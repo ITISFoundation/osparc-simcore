@@ -150,7 +150,7 @@ async def create_group(request: web.Request):
     """Creates organization groups"""
     req_ctx = _GroupsRequestContext.model_validate(request)
     create = await parse_request_body_as(GroupCreate, request)
-    new_group = create.model_dump(exclude_unset=True)
+    new_group = create.model_dump(mode="json", exclude_unset=True)
 
     created_group = await api.create_user_group(request.app, req_ctx.user_id, new_group)
     assert GroupGet.model_validate(created_group) is not None  # nosec

@@ -100,9 +100,9 @@ def mock_rut_api_responses(
     pricing_unit_get_base = PricingUnitGet.model_validate(
         PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
     )
-    pricing_unit_get_1 = pricing_unit_get_base.copy()
+    pricing_unit_get_1 = pricing_unit_get_base.model_copy()
     pricing_unit_get_1.pricing_unit_id = _PRICING_UNIT_ID_1
-    pricing_unit_get_2 = pricing_unit_get_base.copy()
+    pricing_unit_get_2 = pricing_unit_get_base.model_copy()
     pricing_unit_get_2.pricing_unit_id = _PRICING_UNIT_ID_2
 
     aioresponses_mocker.get(

@@ -3,7 +3,6 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-import json
 import time
 from collections.abc import Callable
 from random import randint
@@ -17,7 +16,6 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.payments._methods_api import Faker
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     _ALIVE_SUFFIX,
@@ -35,12 +33,15 @@ from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 @pytest.fixture
 def mock_env_devel_environment(
-    mock_env_devel_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch, faker: Faker
+    mock_env_devel_environment: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ):
     return mock_env_devel_environment | setenvs_from_dict(
-        monkeypatch, {
+        monkeypatch,
+        {
             "RESOURCE_MANAGER_RESOURCE_TTL_S": "3",
-        }
+        },
     )
 
 

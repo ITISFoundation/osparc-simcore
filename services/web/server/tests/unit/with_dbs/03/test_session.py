@@ -118,7 +118,7 @@ def test_session_settings(
 ):
 
     if session_key is not None:
-        settings = SessionSettings(SESSION_SECRET_KEY=session_key)
+        settings = SessionSettings(WEBSERVER_SESSION_SECRET_KEY=session_key)
     else:
         settings = SessionSettings()
 

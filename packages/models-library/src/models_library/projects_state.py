@@ -3,6 +3,7 @@
 """
 
 from enum import Enum, unique
+from typing import Annotated
 
 from pydantic import (
     BaseModel,
@@ -126,7 +127,7 @@ class ProjectRunningState(BaseModel):
 
 
 class ProjectState(BaseModel):
-    locked: ProjectLocked = Field(..., description="The project lock state")
+    locked: Annotated[ProjectLocked, Field(..., description="The project lock state")]
     state: ProjectRunningState = Field(..., description="The project running state")
 
     model_config = ConfigDict(extra="forbid")

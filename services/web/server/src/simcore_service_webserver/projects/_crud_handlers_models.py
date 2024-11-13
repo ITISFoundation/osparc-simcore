@@ -4,7 +4,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 """
 
-from typing import Any
+from typing import Annotated, Self
 
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
@@ -57,19 +57,14 @@ class ProjectCreateHeaders(BaseModel):
         alias=X_SIMCORE_PARENT_NODE_ID,
     )
 
-    @model_validator(mode="before")
-    @classmethod
-    def check_parent_valid(cls, values: dict[str, Any]) -> dict[str, Any]:
-        if (
-            values.get("parent_project_uuid") is None
-            and values.get("parent_node_id") is not None
-        ) or (
-            values.get("parent_project_uuid") is not None
-            and values.get("parent_node_id") is None
+    @model_validator(mode="after")
+    def check_parent_valid(self) -> Self:
+        if (self.parent_project_uuid is None and self.parent_node_id is not None) or (
+            self.parent_project_uuid is not None and self.parent_node_id is None
         ):
             msg = "Both parent_project_uuid and parent_node_id must be set or both null or both unset"
             raise ValueError(msg)
-        return values
+        return self
 
     model_config = ConfigDict(populate_by_name=False)
 
@@ -181,11 +176,14 @@ class ProjectListFullSearchParams(PageQueryParameters):
         max_length=100,
         examples=["My Project"],
     )
-    tag_ids: str | None = Field(
-        default=None,
-        description="Search by tag ID (multiple tag IDs may be provided separated by column)",
-        examples=["1,3"],
-    )
+    tag_ids: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Search by tag ID (multiple tag IDs may be provided separated by column)",
+            examples=["1,3"],
+        ),
+    ]
 
     _empty_is_none = field_validator("text", mode="before")(
         empty_str_to_none_pre_validator

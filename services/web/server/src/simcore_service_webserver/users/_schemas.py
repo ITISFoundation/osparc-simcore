@@ -2,11 +2,10 @@
 
 """
 
-
 import re
 import sys
 from contextlib import suppress
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 import pycountry
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
@@ -61,7 +60,9 @@ class PreUserProfile(InputSchema):
     first_name: str
     last_name: str
     email: LowerCaseEmailStr
-    institution: str | None = Field(default=None, description="company, university, ...")
+    institution: str | None = Field(
+        default=None, description="company, university, ..."
+    )
     phone: str | None
     # billing details
     address: str
@@ -69,10 +70,13 @@ class PreUserProfile(InputSchema):
     state: str | None = Field(default=None)
     postal_code: str
     country: str
-    extras: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Keeps extra information provided in the request form. At most MAX_NUM_EXTRAS fields",
-    )
+    extras: Annotated[
+        dict[str, Any],
+        Field(
+            default_factory=dict,
+            description="Keeps extra information provided in the request form. At most MAX_NUM_EXTRAS fields",
+        ),
+    ]
 
     model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 

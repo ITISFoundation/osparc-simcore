@@ -18,8 +18,6 @@ from aioresponses import aioresponses
 from faker import Faker
 from models_library.products import ProductName
 from models_library.projects_state import ProjectState
-from models_library.services import ServiceKey
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict

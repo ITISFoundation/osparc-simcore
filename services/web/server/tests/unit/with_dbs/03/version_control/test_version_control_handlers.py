@@ -121,7 +121,6 @@ async def test_workflow(
     )
 
     assert CheckpointApiModel.model_validate(page.data[0]) == checkpoint1
-
     # UPDATE checkpoint annotations
     resp = await client.patch(
         f"/{VX}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}",

@@ -995,7 +995,11 @@ async def test_project_node_lifetime(  # noqa: PLR0915
 
     # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
-    body = {"service_key": "simcore/services/dynamic/key", "service_version": "1.3.4"}
+    body = {
+        "service_key": "simcore/services/dynamic/key",
+        "service_version": "1.3.4",
+        "service_id": None,
+    }
     resp = await client.post(url.path, json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
     dynamic_node_id = None
@@ -1016,6 +1020,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     body = {
         "service_key": "simcore/services/comp/key",
         "service_version": "1.3.4",
+        "service_id": None,
     }
     resp = await client.post(f"{url}", json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
@@ -1277,7 +1282,7 @@ async def test_open_shared_project_2_users_locked(
         mock_project_state_updated_handler,
         shared_project,
         [
-            expected_project_state_client_1.copy(
+            expected_project_state_client_1.model_copy(
                 update={
                     "locked": ProjectLocked(
                         value=True, status=ProjectStatus.CLOSING, owner=owner1

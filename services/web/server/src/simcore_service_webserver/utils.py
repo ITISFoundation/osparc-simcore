@@ -11,7 +11,7 @@ import traceback
 import tracemalloc
 from datetime import datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import orjson
 from common_library.error_codes import ErrorCodeStr
