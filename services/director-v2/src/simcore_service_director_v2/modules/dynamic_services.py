@@ -16,7 +16,7 @@ from ..utils.client_decorators import handle_errors, handle_retry
 logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI, tracing_settings: TracingSettings) -> None:
+def setup(app: FastAPI, tracing_settings: TracingSettings | None) -> None:
     def on_startup() -> None:
         client = httpx.AsyncClient(
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT
