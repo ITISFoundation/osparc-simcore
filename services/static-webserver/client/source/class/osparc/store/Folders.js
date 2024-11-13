@@ -178,6 +178,8 @@ qx.Class.define("osparc.store.Folders", {
             folder.set("createdAt", new Date(folderData["createdAt"]));
           } else if (key === "modifiedAt") {
             folder.set("lastModified", new Date(folderData["modifiedAt"]));
+          } else if (key === "trashedAt") {
+            folder.set("trashedAt", new Date(folderData["trashedAt"]));
           } else {
             folder.set(key, folderData[key]);
           }
