@@ -51,7 +51,7 @@ qx.Class.define("osparc.store.Folders", {
       orderBy = {
         field: "modified_at",
         direction: "desc"
-      }
+      },
     ) {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
@@ -83,7 +83,7 @@ qx.Class.define("osparc.store.Folders", {
       orderBy = {
         field: "modified_at",
         direction: "desc"
-      }
+      },
     ) {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {

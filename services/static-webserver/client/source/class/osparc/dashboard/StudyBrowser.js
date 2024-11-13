@@ -183,7 +183,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case "search": {
           const filterData = this._searchBarFilter.getFilterData();
           const text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
-          request = osparc.store.Folders.getInstance().searchFolders(this.getOrderBy(), text);
+          request = osparc.store.Folders.getInstance().searchFolders(text, this.getOrderBy());
           break;
         }
         case "studiesAndFolders": {
