@@ -397,7 +397,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _workspaceSelected: function(workspaceId) {
-      this.__changeContext("studiesAndFolders", workspaceId, null);
+      this._changeContext("studiesAndFolders", workspaceId, null);
     },
 
     _workspaceUpdated: function() {
@@ -457,7 +457,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _folderSelected: function(folderId) {
-      this.__changeContext("studiesAndFolders", this.getCurrentWorkspaceId(), folderId);
+      this._changeContext("studiesAndFolders", this.getCurrentWorkspaceId(), folderId);
     },
 
     _folderUpdated: function() {
@@ -936,7 +936,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         header.addListener("locationChanged", () => {
           const workspaceId = header.getCurrentWorkspaceId();
           const folderId = header.getCurrentFolderId();
-          this.__changeContext("studiesAndFolders", workspaceId, folderId);
+          this._changeContext("studiesAndFolders", workspaceId, folderId);
         }, this);
 
         const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
@@ -944,27 +944,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const context = e.getData();
           const workspaceId = context["workspaceId"];
           if (workspaceId === -1) {
-            this.__changeContext("workspaces");
+            this._changeContext("workspaces");
           } else {
             const folderId = context["folderId"];
-            this.__changeContext("studiesAndFolders", workspaceId, folderId);
+            this._changeContext("studiesAndFolders", workspaceId, folderId);
           }
         }, this);
 
         this._searchBarFilter.addListener("filterChanged", e => {
           const filterData = e.getData();
           if (filterData.text) {
-            this.__changeContext("search");
+            this._changeContext("search");
           } else {
             const workspaceId = this.getCurrentWorkspaceId();
             const folderId = this.getCurrentFolderId();
-            this.__changeContext("studiesAndFolders", workspaceId, folderId);
+            this._changeContext("studiesAndFolders", workspaceId, folderId);
           }
         });
       }
     },
 
-    __changeContext: function(context, workspaceId = null, folderId = null) {
+    _changeContext: function(context, workspaceId = null, folderId = null) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         if (
           context !== "search" && // reload studies for a new search
@@ -1369,7 +1369,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getOpenLocationMenuButton: function(studyData) {
       const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesome5Solid/external-link-alt/12");
       openLocationButton.addListener("execute", () => {
-        this.__changeContext("studiesAndFolders", studyData["workspaceId"], studyData["folderId"]);
+        this._changeContext("studiesAndFolders", studyData["workspaceId"], studyData["folderId"]);
       }, this);
       return openLocationButton;
     },

@@ -46,7 +46,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     "folderSelected": "qx.event.type.Data",
     "folderUpdated": "qx.event.type.Data",
     "moveFolderToRequested": "qx.event.type.Data",
-    "deleteFolderRequested": "qx.event.type.Data"
+    "deleteFolderRequested": "qx.event.type.Data",
+    "changeContext": "qx.event.type.Data",
   },
 
   properties: {
@@ -186,19 +187,38 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         position: "bottom-right"
       });
 
-      const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
-      editButton.addListener("execute", () => this.__editFolder(), this);
-      menu.add(editButton);
+      const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+      if (
+        studyBrowserContext === "search" ||
+        studyBrowserContext === "studiesAndFolders"
+      ) {
+        const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
+        editButton.addListener("execute", () => this.__editFolder(), this);
+        menu.add(editButton);
 
-      const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesome5Solid/folder/12");
-      moveToButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
-      menu.add(moveToButton);
+        if (studyBrowserContext === "search") {
+          const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesome5Solid/external-link-alt/12");
+          openLocationButton.addListener("execute", () => {
+            const folder = this.getFolder();
+            this.fireDataEvent("changeContext", {
+              context: "studiesAndFolders",
+              workspaceId: folder.getWorkspaceId(),
+              folderId: folder.getFolderId(),
+            });
+          }, this);
+          menu.add(openLocationButton);
+        }
 
-      menu.addSeparator();
+        const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesome5Solid/folder/12");
+        moveToButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
+        menu.add(moveToButton);
 
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
-      deleteButton.addListener("execute", () => this.__deleteFolderRequested(), this);
-      menu.add(deleteButton);
+        menu.addSeparator();
+
+        const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+        deleteButton.addListener("execute", () => this.__deleteFolderRequested(), this);
+        menu.add(deleteButton);
+      }
 
       menuButton.setMenu(menu);
     },
