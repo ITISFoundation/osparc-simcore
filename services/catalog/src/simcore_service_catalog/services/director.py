@@ -166,11 +166,15 @@ async def setup_director(
         ):
             async for attempt in AsyncRetrying(**_director_startup_retry_policy):
                 client = DirectorApi(
-                    base_url=settings.base_url, app=app, add_tracing=add_tracing
+                    base_url=settings.base_url,
+                    app=app,
+                    tracing_settings=tracing_settings,
                 )
                 with attempt:
                     client = DirectorApi(
-                        base_url=settings.base_url, app=app, add_tracing=add_tracing
+                        base_url=settings.base_url,
+                        app=app,
+                        tracing_settings=tracing_settings,
                     )
                     if not await client.is_responsive():
                         with suppress(Exception):

@@ -71,7 +71,9 @@ def request_timeout() -> int:
 
 @pytest.fixture
 async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
-    async with FakeThickClient(total_retry_interval=request_timeout) as client:
+    async with FakeThickClient(
+        total_retry_interval=request_timeout, tracing_settings=None
+    ) as client:
         yield client
 
 
@@ -95,7 +97,9 @@ async def test_retry_on_errors(
     test_url: AnyHttpUrl,
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
-    client = FakeThickClient(total_retry_interval=request_timeout)
+    client = FakeThickClient(
+        total_retry_interval=request_timeout, tracing_settings=None
+    )
 
     with pytest.raises(ClientHttpError):
         await client.get_provided_url(test_url)
@@ -224,7 +228,9 @@ async def test_retry_timeout_overwrite(
     request_timeout: int,
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
-    client = FakeThickClient(total_retry_interval=request_timeout)
+    client = FakeThickClient(
+        total_retry_interval=request_timeout, tracing_settings=None
+    )
 
     caplog_info_level.clear()
     start = arrow.utcnow()
