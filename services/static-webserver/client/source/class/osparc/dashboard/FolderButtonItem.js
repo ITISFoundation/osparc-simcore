@@ -203,7 +203,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             this.fireDataEvent("changeContext", {
               context: "studiesAndFolders",
               workspaceId: folder.getWorkspaceId(),
-              folderId: folder.getFolderId(),
+              folderId: folder.getParentFolderId(),
             });
           }, this);
           menu.add(openLocationButton);
