@@ -31,6 +31,17 @@ qx.Class.define("osparc.store.Folders", {
     "folderMoved": "qx.event.type.Data",
   },
 
+  statics: {
+    curateOrderBy: function(orderBy) {
+      const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
+      if (curatedOrderBy.field !== "name") {
+        // only "modified_at" and "name" supported
+        curatedOrderBy.field = "modified_at";
+      }
+      return curatedOrderBy;
+    },
+  },
+
   members: {
     foldersCached: null,
 
@@ -48,12 +59,7 @@ qx.Class.define("osparc.store.Folders", {
         });
       }
 
-      const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
-      if (curatedOrderBy.field !== "name") {
-        // only "modified_at" and "name" supported
-        curatedOrderBy.field = "modified_at";
-      }
-
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
       const params = {
         url: {
           workspaceId,
