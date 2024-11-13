@@ -17,8 +17,6 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel,
         Field(
             LogLevel.INFO.value,
-            alias="LOG_LEVEL",
-            serialization_alias="LOG_LEVEL",
             validation_alias=AliasChoices(
                 "DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
             ),
