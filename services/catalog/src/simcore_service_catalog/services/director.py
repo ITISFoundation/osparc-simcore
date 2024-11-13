@@ -13,6 +13,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.json_serialization import json_dumps
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_context
+from settings_library.tracing import TracingSettings
 from starlette import status
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -107,12 +108,14 @@ class DirectorApi:
     SEE services/catalog/src/simcore_service_catalog/api/dependencies/director.py
     """
 
-    def __init__(self, base_url: str, app: FastAPI, add_tracing: bool = False):
+    def __init__(
+        self, base_url: str, app: FastAPI, tracing_settings: TracingSettings | None
+    ):
         self.client = httpx.AsyncClient(
             base_url=base_url,
             timeout=app.state.settings.CATALOG_CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
-        if add_tracing:
+        if tracing_settings:
             setup_httpx_client_tracing(self.client)
         self.vtag = app.state.settings.CATALOG_DIRECTOR.DIRECTOR_VTAG
 
@@ -154,7 +157,9 @@ class DirectorApi:
         return ServiceMetaDataPublished.parse_obj(data[0])
 
 
-async def setup_director(app: FastAPI, add_tracing: bool = False) -> None:
+async def setup_director(
+    app: FastAPI, tracing_settings: TracingSettings | None
+) -> None:
     if settings := app.state.settings.CATALOG_DIRECTOR:
         with log_context(
             _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
