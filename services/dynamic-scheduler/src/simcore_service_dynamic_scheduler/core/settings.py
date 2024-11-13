@@ -1,4 +1,5 @@
 import datetime
+from typing import Annotated
 
 from pydantic import AliasChoices, Field, TypeAdapter, field_validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
@@ -23,12 +24,15 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
 
-    DYNAMIC_SCHEDULER_LOGLEVEL: LogLevel = Field(
-        default=LogLevel.INFO,
-        validation_alias=AliasChoices(
-            "DYNAMIC_SCHEDULER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+    DYNAMIC_SCHEDULER_LOGLEVEL: Annotated[
+        LogLevel,
+        Field(
+            default=LogLevel.INFO,
+            validation_alias=AliasChoices(
+                "DYNAMIC_SCHEDULER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+            ),
         ),
-    )
+    ]
 
     DYNAMIC_SCHEDULER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
