@@ -178,6 +178,12 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
                 & (folders_v2.c.user_id.is_(None))
             )
         )
+
+        if workspace_query.workspace_scope == WorkspaceScope.SHARED:
+            shared_workspace_query = shared_workspace_query.where(
+                folders_v2.c.workspace_id == workspace_query.workspace_id
+            )
+
     else:
         shared_workspace_query = None
 
