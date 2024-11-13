@@ -61,7 +61,6 @@
   "created": "1961-07-06T11:24:30.877Z",
   "modified": "2008-03-24T07:02:09.279Z",
   "last_heartbeat": null,
-  "pricing_info": null,
   "hardware_info": {
     "aws_ec2_instances": []
   }
