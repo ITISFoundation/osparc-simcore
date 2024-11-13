@@ -276,7 +276,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    compose_spec: Json[ComposeSpecLabelDict] | None = Field(
+    compose_spec: Json[ComposeSpecLabelDict | None] | None = Field(
         None,
         alias="simcore.service.compose-spec",
         description=(
