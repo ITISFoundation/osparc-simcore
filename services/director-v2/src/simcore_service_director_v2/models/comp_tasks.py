@@ -21,7 +21,6 @@ from pydantic import (
     ByteSize,
     ConfigDict,
     Field,
-    PlainSerializer,
     PositiveInt,
     TypeAdapter,
     ValidationInfo,
@@ -118,7 +117,7 @@ class NodeSchema(BaseModel):
 
 class CompTaskAtDB(BaseModel):
     project_id: ProjectID
-    node_id: Annotated[NodeID, PlainSerializer(str, return_type=str)]
+    node_id: NodeID
     job_id: str | None = Field(default=None, description="The worker job ID")
     node_schema: NodeSchema = Field(..., alias="schema")
     inputs: InputsDict | None = Field(..., description="the inputs payload")
@@ -181,7 +180,7 @@ class CompTaskAtDB(BaseModel):
 
     def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
         comp_task_dict = self.model_dump(
-            by_alias=True, exclude_unset=True, **exclusion_rules
+            mode="json", by_alias=True, exclude_unset=True, **exclusion_rules
         )
         if "state" in comp_task_dict:
             comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value
