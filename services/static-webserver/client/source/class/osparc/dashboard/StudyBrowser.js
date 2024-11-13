@@ -976,6 +976,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
 
+        osparc.store.Store.getInstance().setStudyBrowserContext(context);
         this.set({
           currentContext: context,
           currentWorkspaceId: workspaceId,
