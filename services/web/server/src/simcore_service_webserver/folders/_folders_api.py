@@ -172,6 +172,7 @@ async def list_folders(
             else WorkspaceQuery(workspace_scope=WorkspaceScope.PRIVATE)
         ),
         filter_trashed=trashed,
+        filter_by_text=None,
         offset=offset,
         limit=limit,
         order_by=order_by,
@@ -199,6 +200,7 @@ async def list_folders_full_search(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
+    text: str | None,
     trashed: bool | None,
     offset: NonNegativeInt,
     limit: int,
@@ -213,6 +215,7 @@ async def list_folders_full_search(
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
         filter_trashed=trashed,
+        filter_by_text=text,
         offset=offset,
         limit=limit,
         order_by=order_by,

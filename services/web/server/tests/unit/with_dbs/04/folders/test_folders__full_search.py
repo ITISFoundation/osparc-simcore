@@ -103,6 +103,14 @@ async def test_folders_full_search(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 3
 
+    # list full folder search with specific text
+    url = client.app.router["list_folders_full_search"].url_for()
+    query_parameters = {"text": "My subfolder"}
+    url_with_query = url.with_query(**query_parameters)
+    resp = await client.get(f"{url_with_query}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+
     # Create new user
     async with LoggedUser(client) as new_logged_user:
         # list full folder search
