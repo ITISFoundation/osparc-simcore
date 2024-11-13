@@ -150,7 +150,7 @@ class CompTaskAtDB(BaseModel):
     created: Annotated[dt.datetime, BeforeValidator(validate_legacy_datetime_str)]
     modified: Annotated[dt.datetime, BeforeValidator(validate_legacy_datetime_str)]
     # Additional information about price and hardware (ex. AWS EC2 instance type)
-    pricing_info: dict | None = None
+    pricing_info: dict | None
     hardware_info: HardwareInfo
 
     @field_validator("state", mode="before")
