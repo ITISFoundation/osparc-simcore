@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 
+from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
@@ -129,3 +130,12 @@ async def compute_service_run_credit_costs(
         return round(Decimal(time_delta.total_seconds() / 3600) * cost_per_unit, 2)
     msg = f"Stop {stop} is smaller then {start} this should not happen. Investigate."
     raise ValueError(msg)
+
+
+async def convert_project_tags_to_db(
+    project_tags: list[tuple[int, str]]
+) -> dict[str, dict[str, str]]:
+    project_tags_db: dict[str, dict[str, str]] = {}
+    for tag in project_tags:
+        project_tags_db[f"{tag[0]}"] = {"name": tag[1]}
+    return jsonable_encoder(project_tags_db)

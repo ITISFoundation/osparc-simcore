@@ -36,6 +36,7 @@ from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client
 from .utils import (
     compute_service_run_credit_costs,
+    convert_project_tags_to_db,
     make_negative,
     publish_to_rabbitmq_wallet_credits_limit_reached,
     sum_credit_transactions_and_publish_to_rabbitmq,
@@ -95,13 +96,11 @@ async def _process_start_event(
         )
         pricing_unit_cost = pricing_unit_cost_db.cost_per_unit
 
-    project_tags_db: dict[str, dict[str, str]] = {}
-    for tag in msg.project_tags:
-        project_tags_db[f"{tag[0]}"] = {"name": tag[1]}
+    project_tags_db = await convert_project_tags_to_db(msg.project_tags)
     await resource_tracker_repo.insert_rut_project_metadata(
         project_id=msg.project_id,
         project_name=msg.project_name,
-        project_tags_db=jsonable_encoder(project_tags_db),
+        project_tags_db=project_tags_db,
     )
 
     create_service_run = ServiceRunCreate(

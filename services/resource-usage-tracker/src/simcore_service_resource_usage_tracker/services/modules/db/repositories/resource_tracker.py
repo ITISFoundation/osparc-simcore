@@ -222,7 +222,7 @@ class ResourceTrackerRepository(
         self,
         project_id: ProjectID,
         project_name: str | None = None,
-        project_tags: list[str] | None = None,
+        project_tags: dict[str, dict[str, str]] | None = None,
     ) -> None:
 
         _update_data = {
