@@ -19,8 +19,9 @@ from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersio
 from models_library.users import UserID
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_decorator
+from settings_library.tracing import TracingSettings
 
-from ..core.settings import AppSettings, DirectorV0Settings
+from ..core.settings import DirectorV0Settings
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 
@@ -29,9 +30,11 @@ logger = logging.getLogger(__name__)
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: AppSettings):
-    director_v0_settings = settings.DIRECTOR_V0
-    tracing_settings = settings.DIRECTOR_V2_TRACING
+def setup(
+    app: FastAPI,
+    director_v0_settings: DirectorV0Settings | None,
+    tracing_settings: TracingSettings | None,
+):
     if not director_v0_settings:
         director_v0_settings = DirectorV0Settings()
 

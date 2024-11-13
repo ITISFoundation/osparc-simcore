@@ -12,11 +12,11 @@ from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_decorator
 from settings_library.s3 import S3Settings
 from settings_library.storage import StorageSettings
+from settings_library.tracing import TracingSettings
 
 # Module's business logic ---------------------------------------------
 from starlette import status
 
-from ..core.settings import AppSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 
@@ -25,9 +25,11 @@ logger = logging.getLogger(__name__)
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: AppSettings):
-    storage_settings = settings.DIRECTOR_V2_STORAGE
-    tracing_settings = settings.DIRECTOR_V2_TRACING
+def setup(
+    app: FastAPI,
+    storage_settings: StorageSettings | None,
+    tracing_settings: TracingSettings | None,
+):
 
     if not storage_settings:
         storage_settings = StorageSettings()

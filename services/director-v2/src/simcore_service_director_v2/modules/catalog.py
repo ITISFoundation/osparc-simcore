@@ -11,16 +11,18 @@ from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from settings_library.catalog import CatalogSettings
+from settings_library.tracing import TracingSettings
 
-from ..core.settings import AppSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI, settings: AppSettings) -> None:
-    catalog_settings = settings.DIRECTOR_V2_CATALOG
-    tracing_settings = settings.DIRECTOR_V2_TRACING
+def setup(
+    app: FastAPI,
+    catalog_settings: CatalogSettings | None,
+    tracing_settings: TracingSettings | None,
+) -> None:
 
     if not catalog_settings:
         catalog_settings = CatalogSettings()

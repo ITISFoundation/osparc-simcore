@@ -341,7 +341,7 @@ async def patch_storage_setup(
     original_setup = dv2_modules_storage.setup
 
     def setup(app: FastAPI, settings: StorageSettings) -> None:
-        original_setup(app, local_settings)
+        original_setup(app, storage_settings=local_settings, tracing_settings=None)
 
     mocker.patch("simcore_service_director_v2.modules.storage.setup", side_effect=setup)
 
