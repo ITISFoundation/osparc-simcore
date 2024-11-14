@@ -278,15 +278,9 @@ qx.Class.define("osparc.form.tag.TagItem", {
       saveButton.addListener("execute", () => {
         if (this.__validationManager.validate()) {
           const data = this.__serializeData();
-          const params = {
-            data
-          };
           saveButton.setFetching(true);
           let fetch;
           if (this.isPropertyInitialized("id")) {
-            params.url = {
-              tagId: this.getId()
-            };
             fetch = osparc.store.Tags.getInstance().putTag(this.getId(), data);
           } else {
             fetch = osparc.store.Tags.getInstance().postTag(data);

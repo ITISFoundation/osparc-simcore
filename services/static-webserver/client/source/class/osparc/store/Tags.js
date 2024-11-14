@@ -91,7 +91,7 @@ qx.Class.define("osparc.store.Tags", {
         },
         data: updateData
       };
-      return osparc.data.Resources.getInstance().fetch("tags", "update", params)
+      return osparc.data.Resources.getInstance().fetch("tags", "put", params)
         .then(tagData => {
           this.__addToCache(tagData);
         })
