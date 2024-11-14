@@ -271,7 +271,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     addTagActiveFilter: function(tag) {
-      this.__addChip("tag", tag.id, tag.name);
+      this.__addChip("tag", tag.getTagId(), tag.getName());
     },
 
     setTagsActiveFilter: function(tagIds) {
@@ -279,9 +279,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       tags.forEach(tag => {
         const tagId = tag.getTagId();
         if (tagIds.includes(tagId)) {
-          this.__addChip("tag", tag.id, tag.getName());
+          this.__addChip("tag", tagId, tag.getName());
         } else {
-          this.__removeChip("tag", tag.id, tag.getName());
+          this.__removeChip("tag", tagId, tag.getName());
         }
       });
     },
