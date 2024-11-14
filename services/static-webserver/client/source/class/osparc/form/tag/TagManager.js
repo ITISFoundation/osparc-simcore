@@ -124,20 +124,21 @@ qx.Class.define("osparc.form.tag.TagManager", {
     },
 
     __tagButton: function(tag) {
-      const tagButton = new osparc.form.tag.TagToggleButton(tag, this.__selectedTags.includes(tag.id));
+      const tagId = tag.getTagId();
+      const tagButton = new osparc.form.tag.TagToggleButton(tag, this.__selectedTags.includes(tagId));
       tagButton.addListener("changeValue", evt => {
         const selected = evt.getData();
         if (this.isLiveUpdate()) {
           tagButton.setFetching(true);
           if (selected) {
-            this.__saveAddTag(tag.id, tagButton);
+            this.__saveAddTag(tagId, tagButton);
           } else {
-            this.__saveRemoveTag(tag.id, tagButton);
+            this.__saveRemoveTag(tagId, tagButton);
           }
         } else if (selected) {
-          this.__selectedTags.push(tag.id);
+          this.__selectedTags.push(tagId);
         } else {
-          this.__selectedTags.remove(tag.id);
+          this.__selectedTags.remove(tagId);
         }
       }, this);
       tagButton.subscribeToFilterGroup("studyBrowserTagManager");
