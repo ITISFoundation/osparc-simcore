@@ -102,6 +102,7 @@ qx.Class.define("osparc.po.Announcements", {
       const generateAnnouncementBtn = new osparc.ui.form.FetchButton(this.tr("Generate"));
       generateAnnouncementBtn.set({appearance: "form-button"});
       generateAnnouncementBtn.addListener("execute", () => {
+        const products = [osparc.product.Utils.getProductName()];
         const widgets = [];
         if (widgetLogin.getValue()) {
           widgets.push("login");
@@ -118,10 +119,10 @@ qx.Class.define("osparc.po.Announcements", {
         }
         const announcementData = {
           "id": osparc.utils.Utils.uuidV4(),
-          "products": "[" + osparc.product.Utils.getProductName() + "]",
-          "title": title.getValue() ? encodeURIComponent(title.getValue()) : "",
-          "description": description.getValue() ? encodeURIComponent(description.getValue()) : "",
-          "widgets": "[" + widgets.join("") + "]",
+          "products": JSON.stringify(products),
+          "title": title.getValue() ? title.getValue() : "",
+          "description": description.getValue() ? description.getValue() : "",
+          "widgets": JSON.stringify(widgets),
           "start": start.getValue(),
           "end": end.getValue(),
         };
@@ -147,7 +148,7 @@ qx.Class.define("osparc.po.Announcements", {
       });
       copyAnnouncementBtn.set({appearance: "form-button"});
       copyAnnouncementBtn.addListener("execute", () => {
-        if (osparc.utils.Utils.copyTextToClipboard(announcementData)) {
+        if (osparc.utils.Utils.copyTextToClipboard(JSON.stringify(announcementData))) {
           copyAnnouncementBtn.setIcon("@FontAwesome5Solid/check/12");
         }
       });
