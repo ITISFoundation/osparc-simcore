@@ -251,12 +251,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
       editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
       deleteButton.addListener("execute", () => {
         deleteButton.setFetching(true);
-        const params = {
-          url: {
-            tagId: this.getId()
-          }
-        };
-        osparc.data.Resources.fetch("tags", "delete", params)
+        osparc.store.Tags.getInstance().deleteTag(this.getId())
           .then(() => this.fireEvent("deleteTag"))
           .catch(console.error)
           .finally(() => deleteButton.setFetching(false));
