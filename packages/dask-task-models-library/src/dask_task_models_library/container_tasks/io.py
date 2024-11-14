@@ -1,7 +1,7 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, TypeAlias, Union
+from typing import Annotated, Any, TypeAlias
 
 from models_library.basic_regex import MIME_TYPE_RE
 from models_library.generics import DictModel
@@ -84,15 +84,16 @@ class FileUrl(BaseModel):
     )
 
 
-PortValue: TypeAlias = Union[
-    StrictBool,
-    StrictInt,
-    StrictFloat,
-    StrictStr,
-    FileUrl,
-    list[Any],
-    dict[str, Any],
-    None,
+PortValue: TypeAlias = Annotated[
+    StrictBool
+    | StrictInt
+    | StrictFloat
+    | StrictStr
+    | FileUrl
+    | list[Any]
+    | dict[str, Any]
+    | None,
+    Field(union_mode="left_to_right"),
 ]
 
 
@@ -112,7 +113,9 @@ class TaskInputData(DictModel[ServicePortKey, PortValue]):
     )
 
 
-PortSchemaValue: TypeAlias = Union[PortSchema, FilePortSchema]
+PortSchemaValue: TypeAlias = Annotated[
+    PortSchema | FilePortSchema, Field(union_mode="left_to_right")
+]
 
 
 class TaskOutputDataSchema(DictModel[ServicePortKey, PortSchemaValue]):
