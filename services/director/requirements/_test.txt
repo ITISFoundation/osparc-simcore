@@ -2,7 +2,7 @@ aiohappyeyeballs==2.4.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.10.10
+aiohttp==3.11.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -35,11 +35,11 @@ charset-normalizer==3.4.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.6.4
+coverage==7.6.5
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==30.8.2
+faker==33.0.0
     # via -r requirements/_test.in
 frozenlist==1.5.0
     # via
@@ -75,7 +75,7 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-packaging==24.1
+packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -85,6 +85,7 @@ pluggy==1.5.0
 propcache==0.2.0
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   yarl
 pytest==8.3.3
     # via

@@ -14,7 +14,7 @@ aiofiles==24.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiohappyeyeballs==2.4.3
     # via aiohttp
-aiohttp==3.10.10
+aiohttp==3.11.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -88,13 +88,13 @@ fastapi==0.99.1
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   prometheus-fastapi-instrumentator
-faststream==0.5.28
+faststream==0.5.30
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-googleapis-common-protos==1.65.0
+googleapis-common-protos==1.66.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
@@ -155,7 +155,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-opentelemetry-api==1.28.0
+opentelemetry-api==1.28.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -163,56 +163,62 @@ opentelemetry-api==1.28.0
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-otlp==1.28.0
+opentelemetry-exporter-otlp==1.28.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-exporter-otlp-proto-common==1.28.0
+opentelemetry-exporter-otlp-proto-common==1.28.1
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-grpc==1.28.0
+opentelemetry-exporter-otlp-proto-grpc==1.28.1
     # via opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.28.0
+opentelemetry-exporter-otlp-proto-http==1.28.1
     # via opentelemetry-exporter-otlp
-opentelemetry-instrumentation==0.49b0
+opentelemetry-instrumentation==0.49b1
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
-opentelemetry-instrumentation-asgi==0.49b0
+opentelemetry-instrumentation-asgi==0.49b1
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-fastapi==0.49b0
+opentelemetry-instrumentation-fastapi==0.49b1
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-opentelemetry-instrumentation-redis==0.49b0
+opentelemetry-instrumentation-httpx==0.49b1
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+opentelemetry-instrumentation-redis==0.49b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-requests==0.49b0
+opentelemetry-instrumentation-requests==0.49b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-proto==1.28.0
+opentelemetry-proto==1.28.1
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.28.0
+opentelemetry-sdk==1.28.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.49b0
+opentelemetry-semantic-conventions==0.49b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
-opentelemetry-util-http==0.49b0
+opentelemetry-util-http==0.49b1
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
 orjson==3.10.11
     # via
@@ -225,7 +231,7 @@ orjson==3.10.11
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   fastapi
-packaging==24.1
+packaging==24.2
     # via opentelemetry-instrumentation
 pamqp==3.3.0
     # via aiormq
@@ -237,7 +243,9 @@ prometheus-client==0.21.0
 prometheus-fastapi-instrumentator==6.1.0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 propcache==0.2.0
-    # via yarl
+    # via
+    #   aiohttp
+    #   yarl
 protobuf==5.28.3
     # via
     #   googleapis-common-protos
@@ -332,7 +340,7 @@ toolz==1.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.67.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-typer==0.12.5
+typer==0.13.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
@@ -372,17 +380,18 @@ uvloop==0.21.0
     # via uvicorn
 watchfiles==0.24.0
     # via uvicorn
-websockets==13.1
+websockets==14.1
     # via uvicorn
 wrapt==1.16.0
     # via
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
 yarl==1.17.1
     # via
     #   aio-pika
     #   aiohttp
     #   aiormq
-zipp==3.20.2
+zipp==3.21.0
     # via importlib-metadata
