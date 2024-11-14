@@ -11,6 +11,7 @@
 
 # installs this repo's packages
 simcore-models-library @ ../../packages/models-library
+simcore-common-library @ ../../packages/common-library/
 simcore-service-library[fastapi] @ ../../packages/service-library
 simcore-settings-library @ ../../packages/settings-library
 
