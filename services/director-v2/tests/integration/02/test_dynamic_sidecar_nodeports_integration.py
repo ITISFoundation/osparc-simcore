@@ -64,6 +64,7 @@ from servicelib.sequences_utils import pairwise
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.storage import StorageSettings
+from settings_library.tracing import TracingSettings
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects_networks import projects_networks
@@ -340,8 +341,14 @@ async def patch_storage_setup(
 
     original_setup = dv2_modules_storage.setup
 
-    def setup(app: FastAPI, settings: StorageSettings) -> None:
-        original_setup(app, local_settings)
+    def setup(
+        app: FastAPI,
+        storage_settings: StorageSettings,
+        tracing_settings: TracingSettings | None,
+    ) -> None:
+        original_setup(
+            app, storage_settings=local_settings, tracing_settings=tracing_settings
+        )
 
     mocker.patch("simcore_service_director_v2.modules.storage.setup", side_effect=setup)
 
