@@ -88,8 +88,8 @@ qx.Class.define("osparc.form.tag.TagManager", {
         newItem.addListener("tagSaved", () => this.__repopulateTags(), this);
         newItem.addListener("cancelNewTag", e => tagsContainer.remove(e.getTarget()), this);
         newItem.addListener("deleteTag", e => tagsContainer.remove(e.getTarget()), this);
-        this.__repopulateTags();
         tagsContainer.add(newItem);
+        this.__repopulateTags();
       });
       this._add(addTagButton);
 
