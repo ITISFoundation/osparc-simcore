@@ -94,13 +94,37 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     # ensure we do not use the bucket of simcore or so
     env_devel["S3_BUCKET_NAME"] = "pytestbucket"
 
+    # ensure OpenTelemetry is not enabled
+    env_devel |= {
+        x: "null"
+        for x in (
+            "AGENT_TRACING",
+            "API_SERVER_TRACING",
+            "AUTOSCALING_TRACING",
+            "CATALOG_TRACING",
+            "CLUSTERS_KEEPER_TRACING",
+            "DATCORE_ADAPTER_TRACING",
+            "DIRECTOR_TRACING",
+            "DIRECTOR_V2_TRACING",
+            "DYNAMIC_SCHEDULER_TRACING",
+            "EFS_GUARDIAN_TRACING",
+            "INVITATIONS_TRACING",
+            "PAYMENTS_TRACING",
+            "RESOURCE_USAGE_TRACKER_TRACING",
+            "STORAGE_TRACING",
+            "WB_DB_EL_TRACING",
+            "WB_GC_TRACING",
+            "WEBSERVER_TRACING",
+        )
+    }
+
     return {key: value for key, value in env_devel.items() if value is not None}
 
 
 @pytest.fixture(scope="module")
 def env_file_for_testing(
     temp_folder: Path,
-    testing_environ_vars: dict[str, str],
+    testing_environ_vars: EnvVarsDict,
     osparc_simcore_root_dir: Path,
 ) -> Iterator[Path]:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file
@@ -118,10 +142,6 @@ def env_file_for_testing(
             file=fh,
         )
         for key, value in sorted(testing_environ_vars.items()):
-            # ensure OpenTelemetry is not enabled
-            if key.startswith("TRACING_") or key.endswith("_TRACING"):
-                continue
-
             # NOTE: python-dotenv parses JSON encoded strings correctly, but
             # writing them back shows an issue. if the original ENV is something like MY_ENV='{"correct": "encodedjson"}'
             # it goes to MY_ENV={"incorrect": "encodedjson"}!
