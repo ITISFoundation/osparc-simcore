@@ -1165,7 +1165,6 @@ class RebootState:
     expected_run_state: RunningState
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize(
     "reboot_state",
     [
