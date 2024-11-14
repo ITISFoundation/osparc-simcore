@@ -47,23 +47,29 @@ opentelemetry-api==1.27.0
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-semantic-conventions
 opentelemetry-instrumentation==0.48b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
 opentelemetry-instrumentation-asgi==0.48b0
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-fastapi==0.48b0
+    # via -r requirements/_fastapi.in
+opentelemetry-instrumentation-httpx==0.48b0
     # via -r requirements/_fastapi.in
 opentelemetry-semantic-conventions==0.48b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
 opentelemetry-util-http==0.48b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
 prometheus-client==0.21.0
     # via
     #   -r requirements/_fastapi.in

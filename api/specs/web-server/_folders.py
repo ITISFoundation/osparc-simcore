@@ -64,6 +64,28 @@ async def list_folders(
 
 
 @router.get(
+    "/folders:search",
+    response_model=Envelope[list[FolderGet]],
+)
+async def list_folders_full_search(
+    params: Annotated[PageQueryParameters, Depends()],
+    text: str | None = None,
+    order_by: Annotated[
+        Json,
+        Query(
+            description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
+            example='{"field": "name", "direction": "desc"}',
+        ),
+    ] = '{"field": "modified_at", "direction": "desc"}',
+    filters: Annotated[
+        Json | None,
+        Query(description=FolderFilters.schema_json(indent=1)),
+    ] = None,
+):
+    ...
+
+
+@router.get(
     "/folders/{folder_id}",
     response_model=Envelope[FolderGet],
 )

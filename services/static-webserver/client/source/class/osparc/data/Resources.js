@@ -301,6 +301,11 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
+          getPageSearch: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/folders:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}"
+          },
           getOne: {
             method: "GET",
             url: statics.API + "/folders/{folderId}"
@@ -1368,7 +1373,7 @@ qx.Class.define("osparc.data.Resources", {
       });
     },
 
-    getAllPages: function(resource, params = {}) {
+    getAllPages: function(resource, params = {}, endpoint = "getPage") {
       return new Promise((resolve, reject) => {
         let resources = [];
         let offset = 0;
@@ -1377,7 +1382,6 @@ qx.Class.define("osparc.data.Resources", {
         }
         params["url"]["offset"] = offset;
         params["url"]["limit"] = 10;
-        const endpoint = "getPage";
         const options = {
           resolveWResponse: true
         };

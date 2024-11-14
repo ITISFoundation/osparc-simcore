@@ -11,6 +11,7 @@ from collections.abc import Awaitable, Callable, Iterator
 from typing import Any, cast
 from uuid import uuid4
 
+import arrow
 import pytest
 import sqlalchemy as sa
 from _helpers import PublishedProject, RunningProject
@@ -318,6 +319,7 @@ async def running_project(
 ) -> RunningProject:
     user = registered_user()
     created_project = await project(user, workbench=fake_workbench_without_outputs)
+    now_time = arrow.utcnow().datetime
     return RunningProject(
         project=created_project,
         pipeline=pipeline(
@@ -329,9 +331,50 @@ async def running_project(
             project=created_project,
             state=StateType.RUNNING,
             progress=0.0,
-            start=datetime.datetime.now(tz=datetime.UTC),
+            start=now_time,
         ),
-        runs=runs(user=user, project=created_project, result=StateType.RUNNING),
+        runs=runs(
+            user=user,
+            project=created_project,
+            started=now_time,
+            result=StateType.RUNNING,
+        ),
+    )
+
+
+@pytest.fixture
+async def running_project_mark_for_cancellation(
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., Awaitable[ProjectAtDB]],
+    pipeline: Callable[..., CompPipelineAtDB],
+    tasks: Callable[..., list[CompTaskAtDB]],
+    runs: Callable[..., CompRunsAtDB],
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+) -> RunningProject:
+    user = registered_user()
+    created_project = await project(user, workbench=fake_workbench_without_outputs)
+    now_time = arrow.utcnow().datetime
+    return RunningProject(
+        project=created_project,
+        pipeline=pipeline(
+            project_id=f"{created_project.uuid}",
+            dag_adjacency_list=fake_workbench_adjacency,
+        ),
+        tasks=tasks(
+            user=user,
+            project=created_project,
+            state=StateType.RUNNING,
+            progress=0.0,
+            start=now_time,
+        ),
+        runs=runs(
+            user=user,
+            project=created_project,
+            result=StateType.RUNNING,
+            started=now_time,
+            cancelled=now_time + datetime.timedelta(seconds=5),
+        ),
     )
 
 
