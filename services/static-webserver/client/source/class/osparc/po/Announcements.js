@@ -61,7 +61,8 @@ qx.Class.define("osparc.po.Announcements", {
       form.add(title, this.tr("Title"));
 
       const description = new qx.ui.form.TextArea().set({
-        placeholder: this.tr("description")
+        placeholder: this.tr("description"),
+        maxHeight: 60
       });
       form.add(description, this.tr("Description"));
 
@@ -94,14 +95,12 @@ qx.Class.define("osparc.po.Announcements", {
       form.add(start, this.tr("Start"));
 
       const end = new qx.ui.form.DateField();
-      start.setDateFormat(dateFormat);
-      start.setValue(now);
+      end.setDateFormat(dateFormat);
+      end.setValue(now);
       form.add(end, this.tr("End"));
 
       const generateAnnouncementBtn = new osparc.ui.form.FetchButton(this.tr("Generate"));
-      generateAnnouncementBtn.set({
-        appearance: "form-button"
-      });
+      generateAnnouncementBtn.set({appearance: "form-button"});
       generateAnnouncementBtn.addListener("execute", () => {
         const widgets = [];
         if (widgetLogin.getValue()) {
@@ -113,12 +112,16 @@ qx.Class.define("osparc.po.Announcements", {
         if (widgetUserMenu.getValue()) {
           widgets.push("user-menu");
         }
+        if (widgets.length === 0) {
+          const msg = "Select at least one widget";
+          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+        }
         const announcementData = {
           "id": osparc.utils.Utils.uuidV4(),
-          "products": [osparc.product.Utils.getProductName()],
-          "title": title.getValue(),
-          "description": description.getValue(),
-          "widgets": JSON.stringify(widgets),
+          "products": "[" + osparc.product.Utils.getProductName() + "]",
+          "title": title.getValue() ? encodeURIComponent(title.getValue()) : "",
+          "description": description.getValue() ? encodeURIComponent(description.getValue()) : "",
+          "widgets": "[" + widgets.join("") + "]",
           "start": start.getValue(),
           "end": end.getValue(),
         };
@@ -133,31 +136,22 @@ qx.Class.define("osparc.po.Announcements", {
       const vBox = this.getChildControl("announcement-container");
       vBox.removeAll();
 
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignY: "middle"
-      }));
-      vBox.add(hBox);
-
-      const announcementField = new qx.ui.form.TextArea(announcementData).set({
+      const announcementField = new qx.ui.form.TextArea(JSON.stringify(announcementData)).set({
         readOnly: true
       });
-      hBox.add(announcementField);
+      vBox.add(announcementField);
 
-      const copyAnnouncementBtn = new qx.ui.form.Button(this.tr("Copy announcement"));
-      copyAnnouncementBtn.set({appearance: "form-button-outlined"});
+      const copyAnnouncementBtn = new qx.ui.form.Button(this.tr("Copy announcement")).set({
+        alignX: "left",
+        allowGrowX: false,
+      });
+      copyAnnouncementBtn.set({appearance: "form-button"});
       copyAnnouncementBtn.addListener("execute", () => {
         if (osparc.utils.Utils.copyTextToClipboard(announcementData)) {
           copyAnnouncementBtn.setIcon("@FontAwesome5Solid/check/12");
         }
       });
-      hBox.add(copyAnnouncementBtn);
-
-      const announcementRespViewer = new osparc.ui.basic.JsonTreeWidget(announcementData, "announcement-data");
-      const container = new qx.ui.container.Scroll();
-      container.add(announcementRespViewer);
-      vBox.add(container, {
-        flex: 1
-      });
+      vBox.add(copyAnnouncementBtn);
     }
   }
 });
