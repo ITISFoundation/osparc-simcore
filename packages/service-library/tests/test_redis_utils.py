@@ -5,6 +5,7 @@ from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 from datetime import timedelta
 from itertools import chain
+from typing import Awaitable
 from unittest.mock import Mock
 
 import arrow
@@ -32,39 +33,117 @@ async def _is_locked(redis_client_sdk: RedisClientSDK, lock_name: str) -> bool:
 
 @pytest.fixture
 def lock_name(faker: Faker) -> str:
-    return faker.uuid4()  # type: ignore
+    return faker.pystr()
 
 
-async def _contained_client(
+def _exclusive_sleeping_task(
+    redis_client_sdk: RedisClientSDK | Callable[..., RedisClientSDK],
+    lock_name: str | Callable[..., str],
+    sleep_duration: float,
+) -> Callable[..., Awaitable[float]]:
+    @exclusive(redis_client_sdk, lock_key=lock_name)
+    async def _() -> float:
+        resolved_client = (
+            redis_client_sdk() if callable(redis_client_sdk) else redis_client_sdk
+        )
+        resolved_lock_name = lock_name() if callable(lock_name) else lock_name
+        assert await _is_locked(resolved_client, resolved_lock_name)
+        await asyncio.sleep(sleep_duration)
+        assert await _is_locked(resolved_client, resolved_lock_name)
+        return sleep_duration
+
+    return _
+
+
+@pytest.fixture
+def sleep_duration(faker: Faker) -> float:
+    return faker.pyfloat(positive=True, min_value=0.2, max_value=0.8)
+
+
+async def test_exclusive_decorator(
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
     ],
     lock_name: str,
-    task_duration: float,
+    sleep_duration: float,
+):
+
+    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client:
+        for _ in range(3):
+            assert (
+                await _exclusive_sleeping_task(
+                    redis_client, lock_name, sleep_duration
+                )()
+                == sleep_duration
+            )
+
+
+async def test_exclusive_decorator_with_key_builder(
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+    lock_name: str,
+    sleep_duration: float,
+):
+    def _get_lock_name(*args, **kwargs) -> str:
+        assert args is not None
+        assert kwargs is not None
+        return lock_name
+
+    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client:
+        for _ in range(3):
+            assert (
+                await _exclusive_sleeping_task(
+                    redis_client, _get_lock_name, sleep_duration
+                )()
+                == sleep_duration
+            )
+
+
+async def test_exclusive_decorator_with_client_builder(
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+    lock_name: str,
+    sleep_duration: float,
+):
+    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client:
+
+        def _get_redis_client_builder(*args, **kwargs) -> RedisClientSDK:
+            assert args is not None
+            assert kwargs is not None
+            return redis_client
+
+        for _ in range(3):
+            assert (
+                await _exclusive_sleeping_task(
+                    _get_redis_client_builder, lock_name, sleep_duration
+                )()
+                == sleep_duration
+            )
+
+
+async def _acquire_lock_and_exclusively_sleep(
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+    lock_name: str | Callable[..., str],
+    sleep_duration: float,
 ) -> None:
     async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client_sdk:
-        assert not await _is_locked(redis_client_sdk, lock_name)
+        redis_lock_name = lock_name() if callable(lock_name) else lock_name
+        assert not await _is_locked(redis_client_sdk, redis_lock_name)
 
         @exclusive(redis_client_sdk, lock_key=lock_name)
-        async def _some_task() -> None:
-            assert await _is_locked(redis_client_sdk, lock_name)
-            await asyncio.sleep(task_duration)
-            assert await _is_locked(redis_client_sdk, lock_name)
+        async def _() -> float:
+            assert await _is_locked(redis_client_sdk, redis_lock_name)
+            await asyncio.sleep(sleep_duration)
+            assert await _is_locked(redis_client_sdk, redis_lock_name)
+            return sleep_duration
 
-        await _some_task()
+        assert await _() == sleep_duration
 
-        assert not await _is_locked(redis_client_sdk, lock_name)
-
-
-@pytest.mark.parametrize("task_duration", [0.1, 1, 2])
-async def test_exclusive_sequentially(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
-    lock_name: str,
-    task_duration: float,
-):
-    await _contained_client(get_redis_client_sdk, lock_name, task_duration)
+        assert not await _is_locked(redis_client_sdk, redis_lock_name)
 
 
 async def test_exclusive_parallel_lock_is_released_and_reacquired(
@@ -76,17 +155,19 @@ async def test_exclusive_parallel_lock_is_released_and_reacquired(
     parallel_tasks = 10
     results = await logged_gather(
         *[
-            _contained_client(get_redis_client_sdk, lock_name, task_duration=0.1)
+            _acquire_lock_and_exclusively_sleep(
+                get_redis_client_sdk, lock_name, sleep_duration=0.1
+            )
             for _ in range(parallel_tasks)
         ],
-        reraise=False
+        reraise=False,
     )
     assert results.count(None) == 1
     assert [isinstance(x, CouldNotAcquireLockError) for x in results].count(
         True
     ) == parallel_tasks - 1
 
-    # check lock is being released
+    # check lock is released
     async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client_sdk:
         assert not await _is_locked(redis_client_sdk, lock_name)
 
@@ -168,7 +249,7 @@ async def test_start_exclusive_periodic_task_parallel_all_finish(
             _assert_task_completes_once(get_redis_client_sdk, stop_after=60)
             for _ in range(parallel_tasks)
         ],
-        reraise=False
+        reraise=False,
     )
 
     # check no error occurred

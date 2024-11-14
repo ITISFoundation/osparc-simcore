@@ -81,7 +81,6 @@ async-timeout==4.0.3
     # via
     #   aiopg
     #   asyncpg
-    #   redis
 asyncpg==0.29.0
     # via sqlalchemy
 attrs==23.2.0
@@ -340,6 +339,7 @@ opentelemetry-api==1.27.0
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -363,6 +363,7 @@ opentelemetry-instrumentation==0.48b0
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-aiopg==0.48b0
@@ -376,6 +377,8 @@ opentelemetry-instrumentation-asyncpg==0.48b0
 opentelemetry-instrumentation-dbapi==0.48b0
     # via opentelemetry-instrumentation-aiopg
 opentelemetry-instrumentation-fastapi==0.48b0
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+opentelemetry-instrumentation-httpx==0.48b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-redis==0.48b0
     # via
@@ -402,6 +405,7 @@ opentelemetry-semantic-conventions==0.48b0
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -409,6 +413,7 @@ opentelemetry-util-http==0.48b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
 ordered-set==4.1.0
     # via -r requirements/_base.in

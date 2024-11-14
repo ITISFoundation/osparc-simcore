@@ -48,6 +48,7 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
+from settings_library.tracing import TracingSettings
 from simcore_service_api_server.exceptions.backend_errors import (
     ConfigurationError,
     ForbiddenWalletError,
@@ -588,24 +589,30 @@ class AuthSession:
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: WebServerSettings) -> None:
+def setup(
+    app: FastAPI,
+    webserver_settings: WebServerSettings,
+    tracing_settings: TracingSettings | None,
+) -> None:
 
     setup_client_instance(
         app,
         WebserverApi,
-        api_baseurl=settings.api_base_url,
+        api_baseurl=webserver_settings.api_base_url,
         service_name="webserver",
+        tracing_settings=tracing_settings,
     )
     setup_client_instance(
         app,
         LongRunningTasksClient,
         api_baseurl="",
         service_name="long_running_tasks_client",
+        tracing_settings=tracing_settings,
     )
 
     def _on_startup() -> None:
         # normalize & encrypt
-        secret_key = settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
+        secret_key = webserver_settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
         app.state.webserver_fernet = fernet.Fernet(secret_key)
 
     async def _on_shutdown() -> None:
