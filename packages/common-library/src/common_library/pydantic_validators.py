@@ -5,20 +5,6 @@ import warnings
 from pydantic import TypeAdapter, field_validator
 
 
-def validate_legacy_datetime_str(v: str | dt.datetime) -> dt.datetime:
-    if isinstance(v, dt.datetime):
-        return v
-    try:
-        return dt.datetime.fromisoformat(v)
-    except ValueError:
-        pass
-
-    try:
-        return dt.datetime.strptime(v, "%Y-%m-%d %H:%M:%S.%f%z")
-    except ValueError:
-        raise ValueError("Timestamp must be in a recognized datetime format")
-
-
 def _validate_legacy_timedelta_str(time_str: str | dt.timedelta) -> str | dt.timedelta:
     if not isinstance(time_str, str):
         return time_str

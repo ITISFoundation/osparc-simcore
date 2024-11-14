@@ -1,8 +1,7 @@
 import datetime as dt
 from contextlib import suppress
-from typing import Annotated, Any
+from typing import Any
 
-from common_library.pydantic_validators import validate_legacy_datetime_str
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.basic_regex import SIMPLE_VERSION_RE
@@ -17,7 +16,6 @@ from models_library.services_regex import SERVICE_KEY_RE
 from models_library.services_resources import BootMode
 from pydantic import (
     BaseModel,
-    BeforeValidator,
     ByteSize,
     ConfigDict,
     Field,
@@ -146,8 +144,8 @@ class CompTaskAtDB(BaseModel):
     last_heartbeat: dt.datetime | None = Field(
         ..., description="Last time the running task was checked by the backend"
     )
-    created: Annotated[dt.datetime, BeforeValidator(validate_legacy_datetime_str)]
-    modified: Annotated[dt.datetime, BeforeValidator(validate_legacy_datetime_str)]
+    created: dt.datetime
+    modified: dt.datetime
     # Additional information about price and hardware (ex. AWS EC2 instance type)
     pricing_info: dict | None
     hardware_info: HardwareInfo
@@ -234,8 +232,8 @@ class CompTaskAtDB(BaseModel):
                     "state": "NOT_STARTED",
                     "progress": 0.44,
                     "last_heartbeat": None,
-                    "created": "2022-05-20 13:28:31.139+00",
-                    "modified": "2023-06-23 15:58:32.833081+00",
+                    "created": "2022-05-20 13:28:31.139",
+                    "modified": "2023-06-23 15:58:32.833081",
                     "pricing_info": {
                         "pricing_plan_id": 1,
                         "pricing_unit_id": 1,
