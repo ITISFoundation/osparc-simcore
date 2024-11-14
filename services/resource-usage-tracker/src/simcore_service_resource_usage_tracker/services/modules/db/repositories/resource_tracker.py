@@ -272,7 +272,7 @@ class ResourceTrackerRepository(
                     resource_tracker_credit_transactions.c.osparc_credits,
                     resource_tracker_credit_transactions.c.transaction_status,
                     sa.func.coalesce(
-                        self._project_tags_subquery.c.tags,
+                        self._project_tags_subquery.c.project_tags,
                         sa.cast(sa.text("'{}'"), sa.ARRAY(sa.String)),
                     ).label("project_tags"),
                 )
@@ -468,7 +468,7 @@ class ResourceTrackerRepository(
                     resource_tracker_credit_transactions.c.osparc_credits,
                     resource_tracker_credit_transactions.c.transaction_status,
                     sa.func.coalesce(
-                        self._project_tags_subquery.c.tags,
+                        self._project_tags_subquery.c.project_tags,
                         sa.cast(sa.text("'{}'"), sa.ARRAY(sa.String)),
                     ).label("project_tags"),
                 )
