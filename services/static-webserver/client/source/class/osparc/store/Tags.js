@@ -93,7 +93,7 @@ qx.Class.define("osparc.store.Tags", {
       };
       return osparc.data.Resources.getInstance().fetch("tags", "put", params)
         .then(tagData => {
-          this.__addToCache(tagData);
+          return this.__addToCache(tagData);
         })
         .catch(console.error);
     },

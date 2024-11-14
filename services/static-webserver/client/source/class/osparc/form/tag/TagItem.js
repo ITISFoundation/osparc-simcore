@@ -286,7 +286,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
             fetch = osparc.store.Tags.getInstance().postTag(data);
           }
           fetch
-            .then(tag => this.set(tag))
+            .then(tag => this.setTag(tag))
             .catch(console.error)
             .finally(() => {
               this.fireEvent("tagSaved");
