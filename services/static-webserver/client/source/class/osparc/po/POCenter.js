@@ -58,7 +58,7 @@ qx.Class.define("osparc.po.POCenter", {
 
     __addAnnouncementsPage: function() {
       const title = this.tr("Announcements");
-      const iconSrc = "@FontAwesome5Solid/envelope/22";
+      const iconSrc = "@FontAwesome5Solid/bullhorn/22";
       const announcements = new osparc.po.Announcements();
       this.addTab(title, iconSrc, announcements);
     },
