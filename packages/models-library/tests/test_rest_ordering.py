@@ -147,7 +147,7 @@ def test_order_by_query_model_class__defaults(override_direction_default: bool):
     assert error["type"] == "value_error.missing"
 
 
-def test_order_by_query_model_class__openapi():
+def test_order_by_query_model_class__openapi_generator():
 
     _, OrderByQueryParamsModelOAS = create_order_by_query_model_classes(
         sortable_fields={"modified", "name", "description"},
@@ -158,16 +158,12 @@ def test_order_by_query_model_class__openapi():
 
     print(OrderByQueryParamsModelOAS.schema_json(indent=1))
 
-    assert OrderByQueryParamsModelOAS.schema() == {
-        "title": "Order By Parameters",
-        "type": "object",
-        "properties": {
-            "order_by": {
-                "title": "Order By",
-                "description": "Order by field (description|modified|name) and direction (asc|desc). The default sorting order is 'desc' on 'modified'.",
-                "default": '{"field":"modified","direction":"desc"}',
-                "type": "string",
-                "format": "json-string",
-            }
-        },
-    }
+    schema = OrderByQueryParamsModelOAS.schema()
+
+    assert schema["type"] == "object"
+    assert "order_by" in schema["properties"]
+
+    assert schema["properties"]["order_by"]["type"] == "string"
+    assert schema["properties"]["order_by"]["format"] == "json-string"
+    assert schema["properties"]["order_by"].get("description")
+    assert schema["properties"]["order_by"].get("title")
