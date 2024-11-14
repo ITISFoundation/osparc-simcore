@@ -58,6 +58,7 @@ from ...utils.comp_scheduler import (
     COMPLETED_STATES,
     PROCESSING_STATES,
     RUNNING_STATES,
+    SCHEDULED_STATES,
     TASK_TO_START_STATES,
     WAITING_FOR_START_STATES,
     Iteration,
@@ -147,16 +148,52 @@ class ScheduledPipelineParams:
 
 @dataclass
 class BaseCompScheduler(ABC):
-    scheduled_pipelines: dict[
-        tuple[UserID, ProjectID, Iteration], ScheduledPipelineParams
-    ]
     db_engine: Engine
-    wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
     rabbitmq_client: RabbitMQClient
     rabbitmq_rpc_client: RabbitMQRPCClient
     settings: ComputationalBackendSettings
     service_runtime_heartbeat_interval: datetime.timedelta
     redis_client: RedisClientSDK
+
+    # NOTE: this is a trick to be able to inheritate from the class
+    _scheduled_pipelines: dict[
+        tuple[UserID, ProjectID, Iteration], ScheduledPipelineParams
+    ] = field(default_factory=dict, init=False)
+
+    def __post_init__(self) -> None:
+        self._scheduled_pipelines = {}
+
+    async def restore_scheduling_from_db(self) -> None:
+        # get currently scheduled runs
+        comp_runs = await CompRunsRepository.instance(self.db_engine).list(
+            filter_by_state=SCHEDULED_STATES
+        )
+
+        self._scheduled_pipelines |= {
+            (
+                run.user_id,
+                run.project_uuid,
+                run.iteration,
+            ): ScheduledPipelineParams()
+            for run in comp_runs
+        }
+
+        for (
+            user_id,
+            project_id,
+            iteration,
+        ), params in self._scheduled_pipelines.items():
+            self._start_scheduling(params, user_id, project_id, iteration)
+
+    async def start_scheduling(self) -> None:
+        await self.restore_scheduling_from_db()
+
+        for (
+            user_id,
+            project_id,
+            iteration,
+        ), params in self._scheduled_pipelines.items():
+            self._start_scheduling(params, user_id, project_id, iteration)
 
     async def run_new_pipeline(
         self,
@@ -187,7 +224,7 @@ class BaseCompScheduler(ABC):
             metadata=run_metadata,
             use_on_demand_clusters=use_on_demand_clusters,
         )
-        self.scheduled_pipelines[
+        self._scheduled_pipelines[
             (user_id, project_id, new_run.iteration)
         ] = pipeline_params = ScheduledPipelineParams()
         await publish_project_log(
@@ -207,7 +244,7 @@ class BaseCompScheduler(ABC):
             # if no iteration given find the latest one in the list
             possible_iterations = {
                 it
-                for u_id, p_id, it in self.scheduled_pipelines
+                for u_id, p_id, it in self._scheduled_pipelines
                 if u_id == user_id and p_id == project_id
             }
             if not possible_iterations:
@@ -227,24 +264,16 @@ class BaseCompScheduler(ABC):
         if updated_comp_run:
             assert updated_comp_run.cancelled is not None  # nosec
             # ensure the scheduler starts right away
-            self.scheduled_pipelines[
+            self._scheduled_pipelines[
                 (user_id, project_id, selected_iteration)
             ].wake_up()
-
-    def recover_scheduling(self) -> None:
-        for (
-            user_id,
-            project_id,
-            iteration,
-        ), params in self.scheduled_pipelines.items():
-            self._start_scheduling(params, user_id, project_id, iteration)
 
     async def shutdown(self) -> None:
         # cancel all current scheduling processes
         await asyncio.gather(
             *(
                 stop_periodic_task(p.scheduler_task, timeout=3)
-                for p in self.scheduled_pipelines.values()
+                for p in self._scheduled_pipelines.values()
                 if p.scheduler_task
             ),
             return_exceptions=True,
@@ -254,7 +283,7 @@ class BaseCompScheduler(ABC):
         # if no iteration given find the latest one in the list
         possible_iterations = {
             it
-            for u_id, p_id, it in self.scheduled_pipelines
+            for u_id, p_id, it in self._scheduled_pipelines
             if u_id == user_id and p_id == project_id
         }
         if not possible_iterations:
@@ -730,7 +759,9 @@ class BaseCompScheduler(ABC):
                 # 7. Are we done scheduling that pipeline?
                 if not dag.nodes() or pipeline_result in COMPLETED_STATES:
                     # there is nothing left, the run is completed, we're done here
-                    self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+                    self._scheduled_pipelines.pop(
+                        (user_id, project_id, iteration), None
+                    )
                     _logger.info(
                         "pipeline %s scheduling completed with result %s",
                         f"{project_id=}",
@@ -747,7 +778,7 @@ class BaseCompScheduler(ABC):
                 await self._set_run_result(
                     user_id, project_id, iteration, RunningState.ABORTED
                 )
-                self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+                self._scheduled_pipelines.pop((user_id, project_id, iteration), None)
             except InvalidPipelineError as exc:
                 _logger.warning(
                     "pipeline %s appears to be misconfigured, it will be removed from scheduler. Please check pipeline:\n%s",
@@ -757,7 +788,7 @@ class BaseCompScheduler(ABC):
                 await self._set_run_result(
                     user_id, project_id, iteration, RunningState.ABORTED
                 )
-                self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+                self._scheduled_pipelines.pop((user_id, project_id, iteration), None)
             except (DaskClientAcquisisitonError, ClustersKeeperNotAvailableError):
                 _logger.exception(
                     "Unexpected error while connecting with computational backend, aborting pipeline"
@@ -774,7 +805,7 @@ class BaseCompScheduler(ABC):
                 await self._set_run_result(
                     user_id, project_id, iteration, RunningState.FAILED
                 )
-                self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+                self._scheduled_pipelines.pop((user_id, project_id, iteration), None)
             except ComputationalBackendNotConnectedError:
                 _logger.exception("Computational backend is not connected!")
 
