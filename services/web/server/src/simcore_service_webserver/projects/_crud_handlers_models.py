@@ -11,22 +11,18 @@ from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_filters import Filters, FiltersQueryParameters
-from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_ordering import (
+    OrderBy,
+    OrderDirection,
+    create_order_by_query_model_classes,
+)
 from models_library.rest_pagination import PageQueryParameters
 from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
     null_or_none_str_to_none_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import (
-    BaseModel,
-    Extra,
-    Field,
-    Json,
-    parse_obj_as,
-    root_validator,
-    validator,
-)
+from pydantic import BaseModel, Extra, Field, parse_obj_as, root_validator, validator
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_PARENT_NODE_ID,
@@ -140,32 +136,23 @@ class ProjectListParams(PageQueryParameters):
     )(null_or_none_str_to_none_validator)
 
 
-class ProjectListSortParams(BaseModel):
-    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
-        default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
-        description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
-        example='{"field": "prj_owner", "direction": "desc"}',
-        alias="order_by",
-    )
-
-    @validator("order_by", check_fields=False)
-    @classmethod
-    def validate_order_by_field(cls, v):
-        if v.field not in {
-            "type",
-            "uuid",
-            "name",
-            "description",
-            "prj_owner",
-            "creation_date",
-            "last_change_date",
-        }:
-            msg = f"We do not support ordering by provided field {v.field}"
-            raise ValueError(msg)
-        return v
-
-    class Config:
-        extra = Extra.forbid
+(
+    ProjectListSortParams,
+    ProjectListSortParamsOpenApi,
+) = create_order_by_query_model_classes(
+    sortable_fields={
+        "type",
+        "uuid",
+        "name",
+        "description",
+        "prj_owner",
+        "creation_date",
+        "last_change_date",
+    },
+    default_order_by=OrderBy(
+        field=IDStr("last_change_date"), direction=OrderDirection.DESC
+    ),
+)
 
 
 class ProjectListWithJsonStrParams(

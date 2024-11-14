@@ -26,16 +26,29 @@ from models_library.api_schemas_webserver.projects import (
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.rest_base import RequestParameters
 from models_library.rest_pagination import Page
 from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._common_models import ProjectPathParams
 from simcore_service_webserver.projects._crud_handlers import ProjectCreateParams
 from simcore_service_webserver.projects._crud_handlers_models import (
-    ProjectFilters,
     ProjectListFullSearchParams,
     ProjectListParams,
+    ProjectListSortParamsOpenApi,
 )
+
+
+class _FiltersQueryParams(RequestParameters):
+    filters: Annotated[Json | None, Query()] = None
+
+
+class _ListQueryParams(  # type: ignore
+    ProjectListSortParamsOpenApi,
+    _FiltersQueryParams,
+):
+    ...
+
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -52,8 +65,8 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_project(
-    _params: Annotated[ProjectCreateParams, Depends()],
-    _create: ProjectCreateNew | ProjectCopyOverride,
+    _p: Annotated[ProjectCreateParams, Depends()],
+    _b: ProjectCreateNew | ProjectCopyOverride,
     x_simcore_user_agent: Annotated[str | None, Header()] = "undefined",
     x_simcore_parent_project_uuid: Annotated[
         ProjectID | None,
@@ -76,18 +89,8 @@ async def create_project(
     response_model=Page[ProjectListItem],
 )
 async def list_projects(
-    _params: Annotated[ProjectListParams, Depends()],
-    order_by: Annotated[
-        Json,
-        Query(
-            description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
-            example='{"field": "last_change_date", "direction": "desc"}',
-        ),
-    ] = '{"field": "last_change_date", "direction": "desc"}',
-    filters: Annotated[
-        Json | None,
-        Query(description=ProjectFilters.schema_json(indent=1)),
-    ] = None,
+    _p: Annotated[ProjectListParams, Depends()],
+    _q: Annotated[_ListQueryParams, Depends()],
 ):
     ...
 
