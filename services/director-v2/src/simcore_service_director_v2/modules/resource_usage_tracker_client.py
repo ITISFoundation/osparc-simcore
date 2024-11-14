@@ -23,7 +23,6 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
 
 from ..core.errors import PricingPlanUnitNotFoundError
 from ..core.settings import AppSettings
@@ -92,7 +91,7 @@ class ResourceUsageTrackerClient:
             raise PricingPlanUnitNotFoundError(msg)
 
         response.raise_for_status()
-        return parse_obj_as(PricingPlanGet, response.json())
+        return PricingPlanGet.model_validate(response.json())
 
     async def get_default_pricing_and_hardware_info(
         self,
@@ -130,7 +129,7 @@ class ResourceUsageTrackerClient:
             },
         )
         response.raise_for_status()
-        return parse_obj_as(PricingUnitGet, response.json())
+        return PricingUnitGet.model_validate(response.json())
 
     async def get_wallet_credits(
         self,
@@ -142,7 +141,7 @@ class ResourceUsageTrackerClient:
             params={"product_name": product_name, "wallet_id": wallet_id},
         )
         response.raise_for_status()
-        return parse_obj_as(WalletTotalCredits, response.json())
+        return WalletTotalCredits.model_validate(response.json())
 
     #
     # app

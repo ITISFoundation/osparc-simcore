@@ -118,7 +118,7 @@ async def periodic_task_result(
         logger.debug("%s, %s", f"{task_id=}", f"{result=}")
 
         yield result
-    except asyncio.TimeoutError as e:
+    except TimeoutError as e:
         await client.cancel_and_delete_task(task_id)
         raise TaskClientTimeoutError(
             task_id=task_id,

@@ -31,5 +31,5 @@ class UserPreferencesFrontendRepository(BaseRepository):
         return (
             None
             if preference_payload is None
-            else preference_class.parse_obj(preference_payload)
+            else preference_class.model_validate(preference_payload)
         )

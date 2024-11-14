@@ -175,7 +175,7 @@ class PathMappingsLabel(BaseModel):
         description="folder path where the service is expected to provide all its outputs",
     )
     state_paths: list[Path] = Field(
-        [],
+        default_factory=list,
         description="optional list of paths which contents need to be persisted",
     )
 
@@ -276,7 +276,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    compose_spec: Json[ComposeSpecLabelDict] | None = Field(
+    compose_spec: Json[ComposeSpecLabelDict | None] | None = Field(
         None,
         alias="simcore.service.compose-spec",
         description=(
@@ -434,7 +434,7 @@ class DynamicSidecarServiceLabels(BaseModel):
     @field_validator("user_preferences_path", mode="before")
     @classmethod
     def _deserialize_from_json(cls, v):
-        return f"{v}".removeprefix('"').removesuffix('"')
+        return f"{v}".removeprefix('"').removesuffix('"') if v else None
 
     @field_validator("user_preferences_path")
     @classmethod

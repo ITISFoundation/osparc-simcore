@@ -21,10 +21,9 @@ def model_dump_with_secrets(
             data[field_name] = field_data.total_seconds()
 
         elif isinstance(field_data, SecretStr):
-            if show_secrets:
-                data[field_name] = field_data.get_secret_value()
-            else:
-                data[field_name] = str(field_data)
+            data[field_name] = (
+                field_data.get_secret_value() if show_secrets else str(field_data)
+            )
 
         elif isinstance(field_data, Url):
             data[field_name] = str(field_data)

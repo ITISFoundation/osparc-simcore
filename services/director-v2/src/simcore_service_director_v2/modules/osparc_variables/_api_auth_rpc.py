@@ -6,7 +6,7 @@ from models_library.api_schemas_webserver.auth import ApiKeyGet
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from ..rabbitmq import get_rabbitmq_rpc_client
 
@@ -26,10 +26,10 @@ async def get_or_create_api_key_and_secret(
     rpc_client = get_rabbitmq_rpc_client(app)
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_or_create_api_keys"),
+        TypeAdapter(RPCMethodName).validate_python("get_or_create_api_keys"),
         product_name=product_name,
         user_id=user_id,
         name=name,
         expiration=expiration,
     )
-    return ApiKeyGet.parse_obj(result)
+    return ApiKeyGet.model_validate(result)

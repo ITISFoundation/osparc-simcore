@@ -103,8 +103,8 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         ),
     )
 
-    DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(
-        60.0 * _MINUTE,
+    DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: timedelta = Field(
+        timedelta(hours=1),
         description=(
             "When saving and restoring the state of a dynamic service, depending on the payload "
             "some services take longer or shorter to save and restore. Across the "
