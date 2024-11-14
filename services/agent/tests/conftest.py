@@ -58,6 +58,7 @@ def mock_environment(
             "RABBIT_SECURE": "false",
             "RABBIT_USER": "test",
             "AGENT_DOCKER_NODE_ID": docker_node_id,
+            "AGENT_TRACING": "null",
         },
     )
 
