@@ -11,6 +11,7 @@
 
 # installs this repo's packages
 simcore-models-library @ ../../packages/models-library/
+simcore-common-library @ ../../packages/common-library/
 simcore-postgres-database @ ../../packages/postgres-database/
 simcore-sdk @ ../../packages/simcore-sdk
 simcore-service-library[fastapi] @ ../../packages/service-library
