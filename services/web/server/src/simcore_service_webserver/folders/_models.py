@@ -17,7 +17,7 @@ from models_library.utils.common_validators import (
     null_or_none_str_to_none_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import Extra, Field, validator
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -92,7 +92,6 @@ class FolderSearchQueryParams(
 
     class Config:
         extra = Extra.forbid
-
 
 
 assert RemoveQueryParams  # nosec
