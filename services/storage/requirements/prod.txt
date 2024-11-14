@@ -11,7 +11,7 @@
 
 # installs this repo's packages
 simcore-aws-library @ ../../packages/aws-library/
-simcore-aws-library @ ../../packages/common-library/
+simcore-common-library-library @ ../../packages/common-library/
 simcore-models-library @ ../../packages/models-library/
 simcore-postgres-database @ ../../packages/postgres-database/
 simcore-service-library[aiohttp] @ ../../packages/service-library
