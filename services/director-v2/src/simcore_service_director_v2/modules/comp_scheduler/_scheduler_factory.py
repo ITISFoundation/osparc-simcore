@@ -1,7 +1,6 @@
 import logging
 
 from fastapi import FastAPI
-from models_library.clusters import DEFAULT_CLUSTER_ID
 from servicelib.logging_utils import log_context
 from settings_library.redis import RedisDatabase
 
@@ -48,13 +47,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
             redis_client=get_redis_client_manager(app).client(RedisDatabase.LOCKS),
             db_engine=db_engine,
             scheduled_pipelines={
-                (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
-                    cluster_id=(
-                        r.cluster_id if r.cluster_id is not None else DEFAULT_CLUSTER_ID
-                    ),
-                    run_metadata=r.metadata,
-                    use_on_demand_clusters=r.use_on_demand_clusters,
-                )
+                (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams()
                 for r in runs
             },
             service_runtime_heartbeat_interval=app_settings.SERVICE_TRACKING_HEARTBEAT,
