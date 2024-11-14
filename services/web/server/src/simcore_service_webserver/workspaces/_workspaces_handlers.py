@@ -10,12 +10,16 @@ from models_library.api_schemas_webserver.workspaces import (
 )
 from models_library.basic_types import IDStr
 from models_library.rest_base import RequestParameters, StrictRequestParameters
-from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_ordering import (
+    OrderBy,
+    OrderDirection,
+    create_ordering_query_model_classes,
+)
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
-from pydantic import Extra, Field, Json, parse_obj_as, validator
+from pydantic import Field, parse_obj_as, validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -69,31 +73,26 @@ class WorkspacesPathParams(StrictRequestParameters):
     workspace_id: WorkspaceID
 
 
-class WorkspacesListWithJsonStrQueryParams(PageQueryParameters):
-    # pylint: disable=unsubscriptable-object
-    order_by: Json[OrderBy] = Field(
-        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
-        description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
-        example='{"field": "name", "direction": "desc"}',
-        alias="order_by",
-    )
+(
+    WorkspacesListOrderQueryParams,
+    WorkspacesListOrderQueryParamsOpenApi,
+) = create_ordering_query_model_classes(
+    sortable_fields={
+        "modified_at",
+        "name",
+        "description",
+    },
+    default_order_by=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+)
 
+
+class WorkspacesListQueryParams(PageQueryParameters, WorkspacesListOrderQueryParams):
     @validator("order_by", check_fields=False)
     @classmethod
-    def validate_order_by_field(cls, v):
-        if v.field not in {
-            "modified_at",
-            "name",
-            "description",
-        }:
-            msg = f"We do not support ordering by provided field {v.field}"
-            raise ValueError(msg)
+    def _post_rename_order_by_field(cls, v):
         if v.field == "modified_at":
             v.field = "modified"
         return v
-
-    class Config:
-        extra = Extra.forbid
 
 
 @routes.post(f"/{VTAG}/workspaces", name="create_workspace")
@@ -122,8 +121,8 @@ async def create_workspace(request: web.Request):
 @handle_workspaces_exceptions
 async def list_workspaces(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
-    query_params: WorkspacesListWithJsonStrQueryParams = (
-        parse_request_query_parameters_as(WorkspacesListWithJsonStrQueryParams, request)
+    query_params: WorkspacesListQueryParams = parse_request_query_parameters_as(
+        WorkspacesListQueryParams, request
     )
 
     workspaces: WorkspaceGetPage = await _workspaces_api.list_workspaces(

@@ -12,7 +12,7 @@ This OAS are the source of truth
 from typing import Annotated
 
 from _common import assert_handler_signature_against_model
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedByServiceGet,
 )
@@ -35,9 +35,10 @@ from models_library.resource_tracker import (
     ServicesAggregatedUsagesTimePeriod,
     ServicesAggregatedUsagesType,
 )
-from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
+from models_library.rest_base import RequestParameters
+from models_library.rest_pagination import PageQueryParameters
 from models_library.wallets import WalletID
-from pydantic import Json, NonNegativeInt
+from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.resource_usage._pricing_plans_admin_handlers import (
     _GetPricingPlanPathParams,
@@ -47,72 +48,65 @@ from simcore_service_webserver.resource_usage._pricing_plans_handlers import (
     _GetPricingPlanUnitPathParams,
 )
 from simcore_service_webserver.resource_usage._service_runs_handlers import (
-    ORDER_BY_DESCRIPTION,
-    _ListServicesAggregatedUsagesQueryParams,
-    _ListServicesResourceUsagesQueryParams,
-    _ListServicesResourceUsagesQueryParamsWithPagination,
+    ListResourceUsagesOrderQueryParamsOpenApi,
 )
 
+
+class _FiltersQueryParams(RequestParameters):
+    filters: Annotated[
+        Json | None,
+        Query(
+            description="Filters to process on the resource usages list, encoded as JSON. "
+            "Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. "
+            "The date range specified is inclusive.",
+            example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
+        ),
+    ] = None
+
+
+class _OrderQueryParams(ListResourceUsagesOrderQueryParamsOpenApi):
+    ...
+
+
+class _ListQueryParams(  # type: ignore
+    _OrderQueryParams,
+    _FiltersQueryParams,
+    PageQueryParameters,
+):
+    ...
+
+
 router = APIRouter(prefix=f"/{API_VTAG}")
-
-
-#
-# API entrypoints
-#
 
 
 @router.get(
     "/services/-/resource-usages",
     response_model=Envelope[list[ServiceRunGet]],
-    summary="Retrieve finished and currently running user services (user and product are taken from context, optionally wallet_id parameter might be provided).",
+    summary="Retrieve finished and currently running user services"
+    " (user and product are taken from context, optionally wallet_id parameter might be provided).",
     tags=["usage"],
 )
 async def list_resource_usage_services(
-    order_by: Annotated[
-        Json,
-        Query(
-            description="Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status) and direction (asc|desc). The default sorting order is ascending.",
-            example='{"field": "started_at", "direction": "desc"}',
-        ),
-    ] = '{"field": "started_at", "direction": "desc"}',
-    filters: Annotated[
-        Json | None,
-        Query(
-            description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is inclusive.",
-            example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
-        ),
-    ] = None,
+    _q: Annotated[_ListQueryParams, Depends()],
     wallet_id: Annotated[WalletID | None, Query] = None,
-    limit: int = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    offset: NonNegativeInt = 0,
 ):
     ...
-
-
-assert_handler_signature_against_model(
-    list_resource_usage_services, _ListServicesResourceUsagesQueryParamsWithPagination
-)
 
 
 @router.get(
     "/services/-/aggregated-usages",
     response_model=Envelope[list[OsparcCreditsAggregatedByServiceGet]],
-    summary="Used credits based on aggregate by type, currently supported `services`. (user and product are taken from context, optionally wallet_id parameter might be provided).",
+    summary="Used credits based on aggregate by type, currently supported `services`"
+    ". (user and product are taken from context, optionally wallet_id parameter might be provided).",
     tags=["usage"],
 )
 async def list_osparc_credits_aggregated_usages(
     aggregated_by: ServicesAggregatedUsagesType,
     time_period: ServicesAggregatedUsagesTimePeriod,
     wallet_id: Annotated[WalletID, Query],
-    limit: int = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    offset: NonNegativeInt = 0,
+    _q: Annotated[PageQueryParameters, Depends()],
 ):
     ...
-
-
-assert_handler_signature_against_model(
-    list_osparc_credits_aggregated_usages, _ListServicesAggregatedUsagesQueryParams
-)
 
 
 @router.get(
@@ -124,31 +118,15 @@ assert_handler_signature_against_model(
         }
     },
     tags=["usage"],
-    summary="Redirects to download CSV link. CSV obtains finished and currently running user services (user and product are taken from context, optionally wallet_id parameter might be provided).",
+    summary="Redirects to download CSV link. CSV obtains finished and currently running "
+    "user services (user and product are taken from context, optionally wallet_id parameter might be provided).",
 )
 async def export_resource_usage_services(
-    order_by: Annotated[
-        Json,
-        Query(
-            description="",
-            example='{"field": "started_at", "direction": "desc"}',
-        ),
-    ] = '{"field": "started_at", "direction": "desc"}',
-    filters: Annotated[
-        Json | None,
-        Query(
-            description=ORDER_BY_DESCRIPTION,
-            example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
-        ),
-    ] = None,
+    _oq: Annotated[_OrderQueryParams, Depends()],
+    _fq: Annotated[_FiltersQueryParams, Depends()],
     wallet_id: Annotated[WalletID | None, Query] = None,
 ):
     ...
-
-
-assert_handler_signature_against_model(
-    list_resource_usage_services, _ListServicesResourceUsagesQueryParams
-)
 
 
 @router.get(
@@ -203,7 +181,9 @@ assert_handler_signature_against_model(get_pricing_plan, _GetPricingPlanPathPara
     summary="Create pricing plan",
     tags=["admin"],
 )
-async def create_pricing_plan(body: CreatePricingPlanBodyParams):
+async def create_pricing_plan(
+    _b: CreatePricingPlanBodyParams,
+):
     ...
 
 
@@ -214,7 +194,8 @@ async def create_pricing_plan(body: CreatePricingPlanBodyParams):
     tags=["admin"],
 )
 async def update_pricing_plan(
-    pricing_plan_id: PricingPlanId, body: UpdatePricingPlanBodyParams
+    pricing_plan_id: PricingPlanId,
+    _b: UpdatePricingPlanBodyParams,
 ):
     ...
 
@@ -232,7 +213,8 @@ assert_handler_signature_against_model(update_pricing_plan, _GetPricingPlanPathP
     tags=["admin"],
 )
 async def get_pricing_unit(
-    pricing_plan_id: PricingPlanId, pricing_unit_id: PricingUnitId
+    pricing_plan_id: PricingPlanId,
+    pricing_unit_id: PricingUnitId,
 ):
     ...
 
@@ -247,7 +229,8 @@ assert_handler_signature_against_model(get_pricing_unit, _GetPricingUnitPathPara
     tags=["admin"],
 )
 async def create_pricing_unit(
-    pricing_plan_id: PricingPlanId, body: CreatePricingUnitBodyParams
+    pricing_plan_id: PricingPlanId,
+    _b: CreatePricingUnitBodyParams,
 ):
     ...
 
@@ -264,7 +247,7 @@ assert_handler_signature_against_model(create_pricing_unit, _GetPricingPlanPathP
 async def update_pricing_unit(
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
-    body: UpdatePricingUnitBodyParams,
+    _b: UpdatePricingUnitBodyParams,
 ):
     ...
 
@@ -298,7 +281,7 @@ assert_handler_signature_against_model(update_pricing_unit, _GetPricingPlanPathP
 )
 async def connect_service_to_pricing_plan(
     pricing_plan_id: PricingPlanId,
-    body: ConnectServiceToPricingPlanBodyParams,
+    _b: ConnectServiceToPricingPlanBodyParams,
 ):
     ...
 

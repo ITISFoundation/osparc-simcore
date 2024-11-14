@@ -120,6 +120,9 @@ def assert_handler_signature_against_model(
         for field in model_cls.__fields__.values()
     ]
 
-    assert {p.name for p in implemented_params}.issubset(  # nosec
-        {p.name for p in specs_params}
-    ), f"Entrypoint {handler} does not implement OAS"
+    implemented_names = {p.name for p in implemented_params}
+    specified_names = {p.name for p in specs_params}
+
+    if not implemented_names.issubset(specified_names):
+        msg = f"Entrypoint {handler} does not implement OAS: {implemented_names} not in {specified_names}"
+        raise AssertionError(msg)

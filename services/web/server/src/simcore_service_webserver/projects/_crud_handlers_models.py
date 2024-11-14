@@ -158,9 +158,9 @@ class ProjectListExtraQueryParams(RequestParameters):
 
 class ProjectListQueryParams(
     PageQueryParameters,
-    ProjectListExtraQueryParams,
     ProjectListOrderParams,
     FiltersQueryParameters[ProjectFilters],
+    ProjectListExtraQueryParams,
 ):
     ...
 

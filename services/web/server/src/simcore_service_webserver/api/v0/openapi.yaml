@@ -2601,6 +2601,14 @@ paths:
       parameters:
       - required: false
         schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: query
+      - required: false
+        schema:
           title: Folder Id
           exclusiveMinimum: true
           type: integer
@@ -2609,22 +2617,21 @@ paths:
         in: query
       - required: false
         schema:
-          title: Workspace Id
-          exclusiveMinimum: true
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
           type: integer
-          minimum: 0
-        name: workspace_id
+          default: 20
+          maximum: 50
+        name: limit
         in: query
-      - description: Order by field (modified_at|name|description) and direction (asc|desc).
-          The default sorting order is ascending.
-        required: false
+      - required: false
         schema:
-          title: Order By
-          description: Order by field (modified_at|name|description) and direction
-            (asc|desc). The default sorting order is ascending.
-          default: '{"field": "modified_at", "direction": "desc"}'
-        example: '{"field": "name", "direction": "desc"}'
-        name: order_by
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
         in: query
       - description: "{\n \"title\": \"FolderFilters\",\n \"description\": \"Encoded\
           \ as JSON. Each available filter can have its own logic (should be well\
@@ -2649,21 +2656,13 @@ paths:
         in: query
       - required: false
         schema:
-          title: Limit
-          exclusiveMaximum: true
-          minimum: 1
-          type: integer
-          default: 20
-          maximum: 50
-        name: limit
-        in: query
-      - required: false
-        schema:
-          title: Offset
-          minimum: 0
-          type: integer
-          default: 0
-        name: offset
+          title: Order By
+          type: string
+          description: Order by field (description|modified|name) and direction (asc|desc).
+            The default sorting order is 'desc' on 'modified'.For instance order_by={"field":"some_field_name","direction":"desc"}
+          format: json-string
+          default: '{"field":"modified","direction":"desc"}'
+        name: order_by
         in: query
       responses:
         '200':
@@ -3136,56 +3135,6 @@ paths:
       summary: List Projects
       operationId: list_projects
       parameters:
-      - description: Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date)
-          and direction (asc|desc). The default sorting order is ascending.
-        required: false
-        schema:
-          title: Order By
-          description: Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date)
-            and direction (asc|desc). The default sorting order is ascending.
-          default: '{"field": "last_change_date", "direction": "desc"}'
-        example: '{"field": "last_change_date", "direction": "desc"}'
-        name: order_by
-        in: query
-      - description: "{\n \"title\": \"ProjectFilters\",\n \"description\": \"Encoded\
-          \ as JSON. Each available filter can have its own logic (should be well\
-          \ documented)\\nInspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.\"\
-          ,\n \"type\": \"object\",\n \"properties\": {\n  \"trashed\": {\n   \"title\"\
-          : \"Trashed\",\n   \"description\": \"Set to true to list trashed, false\
-          \ to list non-trashed (default), None to list all\",\n   \"default\": false,\n\
-          \   \"type\": \"boolean\"\n  }\n }\n}"
-        required: false
-        schema:
-          title: Filters
-          type: string
-          description: "{\n \"title\": \"ProjectFilters\",\n \"description\": \"Encoded\
-            \ as JSON. Each available filter can have its own logic (should be well\
-            \ documented)\\nInspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.\"\
-            ,\n \"type\": \"object\",\n \"properties\": {\n  \"trashed\": {\n   \"\
-            title\": \"Trashed\",\n   \"description\": \"Set to true to list trashed,\
-            \ false to list non-trashed (default), None to list all\",\n   \"default\"\
-            : false,\n   \"type\": \"boolean\"\n  }\n }\n}"
-          format: json-string
-        name: filters
-        in: query
-      - required: false
-        schema:
-          title: Limit
-          exclusiveMaximum: true
-          minimum: 1
-          type: integer
-          default: 20
-          maximum: 50
-        name: limit
-        in: query
-      - required: false
-        schema:
-          title: Offset
-          minimum: 0
-          type: integer
-          default: 0
-        name: offset
-        in: query
       - required: false
         schema:
           allOf:
@@ -3222,6 +3171,42 @@ paths:
           type: integer
           minimum: 0
         name: workspace_id
+        in: query
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      - required: false
+        schema:
+          title: Filters
+          type: string
+          format: json-string
+        name: filters
+        in: query
+      - required: false
+        schema:
+          title: Order By
+          type: string
+          description: Order by field (creation_date|description|last_change_date|name|prj_owner|type|uuid)
+            and direction (asc|desc). The default sorting order is 'desc' on 'last_change_date'.For
+            instance order_by={"field":"some_field_name","direction":"desc"}
+          format: json-string
+          default: '{"field":"last_change_date","direction":"desc"}'
+        name: order_by
         in: query
       responses:
         '200':
@@ -3297,7 +3282,7 @@ paths:
         content:
           application/json:
             schema:
-              title: ' Create'
+              title: ' B'
               anyOf:
               - $ref: '#/components/schemas/ProjectCreateNew'
               - $ref: '#/components/schemas/ProjectCopyOverride'
@@ -4649,16 +4634,31 @@ paths:
         are taken from context, optionally wallet_id parameter might be provided).
       operationId: list_resource_usage_services
       parameters:
-      - description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
-          and direction (asc|desc). The default sorting order is ascending.
-        required: false
+      - required: false
         schema:
-          title: Order By
-          description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
-            and direction (asc|desc). The default sorting order is ascending.
-          default: '{"field": "started_at", "direction": "desc"}'
-        example: '{"field": "started_at", "direction": "desc"}'
-        name: order_by
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: query
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
         in: query
       - description: Filters to process on the resource usages list, encoded as JSON.
           Currently supports the filtering of 'started_at' field with 'from' and 'until'
@@ -4678,26 +4678,14 @@ paths:
         in: query
       - required: false
         schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: query
-      - required: false
-        schema:
-          title: Limit
-          type: integer
-          default: 20
-        name: limit
-        in: query
-      - required: false
-        schema:
-          title: Offset
-          minimum: 0
-          type: integer
-          default: 0
-        name: offset
+          title: Order By
+          type: string
+          description: Order by field (credit_cost|node_id|node_name|project_id|project_name|root_parent_project_id|root_parent_project_name|service_key|service_run_status|service_type|service_version|started_at|stopped_at|transaction_status|user_email|user_id|wallet_id|wallet_name)
+            and direction (asc|desc). The default sorting order is 'desc' on 'started_at'.For
+            instance order_by={"field":"some_field_name","direction":"desc"}
+          format: json-string
+          default: '{"field":"started_at","direction":"desc"}'
+        name: order_by
         in: query
       responses:
         '200':
@@ -4736,8 +4724,11 @@ paths:
       - required: false
         schema:
           title: Limit
+          exclusiveMaximum: true
+          minimum: 1
           type: integer
           default: 20
+          maximum: 50
         name: limit
         in: query
       - required: false
@@ -4766,30 +4757,38 @@ paths:
       parameters:
       - required: false
         schema:
-          title: Order By
-          default: '{"field": "started_at", "direction": "desc"}'
-        example: '{"field": "started_at", "direction": "desc"}'
-        name: order_by
-        in: query
-      - description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
-          and direction (asc|desc). The default sorting order is ascending.
-        required: false
-        schema:
-          title: Filters
-          type: string
-          description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
-            and direction (asc|desc). The default sorting order is ascending.
-          format: json-string
-        example: '{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}'
-        name: filters
-        in: query
-      - required: false
-        schema:
           title: Wallet Id
           exclusiveMinimum: true
           type: integer
           minimum: 0
         name: wallet_id
+        in: query
+      - required: false
+        schema:
+          title: Order By
+          type: string
+          description: Order by field (credit_cost|node_id|node_name|project_id|project_name|root_parent_project_id|root_parent_project_name|service_key|service_run_status|service_type|service_version|started_at|stopped_at|transaction_status|user_email|user_id|wallet_id|wallet_name)
+            and direction (asc|desc). The default sorting order is 'desc' on 'started_at'.For
+            instance order_by={"field":"some_field_name","direction":"desc"}
+          format: json-string
+          default: '{"field":"started_at","direction":"desc"}'
+        name: order_by
+        in: query
+      - description: Filters to process on the resource usages list, encoded as JSON.
+          Currently supports the filtering of 'started_at' field with 'from' and 'until'
+          parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is
+          inclusive.
+        required: false
+        schema:
+          title: Filters
+          type: string
+          description: Filters to process on the resource usages list, encoded as
+            JSON. Currently supports the filtering of 'started_at' field with 'from'
+            and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range
+            specified is inclusive.
+          format: json-string
+        example: '{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}'
+        name: filters
         in: query
       responses:
         '302':
