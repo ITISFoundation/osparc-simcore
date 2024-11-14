@@ -13,8 +13,8 @@ projects_tags = sa.Table(
     sa.Column(
         "project_id",
         sa.BigInteger,
-        sa.ForeignKey(projects.c.id, onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
+        sa.ForeignKey(projects.c.id, onupdate="CASCADE", ondelete="SET NULL"),
+        nullable=True,  # <-- NULL means that project was deleted
         doc="NOTE that project.c.id != project.c.uuid",
     ),
     sa.Column(
@@ -23,5 +23,10 @@ projects_tags = sa.Table(
         sa.ForeignKey(tags.c.id, onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     ),
-    sa.UniqueConstraint("project_id", "tag_id"),
+    sa.Column(
+        "project_uuid",
+        sa.String,
+        nullable=False,
+    ),
+    sa.UniqueConstraint("project_uuid", "tag_id"),
 )
