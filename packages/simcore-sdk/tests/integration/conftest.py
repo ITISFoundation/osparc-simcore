@@ -80,7 +80,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[str]:
 
 @pytest.fixture(scope="module")
 def node_uuid() -> NodeIDStr:
-    return TypeAdapter(NodeIDStr).validate_python(uuid4())
+    return TypeAdapter(NodeIDStr).validate_python(f"{uuid4()}")
 
 
 @pytest.fixture(scope="session")
