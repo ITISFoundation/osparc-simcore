@@ -182,7 +182,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       preResourcePromises.push(store.getAllGroupsAndMembers());
       preResourcePromises.push(osparc.store.Services.getServicesLatest(false));
       if (permissions.canDo("study.tag")) {
-        preResourcePromises.push(osparc.data.Resources.get("tags"));
+        preResourcePromises.push(osparc.store.Tags.getInstance().fetchTags());
       }
       Promise.all(preResourcePromises)
         .then(() => {
