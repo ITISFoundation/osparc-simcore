@@ -17,9 +17,9 @@ R = TypeVar("R")
 
 
 def exclusive(
-    redis: RedisClientSDK | Callable[P, RedisClientSDK],
+    redis: RedisClientSDK | Callable[..., RedisClientSDK],
     *,
-    lock_key: str | Callable[P, str],
+    lock_key: str | Callable[..., str],
     lock_value: bytes | str | None = None,
 ) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
     """
@@ -43,14 +43,12 @@ def exclusive(
     def decorator(func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
         @functools.wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            redis_lock_key = lock_key
-            if callable(lock_key):
-                redis_lock_key = lock_key(*args, **kwargs)
+            redis_lock_key = (
+                lock_key(*args, **kwargs) if callable(lock_key) else lock_key
+            )
             assert isinstance(redis_lock_key, str)  # nosec
 
-            redis_client = redis
-            if callable(redis):
-                redis_client = redis(*args, **kwargs)
+            redis_client = redis(*args, **kwargs) if callable(redis) else redis
             assert isinstance(redis_client, RedisClientSDK)  # nosec
 
             async with redis_client.lock_context(
