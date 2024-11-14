@@ -1,5 +1,4 @@
 #!/bin/bash
-#!/bin/bash
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
 set -o errexit
 set -o nounset
@@ -27,6 +26,7 @@ ENTRYPOINT ["datamodel-codegen", \
           "--use-standard-collections", \
           "--use-union-operator", \
           "--use-schema-description", \
+          "--allow-population-by-field-name", \
           "--use-subclass-enum", \
           "--use-double-quotes", \
           "--field-constraints", \

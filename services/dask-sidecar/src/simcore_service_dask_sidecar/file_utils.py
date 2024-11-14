@@ -75,7 +75,7 @@ def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict
         # setting it for the us-east-1 creates issue when creating buckets (which we do in tests)
         s3fs_settings["client_kwargs"]["region_name"] = s3_settings.S3_REGION
     if s3_settings.S3_ENDPOINT is not None:
-        s3fs_settings["client_kwargs"]["endpoint_url"] = s3_settings.S3_ENDPOINT
+        s3fs_settings["client_kwargs"]["endpoint_url"] = f"{s3_settings.S3_ENDPOINT}"
     return s3fs_settings
 
 

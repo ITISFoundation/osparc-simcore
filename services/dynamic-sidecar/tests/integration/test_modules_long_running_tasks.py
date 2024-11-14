@@ -314,7 +314,7 @@ async def s3_client(s3_settings: S3Settings) -> AsyncIterable[S3Client]:
     session = aioboto3.Session()
     session_client = session.client(
         "s3",
-        endpoint_url=s3_settings.S3_ENDPOINT,
+        endpoint_url=f"{s3_settings.S3_ENDPOINT}",
         aws_access_key_id=s3_settings.S3_ACCESS_KEY,
         aws_secret_access_key=s3_settings.S3_SECRET_KEY,
         region_name=s3_settings.S3_REGION,

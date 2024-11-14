@@ -1,4 +1,4 @@
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 from pydantic import (
     AnyHttpUrl,
@@ -48,13 +48,12 @@ AvailableResources: TypeAlias = DictModel[str, PositiveFloat]
 class UsedResources(DictModel[str, NonNegativeFloat]):
     @model_validator(mode="before")
     @classmethod
-    def ensure_negative_value_is_zero(cls, values):
+    def ensure_negative_value_is_zero(cls, values: dict[str, Any]):
         # dasks adds/remove resource values and sometimes
         # they end up being negative instead of 0
-        if v := values.get("__root__", {}):
-            for res_key, res_value in v.items():
-                if res_value < 0:
-                    v[res_key] = 0
+        for res_key, res_value in values.items():
+            if res_value < 0:
+                values[res_key] = 0
         return values
 
 

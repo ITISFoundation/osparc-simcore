@@ -44,7 +44,7 @@ def message(faker: Faker) -> WalletCreditsLimitReachedMessage:
 async def test_handler_out_of_credits(
     mock_app: FastAPI, message: WalletCreditsLimitReachedMessage, ignore_limits
 ):
-    await handler_out_of_credits(mock_app, message.json().encode())
+    await handler_out_of_credits(mock_app, message.model_dump_json().encode())
 
     removal_mark_count = (
         mock_app.state.dynamic_sidecar_scheduler.mark_all_services_in_wallet_for_removal.call_count

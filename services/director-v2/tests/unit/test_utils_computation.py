@@ -27,7 +27,7 @@ def fake_task_file(mocks_dir: Path):
 
 @pytest.fixture(scope="session")
 def fake_task(fake_task_file: Path) -> CompTaskAtDB:
-    return CompTaskAtDB.parse_file(fake_task_file)
+    return CompTaskAtDB.model_validate_json(fake_task_file.read_text())
 
 
 # NOTE: these parametrizations are made to mimic something like a sleepers project

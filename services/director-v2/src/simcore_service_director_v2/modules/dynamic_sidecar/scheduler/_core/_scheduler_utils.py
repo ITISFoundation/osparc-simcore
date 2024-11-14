@@ -76,7 +76,7 @@ def create_model_from_scheduler_data(
     service_state: ServiceState,
     service_message: str,
 ) -> RunningDynamicServiceDetails:
-    return RunningDynamicServiceDetails.parse_obj(
+    return RunningDynamicServiceDetails.model_validate(
         {
             "boot_type": ServiceBootType.V2,
             "user_id": scheduler_data.user_id,

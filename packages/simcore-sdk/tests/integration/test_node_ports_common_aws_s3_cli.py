@@ -50,7 +50,9 @@ async def cleanup_bucket_after_test(
 
     yield
 
-    async with session.client("s3", endpoint_url=aws_s3_cli_settings.AWS_S3_CLI_S3.S3_ENDPOINT) as s3_client:  # type: ignore
+    async with session.client(
+        "s3", endpoint_url=f"{aws_s3_cli_settings.AWS_S3_CLI_S3.S3_ENDPOINT}"
+    ) as s3_client:
         # List all object versions
         paginator = s3_client.get_paginator("list_object_versions")
         async for page in paginator.paginate(

@@ -83,7 +83,7 @@ class DirectorV0Client:
             f"/service_extras/{urllib.parse.quote_plus(service_key)}/{service_version}",
         )
         if resp.status_code == status.HTTP_200_OK:
-            return ServiceExtras.parse_obj(unenvelope_or_raise_error(resp))
+            return ServiceExtras.model_validate(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
@@ -94,7 +94,7 @@ class DirectorV0Client:
             "GET", f"running_interactive_services/{service_uuid}"
         )
         if resp.status_code == status.HTTP_200_OK:
-            return RunningDynamicServiceDetails.parse_obj(
+            return RunningDynamicServiceDetails.model_validate(
                 unenvelope_or_raise_error(resp)
             )
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
@@ -109,7 +109,7 @@ class DirectorV0Client:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return SimcoreServiceLabels.parse_obj(unenvelope_or_raise_error(resp))
+            return SimcoreServiceLabels.model_validate(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)

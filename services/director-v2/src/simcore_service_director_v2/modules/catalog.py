@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, status
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from settings_library.catalog import CatalogSettings
 
 from ..utils.client_decorators import handle_errors, handle_retry
@@ -90,8 +90,8 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            json_response: ServiceResourcesDict = parse_obj_as(
-                ServiceResourcesDict, resp.json()
+            json_response: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python(
+                resp.json()
             )
             return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

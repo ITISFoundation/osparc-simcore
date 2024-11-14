@@ -2,7 +2,7 @@ import asyncio
 import collections
 import logging
 from collections.abc import Awaitable, Callable, Coroutine, Generator
-from typing import Any, Final, NoReturn, Optional, ParamSpec, TypeVar, cast, get_args
+from typing import Any, Final, NoReturn, ParamSpec, TypeVar, cast, get_args
 from uuid import uuid4
 
 import dask_gateway  # type: ignore[import-untyped]
@@ -30,7 +30,7 @@ from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
@@ -61,7 +61,7 @@ _logger = logging.getLogger(__name__)
 ServiceKeyStr = str
 ServiceVersionStr = str
 
-_PVType = Optional[_NPItemValue]
+_PVType = _NPItemValue | None
 
 assert len(get_args(_PVType)) == len(  # nosec
     get_args(PortValue)
@@ -73,7 +73,7 @@ def _get_port_validation_errors(port_key: str, err: ValidationError) -> list[Err
     for error in errors:
         assert error["loc"][-1] != (port_key,)
         error["loc"] = error["loc"] + (port_key,)
-    return errors
+    return list(errors)
 
 
 def generate_dask_job_id(
@@ -134,7 +134,7 @@ async def create_node_ports(
             db_manager=db_manager,
         )
     except ValidationError as err:
-        raise PortsValidationError(project_id, node_id, err.errors()) from err
+        raise PortsValidationError(project_id, node_id, list(err.errors())) from err
 
 
 async def parse_output_data(
@@ -229,7 +229,7 @@ async def compute_input_data(
     if ports_errors:
         raise PortsValidationError(project_id, node_id, ports_errors)
 
-    return TaskInputData.parse_obj(input_data)
+    return TaskInputData.model_validate(input_data)
 
 
 async def compute_output_data_schema(
@@ -276,7 +276,7 @@ async def compute_output_data_schema(
                 }
             )
 
-    return TaskOutputDataSchema.parse_obj(output_data_schema)
+    return TaskOutputDataSchema.model_validate(output_data_schema)
 
 
 _LOGS_FILE_NAME = "logs.zip"
@@ -314,7 +314,7 @@ def compute_task_labels(
         ValidationError
     """
     product_name = run_metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
-    standard_simcore_labels = StandardSimcoreDockerLabels.construct(
+    standard_simcore_labels = StandardSimcoreDockerLabels.model_construct(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
@@ -326,8 +326,7 @@ def compute_task_labels(
         memory_limit=node_requirements.ram,
         cpu_limit=node_requirements.cpu,
     ).to_simcore_runtime_docker_labels()
-    return standard_simcore_labels | parse_obj_as(
-        ContainerLabelsDict,
+    return standard_simcore_labels | TypeAdapter(ContainerLabelsDict).validate_python(
         {
             DockerLabelKey.from_key(k): f"{v}"
             for k, v in run_metadata.items()
@@ -470,7 +469,7 @@ def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
 ) -> dict[str, int | float]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
-    dask_resources: dict[str, int | float] = node_reqs.dict(
+    dask_resources: dict[str, int | float] = node_reqs.model_dump(
         exclude_unset=True,
         by_alias=True,
         exclude_none=True,
@@ -552,9 +551,9 @@ def _to_human_readable_resource_values(resources: dict[str, Any]) -> dict[str, A
     for res_name, res_value in resources.items():
         if "RAM" in res_name:
             try:
-                human_readable_resources[res_name] = parse_obj_as(
-                    ByteSize, res_value
-                ).human_readable()
+                human_readable_resources[res_name] = (
+                    TypeAdapter(ByteSize).validate_python(res_value).human_readable()
+                )
             except ValidationError:
                 _logger.warning(
                     "could not parse %s:%s, please check what changed in how Dask prepares resources!",

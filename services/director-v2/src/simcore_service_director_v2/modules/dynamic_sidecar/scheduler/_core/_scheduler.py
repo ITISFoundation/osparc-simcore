@@ -40,7 +40,7 @@ from models_library.service_settings_labels import RestartPolicy, SimcoreService
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyHttpUrl, NonNegativeFloat
+from pydantic import NonNegativeFloat
 from servicelib.background_task import (
     cancel_task,
     start_periodic_task,
@@ -455,7 +455,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
         service_name = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
-        dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
+        dynamic_sidecar_endpoint = scheduler_data.endpoint
         sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_uuid)
 
         started = time.time()

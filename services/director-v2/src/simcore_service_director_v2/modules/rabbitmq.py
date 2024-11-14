@@ -22,7 +22,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
-    message = WalletCreditsLimitReachedMessage.parse_raw(data)
+    message = WalletCreditsLimitReachedMessage.model_validate_json(data)
 
     scheduler: "DynamicSidecarsScheduler" = app.state.dynamic_sidecar_scheduler  # type: ignore[name-defined] # noqa: F821
     settings: AppSettings = app.state.settings

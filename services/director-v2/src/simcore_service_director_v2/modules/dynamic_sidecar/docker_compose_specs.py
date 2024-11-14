@@ -239,7 +239,7 @@ def _update_container_labels(
             spec_service_key, default_limits
         )
 
-        label_keys = StandardSimcoreDockerLabels.construct(
+        label_keys = StandardSimcoreDockerLabels.model_construct(
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,

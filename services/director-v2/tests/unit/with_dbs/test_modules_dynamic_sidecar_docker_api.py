@@ -195,7 +195,7 @@ def dynamic_sidecar_service_spec(
             f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
             f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
             f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
-            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data_from_http_request.json(),
+            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data_from_http_request.model_dump_json(),
         },
     }
 
@@ -330,8 +330,10 @@ def service_name() -> str:
 
 @pytest.fixture(
     params=[
-        SimcoreServiceLabels.parse_obj(example)
-        for example in SimcoreServiceLabels.Config.schema_extra["examples"]
+        SimcoreServiceLabels.model_validate(example)
+        for example in SimcoreServiceLabels.model_config["json_schema_extra"][
+            "examples"
+        ]
     ],
 )
 def labels_example(request: pytest.FixtureRequest) -> SimcoreServiceLabels:
@@ -391,11 +393,11 @@ def test_settings__valid_network_names(
     monkeypatch: pytest.MonkeyPatch,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
 ) -> None:
-    items = dynamic_services_scheduler_settings.dict()
+    items = dynamic_services_scheduler_settings.model_dump()
     items["SIMCORE_SERVICES_NETWORK_NAME"] = simcore_services_network_name
 
     # validate network names
-    DynamicServicesSchedulerSettings.parse_obj(items)
+    DynamicServicesSchedulerSettings.model_validate(items)
 
 
 async def test_failed_docker_client_request(docker_swarm: None):
@@ -727,7 +729,7 @@ async def test_update_scheduler_data_label(
     # fetch stored data in labels
     service_inspect = await async_docker_client.services.inspect(mock_service)
     labels = service_inspect["Spec"]["Labels"]
-    scheduler_data = SchedulerData.parse_raw(
+    scheduler_data = SchedulerData.model_validate_json(
         labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL]
     )
     assert scheduler_data == mock_scheduler_data

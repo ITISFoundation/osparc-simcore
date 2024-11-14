@@ -3,7 +3,7 @@
 #       This is a minor evil to avoid the maintenance burden that creates
 #       an extra dependency to a larger models_library (intra-repo library)
 
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, TypeAlias
 
 from pydantic import Field, StringConstraints
@@ -16,14 +16,14 @@ PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 VersionTag: TypeAlias = Annotated[str, StringConstraints(pattern=r"^v\d$")]
 
 
-class LogLevel(str, Enum):
+class LogLevel(StrEnum):
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
     ERROR = "ERROR"
 
 
-class BootMode(str, Enum):
+class BootMode(StrEnum):
     """
     Values taken by SC_BOOT_MODE environment variable
     set in Dockerfile and used during docker/boot.sh
@@ -36,7 +36,7 @@ class BootMode(str, Enum):
     DEVELOPMENT = "development"
 
 
-class BuildTargetEnum(str, Enum):
+class BuildTargetEnum(StrEnum):
     """
     Values taken by SC_BUILD_TARGET environment variable
     set in Dockerfile that defines the stage targeted in the

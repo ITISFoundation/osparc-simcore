@@ -1,10 +1,10 @@
 from contextlib import suppress
-from typing import Any, ClassVar, cast
+from typing import cast
 
 import networkx as nx
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ..utils.db import DB_TO_RUNNING_STATE
@@ -15,7 +15,7 @@ class CompPipelineAtDB(BaseModel):
     dag_adjacency_list: dict[str, list[str]]  # json serialization issue if using NodeID
     state: RunningState
 
-    @validator("state", pre=True)
+    @field_validator("state", mode="before")
     @classmethod
     def convert_state_from_state_type_enum_if_needed(cls, v):
         if isinstance(v, str):
@@ -27,7 +27,7 @@ class CompPipelineAtDB(BaseModel):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
         return v
 
-    @validator("dag_adjacency_list", pre=True)
+    @field_validator("dag_adjacency_list", mode="before")
     @classmethod
     def auto_convert_dag(cls, v):
         # this enforcement is here because the serialization using json is not happy with non str Dict keys, also comparison gets funny if the lists are having sometimes UUIDs or str.
@@ -42,10 +42,9 @@ class CompPipelineAtDB(BaseModel):
             ),
         )
 
-    class Config:
-        orm_mode = True
-
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "examples": [
                 # DB model
                 {
@@ -60,4 +59,5 @@ class CompPipelineAtDB(BaseModel):
                     "state": "NOT_STARTED",
                 }
             ]
-        }
+        },
+    )
