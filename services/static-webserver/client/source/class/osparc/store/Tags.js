@@ -103,7 +103,7 @@ qx.Class.define("osparc.store.Tags", {
     },
 
     __addToCache: function(tagData) {
-      let tag = this.tagsCached.find(f => f.getTagId() === tagData["tagId"]);
+      let tag = this.tagsCached.find(f => f.getTagId() === tagData["id"]);
       if (tag) {
         const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Tag));
         // put

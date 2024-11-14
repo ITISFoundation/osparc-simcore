@@ -20,8 +20,10 @@ qx.Class.define("osparc.ui.basic.Tag", {
   construct: function(tag, filterGroupId) {
     this.base(arguments);
 
-    tag.bind("name", this, "value");
-    tag.bind("color", this, "color");
+    if (tag) {
+      tag.bind("name", this, "value");
+      tag.bind("color", this, "color");
+    }
     this.setFont("text-11");
 
     if (filterGroupId) {
