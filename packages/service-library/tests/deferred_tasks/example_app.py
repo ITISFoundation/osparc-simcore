@@ -60,6 +60,7 @@ class InMemoryLists:
         self.redis: Redis = RedisClientSDK(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
             decode_responses=True,
+            client_name="example_app",
         ).redis
         self.port = port
 
@@ -84,6 +85,7 @@ class ExampleApp:
         self._redis_client = RedisClientSDK(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
             decode_responses=False,
+            client_name="example_app",
         )
         self._manager = DeferredManager(
             rabbit_settings,

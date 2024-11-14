@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     this._setLayout(new qx.ui.layout.VBox());
 
     const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar().set({
-      backgroundColor: "tab_navigation_bar_background_color"
+      backgroundColor: "workbench-view-navbar"
     });
 
     const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();

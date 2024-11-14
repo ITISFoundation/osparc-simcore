@@ -98,6 +98,7 @@ def _assert_added_project(
         "lastChangeDate",
         "accessRights",  # NOTE: access rights were moved away from the projects table
         "trashedAt",
+        "trashedExplicitly",
     ]
     assert {k: v for k, v in expected_prj.items() if k in _DIFFERENT_KEYS} != {
         k: v for k, v in added_prj.items() if k in _DIFFERENT_KEYS

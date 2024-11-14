@@ -1,4 +1,3 @@
-import functools
 import logging
 
 from aiohttp import web
@@ -8,135 +7,43 @@ from models_library.api_schemas_webserver.folders_v2 import (
     FolderGetPage,
     PutFolderBodyParams,
 )
-from models_library.basic_types import IDStr
-from models_library.folders import FolderID
-from models_library.rest_ordering import OrderBy, OrderDirection
-from models_library.rest_pagination import Page, PageQueryParameters
+from models_library.rest_ordering import OrderBy
+from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from models_library.users import UserID
-from models_library.utils.common_validators import null_or_none_str_to_none_validator
-from models_library.workspaces import WorkspaceID
-from pydantic import Extra, Field, Json, parse_obj_as, validator
+from pydantic import parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
-    RequestParams,
-    StrictRequestParams,
     parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from ..workspaces.errors import (
-    WorkspaceAccessForbiddenError,
-    WorkspaceFolderInconsistencyError,
-    WorkspaceNotFoundError,
-)
 from . import _folders_api
-from .errors import (
-    FolderAccessForbiddenError,
-    FolderNotFoundError,
-    FoldersValueError,
-    FolderValueNotPermittedError,
+from ._exceptions_handlers import handle_plugin_requests_exceptions
+from ._models import (
+    FolderFilters,
+    FolderListFullSearchWithJsonStrQueryParams,
+    FolderListWithJsonStrQueryParams,
+    FoldersPathParams,
+    FoldersRequestContext,
 )
 
 _logger = logging.getLogger(__name__)
 
 
-def handle_folders_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except (FolderNotFoundError, WorkspaceNotFoundError) as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except (
-            FolderAccessForbiddenError,
-            WorkspaceAccessForbiddenError,
-            WorkspaceFolderInconsistencyError,
-        ) as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-
-        except (FolderValueNotPermittedError, FoldersValueError) as exc:
-            raise web.HTTPBadRequest(reason=f"{exc}") from exc
-
-    return wrapper
-
-
-#
-# folders COLLECTION -------------------------
-#
-
 routes = web.RouteTableDef()
-
-
-class FoldersRequestContext(RequestParams):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
-
-
-class FoldersPathParams(StrictRequestParams):
-    folder_id: FolderID
-
-
-class FolderListWithJsonStrQueryParams(PageQueryParameters):
-    # pylint: disable=unsubscriptable-object
-    order_by: Json[OrderBy] = Field(
-        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
-        description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
-        example='{"field": "name", "direction": "desc"}',
-        alias="order_by",
-    )
-    folder_id: FolderID | None = Field(
-        default=None,
-        description="List the subfolders of this folder. By default, list the subfolders of the root directory (Folder ID is None).",
-    )
-    workspace_id: WorkspaceID | None = Field(
-        default=None,
-        description="List folders in specific workspace. By default, list in the user private workspace",
-    )
-
-    @validator("order_by", check_fields=False)
-    @classmethod
-    def validate_order_by_field(cls, v):
-        if v.field not in {
-            "modified_at",
-            "name",
-            "description",
-        }:
-            msg = f"We do not support ordering by provided field {v.field}"
-            raise ValueError(msg)
-        if v.field == "modified_at":
-            v.field = "modified"
-        return v
-
-    class Config:
-        extra = Extra.forbid
-
-    # validators
-    _null_or_none_str_to_none_validator = validator(
-        "folder_id", allow_reuse=True, pre=True
-    )(null_or_none_str_to_none_validator)
-
-    _null_or_none_str_to_none_validator2 = validator(
-        "workspace_id", allow_reuse=True, pre=True
-    )(null_or_none_str_to_none_validator)
 
 
 @routes.post(f"/{VTAG}/folders", name="create_folder")
 @login_required
 @permission_required("folder.create")
-@handle_folders_exceptions
+@handle_plugin_requests_exceptions
 async def create_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     body_params = await parse_request_body_as(CreateFolderBodyParams, request)
@@ -156,12 +63,15 @@ async def create_folder(request: web.Request):
 @routes.get(f"/{VTAG}/folders", name="list_folders")
 @login_required
 @permission_required("folder.read")
-@handle_folders_exceptions
+@handle_plugin_requests_exceptions
 async def list_folders(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     query_params: FolderListWithJsonStrQueryParams = parse_request_query_parameters_as(
         FolderListWithJsonStrQueryParams, request
     )
+
+    if not query_params.filters:
+        query_params.filters = FolderFilters()
 
     folders: FolderGetPage = await _folders_api.list_folders(
         app=request.app,
@@ -169,6 +79,48 @@ async def list_folders(request: web.Request):
         product_name=req_ctx.product_name,
         folder_id=query_params.folder_id,
         workspace_id=query_params.workspace_id,
+        trashed=query_params.filters.trashed,
+        offset=query_params.offset,
+        limit=query_params.limit,
+        order_by=parse_obj_as(OrderBy, query_params.order_by),
+    )
+
+    page = Page[FolderGet].parse_obj(
+        paginate_data(
+            chunk=folders.items,
+            request_url=request.url,
+            total=folders.total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
+@routes.get(f"/{VTAG}/folders:search", name="list_folders_full_search")
+@login_required
+@permission_required("folder.read")
+@handle_plugin_requests_exceptions
+async def list_folders_full_search(request: web.Request):
+    req_ctx = FoldersRequestContext.parse_obj(request)
+    query_params: FolderListFullSearchWithJsonStrQueryParams = (
+        parse_request_query_parameters_as(
+            FolderListFullSearchWithJsonStrQueryParams, request
+        )
+    )
+
+    if not query_params.filters:
+        query_params.filters = FolderFilters()
+
+    folders: FolderGetPage = await _folders_api.list_folders_full_search(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        text=query_params.text,
+        trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
         order_by=parse_obj_as(OrderBy, query_params.order_by),
@@ -192,7 +144,7 @@ async def list_folders(request: web.Request):
 @routes.get(f"/{VTAG}/folders/{{folder_id}}", name="get_folder")
 @login_required
 @permission_required("folder.read")
-@handle_folders_exceptions
+@handle_plugin_requests_exceptions
 async def get_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
@@ -213,7 +165,7 @@ async def get_folder(request: web.Request):
 )
 @login_required
 @permission_required("folder.update")
-@handle_folders_exceptions
+@handle_plugin_requests_exceptions
 async def replace_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
@@ -236,7 +188,7 @@ async def replace_folder(request: web.Request):
 )
 @login_required
 @permission_required("folder.delete")
-@handle_folders_exceptions
+@handle_plugin_requests_exceptions
 async def delete_folder_group(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)

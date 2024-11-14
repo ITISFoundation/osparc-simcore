@@ -18,10 +18,6 @@
 qx.Class.define("osparc.node.UpdateResourceLimitsView", {
   extend: osparc.node.ServiceOptionsView,
 
-  events: {
-    "limitsChanged": "qx.event.type.Event"
-  },
-
   members: {
     __resourceFields: null,
     __saveBtn: null,
@@ -92,7 +88,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
                       value = osparc.utils.Utils.bytesToGiB(value);
                     }
                     const spinner = new qx.ui.form.Spinner(0, value, 512).set({
-                      singleStep: 0.1
+                      singleStep: 1.0
                     });
                     const nf = new qx.util.format.NumberFormat();
                     nf.setMinimumFractionDigits(2);
@@ -159,7 +155,6 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
       osparc.data.Resources.fetch("nodesInStudyResources", "put", params)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Limits successfully updated"));
-          this.fireEvent("limitsChanged");
         })
         .catch(err => {
           console.error(err);

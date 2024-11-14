@@ -5,11 +5,13 @@
 import logging
 
 from fastapi import FastAPI
+from httpx import AsyncClient, Client
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -121,3 +123,7 @@ def setup_tracing(
             msg="Attempting to add requests opentelemetry autoinstrumentation...",
         ):
             RequestsInstrumentor().instrument()
+
+
+def setup_httpx_client_tracing(client: AsyncClient | Client):
+    HTTPXClientInstrumentor.instrument_client(client)

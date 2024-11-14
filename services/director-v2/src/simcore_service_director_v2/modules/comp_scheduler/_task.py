@@ -10,6 +10,7 @@ from servicelib.redis import RedisClientsManager
 from servicelib.redis_utils import exclusive
 from settings_library.redis import RedisDatabase
 
+from ..._meta import APP_NAME
 from . import _scheduler_factory
 
 _logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
             _logger, level=logging.INFO, msg="starting computational scheduler"
         ):
             redis_clients_manager: RedisClientsManager = app.state.redis_clients_manager
-            lock_key = f"{app.title}:computational_scheduler"
+            lock_key = f"{APP_NAME}:computational_scheduler"
             app.state.scheduler = scheduler = await _scheduler_factory.create_from_db(
                 app
             )

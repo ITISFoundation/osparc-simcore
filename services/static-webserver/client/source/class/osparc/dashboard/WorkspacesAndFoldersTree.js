@@ -74,7 +74,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
     osparc.store.Workspaces.getInstance().addListener("workspaceRemoved", e => {
       const workspace = e.getData();
-      this.__removeWorkspace(workspace);
+      this.__workspaceRemoved(workspace);
     }, this);
 
     this.getSelection().addListener("change", () => {
@@ -227,11 +227,21 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       this.__populateFolder(workspaceModel, workspace.getWorkspaceId(), null);
     },
 
-    __removeWorkspace: function(workspace) {
+    __workspaceRemoved: function(workspace) {
+      // remove it from the tree
       const sharedWorkspaceModel = this.__getModel(-1, null);
       const idx = sharedWorkspaceModel.getChildren().toArray().findIndex(w => workspace.getWorkspaceId() === w.getWorkspaceId());
       if (idx > -1) {
-        sharedWorkspaceModel.getChildren().toArray().splice(idx, 1);
+        sharedWorkspaceModel.getChildren().removeAt(idx);
+      }
+
+      // remove it from the cached models
+      const modelFound = this.__getModel(workspace.getWorkspaceId(), null);
+      if (modelFound) {
+        const index = this.__models.indexOf(modelFound);
+        if (index > -1) { // only splice array when item is found
+          this.__models.splice(index, 1); // 2nd parameter means remove one item only
+        }
       }
     },
 
@@ -283,7 +293,19 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       if (parentModel) {
         const idx = parentModel.getChildren().toArray().findIndex(c => folder.getWorkspaceId() === c.getWorkspaceId() && folder.getFolderId() === c.getFolderId());
         if (idx > -1) {
-          parentModel.getChildren().toArray().splice(idx, 1);
+          parentModel.getChildren().removeAt(idx);
+        }
+      }
+
+      if (oldParentFolderId === undefined) {
+        // it was removed, not moved
+        // remove it from the cached models
+        const modelFound = this.__getModel(folder.getWorkspaceId(), folder.getFolderId());
+        if (modelFound) {
+          const index = this.__models.indexOf(modelFound);
+          if (index > -1) { // only splice array when item is found
+            this.__models.splice(index, 1); // 2nd parameter means remove one item only
+          }
         }
       }
     },

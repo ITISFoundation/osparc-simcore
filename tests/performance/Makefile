@@ -12,7 +12,8 @@ export ENV_FILE
 NETWORK_NAME=dashboards_timenet
 
 # UTILS
-get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
+# NOTE: keep short arguments for `cut` so it works in both BusyBox (alpine) AND Ubuntu
+get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut -d " " -f 1)
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
@@ -26,6 +27,7 @@ check_defined = \
 __check_defined = \
     $(if $(value $1),, \
       $(error Undefined $1$(if $2, ($2))))
+
 
 
 .PHONY: build
@@ -42,6 +44,8 @@ build: ## builds distributed osparc locust docker image
 push:
 	docker push itisfoundation/locust:$(LOCUST_VERSION)
 
+
+
 .PHONY: down
 down: ## stops and removes osparc locust containers
 	docker compose --file docker-compose.yml down
@@ -54,6 +58,8 @@ test: ## runs osparc locust. Locust and test configuration are specified in ENV_
 		echo "Created docker network $(NETWORK_NAME)"; \
 	fi
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master
+
+
 
 .PHONY: dashboards-up dashboards-down
 
@@ -68,6 +74,8 @@ dashboards-up: ## Create Grafana dashboard for inspecting locust results. See da
 dashboards-down:
 	@locust-compose down
 
+
+
 .PHONY: install-ci install-dev
 
 install-dev:
@@ -80,4 +88,4 @@ install-ci:
 .PHONY: config
 config:
 	@$(call check_defined, input, please define inputs when calling $@ - e.g. ```make $@ input="--help"```)
-	@uv run locust_settings.py $(input) | tee .env
+	@uv run locust_settings.py $(input) | tee "${ENV_FILE}"
