@@ -27,6 +27,7 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.services_enums import ServiceState
+from models_library.utils._original_fastapi_encoders import jsonable_encoder
 from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -200,7 +201,7 @@ def mocked_storage_service_api(
         respx_mock.post(
             "/simcore-s3:access",
             name="get_or_create_temporary_s3_access",
-        ).respond(json={"data": fake_s3_settings.model_dump(by_alias=True)})
+        ).respond(json=jsonable_encoder({"data": fake_s3_settings}, by_alias=True))
 
         yield respx_mock
 
