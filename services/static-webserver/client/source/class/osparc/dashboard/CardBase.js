@@ -926,7 +926,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _filterTags: function(tags) {
-      const checks = this.getTags().map(tag => tag.id);
+      const checks = this.getTags().map(tag => tag.getId());
       return this.self().filterTags(checks, tags);
     },
 
