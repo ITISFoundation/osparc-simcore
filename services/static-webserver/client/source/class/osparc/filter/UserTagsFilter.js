@@ -18,7 +18,7 @@ qx.Class.define("osparc.filter.UserTagsFilter", {
   },
   members: {
     __buildMenu: function() {
-      osparc.store.Store.getInstance().getTags()
+      osparc.store.Tags.getInstance().getTags()
         .forEach(tag => {
           const menuButton = this._addOption(tag.name);
           menuButton.setIcon("@FontAwesome5Solid/square/12");

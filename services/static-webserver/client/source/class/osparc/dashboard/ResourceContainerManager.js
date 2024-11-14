@@ -208,7 +208,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __createCard: function(resourceData) {
-      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.getTagId())) : [];
+      const tags = resourceData.tags ? osparc.store.Tags.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.getTagId())) : [];
       const card = this.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       card.set({
         appearance: resourceData.type ? `pb-${resourceData.type}` : `pb-${resourceData.resourceType}`,
@@ -434,7 +434,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __groupByTags: function(cards, resourceData) {
-      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.getTagId())) : [];
+      const tags = resourceData.tags ? osparc.store.Tags.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.getTagId())) : [];
       if (tags.length === 0) {
         let noGroupContainer = this.__getGroupContainer("no-group");
         const card = this.__createCard(resourceData);

@@ -211,7 +211,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         tagsContainer.removeAll();
         const noTagsLabel = new qx.ui.basic.Label(qx.locale.Manager.tr("Add tags"));
         tagsContainer.add(noTagsLabel);
-        osparc.store.Store.getInstance().getTags().filter(tag => model.getTags().includes(tag.id))
+        osparc.store.Tags.getInstance().getTags().filter(tag => model.getTags().includes(tag.id))
           .forEach(selectedTag => {
             if (tagsContainer.indexOf(noTagsLabel) > -1) {
               tagsContainer.remove(noTagsLabel);

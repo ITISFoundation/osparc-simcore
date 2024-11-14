@@ -119,7 +119,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
 
     __repopulateTags: function() {
       this.__tagsContainer.removeAll();
-      const tags = osparc.store.Store.getInstance().getTags();
+      const tags = osparc.store.Tags.getInstance().getTags();
       tags.forEach(tag => this.__tagsContainer.add(this.__tagButton(tag)));
     },
 
