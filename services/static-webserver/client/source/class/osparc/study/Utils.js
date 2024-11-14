@@ -255,7 +255,7 @@ qx.Class.define("osparc.study.Utils", {
             }, this);
             task.addListener("resultReceived", e => {
               const studyData = e.getData();
-              resolve(studyData["uuid"]);
+              resolve(studyData);
             }, this);
             task.addListener("pollingError", e => {
               const err = e.getData();
