@@ -124,7 +124,7 @@ class DaskScheduler(BaseCompScheduler):
                         cluster_id=pipeline_params.cluster_id,
                         tasks={node_id: task.image},
                         hardware_info=task.hardware_info,
-                        callback=self._wake_up_scheduler_now,
+                        callback=pipeline_params.wake_up,
                         metadata=pipeline_params.run_metadata,
                     )
                     for node_id, task in scheduled_tasks.items()

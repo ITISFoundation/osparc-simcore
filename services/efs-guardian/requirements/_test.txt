@@ -27,10 +27,6 @@ anyio==4.6.2.post1
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-async-timeout==4.0.3
-    # via
-    #   -c requirements/_base.txt
-    #   redis
 attrs==24.2.0
     # via
     #   -c requirements/_base.txt

@@ -29,7 +29,7 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       const layout = new qx.ui.layout.HBox();
       this._setLayout(layout);
 
-      this.setBackgroundColor("primary-background-color");
+      this.setBackgroundColor("rgba(0, 20, 46, 1)");
 
       this._removeAll();
 

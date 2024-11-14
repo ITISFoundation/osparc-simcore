@@ -1,11 +1,39 @@
 from datetime import datetime
+from enum import auto
 from typing import TypeAlias
 
-from models_library.access_rights import AccessRights
-from models_library.users import GroupID
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, field_validator
+
+from .access_rights import AccessRights
+from .users import GroupID
+from .utils.enums import StrAutoEnum
 
 WorkspaceID: TypeAlias = PositiveInt
+
+
+class WorkspaceScope(StrAutoEnum):
+    PRIVATE = auto()
+    SHARED = auto()
+    ALL = auto()
+
+
+class WorkspaceQuery(BaseModel):
+    workspace_scope: WorkspaceScope
+    workspace_id: PositiveInt | None = None
+
+    @field_validator("workspace_id", mode="before")
+    @classmethod
+    def validate_workspace_id(cls, value, values):
+        scope = values.get("workspace_scope")
+        if scope == WorkspaceScope.SHARED and value is None:
+            raise ValueError(
+                "workspace_id must be provided when workspace_scope is SHARED."
+            )
+        if scope != WorkspaceScope.SHARED and value is not None:
+            raise ValueError(
+                "workspace_id should be None when workspace_scope is not SHARED."
+            )
+        return value
 
 
 #

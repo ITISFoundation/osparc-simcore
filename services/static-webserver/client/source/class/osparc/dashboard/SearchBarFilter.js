@@ -208,14 +208,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     __addTags: function(menuButton) {
-      const tags = osparc.store.Store.getInstance().getTags();
+      const tags = osparc.store.Tags.getInstance().getTags();
       menuButton.setVisibility(tags.length ? "visible" : "excluded");
       if (tags.length) {
         const tagsMenu = new qx.ui.menu.Menu();
         osparc.utils.Utils.setIdToWidget(tagsMenu, "searchBarFilter-tags-menu");
         tags.forEach(tag => {
-          const tagButton = new qx.ui.menu.Button(tag.name, "@FontAwesome5Solid/tag/12");
-          tagButton.getChildControl("icon").setTextColor(tag.color);
+          const tagButton = new qx.ui.menu.Button(tag.getName(), "@FontAwesome5Solid/tag/12");
+          tagButton.getChildControl("icon").setTextColor(tag.getColor());
           tagsMenu.add(tagButton);
           tagButton.addListener("execute", () => this.addTagActiveFilter(tag), this);
         });
@@ -271,16 +271,17 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     addTagActiveFilter: function(tag) {
-      this.__addChip("tag", tag.id, tag.name);
+      this.__addChip("tag", tag.getTagId(), tag.getName());
     },
 
     setTagsActiveFilter: function(tagIds) {
-      const tags = osparc.store.Store.getInstance().getTags();
+      const tags = osparc.store.Tags.getInstance().getTags();
       tags.forEach(tag => {
-        if (tagIds.includes(tag.id)) {
-          this.__addChip("tag", tag.id, tag.name);
+        const tagId = tag.getTagId();
+        if (tagIds.includes(tagId)) {
+          this.__addChip("tag", tagId, tag.getName());
         } else {
-          this.__removeChip("tag", tag.id, tag.name);
+          this.__removeChip("tag", tagId, tag.getName());
         }
       });
     },

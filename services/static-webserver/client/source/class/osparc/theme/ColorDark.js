@@ -2,29 +2,27 @@ qx.Theme.define("osparc.theme.ColorDark", {
   include: osparc.theme.mixin.Color,
 
   colors: {
+    // 105-0
     "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
-    "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 100),
-    "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 95),
-    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 85),
-    "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 80),
-    "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 70),
-    "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 55),
-    "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
-    "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
-    "c09": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 30),
-    "c10": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
-    "c11": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 20),
-    "c12": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
-    "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 8),
-    "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
+    "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-5),
+    "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-10),
+    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-20),
+    "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-25),
+    "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-35),
+    "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-50),
+    "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-60),
+    "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-70),
+    "c09": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-75),
+    "c10": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-80),
+    "c12": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-90),
+    "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-105),
 
     "product-color": "rgba(0, 144, 208, 1)", // override in product
     "strong-main": "product-color",
-    "strong-text": "rgba(255, 255, 255, 1)",
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
 
     // main
-    "background-main": "#222",
+    "background-main": "c01",
     "background-main-1": "c02",
     "background-main-2": "c03",
     "background-main-3": "c04",
@@ -34,10 +32,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "background-card-overlay": "rgba(25, 33, 37, 0.8)",
     "background-workspace-card-overlay": "rgb(35, 93, 122)",
 
-    "primary-background-color": "rgba(0, 20, 46, 1)",
     "navigation_bar_background_color": "rgba(1, 18, 26, 0.8)",
-    "tab_navigation_bar_background_color": "c00",
-    "modal-backdrop": "rgba(8, 9, 13, 1)",
     "fab_text": "contrasted-text-dark",
     "fab-background": "rgba(255, 255, 255, 0.2)",
     "input_background": "#213248",
@@ -58,18 +53,18 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "link": "rgba(10, 182, 255, 1)",
 
     // shadows
-    "bg-shadow":  "background-main-5",
-    "box-shadow":  "rgba(0,0,0, 0.15)",
+    "bg-shadow": "background-main-5",
+    "box-shadow": "rgba(0, 0, 0, 0.15)",
     "shadow": qx.core.Environment.get("css.rgba") ? "a-bit-transparent" : "bg-shadow",
 
     // window
     "window-popup-background": "rgba(66, 66, 66, 1)",
     "window-caption-background": "background-main",
-    "window-caption-background-active":  "background-main-3",
+    "window-caption-background-active": "background-main-3",
     "window-caption-text": "text",
     "window-caption-text-active": "c12",
-    "window-border":  "background-main-2",
-    "window-border-inner":  "background-main-1",
+    "window-border": "background-main-2",
+    "window-border-inner": "background-main-1",
 
     // material-button
     "material-button-background": "fab-background",
@@ -88,10 +83,10 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
     // backgrounds
     "background-selected": "default-button-background",
-    "background-selected-disabled":  "default-button-disabled",
-    "background-selected-dark":  "product-color",
+    "background-selected-disabled": "default-button-disabled",
+    "background-selected-dark": "product-color",
     "background-disabled": "background-main",
-    "background-disabled-checked":  "background-main-1",
+    "background-disabled-checked": "background-main-1",
     "background-pane": "background-main",
 
     // tabview
@@ -102,23 +97,23 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "tabview-button-background": "transparent",
 
     // scrollbar
-    "scrollbar-passive":  "background-main-4",
-    "scrollbar-active":  "background-main-5",
+    "scrollbar-passive": "background-main-4",
+    "scrollbar-active": "background-main-5",
 
     // form
     "button": "background-main-4",
-    "button-border":  "background-main-5",
+    "button-border": "background-main-5",
     "button-border-hovered": "c07",
-    "button-box":  "background-main-3",
-    "button-box-pressed":  "background-main-4",
+    "button-box": "background-main-3",
+    "button-box-pressed": "background-main-4",
     "border-lead": "c07",
 
     // group box
-    "white-box-border":  "background-main-2",
+    "white-box-border": "background-main-2",
 
     // borders
     // 'border-main' is an alias of 'background-selected' (compatibility reasons)
-    "border":  "background-main-3",
+    "border": "background-main-3",
     "border-focused": "c09",
     "border-invalid": "failed-red",
     "border-disabled": "background-main",
@@ -134,13 +129,13 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "table-header": "background-main",
     "table-header-foreground": "c09",
     "table-header-border": "c07",
-    "table-focus-indicator":  "background-main-5",
+    "table-focus-indicator": "background-main-5",
 
     // used in table code
     "table-header-cell": "background-main",
-    "table-row-background-focused-selected":  "background-main-4",
-    "table-row-background-focused":  "background-main-3",
-    "table-row-background-selected":  "background-main-4",
+    "table-row-background-focused-selected": "background-main-4",
+    "table-row-background-focused": "background-main-3",
+    "table-row-background-selected": "background-main-4",
     "table-row-background-even": "background-main",
     "table-row-background-odd": "background-main",
 
@@ -156,11 +151,11 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "progressive-table-header": "c08",
     "progressive-table-row-background-even": "background-main",
     "progressive-table-row-background-odd": "background-main",
-    "progressive-progressbar-background":  "background-main",
+    "progressive-progressbar-background": "background-main",
     "progressive-progressbar-indicator-done": "background-main",
-    "progressive-progressbar-indicator-undone":  "background-main-1",
-    "progressive-progressbar-percent-background":  "background-main",
-    "progressive-progressbar-percent-text":  "background-main-1",
+    "progressive-progressbar-indicator-undone": "background-main-1",
+    "progressive-progressbar-percent-background": "background-main",
+    "progressive-progressbar-percent-text": "background-main-1",
 
 
 
@@ -168,6 +163,8 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "workbench-edge-comp-active": "#777777",
     "workbench-edge-api-active": "#BBBBBB",
     "workbench-start-hint": "#505050",
+    "workbench-view-navbar": "c00",
+    "workbench-view-splitter": "#000000",
 
     "node-background": "rgba(113, 157, 181, 0.5)",
     "node-selected-background": "strong-main",

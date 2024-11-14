@@ -250,6 +250,7 @@ def expected_dynamic_sidecar_spec(
                     "FORWARD_ENV_DISPLAY": ":0",
                     "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": "3",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+                    "DYNAMIC_SIDECAR_TRACING": "null",
                     "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
                         '{"REGISTRY_AUTH":false,"REGISTRY_PATH":null,'
                         '"REGISTRY_URL":"foo.bar.com","REGISTRY_USER":'

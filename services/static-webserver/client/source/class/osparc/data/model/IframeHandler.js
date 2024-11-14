@@ -84,7 +84,9 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       this.__unresponsiveRetries = 5;
       this.__nodeState();
 
-      this.getIFrame().resetSource();
+      if (this.getIFrame()) {
+        this.getIFrame().resetSource();
+      }
     },
 
     __initIFrame: function() {
@@ -365,7 +367,9 @@ qx.Class.define("osparc.data.model.IframeHandler", {
 
         // will switch to the loading page
         node.resetServiceUrl();
-        this.getIFrame().resetSource();
+        if (this.getIFrame()) {
+          this.getIFrame().resetSource();
+        }
         this.fireEvent("iframeChanged");
       }
     },
@@ -396,8 +400,10 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const status = node.getStatus().getInteractive();
       // it might have been stopped
       if (["running", "ready"].includes(status)) {
-        this.getIFrame().resetSource();
-        this.getIFrame().setSource(node.getServiceUrl());
+        if (this.getIFrame()) {
+          this.getIFrame().resetSource();
+          this.getIFrame().setSource(node.getServiceUrl());
+        }
 
         // fire event to force switching to iframe's content:
         // it is required in those cases where the native 'load' event isn't triggered (voila)

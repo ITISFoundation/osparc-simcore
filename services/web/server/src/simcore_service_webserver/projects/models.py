@@ -52,6 +52,7 @@ class ProjectDB(BaseModel):
     hidden: bool
     workspace_id: WorkspaceID | None
     trashed_at: datetime | None
+    trashed_explicitly: bool = False
 
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
@@ -94,7 +95,8 @@ class UserProjectAccessRightsWithWorkspace(BaseModel):
 
 class ProjectPatchExtended(ProjectPatch):
     # Only used internally
-    trashed_at: datetime | None = None
+    trashed_at: datetime | None
+    trashed_explicitly: bool
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 

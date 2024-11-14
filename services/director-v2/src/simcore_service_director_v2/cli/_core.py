@@ -36,13 +36,16 @@ from ._client import ThinDV2LocalhostClient
 async def _initialized_app(only_db: bool = False) -> AsyncIterator[FastAPI]:
     app = create_base_app()
     settings: AppSettings = app.state.settings
-
     # Initialize minimal required components for the application
     db.setup(app, settings.POSTGRES)
 
     if not only_db:
         dynamic_sidecar.setup(app)
-        director_v0.setup(app, settings.DIRECTOR_V0)
+        director_v0.setup(
+            app,
+            director_v0_settings=settings.DIRECTOR_V0,
+            tracing_settings=settings.DIRECTOR_V2_TRACING,
+        )
 
     await app.router.startup()
     yield app

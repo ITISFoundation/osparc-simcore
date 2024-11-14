@@ -62,10 +62,11 @@ def _assert_same_projects(got: dict, expected: dict):
         "workbench",
         "accessRights",
         "ui",
+        "trashedExplicitly",
     }
     for key in expected:
         if key not in exclude:
-            assert got[key] == expected[key], "Failed in %s" % key
+            assert got[key] == expected[key], f"Failed in {key}"
 
 
 def _is_user_authenticated(session: ClientSession) -> bool:

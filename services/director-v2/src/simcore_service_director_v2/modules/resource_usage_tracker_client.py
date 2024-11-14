@@ -23,6 +23,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.wallets import WalletID
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
 
 from ..core.errors import PricingPlanUnitNotFoundError
 from ..core.settings import AppSettings
@@ -40,6 +41,8 @@ class ResourceUsageTrackerClient:
         client = httpx.AsyncClient(
             base_url=settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER.api_base_url,
         )
+        if settings.DIRECTOR_V2_TRACING:
+            setup_httpx_client_tracing(client=client)
         exit_stack = contextlib.AsyncExitStack()
 
         return cls(client=client, exit_stack=exit_stack)

@@ -1,13 +1,13 @@
 from datetime import timedelta
 
 from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
-from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AliasChoices, Field, field_validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.rabbit import RabbitSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
@@ -87,19 +87,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True},
     )
 
-    _validate_agent_volumes_cleanup_interval = validate_numeric_string_as_timedelta(
-        "AGENT_VOLUMES_CLEANUP_INTERVAL"
-    )
-
-    _validate_agent_volumes_cleanup_book_keeping_interval = (
-        validate_numeric_string_as_timedelta(
-            "AGENT_VOLUMES_CLEANUP_BOOK_KEEPING_INTERVAL"
-        )
-    )
-    _validate_agent_volumes_cleanup_remove_volumes_inactive_for = (
-        validate_numeric_string_as_timedelta(
-            "AGENT_VOLUMES_CLEANUP_REMOVE_VOLUMES_INACTIVE_FOR"
-        )
+    AGENT_TRACING: TracingSettings | None = Field(
+        description="settings for opentelemetry tracing",
+        json_schema_extra={"auto_default_from_env": True},
     )
 
     @field_validator("LOGLEVEL")
