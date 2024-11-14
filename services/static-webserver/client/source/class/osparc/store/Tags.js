@@ -51,6 +51,10 @@ qx.Class.define("osparc.store.Tags", {
         });
     },
 
+    getTags: function() {
+      return this.tagsCached;
+    },
+
     postTag: function(name, parentTagId = null, workspaceId = null) {
       const newTagData = {
         name,
@@ -68,9 +72,9 @@ qx.Class.define("osparc.store.Tags", {
         });
     },
 
-    deleteTag: function(tagId, workspaceId) {
+    deleteTag: function(tagId) {
       const params = {
-        "url": {
+        url: {
           tagId
         }
       };
@@ -78,7 +82,7 @@ qx.Class.define("osparc.store.Tags", {
         .then(() => {
           const tag = this.getTag(tagId);
           if (tag) {
-            this.__deleteFromCache(tagId, workspaceId);
+            this.__deleteFromCache(tagId);
             this.fireDataEvent("tagRemoved", tag);
           }
         })
@@ -104,7 +108,7 @@ qx.Class.define("osparc.store.Tags", {
     },
 
     __addToCache: function(tagData) {
-      let tag = this.tagsCached.find(f => f.getTagId() === tagData["tagId"] && f.getWorkspaceId() === tagData["workspaceId"]);
+      let tag = this.tagsCached.find(f => f.getTagId() === tagData["tagId"]);
       if (tag) {
         const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Tag));
         // put
