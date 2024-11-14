@@ -23,6 +23,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.resource_usage_tracker import (
     DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
 )
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
@@ -166,6 +167,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
 
     SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(auto_default_from_env=True)
+
+    DYNAMIC_SIDECAR_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
+    )
 
     @property
     def are_prometheus_metrics_enabled(self) -> bool:
