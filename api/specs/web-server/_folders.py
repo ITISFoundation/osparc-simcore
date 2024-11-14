@@ -24,7 +24,7 @@ from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.folders._models import (
     FolderFilters,
-    FolderSortJsonQueryParams,
+    FolderSortQueryParamsOpenApi,
     FoldersPathParams,
 )
 
@@ -41,8 +41,8 @@ class _FiltersQueryParams(RequestParameters):
     ] = None
 
 
-class _ListQueryParams(
-    FolderSortJsonQueryParams,
+class _ListQueryParams(  # type: ignore
+    FolderSortQueryParamsOpenApi,
     _FiltersQueryParams,
     PageQueryParameters,
     _ScopeQueryParams,

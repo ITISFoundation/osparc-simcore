@@ -42,7 +42,7 @@ class FolderFilters(Filters):
 
 (
     _FolderSortQueryParams,
-    FolderSortJsonQueryParams,
+    FolderSortQueryParamsOpenApi,
 ) = create_order_by_query_model_classes(
     sortable_fields={"modified", "name", "description"},
     default_order_by=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
