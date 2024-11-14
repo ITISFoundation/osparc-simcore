@@ -17,11 +17,38 @@ from models_library.api_schemas_webserver.folders_v2 import (
 )
 from models_library.folders import FolderID
 from models_library.generics import Envelope
+from models_library.rest_base import RequestParameters
 from models_library.rest_pagination import PageQueryParameters
 from models_library.workspaces import WorkspaceID
 from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.folders._models import FolderFilters, FoldersPathParams
+from simcore_service_webserver.folders._models import (
+    FolderFilters,
+    FolderSortJsonQueryParams,
+    FoldersPathParams,
+)
+
+
+class _ScopeQueryParams(RequestParameters):
+    workspace_id: WorkspaceID | None = None
+    folder_id: FolderID | None = None
+
+
+class _FiltersQueryParams(RequestParameters):
+    filters: Annotated[
+        Json | None,
+        Query(description=FolderFilters.schema_json(indent=1)),
+    ] = None
+
+
+class _ListQueryParams(
+    FolderSortJsonQueryParams,
+    _FiltersQueryParams,
+    PageQueryParameters,
+    _ScopeQueryParams,
+):
+    ...
+
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -36,7 +63,7 @@ router = APIRouter(
     response_model=Envelope[FolderGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_folder(_body: CreateFolderBodyParams):
+async def create_folder(_b: CreateFolderBodyParams):
     ...
 
 
@@ -45,20 +72,7 @@ async def create_folder(_body: CreateFolderBodyParams):
     response_model=Envelope[list[FolderGet]],
 )
 async def list_folders(
-    params: Annotated[PageQueryParameters, Depends()],
-    folder_id: FolderID | None = None,
-    workspace_id: WorkspaceID | None = None,
-    order_by: Annotated[
-        Json,
-        Query(
-            description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
-            example='{"field": "name", "direction": "desc"}',
-        ),
-    ] = '{"field": "modified_at", "direction": "desc"}',
-    filters: Annotated[
-        Json | None,
-        Query(description=FolderFilters.schema_json(indent=1)),
-    ] = None,
+    _q: Annotated[_ListQueryParams, Depends()],
 ):
     ...
 

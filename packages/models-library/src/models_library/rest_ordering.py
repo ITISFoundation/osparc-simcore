@@ -1,11 +1,12 @@
 from enum import Enum
 from typing import Any, ClassVar
 
-from models_library.utils.json_serialization import json_dumps, json_loads
-from pydantic import BaseModel, Field, Json, validator
+from models_library.utils.json_serialization import json_dumps
+from pydantic import BaseModel, Field, validator
 
 from .basic_types import IDStr
 from .rest_base import RequestParameters
+from .utils.common_validators import load_if_json_encoded_pre_validator
 
 
 class OrderDirection(str, Enum):
@@ -49,28 +50,22 @@ def create_order_by_query_model_classes(
 
     assert default_order_by.field in sortable_fields  # nosec
 
+    order_by_example: dict[str, Any] = OrderBy.Config.schema_extra["example"]
     msg_field_options = "|".join(sorted(sortable_fields))
     msg_direction_options = "|".join(sorted(OrderDirection))
-    order_by_example: dict[str, Any] = OrderBy.Config.schema_extra["example"]
+    description = (
+        f"Order by field ({msg_field_options}) and direction ({msg_direction_options}). "
+        f"The default sorting order is '{default_order_by.direction.value}' on '{default_order_by.field}'."
+        f"For instance order_by={json_dumps(order_by_example)}"
+    )
 
-    class _OrderByJsonable(OrderBy):
+    class _OrderBy(OrderBy):
         direction: OrderDirection = Field(
             default=default_order_by.direction
             if override_direction_default
             else OrderBy.__fields__["direction"].default,
             description=OrderBy.__fields__["direction"].field_info.description,
         )
-
-        @classmethod
-        def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-            # openapi.json schema is corrected here
-            field_schema.update(
-                type="string",
-                format="json-string",
-                default=json_dumps(default_order_by),
-                example=json_dumps(order_by_example),
-                title="Order By",
-            )
 
         @validator("field", allow_reuse=True)
         @classmethod
@@ -83,36 +78,28 @@ def create_order_by_query_model_classes(
                 raise ValueError(msg)
             return v
 
-    description = (
-        f"Order by field ({msg_field_options}) and direction ({msg_direction_options}). "
-        f"The default sorting order is '{default_order_by.direction.value}' on '{default_order_by.field}'."
-    )
-
     class _RequestValidatorModel(_BaseOrderByQueryParams):
         # Used in rest handler for verification
-        order_by: _OrderByJsonable = Field(
-            default=default_order_by,
-            description=description,
+        order_by: _OrderBy = Field(default=default_order_by)
+
+        _pre_parse_string = validator("order_by", allow_reuse=True, pre=True)(
+            load_if_json_encoded_pre_validator
         )
 
-        @validator("order_by", allow_reuse=True, pre=True)
+    class _OrderByJson(str):
+        __slots__ = ()
+
         @classmethod
-        def _pre_parse_if_json(cls, v):
-            if isinstance(v, str):
-                # can raise a JsonEncoderError(TypeError)
-                return json_loads(v)
-            return v
+        def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+            # openapi.json schema is corrected here
+            field_schema.update(
+                type="string",
+                format="json-string",
+                description=description,
+            )
 
     class _OpenapiModel(BaseModel):
         # Used to produce nice openapi.json specs
-        order_by: Json = Field(
-            default=json_dumps(default_order_by),
-            description=description,
-        )
-
-        class Config:
-            schema_extra: ClassVar[dict[str, Any]] = {
-                "title": "Order By Parameters",
-            }
+        order_by: _OrderByJson = Field(default=json_dumps(default_order_by))
 
     return _RequestValidatorModel, _OpenapiModel
