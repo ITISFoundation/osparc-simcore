@@ -2,7 +2,7 @@ import asyncio
 import collections
 import logging
 from collections.abc import Awaitable, Callable, Coroutine, Generator
-from typing import Any, Final, NoReturn, ParamSpec, TypeVar, cast, get_args
+from typing import Any, Final, NoReturn, ParamSpec, TypeVar, cast
 from uuid import uuid4
 
 import dask_gateway  # type: ignore[import-untyped]
@@ -11,7 +11,6 @@ from aiopg.sa.engine import Engine
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
-    PortValue,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
@@ -63,10 +62,6 @@ ServiceVersionStr = str
 
 _PVType = _NPItemValue | None
 
-assert len(get_args(_PVType)) == len(  # nosec
-    get_args(PortValue)
-), "Types returned by port.get_value() -> _PVType MUST map one-to-one to PortValue. See compute_input_data"
-
 
 def _get_port_validation_errors(port_key: str, err: ValidationError) -> list[ErrorDict]:
     errors = err.errors()
@@ -104,7 +99,7 @@ def parse_dask_job_id(
     return (
         parts[0],
         parts[1],
-        UserID(parts[2][len("userid_") :]),
+        TypeAdapter(UserID).validate_python(parts[2][len("userid_") :]),
         ProjectID(parts[3][len("projectid_") :]),
         NodeID(parts[4][len("nodeid_") :]),
     )
@@ -130,7 +125,7 @@ async def create_node_ports(
         return await node_ports_v2.ports(
             user_id=user_id,
             project_id=ProjectIDStr(f"{project_id}"),
-            node_uuid=NodeIDStr(f"{node_id}"),
+            node_uuid=TypeAdapter(NodeIDStr).validate_python(f"{node_id}"),
             db_manager=db_manager,
         )
     except ValidationError as err:
@@ -350,8 +345,8 @@ async def compute_task_envs(
         vendor_substituted_envs = await substitute_vendor_secrets_in_specs(
             app,
             cast(dict[str, Any], node_image.envs),
-            service_key=ServiceKey(node_image.name),
-            service_version=ServiceVersion(node_image.tag),
+            service_key=TypeAdapter(ServiceKey).validate_python(node_image.name),
+            service_version=TypeAdapter(ServiceVersion).validate_python(node_image.tag),
             product_name=product_name,
         )
         resolved_envs = await resolve_and_substitute_session_variables_in_specs(
