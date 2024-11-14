@@ -17,9 +17,9 @@ R = TypeVar("R")
 
 
 def exclusive(
-    redis: RedisClientSDK | Callable[..., RedisClientSDK],
+    redis: RedisClientSDK | Callable[P, RedisClientSDK],
     *,
-    lock_key: str | Callable[..., str],
+    lock_key: str | Callable[P, str],
     lock_value: bytes | str | None = None,
 ) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
     """
