@@ -33,9 +33,9 @@ from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._common_models import ProjectPathParams
 from simcore_service_webserver.projects._crud_handlers import ProjectCreateParams
 from simcore_service_webserver.projects._crud_handlers_models import (
-    ProjectListExtraQueryParams,
-    ProjectListFullSearchParams,
-    ProjectListOrderParamsOpenApi,
+    ListProjectsExtraQueryParams,
+    ListProjectsOrderParamsOpenApi,
+    SearchProjectExtraQueryParams,
 )
 
 
@@ -43,12 +43,7 @@ class _FiltersQueryParams(RequestParameters):
     filters: Annotated[Json | None, Query()] = None
 
 
-class _ListQueryParams(  # type: ignore
-    ProjectListOrderParamsOpenApi,
-    _FiltersQueryParams,
-    PageQueryParameters,
-    ProjectListExtraQueryParams,
-):
+class _OrderQueryParams(ListProjectsOrderParamsOpenApi):
     ...
 
 
@@ -91,7 +86,10 @@ async def create_project(
     response_model=Page[ProjectListItem],
 )
 async def list_projects(
-    _q: Annotated[_ListQueryParams, Depends()],
+    _xq: Annotated[ListProjectsExtraQueryParams, Depends()],
+    _oq: Annotated[_OrderQueryParams, Depends()],
+    _fq: Annotated[_FiltersQueryParams, Depends()],
+    _pq: Annotated[PageQueryParameters, Depends()],
 ):
     ...
 
@@ -142,10 +140,10 @@ async def clone_project(
 
 @router.get(
     "/projects:search",
-    response_model=Page[ProjectListFullSearchParams],
+    response_model=Page[SearchProjectExtraQueryParams],
 )
 async def list_projects_full_search(
-    _params: Annotated[ProjectListFullSearchParams, Depends()],
+    _params: Annotated[SearchProjectExtraQueryParams, Depends()],
     order_by: Annotated[
         Json,
         Query(

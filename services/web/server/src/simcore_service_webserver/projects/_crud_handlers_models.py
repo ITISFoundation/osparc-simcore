@@ -102,8 +102,8 @@ class ProjectFilters(Filters):
 
 
 (
-    ProjectListOrderParams,
-    ProjectListOrderParamsOpenApi,
+    ListProjectsOrderParams,
+    ListProjectsOrderParamsOpenApi,
 ) = create_ordering_query_model_classes(
     sortable_fields={
         "type",
@@ -120,7 +120,7 @@ class ProjectFilters(Filters):
 )
 
 
-class ProjectListExtraQueryParams(RequestParameters):
+class ListProjectsExtraQueryParams(RequestParameters):
     project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
     show_hidden: bool = Field(
         default=False, description="includes projects marked as hidden in the listing"
@@ -156,11 +156,11 @@ class ProjectListExtraQueryParams(RequestParameters):
     )(null_or_none_str_to_none_validator)
 
 
-class ProjectListQueryParams(
+class ListProjectsQueryParams(
     PageQueryParameters,
-    ProjectListOrderParams,
+    ListProjectsOrderParams,
     FiltersQueryParameters[ProjectFilters],
-    ProjectListExtraQueryParams,
+    ListProjectsExtraQueryParams,
 ):
     ...
 
@@ -169,7 +169,7 @@ class ProjectActiveParams(BaseModel):
     client_session_id: str
 
 
-class ProjectListFullSearchParams(PageQueryParameters):
+class SearchProjectExtraQueryParams(PageQueryParameters):
     text: str | None = Field(
         default=None,
         description="Multi column full text search, across all folders and workspaces",
@@ -187,9 +187,7 @@ class ProjectListFullSearchParams(PageQueryParameters):
     )
 
 
-class ProjectListFullSearchWithJsonStrParams(
-    ProjectListFullSearchParams, ProjectListOrderParams
-):
+class SearchProjectsQueryParams(SearchProjectExtraQueryParams, ListProjectsOrderParams):
     def tag_ids_list(self) -> list[int]:
         try:
             # Split the tag_ids by commas and map them to integers
