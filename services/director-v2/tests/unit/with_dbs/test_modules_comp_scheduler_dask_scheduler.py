@@ -71,9 +71,6 @@ from simcore_service_director_v2.modules.comp_scheduler import (
     BaseCompScheduler,
     get_scheduler,
 )
-from simcore_service_director_v2.modules.comp_scheduler._base_scheduler import (
-    ScheduledPipelineParams,
-)
 from simcore_service_director_v2.modules.comp_scheduler._dask_scheduler import (
     DaskScheduler,
 )
@@ -165,14 +162,14 @@ async def schedule_all_pipelines(scheduler: BaseCompScheduler) -> None:
     # misconfigured pipelines that would be removed from the scheduler
     # NOTE: we simulate multiple dv-2 replicas by running several times
     # the same pipeline scheduling
-    local_pipelines = deepcopy(scheduler.scheduled_pipelines)
+    local_pipelines = deepcopy(scheduler._scheduled_pipelines)  # noqa: SLF001
     results = await asyncio.gather(
         *(
             scheduler._schedule_pipeline(  # noqa: SLF001
                 user_id=user_id,
                 project_id=project_id,
                 iteration=iteration,
-                pipeline_params=params,
+                wake_up_callback=params.scheduler_waker.set,
             )
             for _ in range(3)
             for (
@@ -256,15 +253,16 @@ def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
 
 @pytest.fixture
 def with_disabled_auto_scheduling(mocker: MockerFixture) -> mock.MagicMock:
-    """disables the scheduler task, note that it needs to be triggered manually then"""
+    """disables the scheduler task, note that it needs to be triggered manu>ally then"""
 
     def _fake_starter(
         self: BaseCompScheduler,
-        pipeline_params: ScheduledPipelineParams,
         *args,
         **kwargs,
-    ) -> None:
-        pipeline_params.scheduler_task = mocker.MagicMock()
+    ):
+        scheduler_task = mocker.MagicMock()
+        scheduler_task_wake_up_event = mocker.MagicMock()
+        return scheduler_task, scheduler_task_wake_up_event
 
     return mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler._base_scheduler.BaseCompScheduler._start_scheduling",
@@ -358,7 +356,7 @@ async def test_empty_pipeline_is_not_scheduled(
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
-    assert len(scheduler.scheduled_pipelines) == 0
+    assert len(scheduler._scheduled_pipelines) == 0  # noqa: SLF001
     # check the database is empty
     async with aiopg_engine.acquire() as conn:
         result = await conn.scalar(
@@ -397,8 +395,12 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
-    assert len(scheduler.scheduled_pipelines) == 1
-    for (u_id, p_id, it), params in scheduler.scheduled_pipelines.items():
+    assert len(scheduler._scheduled_pipelines) == 1  # noqa: SLF001
+    for (
+        u_id,
+        p_id,
+        it,
+    ), params in scheduler._scheduled_pipelines.items():  # noqa: SLF001
         assert u_id == user["id"]
         assert p_id == sleepers_project.uuid
         assert it > 0
@@ -415,7 +417,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     # let the scheduler kick in
     await schedule_all_pipelines(scheduler)
     # check the scheduled pipelines is again empty since it's misconfigured
-    assert len(scheduler.scheduled_pipelines) == 0
+    assert len(scheduler._scheduled_pipelines) == 0  # noqa: SLF001
     # check the database entry is correctly updated
     async with aiopg_engine.acquire() as conn:
         result = await conn.execute(
@@ -444,12 +446,17 @@ async def _assert_start_pipeline(
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
-    assert len(scheduler.scheduled_pipelines) == 1, "the pipeline is not scheduled!"
-    for (u_id, p_id, it), params in scheduler.scheduled_pipelines.items():
+    assert (
+        len(scheduler._scheduled_pipelines) == 1  # noqa: SLF001
+    ), "the pipeline is not scheduled!"
+    for (
+        u_id,
+        p_id,
+        it,
+    ) in scheduler._scheduled_pipelines:  # noqa: SLF001
         assert u_id == published_project.project.prj_owner
         assert p_id == published_project.project.uuid
         assert it > 0
-        assert params.run_metadata == run_metadata
 
     # check the database is correctly updated, the run is published
     await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
@@ -1017,7 +1024,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     assert isinstance(messages[1], RabbitResourceTrackingStoppedMessage)
 
     # the scheduled pipeline shall be removed
-    assert scheduler.scheduled_pipelines == {}
+    assert scheduler._scheduled_pipelines == {}  # noqa: SLF001
 
 
 async def test_task_progress_triggers(
