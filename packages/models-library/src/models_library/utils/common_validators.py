@@ -20,6 +20,8 @@ import functools
 import operator
 from typing import Any
 
+from .json_serialization import json_loads
+
 
 def empty_str_to_none_pre_validator(value: Any):
     if isinstance(value, str) and value.strip() == "":
@@ -36,6 +38,13 @@ def none_to_empty_str_pre_validator(value: Any):
 def none_to_empty_list_pre_validator(value: Any):
     if value is None:
         return []
+    return value
+
+
+def load_if_json_encoded_pre_validator(value: Any):
+    if isinstance(value, str):
+        # raises JsonEncoderError which is a TypeError
+        return json_loads(value)
     return value
 
 
