@@ -25,6 +25,7 @@ from servicelib.fastapi.http_client import (
     HealthMixinMixin,
 )
 from servicelib.fastapi.httpx_utils import to_curl_command
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from simcore_service_payments.models.schemas.acknowledgements import (
     AckPaymentWithPaymentMethod,
 )
@@ -216,5 +217,7 @@ def setup_payments_gateway(app: FastAPI):
             secret=settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()
         ),
     )
+    if settings.PAYMENTS_TRACING:
+        setup_httpx_client_tracing(api.client)
     api.attach_lifespan_to(app)
     api.set_to_app_state(app)
