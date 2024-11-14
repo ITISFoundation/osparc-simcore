@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import Depends, FastAPI, Request
 
 from ...core.settings import ComputationalBackendSettings
@@ -11,7 +13,7 @@ def get_scheduler(request: Request) -> BaseCompScheduler:
 
 
 def get_scheduler_settings(
-    app: FastAPI = Depends(get_app),
+    app: Annotated[FastAPI, Depends(get_app)]
 ) -> ComputationalBackendSettings:
     settings: ComputationalBackendSettings = (
         app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND

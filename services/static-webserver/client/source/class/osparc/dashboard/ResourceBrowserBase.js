@@ -95,7 +95,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return isLogged;
     },
 
-    startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
+    startStudyById: function(studyId, openCB, cancelCB, showStudyOptions = false) {
       if (!osparc.dashboard.ResourceBrowserBase.checkLoggedIn()) {
         return;
       }
@@ -116,7 +116,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         };
         osparc.data.Resources.fetch("studies", "getWallet", params)
           .then(wallet => {
-            if (isStudyCreation || wallet === null || osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null) {
+            if (
+              showStudyOptions ||
+              wallet === null ||
+              osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null
+            ) {
               // pop up study options if the study was just created or if it has no wallet assigned or user has no access to it
               const resourceSelector = new osparc.study.StudyOptions(studyId);
               const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
@@ -275,6 +279,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("workspaceSelected", e => {
         const workspaceId = e.getData();
         this._workspaceSelected(workspaceId);
+      }, this);
+      resourcesContainer.addListener("changeContext", e => {
+        const {
+          context,
+          workspaceId,
+          folderId,
+        } = e.getData();
+        this._changeContext(context, workspaceId, folderId);
       }, this);
       resourcesContainer.addListener("workspaceUpdated", e => this._workspaceUpdated(e.getData()));
       resourcesContainer.addListener("deleteWorkspaceRequested", e => this._deleteWorkspaceRequested(e.getData()));
@@ -472,6 +484,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _deleteResourceRequested: function(resourceId) {
+      throw new Error("Abstract method called!");
+    },
+
+    _changeContext: function(context, workspaceId, folderId) {
       throw new Error("Abstract method called!");
     },
 

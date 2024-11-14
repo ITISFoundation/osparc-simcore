@@ -60,6 +60,7 @@ async def _cancel_or_warn(task: Task) -> None:
 @dataclass
 class RedisClientSDK:
     redis_dsn: str
+    client_name: str
     decode_responses: bool = _DEFAULT_DECODE_RESPONSES
     health_check_interval: datetime.timedelta = _DEFAULT_HEALTH_CHECK_INTERVAL
 
@@ -86,7 +87,7 @@ class RedisClientSDK:
             socket_connect_timeout=_DEFAULT_SOCKET_TIMEOUT.total_seconds(),
             encoding="utf-8",
             decode_responses=self.decode_responses,
-            auto_close_connection_pool=True,
+            client_name=self.client_name,
         )
 
     @retry(**RedisRetryPolicyUponInitialization(_logger).kwargs)
@@ -238,6 +239,7 @@ class RedisClientsManager:
 
     databases_configs: set[RedisManagerDBConfig]
     settings: RedisSettings
+    client_name: str
 
     _client_sdks: dict[RedisDatabase, RedisClientSDK] = field(default_factory=dict)
 
@@ -247,6 +249,7 @@ class RedisClientsManager:
                 redis_dsn=self.settings.build_redis_dsn(config.database),
                 decode_responses=config.decode_responses,
                 health_check_interval=config.health_check_interval,
+                client_name=f"{self.client_name}",
             )
 
         for client in self._client_sdks.values():

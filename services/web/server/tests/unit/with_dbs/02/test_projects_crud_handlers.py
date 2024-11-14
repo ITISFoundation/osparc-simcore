@@ -364,9 +364,14 @@ async def test_list_projects_with_innaccessible_services(
     data, *_ = await _list_and_assert_projects(
         client, expected, headers=s4l_product_headers
     )
-    assert len(data) == 2
+    # UPDATE (use-case 4): 11.11.2024 - This test was checking backwards compatibility for listing
+    # projects that were not in the projects_to_products table. After refactoring the project listing,
+    # we no longer support this. MD double-checked the last_modified_timestamp on projects
+    # that do not have any product assigned (all of them were before 01-11-2022 with the exception of two
+    # `4b001ad2-8450-11ec-b105-02420a0b02c7` and `d952cbf4-d838-11ec-af92-02420a0bdad4` which were added to osparc product).
+    assert len(data) == 0
     data, *_ = await _list_and_assert_projects(client, expected)
-    assert len(data) == 2
+    assert len(data) == 0
 
 
 @pytest.mark.parametrize(

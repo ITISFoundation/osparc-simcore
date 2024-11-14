@@ -25,9 +25,11 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
       layout: new qx.ui.layout.VBox(5)
     });
 
-    this.__studyData = studyData;
+    this.__nodePricingUnits = [];
 
-    this.__showPricingUnits();
+    if (studyData) {
+      this.setStudyData(studyData);
+    }
   },
 
   events: {
@@ -35,8 +37,20 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
     "unitsReady": "qx.event.type.Event"
   },
 
+  statics: {
+    includeInList: function(node) {
+      return !osparc.data.model.Node.isFrontend(node);
+    },
+  },
+
   members: {
     __studyData: null,
+    __nodePricingUnits: null,
+
+    setStudyData: function(studyData) {
+      this.__studyData = studyData;
+      this.__showPricingUnits();
+    },
 
     __showPricingUnits: function() {
       const unitsLoading = () => this.fireEvent("loadingUnits");
@@ -48,16 +62,20 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
         const workbench = this.__studyData["workbench"];
         Object.keys(workbench).forEach(nodeId => {
           const node = workbench[nodeId];
-          if (osparc.data.model.Node.isFrontend(node)) {
-            return;
+          if (this.self().includeInList(node)) {
+            const nodePricingUnits = new osparc.study.NodePricingUnits(this.__studyData["uuid"], nodeId, node);
+            this.__nodePricingUnits.push(nodePricingUnits);
+            this._add(nodePricingUnits);
+            promises.push(nodePricingUnits.showPricingUnits());
           }
-          const nodePricingUnits = new osparc.study.NodePricingUnits(this.__studyData["uuid"], nodeId, node);
-          this._add(nodePricingUnits);
-          promises.push(nodePricingUnits.showPricingUnits());
         });
       }
       Promise.all(promises)
         .then(() => unitsAdded());
-    }
+    },
+
+    getNodePricingUnits: function() {
+      return this.__nodePricingUnits;
+    },
   }
 });
