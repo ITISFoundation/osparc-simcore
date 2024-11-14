@@ -191,7 +191,7 @@ class FileUploadQueryParams(StorageQueryParamsBase):
     def when_directory_force_link_type_and_file_size(cls, data: Any) -> Any:
         assert isinstance(data, dict)
 
-        if bool(data.get("is_directory", False)) is True:
+        if TypeAdapter(bool).validate_python(data.get("is_directory", "false")):
             # sets directory size by default to undefined
             if int(data.get("file_size", -1)) < 0:
                 data["file_size"] = None
