@@ -80,7 +80,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[str]:
 
 @pytest.fixture(scope="module")
 def node_uuid() -> NodeIDStr:
-    return NodeIDStr(f"{uuid4()}")
+    return TypeAdapter(NodeIDStr).validate_python(uuid4())
 
 
 @pytest.fixture(scope="session")
@@ -156,7 +156,7 @@ def create_store_link(
                 "Content-Type": "application/binary",
             }
             async with session.put(
-                link, data=file_path.read_bytes(), headers=extra_hdr
+                f"{link}", data=file_path.read_bytes(), headers=extra_hdr
             ) as resp:
                 resp.raise_for_status()
 

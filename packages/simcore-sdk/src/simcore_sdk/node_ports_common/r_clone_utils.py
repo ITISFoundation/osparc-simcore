@@ -78,9 +78,7 @@ class SyncProgressLogParser(BaseLogParser):
         with log_catch(_logger, reraise=False):
             rclone_message: _RCloneSyncMessages = TypeAdapter(
                 _RCloneSyncMessages
-            ).validate_strings(
-                logs,
-            )
+            ).validate_json(logs)
 
             if isinstance(rclone_message, _RCloneSyncTransferringMessage):
                 await self.progress_bar.set_(rclone_message.stats.bytes)

@@ -69,18 +69,18 @@ async def _complete_upload(
     :rtype: ETag
     """
     async with session.post(
-        _get_https_link_if_storage_secure(str(upload_completion_link)),
+        _get_https_link_if_storage_secure(f"{upload_completion_link}"),
         json=jsonable_encoder(FileUploadCompletionBody(parts=parts)),
         auth=get_basic_auth(),
     ) as resp:
         resp.raise_for_status()
         # now poll for state
-        file_upload_complete_response = TypeAdapter(Envelope[FileUploadCompleteResponse]).validate_python(
-            await resp.json()
-        )
+        file_upload_complete_response = TypeAdapter(
+            Envelope[FileUploadCompleteResponse]
+        ).validate_python(await resp.json())
         assert file_upload_complete_response.data  # nosec
     state_url = _get_https_link_if_storage_secure(
-        str(file_upload_complete_response.data.links.state)
+        f"{file_upload_complete_response.data.links.state}"
     )
     _logger.info("completed upload of %s", f"{len(parts)} parts, received {state_url}")
 
@@ -96,9 +96,9 @@ async def _complete_upload(
         with attempt:
             async with session.post(state_url, auth=get_basic_auth()) as resp:
                 resp.raise_for_status()
-                future_enveloped = TypeAdapter(Envelope[FileUploadCompleteFutureResponse]).validate_python(
-                    await resp.json()
-                )
+                future_enveloped = TypeAdapter(
+                    Envelope[FileUploadCompleteFutureResponse]
+                ).validate_python(await resp.json())
                 assert future_enveloped.data  # nosec
                 if future_enveloped.data.state == FileUploadCompleteState.NOK:
                     msg = "upload not ready yet"
@@ -142,7 +142,8 @@ async def _abort_upload(
     # abort the upload correctly, so it can revert back to last version
     try:
         async with session.post(
-            _get_https_link_if_storage_secure(str(abort_upload_link)), auth=get_basic_auth()
+            _get_https_link_if_storage_secure(f"{abort_upload_link}"),
+            auth=get_basic_auth(),
         ) as resp:
             resp.raise_for_status()
     except ClientError:

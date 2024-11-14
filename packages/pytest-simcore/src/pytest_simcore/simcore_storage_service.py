@@ -45,22 +45,24 @@ async def storage_service(
 ) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
 
-    def correct_ip(url: AnyUrl):
+    def _replace_storage_endpoint(url: str) -> str:
+        url_obj = TypeAdapter(AnyUrl).validate_python(url)
         assert storage_endpoint.host is not None
         assert storage_endpoint.port is not None
 
-        return AnyUrl.build(
-            scheme=url.scheme,
+        storage_endpoint_url = AnyUrl.build(
+            scheme=url_obj.scheme,
             host=storage_endpoint.host,
-            port=f"{storage_endpoint.port}",
-            path=url.path,
-            query=url.query,
+            port=storage_endpoint.port,
+            path=url_obj.path.lstrip("/"),
+            query=url_obj.query,
         )
+        return f"{storage_endpoint_url}"
 
     # NOTE: Mock to ensure container IP agrees with host IP when testing
     mocker.patch(
         "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
-        correct_ip,
+        _replace_storage_endpoint,
     )
 
     return storage_endpoint
