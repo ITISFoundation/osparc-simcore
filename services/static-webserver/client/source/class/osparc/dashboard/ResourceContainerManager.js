@@ -446,6 +446,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           let groupContainer = this.__getGroupContainer(tag.getTagId());
           if (groupContainer === null) {
             groupContainer = this.__createGroupContainer(tag.getTagId(), tag.getName(), tag.getColor());
+            tag.bind("name", groupContainer, "headerLabel");
+            tag.bind("color", groupContainer, "headerColor");
             groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
             this.__groupedContainers.add(groupContainer);
             this.__groupedContainers.getChildren().sort((a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel()));
