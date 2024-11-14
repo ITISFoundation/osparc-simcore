@@ -309,10 +309,13 @@ qx.Class.define("osparc.form.tag.TagItem", {
      * Creates an object containing the udpated tag info
      */
     __serializeData: function() {
+      const name = this.getChildControl("nameinput").getValue();
+      const description = this.getChildControl("descriptioninput").getValue();
+      const color = this.getChildControl("colorinput").getValue();
       return {
-        name: this.getChildControl("nameinput").getValue().trim(),
-        description: this.getChildControl("descriptioninput").getValue().trim(),
-        color: this.getChildControl("colorinput").getValue()
+        name: name.trim(),
+        description: description ? description.trim() : "",
+        color: color
       };
     },
     _applyMode: function() {
