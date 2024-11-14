@@ -17,8 +17,9 @@ import datetime
 import functools
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Final
+from typing import Final, TypeAlias
 
 import arrow
 import networkx as nx
@@ -87,6 +88,9 @@ _TASK_NAME_TEMPLATE: Final[
     str
 ] = "computational-scheduler-{user_id}:{project_id}:{iteration}"
 
+PipelineSchedulingTask: TypeAlias = asyncio.Task
+PipelineSchedulingWakeUpEvent: TypeAlias = asyncio.Event
+
 
 @dataclass(frozen=True, slots=True)
 class SortedTasks:
@@ -139,8 +143,8 @@ async def _triage_changed_tasks(
 
 @dataclass(kw_only=True)
 class ScheduledPipelineParams:
-    scheduler_task: asyncio.Task | None = None
-    scheduler_waker: asyncio.Event = field(default_factory=asyncio.Event)
+    scheduler_task: asyncio.Task
+    scheduler_waker: asyncio.Event
 
     def wake_up(self) -> None:
         self.scheduler_waker.set()
@@ -169,31 +173,19 @@ class BaseCompScheduler(ABC):
             filter_by_state=SCHEDULED_STATES
         )
 
-        self._scheduled_pipelines |= {
-            (
-                run.user_id,
-                run.project_uuid,
-                run.iteration,
-            ): ScheduledPipelineParams()
-            for run in comp_runs
-        }
-
-        for (
-            user_id,
-            project_id,
-            iteration,
-        ), params in self._scheduled_pipelines.items():
-            self._start_scheduling(params, user_id, project_id, iteration)
-
-    async def start_scheduling(self) -> None:
-        await self.restore_scheduling_from_db()
-
-        for (
-            user_id,
-            project_id,
-            iteration,
-        ), params in self._scheduled_pipelines.items():
-            self._start_scheduling(params, user_id, project_id, iteration)
+        for run in comp_runs:
+            task, wake_up_event = self._start_scheduling(
+                run.user_id, run.project_uuid, run.iteration
+            )
+            self._scheduled_pipelines |= {
+                (
+                    run.user_id,
+                    run.project_uuid,
+                    run.iteration,
+                ): ScheduledPipelineParams(
+                    scheduler_task=task, scheduler_waker=wake_up_event
+                )
+            }
 
     async def run_new_pipeline(
         self,
@@ -224,9 +216,12 @@ class BaseCompScheduler(ABC):
             metadata=run_metadata,
             use_on_demand_clusters=use_on_demand_clusters,
         )
+        task, wake_up_event = self._start_scheduling(
+            user_id, project_id, new_run.iteration
+        )
         self._scheduled_pipelines[
             (user_id, project_id, new_run.iteration)
-        ] = pipeline_params = ScheduledPipelineParams()
+        ] = ScheduledPipelineParams(scheduler_task=task, scheduler_waker=wake_up_event)
         await publish_project_log(
             self.rabbitmq_client,
             user_id,
@@ -234,8 +229,6 @@ class BaseCompScheduler(ABC):
             log=f"Project pipeline scheduled using {'on-demand clusters' if use_on_demand_clusters else 'pre-defined clusters'}, starting soon...",
             log_level=logging.INFO,
         )
-
-        self._start_scheduling(pipeline_params, user_id, project_id, new_run.iteration)
 
     async def stop_pipeline(
         self, user_id: UserID, project_id: ProjectID, iteration: int | None = None
@@ -293,11 +286,10 @@ class BaseCompScheduler(ABC):
 
     def _start_scheduling(
         self,
-        pipeline_params: ScheduledPipelineParams,
         user_id: UserID,
         project_id: ProjectID,
         iteration: Iteration,
-    ) -> None:
+    ) -> tuple[PipelineSchedulingTask, PipelineSchedulingWakeUpEvent]:
         async def _exclusive_safe_schedule_pipeline(
             *,
             user_id: UserID,
@@ -313,20 +305,22 @@ class BaseCompScheduler(ABC):
                     wake_up_callback=wake_up_callback,
                 )
 
-        pipeline_params.scheduler_task = start_periodic_task(
+        pipeline_wake_up_event = asyncio.Event()
+        pipeline_task = start_periodic_task(
             functools.partial(
                 _exclusive_safe_schedule_pipeline,
                 user_id=user_id,
                 project_id=project_id,
                 iteration=iteration,
-                wake_up_callback=pipeline_params.wake_up,
+                wake_up_callback=pipeline_wake_up_event.set,
             ),
             interval=_SCHEDULER_INTERVAL,
             task_name=_TASK_NAME_TEMPLATE.format(
                 user_id=user_id, project_id=project_id, iteration=iteration
             ),
-            early_wake_up_event=pipeline_params.scheduler_waker,
+            early_wake_up_event=pipeline_wake_up_event,
         )
+        return pipeline_task, pipeline_wake_up_event
 
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
         comp_pipeline_repo = CompPipelinesRepository.instance(self.db_engine)
