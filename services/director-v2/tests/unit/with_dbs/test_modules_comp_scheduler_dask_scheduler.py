@@ -400,7 +400,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         u_id,
         p_id,
         it,
-    ), params in scheduler._scheduled_pipelines.items():  # noqa: SLF001
+    ) in scheduler._scheduled_pipelines:  # noqa: SLF001
         assert u_id == user["id"]
         assert p_id == sleepers_project.uuid
         assert it > 0
