@@ -278,7 +278,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
             scheduler_data.proxy_service_name = localhost_ip
             scheduler_data.proxy_admin_api_port = proxy_published_port
 
-    endpoint = scheduler_data.endpoint
+    endpoint = f"{scheduler_data.endpoint}".rstrip("/")
     assert endpoint == f"http://{localhost_ip}:{sidecar_published_port}"
     return endpoint
 
