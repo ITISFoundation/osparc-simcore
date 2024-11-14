@@ -38,7 +38,7 @@ SETUP = {
     "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
     "author": "Pedro Crespo-Valero (pcrespov)",
     "description": "simcore library for user notifications e.g. emails, sms, etc",
-    "python_requires": "~=3.10",
+    "python_requires": "~=3.11",
     "classifiers": [
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
