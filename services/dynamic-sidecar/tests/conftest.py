@@ -199,6 +199,7 @@ def base_mock_envs(
                 "REGISTRY_SSL": "false",
             }
         ),
+        "DYNAMIC_SIDECAR_TRACING": "null",
     }
 
 

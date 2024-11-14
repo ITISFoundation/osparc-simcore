@@ -6,6 +6,7 @@ from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.rabbit import RabbitSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
@@ -75,6 +76,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AGENT_RABBITMQ: RabbitSettings = Field(
         auto_default_from_env=True, description="settings for service/rabbitmq"
+    )
+
+    AGENT_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
     )
 
     @validator("LOGLEVEL")
