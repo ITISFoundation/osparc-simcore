@@ -20,8 +20,6 @@ from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
-    RequestParams,
-    StrictRequestParams,
     parse_request_body_as,
     parse_request_headers_as,
     parse_request_path_parameters_as,
