@@ -113,6 +113,7 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     workspace_query: WorkspaceQuery,
     # attribute filters
     filter_trashed: bool | None,
+    filter_by_text: str | None,
     # pagination
     offset: NonNegativeInt,
     limit: int,
@@ -177,6 +178,12 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
                 & (folders_v2.c.user_id.is_(None))
             )
         )
+
+        if workspace_query.workspace_scope == WorkspaceScope.SHARED:
+            shared_workspace_query = shared_workspace_query.where(
+                folders_v2.c.workspace_id == workspace_query.workspace_id
+            )
+
     else:
         shared_workspace_query = None
 
@@ -199,6 +206,8 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
         else:
             assert folder_query.folder_scope == FolderScope.ROOT  # nosec
             attributes_filters.append(folders_v2.c.parent_folder_id.is_(None))
+    if filter_by_text:
+        attributes_filters.append(folders_v2.c.name.ilike(f"%{filter_by_text}%"))
 
     ###
     # Combined

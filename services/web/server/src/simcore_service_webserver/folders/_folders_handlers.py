@@ -119,6 +119,7 @@ async def list_folders_full_search(request: web.Request):
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
+        text=query_params.text,
         trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
