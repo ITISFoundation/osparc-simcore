@@ -216,7 +216,7 @@ qx.Class.define("osparc.info.StudyUtils", {
             if (tagsContainer.indexOf(noTagsLabel) > -1) {
               tagsContainer.remove(noTagsLabel);
             }
-            tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
+            tagsContainer.add(new osparc.ui.basic.Tag(selectedTag));
           });
       };
       study.addListener("changeTags", () => addTags(study), this);
