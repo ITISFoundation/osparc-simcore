@@ -12,7 +12,9 @@ The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 """
 
 import asyncio
+import contextlib
 import datetime
+import functools
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -29,9 +31,12 @@ from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.users import UserID
 from networkx.classes.reportviews import InDegreeView
 from pydantic import PositiveInt
+from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
-from servicelib.utils import limited_gather
+from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK
+from servicelib.redis_utils import exclusive
 
 from ...constants import UNDEFINED_STR_METADATA
 from ...core.errors import (
@@ -76,6 +81,10 @@ _logger = logging.getLogger(__name__)
 _Previous = CompTaskAtDB
 _Current = CompTaskAtDB
 _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
+_SCHEDULER_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
+_TASK_NAME_TEMPLATE: Final[
+    str
+] = "computational-scheduler-{user_id}:{project_id}:{iteration}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,6 +143,12 @@ class ScheduledPipelineParams:
     mark_for_cancellation: datetime.datetime | None
     use_on_demand_clusters: bool
 
+    scheduler_task: asyncio.Task | None = None
+    scheduler_waker: asyncio.Event = field(default_factory=asyncio.Event)
+
+    def wake_up(self) -> None:
+        self.scheduler_waker.set()
+
 
 @dataclass
 class BaseCompScheduler(ABC):
@@ -146,6 +161,7 @@ class BaseCompScheduler(ABC):
     rabbitmq_rpc_client: RabbitMQRPCClient
     settings: ComputationalBackendSettings
     service_runtime_heartbeat_interval: datetime.timedelta
+    redis_client: RedisClientSDK
 
     async def run_new_pipeline(
         self,
@@ -178,7 +194,7 @@ class BaseCompScheduler(ABC):
         )
         self.scheduled_pipelines[
             (user_id, project_id, new_run.iteration)
-        ] = ScheduledPipelineParams(
+        ] = pipeline_params = ScheduledPipelineParams(
             cluster_id=cluster_id,
             run_metadata=new_run.metadata,
             use_on_demand_clusters=use_on_demand_clusters,
@@ -191,8 +207,8 @@ class BaseCompScheduler(ABC):
             log=f"Project pipeline scheduled using {'on-demand clusters' if use_on_demand_clusters else 'pre-defined clusters'}, starting soon...",
             log_level=logging.INFO,
         )
-        # ensure the scheduler starts right away
-        self._wake_up_scheduler_now()
+
+        self._start_scheduling(pipeline_params, user_id, project_id, new_run.iteration)
 
     async def stop_pipeline(
         self, user_id: UserID, project_id: ProjectID, iteration: int | None = None
@@ -224,29 +240,76 @@ class BaseCompScheduler(ABC):
                 (user_id, project_id, selected_iteration)
             ].mark_for_cancellation = updated_comp_run.cancelled
             # ensure the scheduler starts right away
-            self._wake_up_scheduler_now()
+            self.scheduled_pipelines[
+                (user_id, project_id, selected_iteration)
+            ].wake_up()
 
-    async def schedule_all_pipelines(self) -> None:
-        self.wake_up_event.clear()
-        # if one of the task throws, the other are NOT cancelled which is what we want
-        await limited_gather(
+    def recover_scheduling(self) -> None:
+        for (
+            user_id,
+            project_id,
+            iteration,
+        ), params in self.scheduled_pipelines.items():
+            self._start_scheduling(params, user_id, project_id, iteration)
+
+    async def shutdown(self) -> None:
+        # cancel all current scheduling processes
+        await asyncio.gather(
             *(
-                self._schedule_pipeline(
+                stop_periodic_task(p.scheduler_task, timeout=3)
+                for p in self.scheduled_pipelines.values()
+                if p.scheduler_task
+            ),
+            return_exceptions=True,
+        )
+
+    def _get_last_iteration(self, user_id: UserID, project_id: ProjectID) -> Iteration:
+        # if no iteration given find the latest one in the list
+        possible_iterations = {
+            it
+            for u_id, p_id, it in self.scheduled_pipelines
+            if u_id == user_id and p_id == project_id
+        }
+        if not possible_iterations:
+            msg = f"There are no pipeline scheduled for {user_id}:{project_id}"
+            raise SchedulerError(msg)
+        return max(possible_iterations)
+
+    def _start_scheduling(
+        self,
+        pipeline_params: ScheduledPipelineParams,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: Iteration,
+    ) -> None:
+        async def _exclusive_safe_schedule_pipeline(
+            *,
+            user_id: UserID,
+            project_id: ProjectID,
+            iteration: Iteration,
+            pipeline_params: ScheduledPipelineParams,
+        ) -> None:
+            with contextlib.suppress(CouldNotAcquireLockError):
+                await self._schedule_pipeline(
                     user_id=user_id,
                     project_id=project_id,
                     iteration=iteration,
                     pipeline_params=pipeline_params,
                 )
-                for (
-                    user_id,
-                    project_id,
-                    iteration,
-                ), pipeline_params in self.scheduled_pipelines.items()
+
+        pipeline_params.scheduler_task = start_periodic_task(
+            functools.partial(
+                _exclusive_safe_schedule_pipeline,
+                user_id=user_id,
+                project_id=project_id,
+                iteration=iteration,
+                pipeline_params=pipeline_params,
             ),
-            reraise=False,
-            log=_logger,
-            limit=40,
-            tasks_group_prefix="computational-scheduled-pipeline",
+            interval=_SCHEDULER_INTERVAL,
+            task_name=_TASK_NAME_TEMPLATE.format(
+                user_id=user_id, project_id=project_id, iteration=iteration
+            ),
+            early_wake_up_event=pipeline_params.scheduler_waker,
         )
 
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
@@ -610,6 +673,22 @@ class BaseCompScheduler(ABC):
     ) -> None:
         ...
 
+    @staticmethod
+    def _build_exclusive_lock_key(*args, **kwargs) -> str:
+        assert args  # nosec
+        return f"{kwargs['user_id']}:{kwargs['project_id']}:{kwargs['iteration']}"
+
+    @staticmethod
+    def _redis_client_getter(*args, **kwargs) -> RedisClientSDK:
+        assert kwargs  # nosec
+        zelf = args[0]
+        assert isinstance(zelf, BaseCompScheduler)  # nosec
+        return zelf.redis_client
+
+    @exclusive(
+        redis=_redis_client_getter,
+        lock_key=_build_exclusive_lock_key,
+    )
     async def _schedule_pipeline(
         self,
         *,
@@ -618,98 +697,99 @@ class BaseCompScheduler(ABC):
         iteration: PositiveInt,
         pipeline_params: ScheduledPipelineParams,
     ) -> None:
-        _logger.debug(
-            "checking run of project [%s:%s] for user [%s]",
-            f"{project_id=}",
-            f"{iteration=}",
-            f"{user_id=}",
-        )
-        dag: nx.DiGraph = nx.DiGraph()
-        try:
-            dag = await self._get_pipeline_dag(project_id)
-            # 1. Update our list of tasks with data from backend (state, results)
-            await self._update_states_from_comp_backend(
-                user_id, project_id, iteration, dag, pipeline_params=pipeline_params
-            )
-            # 2. Any task following a FAILED task shall be ABORTED
-            comp_tasks = await self._set_states_following_failed_to_aborted(
-                project_id, dag
-            )
-            # 3. do we want to stop the pipeline now?
-            if pipeline_params.mark_for_cancellation:
-                await self._schedule_tasks_to_stop(
-                    user_id, project_id, comp_tasks, pipeline_params
+        with log_context(
+            _logger,
+            level=logging.INFO,
+            msg=f"scheduling pipeline {user_id=}:{project_id=}:{iteration=}",
+        ):
+            dag: nx.DiGraph = nx.DiGraph()
+            try:
+                dag = await self._get_pipeline_dag(project_id)
+                # 1. Update our list of tasks with data from backend (state, results)
+                await self._update_states_from_comp_backend(
+                    user_id, project_id, iteration, dag, pipeline_params=pipeline_params
                 )
-            else:
-                # let's get the tasks to schedule then
-                comp_tasks = await self._schedule_tasks_to_start(
-                    user_id=user_id,
-                    project_id=project_id,
-                    comp_tasks=comp_tasks,
-                    dag=dag,
-                    pipeline_params=pipeline_params,
+                # 2. Any task following a FAILED task shall be ABORTED
+                comp_tasks = await self._set_states_following_failed_to_aborted(
+                    project_id, dag
                 )
-            # 4. timeout if waiting for cluster has been there for more than X minutes
-            comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
-                user_id, project_id, comp_tasks
-            )
-            # 5. send a heartbeat
-            await self._send_running_tasks_heartbeat(
-                user_id, project_id, iteration, dag
-            )
+                # 3. do we want to stop the pipeline now?
+                if pipeline_params.mark_for_cancellation:
+                    await self._schedule_tasks_to_stop(
+                        user_id, project_id, comp_tasks, pipeline_params
+                    )
+                else:
+                    # let's get the tasks to schedule then
+                    comp_tasks = await self._schedule_tasks_to_start(
+                        user_id=user_id,
+                        project_id=project_id,
+                        comp_tasks=comp_tasks,
+                        dag=dag,
+                        pipeline_params=pipeline_params,
+                    )
+                # 4. timeout if waiting for cluster has been there for more than X minutes
+                comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
+                    user_id, project_id, comp_tasks
+                )
+                # 5. send a heartbeat
+                await self._send_running_tasks_heartbeat(
+                    user_id, project_id, iteration, dag
+                )
 
-            # 6. Update the run result
-            pipeline_result = await self._update_run_result_from_tasks(
-                user_id, project_id, iteration, comp_tasks
-            )
+                # 6. Update the run result
+                pipeline_result = await self._update_run_result_from_tasks(
+                    user_id, project_id, iteration, comp_tasks
+                )
 
-            # 7. Are we done scheduling that pipeline?
-            if not dag.nodes() or pipeline_result in COMPLETED_STATES:
-                # there is nothing left, the run is completed, we're done here
-                self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
-                _logger.info(
-                    "pipeline %s scheduling completed with result %s",
+                # 7. Are we done scheduling that pipeline?
+                if not dag.nodes() or pipeline_result in COMPLETED_STATES:
+                    # there is nothing left, the run is completed, we're done here
+                    self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+                    _logger.info(
+                        "pipeline %s scheduling completed with result %s",
+                        f"{project_id=}",
+                        f"{pipeline_result=}",
+                    )
+                    assert pipeline_params.scheduler_task is not None  # nosec
+                    pipeline_params.scheduler_task.cancel()
+            except PipelineNotFoundError:
+                _logger.warning(
+                    "pipeline %s does not exist in comp_pipeline table, it will be removed from scheduler",
                     f"{project_id=}",
-                    f"{pipeline_result=}",
                 )
-        except PipelineNotFoundError:
-            _logger.warning(
-                "pipeline %s does not exist in comp_pipeline table, it will be removed from scheduler",
-                f"{project_id=}",
-            )
-            await self._set_run_result(
-                user_id, project_id, iteration, RunningState.ABORTED
-            )
-            self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
-        except InvalidPipelineError as exc:
-            _logger.warning(
-                "pipeline %s appears to be misconfigured, it will be removed from scheduler. Please check pipeline:\n%s",
-                f"{project_id=}",
-                exc,
-            )
-            await self._set_run_result(
-                user_id, project_id, iteration, RunningState.ABORTED
-            )
-            self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
-        except (DaskClientAcquisisitonError, ClustersKeeperNotAvailableError):
-            _logger.exception(
-                "Unexpected error while connecting with computational backend, aborting pipeline"
-            )
-            tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(
-                project_id, dag
-            )
-            comp_tasks_repo = CompTasksRepository(self.db_engine)
-            await comp_tasks_repo.update_project_tasks_state(
-                project_id,
-                [t.node_id for t in tasks.values()],
-                RunningState.FAILED,
-            )
-            await self._set_run_result(
-                user_id, project_id, iteration, RunningState.FAILED
-            )
-            self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
-        except ComputationalBackendNotConnectedError:
-            _logger.exception("Computational backend is not connected!")
+                await self._set_run_result(
+                    user_id, project_id, iteration, RunningState.ABORTED
+                )
+                self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+            except InvalidPipelineError as exc:
+                _logger.warning(
+                    "pipeline %s appears to be misconfigured, it will be removed from scheduler. Please check pipeline:\n%s",
+                    f"{project_id=}",
+                    exc,
+                )
+                await self._set_run_result(
+                    user_id, project_id, iteration, RunningState.ABORTED
+                )
+                self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+            except (DaskClientAcquisisitonError, ClustersKeeperNotAvailableError):
+                _logger.exception(
+                    "Unexpected error while connecting with computational backend, aborting pipeline"
+                )
+                tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(
+                    project_id, dag
+                )
+                comp_tasks_repo = CompTasksRepository(self.db_engine)
+                await comp_tasks_repo.update_project_tasks_state(
+                    project_id,
+                    [t.node_id for t in tasks.values()],
+                    RunningState.FAILED,
+                )
+                await self._set_run_result(
+                    user_id, project_id, iteration, RunningState.FAILED
+                )
+                self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+            except ComputationalBackendNotConnectedError:
+                _logger.exception("Computational backend is not connected!")
 
     async def _schedule_tasks_to_stop(
         self,
@@ -910,6 +990,3 @@ class BaseCompScheduler(ABC):
                     log_level=logging.ERROR,
                 )
         return comp_tasks
-
-    def _wake_up_scheduler_now(self) -> None:
-        self.wake_up_event.set()
