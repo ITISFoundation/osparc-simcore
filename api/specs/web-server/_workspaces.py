@@ -23,9 +23,17 @@ from simcore_service_webserver.workspaces._models import (
     WorkspacesFilters,
     WorkspacesGroupsBodyParams,
     WorkspacesGroupsPathParams,
-    WorkspacesListWithJsonStrQueryParams,
+    WorkspacesOrderByJsonQueryParams,
     WorkspacesPathParams,
 )
+
+
+class _ListQueryParams(WorkspacesOrderByJsonQueryParams):
+    filters: Annotated[
+        Json | None,
+        Query(description=WorkspacesFilters.schema_json(indent=1)),
+    ] = None
+
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -51,21 +59,7 @@ async def create_workspace(
     response_model=Envelope[list[WorkspaceGet]],
 )
 async def list_workspaces(
-    order_by: Annotated[
-        Json,
-        Query(
-            description=WorkspacesListWithJsonStrQueryParams.__fields__[
-                "order_by"
-            ].field_info.description,
-            example=WorkspacesListWithJsonStrQueryParams.__fields__[
-                "order_by"
-            ].field_info.extra.get("example"),
-        ),
-    ] = WorkspacesListWithJsonStrQueryParams.__fields__["order_by"].field_info.default,
-    filters: Annotated[
-        Json | None,
-        Query(description=WorkspacesFilters.schema_json(indent=1)),
-    ] = None,
+    _q: Annotated[_ListQueryParams, Depends()],
 ):
     ...
 

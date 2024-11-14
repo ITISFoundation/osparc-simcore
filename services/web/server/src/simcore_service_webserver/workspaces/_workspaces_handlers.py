@@ -72,6 +72,7 @@ async def list_workspaces(request: web.Request):
     if not query_params.filters:
         query_params.filters = WorkspacesFilters()
 
+    assert query_params.filters
     workspaces: WorkspaceGetPage = await _workspaces_api.list_workspaces(
         app=request.app,
         user_id=req_ctx.user_id,
