@@ -32,6 +32,7 @@ qx.Class.define("osparc.data.model.Tag", {
       tagId: tagData.id,
       name: tagData.name,
       description: tagData.description,
+      color: tagData.color,
       accessRights: tagData.accessRights,
     });
   },
@@ -53,7 +54,7 @@ qx.Class.define("osparc.data.model.Tag", {
 
     description: {
       check: "String",
-      nullable: false,
+      nullable: true,
       init: null,
       event: "changeDescription"
     },

@@ -50,7 +50,12 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       osparc.utils.Utils.setIdToWidget(this.__addTagButton, "addTagBtn");
       osparc.data.Resources.get("tags")
         .then(tags => {
-          this.__tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({...tag}));
+          this.__tagItems = tags.map(tagData => {
+            const tag = new osparc.data.model.Tag(tagData);
+            return new osparc.form.tag.TagItem().set({
+              tag
+            });
+          });
           this.__renderLayout();
           this.__attachEventHandlers();
         })

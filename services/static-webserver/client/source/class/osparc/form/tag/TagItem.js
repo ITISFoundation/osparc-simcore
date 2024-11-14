@@ -26,6 +26,14 @@ qx.Class.define("osparc.form.tag.TagItem", {
   },
 
   properties: {
+    tag: {
+      check: "osparc.data.model.Tag",
+      nullable: false,
+      init: null,
+      event: "changeTag",
+      apply: "__applyTag",
+    },
+
     id: {
       check: "Integer"
     },
@@ -156,6 +164,14 @@ qx.Class.define("osparc.form.tag.TagItem", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __applyTag: function(tag) {
+      tag.bind("tagId", this, "id");
+      tag.bind("name", this, "name");
+      tag.bind("description", this, "description");
+      tag.bind("color", this, "color");
+      tag.bind("accessRights", this, "accessRights");
     },
 
     /**
