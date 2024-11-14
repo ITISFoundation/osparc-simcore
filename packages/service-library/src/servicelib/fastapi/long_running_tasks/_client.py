@@ -140,7 +140,7 @@ class Client:
     ) -> TaskStatus:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.get(
-            self._get_url(f"/task/{task_id}"),
+            self._get_url(f"task/{task_id}"),
             timeout=timeout,
         )
         if result.status_code != status.HTTP_200_OK:
@@ -159,7 +159,7 @@ class Client:
     ) -> Any | None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.get(
-            self._get_url(f"/task/{task_id}/result"),
+            self._get_url(f"task/{task_id}/result"),
             timeout=timeout,
         )
         if result.status_code != status.HTTP_200_OK:
@@ -181,7 +181,7 @@ class Client:
     ) -> None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.delete(
-            self._get_url(f"/task/{task_id}"),
+            self._get_url(f"task/{task_id}"),
             timeout=timeout,
         )
 
