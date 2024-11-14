@@ -22,6 +22,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
     this.base(arguments);
 
     this.set({
+      margin: 4,
       maxWidth: this.self().MAX_WIDTH,
       padding: this.self().PADDING,
       cursor: "pointer"
@@ -216,9 +217,14 @@ qx.Class.define("osparc.notification.NotificationUI", {
         }
       });
 
-      notification.bind("read", this, "backgroundColor", {
-        converter: read => read ? "background-main-3" : "background-main-4"
-      });
+      const highlight = mouseOn => {
+        this.set({
+          backgroundColor: mouseOn ? "strong-main" : "transparent"
+        })
+      };
+      this.addListener("mouseover", () => highlight(true));
+      this.addListener("mouseout", () => highlight(false));
+      highlight(false);
     },
 
     __notificationTapped: function() {
