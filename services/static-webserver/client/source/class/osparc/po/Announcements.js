@@ -70,8 +70,6 @@ qx.Class.define("osparc.po.Announcements", {
       });
       form.add(link, this.tr("Link"));
 
-      // "widgets": ["login", "ribbon"],
-
       const widgetLogin = new qx.ui.form.CheckBox().set({
         value: false
       });
@@ -86,6 +84,19 @@ qx.Class.define("osparc.po.Announcements", {
         value: false
       });
       form.add(widgetUserMenu, this.tr("User Menu"));
+
+      const dateFormat = new qx.util.format.DateFormat("dd/MM/yyyy");
+      const now = new Date();
+
+      const start = new qx.ui.form.DateField();
+      start.setDateFormat(dateFormat);
+      start.setValue(now);
+      form.add(start, this.tr("Start"));
+
+      const end = new qx.ui.form.DateField();
+      start.setDateFormat(dateFormat);
+      start.setValue(now);
+      form.add(end, this.tr("End"));
 
       const generateAnnouncementBtn = new osparc.ui.form.FetchButton(this.tr("Generate"));
       generateAnnouncementBtn.set({
@@ -108,8 +119,8 @@ qx.Class.define("osparc.po.Announcements", {
           "title": title.getValue(),
           "description": description.getValue(),
           "widgets": JSON.stringify(widgets),
-          "start": "now",
-          "end": "later",
+          "start": start.getValue(),
+          "end": end.getValue(),
         };
         this.__populateAnnouncementLayout(announcementData);
       }, this);
