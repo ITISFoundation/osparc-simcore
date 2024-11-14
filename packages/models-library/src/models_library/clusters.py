@@ -2,6 +2,7 @@ from enum import auto
 from pathlib import Path
 from typing import Final, Literal, TypeAlias
 
+from models_library.utils._original_fastapi_encoders import jsonable_encoder
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -224,6 +225,8 @@ class Cluster(BaseCluster):
     @model_validator(mode="before")
     @classmethod
     def check_owner_has_access_rights(cls, values):
+        values = jsonable_encoder(values)
+
         is_default_cluster = bool(values["id"] == DEFAULT_CLUSTER_ID)
         owner_gid = values["owner"]
 
@@ -231,11 +234,15 @@ class Cluster(BaseCluster):
         access_rights = values.get("access_rights", values.get("accessRights", {}))
         if owner_gid not in access_rights:
             access_rights[owner_gid] = (
-                CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
+                CLUSTER_USER_RIGHTS.model_dump()
+                if is_default_cluster
+                else CLUSTER_ADMIN_RIGHTS.model_dump()
             )
         # check owner has the expected access
         if access_rights[owner_gid] != (
-            CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
+            CLUSTER_USER_RIGHTS.model_dump()
+            if is_default_cluster
+            else CLUSTER_ADMIN_RIGHTS.model_dump()
         ):
             msg = f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
             raise ValueError(msg)
