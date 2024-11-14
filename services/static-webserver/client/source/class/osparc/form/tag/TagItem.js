@@ -306,7 +306,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
       return container;
     },
     /**
-     * Creates an object containing the udpated tag info
+     * Creates an object containing the updated tag info
      */
     __serializeData: function() {
       const name = this.getChildControl("nameinput").getValue();
