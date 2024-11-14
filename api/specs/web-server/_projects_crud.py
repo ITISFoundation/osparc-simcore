@@ -27,7 +27,7 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_base import RequestParameters
-from models_library.rest_pagination import Page
+from models_library.rest_pagination import Page, PageQueryParameters
 from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._common_models import ProjectPathParams
@@ -44,9 +44,10 @@ class _FiltersQueryParams(RequestParameters):
 
 
 class _ListQueryParams(  # type: ignore
-    ProjectListExtraQueryParams,
     ProjectListOrderParamsOpenApi,
     _FiltersQueryParams,
+    PageQueryParameters,
+    ProjectListExtraQueryParams,
 ):
     ...
 

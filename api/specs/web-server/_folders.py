@@ -24,12 +24,12 @@ from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.folders._models import (
     FolderFilters,
-    FolderSortQueryParamsOpenApi,
+    FolderOrderQueryParamsOpenApi,
     FoldersPathParams,
 )
 
 
-class _ScopeQueryParams(RequestParameters):
+class _ListExtraQueryParams(RequestParameters):
     workspace_id: WorkspaceID | None = None
     folder_id: FolderID | None = None
 
@@ -42,10 +42,10 @@ class _FiltersQueryParams(RequestParameters):
 
 
 class _ListQueryParams(  # type: ignore
-    FolderSortQueryParamsOpenApi,
+    FolderOrderQueryParamsOpenApi,
     _FiltersQueryParams,
     PageQueryParameters,
-    _ScopeQueryParams,
+    _ListExtraQueryParams,
 ):
     ...
 

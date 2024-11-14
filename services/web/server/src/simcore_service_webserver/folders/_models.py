@@ -41,8 +41,8 @@ class FolderFilters(Filters):
 
 
 (
-    _FolderSortQueryParams,
-    FolderSortQueryParamsOpenApi,
+    _FolderOrderQueryParams,
+    FolderOrderQueryParamsOpenApi,
 ) = create_ordering_query_model_classes(
     sortable_fields={"modified", "name", "description"},
     default_order_by=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
@@ -50,7 +50,7 @@ class FolderFilters(Filters):
 
 
 class FolderListWithJsonStrQueryParams(
-    PageQueryParameters, _FolderSortQueryParams, FiltersQueryParameters[FolderFilters]
+    PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]
 ):
     folder_id: FolderID | None = Field(
         default=None,
@@ -75,7 +75,7 @@ class FolderListWithJsonStrQueryParams(
 
 
 class FolderListFullSearchWithJsonStrQueryParams(
-    PageQueryParameters, _FolderSortQueryParams, FiltersQueryParameters[FolderFilters]
+    PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]
 ):
     text: str | None = Field(
         default=None,
