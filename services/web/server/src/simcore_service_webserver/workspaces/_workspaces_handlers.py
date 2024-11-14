@@ -9,6 +9,7 @@ from models_library.api_schemas_webserver.workspaces import (
     WorkspaceGetPage,
 )
 from models_library.basic_types import IDStr
+from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
@@ -17,8 +18,6 @@ from models_library.workspaces import WorkspaceID
 from pydantic import Extra, Field, Json, parse_obj_as, validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
-    RequestParams,
-    StrictRequestParams,
     parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
@@ -61,12 +60,12 @@ def handle_workspaces_exceptions(handler: Handler):
 routes = web.RouteTableDef()
 
 
-class WorkspacesRequestContext(RequestParams):
+class WorkspacesRequestContext(RequestParameters):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
-class WorkspacesPathParams(StrictRequestParams):
+class WorkspacesPathParams(StrictRequestParameters):
     workspace_id: WorkspaceID
 
 

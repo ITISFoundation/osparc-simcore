@@ -4,7 +4,11 @@ from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.rest_filters import Filters, FiltersQueryParameters
-from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_ordering import (
+    OrderBy,
+    OrderDirection,
+    create_order_by_query_model_classes,
+)
 from models_library.rest_pagination import PageQueryParameters
 from models_library.users import UserID
 from models_library.utils.common_validators import (
@@ -12,7 +16,7 @@ from models_library.utils.common_validators import (
     null_or_none_str_to_none_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, Extra, Field, Json, validator
+from pydantic import BaseModel, Extra, Field, validator
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -36,35 +40,17 @@ class FolderFilters(Filters):
     )
 
 
-class FolderListSortParams(BaseModel):
-    # pylint: disable=unsubscriptable-object
-    order_by: Json[OrderBy] = Field(
-        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
-        description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
-        example='{"field": "name", "direction": "desc"}',
-        alias="order_by",
-    )
-
-    @validator("order_by", check_fields=False)
-    @classmethod
-    def _validate_order_by_field(cls, v):
-        if v.field not in {
-            "modified_at",
-            "name",
-            "description",
-        }:
-            msg = f"We do not support ordering by provided field {v.field}"
-            raise ValueError(msg)
-        if v.field == "modified_at":
-            v.field = "modified"
-        return v
-
-    class Config:
-        extra = Extra.forbid
+(
+    _FolderSortQueryParams,
+    FolderSortJsonQueryParams,
+) = create_order_by_query_model_classes(
+    sortable_fields={"modified", "name", "description"},
+    default_order_by=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
+)
 
 
 class FolderListWithJsonStrQueryParams(
-    PageQueryParameters, FolderListSortParams, FiltersQueryParameters[FolderFilters]
+    PageQueryParameters, _FolderSortQueryParams, FiltersQueryParameters[FolderFilters]
 ):
     folder_id: FolderID | None = Field(
         default=None,
@@ -89,7 +75,7 @@ class FolderListWithJsonStrQueryParams(
 
 
 class FolderListFullSearchWithJsonStrQueryParams(
-    PageQueryParameters, FolderListSortParams, FiltersQueryParameters[FolderFilters]
+    PageQueryParameters, _FolderSortQueryParams, FiltersQueryParameters[FolderFilters]
 ):
     text: str | None = Field(
         default=None,
