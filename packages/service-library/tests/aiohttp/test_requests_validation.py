@@ -3,15 +3,21 @@
 # pylint: disable=unused-variable
 
 import json
-from typing import Callable
+from collections.abc import Callable
 from uuid import UUID
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
+from models_library.rest_base import RequestParameters, StrictRequestParameters
+from models_library.rest_ordering import (
+    OrderBy,
+    OrderDirection,
+    create_order_by_query_model_classes,
+)
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -19,6 +25,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from yarl import URL
 
 RQT_USERID_KEY = f"{__name__}.user_id"
 APP_SECRET_KEY = f"{__name__}.secret"
@@ -30,7 +37,7 @@ def jsonable_encoder(data):
     return json.loads(json_dumps(data))
 
 
-class MyRequestContext(BaseModel):
+class MyRequestContext(RequestParameters):
     user_id: int = Field(alias=RQT_USERID_KEY)
     secret: str = Field(alias=APP_SECRET_KEY)
 
@@ -39,31 +46,24 @@ class MyRequestContext(BaseModel):
         return cls(user_id=faker.pyint(), secret=faker.password())
 
 
-class MyRequestPathParams(BaseModel):
+class MyRequestPathParams(StrictRequestParameters):
     project_uuid: UUID
-
-    class Config:
-        extra = Extra.forbid
 
     @classmethod
     def create_fake(cls, faker: Faker):
         return cls(project_uuid=faker.uuid4())
 
 
-class MyRequestQueryParams(BaseModel):
+class MyRequestQueryParams(RequestParameters):
     is_ok: bool = True
     label: str
-
-    def as_params(self, **kwargs) -> dict[str, str]:
-        data = self.dict(**kwargs)
-        return {k: f"{v}" for k, v in data.items()}
 
     @classmethod
     def create_fake(cls, faker: Faker):
         return cls(is_ok=faker.pybool(), label=faker.word())
 
 
-class MyRequestHeadersParams(BaseModel):
+class MyRequestHeadersParams(RequestParameters):
     user_agent: str = Field(alias="X-Simcore-User-Agent")
     optional_header: str | None = Field(default=None, alias="X-Simcore-Optional-Header")
 
@@ -359,3 +359,26 @@ async def test_parse_request_with_invalid_headers_params(
             ],
         }
     }
+
+
+def test_parse_request_query_parameters_as_with_order_by_query_models():
+
+    OrderByModel, OrderByModelOAS = create_order_by_query_model_classes(
+        sortable_fields={"modified", "name"}, default_order_by=OrderBy(field="name")
+    )
+
+    expected = OrderBy(field="name", direction=OrderDirection.ASC)
+
+    url = URL("/test").with_query(order_by=expected.json())
+
+    request = make_mocked_request("GET", path=f"{url}")
+
+    query_params = parse_request_query_parameters_as(OrderByModel, request)
+    assert query_params.order_by == expected
+
+    expected_schema = {"type": "string", "format": "json-string"}
+    assert {
+        k: v
+        for k, v in OrderByModel.schema()["properties"]["order_by"]
+        if k in expected
+    } == expected_schema

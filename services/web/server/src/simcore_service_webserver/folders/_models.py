@@ -2,6 +2,7 @@ import logging
 
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
+from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.rest_filters import Filters, FiltersQueryParameters
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
@@ -12,7 +13,6 @@ from models_library.utils.common_validators import (
 )
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, Extra, Field, Json, validator
-from servicelib.aiohttp.requests_validation import RequestParams, StrictRequestParams
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -20,12 +20,12 @@ from .._constants import RQ_PRODUCT_KEY
 _logger = logging.getLogger(__name__)
 
 
-class FoldersRequestContext(RequestParams):
+class FoldersRequestContext(RequestParameters):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
-class FoldersPathParams(StrictRequestParams):
+class FoldersPathParams(StrictRequestParameters):
     folder_id: FolderID
 
 
