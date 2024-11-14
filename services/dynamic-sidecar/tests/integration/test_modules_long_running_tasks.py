@@ -162,23 +162,24 @@ async def simcore_storage_service(mocker: MockerFixture, app: FastAPI) -> None:
     storage_host: Final[str] | None = os.environ.get("STORAGE_HOST")
     storage_port: Final[str] | None = os.environ.get("STORAGE_PORT")
 
-    def correct_ip(url: AnyUrl):
-
+    def _replace_storage_endpoint(url: str) -> str:
+        url_obj = TypeAdapter(AnyUrl).validate_python(url)
         assert storage_host is not None
         assert storage_port is not None
 
-        return AnyUrl.build(
-            scheme=url.scheme,
+        storage_endpoint_url = AnyUrl.build(
+            scheme=url_obj.scheme,
             host=storage_host,
-            port=storage_port,
-            path=url.path,
-            query=url.query,
+            port=int(storage_port),
+            path=url_obj.path.lstrip("/"),
+            query=url_obj.query,
         )
+        return f"{storage_endpoint_url}"
 
     # NOTE: Mock to ensure container IP agrees with host IP when testing
     mocker.patch(
         "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
-        correct_ip,
+        _replace_storage_endpoint,
     )
 
 
