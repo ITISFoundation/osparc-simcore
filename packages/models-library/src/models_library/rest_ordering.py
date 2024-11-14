@@ -36,7 +36,7 @@ class _BaseOrderByQueryParams(RequestParameters):
     order_by: OrderBy | None = None
 
 
-def create_order_by_query_model_classes(
+def create_ordering_query_model_classes(
     *,
     sortable_fields: set[str],
     default_order_by: OrderBy,

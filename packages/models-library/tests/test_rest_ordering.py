@@ -3,13 +3,13 @@ from models_library.basic_types import IDStr
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
-    create_order_by_query_model_classes,
+    create_ordering_query_model_classes,
 )
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Extra, Field, Json, ValidationError, validator
 
 
-class ReferenceSortQueryParamsClass(BaseModel):
+class ReferenceOrderQueryParamsClass(BaseModel):
     # NOTE: this class is a copy of `FolderListSortParams` from
     # services/web/server/src/simcore_service_webserver/folders/_models.py
     # and used as a reference in these tests to ensure the same functionality
@@ -40,8 +40,8 @@ class ReferenceSortQueryParamsClass(BaseModel):
         extra = Extra.forbid
 
 
-def test_order_by_query_model_class_factory():
-    BaseOrderByQueryModel, _ = create_order_by_query_model_classes(
+def test_ordering_query_model_class_factory():
+    BaseOrderingQueryModel, _ = create_ordering_query_model_classes(
         sortable_fields={"modified", "name", "description"},
         default_order_by=OrderBy(
             field=IDStr("modified"), direction=OrderDirection.DESC
@@ -49,7 +49,7 @@ def test_order_by_query_model_class_factory():
     )
 
     # inherits to add extra post-validator
-    class OrderByQueryParamsModel(BaseOrderByQueryModel):
+    class OrderQueryParamsModel(BaseOrderingQueryModel):
         @validator("order_by", pre=True)
         @classmethod
         def _validate_order_by_field(cls, v):
@@ -60,21 +60,21 @@ def test_order_by_query_model_class_factory():
 
     # normal
     data = {"order_by": {"field": "modified_at", "direction": "asc"}}
-    model = OrderByQueryParamsModel.parse_obj(data)
+    model = OrderQueryParamsModel.parse_obj(data)
 
     assert model.order_by
     assert model.order_by.dict() == {"field": "modified", "direction": "asc"}
 
     # test against reference
-    expected = ReferenceSortQueryParamsClass.parse_obj(
+    expected = ReferenceOrderQueryParamsClass.parse_obj(
         {"order_by": json_dumps({"field": "modified_at", "direction": "asc"})}
     )
     assert expected.dict() == model.dict()
 
 
-def test_order_by_query_model_class__fails_with_invalid_fields():
+def test_ordering_query_model_class__fails_with_invalid_fields():
 
-    OrderByQueryParamsModel, _ = create_order_by_query_model_classes(
+    OrderQueryParamsModel, _ = create_ordering_query_model_classes(
         sortable_fields={"modified", "name", "description"},
         default_order_by=OrderBy(
             field=IDStr("modified"), direction=OrderDirection.DESC
@@ -83,7 +83,7 @@ def test_order_by_query_model_class__fails_with_invalid_fields():
 
     # fails with invalid field to sort
     with pytest.raises(ValidationError) as err_info:
-        OrderByQueryParamsModel.parse_obj({"order_by": {"field": "INVALID"}})
+        OrderQueryParamsModel.parse_obj({"order_by": {"field": "INVALID"}})
 
     error = err_info.value.errors()[0]
 
@@ -92,8 +92,8 @@ def test_order_by_query_model_class__fails_with_invalid_fields():
     assert error["loc"] == ("order_by", "field")
 
 
-def test_order_by_query_model_class__fails_with_invalid_direction():
-    OrderByQueryParamsModel, _ = create_order_by_query_model_classes(
+def test_ordering_query_model_class__fails_with_invalid_direction():
+    OrderQueryParamsModel, _ = create_ordering_query_model_classes(
         sortable_fields={"modified", "name", "description"},
         default_order_by=OrderBy(
             field=IDStr("modified"), direction=OrderDirection.DESC
@@ -101,7 +101,7 @@ def test_order_by_query_model_class__fails_with_invalid_direction():
     )
 
     with pytest.raises(ValidationError) as err_info:
-        OrderByQueryParamsModel.parse_obj(
+        OrderQueryParamsModel.parse_obj(
             {"order_by": {"field": "modified", "direction": "INVALID"}}
         )
 
@@ -112,9 +112,9 @@ def test_order_by_query_model_class__fails_with_invalid_direction():
 
 
 @pytest.mark.parametrize("override_direction_default", [True, False])
-def test_order_by_query_model_class__defaults(override_direction_default: bool):
+def test_ordering_query_model_class__defaults(override_direction_default: bool):
 
-    OrderByQueryParamsModel, _ = create_order_by_query_model_classes(
+    OrderQueryParamsModel, _ = create_ordering_query_model_classes(
         sortable_fields={"modified", "name", "description"},
         default_order_by=OrderBy(
             field=IDStr("modified"), direction=OrderDirection.DESC
@@ -123,13 +123,13 @@ def test_order_by_query_model_class__defaults(override_direction_default: bool):
     )
 
     # checks  all defaults
-    model = OrderByQueryParamsModel()
+    model = OrderQueryParamsModel()
     assert model.order_by
     assert model.order_by.field == "modified"
     assert model.order_by.direction == OrderDirection.DESC
 
     # partial defaults
-    model = OrderByQueryParamsModel.parse_obj({"order_by": {"field": "name"}})
+    model = OrderQueryParamsModel.parse_obj({"order_by": {"field": "name"}})
     assert model.order_by
     assert model.order_by.field == "name"
     assert (
@@ -140,25 +140,25 @@ def test_order_by_query_model_class__defaults(override_direction_default: bool):
 
     # direction alone is invalid
     with pytest.raises(ValidationError) as err_info:
-        OrderByQueryParamsModel.parse_obj({"order_by": {"direction": "asc"}})
+        OrderQueryParamsModel.parse_obj({"order_by": {"direction": "asc"}})
 
     error = err_info.value.errors()[0]
     assert error["loc"] == ("order_by", "field")
     assert error["type"] == "value_error.missing"
 
 
-def test_order_by_query_model_class__openapi_generator():
+def test_ordering_query_model_class__openapi_generator():
 
-    _, OrderByQueryParamsModelOAS = create_order_by_query_model_classes(
+    _, OrderQueryParamsModelOpenApi = create_ordering_query_model_classes(
         sortable_fields={"modified", "name", "description"},
         default_order_by=OrderBy(
             field=IDStr("modified"), direction=OrderDirection.DESC
         ),
     )
 
-    print(OrderByQueryParamsModelOAS.schema_json(indent=1))
+    print(OrderQueryParamsModelOpenApi.schema_json(indent=1))
 
-    schema = OrderByQueryParamsModelOAS.schema()
+    schema = OrderQueryParamsModelOpenApi.schema()
 
     assert schema["type"] == "object"
     assert "order_by" in schema["properties"]

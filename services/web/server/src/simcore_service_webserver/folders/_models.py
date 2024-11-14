@@ -7,7 +7,7 @@ from models_library.rest_filters import Filters, FiltersQueryParameters
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
-    create_order_by_query_model_classes,
+    create_ordering_query_model_classes,
 )
 from models_library.rest_pagination import PageQueryParameters
 from models_library.users import UserID
@@ -43,7 +43,7 @@ class FolderFilters(Filters):
 (
     _FolderSortQueryParams,
     FolderSortQueryParamsOpenApi,
-) = create_order_by_query_model_classes(
+) = create_ordering_query_model_classes(
     sortable_fields={"modified", "name", "description"},
     default_order_by=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
 )

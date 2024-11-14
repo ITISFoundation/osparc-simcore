@@ -10,11 +10,12 @@ from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.rest_base import RequestParameters
 from models_library.rest_filters import Filters, FiltersQueryParameters
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
-    create_order_by_query_model_classes,
+    create_ordering_query_model_classes,
 )
 from models_library.rest_pagination import PageQueryParameters
 from models_library.utils.common_validators import (
@@ -100,7 +101,26 @@ class ProjectFilters(Filters):
     )
 
 
-class ProjectListParams(PageQueryParameters):
+(
+    ProjectListOrderParams,
+    ProjectListOrderParamsOpenApi,
+) = create_ordering_query_model_classes(
+    sortable_fields={
+        "type",
+        "uuid",
+        "name",
+        "description",
+        "prj_owner",
+        "creation_date",
+        "last_change_date",
+    },
+    default_order_by=OrderBy(
+        field=IDStr("last_change_date"), direction=OrderDirection.DESC
+    ),
+)
+
+
+class ProjectListExtraQueryParams(RequestParameters):
     project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
     show_hidden: bool = Field(
         default=False, description="includes projects marked as hidden in the listing"
@@ -136,27 +156,11 @@ class ProjectListParams(PageQueryParameters):
     )(null_or_none_str_to_none_validator)
 
 
-(
-    ProjectListSortParams,
-    ProjectListSortParamsOpenApi,
-) = create_order_by_query_model_classes(
-    sortable_fields={
-        "type",
-        "uuid",
-        "name",
-        "description",
-        "prj_owner",
-        "creation_date",
-        "last_change_date",
-    },
-    default_order_by=OrderBy(
-        field=IDStr("last_change_date"), direction=OrderDirection.DESC
-    ),
-)
-
-
-class ProjectListWithJsonStrParams(
-    ProjectListParams, ProjectListSortParams, FiltersQueryParameters[ProjectFilters]
+class ProjectListQueryParams(
+    PageQueryParameters,
+    ProjectListExtraQueryParams,
+    ProjectListOrderParams,
+    FiltersQueryParameters[ProjectFilters],
 ):
     ...
 
@@ -184,7 +188,7 @@ class ProjectListFullSearchParams(PageQueryParameters):
 
 
 class ProjectListFullSearchWithJsonStrParams(
-    ProjectListFullSearchParams, ProjectListSortParams
+    ProjectListFullSearchParams, ProjectListOrderParams
 ):
     def tag_ids_list(self) -> list[int]:
         try:

@@ -56,7 +56,7 @@ from ._crud_handlers_models import (
     ProjectCreateParams,
     ProjectFilters,
     ProjectListFullSearchWithJsonStrParams,
-    ProjectListWithJsonStrParams,
+    ProjectListQueryParams,
 )
 from ._permalink_api import update_or_pop_permalink_in_project
 from .exceptions import (
@@ -188,8 +188,8 @@ async def list_projects(request: web.Request):
 
     """
     req_ctx = RequestContext.parse_obj(request)
-    query_params: ProjectListWithJsonStrParams = parse_request_query_parameters_as(
-        ProjectListWithJsonStrParams, request
+    query_params: ProjectListQueryParams = parse_request_query_parameters_as(
+        ProjectListQueryParams, request
     )
 
     if not query_params.filters:

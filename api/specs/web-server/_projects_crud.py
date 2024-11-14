@@ -33,9 +33,9 @@ from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._common_models import ProjectPathParams
 from simcore_service_webserver.projects._crud_handlers import ProjectCreateParams
 from simcore_service_webserver.projects._crud_handlers_models import (
+    ProjectListExtraQueryParams,
     ProjectListFullSearchParams,
-    ProjectListParams,
-    ProjectListSortParamsOpenApi,
+    ProjectListOrderParamsOpenApi,
 )
 
 
@@ -44,7 +44,8 @@ class _FiltersQueryParams(RequestParameters):
 
 
 class _ListQueryParams(  # type: ignore
-    ProjectListSortParamsOpenApi,
+    ProjectListExtraQueryParams,
+    ProjectListOrderParamsOpenApi,
     _FiltersQueryParams,
 ):
     ...
@@ -89,7 +90,6 @@ async def create_project(
     response_model=Page[ProjectListItem],
 )
 async def list_projects(
-    _p: Annotated[ProjectListParams, Depends()],
     _q: Annotated[_ListQueryParams, Depends()],
 ):
     ...

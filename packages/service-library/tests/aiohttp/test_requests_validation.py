@@ -14,7 +14,7 @@ from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
-    create_order_by_query_model_classes,
+    create_ordering_query_model_classes,
 )
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field
@@ -363,7 +363,7 @@ async def test_parse_request_with_invalid_headers_params(
 
 def test_parse_request_query_parameters_as_with_order_by_query_models():
 
-    OrderByModel, OrderByModelOAS = create_order_by_query_model_classes(
+    OrderByModel, OrderByModelOAS = create_ordering_query_model_classes(
         sortable_fields={"modified", "name"}, default_order_by=OrderBy(field="name")
     )
 
