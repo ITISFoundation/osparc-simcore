@@ -199,7 +199,7 @@ def _get_environment_variables(
         "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": f"{app_settings.DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS}",
     }
     if r_clone_settings.R_CLONE_S3.S3_ENDPOINT is not None:
-        envs["S3_ENDPOINT"] = r_clone_settings.R_CLONE_S3.S3_ENDPOINT
+        envs["S3_ENDPOINT"] = f"{r_clone_settings.R_CLONE_S3.S3_ENDPOINT}"
     return envs
 
 
