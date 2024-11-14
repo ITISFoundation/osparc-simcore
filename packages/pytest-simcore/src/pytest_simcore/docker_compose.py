@@ -118,6 +118,10 @@ def env_file_for_testing(
             file=fh,
         )
         for key, value in sorted(testing_environ_vars.items()):
+            # ensure OpenTelemetry is not enabled
+            if key.startswith("TRACING_") or key.endswith("_TRACING"):
+                continue
+
             # NOTE: python-dotenv parses JSON encoded strings correctly, but
             # writing them back shows an issue. if the original ENV is something like MY_ENV='{"correct": "encodedjson"}'
             # it goes to MY_ENV={"incorrect": "encodedjson"}!
