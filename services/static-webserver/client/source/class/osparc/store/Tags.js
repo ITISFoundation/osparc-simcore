@@ -55,12 +55,7 @@ qx.Class.define("osparc.store.Tags", {
       return this.tagsCached;
     },
 
-    postTag: function(name, parentTagId = null, workspaceId = null) {
-      const newTagData = {
-        name,
-        parentTagId,
-        workspaceId,
-      };
+    postTag: function(newTagData) {
       const params = {
         data: newTagData
       };

@@ -287,9 +287,9 @@ qx.Class.define("osparc.form.tag.TagItem", {
             params.url = {
               tagId: this.getId()
             };
-            fetch = osparc.data.Resources.fetch("tags", "put", params);
+            fetch = osparc.store.Tags.getInstance().putTag(this.getId(), data);
           } else {
-            fetch = osparc.data.Resources.fetch("tags", "post", params);
+            fetch = osparc.store.Tags.getInstance().postTag(data);
           }
           fetch
             .then(tag => this.set(tag))
