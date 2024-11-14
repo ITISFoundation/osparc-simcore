@@ -27,9 +27,14 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
       zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
       maxWidth: osparc.notification.NotificationUI.MAX_WIDTH,
       maxHeight: 250,
-      backgroundColor: "background-main-3",
+      backgroundColor: "background-main",
       decorator: "rounded",
     });
+    let color = qx.theme.manager.Color.getInstance().resolve("text");
+    color = qx.util.ColorUtil.stringToRgb(color);
+    color.push(0.3); // add transparency
+    color = qx.util.ColorUtil.rgbToRgbString(color);
+    osparc.utils.Utils.addBorder(this, 1, color);
     osparc.utils.Utils.setIdToWidget(this, "notificationsContainer");
 
     const root = qx.core.Init.getApplication().getRoot();

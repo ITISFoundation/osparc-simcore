@@ -13,17 +13,19 @@ qx.Class.define("osparc.ui.basic.Tag", {
   extend: qx.ui.basic.Label,
   /**
    * Constructor for the Tag element.
-   * @param {String} value Short text to be shown on the tag
-   * @param {String} color Color for the background, must be in hex3 or hex6 form
+   * @param {osparc.data.model.Tag} tag Short text to be shown on the tag
    * @param {String} [filterGroupId] If present, clicking on the tab will dispatch a bus message with the
    *    id ``GroupIdTagsTrigger`` to be subscribed by a filter.
    */
-  construct: function(value, color, filterGroupId) {
-    this.base(arguments, value);
-    this.setFont("text-11");
-    if (color) {
-      this.setColor(color);
+  construct: function(tag, filterGroupId) {
+    this.base(arguments);
+
+    if (tag) {
+      tag.bind("name", this, "value");
+      tag.bind("color", this, "color");
     }
+    this.setFont("text-11");
+
     if (filterGroupId) {
       this.setCursor("pointer");
       this.addListener("tap", e => {
