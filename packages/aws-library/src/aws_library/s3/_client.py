@@ -73,7 +73,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         session = aioboto3.Session()
         session_client = session.client(
             "s3",
-            endpoint_url=settings.S3_ENDPOINT,
+            endpoint_url=f"{settings.S3_ENDPOINT}",
             aws_access_key_id=settings.S3_ACCESS_KEY,
             aws_secret_access_key=settings.S3_SECRET_KEY,
             region_name=settings.S3_REGION,
