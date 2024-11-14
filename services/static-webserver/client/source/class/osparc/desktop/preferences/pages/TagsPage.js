@@ -48,13 +48,10 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
         icon: "@FontAwesome5Solid/plus/14"
       });
       osparc.utils.Utils.setIdToWidget(this.__addTagButton, "addTagBtn");
-      osparc.data.Resources.get("tags")
-        .then(tags => {
-          this.__tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({...tag}));
-          this.__renderLayout();
-          this.__attachEventHandlers();
-        })
-        .catch(err => console.error(err));
+      const tags = osparc.store.Tags.getInstance().getTags();
+      this.__tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({tag}));
+      this.__renderLayout();
+      this.__attachEventHandlers();
     },
 
     __renderLayout: function() {

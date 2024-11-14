@@ -61,7 +61,7 @@ qx.Class.define("osparc.desktop.MainPageDesktop", {
       preloadPromises.push(store.reloadWallets());
     }
     preloadPromises.push(store.getAllClassifiers(true));
-    preloadPromises.push(store.getTags());
+    preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());
     Promise.all(preloadPromises)
       .then(() => {
         const desktopCenter = new osparc.desktop.credits.DesktopCenter();
