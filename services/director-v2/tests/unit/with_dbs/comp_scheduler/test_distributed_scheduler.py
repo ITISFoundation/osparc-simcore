@@ -54,11 +54,21 @@ async def test_schedule_pipelines(
     await schedule_pipelines(initialized_app)
 
 
-async def test_schedule_pipelines_concurently_raises(
+async def test_schedule_pipelines_concurently_raises_and_only_one_runs(
     initialized_app: FastAPI,
 ):
+    CONCURRENCY = 5
     with pytest.raises(
         CouldNotAcquireLockError,
         match=".+ computational-distributed-scheduler",
     ):
-        await asyncio.gather(*(schedule_pipelines(initialized_app) for _ in range(2)))
+        await asyncio.gather(
+            *(schedule_pipelines(initialized_app) for _ in range(CONCURRENCY))
+        )
+
+    results = await asyncio.gather(
+        *(schedule_pipelines(initialized_app) for _ in range(CONCURRENCY)),
+        return_exceptions=True,
+    )
+
+    assert results.count(None) == 1, "Only one task should have run"
