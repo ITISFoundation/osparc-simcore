@@ -108,7 +108,7 @@ async def create_pipeline(
     responses: list[httpx.Response] = await asyncio.gather(
         *(
             async_client.request(
-                "DELETE", task.url, json={"user_id": user_id, "force": True}
+                "DELETE", f"{task.url}", json={"user_id": user_id, "force": True}
             )
             for user_id, task in created_comp_tasks
         )
