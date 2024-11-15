@@ -121,6 +121,7 @@ async def list_service_runs(
                 user_email=service.user_email,
                 project_id=service.project_id,
                 project_name=service.project_name,
+                project_tags=service.project_tags,
                 root_parent_project_id=service.root_parent_project_id,
                 root_parent_project_name=service.root_parent_project_name,
                 node_id=service.node_id,

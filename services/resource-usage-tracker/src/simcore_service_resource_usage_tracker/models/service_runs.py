@@ -101,6 +101,7 @@ class ServiceRunDB(BaseModel):
 class ServiceRunWithCreditsDB(ServiceRunDB):
     osparc_credits: Decimal | None
     transaction_status: CreditTransactionStatus | None
+    project_tags: list[str]
 
     class Config:
         orm_mode = True
