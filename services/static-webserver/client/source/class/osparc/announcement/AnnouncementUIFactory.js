@@ -110,12 +110,22 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
       const loginAnnouncements = [];
       this.__announcements.forEach(announcement => {
         if (this.self().isValid(announcement, "login")) {
-          loginAnnouncements.push(this.self().createLoginAnnouncement(announcement.getTitle(), announcement.getDescription()));
+          const loginAnnouncement = this.self().createLoginAnnouncement(announcement.getTitle(), announcement.getDescription())
+          loginAnnouncement.setWidth(osparc.auth.core.BaseAuthPage.FORM_WIDTH-5); // show 1-2 pixel of the nearby announcement
+          loginAnnouncements.push(loginAnnouncement);
         }
       });
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      loginAnnouncements.forEach(loginAnnouncement => layout.add(loginAnnouncement));
-      return layout;
+      const slideBar = new osparc.widget.SlideBar().set({
+        allowGrowX: true,
+      });
+      slideBar.getChildControl("button-backward").set({
+        backgroundColor: "transparent"
+      });
+      slideBar.getChildControl("button-forward").set({
+        backgroundColor: "transparent"
+      });
+      loginAnnouncements.forEach(loginAnnouncement => slideBar.add(loginAnnouncement));
+      return slideBar;
     },
 
     __addRibbonAnnouncement: function() {
