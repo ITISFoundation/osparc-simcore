@@ -20,7 +20,7 @@ projects_tags = sa.Table(
             name="project_tags_project_id_fkey",
         ),
         nullable=True,  # <-- NULL means that project was deleted
-        doc="NOTE that project.c.id != project.c.uuid",
+        doc="NOTE that project.c.id != project.c.uuid. If project is deleted, we do not delete project in this table, we just set this column to NULL. Why? Because the `project_uuid_for_rut` is still used by resource usage tracker",
     ),
     sa.Column(
         "tag_id",
@@ -29,11 +29,11 @@ projects_tags = sa.Table(
         nullable=False,
     ),
     sa.Column(
-        "project_uuid",
+        "project_uuid_for_rut",
         sa.String,
         nullable=False,
     ),
     sa.UniqueConstraint(
-        "project_uuid", "tag_id", name="project_tags_project_uuid_unique"
+        "project_uuid_for_rut", "tag_id", name="project_tags_project_uuid_unique"
     ),
 )

@@ -216,11 +216,11 @@ class ResourceTrackerRepository(
 
     _project_tags_subquery = (
         sa.select(
-            projects_tags.c.project_uuid,
+            projects_tags.c.project_uuid_for_rut,
             sa.func.array_agg(tags.c.name).label("project_tags"),
         )
         .select_from(projects_tags.join(tags, projects_tags.c.tag_id == tags.c.id))
-        .group_by(projects_tags.c.project_uuid)
+        .group_by(projects_tags.c.project_uuid_for_rut)
     ).subquery("project_tags_subquery")
 
     async def list_service_runs_by_product_and_user_and_wallet(
@@ -291,7 +291,7 @@ class ResourceTrackerRepository(
                     ).join(
                         self._project_tags_subquery,
                         resource_tracker_service_runs.c.project_id
-                        == self._project_tags_subquery.c.project_uuid,
+                        == self._project_tags_subquery.c.project_uuid_for_rut,
                         isouter=True,
                     )
                 )
@@ -481,7 +481,7 @@ class ResourceTrackerRepository(
                     ).join(
                         self._project_tags_subquery,
                         resource_tracker_service_runs.c.project_id
-                        == self._project_tags_subquery.c.project_uuid,
+                        == self._project_tags_subquery.c.project_uuid_for_rut,
                         isouter=True,
                     )
                 )
