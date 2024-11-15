@@ -9,6 +9,7 @@
 
 from typing import Annotated
 
+from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.folders_v2 import (
     CreateFolderBodyParams,
@@ -48,7 +49,7 @@ async def create_folder(
     response_model=Envelope[list[FolderGet]],
 )
 async def list_folders(
-    _q: Annotated[FoldersListQueryParams, Depends()],
+    _q: Annotated[as_query(FoldersListQueryParams), Depends()],
 ):
     ...
 
@@ -59,7 +60,7 @@ async def list_folders(
 )
 async def list_folders_full_search(
     _p: Annotated[PageQueryParameters, Depends()],
-    _q: Annotated[FolderSearchQueryParams, Depends()],
+    _q: Annotated[as_query(FolderSearchQueryParams), Depends()],
 ):
     ...
 
