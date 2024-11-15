@@ -28,6 +28,7 @@ qx.Class.define("osparc.admin.AdminCenter", {
 
     this.__addPricingPlansPage();
     this.__addMaintenancePage();
+    this.__addAnnouncementsPage();
   },
 
   members: {
@@ -43,6 +44,13 @@ qx.Class.define("osparc.admin.AdminCenter", {
       const iconSrc = "@FontAwesome5Solid/wrench/22";
       const maintenance = new osparc.admin.Maintenance();
       this.addTab(title, iconSrc, maintenance);
-    }
+    },
+
+    __addAnnouncementsPage: function() {
+      const title = this.tr("Announcements");
+      const iconSrc = "@FontAwesome5Solid/bullhorn/22";
+      const announcements = new osparc.admin.Announcements();
+      this.addTab(title, iconSrc, announcements);
+    },
   }
 });
