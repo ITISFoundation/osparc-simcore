@@ -1,6 +1,7 @@
 """ Computational Runs Table
 
 """
+
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
@@ -105,6 +106,12 @@ comp_runs = sa.Table(
         sa.DateTime(timezone=True),
         nullable=True,
         doc="If filled, when cancellation was requested",
+    ),
+    sa.Column(
+        "last_scheduled",
+        sa.DateTime(timezone=True),
+        nullable=True,
+        doc="last time the pipeline was scheduled",
     ),
     sa.Column("metadata", JSONB, nullable=True, doc="the run optional metadata"),
     sa.Column(
