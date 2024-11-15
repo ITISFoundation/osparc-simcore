@@ -37,17 +37,23 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
   members: {
     __loginBtn: null,
+    __loginAnnouncements: null,
 
     // overrides base
     _buildPage: function() {
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
+      const showAnnouncement = () => {
+        if (this.__loginAnnouncements) {
+          this.remove(this.__loginAnnouncements);
+        }
+        this.__loginAnnouncements = announcementUIFactory.createLoginAnnouncements();
+        this.addAt(this.__loginAnnouncements, 0);
+      };
       if (announcementUIFactory.hasLoginAnnouncement()) {
-        this.addAt(announcementUIFactory.createLoginAnnouncements(), 0);
+        showAnnouncement();
       } else {
-        announcementUIFactory.addListenerOnce("changeAnnouncement", e => {
-          if (announcementUIFactory.hasLoginAnnouncement()) {
-            this.addAt(announcementUIFactory.createLoginAnnouncements(), 0);
-          }
+        announcementUIFactory.addListenerOnce("changeAnnouncements", () => {
+          showAnnouncement();
         });
       }
 

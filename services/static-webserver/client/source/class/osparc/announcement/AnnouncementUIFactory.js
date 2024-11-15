@@ -19,14 +19,8 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
   extend: qx.core.Object,
   type: "singleton",
 
-  properties: {
-    announcement: {
-      check: "osparc.announcement.Announcement",
-      init: null,
-      nullable: false,
-      event: "changeAnnouncement",
-      apply: "__applyAnnouncement"
-    }
+  events: {
+    "changeAnnouncements": "qx.event.type.Event",
   },
 
   statics: {
@@ -87,6 +81,7 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         const announcement = new osparc.announcement.Announcement(announcementData);
         this.__announcements.push(announcement);
       });
+      this.fireEvent("changeAnnouncements");
     },
 
     __applyAnnouncement: function() {
