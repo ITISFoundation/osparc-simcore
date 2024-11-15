@@ -12,7 +12,6 @@ from models_library.resource_tracker import (
     ServicesAggregatedUsagesTimePeriod,
     ServicesAggregatedUsagesType,
 )
-from models_library.rest_base import RequestParameters
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
@@ -20,18 +19,16 @@ from models_library.rest_ordering import (
 )
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
-from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import Extra, Field, Json, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
+from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _service_runs_api as api
@@ -51,11 +48,6 @@ def _handle_resource_usage_exceptions(handler: Handler):
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper
-
-
-class _RequestContext(RequestParameters):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 _ResorceUsagesListOrderQueryParams = create_ordering_query_model_classes(
@@ -133,7 +125,7 @@ routes = web.RouteTableDef()
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_resource_usage_services(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.parse_obj(request)
     query_params: ServicesResourceUsagesListQueryParams = (
         parse_request_query_parameters_as(
             ServicesResourceUsagesListQueryParams, request
@@ -174,7 +166,7 @@ async def list_resource_usage_services(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_osparc_credits_aggregated_usages(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.parse_obj(request)
     query_params: ServicesAggregatedUsagesListQueryParams = (
         parse_request_query_parameters_as(
             ServicesAggregatedUsagesListQueryParams, request
@@ -214,7 +206,7 @@ async def list_osparc_credits_aggregated_usages(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def export_resource_usage_services(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.parse_obj(request)
     query_params: ServicesResourceUsagesReportQueryParams = (
         parse_request_query_parameters_as(
             ServicesResourceUsagesReportQueryParams, request

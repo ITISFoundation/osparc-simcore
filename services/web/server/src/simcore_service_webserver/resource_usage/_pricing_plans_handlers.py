@@ -4,15 +4,12 @@ from aiohttp import web
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.rest_base import StrictRequestParameters
-from models_library.users import UserID
-from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.request_keys import RQT_USERID_KEY
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
+from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.errors import WalletAccessForbiddenError
@@ -35,11 +32,6 @@ def _handle_resource_usage_exceptions(handler: Handler):
     return wrapper
 
 
-class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
-
-
 routes = web.RouteTableDef()
 
 
@@ -56,7 +48,7 @@ class PricingPlanUnitGetPathParams(StrictRequestParameters):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def get_pricing_plan_unit(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
         PricingPlanUnitGetPathParams, request
     )

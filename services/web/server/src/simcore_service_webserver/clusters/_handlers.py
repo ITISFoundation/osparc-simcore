@@ -10,15 +10,13 @@ from models_library.api_schemas_webserver.clusters import (
     ClusterPathParams,
     ClusterPing,
 )
-from models_library.users import UserID
-from pydantic import BaseModel, Field, parse_obj_as
+from pydantic import parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import api_version_prefix
 from ..director_v2 import api as director_v2_api
@@ -29,6 +27,7 @@ from ..director_v2.exceptions import (
     DirectorServiceError,
 )
 from ..login.decorators import login_required
+from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 
@@ -58,15 +57,6 @@ def _handle_cluster_exceptions(handler: Handler):
 
 
 #
-# API components/schemas
-#
-
-
-class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-
-
-#
 # API handlers
 #
 
@@ -78,7 +68,7 @@ routes = web.RouteTableDef()
 @permission_required("clusters.create")
 @_handle_cluster_exceptions
 async def create_cluster(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.parse_obj(request)
     new_cluster = await parse_request_body_as(ClusterCreate, request)
 
     created_cluster = await director_v2_api.create_cluster(
@@ -94,7 +84,7 @@ async def create_cluster(request: web.Request) -> web.Response:
 @permission_required("clusters.read")
 @_handle_cluster_exceptions
 async def list_clusters(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.parse_obj(request)
 
     clusters = await director_v2_api.list_clusters(
         app=request.app,
@@ -109,7 +99,7 @@ async def list_clusters(request: web.Request) -> web.Response:
 @permission_required("clusters.read")
 @_handle_cluster_exceptions
 async def get_cluster(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ClusterPathParams, request)
 
     cluster = await director_v2_api.get_cluster(
@@ -126,7 +116,7 @@ async def get_cluster(request: web.Request) -> web.Response:
 @permission_required("clusters.write")
 @_handle_cluster_exceptions
 async def update_cluster(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ClusterPathParams, request)
     cluster_patch = await parse_request_body_as(ClusterPatch, request)
 
@@ -146,7 +136,7 @@ async def update_cluster(request: web.Request) -> web.Response:
 @permission_required("clusters.delete")
 @_handle_cluster_exceptions
 async def delete_cluster(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ClusterPathParams, request)
 
     await director_v2_api.delete_cluster(
@@ -165,7 +155,7 @@ async def delete_cluster(request: web.Request) -> web.Response:
 @permission_required("clusters.read")
 @_handle_cluster_exceptions
 async def get_cluster_details(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ClusterPathParams, request)
 
     cluster_details = await director_v2_api.get_cluster_details(
@@ -199,7 +189,7 @@ async def ping_cluster(request: web.Request) -> web.Response:
 @permission_required("clusters.read")
 @_handle_cluster_exceptions
 async def ping_cluster_cluster_id(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ClusterPathParams, request)
 
     await director_v2_api.ping_specific_cluster(
