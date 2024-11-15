@@ -73,7 +73,7 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
 
   members: {
     __announcements: null,
-    __ribbonAnnouncement: null,
+    __ribbonAnnouncements: null,
 
     setAnnouncementsData: function(announcementsData) {
       this.__announcements = [];
