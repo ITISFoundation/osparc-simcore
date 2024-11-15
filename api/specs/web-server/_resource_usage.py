@@ -11,7 +11,7 @@ This OAS are the source of truth
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedByServiceGet,
 )
@@ -28,42 +28,19 @@ from models_library.api_schemas_webserver.resource_usage import (
     UpdatePricingUnitBodyParams,
 )
 from models_library.generics import Envelope
-from models_library.resource_tracker import (
-    ServicesAggregatedUsagesTimePeriod,
-    ServicesAggregatedUsagesType,
-)
-from models_library.rest_base import RequestParameters
-from models_library.rest_pagination import PageQueryParameters
-from models_library.wallets import WalletID
-from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.resource_usage._pricing_plans_admin_handlers import (
-    _GetPricingPlanPathParams,
-    _GetPricingUnitPathParams,
+    PricingPlanGetPathParams,
+    PricingUnitGetPathParams,
 )
 from simcore_service_webserver.resource_usage._pricing_plans_handlers import (
-    _GetPricingPlanUnitPathParams,
+    PricingPlanUnitGetPathParams,
 )
 from simcore_service_webserver.resource_usage._service_runs_handlers import (
-    ListResourceUsagesOrderQueryParamsOpenApi,
+    ServicesAggregatedUsagesListQueryParams,
+    ServicesResourceUsagesListQueryParams,
+    ServicesResourceUsagesReportQueryParams,
 )
-
-
-class _FiltersQueryParams(RequestParameters):
-    filters: Annotated[
-        Json | None,
-        Query(
-            description="Filters to process on the resource usages list, encoded as JSON. "
-            "Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. "
-            "The date range specified is inclusive.",
-            example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
-        ),
-    ] = None
-
-
-class _OrderQueryParams(ListResourceUsagesOrderQueryParamsOpenApi):
-    ...
-
 
 router = APIRouter(prefix=f"/{API_VTAG}")
 
@@ -76,10 +53,7 @@ router = APIRouter(prefix=f"/{API_VTAG}")
     tags=["usage"],
 )
 async def list_resource_usage_services(
-    _qo: Annotated[_OrderQueryParams, Depends()],
-    _qf: Annotated[_FiltersQueryParams, Depends()],
-    _qp: Annotated[PageQueryParameters, Depends()],
-    wallet_id: Annotated[WalletID | None, Query] = None,
+    _q: Annotated[ServicesResourceUsagesListQueryParams, Depends()],
 ):
     ...
 
@@ -92,10 +66,7 @@ async def list_resource_usage_services(
     tags=["usage"],
 )
 async def list_osparc_credits_aggregated_usages(
-    aggregated_by: ServicesAggregatedUsagesType,
-    time_period: ServicesAggregatedUsagesTimePeriod,
-    wallet_id: Annotated[WalletID, Query],
-    _qp: Annotated[PageQueryParameters, Depends()],
+    _q: Annotated[ServicesAggregatedUsagesListQueryParams, Depends()]
 ):
     ...
 
@@ -113,9 +84,7 @@ async def list_osparc_credits_aggregated_usages(
     "user services (user and product are taken from context, optionally wallet_id parameter might be provided).",
 )
 async def export_resource_usage_services(
-    _qo: Annotated[_OrderQueryParams, Depends()],
-    _qf: Annotated[_FiltersQueryParams, Depends()],
-    wallet_id: Annotated[WalletID | None, Query] = None,
+    _q: Annotated[ServicesResourceUsagesReportQueryParams, Depends()]
 ):
     ...
 
@@ -127,7 +96,7 @@ async def export_resource_usage_services(
     tags=["pricing-plans"],
 )
 async def get_pricing_plan_unit(
-    _p: Annotated[_GetPricingPlanUnitPathParams, Depends()],
+    _p: Annotated[PricingPlanUnitGetPathParams, Depends()],
 ):
     ...
 
@@ -153,7 +122,7 @@ async def list_pricing_plans():
     tags=["admin"],
 )
 async def get_pricing_plan(
-    _p: Annotated[_GetPricingPlanPathParams, Depends()],
+    _p: Annotated[PricingPlanGetPathParams, Depends()],
 ):
     ...
 
@@ -177,7 +146,7 @@ async def create_pricing_plan(
     tags=["admin"],
 )
 async def update_pricing_plan(
-    _p: Annotated[_GetPricingPlanPathParams, Depends()],
+    _p: Annotated[PricingPlanGetPathParams, Depends()],
     _b: UpdatePricingPlanBodyParams,
 ):
     ...
@@ -193,7 +162,7 @@ async def update_pricing_plan(
     tags=["admin"],
 )
 async def get_pricing_unit(
-    _p: Annotated[_GetPricingUnitPathParams, Depends()],
+    _p: Annotated[PricingUnitGetPathParams, Depends()],
 ):
     ...
 
@@ -205,7 +174,7 @@ async def get_pricing_unit(
     tags=["admin"],
 )
 async def create_pricing_unit(
-    _p: Annotated[_GetPricingPlanPathParams, Depends()],
+    _p: Annotated[PricingPlanGetPathParams, Depends()],
     _b: CreatePricingUnitBodyParams,
 ):
     ...
@@ -218,7 +187,7 @@ async def create_pricing_unit(
     tags=["admin"],
 )
 async def update_pricing_unit(
-    _p: Annotated[_GetPricingUnitPathParams, Depends()],
+    _p: Annotated[PricingUnitGetPathParams, Depends()],
     _b: UpdatePricingUnitBodyParams,
 ):
     ...
@@ -234,7 +203,7 @@ async def update_pricing_unit(
     tags=["admin"],
 )
 async def list_connected_services_to_pricing_plan(
-    _p: Annotated[_GetPricingPlanPathParams, Depends()],
+    _p: Annotated[PricingPlanGetPathParams, Depends()],
 ):
     ...
 
@@ -246,7 +215,7 @@ async def list_connected_services_to_pricing_plan(
     tags=["admin"],
 )
 async def connect_service_to_pricing_plan(
-    _p: Annotated[_GetPricingPlanPathParams, Depends()],
+    _p: Annotated[PricingPlanGetPathParams, Depends()],
     _b: ConnectServiceToPricingPlanBodyParams,
 ):
     ...

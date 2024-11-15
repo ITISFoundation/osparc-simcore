@@ -3,8 +3,9 @@ import functools
 from aiohttp import web
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
+from models_library.rest_base import StrictRequestParameters
 from models_library.users import UserID
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.request_keys import RQT_USERID_KEY
@@ -42,12 +43,9 @@ class _RequestContext(BaseModel):
 routes = web.RouteTableDef()
 
 
-class _GetPricingPlanUnitPathParams(BaseModel):
+class PricingPlanUnitGetPathParams(StrictRequestParameters):
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
-
-    class Config:
-        extra = Extra.forbid
 
 
 @routes.get(
@@ -60,7 +58,7 @@ class _GetPricingPlanUnitPathParams(BaseModel):
 async def get_pricing_plan_unit(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
-        _GetPricingPlanUnitPathParams, request
+        PricingPlanUnitGetPathParams, request
     )
 
     pricing_unit_get = await api.get_pricing_plan_unit(

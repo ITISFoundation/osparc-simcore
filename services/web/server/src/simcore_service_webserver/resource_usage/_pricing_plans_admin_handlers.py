@@ -19,6 +19,7 @@ from models_library.resource_tracker import (
     PricingUnitWithCostCreate,
     PricingUnitWithCostUpdate,
 )
+from models_library.rest_base import StrictRequestParameters
 from models_library.users import UserID
 from pydantic import BaseModel, Extra, Field
 from servicelib.aiohttp.requests_validation import (
@@ -70,7 +71,7 @@ routes = web.RouteTableDef()
 ## Admin Pricing Plan endpoints
 
 
-class _GetPricingPlanPathParams(BaseModel):
+class PricingPlanGetPathParams(StrictRequestParameters):
     pricing_plan_id: PricingPlanId
 
     class Config:
@@ -117,7 +118,7 @@ async def list_pricing_plans(request: web.Request):
 @_handle_pricing_plan_admin_exceptions
 async def get_pricing_plan(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+    path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
 
     pricing_plan_get = await admin_api.get_pricing_plan(
         app=request.app,
@@ -125,7 +126,8 @@ async def get_pricing_plan(request: web.Request):
         pricing_plan_id=path_params.pricing_plan_id,
     )
     if pricing_plan_get.pricing_units is None:
-        raise ValueError("Pricing plan units should not be None")
+        msg = "Pricing plan units should not be None"
+        raise ValueError(msg)
 
     webserver_admin_pricing_plan_get = PricingPlanAdminGet(
         pricing_plan_id=pricing_plan_get.pricing_plan_id,
@@ -209,7 +211,7 @@ async def create_pricing_plan(request: web.Request):
 @_handle_pricing_plan_admin_exceptions
 async def update_pricing_plan(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+    path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
     body_params = await parse_request_body_as(UpdatePricingPlanBodyParams, request)
 
     _data = PricingPlanUpdate(
@@ -253,7 +255,7 @@ async def update_pricing_plan(request: web.Request):
 ## Admin Pricing Unit endpoints
 
 
-class _GetPricingUnitPathParams(BaseModel):
+class PricingUnitGetPathParams(BaseModel):
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
 
@@ -270,7 +272,7 @@ class _GetPricingUnitPathParams(BaseModel):
 @_handle_pricing_plan_admin_exceptions
 async def get_pricing_unit(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingUnitPathParams, request)
+    path_params = parse_request_path_parameters_as(PricingUnitGetPathParams, request)
 
     pricing_unit_get = await admin_api.get_pricing_unit(
         app=request.app,
@@ -300,7 +302,7 @@ async def get_pricing_unit(request: web.Request):
 @_handle_pricing_plan_admin_exceptions
 async def create_pricing_unit(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+    path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
     body_params = await parse_request_body_as(CreatePricingUnitBodyParams, request)
 
     _data = PricingUnitWithCostCreate(
@@ -339,7 +341,7 @@ async def create_pricing_unit(request: web.Request):
 @_handle_pricing_plan_admin_exceptions
 async def update_pricing_unit(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingUnitPathParams, request)
+    path_params = parse_request_path_parameters_as(PricingUnitGetPathParams, request)
     body_params = await parse_request_body_as(UpdatePricingUnitBodyParams, request)
 
     _data = PricingUnitWithCostUpdate(
@@ -381,7 +383,7 @@ async def update_pricing_unit(request: web.Request):
 @_handle_pricing_plan_admin_exceptions
 async def list_connected_services_to_pricing_plan(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+    path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
 
     connected_services_list = await admin_api.list_connected_services_to_pricing_plan(
         app=request.app,
@@ -410,7 +412,7 @@ async def list_connected_services_to_pricing_plan(request: web.Request):
 @_handle_pricing_plan_admin_exceptions
 async def connect_service_to_pricing_plan(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+    path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
     body_params = await parse_request_body_as(
         ConnectServiceToPricingPlanBodyParams, request
     )

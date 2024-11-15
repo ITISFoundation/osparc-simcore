@@ -18,16 +18,11 @@ from models_library.rest_ordering import (
     OrderDirection,
     create_ordering_query_model_classes,
 )
-from models_library.rest_pagination import (
-    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-    Page,
-    PageQueryParameters,
-)
+from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import Extra, Field, Json, NonNegativeInt, parse_obj_as, validator
+from pydantic import Extra, Field, Json, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -63,10 +58,7 @@ class _RequestContext(RequestParameters):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
-(
-    ListResourceUsagesOrderQueryParams,
-    ListResourceUsagesOrderQueryParamsOpenApi,
-) = create_ordering_query_model_classes(
+_ResorceUsagesListOrderQueryParams, _ = create_ordering_query_model_classes(
     ordering_fields={
         "wallet_id",
         "wallet_name",
@@ -91,7 +83,7 @@ class _RequestContext(RequestParameters):
 )
 
 
-class _ListServicesResourceUsagesQueryParams(ListResourceUsagesOrderQueryParams):
+class ServicesResourceUsagesReportQueryParams(_ResorceUsagesListOrderQueryParams):
     wallet_id: WalletID | None = Field(default=None)
     filters: (
         Json[ServiceResourceUsagesFilters]  # pylint: disable=unsubscriptable-object
@@ -113,24 +105,14 @@ class _ListServicesResourceUsagesQueryParams(ListResourceUsagesOrderQueryParams)
         extra = Extra.forbid
 
 
-class _ListServicesResourceUsagesQueryParamsWithPagination(
-    _ListServicesResourceUsagesQueryParams
+class ServicesResourceUsagesListQueryParams(
+    PageQueryParameters, ServicesResourceUsagesReportQueryParams
 ):
-    limit: int = Field(
-        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-        description="maximum number of items to return (pagination)",
-        ge=1,
-        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-    )
-    offset: NonNegativeInt = Field(
-        default=0, description="index to the first item to return (pagination)"
-    )
-
     class Config:
         extra = Extra.forbid
 
 
-class _ListServicesAggregatedUsagesQueryParams(PageQueryParameters):
+class ServicesAggregatedUsagesListQueryParams(PageQueryParameters):
     aggregated_by: ServicesAggregatedUsagesType
     time_period: ServicesAggregatedUsagesTimePeriod
     wallet_id: WalletID
@@ -152,9 +134,9 @@ routes = web.RouteTableDef()
 @_handle_resource_usage_exceptions
 async def list_resource_usage_services(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    query_params: _ListServicesResourceUsagesQueryParamsWithPagination = (
+    query_params: ServicesResourceUsagesListQueryParams = (
         parse_request_query_parameters_as(
-            _ListServicesResourceUsagesQueryParamsWithPagination, request
+            ServicesResourceUsagesListQueryParams, request
         )
     )
 
@@ -193,9 +175,9 @@ async def list_resource_usage_services(request: web.Request):
 @_handle_resource_usage_exceptions
 async def list_osparc_credits_aggregated_usages(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    query_params: _ListServicesAggregatedUsagesQueryParams = (
+    query_params: ServicesAggregatedUsagesListQueryParams = (
         parse_request_query_parameters_as(
-            _ListServicesAggregatedUsagesQueryParams, request
+            ServicesAggregatedUsagesListQueryParams, request
         )
     )
 
@@ -233,9 +215,9 @@ async def list_osparc_credits_aggregated_usages(request: web.Request):
 @_handle_resource_usage_exceptions
 async def export_resource_usage_services(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    query_params: _ListServicesResourceUsagesQueryParams = (
+    query_params: ServicesResourceUsagesReportQueryParams = (
         parse_request_query_parameters_as(
-            _ListServicesResourceUsagesQueryParams, request
+            ServicesResourceUsagesReportQueryParams, request
         )
     )
     download_url = await api.export_usage_services(
