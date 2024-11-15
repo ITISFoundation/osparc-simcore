@@ -54,9 +54,8 @@ def create_ordering_query_model_classes(
     msg_field_options = "|".join(sorted(ordering_fields))
     msg_direction_options = "|".join(sorted(OrderDirection))
     description = (
-        f"Order by field ({msg_field_options}) and direction ({msg_direction_options}). "
-        f"The default sorting order is '{default.direction.value}' on '{default.field}'."
-        f"For instance order_by={json_dumps(order_by_example)}"
+        f"Order by field (`{msg_field_options}`) and direction (`{msg_direction_options}`). "
+        f"The default sorting order is `{default.direction.value}` on `{default.field}`."
     )
 
     class _OrderBy(OrderBy):
@@ -78,9 +77,12 @@ def create_ordering_query_model_classes(
                 raise ValueError(msg)
             return v
 
-    class _RequestValidatorModel(_BaseOrderByQueryParams):
-        # Used in rest handler for verification
-        order_by: _OrderBy = Field(default=default)
+    class _OrderQueryParams(_BaseOrderByQueryParams):
+        order_by: _OrderBy = Field(
+            default=default,
+            description=description,
+            example_json=json_dumps(order_by_example),
+        )
 
         _pre_parse_string = validator("order_by", allow_reuse=True, pre=True)(
             load_if_json_encoded_pre_validator
@@ -104,4 +106,4 @@ def create_ordering_query_model_classes(
         # Used to produce nice openapi.json specs
         order_by: _OrderByJson = Field(default=json_dumps(default))
 
-    return _RequestValidatorModel, _OpenApiModel
+    return _OrderQueryParams, _OpenApiModel
