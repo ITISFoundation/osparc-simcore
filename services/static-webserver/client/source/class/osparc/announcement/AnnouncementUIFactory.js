@@ -63,14 +63,9 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
       }
 
       return loginAnnouncement;
-    }
-  },
+    },
 
-  members: {
-    __ribbonAnnouncement: null,
-
-    __isValid: function(widgetType) {
-      const announcement = this.getAnnouncement();
+    isValid: function(announcement, widgetType) {
       if (announcement) {
         const now = new Date();
         const validPeriod = now > announcement.getStart() && now < announcement.getEnd();
@@ -79,6 +74,19 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         return validPeriod && validProduct && validWidgetType;
       }
       return false;
+    },
+  },
+
+  members: {
+    __announcements: null,
+    __ribbonAnnouncement: null,
+
+    setAnnouncementsData: function(announcementsData) {
+      this.__announcements = [];
+      announcementsData.forEach(announcementData => {
+        const announcement = new osparc.announcement.Announcement(announcementData);
+        this.__announcements.push(announcement);
+      });
     },
 
     __applyAnnouncement: function() {
@@ -92,15 +100,18 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
     },
 
     hasLoginAnnouncement: function() {
-      return this.__isValid("login");
+      const announcement = this.getAnnouncement();
+      return this.self().isValid(announcement, "login");
     },
 
     __hasRibbonAnnouncement: function() {
-      return this.__isValid("ribbon");
+      const announcement = this.getAnnouncement();
+      return this.self().isValid(announcement, "ribbon");
     },
 
     hasUserMenuAnnouncement: function() {
-      return this.__isValid("user-menu") && this.getAnnouncement().getLink();
+      const announcement = this.getAnnouncement();
+      return this.self().isValid(announcement, "user-menu") && announcement.getLink();
     },
 
     createLoginAnnouncement: function() {
