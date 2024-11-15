@@ -447,6 +447,10 @@ def create_new_project_and_delete(
                 if press_open:
                     open_button = page.get_by_test_id("openResource")
                     if template_id is not None:
+                        if is_product_billable:
+                            open_button.click()
+                            # Open project with default resources
+                            open_button = page.get_by_test_id("openWithResources")
                         # it returns a Long Running Task
                         with page.expect_response(
                             re.compile(rf"/projects\?from_study\={template_id}")
@@ -458,9 +462,6 @@ def create_new_project_and_delete(
                             logging.INFO,
                             "Copying template data",
                         ) as copying_logger:
-                            if is_product_billable:
-                                # Open project with default resources
-                                page.get_by_test_id("openWithResources").click()
 
                             # From the long running tasks response's urls, only their path is relevant
                             def url_to_path(url):
