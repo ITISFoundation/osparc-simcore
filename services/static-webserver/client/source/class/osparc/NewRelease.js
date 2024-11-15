@@ -65,10 +65,14 @@ qx.Class.define("osparc.NewRelease", {
         const title = qx.locale.Manager.tr("New Release");
         let win = null;
         if (this.isNewReleaseLinkMarkdown()) {
-          win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 800, 600).set({
+          win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 800).set({
             clickAwayClose: false,
             resizable: true,
-            showClose: true
+            showClose: true,
+            maxHeight: 800,
+          });
+          newRelease.addListener("rendered", () => {
+            setTimeout(() => win.center(), 1000);
           });
         } else {
           win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
@@ -94,6 +98,10 @@ qx.Class.define("osparc.NewRelease", {
     },
   },
 
+  events: {
+    "rendered": "qx.event.type.Event",
+  },
+
   members: {
     __buildLayout: function() {
       const introText = qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
@@ -106,13 +114,16 @@ qx.Class.define("osparc.NewRelease", {
 
       const url = this.self().getReleaseNotesLink();
       if (osparc.utils.Utils.isMarkdownLink(url)) {
-        const description = new osparc.ui.markdown.Markdown();
+        const description = new osparc.ui.markdown.Markdown().set({
+          maxWidth: 750,
+        });
         this._add(description);
         fetch(url)
           .then(response => response.blob())
           .then(blob => blob.text())
           .then(markdown => {
-            description.setValue(markdown)
+            description.setValue(markdown);
+            this.fireEvent("rendered");
           })
           .catch(err => console.error(err));
       } else {
