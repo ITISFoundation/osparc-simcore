@@ -403,7 +403,9 @@ class ProjectDBAPI(BaseProjectDB):
                 sa.select(
                     projects_tags.c.project_id,
                     sa.func.array_agg(projects_tags.c.tag_id).label("tags"),
-                ).group_by(projects_tags.c.project_id)
+                )
+                .where(projects_tags.c.project_id.is_not(None))
+                .group_by(projects_tags.c.project_id)
             ).subquery("project_tags_subquery")
 
             ###
@@ -1218,6 +1220,7 @@ class ProjectDBAPI(BaseProjectDB):
                     projects_tags.insert().values(
                         project_id=project["id"],
                         tag_id=tag_id,
+                        project_uuid_for_rut=project["uuid"],
                     )
                 )
                 project_tags.append(tag_id)
