@@ -165,7 +165,7 @@ async def _assert_get_same_project(
         project_permalink = data.pop("permalink", None)
         folder_id = data.pop("folderId", None)
 
-        assert data == project
+        assert data == {k: project[k] for k in data}
 
         if project_state:
             assert ProjectState.model_validate(project_state)
@@ -201,22 +201,24 @@ async def test_list_projects(
         assert len(data) == 2
 
         # template project
-        project_state = data[0].pop("state")
-        project_permalink = data[0].pop("permalink")
-        folder_id = data[0].pop("folderId")
+        got = data[0]
+        project_state = got.pop("state")
+        project_permalink = got.pop("permalink")
+        folder_id = got.pop("folderId")
 
-        assert data[0] == template_project
+        assert got == {k: template_project[k] for k in got}
         assert not ProjectState(
             **project_state
         ).locked.value, "Templates are not locked"
         assert ProjectPermalink.model_validate(project_permalink)
 
         # standard project
-        project_state = data[1].pop("state")
-        project_permalink = data[1].pop("permalink", None)
-        folder_id = data[1].pop("folderId")
+        got = data[1]
+        project_state = got.pop("state")
+        project_permalink = got.pop("permalink", None)
+        folder_id = got.pop("folderId")
 
-        assert data[1] == user_project
+        assert got == {k: user_project[k] for k in got}
         assert ProjectState(**project_state)
         assert project_permalink is None
         assert folder_id is None
@@ -227,11 +229,12 @@ async def test_list_projects(
         assert len(data) == 1
 
         # standad project
-        project_state = data[0].pop("state")
-        project_permalink = data[0].pop("permalink", None)
-        folder_id = data[0].pop("folderId")
+        got = data[0]
+        project_state = got.pop("state")
+        project_permalink = got.pop("permalink", None)
+        folder_id = got.pop("folderId")
 
-        assert data[0] == user_project
+        assert got == {k: user_project[k] for k in got}
         assert not ProjectState(
             **project_state
         ).locked.value, "Single user does not lock"
@@ -244,11 +247,12 @@ async def test_list_projects(
         assert len(data) == 1
 
         # template project
-        project_state = data[0].pop("state")
-        project_permalink = data[0].pop("permalink")
-        folder_id = data[0].pop("folderId")
+        got = data[0]
+        project_state = got.pop("state")
+        project_permalink = got.pop("permalink")
+        folder_id = got.pop("folderId")
 
-        assert data[0] == template_project
+        assert got == {k: template_project[k] for k in got}
         assert not ProjectState(
             **project_state
         ).locked.value, "Templates are not locked"
@@ -360,9 +364,14 @@ async def test_list_projects_with_innaccessible_services(
     data, *_ = await _list_and_assert_projects(
         client, expected, headers=s4l_product_headers
     )
-    assert len(data) == 2
+    # UPDATE (use-case 4): 11.11.2024 - This test was checking backwards compatibility for listing
+    # projects that were not in the projects_to_products table. After refactoring the project listing,
+    # we no longer support this. MD double-checked the last_modified_timestamp on projects
+    # that do not have any product assigned (all of them were before 01-11-2022 with the exception of two
+    # `4b001ad2-8450-11ec-b105-02420a0b02c7` and `d952cbf4-d838-11ec-af92-02420a0bdad4` which were added to osparc product).
+    assert len(data) == 0
     data, *_ = await _list_and_assert_projects(client, expected)
-    assert len(data) == 2
+    assert len(data) == 0
 
 
 @pytest.mark.parametrize(

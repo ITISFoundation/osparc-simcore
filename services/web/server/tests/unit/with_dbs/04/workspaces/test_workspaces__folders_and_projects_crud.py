@@ -365,3 +365,98 @@ async def test_workspaces_delete_folders(
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 0
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_created(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
+    fake_project: ProjectDict,
+    workspaces_clean_db: None,
+):
+    assert client.app
+
+    # create a new workspace
+    url = client.app.router["create_workspace"].url_for()
+    resp = await client.post(
+        url.path,
+        json={
+            "name": "My first workspace",
+            "description": "Custom description",
+            "thumbnail": None,
+        },
+    )
+    added_workspace_1, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # Create project in workspace
+    project_data = deepcopy(fake_project)
+    project_data["workspace_id"] = f"{added_workspace_1['workspaceId']}"
+    project = await create_project(
+        client.app,
+        project_data,
+        user_id=logged_user["id"],
+        product_name="osparc",
+    )
+
+    # Create folder in workspace
+    url = client.app.router["create_folder"].url_for()
+    resp = await client.post(
+        url.path,
+        json={
+            "name": "Original user folder",
+            "workspaceId": f"{added_workspace_1['workspaceId']}",
+        },
+    )
+    first_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # create a new workspace
+    url = client.app.router["create_workspace"].url_for()
+    resp = await client.post(
+        url.path,
+        json={
+            "name": "My first workspace",
+            "description": "Custom description",
+            "thumbnail": None,
+        },
+    )
+    added_workspace_2, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # Create project in workspace
+    project_data = deepcopy(fake_project)
+    project_data["workspace_id"] = f"{added_workspace_2['workspaceId']}"
+    project = await create_project(
+        client.app,
+        project_data,
+        user_id=logged_user["id"],
+        product_name="osparc",
+    )
+
+    # Create folder in workspace
+    url = client.app.router["create_folder"].url_for()
+    resp = await client.post(
+        url.path,
+        json={
+            "name": "Original user folder",
+            "workspaceId": f"{added_workspace_2['workspaceId']}",
+        },
+    )
+    first_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # List projects in workspace 1
+    base_url = client.app.router["list_projects"].url_for()
+    url = base_url.with_query({"workspace_id": f"{added_workspace_1['workspaceId']}"})
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+
+    # List folders in workspace 1
+    base_url = client.app.router["list_folders"].url_for()
+    url = base_url.with_query(
+        {"workspace_id": f"{added_workspace_1['workspaceId']}", "folder_id": "null"}
+    )
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1

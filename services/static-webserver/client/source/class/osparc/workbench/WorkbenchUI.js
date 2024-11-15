@@ -1665,17 +1665,13 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __openNodeInfo: function(nodeId) {
       if (nodeId) {
         const node = this.getStudy().getWorkbench().getNode(nodeId);
-        const serviceDetails = new osparc.info.ServiceLarge(node.getMetaData(), {
+        const metadata = node.getMetaData();
+        const serviceDetails = new osparc.info.ServiceLarge(metadata, {
           nodeId,
           label: node.getLabel(),
           studyId: this.getStudy().getUuid()
         });
-        const title = this.tr("Service information");
-        const width = osparc.info.CardLarge.WIDTH;
-        const height = osparc.info.CardLarge.HEIGHT;
-        osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height).set({
-          maxHeight: height
-        });
+        osparc.info.ServiceLarge.popUpInWindow(serviceDetails);
       }
     },
 

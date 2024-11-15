@@ -37,6 +37,7 @@ qx.Class.define("osparc.data.model.Folder", {
       owner: folderData.owner,
       createdAt: new Date(folderData.createdAt),
       lastModified: new Date(folderData.modifiedAt),
+      trashedAt: folderData.trashedAt ? new Date(folderData.trashedAt) : this.getTrashedAt(),
     });
   },
 
@@ -95,7 +96,13 @@ qx.Class.define("osparc.data.model.Folder", {
       nullable: true,
       init: null,
       event: "changeLastModified"
-    }
+    },
+
+    trashedAt: {
+      check: "Date",
+      nullable: true,
+      init: null,
+    },
   },
 
   statics: {

@@ -33,12 +33,6 @@ qx.Class.define("osparc.widget.NodeOptions", {
     this.setNode(node);
   },
 
-  events: {
-    "versionChanged": "qx.event.type.Event",
-    "bootModeChanged": "qx.event.type.Event",
-    "limitsChanged": "qx.event.type.Event"
-  },
-
   properties: {
     node: {
       check: "osparc.data.model.Node",
@@ -74,7 +68,6 @@ qx.Class.define("osparc.widget.NodeOptions", {
         (node.isUpdatable() || node.isDeprecated() || node.isRetired())
       ) {
         const lifeCycleView = new osparc.node.LifeCycleView(node);
-        node.addListener("versionChanged", () => this.fireEvent("versionChanged"));
         sections.push(lifeCycleView);
 
         showStartStopButton = true;
@@ -83,7 +76,6 @@ qx.Class.define("osparc.widget.NodeOptions", {
       // Boot Options
       if (node.hasBootModes()) {
         const bootOptionsView = new osparc.node.BootOptionsView(node);
-        node.addListener("bootModeChanged", () => this.fireEvent("bootModeChanged"));
         sections.push(bootOptionsView);
 
         showStartStopButton = true;
@@ -95,7 +87,6 @@ qx.Class.define("osparc.widget.NodeOptions", {
         (node.isComputational() || node.isDynamic())
       ) {
         const updateResourceLimitsView = new osparc.node.UpdateResourceLimitsView(node);
-        node.addListener("limitsChanged", () => this.fireEvent("limitsChanged"));
         sections.push(updateResourceLimitsView);
 
         showStartStopButton |= node.isDynamic();

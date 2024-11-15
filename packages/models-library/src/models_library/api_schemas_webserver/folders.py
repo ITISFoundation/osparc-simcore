@@ -18,6 +18,7 @@ class FolderGet(OutputSchema):
     description: str
     created_at: datetime
     modified_at: datetime
+    trashed_at: datetime | None
     owner: GroupID
     my_access_rights: AccessRights
     access_rights: dict[GroupID, AccessRights]

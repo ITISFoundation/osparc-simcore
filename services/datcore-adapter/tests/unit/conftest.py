@@ -15,9 +15,8 @@ import respx
 import simcore_service_datcore_adapter
 from asgi_lifespan import LifespanManager
 from fastapi.applications import FastAPI
-from models_library.basic_types import BootModeEnum
 from pytest_mock import MockFixture
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_datcore_adapter.modules.pennsieve import (
     PennsieveAuthorizationHeaders,
 )
@@ -25,6 +24,7 @@ from starlette import status
 from starlette.testclient import TestClient
 
 pytest_plugins = [
+    "pytest_simcore.environment_configs",
     "pytest_simcore.repository_paths",
     "pytest_simcore.pytest_global_environs",
 ]
@@ -79,9 +79,16 @@ def client(minimal_app: FastAPI) -> TestClient:
 
 
 @pytest.fixture
-def app_envs(monkeypatch: pytest.MonkeyPatch):
-    # disable tracing as together with LifespanManager, it does not remove itself nicely
-    return setenvs_from_dict(monkeypatch, {"SC_BOOT_MODE": BootModeEnum.DEBUG})
+def app_envs(
+    mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **mock_env_devel_environment,
+            "DATCORE_ADAPTER_TRACING": "null",
+        },
+    )
 
 
 @pytest.fixture()

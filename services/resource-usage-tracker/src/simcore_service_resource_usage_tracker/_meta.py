@@ -21,7 +21,7 @@ API_VTAG: Final[VersionTag] = TypeAdapter(VersionTag).validate_python(
     info.api_prefix_path_tag
 )
 SUMMARY: Final[str] = info.get_summary()
-
+APP_NAME: Final[str] = PROJECT_NAME
 
 # NOTE: https://texteditor.com/ascii-frames/
 APP_STARTED_BANNER_MSG = r"""

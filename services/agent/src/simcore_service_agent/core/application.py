@@ -5,6 +5,7 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
+from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import (
@@ -58,6 +59,9 @@ def create_app() -> FastAPI:
     setup_volume_manager(app)
     setup_rest_api(app)
     setup_rpc_api_routes(app)
+
+    if settings.AGENT_TRACING:
+        setup_tracing(app, settings.AGENT_TRACING, APP_NAME)
 
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201

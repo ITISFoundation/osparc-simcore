@@ -19,6 +19,7 @@ from servicelib.fastapi.http_client import (
     BaseHTTPApi,
     HealthMixinMixin,
 )
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
 
 from ..core.errors import StripeRuntimeError
 from ..core.settings import ApplicationSettings
@@ -91,6 +92,8 @@ def setup_stripe(app: FastAPI):
         base_url=settings.PAYMENTS_STRIPE_URL,
         auth=_StripeBearerAuth(settings.PAYMENTS_STRIPE_API_SECRET.get_secret_value()),
     )
+    if settings.PAYMENTS_TRACING:
+        setup_httpx_client_tracing(api.client)
 
     api.set_to_app_state(app)
     api.attach_lifespan_to(app)

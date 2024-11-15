@@ -43,6 +43,7 @@ async def test_setup_client_instance(the_service):
         service_name="the_service",
         health_check_path="/health",
         x=42,
+        tracing_settings=None,
     )
     assert not TheClientApi.get_instance(app)
 

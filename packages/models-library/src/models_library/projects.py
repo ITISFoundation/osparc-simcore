@@ -182,5 +182,6 @@ class Project(BaseProjectModel):
         default=None,
         alias="trashedAt",
     )
+    trashed_explicitly: bool = Field(default=False, alias="trashedExplicitly")
 
     model_config = ConfigDict(title="osparc-simcore project", extra="forbid")

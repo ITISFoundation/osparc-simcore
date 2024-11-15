@@ -88,8 +88,6 @@ def app_environment(
     return setenvs_from_dict(
         monkeypatch,
         {
-            "SC_BOOT_MODE": "production",
-            "SC_BOOT_TARGET": "null",
             **docker_compose_service_environment_dict,
             "CATALOG_TRACING": "null",
         },

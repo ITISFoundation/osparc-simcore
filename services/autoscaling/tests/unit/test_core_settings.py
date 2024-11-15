@@ -5,6 +5,7 @@
 
 import datetime
 import json
+import os
 
 import pytest
 from faker import Faker
@@ -204,10 +205,41 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_passing_valid_image_tags(  # noqa: N802
 def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed(  # noqa: N802
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
+    assert app_environment["AUTOSCALING_EC2_INSTANCES"] == "{}"
     monkeypatch.setenv("EC2_INSTANCES_ALLOWED_TYPES", "{}")
 
-    with pytest.raises(ValidationError):
+    # test child settings
+    with pytest.raises(ValidationError) as err_info:
+        EC2InstancesSettings.create_from_envs()
+
+    assert err_info.value.errors()[0]["loc"] == ("EC2_INSTANCES_ALLOWED_TYPES",)
+
+
+def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_with_main_field_env_var(  # noqa: N802
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    assert os.environ["AUTOSCALING_EC2_INSTANCES"] == "{}"
+    monkeypatch.setenv("EC2_INSTANCES_ALLOWED_TYPES", "{}")
+
+    # now as part of AUTOSCALING_EC2_INSTANCES: EC2InstancesSettings | None
+    with pytest.raises(ValidationError) as exc_before:
+        ApplicationSettings.create_from_envs(AUTOSCALING_EC2_INSTANCES={})
+
+    with pytest.raises(ValidationError) as exc_after:
         ApplicationSettings.create_from_envs()
+
+    assert exc_before.value.errors() == exc_after.value.errors()
+
+
+def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_without_main_field_env_var(  # noqa: N802
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.delenv("AUTOSCALING_EC2_INSTANCES")
+    monkeypatch.setenv("EC2_INSTANCES_ALLOWED_TYPES", "{}")
+
+    # removing any value for AUTOSCALING_EC2_INSTANCES
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES is None
 
 
 @pytest.mark.xfail(
