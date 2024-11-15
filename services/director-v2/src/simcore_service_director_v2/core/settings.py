@@ -4,10 +4,15 @@
 
 import datetime
 from functools import cached_property
-from typing import Annotated
+from typing import Annotated, cast
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
-from models_library.basic_types import LogLevel, PortInt, VersionTag
+from fastapi import FastAPI
+from models_library.basic_types import (
+    LogLevel,
+    PortInt,
+    VersionTag,
+)
 from models_library.clusters import (
     DEFAULT_CLUSTER_ID,
     Cluster,
@@ -263,3 +268,7 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
     _validate_service_tracking_heartbeat = validate_numeric_string_as_timedelta(
         "SERVICE_TRACKING_HEARTBEAT"
     )
+
+
+def get_application_settings(app: FastAPI) -> AppSettings:
+    return cast(AppSettings, app.state.settings)

@@ -1,3 +1,6 @@
+from typing import cast
+
+from aiopg.sa import Engine
 from fastapi import FastAPI
 from settings_library.postgres import PostgresSettings
 
@@ -22,4 +25,11 @@ def setup(app: FastAPI, settings: PostgresSettings) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-__all__: tuple[str, ...] = ("get_asyncpg_engine",)
+def get_db_engine(app: FastAPI) -> Engine:
+    return cast(Engine, app.state.engine)
+
+
+__all__: tuple[str, ...] = (
+    "get_asyncpg_engine",
+    "get_db_engine",
+)

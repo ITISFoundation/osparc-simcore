@@ -1,6 +1,5 @@
 import datetime
 import logging
-from collections import deque
 from typing import Any
 
 import arrow
@@ -55,24 +54,32 @@ class CompRunsRepository(BaseRepository):
             return CompRunsAtDB.model_validate(row)
 
     async def list(
-        self, filter_by_state: set[RunningState] | None = None
+        self,
+        filter_by_state: set[RunningState] | None = None,
+        scheduled_since: datetime.timedelta | None = None,
     ) -> list[CompRunsAtDB]:
-        if not filter_by_state:
-            filter_by_state = set()
-        runs_in_db: deque[CompRunsAtDB] = deque()
-        async with self.db_engine.acquire() as conn:
-            async for row in conn.execute(
-                sa.select(comp_runs).where(
-                    or_(
-                        *[
-                            comp_runs.c.result == RUNNING_STATE_TO_DB[s]
-                            for s in filter_by_state
-                        ]
-                    )
+
+        conditions = []
+        if filter_by_state:
+            conditions.append(
+                or_(
+                    *[
+                        comp_runs.c.result == RUNNING_STATE_TO_DB[s]
+                        for s in filter_by_state
+                    ]
                 )
-            ):
-                runs_in_db.append(CompRunsAtDB.model_validate(row))
-        return list(runs_in_db)
+            )
+        if scheduled_since is not None:
+            scheduled_cutoff = arrow.utcnow().datetime - scheduled_since
+            conditions.append(comp_runs.c.last_scheduled >= scheduled_cutoff)
+
+        async with self.db_engine.acquire() as conn:
+            return [
+                CompRunsAtDB.model_validate(row)
+                async for row in conn.execute(
+                    sa.select(comp_runs).where(sa.and_(*conditions))
+                )
+            ]
 
     async def create(
         self,
