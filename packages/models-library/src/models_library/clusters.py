@@ -238,5 +238,6 @@ class Cluster(BaseCluster):
         ):
             msg = f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
             raise ValueError(msg)
+        # NOTE: overcomes frozen configuration (far fetched in ClusterGet model of webserver)
         object.__setattr__(self, "access_rights", access_rights)
         return self
