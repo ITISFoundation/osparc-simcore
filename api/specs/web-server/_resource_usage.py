@@ -11,6 +11,7 @@ This OAS are the source of truth
 
 from typing import Annotated
 
+from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedByServiceGet,
@@ -53,7 +54,7 @@ router = APIRouter(prefix=f"/{API_VTAG}")
     tags=["usage"],
 )
 async def list_resource_usage_services(
-    _q: Annotated[ServicesResourceUsagesListQueryParams, Depends()],
+    _q: Annotated[as_query(ServicesResourceUsagesListQueryParams), Depends()],
 ):
     ...
 
@@ -66,7 +67,7 @@ async def list_resource_usage_services(
     tags=["usage"],
 )
 async def list_osparc_credits_aggregated_usages(
-    _q: Annotated[ServicesAggregatedUsagesListQueryParams, Depends()]
+    _q: Annotated[as_query(ServicesAggregatedUsagesListQueryParams), Depends()]
 ):
     ...
 
@@ -84,7 +85,7 @@ async def list_osparc_credits_aggregated_usages(
     "user services (user and product are taken from context, optionally wallet_id parameter might be provided).",
 )
 async def export_resource_usage_services(
-    _q: Annotated[ServicesResourceUsagesReportQueryParams, Depends()]
+    _q: Annotated[as_query(ServicesResourceUsagesReportQueryParams), Depends()]
 ):
     ...
 
