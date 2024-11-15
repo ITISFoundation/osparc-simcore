@@ -71,9 +71,7 @@ qx.Class.define("osparc.NewRelease", {
             showClose: true,
             maxHeight: 800,
           });
-          newRelease.addListener("rendered", () => {
-            setTimeout(() => win.center(), 1000);
-          });
+          newRelease.getMarkdown().addListener("resized", () => win.center());
         } else {
           win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
             clickAwayClose: false,
@@ -98,11 +96,9 @@ qx.Class.define("osparc.NewRelease", {
     },
   },
 
-  events: {
-    "rendered": "qx.event.type.Event",
-  },
-
   members: {
+    __markdown: null,
+
     __buildLayout: function() {
       const introText = qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
       const introLabel = new qx.ui.basic.Label(introText).set({
@@ -114,16 +110,15 @@ qx.Class.define("osparc.NewRelease", {
 
       const url = this.self().getReleaseNotesLink();
       if (osparc.utils.Utils.isMarkdownLink(url)) {
-        const description = new osparc.ui.markdown.Markdown().set({
+        const markdown = this.__markdown = new osparc.ui.markdown.Markdown().set({
           maxWidth: 750,
         });
-        this._add(description);
+        this._add(markdown);
         fetch(url)
           .then(response => response.blob())
           .then(blob => blob.text())
-          .then(markdown => {
-            description.setValue(markdown);
-            this.fireEvent("rendered");
+          .then(text => {
+            markdown.setValue(text);
           })
           .catch(err => console.error(err));
       } else {
@@ -134,6 +129,10 @@ qx.Class.define("osparc.NewRelease", {
         });
         this._add(linkLabel);
       }
-    }
+    },
+
+    getMarkdown: function() {
+      return this.__markdown;
+    },
   }
 });
