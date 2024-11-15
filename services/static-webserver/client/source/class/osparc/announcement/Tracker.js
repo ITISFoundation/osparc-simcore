@@ -29,7 +29,7 @@ qx.Class.define("osparc.announcement.Tracker", {
     checkAnnouncements: async function() {
       osparc.data.Resources.get("announcements")
         .then(announcements => {
-          osparc.announcement.AnnouncementUIFactory.getInstance().setAnnouncements((announcements && announcements.length) ? announcements : []);
+          osparc.announcement.AnnouncementUIFactory.getInstance().setAnnouncementsData((announcements && announcements.length) ? announcements : []);
         })
         .catch(err => console.error(err));
     },

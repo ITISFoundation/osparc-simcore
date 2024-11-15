@@ -100,24 +100,27 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
     },
 
     hasLoginAnnouncement: function() {
-      const announcement = this.getAnnouncement();
-      return this.self().isValid(announcement, "login");
+      return this.__announcements && this.__announcements.some(announcement => this.self().isValid(announcement, "login"));
     },
 
     __hasRibbonAnnouncement: function() {
-      const announcement = this.getAnnouncement();
-      return this.self().isValid(announcement, "ribbon");
+      return this.__announcements && this.__announcements.some(announcement => this.self().isValid(announcement, "ribbon"));
     },
 
     hasUserMenuAnnouncement: function() {
-      const announcement = this.getAnnouncement();
-      return this.self().isValid(announcement, "user-menu") && announcement.getLink();
+      return this.__announcements && this.__announcements.some(announcement => this.self().isValid(announcement, "ribbon") && announcement.getLink());
     },
 
-    createLoginAnnouncement: function() {
-      const announcement = this.getAnnouncement();
-      const loginAnnouncement = this.self().createLoginAnnouncement(announcement.getTitle(), announcement.getDescription());
-      return loginAnnouncement;
+    createLoginAnnouncements: function() {
+      const loginAnnouncements = [];
+      this.__announcements.forEach(announcement => {
+        if (this.self().isValid(announcement, "login")) {
+          loginAnnouncements.push(this.self().createLoginAnnouncement(announcement.getTitle(), announcement.getDescription()));
+        }
+      });
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      loginAnnouncements.forEach(loginAnnouncement => layout.add(loginAnnouncement));
+      return layout;
     },
 
     __addRibbonAnnouncement: function() {
