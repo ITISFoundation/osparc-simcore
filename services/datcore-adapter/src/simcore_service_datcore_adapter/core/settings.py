@@ -4,6 +4,7 @@ from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AliasChoices, Field, TypeAdapter, field_validator
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
+from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -19,10 +20,7 @@ class PennsieveSettings(BaseCustomSettings):
     PENNSIEVE_HEALTCHCHECK_TIMEOUT: float = 1.0
 
 
-class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
-    # DOCKER
-    SC_BOOT_MODE: BootModeEnum | None
-
+class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     LOG_LEVEL: LogLevel = Field(
         default=LogLevel.INFO.value,
         validation_alias=AliasChoices(
