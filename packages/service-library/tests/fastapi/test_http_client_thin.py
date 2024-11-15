@@ -6,7 +6,6 @@ from typing import Final
 
 import arrow
 import pytest
-from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from httpx import (
     HTTPError,
     PoolTimeout,
@@ -16,7 +15,7 @@ from httpx import (
     TransportError,
     codes,
 )
-from pydantic import TypeAdapter
+from pydantic import AnyHttpUrl, TypeAdapter
 from respx import MockRouter
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
@@ -78,7 +77,7 @@ async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
 
 @pytest.fixture
 def test_url() -> str:
-    url = TypeAdapter(AnyHttpUrlLegacy).validate_python("http://missing-host:1111")
+    url = TypeAdapter(AnyHttpUrl).validate_python("http://missing-host:1111")
     return f"{url}"
 
 

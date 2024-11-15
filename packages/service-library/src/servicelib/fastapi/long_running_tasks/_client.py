@@ -4,10 +4,9 @@ import logging
 import warnings
 from typing import Any, Awaitable, Callable, Final
 
-from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
-from pydantic import PositiveFloat, TypeAdapter
+from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -106,6 +105,9 @@ def retry_on_http_errors(
             with attempt:
                 return await request_func(zelf, *args, **kwargs)
 
+        msg = "Unexpected"
+        raise RuntimeError(msg)
+
     return request_wrapper
 
 
@@ -131,16 +133,17 @@ class Client:
         return output
 
     def _get_url(self, path: str) -> str:
-        url = f"{self._base_url}{self._client_configuration.router_prefix}{path}"
-        return f"{TypeAdapter(AnyHttpUrlLegacy).validate_python(url)}"
+        url_path = f"{self._client_configuration.router_prefix}{path}".lstrip("/")
+        url = TypeAdapter(AnyHttpUrl).validate_python(f"{self._base_url}{url_path}")
+        return f"{url}"
 
     @retry_on_http_errors
     async def get_task_status(
-        self, task_id: TaskId, *, timeout: PositiveFloat | None = None
+        self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
     ) -> TaskStatus:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.get(
-            self._get_url(f"task/{task_id}"),
+            self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
         if result.status_code != status.HTTP_200_OK:
@@ -155,11 +158,11 @@ class Client:
 
     @retry_on_http_errors
     async def get_task_result(
-        self, task_id: TaskId, *, timeout: PositiveFloat | None = None
+        self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
     ) -> Any | None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.get(
-            self._get_url(f"task/{task_id}/result"),
+            self._get_url(f"/task/{task_id}/result"),
             timeout=timeout,
         )
         if result.status_code != status.HTTP_200_OK:
@@ -177,11 +180,11 @@ class Client:
 
     @retry_on_http_errors
     async def cancel_and_delete_task(
-        self, task_id: TaskId, *, timeout: PositiveFloat | None = None
+        self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
     ) -> None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.delete(
-            self._get_url(f"task/{task_id}"),
+            self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
 
