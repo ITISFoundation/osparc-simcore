@@ -35,6 +35,7 @@ _SERVICE_RUN_GET = ServiceRunPage(
                 "user_email": "name@email.testing",
                 "project_id": "5c2110be-441b-11ee-a0e8-02420a000040",
                 "project_name": "osparc",
+                "project_tags": [],
                 "node_id": "3d2133f4-aba4-4364-9f7a-9377dea1221f",
                 "node_name": "sleeper",
                 "root_parent_project_id": "5c2110be-441b-11ee-a0e8-02420a000040",
