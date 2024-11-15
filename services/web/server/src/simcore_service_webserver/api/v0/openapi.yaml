@@ -2684,6 +2684,23 @@ paths:
       parameters:
       - required: false
         schema:
+          title: Filters
+          type: string
+          description: Custom filter query parameter encoded as JSON
+        name: filters
+        in: query
+      - required: false
+        schema:
+          title: Order By
+          type: string
+          description: Order by field (`description|modified|name`) and direction
+            (`asc|desc`). The default sorting order is `{"field":"modified","direction":"desc"}`.
+          default: '{"field":"modified","direction":"desc"}'
+          example: '{"field":"some_field_name","direction":"desc"}'
+        name: order_by
+        in: query
+      - required: false
+        schema:
           title: Limit
           exclusiveMaximum: true
           minimum: 1
@@ -2699,23 +2716,6 @@ paths:
           type: integer
           default: 0
         name: offset
-        in: query
-      - required: false
-        schema:
-          title: Filters
-          type: string
-          description: Custom filter query parameter encoded as JSON
-        name: filters
-        in: query
-      - required: false
-        schema:
-          title: Order By
-          type: string
-          description: Order by field (`description|modified|name`) and direction
-            (`asc|desc`). The default sorting order is `{"field":"modified","direction":"desc"}`.
-          default: '{"field":"modified","direction":"desc"}'
-          example: '{"field":"some_field_name","direction":"desc"}'
-        name: order_by
         in: query
       - required: false
         schema:

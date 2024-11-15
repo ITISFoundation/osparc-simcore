@@ -17,7 +17,6 @@ from models_library.api_schemas_webserver.folders_v2 import (
     PutFolderBodyParams,
 )
 from models_library.generics import Envelope
-from models_library.rest_pagination import PageQueryParameters
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.folders._models import (
     FolderSearchQueryParams,
@@ -59,7 +58,6 @@ async def list_folders(
     response_model=Envelope[list[FolderGet]],
 )
 async def list_folders_full_search(
-    _p: Annotated[PageQueryParameters, Depends()],
     _q: Annotated[as_query(FolderSearchQueryParams), Depends()],
 ):
     ...
