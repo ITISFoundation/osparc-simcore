@@ -25,10 +25,10 @@ def upgrade():
     op.execute(
         sa.DDL(
             """
-                UPDATE project_tags
+                UPDATE projects_tags
                 SET project_uuid_for_rut = project.uuid
                 FROM project
-                WHERE project_tags.project_id = project.id;
+                WHERE projects_tags.project_id = project.id;
             """
         )
     )
