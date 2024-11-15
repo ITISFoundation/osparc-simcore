@@ -26,12 +26,14 @@ qx.Class.define("osparc.po.POCenter", {
     });
     this.addWidgetOnTopOfTheTabs(miniProfile);
 
-    this.__addUsersPage();
-    this.__addPreRegistrationPage();
-    this.__addInvitationsPage();
+    if (osparc.data.Permissions.getInstance().isProductOwner(true)) {
+      this.__addUsersPage();
+      this.__addPreRegistrationPage();
+      this.__addInvitationsPage();
+      this.__addProductPage();
+      this.__addMsgTemplatesPage();
+    }
     this.__addAnnouncementsPage();
-    this.__addProductPage();
-    this.__addMsgTemplatesPage();
   },
 
   members: {
