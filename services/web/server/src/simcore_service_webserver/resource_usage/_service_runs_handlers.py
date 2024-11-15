@@ -12,6 +12,7 @@ from models_library.resource_tracker import (
     ServicesAggregatedUsagesTimePeriod,
     ServicesAggregatedUsagesType,
 )
+from models_library.rest_base import RequestParameters
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
@@ -50,7 +51,9 @@ def _handle_resource_usage_exceptions(handler: Handler):
     return wrapper
 
 
-_ResorceUsagesListOrderQueryParams = create_ordering_query_model_classes(
+_ResorceUsagesListOrderQueryParams: type[
+    RequestParameters
+] = create_ordering_query_model_classes(
     ordering_fields={
         "wallet_id",
         "wallet_name",
@@ -75,7 +78,9 @@ _ResorceUsagesListOrderQueryParams = create_ordering_query_model_classes(
 )
 
 
-class ServicesResourceUsagesReportQueryParams(_ResorceUsagesListOrderQueryParams):
+class ServicesResourceUsagesReportQueryParams(
+    _ResorceUsagesListOrderQueryParams  # type: ignore[misc, valid-type]
+):
     wallet_id: WalletID | None = Field(default=None)
     filters: (
         Json[ServiceResourceUsagesFilters]  # pylint: disable=unsubscriptable-object

@@ -73,7 +73,9 @@ class WorkspacesPathParams(StrictRequestParameters):
     workspace_id: WorkspaceID
 
 
-WorkspacesListOrderQueryParams = create_ordering_query_model_classes(
+WorkspacesListOrderQueryParams: type[
+    RequestParameters
+] = create_ordering_query_model_classes(
     ordering_fields={
         "modified_at",
         "name",
@@ -83,7 +85,10 @@ WorkspacesListOrderQueryParams = create_ordering_query_model_classes(
 )
 
 
-class WorkspacesListQueryParams(PageQueryParameters, WorkspacesListOrderQueryParams):
+class WorkspacesListQueryParams(
+    PageQueryParameters,
+    WorkspacesListOrderQueryParams,  # type: ignore[misc, valid-type]
+):
     @validator("order_by", check_fields=False)
     @classmethod
     def _post_rename_order_by_field(cls, v):

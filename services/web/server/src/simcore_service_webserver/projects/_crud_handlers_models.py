@@ -153,7 +153,7 @@ class ProjectsListExtraQueryParams(RequestParameters):
 
 class ProjectsListQueryParams(
     PageQueryParameters,
-    ProjectsListOrderParams,
+    ProjectsListOrderParams,  # type: ignore[misc, valid-type]
     FiltersQueryParameters[ProjectFilters],
     ProjectsListExtraQueryParams,
 ):
@@ -182,7 +182,9 @@ class ProjectSearchExtraQueryParams(PageQueryParameters):
     )
 
 
-class ProjectsSearchQueryParams(ProjectSearchExtraQueryParams, ProjectsListOrderParams):
+class ProjectsSearchQueryParams(
+    ProjectSearchExtraQueryParams, ProjectsListOrderParams  # type: ignore[misc, valid-type]
+):
     def tag_ids_list(self) -> list[int]:
         try:
             # Split the tag_ids by commas and map them to integers

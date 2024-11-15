@@ -40,14 +40,14 @@ class FolderFilters(Filters):
     )
 
 
-_FolderOrderQueryParams = create_ordering_query_model_classes(
+_FolderOrderQueryParams: type[RequestParameters] = create_ordering_query_model_classes(
     ordering_fields={"modified", "name", "description"},
     default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
 )
 
 
 class FoldersListQueryParams(
-    PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]
+    PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]  # type: ignore[misc, valid-type]
 ):
     folder_id: FolderID | None = Field(
         default=None,
@@ -72,7 +72,7 @@ class FoldersListQueryParams(
 
 
 class FolderSearchQueryParams(
-    PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]
+    PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]  # type: ignore[misc, valid-type]
 ):
     text: str | None = Field(
         default=None,
