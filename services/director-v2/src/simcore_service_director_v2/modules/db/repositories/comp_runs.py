@@ -71,7 +71,12 @@ class CompRunsRepository(BaseRepository):
             )
         if scheduled_since is not None:
             scheduled_cutoff = arrow.utcnow().datetime - scheduled_since
-            conditions.append(comp_runs.c.last_scheduled >= scheduled_cutoff)
+            conditions.append(
+                or_(
+                    comp_runs.c.last_scheduled.is_(None),
+                    comp_runs.c.last_scheduled >= scheduled_cutoff,
+                )
+            )
 
         async with self.db_engine.acquire() as conn:
             return [
