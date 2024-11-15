@@ -16,7 +16,7 @@ _SCHEDULER_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 
 
 def _redis_client_getter(*args, **kwargs) -> RedisClientSDK:
-    assert kwargs  # nosec
+    assert kwargs is not None  # nosec
     app = args[0]
     assert isinstance(app, FastAPI)  # nosec
     return get_redis_client_manager(app).client(RedisDatabase.LOCKS)
