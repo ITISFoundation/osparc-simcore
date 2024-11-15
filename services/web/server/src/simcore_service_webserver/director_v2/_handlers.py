@@ -26,6 +26,7 @@ from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
+from ..models import RequestContext
 from ..products import api as products_api
 from ..security.decorators import permission_required
 from ..users.exceptions import UserDefaultWalletNotFoundError
