@@ -5,6 +5,10 @@ from fastapi import FastAPI
 from servicelib.redis import RedisClientSDK
 from servicelib.redis_utils import exclusive
 from settings_library.redis import RedisDatabase
+from simcore_service_director_v2.modules.comp_scheduler._models import (
+    SchedulePipelineRabbitMessage,
+)
+from simcore_service_director_v2.modules.rabbitmq import get_rabbitmq_client
 
 from ...core.settings import get_application_settings
 from ...utils.comp_scheduler import SCHEDULED_STATES
@@ -29,7 +33,18 @@ async def schedule_pipelines(app: FastAPI) -> None:
     runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
         filter_by_state=SCHEDULED_STATES, scheduled_since=_SCHEDULER_INTERVAL
     )
-
+    rabbitmq_client = get_rabbitmq_client(app)
     for run in runs_to_schedule:
-        # await rpc_request_schedule_pipeline(run.user_id, run.project_uuid, run.iteration)
-        pass
+        # TODO: we should use the transaction and the asyncpg engine here to ensure 100% consistency
+        # async with transaction_context(get_asyncpg_engine(app)) as connection:
+        await rabbitmq_client.publish(
+            SchedulePipelineRabbitMessage.channel_name,
+            SchedulePipelineRabbitMessage(
+                user_id=run.user_id,
+                project_id=run.project_uuid,
+                iteration=run.iteration,
+            ),
+        )
+        await CompRunsRepository.instance(db_engine).mark_as_scheduled(
+            user_id=run.user_id, project_id=run.project_uuid, iteration=run.iteration
+        )

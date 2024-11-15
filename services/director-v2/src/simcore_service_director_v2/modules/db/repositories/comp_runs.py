@@ -176,3 +176,13 @@ class CompRunsRepository(BaseRepository):
             iteration,
             cancelled=arrow.utcnow().datetime,
         )
+
+    async def mark_as_scheduled(
+        self, *, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+    ) -> CompRunsAtDB | None:
+        return await self.update(
+            user_id,
+            project_id,
+            iteration,
+            last_scheduled=arrow.utcnow().datetime,
+        )
