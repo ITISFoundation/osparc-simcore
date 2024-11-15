@@ -26,14 +26,11 @@ qx.Class.define("osparc.po.POCenter", {
     });
     this.addWidgetOnTopOfTheTabs(miniProfile);
 
-    if (osparc.data.Permissions.getInstance().isProductOwner(true)) {
-      this.__addUsersPage();
-      this.__addPreRegistrationPage();
-      this.__addInvitationsPage();
-      this.__addProductPage();
-      this.__addMsgTemplatesPage();
-    }
-    this.__addAnnouncementsPage();
+    this.__addUsersPage();
+    this.__addPreRegistrationPage();
+    this.__addInvitationsPage();
+    this.__addProductPage();
+    this.__addMsgTemplatesPage();
   },
 
   members: {
@@ -56,13 +53,6 @@ qx.Class.define("osparc.po.POCenter", {
       const iconSrc = "@FontAwesome5Solid/envelope/22";
       const invitations = new osparc.po.Invitations();
       this.addTab(title, iconSrc, invitations);
-    },
-
-    __addAnnouncementsPage: function() {
-      const title = this.tr("Announcements");
-      const iconSrc = "@FontAwesome5Solid/bullhorn/22";
-      const announcements = new osparc.po.Announcements();
-      this.addTab(title, iconSrc, announcements);
     },
 
     __addProductPage: function() {

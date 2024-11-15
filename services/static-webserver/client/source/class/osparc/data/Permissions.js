@@ -288,15 +288,12 @@ qx.Class.define("osparc.data.Permissions", {
       return ["admin", "product_owner", "tester"].includes(this.getRole());
     },
 
-    isProductOwner: function(exclusive = false) {
-      if (exclusive) {
-        return this.getRole() === "product_owner";
-      }
-      return ["admin", "product_owner"].includes(this.getRole());
+    isProductOwner: function() {
+      return this.getRole() === "product_owner";
     },
 
     isAdmin: function() {
-      return ["admin"].includes(this.getRole());
+      return this.getRole() === "admin";
     },
   }
 });

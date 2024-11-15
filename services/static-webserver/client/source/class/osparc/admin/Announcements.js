@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.po.Announcements", {
+qx.Class.define("osparc.admin.Announcements", {
   extend: osparc.po.BaseView,
 
   members: {
@@ -154,6 +154,11 @@ qx.Class.define("osparc.po.Announcements", {
         }
       });
       vBox.add(copyAnnouncementBtn);
+    },
+
+    __testAnnouncements: function(announcementData) {
+      const announcement = new osparc.announcement.Announcement(announcementData);
+      osparc.announcement.AnnouncementUIFactory.getInstance().setAnnouncement(announcement);
     }
   }
 });
