@@ -454,6 +454,9 @@ def create_new_project_and_delete(
                             open_button.click()
                         lrt_data = lrt.value.json()
                         lrt_data = lrt_data["data"]
+                        if is_product_billable:
+                            # Open project with default resources
+                            page.get_by_test_id("openWithResources").click()
                         with log_context(
                             logging.INFO,
                             "Copying template data",
@@ -489,9 +492,9 @@ def create_new_project_and_delete(
                                 ...
                     else:
                         open_button.click()
-                if is_product_billable:
-                    # Open project with default resources
-                    page.get_by_test_id("openWithResources").click()
+                        if is_product_billable:
+                            # Open project with default resources
+                            page.get_by_test_id("openWithResources").click()
             project_data = response_info.value.json()
             assert project_data
             project_uuid = project_data["data"]["uuid"]
