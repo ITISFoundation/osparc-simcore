@@ -157,7 +157,7 @@ email-validator==2.1.1
     # via pydantic
 fast-depends==2.4.12
     # via faststream
-fastapi==0.115.0
+fastapi==0.115.5
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -631,7 +631,7 @@ sortedcontainers==2.4.0
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-starlette==0.38.6
+starlette==0.41.2
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

@@ -182,7 +182,7 @@ email-validator==2.1.1
     #   pydantic
 fast-depends==2.4.2
     # via faststream
-fastapi==0.115.2
+fastapi==0.115.5
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -753,7 +753,7 @@ sqlalchemy==1.4.52
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.38.5
+starlette==0.41.2
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

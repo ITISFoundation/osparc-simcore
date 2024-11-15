@@ -98,7 +98,7 @@ email-validator==2.2.0
     # via pydantic
 fast-depends==2.4.12
     # via faststream
-fastapi==0.115.2
+fastapi==0.115.5
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
