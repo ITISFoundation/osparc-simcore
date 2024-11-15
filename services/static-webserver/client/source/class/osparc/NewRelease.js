@@ -79,6 +79,7 @@ qx.Class.define("osparc.NewRelease", {
         }
         const closeBtn = win.getChildControl("close-button");
         osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
+      }
     },
 
     isNewReleaseLinkMarkdown: function() {
