@@ -38,6 +38,7 @@ def test_valid_web_application_settings(app_environment: EnvVarsDict):
 
 
 def test_docker_container_env_sample(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("DIRECTOR_DEFAULT_MAX_MEMORY", raising=False)
 
     setenvs_from_envfile(
         monkeypatch,
