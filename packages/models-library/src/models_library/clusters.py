@@ -1,8 +1,7 @@
 from enum import auto
 from pathlib import Path
-from typing import Final, Literal, TypeAlias
+from typing import Final, Literal, Self, TypeAlias
 
-from models_library.utils._original_fastapi_encoders import jsonable_encoder
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -222,29 +221,23 @@ class Cluster(BaseCluster):
         },
     )
 
-    @model_validator(mode="before")
-    @classmethod
-    def check_owner_has_access_rights(cls, values):
-        values = jsonable_encoder(values)
-
-        is_default_cluster = bool(values["id"] == DEFAULT_CLUSTER_ID)
-        owner_gid = values["owner"]
+    @model_validator(mode="after")
+    def check_owner_has_access_rights(self: Self) -> Self:
+        is_default_cluster = bool(self.id == DEFAULT_CLUSTER_ID)
+        owner_gid = self.owner
 
         # check owner is in the access rights, if not add it
-        access_rights = values.get("access_rights", values.get("accessRights", {}))
+        access_rights = self.access_rights.copy()
         if owner_gid not in access_rights:
             access_rights[owner_gid] = (
-                CLUSTER_USER_RIGHTS.model_dump()
-                if is_default_cluster
-                else CLUSTER_ADMIN_RIGHTS.model_dump()
+                CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
             )
         # check owner has the expected access
         if access_rights[owner_gid] != (
-            CLUSTER_USER_RIGHTS.model_dump()
-            if is_default_cluster
-            else CLUSTER_ADMIN_RIGHTS.model_dump()
+            CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
         ):
             msg = f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
             raise ValueError(msg)
-        values["access_rights"] = access_rights
-        return values
+        # NOTE: overcomes frozen configuration (far fetched in ClusterGet model of webserver)
+        object.__setattr__(self, "access_rights", access_rights)
+        return self
