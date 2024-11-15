@@ -9,7 +9,7 @@ from pydantic import BaseModel, Extra, Field
 
 from ..models import RequestContext
 
-assert RequestContext  # nosec
+assert RequestContext.__name__  # nosec
 
 
 class ProjectPathParams(BaseModel):
