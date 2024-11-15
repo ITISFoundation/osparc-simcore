@@ -32,7 +32,7 @@ class OrderBy(BaseModel):
         }
 
 
-class _BaseOrderByQueryParams(RequestParameters):
+class _BaseOrderQueryParams(RequestParameters):
     order_by: OrderBy | None = None
 
 
@@ -40,32 +40,17 @@ def create_ordering_query_model_classes(
     *,
     ordering_fields: set[str],
     default: OrderBy,
-    override_direction_default: bool = False,
-) -> tuple[type[_BaseOrderByQueryParams], type[BaseModel]]:
+) -> type[_BaseOrderQueryParams]:
     """
     Factory to create an uniform model used as ordering parameters in a query
 
-    Returns the validation
     """
-
     assert default.field in ordering_fields  # nosec
 
-    order_by_example: dict[str, Any] = OrderBy.Config.schema_extra["example"]
     msg_field_options = "|".join(sorted(ordering_fields))
     msg_direction_options = "|".join(sorted(OrderDirection))
-    description = (
-        f"Order by field (`{msg_field_options}`) and direction (`{msg_direction_options}`). "
-        f"The default sorting order is `{default.direction.value}` on `{default.field}`."
-    )
 
     class _OrderBy(OrderBy):
-        direction: OrderDirection = Field(
-            default=default.direction
-            if override_direction_default
-            else OrderBy.__fields__["direction"].default,
-            description=OrderBy.__fields__["direction"].field_info.description,
-        )
-
         @validator("field", allow_reuse=True)
         @classmethod
         def _check_if_ordering_field(cls, v):
@@ -77,33 +62,22 @@ def create_ordering_query_model_classes(
                 raise ValueError(msg)
             return v
 
-    class _OrderQueryParams(_BaseOrderByQueryParams):
+    order_by_example: dict[str, Any] = OrderBy.Config.schema_extra["example"]
+    order_by_example_json = json_dumps(order_by_example)
+
+    class _OrderQueryParams(_BaseOrderQueryParams):
         order_by: _OrderBy = Field(
             default=default,
-            description=description,
-            example_json=json_dumps(order_by_example),
+            description=(
+                f"Order by field (`{msg_field_options}`) and direction (`{msg_direction_options}`). "
+                f"The default sorting order is `{json_dumps(default)}`."
+            ),
+            example=order_by_example,
+            example_json=order_by_example_json,
         )
 
         _pre_parse_string = validator("order_by", allow_reuse=True, pre=True)(
             load_if_json_encoded_pre_validator
         )
 
-    # -------
-
-    class _OrderByJson(str):
-        __slots__ = ()
-
-        @classmethod
-        def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-            # openapi.json schema is corrected here
-            field_schema.update(
-                type="string",
-                format="json-string",
-                description=description,
-            )
-
-    class _OpenApiModel(BaseModel):
-        # Used to produce nice openapi.json specs
-        order_by: _OrderByJson = Field(default=json_dumps(default))
-
-    return _OrderQueryParams, _OpenApiModel
+    return _OrderQueryParams

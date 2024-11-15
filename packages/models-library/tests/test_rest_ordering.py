@@ -41,7 +41,7 @@ class ReferenceOrderQueryParamsClass(BaseModel):
 
 
 def test_ordering_query_model_class_factory():
-    BaseOrderingQueryModel, _ = create_ordering_query_model_classes(
+    BaseOrderingQueryModel = create_ordering_query_model_classes(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
     )
@@ -72,7 +72,7 @@ def test_ordering_query_model_class_factory():
 
 def test_ordering_query_model_class__fails_with_invalid_fields():
 
-    OrderQueryParamsModel, _ = create_ordering_query_model_classes(
+    OrderQueryParamsModel = create_ordering_query_model_classes(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
     )
@@ -89,7 +89,7 @@ def test_ordering_query_model_class__fails_with_invalid_fields():
 
 
 def test_ordering_query_model_class__fails_with_invalid_direction():
-    OrderQueryParamsModel, _ = create_ordering_query_model_classes(
+    OrderQueryParamsModel = create_ordering_query_model_classes(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
     )
@@ -105,13 +105,11 @@ def test_ordering_query_model_class__fails_with_invalid_direction():
     assert error["loc"] == ("order_by", "direction")
 
 
-@pytest.mark.parametrize("override_direction_default", [True, False])
-def test_ordering_query_model_class__defaults(override_direction_default: bool):
+def test_ordering_query_model_class__defaults():
 
-    OrderQueryParamsModel, _ = create_ordering_query_model_classes(
+    OrderQueryParamsModel = create_ordering_query_model_classes(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
-        override_direction_default=override_direction_default,
     )
 
     # checks  all defaults
@@ -124,11 +122,7 @@ def test_ordering_query_model_class__defaults(override_direction_default: bool):
     model = OrderQueryParamsModel.parse_obj({"order_by": {"field": "name"}})
     assert model.order_by
     assert model.order_by.field == "name"
-    assert (
-        model.order_by.direction == OrderDirection.DESC
-        if override_direction_default
-        else OrderBy.__fields__["direction"].default
-    )
+    assert model.order_by.direction == OrderBy.__fields__["direction"].default
 
     # direction alone is invalid
     with pytest.raises(ValidationError) as err_info:
@@ -137,23 +131,3 @@ def test_ordering_query_model_class__defaults(override_direction_default: bool):
     error = err_info.value.errors()[0]
     assert error["loc"] == ("order_by", "field")
     assert error["type"] == "value_error.missing"
-
-
-def test_ordering_query_model_class__openapi_generator():
-
-    _, OrderQueryParamsModelOpenApi = create_ordering_query_model_classes(
-        ordering_fields={"modified", "name", "description"},
-        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
-    )
-
-    print(OrderQueryParamsModelOpenApi.schema_json(indent=1))
-
-    schema = OrderQueryParamsModelOpenApi.schema()
-
-    assert schema["type"] == "object"
-    assert "order_by" in schema["properties"]
-
-    assert schema["properties"]["order_by"]["type"] == "string"
-    assert schema["properties"]["order_by"]["format"] == "json-string"
-    assert schema["properties"]["order_by"].get("description")
-    assert schema["properties"]["order_by"].get("title")
