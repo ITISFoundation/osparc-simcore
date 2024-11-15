@@ -218,7 +218,7 @@ protobuf==4.25.5
     #   opentelemetry-proto
 psutil==6.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-pydantic==2.9.1
+pydantic==2.9.2
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -247,7 +247,7 @@ pydantic==2.9.1
     #   fast-depends
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.23.3
+pydantic-core==2.23.4
     # via pydantic
 pydantic-extra-types==2.9.0
     # via
