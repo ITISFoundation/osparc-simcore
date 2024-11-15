@@ -82,9 +82,14 @@ qx.Class.define("osparc.NewRelease", {
       }
     },
 
-    isNewReleaseLinkMarkdown: function() {
+    getReleaseNotesLink: function() {
       const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
       const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      return url;
+    },
+
+    isNewReleaseLinkMarkdown: function() {
+      const url = this.getReleaseNotesLink();
       return osparc.utils.Utils.isMarkdownLink(url);
     },
   },
@@ -99,8 +104,7 @@ qx.Class.define("osparc.NewRelease", {
       });
       this._add(introLabel);
 
-      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
-      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      const url = this.self().getReleaseNotesLink();
       if (osparc.utils.Utils.isMarkdownLink(url)) {
         const description = new osparc.ui.markdown.Markdown();
         this._add(description);
