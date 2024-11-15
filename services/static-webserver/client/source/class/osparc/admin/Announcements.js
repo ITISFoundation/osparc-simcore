@@ -155,10 +155,5 @@ qx.Class.define("osparc.admin.Announcements", {
       });
       vBox.add(copyAnnouncementBtn);
     },
-
-    __testAnnouncements: function(announcementData) {
-      const announcement = new osparc.announcement.Announcement(announcementData);
-      osparc.announcement.AnnouncementUIFactory.getInstance().setAnnouncement(announcement);
-    }
   }
 });
