@@ -57,7 +57,21 @@ qx.Class.define("osparc.NewRelease", {
           })
           .catch(() => reject());
       });
-    }
+    },
+
+    checkNewRelease: function() {
+      if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
+        const newRelease = new osparc.NewRelease();
+        const title = qx.locale.Manager.tr("New Release");
+        const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
+          clickAwayClose: false,
+          resizable: false,
+          showClose: true
+        });
+        const closeBtn = win.getChildControl("close-button");
+        osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
+      }
+    },
   },
 
   members: {

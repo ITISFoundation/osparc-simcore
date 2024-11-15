@@ -366,26 +366,12 @@ qx.Class.define("osparc.Application", {
 
     __startupChecks: function() {
       // first, pop up new release window
-      this.__checkNewRelease();
+      osparc.NewRelease.checkNewRelease();
 
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       if (platformName !== "master") {
         // then, pop up cookies accepted window. It will go on top.
         this.__checkCookiesAccepted();
-      }
-    },
-
-    __checkNewRelease: function() {
-      if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
-        const newRelease = new osparc.NewRelease();
-        const title = this.tr("New Release");
-        const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
-          clickAwayClose: false,
-          resizable: false,
-          showClose: true
-        });
-        const closeBtn = win.getChildControl("close-button");
-        osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
       }
     },
 
