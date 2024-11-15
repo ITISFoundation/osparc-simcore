@@ -82,24 +82,29 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         this.__announcements.push(announcement);
       });
       this.fireEvent("changeAnnouncements");
+
+      this.__addToRibbon();
     },
 
-    __applyAnnouncement: function() {
-      if (this.__ribbonAnnouncement) {
-        osparc.notification.RibbonNotifications.getInstance().removeNotification(this.__ribbonAnnouncement);
-        this.__ribbonAnnouncement = null;
+    __addToRibbon: function() {
+      if (this.__ribbonAnnouncements && this.__ribbonAnnouncements.length) {
+        this.__ribbonAnnouncements.forEach(ribbonAnnouncement => {
+          osparc.notification.RibbonNotifications.getInstance().removeNotification(ribbonAnnouncement);
+        });
       }
-      if (this.__hasRibbonAnnouncement()) {
-        this.__addRibbonAnnouncement();
-      }
+      this.__ribbonAnnouncements = [];
+      this.__announcements.forEach(announcement => {
+        if (this.self().isValid(announcement, "ribbon")) {
+          const ribbonAnnouncement = this.__addRibbonAnnouncement(announcement);
+          if (ribbonAnnouncement) {
+            this.__ribbonAnnouncements.push(ribbonAnnouncement);
+          }
+        }
+      });
     },
 
     hasLoginAnnouncement: function() {
       return this.__announcements && this.__announcements.some(announcement => this.self().isValid(announcement, "login"));
-    },
-
-    __hasRibbonAnnouncement: function() {
-      return this.__announcements && this.__announcements.some(announcement => this.self().isValid(announcement, "ribbon"));
     },
 
     hasUserMenuAnnouncement: function() {
@@ -131,21 +136,25 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
       return slideBar;
     },
 
-    __addRibbonAnnouncement: function() {
-      const announcement = this.getAnnouncement();
-
+    __addRibbonAnnouncement: function(announcement) {
       if (osparc.utils.Utils.localCache.isDontShowAnnouncement(announcement.getId())) {
-        return;
+        return null;
       }
 
-      let text = announcement.getTitle();
+      let text = "";
+      if (announcement.getTitle()) {
+        text += announcement.getTitle();
+      }
+      if (announcement.getTitle() && announcement.getDescription()) {
+        text += ": ";
+      }
       if (announcement.getDescription()) {
-        text += ": " + announcement.getDescription();
+        text += announcement.getDescription();
       }
-
-      const ribbonAnnouncement = this.__ribbonAnnouncement = new osparc.notification.RibbonNotification(text, "announcement", true);
+      const ribbonAnnouncement = new osparc.notification.RibbonNotification(text, "announcement", true);
       ribbonAnnouncement.announcementId = announcement.getId();
       osparc.notification.RibbonNotifications.getInstance().addNotification(ribbonAnnouncement);
+      return ribbonAnnouncement;
     },
 
     createUserMenuAnnouncements: function() {
