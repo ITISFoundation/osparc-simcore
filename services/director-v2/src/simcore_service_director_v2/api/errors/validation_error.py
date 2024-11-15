@@ -1,5 +1,3 @@
-from typing import Union
-
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.constants import REF_PREFIX
