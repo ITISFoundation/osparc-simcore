@@ -16,7 +16,6 @@ from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
-from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from fastapi import FastAPI
 from httpx import AsyncClient
 from models_library.generated_models.docker_rest_api import ContainerState
@@ -80,9 +79,7 @@ def compose_spec(raw_compose_spec: dict[str, Any]) -> str:
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return TypeAdapter(AnyHttpUrlLegacy).validate_python(
-        "http://backgroud.testserver.io"
-    )
+    return TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io")
 
 
 @pytest.fixture
