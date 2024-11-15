@@ -171,7 +171,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
 
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasUserMenuAnnouncement()) {
-        this.add(announcementUIFactory.createUserMenuAnnouncement());
+        announcementUIFactory.createUserMenuAnnouncements().forEach(announcement => this.add(announcement));
       }
       this.getChildControl("about");
       if (osparc.product.Utils.showAboutProduct()) {
@@ -227,7 +227,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
 
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasUserMenuAnnouncement()) {
-        this.add(announcementUIFactory.createUserMenuAnnouncement());
+        announcementUIFactory.createUserMenuAnnouncements().forEach(announcement => this.add(announcement));
       }
       this.getChildControl("about");
       if (!osparc.product.Utils.isProduct("osparc")) {

@@ -140,13 +140,17 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
       osparc.notification.RibbonNotifications.getInstance().addNotification(ribbonAnnouncement);
     },
 
-    createUserMenuAnnouncement: function() {
-      const announcement = this.getAnnouncement();
-
-      const link = announcement.getLink();
-      const userMenuAnnouncement = new qx.ui.menu.Button(announcement.getTitle() + "...");
-      userMenuAnnouncement.addListener("execute", () => window.open(link));
-      return userMenuAnnouncement;
+    createUserMenuAnnouncements: function() {
+      const userMenuAnnouncements = [];
+      this.__announcements.forEach(announcement => {
+        if (this.self().isValid(announcement, "user-menu")) {
+          const link = announcement.getLink();
+          const userMenuAnnouncement = new qx.ui.menu.Button(announcement.getTitle() + "...");
+          userMenuAnnouncement.addListener("execute", () => window.open(link));
+          userMenuAnnouncements.push(userMenuAnnouncement);
+        }
+      });
+      return userMenuAnnouncements;
     }
   }
 });
