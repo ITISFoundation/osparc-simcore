@@ -3,10 +3,11 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.api_schemas_webserver.auth import ApiKeyCreate
+from models_library.rest_base import RequestParameters
 from models_library.users import UserID
 from pydantic import Field
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import RequestParams, parse_request_body_as
+from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import DatabaseError
 from simcore_service_webserver.security.decorators import permission_required
@@ -23,7 +24,7 @@ _logger = logging.getLogger(__name__)
 routes = RouteTableDef()
 
 
-class _RequestContext(RequestParams):
+class _RequestContext(RequestParameters):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
