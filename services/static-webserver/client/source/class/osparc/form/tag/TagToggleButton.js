@@ -23,11 +23,11 @@ qx.Class.define("osparc.form.tag.TagToggleButton", {
       appearance: "tagbutton"
     });
     this.setIcon("@FontAwesome5Solid/square/14");
-    this.getChildControl("icon").setTextColor(tag.color);
-    if (tag.description) {
-      this.setLabel(tag.name + " : " + tag.description);
+    this.getChildControl("icon").setTextColor(tag.getColor());
+    if (tag.getDescription()) {
+      this.setLabel(tag.getName() + " : " + tag.getDescription());
     } else {
-      this.setLabel(tag.name);
+      this.setLabel(tag.getName());
     }
     this.getChildControl("check");
 
