@@ -2,7 +2,14 @@ from datetime import datetime
 from enum import auto
 from typing import TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    ValidationInfo,
+    field_validator,
+)
 
 from .access_rights import AccessRights
 from .users import GroupID, UserID
@@ -24,16 +31,14 @@ class FolderQuery(BaseModel):
 
     @field_validator("folder_id", mode="before")
     @classmethod
-    def validate_folder_id(cls, value, values):
-        scope = values.get("folder_scope")
+    def validate_folder_id(cls, value, info: ValidationInfo):
+        scope = info.data.get("folder_scope")
         if scope == FolderScope.SPECIFIC and value is None:
-            raise ValueError(
-                "folder_id must be provided when folder_scope is SPECIFIC."
-            )
+            msg = "folder_id must be provided when folder_scope is SPECIFIC."
+            raise ValueError(msg)
         if scope != FolderScope.SPECIFIC and value is not None:
-            raise ValueError(
-                "folder_id should be None when folder_scope is not SPECIFIC."
-            )
+            msg = "folder_id should be None when folder_scope is not SPECIFIC."
+            raise ValueError(msg)
         return value
 
 

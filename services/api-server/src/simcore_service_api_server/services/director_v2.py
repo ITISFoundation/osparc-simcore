@@ -7,7 +7,15 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, TypeAdapter
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    TypeAdapter,
+)
 from settings_library.tracing import TracingSettings
 from starlette import status
 
