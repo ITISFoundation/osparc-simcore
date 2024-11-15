@@ -8,11 +8,14 @@
 # pylint: disable=too-many-statements
 
 
+import asyncio
+
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.redis import CouldNotAcquireLockError
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.modules.comp_scheduler._distributed_scheduler import (
@@ -49,3 +52,13 @@ async def test_schedule_pipelines(
     initialized_app: FastAPI,
 ):
     await schedule_pipelines(initialized_app)
+
+
+async def test_schedule_pipelines_concurently_raises(
+    initialized_app: FastAPI,
+):
+    with pytest.raises(
+        CouldNotAcquireLockError,
+        match=".+ computational-distributed-scheduler",
+    ):
+        await asyncio.gather(*(schedule_pipelines(initialized_app) for _ in range(2)))
