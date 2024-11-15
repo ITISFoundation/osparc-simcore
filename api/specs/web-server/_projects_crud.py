@@ -86,10 +86,10 @@ async def create_project(
     response_model=Page[ProjectListItem],
 )
 async def list_projects(
-    _xq: Annotated[ListProjectsExtraQueryParams, Depends()],
-    _oq: Annotated[_OrderQueryParams, Depends()],
-    _fq: Annotated[_FiltersQueryParams, Depends()],
-    _pq: Annotated[PageQueryParameters, Depends()],
+    _qo: Annotated[_OrderQueryParams, Depends()],
+    _qf: Annotated[_FiltersQueryParams, Depends()],
+    _qp: Annotated[PageQueryParameters, Depends()],
+    _qx: Annotated[ListProjectsExtraQueryParams, Depends()],
 ):
     ...
 

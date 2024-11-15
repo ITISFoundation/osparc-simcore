@@ -364,7 +364,7 @@ async def test_parse_request_with_invalid_headers_params(
 def test_parse_request_query_parameters_as_with_order_by_query_models():
 
     OrderByModel, OrderByModelOAS = create_ordering_query_model_classes(
-        sortable_fields={"modified", "name"}, default_order_by=OrderBy(field="name")
+        ordering_fields={"modified", "name"}, default=OrderBy(field="name")
     )
 
     expected = OrderBy(field="name", direction=OrderDirection.ASC)

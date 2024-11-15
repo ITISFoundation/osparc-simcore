@@ -33,6 +33,9 @@ class FoldersPathParams(StrictRequestParameters):
     folder_id: FolderID
 
 
+# QUERY ----------
+
+
 class FolderFilters(Filters):
     trashed: bool | None = Field(
         default=False,
@@ -40,16 +43,13 @@ class FolderFilters(Filters):
     )
 
 
-(
-    _FolderOrderQueryParams,
-    FolderOrderQueryParamsOpenApi,
-) = create_ordering_query_model_classes(
-    sortable_fields={"modified", "name", "description"},
-    default_order_by=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
+(_FolderOrderQueryParams, _,) = create_ordering_query_model_classes(
+    ordering_fields={"modified", "name", "description"},
+    default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
 )
 
 
-class FolderListWithJsonStrQueryParams(
+class FoldersListQueryParams(
     PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]
 ):
     folder_id: FolderID | None = Field(
@@ -74,7 +74,7 @@ class FolderListWithJsonStrQueryParams(
     )(null_or_none_str_to_none_validator)
 
 
-class FolderListFullSearchWithJsonStrQueryParams(
+class FolderListFullSearchQueryParams(
     PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]
 ):
     text: str | None = Field(

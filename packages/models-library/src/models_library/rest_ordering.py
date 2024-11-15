@@ -38,8 +38,8 @@ class _BaseOrderByQueryParams(RequestParameters):
 
 def create_ordering_query_model_classes(
     *,
-    sortable_fields: set[str],
-    default_order_by: OrderBy,
+    ordering_fields: set[str],
+    default: OrderBy,
     override_direction_default: bool = False,
 ) -> tuple[type[_BaseOrderByQueryParams], type[BaseModel]]:
     """
@@ -48,20 +48,20 @@ def create_ordering_query_model_classes(
     Returns the validation
     """
 
-    assert default_order_by.field in sortable_fields  # nosec
+    assert default.field in ordering_fields  # nosec
 
     order_by_example: dict[str, Any] = OrderBy.Config.schema_extra["example"]
-    msg_field_options = "|".join(sorted(sortable_fields))
+    msg_field_options = "|".join(sorted(ordering_fields))
     msg_direction_options = "|".join(sorted(OrderDirection))
     description = (
         f"Order by field ({msg_field_options}) and direction ({msg_direction_options}). "
-        f"The default sorting order is '{default_order_by.direction.value}' on '{default_order_by.field}'."
+        f"The default sorting order is '{default.direction.value}' on '{default.field}'."
         f"For instance order_by={json_dumps(order_by_example)}"
     )
 
     class _OrderBy(OrderBy):
         direction: OrderDirection = Field(
-            default=default_order_by.direction
+            default=default.direction
             if override_direction_default
             else OrderBy.__fields__["direction"].default,
             description=OrderBy.__fields__["direction"].field_info.description,
@@ -69,8 +69,8 @@ def create_ordering_query_model_classes(
 
         @validator("field", allow_reuse=True)
         @classmethod
-        def _check_if_sortable_field(cls, v):
-            if v not in sortable_fields:
+        def _check_if_ordering_field(cls, v):
+            if v not in ordering_fields:
                 msg = (
                     f"We do not support ordering by provided field '{v}'. "
                     f"Fields supported are {msg_field_options}."
@@ -80,11 +80,13 @@ def create_ordering_query_model_classes(
 
     class _RequestValidatorModel(_BaseOrderByQueryParams):
         # Used in rest handler for verification
-        order_by: _OrderBy = Field(default=default_order_by)
+        order_by: _OrderBy = Field(default=default)
 
         _pre_parse_string = validator("order_by", allow_reuse=True, pre=True)(
             load_if_json_encoded_pre_validator
         )
+
+    # -------
 
     class _OrderByJson(str):
         __slots__ = ()
@@ -98,8 +100,8 @@ def create_ordering_query_model_classes(
                 description=description,
             )
 
-    class _OpenapiModel(BaseModel):
+    class _OpenApiModel(BaseModel):
         # Used to produce nice openapi.json specs
-        order_by: _OrderByJson = Field(default=json_dumps(default_order_by))
+        order_by: _OrderByJson = Field(default=json_dumps(default))
 
-    return _RequestValidatorModel, _OpenapiModel
+    return _RequestValidatorModel, _OpenApiModel

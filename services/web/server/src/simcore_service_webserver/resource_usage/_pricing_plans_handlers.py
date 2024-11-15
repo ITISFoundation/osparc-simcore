@@ -39,10 +39,6 @@ class _RequestContext(BaseModel):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
-#
-# API handlers
-#
-
 routes = web.RouteTableDef()
 
 

@@ -77,12 +77,12 @@ class WorkspacesPathParams(StrictRequestParameters):
     WorkspacesListOrderQueryParams,
     WorkspacesListOrderQueryParamsOpenApi,
 ) = create_ordering_query_model_classes(
-    sortable_fields={
+    ordering_fields={
         "modified_at",
         "name",
         "description",
     },
-    default_order_by=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+    default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
 )
 
 

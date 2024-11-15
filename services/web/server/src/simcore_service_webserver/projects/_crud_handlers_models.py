@@ -105,7 +105,7 @@ class ProjectFilters(Filters):
     ListProjectsOrderParams,
     ListProjectsOrderParamsOpenApi,
 ) = create_ordering_query_model_classes(
-    sortable_fields={
+    ordering_fields={
         "type",
         "uuid",
         "name",
@@ -114,9 +114,7 @@ class ProjectFilters(Filters):
         "creation_date",
         "last_change_date",
     },
-    default_order_by=OrderBy(
-        field=IDStr("last_change_date"), direction=OrderDirection.DESC
-    ),
+    default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
 )
 
 

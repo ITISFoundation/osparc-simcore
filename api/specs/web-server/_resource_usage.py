@@ -11,7 +11,6 @@ This OAS are the source of truth
 
 from typing import Annotated
 
-from _common import assert_handler_signature_against_model
 from fastapi import APIRouter, Depends, Query, status
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedByServiceGet,
@@ -30,8 +29,6 @@ from models_library.api_schemas_webserver.resource_usage import (
 )
 from models_library.generics import Envelope
 from models_library.resource_tracker import (
-    PricingPlanId,
-    PricingUnitId,
     ServicesAggregatedUsagesTimePeriod,
     ServicesAggregatedUsagesType,
 )
@@ -68,14 +65,6 @@ class _OrderQueryParams(ListResourceUsagesOrderQueryParamsOpenApi):
     ...
 
 
-class _ListQueryParams(  # type: ignore
-    _OrderQueryParams,
-    _FiltersQueryParams,
-    PageQueryParameters,
-):
-    ...
-
-
 router = APIRouter(prefix=f"/{API_VTAG}")
 
 
@@ -87,7 +76,9 @@ router = APIRouter(prefix=f"/{API_VTAG}")
     tags=["usage"],
 )
 async def list_resource_usage_services(
-    _q: Annotated[_ListQueryParams, Depends()],
+    _qo: Annotated[_OrderQueryParams, Depends()],
+    _qf: Annotated[_FiltersQueryParams, Depends()],
+    _qp: Annotated[PageQueryParameters, Depends()],
     wallet_id: Annotated[WalletID | None, Query] = None,
 ):
     ...
@@ -104,7 +95,7 @@ async def list_osparc_credits_aggregated_usages(
     aggregated_by: ServicesAggregatedUsagesType,
     time_period: ServicesAggregatedUsagesTimePeriod,
     wallet_id: Annotated[WalletID, Query],
-    _q: Annotated[PageQueryParameters, Depends()],
+    _qp: Annotated[PageQueryParameters, Depends()],
 ):
     ...
 
@@ -122,8 +113,8 @@ async def list_osparc_credits_aggregated_usages(
     "user services (user and product are taken from context, optionally wallet_id parameter might be provided).",
 )
 async def export_resource_usage_services(
-    _oq: Annotated[_OrderQueryParams, Depends()],
-    _fq: Annotated[_FiltersQueryParams, Depends()],
+    _qo: Annotated[_OrderQueryParams, Depends()],
+    _qf: Annotated[_FiltersQueryParams, Depends()],
     wallet_id: Annotated[WalletID | None, Query] = None,
 ):
     ...
@@ -136,14 +127,9 @@ async def export_resource_usage_services(
     tags=["pricing-plans"],
 )
 async def get_pricing_plan_unit(
-    pricing_plan_id: PricingPlanId, pricing_unit_id: PricingUnitId
+    _p: Annotated[_GetPricingPlanUnitPathParams, Depends()],
 ):
     ...
-
-
-assert_handler_signature_against_model(
-    get_pricing_plan_unit, _GetPricingPlanUnitPathParams
-)
 
 
 ## Pricing plans for Admin panel
@@ -167,12 +153,9 @@ async def list_pricing_plans():
     tags=["admin"],
 )
 async def get_pricing_plan(
-    pricing_plan_id: PricingPlanId,
+    _p: Annotated[_GetPricingPlanPathParams, Depends()],
 ):
     ...
-
-
-assert_handler_signature_against_model(get_pricing_plan, _GetPricingPlanPathParams)
 
 
 @router.post(
@@ -194,13 +177,10 @@ async def create_pricing_plan(
     tags=["admin"],
 )
 async def update_pricing_plan(
-    pricing_plan_id: PricingPlanId,
+    _p: Annotated[_GetPricingPlanPathParams, Depends()],
     _b: UpdatePricingPlanBodyParams,
 ):
     ...
-
-
-assert_handler_signature_against_model(update_pricing_plan, _GetPricingPlanPathParams)
 
 
 ## Pricing units for Admin panel
@@ -213,13 +193,9 @@ assert_handler_signature_against_model(update_pricing_plan, _GetPricingPlanPathP
     tags=["admin"],
 )
 async def get_pricing_unit(
-    pricing_plan_id: PricingPlanId,
-    pricing_unit_id: PricingUnitId,
+    _p: Annotated[_GetPricingUnitPathParams, Depends()],
 ):
     ...
-
-
-assert_handler_signature_against_model(get_pricing_unit, _GetPricingUnitPathParams)
 
 
 @router.post(
@@ -229,13 +205,10 @@ assert_handler_signature_against_model(get_pricing_unit, _GetPricingUnitPathPara
     tags=["admin"],
 )
 async def create_pricing_unit(
-    pricing_plan_id: PricingPlanId,
+    _p: Annotated[_GetPricingPlanPathParams, Depends()],
     _b: CreatePricingUnitBodyParams,
 ):
     ...
-
-
-assert_handler_signature_against_model(create_pricing_unit, _GetPricingPlanPathParams)
 
 
 @router.put(
@@ -245,14 +218,10 @@ assert_handler_signature_against_model(create_pricing_unit, _GetPricingPlanPathP
     tags=["admin"],
 )
 async def update_pricing_unit(
-    pricing_plan_id: PricingPlanId,
-    pricing_unit_id: PricingUnitId,
+    _p: Annotated[_GetPricingUnitPathParams, Depends()],
     _b: UpdatePricingUnitBodyParams,
 ):
     ...
-
-
-assert_handler_signature_against_model(update_pricing_unit, _GetPricingUnitPathParams)
 
 
 ## Pricing Plans to Service Admin panel
@@ -265,12 +234,9 @@ assert_handler_signature_against_model(update_pricing_unit, _GetPricingUnitPathP
     tags=["admin"],
 )
 async def list_connected_services_to_pricing_plan(
-    pricing_plan_id: PricingPlanId,
+    _p: Annotated[_GetPricingPlanPathParams, Depends()],
 ):
     ...
-
-
-assert_handler_signature_against_model(update_pricing_unit, _GetPricingPlanPathParams)
 
 
 @router.post(
@@ -280,10 +246,7 @@ assert_handler_signature_against_model(update_pricing_unit, _GetPricingPlanPathP
     tags=["admin"],
 )
 async def connect_service_to_pricing_plan(
-    pricing_plan_id: PricingPlanId,
+    _p: Annotated[_GetPricingPlanPathParams, Depends()],
     _b: ConnectServiceToPricingPlanBodyParams,
 ):
     ...
-
-
-assert_handler_signature_against_model(update_pricing_unit, _GetPricingPlanPathParams)

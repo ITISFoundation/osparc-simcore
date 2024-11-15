@@ -67,7 +67,7 @@ class _RequestContext(RequestParameters):
     ListResourceUsagesOrderQueryParams,
     ListResourceUsagesOrderQueryParamsOpenApi,
 ) = create_ordering_query_model_classes(
-    sortable_fields={
+    ordering_fields={
         "wallet_id",
         "wallet_name",
         "user_id",
@@ -87,7 +87,7 @@ class _RequestContext(RequestParameters):
         "credit_cost",
         "transaction_status",
     },
-    default_order_by=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
+    default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
 )
 
 

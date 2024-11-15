@@ -42,10 +42,8 @@ class ReferenceOrderQueryParamsClass(BaseModel):
 
 def test_ordering_query_model_class_factory():
     BaseOrderingQueryModel, _ = create_ordering_query_model_classes(
-        sortable_fields={"modified", "name", "description"},
-        default_order_by=OrderBy(
-            field=IDStr("modified"), direction=OrderDirection.DESC
-        ),
+        ordering_fields={"modified", "name", "description"},
+        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
     )
 
     # inherits to add extra post-validator
@@ -75,10 +73,8 @@ def test_ordering_query_model_class_factory():
 def test_ordering_query_model_class__fails_with_invalid_fields():
 
     OrderQueryParamsModel, _ = create_ordering_query_model_classes(
-        sortable_fields={"modified", "name", "description"},
-        default_order_by=OrderBy(
-            field=IDStr("modified"), direction=OrderDirection.DESC
-        ),
+        ordering_fields={"modified", "name", "description"},
+        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
     )
 
     # fails with invalid field to sort
@@ -94,10 +90,8 @@ def test_ordering_query_model_class__fails_with_invalid_fields():
 
 def test_ordering_query_model_class__fails_with_invalid_direction():
     OrderQueryParamsModel, _ = create_ordering_query_model_classes(
-        sortable_fields={"modified", "name", "description"},
-        default_order_by=OrderBy(
-            field=IDStr("modified"), direction=OrderDirection.DESC
-        ),
+        ordering_fields={"modified", "name", "description"},
+        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
     )
 
     with pytest.raises(ValidationError) as err_info:
@@ -115,10 +109,8 @@ def test_ordering_query_model_class__fails_with_invalid_direction():
 def test_ordering_query_model_class__defaults(override_direction_default: bool):
 
     OrderQueryParamsModel, _ = create_ordering_query_model_classes(
-        sortable_fields={"modified", "name", "description"},
-        default_order_by=OrderBy(
-            field=IDStr("modified"), direction=OrderDirection.DESC
-        ),
+        ordering_fields={"modified", "name", "description"},
+        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
         override_direction_default=override_direction_default,
     )
 
@@ -150,10 +142,8 @@ def test_ordering_query_model_class__defaults(override_direction_default: bool):
 def test_ordering_query_model_class__openapi_generator():
 
     _, OrderQueryParamsModelOpenApi = create_ordering_query_model_classes(
-        sortable_fields={"modified", "name", "description"},
-        default_order_by=OrderBy(
-            field=IDStr("modified"), direction=OrderDirection.DESC
-        ),
+        ordering_fields={"modified", "name", "description"},
+        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
     )
 
     print(OrderQueryParamsModelOpenApi.schema_json(indent=1))
