@@ -115,6 +115,9 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
           loginAnnouncements.push(loginAnnouncement);
         }
       });
+      if (loginAnnouncements.length === 1) {
+        return loginAnnouncements[0];
+      }
       const slideBar = new osparc.widget.SlideBar().set({
         allowGrowX: true,
       });
