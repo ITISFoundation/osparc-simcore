@@ -11,6 +11,7 @@ This OAS are the source of truth
 
 from typing import Annotated
 
+from _common import as_query
 from fastapi import APIRouter, Depends, Header, status
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
@@ -80,7 +81,7 @@ async def create_project(
     response_model=Page[ProjectListItem],
 )
 async def list_projects(
-    _q: Annotated[ProjectsListQueryParams, Depends()],
+    _q: Annotated[as_query(ProjectsListQueryParams), Depends()],
 ):
     ...
 
@@ -143,7 +144,7 @@ async def clone_project(
     response_model=Page[ProjectListItem],
 )
 async def list_projects_full_search(
-    _q: Annotated[ProjectsSearchQueryParams, Depends()],
+    _q: Annotated[as_query(ProjectsSearchQueryParams), Depends()],
 ):
     ...
 
