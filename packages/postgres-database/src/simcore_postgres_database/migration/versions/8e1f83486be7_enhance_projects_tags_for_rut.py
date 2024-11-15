@@ -26,9 +26,9 @@ def upgrade():
         sa.DDL(
             """
                 UPDATE projects_tags
-                SET project_uuid_for_rut = project.uuid
-                FROM project
-                WHERE projects_tags.project_id = project.id;
+                SET project_uuid_for_rut = projects.uuid
+                FROM projects
+                WHERE projects_tags.project_id = projects.id;
             """
         )
     )
