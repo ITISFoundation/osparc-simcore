@@ -56,7 +56,6 @@ from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.plugin import setup_users
 from sqlalchemy import func, select
-from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 log = logging.getLogger(__name__)
 
@@ -345,16 +344,9 @@ async def disconnect_user_from_socketio(
     await sio.disconnect()
     assert not sio.sid
     await asyncio.sleep(0)  # just to ensure there is a context switch
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1), stop=stop_after_delay(5), reraise=True
-    ):
-        with attempt:
-            assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-            assert sid not in await socket_registry.find_resources(
-                resource_key, "socket_id"
-            )
-            assert not await socket_registry.find_resources(resource_key, "socket_id")
+    assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
+    assert sid not in await socket_registry.find_resources(resource_key, "socket_id")
+    assert not await socket_registry.find_resources(resource_key, "socket_id")
 
 
 async def assert_users_count(
@@ -485,6 +477,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     await assert_project_in_db(aiopg_engine, empty_guest_user_project)
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_t2_cleanup_resources_after_browser_is_closed(
     disable_garbage_collector_task: None,
     client: TestClient,
