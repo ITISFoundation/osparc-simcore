@@ -89,9 +89,11 @@ class WorkspacesListQueryParams(
     PageQueryParameters,
     WorkspacesListOrderQueryParams,  # type: ignore[misc, valid-type]
 ):
-    @validator("order_by", check_fields=False)
+    @validator("order_by", check_fields=False, always=True)
     @classmethod
     def _post_rename_order_by_field(cls, v):
+        # NOTE: PC->MD this is very error-prone (e.g. w/ defaults).
+        # Rather create a map to a db interface
         if v.field == "modified_at":
             v.field = "modified"
         return v

@@ -91,7 +91,7 @@ class ServicesResourceUsagesReportQueryParams(
         example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
     )
 
-    @validator("order_by")
+    @validator("order_by", always=True)
     @classmethod
     def _post_rename_order_by_field(cls, v):
         if v.field == "credit_cost":

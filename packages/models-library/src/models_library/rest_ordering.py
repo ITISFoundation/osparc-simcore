@@ -51,7 +51,7 @@ def create_ordering_query_model_classes(
     msg_direction_options = "|".join(sorted(OrderDirection))
 
     class _OrderBy(OrderBy):
-        @validator("field", allow_reuse=True)
+        @validator("field", allow_reuse=True, always=True)
         @classmethod
         def _check_if_ordering_field(cls, v):
             if v not in ordering_fields:
