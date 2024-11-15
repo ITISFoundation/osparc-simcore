@@ -101,7 +101,7 @@ class ProjectFilters(Filters):
     )
 
 
-(ProjectsListOrderParams, _) = create_ordering_query_model_classes(
+ProjectsListOrderParams, _ = create_ordering_query_model_classes(
     ordering_fields={
         "type",
         "uuid",
