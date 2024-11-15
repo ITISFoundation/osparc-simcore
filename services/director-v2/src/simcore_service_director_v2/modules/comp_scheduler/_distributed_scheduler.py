@@ -13,11 +13,10 @@ from servicelib.redis import RedisClientSDK
 from servicelib.redis_utils import exclusive
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
-from simcore_service_director_v2.utils.rabbitmq import publish_project_log
 
-from ...core.settings import get_application_settings
 from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ...utils.comp_scheduler import SCHEDULED_STATES
+from ...utils.rabbitmq import publish_project_log
 from ..comp_scheduler._models import SchedulePipelineRabbitMessage
 from ..db import get_db_engine
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
@@ -63,7 +62,6 @@ async def _get_pipeline_dag(project_id: ProjectID, db_engine: Engine) -> nx.DiGr
 
 @exclusive(_redis_client_getter, lock_key="computational-distributed-scheduler")
 async def schedule_pipelines(app: FastAPI) -> None:
-    app_settings = get_application_settings(app)
     db_engine = get_db_engine(app)
     runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
         filter_by_state=SCHEDULED_STATES, scheduled_since=_SCHEDULER_INTERVAL
@@ -107,9 +105,11 @@ async def run_new_pipeline(
         metadata=run_metadata,
         use_on_demand_clusters=use_on_demand_clusters,
     )
-    await _distribute_pipeline(new_run, get_rabbitmq_client(app), db_engine)
+
+    rabbitmq_client = get_rabbitmq_client(app)
+    await _distribute_pipeline(new_run, rabbitmq_client, db_engine)
     await publish_project_log(
-        get_rabbitmq_client(app),
+        rabbitmq_client,
         user_id,
         project_id,
         log=f"Project pipeline scheduled using {'on-demand clusters' if use_on_demand_clusters else 'pre-defined clusters'}, starting soon...",
@@ -124,18 +124,18 @@ async def stop_pipeline(
     project_id: ProjectID,
     iteration: int | None = None,
 ) -> None:
-    comp_run = await CompRunsRepository.instance(get_db_engine(app)).get(
+    db_engine = get_db_engine(app)
+    comp_run = await CompRunsRepository.instance(db_engine).get(
         user_id, project_id, iteration
     )
 
     # mark the scheduled pipeline for stopping
     updated_comp_run = await CompRunsRepository.instance(
-        get_db_engine(app)
+        db_engine
     ).mark_for_cancellation(
         user_id=user_id, project_id=project_id, iteration=comp_run.iteration
     )
     if updated_comp_run:
         # ensure the scheduler starts right away
-        await _distribute_pipeline(
-            updated_comp_run, get_rabbitmq_client(app), get_db_engine(app)
-        )
+        rabbitmq_client = get_rabbitmq_client(app)
+        await _distribute_pipeline(updated_comp_run, rabbitmq_client, db_engine)
