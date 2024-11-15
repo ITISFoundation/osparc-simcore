@@ -101,10 +101,7 @@ class ProjectFilters(Filters):
     )
 
 
-(
-    ListProjectsOrderParams,
-    ListProjectsOrderParamsOpenApi,
-) = create_ordering_query_model_classes(
+(ProjectsListOrderParams, _) = create_ordering_query_model_classes(
     ordering_fields={
         "type",
         "uuid",
@@ -118,7 +115,7 @@ class ProjectFilters(Filters):
 )
 
 
-class ListProjectsExtraQueryParams(RequestParameters):
+class ProjectsListExtraQueryParams(RequestParameters):
     project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
     show_hidden: bool = Field(
         default=False, description="includes projects marked as hidden in the listing"
@@ -154,20 +151,20 @@ class ListProjectsExtraQueryParams(RequestParameters):
     )(null_or_none_str_to_none_validator)
 
 
-class ListProjectsQueryParams(
+class ProjectsListQueryParams(
     PageQueryParameters,
-    ListProjectsOrderParams,
+    ProjectsListOrderParams,
     FiltersQueryParameters[ProjectFilters],
-    ListProjectsExtraQueryParams,
+    ProjectsListExtraQueryParams,
 ):
     ...
 
 
-class ProjectActiveParams(BaseModel):
+class ProjectActiveQueryParams(BaseModel):
     client_session_id: str
 
 
-class SearchProjectExtraQueryParams(PageQueryParameters):
+class ProjectSearchExtraQueryParams(PageQueryParameters):
     text: str | None = Field(
         default=None,
         description="Multi column full text search, across all folders and workspaces",
@@ -185,7 +182,7 @@ class SearchProjectExtraQueryParams(PageQueryParameters):
     )
 
 
-class SearchProjectsQueryParams(SearchProjectExtraQueryParams, ListProjectsOrderParams):
+class ProjectsSearchQueryParams(ProjectSearchExtraQueryParams, ProjectsListOrderParams):
     def tag_ids_list(self) -> list[int]:
         try:
             # Split the tag_ids by commas and map them to integers
