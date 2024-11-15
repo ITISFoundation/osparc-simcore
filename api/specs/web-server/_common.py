@@ -25,7 +25,10 @@ def _create_json_type(**schema_extras):
         @classmethod
         def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
             # openapi.json schema is corrected here
-            field_schema.update(type="string", format="json-string")
+            field_schema.update(
+                type="string",
+                # format="json-string" NOTE: we need to get rid of openapi-core in web-server before using this!
+            )
             if schema_extras:
                 field_schema.update(schema_extras)
 

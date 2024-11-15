@@ -2604,7 +2604,6 @@ paths:
           title: Filters
           type: string
           description: Custom filter query parameter encoded as JSON
-          format: json-string
         name: filters
         in: query
       - required: false
@@ -2613,7 +2612,6 @@ paths:
           type: string
           description: Order by field (`description|modified|name`) and direction
             (`asc|desc`). The default sorting order is `{"field":"modified","direction":"desc"}`.
-          format: json-string
           default: '{"field":"modified","direction":"desc"}'
           example: '{"field":"some_field_name","direction":"desc"}'
         name: order_by
@@ -2707,7 +2705,6 @@ paths:
           title: Filters
           type: string
           description: Custom filter query parameter encoded as JSON
-          format: json-string
         name: filters
         in: query
       - required: false
@@ -2716,7 +2713,6 @@ paths:
           type: string
           description: Order by field (`description|modified|name`) and direction
             (`asc|desc`). The default sorting order is `{"field":"modified","direction":"desc"}`.
-          format: json-string
           default: '{"field":"modified","direction":"desc"}'
           example: '{"field":"some_field_name","direction":"desc"}'
         name: order_by
@@ -3153,7 +3149,6 @@ paths:
           title: Filters
           type: string
           description: Custom filter query parameter encoded as JSON
-          format: json-string
         name: filters
         in: query
       - required: false
@@ -3162,7 +3157,6 @@ paths:
           type: string
           description: Order by field (`creation_date|description|last_change_date|name|prj_owner|type|uuid`)
             and direction (`asc|desc`). The default sorting order is `{"field":"last_change_date","direction":"desc"}`.
-          format: json-string
           default: '{"field":"last_change_date","direction":"desc"}'
           example: '{"field":"some_field_name","direction":"desc"}'
         name: order_by
@@ -3384,7 +3378,6 @@ paths:
           type: string
           description: Order by field (`creation_date|description|last_change_date|name|prj_owner|type|uuid`)
             and direction (`asc|desc`). The default sorting order is `{"field":"last_change_date","direction":"desc"}`.
-          format: json-string
           default: '{"field":"last_change_date","direction":"desc"}'
           example: '{"field":"some_field_name","direction":"desc"}'
         name: order_by
@@ -4394,7 +4387,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -4616,7 +4609,6 @@ paths:
           type: string
           description: Order by field (`credit_cost|node_id|node_name|project_id|project_name|root_parent_project_id|root_parent_project_name|service_key|service_run_status|service_type|service_version|started_at|stopped_at|transaction_status|user_email|user_id|wallet_id|wallet_name`)
             and direction (`asc|desc`). The default sorting order is `{"field":"started_at","direction":"desc"}`.
-          format: json-string
           default: '{"field":"started_at","direction":"desc"}'
           example: '{"field":"some_field_name","direction":"desc"}'
         name: order_by
@@ -4637,7 +4629,6 @@ paths:
             JSON. Currently supports the filtering of 'started_at' field with 'from'
             and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range
             specified is inclusive.
-          format: json-string
         name: filters
         in: query
       - required: false
@@ -4732,7 +4723,6 @@ paths:
           type: string
           description: Order by field (`credit_cost|node_id|node_name|project_id|project_name|root_parent_project_id|root_parent_project_name|service_key|service_run_status|service_type|service_version|started_at|stopped_at|transaction_status|user_email|user_id|wallet_id|wallet_name`)
             and direction (`asc|desc`). The default sorting order is `{"field":"started_at","direction":"desc"}`.
-          format: json-string
           default: '{"field":"started_at","direction":"desc"}'
           example: '{"field":"some_field_name","direction":"desc"}'
         name: order_by
@@ -4753,7 +4743,6 @@ paths:
             JSON. Currently supports the filtering of 'started_at' field with 'from'
             and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range
             specified is inclusive.
-          format: json-string
         name: filters
         in: query
       responses:
