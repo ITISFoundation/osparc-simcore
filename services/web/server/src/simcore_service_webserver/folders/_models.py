@@ -40,7 +40,7 @@ class FolderFilters(Filters):
     )
 
 
-_FolderOrderQueryParams, _ = create_ordering_query_model_classes(
+_FolderOrderQueryParams = create_ordering_query_model_classes(
     ordering_fields={"modified", "name", "description"},
     default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
 )

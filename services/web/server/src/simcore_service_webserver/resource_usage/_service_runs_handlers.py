@@ -58,7 +58,7 @@ class _RequestContext(RequestParameters):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
-_ResorceUsagesListOrderQueryParams, _ = create_ordering_query_model_classes(
+_ResorceUsagesListOrderQueryParams = create_ordering_query_model_classes(
     ordering_fields={
         "wallet_id",
         "wallet_name",

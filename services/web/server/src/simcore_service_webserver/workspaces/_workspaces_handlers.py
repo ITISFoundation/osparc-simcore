@@ -73,10 +73,7 @@ class WorkspacesPathParams(StrictRequestParameters):
     workspace_id: WorkspaceID
 
 
-(
-    WorkspacesListOrderQueryParams,
-    WorkspacesListOrderQueryParamsOpenApi,
-) = create_ordering_query_model_classes(
+WorkspacesListOrderQueryParams = create_ordering_query_model_classes(
     ordering_fields={
         "modified_at",
         "name",
