@@ -222,7 +222,7 @@ class Cluster(BaseCluster):
     )
 
     @model_validator(mode="after")
-    def check_owner_has_access_rights(self) -> Self:
+    def check_owner_has_access_rights(self: Self) -> Self:
         is_default_cluster = bool(self.id == DEFAULT_CLUSTER_ID)
         owner_gid = self.owner
 
@@ -238,5 +238,5 @@ class Cluster(BaseCluster):
         ):
             msg = f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
             raise ValueError(msg)
-        self.access_rights = access_rights
+        object.__setattr__(self, "access_rights", access_rights)
         return self
