@@ -26,6 +26,10 @@ def _redis_client_getter(*args, **kwargs) -> RedisClientSDK:
 async def schedule_pipelines(app: FastAPI) -> None:
     app_settings = get_application_settings(app)
     db_engine = get_db_engine(app)
-    runs_to_schedule = CompRunsRepository.instance(db_engine).list(
+    runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
         filter_by_state=SCHEDULED_STATES, scheduled_since=_SCHEDULER_INTERVAL
     )
+
+    for run in runs_to_schedule:
+        # await rpc_request_schedule_pipeline(run.user_id, run.project_uuid, run.iteration)
+        pass
