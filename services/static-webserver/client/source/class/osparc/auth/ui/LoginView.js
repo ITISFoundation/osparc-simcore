@@ -42,7 +42,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     // overrides base
     _buildPage: function() {
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
-      const showAnnouncement = () => {
+      const addAnnouncements = () => {
         if (this.__loginAnnouncements) {
           this.remove(this.__loginAnnouncements);
         }
@@ -50,11 +50,9 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         this.addAt(this.__loginAnnouncements, 0);
       };
       if (announcementUIFactory.hasLoginAnnouncement()) {
-        showAnnouncement();
+        addAnnouncements();
       } else {
-        announcementUIFactory.addListenerOnce("changeAnnouncements", () => {
-          showAnnouncement();
-        });
+        announcementUIFactory.addListenerOnce("changeAnnouncements", () => addAnnouncements());
       }
 
       // form
