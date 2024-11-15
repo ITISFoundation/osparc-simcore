@@ -3,20 +3,26 @@
     - Adds a layer to the postgres API with a focus on the projects comments
 
 """
+
 import logging
 from datetime import datetime
 
 from aiohttp import web
 from models_library.users import GroupID
 from models_library.workspaces import WorkspaceID
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
 )
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
 from sqlalchemy import func, literal_column
+from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_asyncpg_engine
 from .errors import WorkspaceGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -39,15 +45,16 @@ class WorkspaceGroupGetDB(BaseModel):
 
 async def create_workspace_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     workspace_id: WorkspaceID,
     group_id: GroupID,
-    *,
     read: bool,
     write: bool,
     delete: bool,
 ) -> WorkspaceGroupGetDB:
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
             workspaces_access_rights.insert()
             .values(
                 workspace_id=workspace_id,
@@ -66,6 +73,8 @@ async def create_workspace_group(
 
 async def list_workspace_groups(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     workspace_id: WorkspaceID,
 ) -> list[WorkspaceGroupGetDB]:
     stmt = (
@@ -81,14 +90,15 @@ async def list_workspace_groups(
         .where(workspaces_access_rights.c.workspace_id == workspace_id)
     )
 
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(stmt)
-        rows = await result.fetchall() or []
-        return [WorkspaceGroupGetDB.model_validate(row) for row in rows]
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(stmt)
+        return [WorkspaceGroupGetDB.model_validate(row) async for row in result]
 
 
 async def get_workspace_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     workspace_id: WorkspaceID,
     group_id: GroupID,
 ) -> WorkspaceGroupGetDB:
@@ -108,8 +118,8 @@ async def get_workspace_group(
         )
     )
 
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(stmt)
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(stmt)
         row = await result.first()
         if row is None:
             raise WorkspaceGroupNotFoundError(
@@ -120,15 +130,16 @@ async def get_workspace_group(
 
 async def update_workspace_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     workspace_id: WorkspaceID,
     group_id: GroupID,
-    *,
     read: bool,
     write: bool,
     delete: bool,
 ) -> WorkspaceGroupGetDB:
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
             workspaces_access_rights.update()
             .values(
                 read=read,
@@ -151,10 +162,12 @@ async def update_workspace_group(
 
 async def delete_workspace_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     workspace_id: WorkspaceID,
     group_id: GroupID,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
             workspaces_access_rights.delete().where(
                 (workspaces_access_rights.c.workspace_id == workspace_id)

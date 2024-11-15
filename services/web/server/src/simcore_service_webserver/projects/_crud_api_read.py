@@ -6,24 +6,21 @@ Read operations are list, get
 """
 
 from aiohttp import web
-from models_library.access_rights import AccessRights
 from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.projects import ProjectListItem
-from models_library.folders import FolderID
+from models_library.folders import FolderID, FolderQuery, FolderScope
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
-from models_library.users import GroupID, UserID
-from models_library.workspaces import WorkspaceID
+from models_library.users import UserID
+from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
+from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
-from simcore_service_webserver.workspaces._workspaces_api import (
-    check_user_workspace_access,
-)
 
 from ..catalog.client import get_services_for_user_in_product
 from ..folders import _folders_db as folders_db
-from ..workspaces import _workspaces_db as workspaces_db
+from ..workspaces._workspaces_api import check_user_workspace_access
 from . import projects_api
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
@@ -36,7 +33,6 @@ async def _append_fields(
     user_id: UserID,
     project: ProjectDict,
     is_template: bool,
-    workspace_access_rights: dict[GroupID, AccessRights] | None,
     model_schema_cls: type[OutputSchema],
 ):
     # state
@@ -49,13 +45,6 @@ async def _append_fields(
 
     # permalink
     await update_or_pop_permalink_in_project(request, project)
-
-    # replace project access rights (if project is in workspace)
-    if workspace_access_rights:
-        project["accessRights"] = {
-            f"{gid}": access.model_dump()
-            for gid, access in workspace_access_rights.items()
-        }
 
     # validate
     return model_schema_cls.model_validate(project).data(exclude_unset=True)
@@ -111,29 +100,31 @@ async def list_projects(  # pylint: disable=too-many-arguments
     db_projects, db_project_types, total_number_projects = await db.list_projects(
         product_name=product_name,
         user_id=user_id,
-        workspace_id=workspace_id,
-        folder_id=folder_id,
+        workspace_query=(
+            WorkspaceQuery(
+                workspace_scope=WorkspaceScope.SHARED, workspace_id=workspace_id
+            )
+            if workspace_id
+            else WorkspaceQuery(workspace_scope=WorkspaceScope.PRIVATE)
+        ),
+        folder_query=(
+            FolderQuery(folder_scope=FolderScope.SPECIFIC, folder_id=folder_id)
+            if folder_id
+            else FolderQuery(folder_scope=FolderScope.ROOT)
+        ),
         # attrs
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
         filter_by_services=user_available_services,
-        trashed=trashed,
-        hidden=show_hidden,
+        filter_trashed=trashed,
+        filter_hidden=show_hidden,
         # composed attrs
-        search=search,
+        filter_by_text=search,
         # pagination
         offset=offset,
         limit=limit,
         # order
         order_by=order_by,
     )
-
-    # If workspace, override project access rights
-    workspace_access_rights = None
-    if workspace_id:
-        workspace_db = await workspaces_db.get_workspace_for_user(
-            app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
-        )
-        workspace_access_rights = workspace_db.access_rights
 
     projects: list[ProjectDict] = await logged_gather(
         *(
@@ -142,10 +133,9 @@ async def list_projects(  # pylint: disable=too-many-arguments
                 user_id=user_id,
                 project=prj,
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
-                workspace_access_rights=workspace_access_rights,
                 model_schema_cls=ProjectListItem,
             )
-            for prj, prj_type in zip(db_projects, db_project_types)
+            for prj, prj_type in zip(db_projects, db_project_types, strict=False)
         ),
         reraise=True,
         max_concurrency=100,
@@ -171,19 +161,18 @@ async def list_projects_full_search(
         request.app, user_id, product_name, only_key_versions=True
     )
 
-    (
-        db_projects,
-        db_project_types,
-        total_number_projects,
-    ) = await db.list_projects_full_search(
-        user_id=user_id,
+    (db_projects, db_project_types, total_number_projects,) = await db.list_projects(
         product_name=product_name,
+        user_id=user_id,
+        workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
+        folder_query=FolderQuery(folder_scope=FolderScope.ALL),
         filter_by_services=user_available_services,
-        text=text,
+        filter_by_text=text,
+        filter_tag_ids_list=tag_ids_list,
+        filter_by_project_type=ProjectType.STANDARD,
         offset=offset,
         limit=limit,
         order_by=order_by,
-        tag_ids_list=tag_ids_list,
     )
 
     projects: list[ProjectDict] = await logged_gather(
@@ -193,10 +182,9 @@ async def list_projects_full_search(
                 user_id=user_id,
                 project=prj,
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
-                workspace_access_rights=None,
                 model_schema_cls=ProjectListItem,
             )
-            for prj, prj_type in zip(db_projects, db_project_types)
+            for prj, prj_type in zip(db_projects, db_project_types, strict=False)
         ),
         reraise=True,
         max_concurrency=100,

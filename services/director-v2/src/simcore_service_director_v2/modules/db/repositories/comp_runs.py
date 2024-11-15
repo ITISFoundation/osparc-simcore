@@ -3,6 +3,7 @@ import logging
 from collections import deque
 from typing import Any
 
+import arrow
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
@@ -146,10 +147,20 @@ class CompRunsRepository(BaseRepository):
     ) -> CompRunsAtDB | None:
         values: dict[str, Any] = {"result": RUNNING_STATE_TO_DB[result_state]}
         if final_state:
-            values.update({"ended": datetime.datetime.now(tz=datetime.UTC)})
+            values.update({"ended": arrow.utcnow().datetime})
         return await self.update(
             user_id,
             project_id,
             iteration,
             **values,
+        )
+
+    async def mark_for_cancellation(
+        self, *, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+    ) -> CompRunsAtDB | None:
+        return await self.update(
+            user_id,
+            project_id,
+            iteration,
+            cancelled=arrow.utcnow().datetime,
         )

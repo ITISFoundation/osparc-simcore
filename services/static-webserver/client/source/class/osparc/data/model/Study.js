@@ -58,7 +58,8 @@ qx.Class.define("osparc.data.model.Study", {
       state: studyData.state || this.getState(),
       quality: studyData.quality || this.getQuality(),
       permalink: studyData.permalink || this.getPermalink(),
-      dev: studyData.dev || this.getDev()
+      dev: studyData.dev || this.getDev(),
+      trashedAt: studyData.trashedAt ? new Date(studyData.trashedAt) : this.getTrashedAt(),
     });
 
     const wbData = studyData.workbench || this.getWorkbench();
@@ -209,7 +210,13 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: true,
       event: "changeReadOnly",
       init: true
-    }
+    },
+
+    trashedAt: {
+      check: "Date",
+      nullable: true,
+      init: null,
+    },
     // ------ ignore for serializing ------
   },
 
@@ -218,7 +225,8 @@ qx.Class.define("osparc.data.model.Study", {
       "permalink",
       "state",
       "pipelineRunning",
-      "readOnly"
+      "readOnly",
+      "trashedAt",
     ],
 
     IgnoreModelizationProps: [

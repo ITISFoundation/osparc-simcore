@@ -14,6 +14,7 @@ from models_library.api_schemas_storage import FileUploadSchema, PresignedLink
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from pydantic import AnyUrl, PositiveInt
+from settings_library.tracing import TracingSettings
 from starlette.datastructures import URL
 
 from ..core.settings import StorageSettings
@@ -215,12 +216,18 @@ class StorageApi(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: StorageSettings) -> None:
+def setup(
+    app: FastAPI, settings: StorageSettings, tracing_settings: TracingSettings | None
+) -> None:
     if not settings:
         settings = StorageSettings()
 
     setup_client_instance(
-        app, StorageApi, api_baseurl=settings.api_base_url, service_name="storage"
+        app,
+        StorageApi,
+        api_baseurl=settings.api_base_url,
+        service_name="storage",
+        tracing_settings=tracing_settings,
     )
 
 

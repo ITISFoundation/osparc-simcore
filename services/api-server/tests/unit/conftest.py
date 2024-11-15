@@ -62,6 +62,7 @@ def app_environment(
             "WEBSERVER_HOST": "webserver",
             "API_SERVER_POSTGRES": "null",
             "API_SERVER_RABBITMQ": "null",
+            "API_SERVER_TRACING": "null",
             "LOG_LEVEL": "debug",
             "SC_BOOT_MODE": "production",
             "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",

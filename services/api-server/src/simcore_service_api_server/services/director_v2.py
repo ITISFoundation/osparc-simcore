@@ -16,6 +16,7 @@ from pydantic import (
     PositiveInt,
     TypeAdapter,
 )
+from settings_library.tracing import TracingSettings
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
@@ -197,11 +198,14 @@ class DirectorV2Api(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: DirectorV2Settings) -> None:
+def setup(
+    app: FastAPI, settings: DirectorV2Settings, tracing_settings: TracingSettings | None
+) -> None:
     setup_client_instance(
         app,
         DirectorV2Api,
         # WARNING: it has /v0 and /v2 prefixes
         api_baseurl=settings.base_url,
         service_name="director_v2",
+        tracing_settings=tracing_settings,
     )

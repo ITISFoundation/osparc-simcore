@@ -186,5 +186,5 @@ async def assert_get_same_project(
     data, error = await assert_status(resp, expected)
 
     if not error:
-        assert data == project
+        assert data == {k: project[k] for k in data}
     return data

@@ -20,14 +20,14 @@ qx.Class.define("osparc.info.ServiceLarge", {
   extend: osparc.info.CardLarge,
 
   /**
-    * @param serviceData {Object} Serialized Service Object
+    * @param metadata {Object} Serialized Service Object
     * @param instance {Object} instance related data
     * @param openOptions {Boolean} open edit options in new window or fire event
     */
-  construct: function(serviceData, instance = null, openOptions = true) {
+  construct: function(metadata, instance = null, openOptions = true) {
     this.base(arguments);
 
-    this.setService(serviceData);
+    this.setService(metadata);
 
     if (instance) {
       if ("nodeId" in instance) {
@@ -79,6 +79,19 @@ qx.Class.define("osparc.info.ServiceLarge", {
     }
   },
 
+  statics: {
+    popUpInWindow: function(serviceLarge) {
+      const metadata = serviceLarge.getService();
+      const versionDisplay = osparc.service.Utils.extractVersionDisplay(metadata);
+      const title = `${metadata["name"]} ${versionDisplay}`;
+      const width = osparc.info.CardLarge.WIDTH;
+      const height = osparc.info.CardLarge.HEIGHT;
+      osparc.ui.window.Window.popUpInWindow(serviceLarge, title, width, height).set({
+        maxHeight: height
+      });
+    },
+  },
+
   members: {
     _rebuildLayout: function() {
       this._removeAll();
@@ -90,72 +103,85 @@ qx.Class.define("osparc.info.ServiceLarge", {
         vBox.add(deprecated);
       }
 
-      const title = this.__createTitle();
-      const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
-
-      const extraInfo = this.__extraInfo();
-      const extraInfoLayout = this.__createExtraInfo(extraInfo);
-
-      const bounds = this.getBounds();
-      const offset = 30;
-      const maxThumbnailHeight = extraInfo.length*20;
-      let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
-      let thumbnailWidth = widgetWidth - 2 * osparc.info.CardLarge.PADDING - osparc.info.CardLarge.EXTRA_INFO_WIDTH;
-      thumbnailWidth = Math.min(thumbnailWidth - 20, osparc.info.CardLarge.THUMBNAIL_MAX_WIDTH);
-      const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-      const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
-      thumbnailLayout.getLayout().set({
-        alignX: "center"
-      });
-
-      const infoAndThumbnail = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
-        alignX: "center"
-      }));
-      infoAndThumbnail.add(extraInfoLayout);
-      infoAndThumbnail.add(thumbnailLayout, {
-        flex: 1
-      });
-
-      let descriptionUi = null;
-      if (osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
-        descriptionUi = this.__createDescriptionUi();
-      }
-
       const description = this.__createDescription();
       const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
       description.addAt(editInTitle, 0);
-
-      let resources = null;
-      if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
-        resources = this.__createResources();
-      }
 
       const copyMetadataButton = new qx.ui.form.Button(this.tr("Copy Raw metadata"), "@FontAwesome5Solid/copy/12").set({
         allowGrowX: false
       });
       copyMetadataButton.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService())), this);
 
-
       if (
         this.getService()["descriptionUi"] &&
         !osparc.service.Utils.canIWrite(this.getService()["accessRights"]) &&
         description.getChildren().length > 1
       ) {
+        // Show also the copy Id buttons too
+        const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+        if (this.getNodeId()) {
+          const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+          const copyStudyIdButton = new qx.ui.form.Button(this.tr(`Copy ${studyAlias} Id`), "@FontAwesome5Solid/copy/12").set({
+            toolTipText: qx.locale.Manager.tr("Copy to clipboard"),
+          });
+          copyStudyIdButton.addListener("execute", this.__copyStudyIdToClipboard, this);
+          buttonsLayout.add(copyStudyIdButton);
+          vBox.add(buttonsLayout);
+
+          const copyNodeIdButton = new qx.ui.form.Button(this.tr("Copy Service Id"), "@FontAwesome5Solid/copy/12").set({
+            toolTipText: qx.locale.Manager.tr("Copy to clipboard"),
+          });
+          copyNodeIdButton.addListener("execute", this.__copyNodeIdToClipboard, this);
+          buttonsLayout.add(copyNodeIdButton);
+          vBox.add(buttonsLayout);
+        }
+        // Also copyMetadataButton if tester
+        if (osparc.data.Permissions.getInstance().isTester()) {
+          buttonsLayout.add(copyMetadataButton);
+          vBox.add(buttonsLayout);
+        }
         // Show description only
         vBox.add(description.getChildren()[1]);
-        if (osparc.data.Permissions.getInstance().isTester()) {
-          // Also copyMetadataButton if tester
-          vBox.add(copyMetadataButton);
-        }
       } else {
+        const title = this.__createTitle();
+        const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
         vBox.add(titleLayout);
+
+        const extraInfo = this.__extraInfo();
+        const extraInfoLayout = this.__createExtraInfo(extraInfo);
+        const bounds = this.getBounds();
+        const offset = 30;
+        const maxThumbnailHeight = extraInfo.length*20;
+        let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
+        let thumbnailWidth = widgetWidth - 2 * osparc.info.CardLarge.PADDING - osparc.info.CardLarge.EXTRA_INFO_WIDTH;
+        thumbnailWidth = Math.min(thumbnailWidth - 20, osparc.info.CardLarge.THUMBNAIL_MAX_WIDTH);
+        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
+        const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
+        thumbnailLayout.getLayout().set({
+          alignX: "center"
+        });
+        const infoAndThumbnail = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+          alignX: "center"
+        }));
+        infoAndThumbnail.add(extraInfoLayout);
+        infoAndThumbnail.add(thumbnailLayout, {
+          flex: 1
+        });
         vBox.add(infoAndThumbnail);
-        if (descriptionUi) {
-          vBox.add(descriptionUi);
+
+        if (osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
+          const descriptionUi = this.__createDescriptionUi();
+          if (descriptionUi) {
+            vBox.add(descriptionUi);
+          }
         }
         vBox.add(description);
-        if (resources) {
-          vBox.add(resources);
+
+        if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+          const resources = this.__createResources();
+          if (resources) {
+            vBox.add(resources);
+          }
         }
         vBox.add(copyMetadataButton);
       }
@@ -427,6 +453,10 @@ qx.Class.define("osparc.info.ServiceLarge", {
       }, this);
       titleEditor.center();
       titleEditor.open();
+    },
+
+    __copyStudyIdToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.getStudyId());
     },
 
     __copyNodeIdToClipboard: function() {

@@ -18,10 +18,6 @@
 qx.Class.define("osparc.node.BootOptionsView", {
   extend: osparc.node.ServiceOptionsView,
 
-  events: {
-    "bootModeChanged": "qx.event.type.Event"
-  },
-
   members: {
     _applyNode: function(node) {
       if (node.hasBootModes()) {
@@ -61,7 +57,6 @@ qx.Class.define("osparc.node.BootOptionsView", {
           setTimeout(() => {
             buttonsLayout.setEnabled(true);
             node.requestStartNode();
-            this.fireEvent("bootModeChanged");
           }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
         }
       }, this);

@@ -18,6 +18,7 @@ class FolderGet(OutputSchema):
     name: str
     created_at: datetime
     modified_at: datetime
+    trashed_at: datetime | None
     owner: GroupID
     workspace_id: WorkspaceID | None
     my_access_rights: AccessRights

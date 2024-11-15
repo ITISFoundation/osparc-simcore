@@ -197,6 +197,10 @@ qx.Class.define("osparc.store.Workspaces", {
       return this.workspacesCached.find(w => w.getWorkspaceId() === workspaceId);
     },
 
+    getWorkspaces: function() {
+      return this.workspacesCached;
+    },
+
     __addToCache: function(workspace) {
       const found = this.workspacesCached.find(w => w.getWorkspaceId() === workspace.getWorkspaceId());
       if (!found) {

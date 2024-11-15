@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       preloadPromises.push(store.reloadWallets());
     }
     preloadPromises.push(store.getAllClassifiers(true));
-    preloadPromises.push(store.getTags());
+    preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());
     Promise.all(preloadPromises)
       .then(() => {
         const mainStack = this.__createMainStack();

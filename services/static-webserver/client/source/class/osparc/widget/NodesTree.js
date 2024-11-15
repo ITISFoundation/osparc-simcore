@@ -290,15 +290,13 @@ qx.Class.define("osparc.widget.NodesTree", {
           });
         } else {
           const node = study.getWorkbench().getNode(nodeId);
-          const serviceDetails = new osparc.info.ServiceLarge(node.getMetaData(), {
+          const metadata = node.getMetaData();
+          const serviceDetails = new osparc.info.ServiceLarge(metadata, {
             nodeId,
             label: node.getLabel(),
             studyId: study.getUuid()
           });
-          const title = this.tr("Service information");
-          osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height).set({
-            maxHeight: height
-          });
+          osparc.info.ServiceLarge.popUpInWindow(serviceDetails);
         }
       }
     },

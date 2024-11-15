@@ -37,6 +37,7 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
                 DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S
             ),
             extra_allowed_method_names={"attach_lifespan_to"},
+            tracing_settings=settings.DYNAMIC_SCHEDULER_TRACING,
         )
 
     @retry_on_errors()

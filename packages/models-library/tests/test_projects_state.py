@@ -9,7 +9,7 @@ def test_project_locked_with_missing_owner_raises():
 
 
 def test_project_locked_with_missing_owner_ok_during_maintaining():
-    ProjectLocked.parse_obj({"value": True, "status": ProjectStatus.MAINTAINING})
+    ProjectLocked.model_validate({"value": True, "status": ProjectStatus.MAINTAINING})
 
 
 @pytest.mark.parametrize(

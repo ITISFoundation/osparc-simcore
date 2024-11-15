@@ -2,4 +2,4 @@ from common_library.errors_classes import OsparcErrorMixin
 
 
 class WebServerBaseError(OsparcErrorMixin, Exception):
-    """WebServer base error."""
+    msg_template = "Error in web-server service"

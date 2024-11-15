@@ -79,6 +79,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "workspaceSelected": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Data",
     "deleteWorkspaceRequested": "qx.event.type.Data",
+    "changeContext": "qx.event.type.Data",
   },
 
   statics: {
@@ -207,7 +208,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __createCard: function(resourceData) {
-      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
+      const tags = resourceData.tags ? osparc.store.Tags.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.getTagId())) : [];
       const card = this.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       card.set({
         appearance: resourceData.type ? `pb-${resourceData.type}` : `pb-${resourceData.resourceType}`,
@@ -419,6 +420,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         "folderUpdated",
         "moveFolderToRequested",
         "deleteFolderRequested",
+        "changeContext",
       ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
       return card;
     },
@@ -432,7 +434,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __groupByTags: function(cards, resourceData) {
-      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
+      const tags = resourceData.tags ? osparc.store.Tags.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.getTagId())) : [];
       if (tags.length === 0) {
         let noGroupContainer = this.__getGroupContainer("no-group");
         const card = this.__createCard(resourceData);
@@ -441,9 +443,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         cards.push(card);
       } else {
         tags.forEach(tag => {
-          let groupContainer = this.__getGroupContainer(tag.id);
+          let groupContainer = this.__getGroupContainer(tag.getTagId());
           if (groupContainer === null) {
-            groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
+            groupContainer = this.__createGroupContainer(tag.getTagId(), tag.getName(), tag.getColor());
+            tag.bind("name", groupContainer, "headerLabel");
+            tag.bind("color", groupContainer, "headerColor");
             groupContainer.setHeaderIcon("@FontAwesome5Solid/tag/24");
             this.__groupedContainers.add(groupContainer);
             this.__groupedContainers.getChildren().sort((a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel()));
