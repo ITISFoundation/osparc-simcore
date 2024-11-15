@@ -63,14 +63,28 @@ qx.Class.define("osparc.NewRelease", {
       if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
         const newRelease = new osparc.NewRelease();
         const title = qx.locale.Manager.tr("New Release");
-        const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
-          clickAwayClose: false,
-          resizable: false,
-          showClose: true
-        });
+        let win = null;
+        if (this.isNewReleaseLinkMarkdown()) {
+          win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 800, 600).set({
+            clickAwayClose: false,
+            resizable: true,
+            showClose: true
+          });
+        } else {
+          win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
+            clickAwayClose: false,
+            resizable: false,
+            showClose: true
+          });
+        }
         const closeBtn = win.getChildControl("close-button");
         osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
-      }
+    },
+
+    isNewReleaseLinkMarkdown: function() {
+      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      return osparc.utils.Utils.isMarkdownLink(url);
     },
   },
 
@@ -86,12 +100,24 @@ qx.Class.define("osparc.NewRelease", {
 
       const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
       const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
-      const linkLabel = new osparc.ui.basic.LinkLabel().set({
-        value: this.tr("What's new"),
-        url,
-        font: "link-label-14"
-      });
-      this._add(linkLabel);
+      if (osparc.utils.Utils.isMarkdownLink(url)) {
+        const description = new osparc.ui.markdown.Markdown();
+        this._add(description);
+        fetch(url)
+          .then(response => response.blob())
+          .then(blob => blob.text())
+          .then(markdown => {
+            description.setValue(markdown)
+          })
+          .catch(err => console.error(err));
+      } else {
+        const linkLabel = new osparc.ui.basic.LinkLabel().set({
+          value: this.tr("What's new"),
+          url,
+          font: "link-label-14"
+        });
+        this._add(linkLabel);
+      }
     }
   }
 });
