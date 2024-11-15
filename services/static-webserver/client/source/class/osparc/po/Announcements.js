@@ -119,10 +119,11 @@ qx.Class.define("osparc.po.Announcements", {
         }
         const announcementData = {
           "id": osparc.utils.Utils.uuidV4(),
-          "products": JSON.stringify(products),
+          "products": products,
           "title": title.getValue() ? title.getValue() : "",
           "description": description.getValue() ? description.getValue() : "",
-          "widgets": JSON.stringify(widgets),
+          "link": link.getValue() ? link.getValue() : "",
+          "widgets": widgets,
           "start": start.getValue(),
           "end": end.getValue(),
         };
