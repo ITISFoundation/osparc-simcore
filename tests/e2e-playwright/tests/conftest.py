@@ -454,13 +454,14 @@ def create_new_project_and_delete(
                             open_button.click()
                         lrt_data = lrt.value.json()
                         lrt_data = lrt_data["data"]
-                        if is_product_billable:
-                            # Open project with default resources
-                            page.get_by_test_id("openWithResources").click()
                         with log_context(
                             logging.INFO,
                             "Copying template data",
                         ) as copying_logger:
+                            if is_product_billable:
+                                # Open project with default resources
+                                page.get_by_test_id("openWithResources").click()
+
                             # From the long running tasks response's urls, only their path is relevant
                             def url_to_path(url):
                                 return urllib.parse.urlparse(url).path
