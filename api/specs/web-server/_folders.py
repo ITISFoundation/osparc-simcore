@@ -19,7 +19,7 @@ from models_library.generics import Envelope
 from models_library.rest_pagination import PageQueryParameters
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.folders._models import (
-    FolderListFullSearchQueryParams,
+    FolderSearchQueryParams,
     FoldersListQueryParams,
     FoldersPathParams,
 )
@@ -37,7 +37,9 @@ router = APIRouter(
     response_model=Envelope[FolderGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_folder(_b: CreateFolderBodyParams):
+async def create_folder(
+    _b: CreateFolderBodyParams,
+):
     ...
 
 
@@ -57,7 +59,7 @@ async def list_folders(
 )
 async def list_folders_full_search(
     _p: Annotated[PageQueryParameters, Depends()],
-    _q: Annotated[FolderListFullSearchQueryParams, Depends()],
+    _q: Annotated[FolderSearchQueryParams, Depends()],
 ):
     ...
 
@@ -66,7 +68,9 @@ async def list_folders_full_search(
     "/folders/{folder_id}",
     response_model=Envelope[FolderGet],
 )
-async def get_folder(_path: Annotated[FoldersPathParams, Depends()]):
+async def get_folder(
+    _p: Annotated[FoldersPathParams, Depends()],
+):
     ...
 
 
@@ -75,7 +79,8 @@ async def get_folder(_path: Annotated[FoldersPathParams, Depends()]):
     response_model=Envelope[FolderGet],
 )
 async def replace_folder(
-    _path: Annotated[FoldersPathParams, Depends()], _body: PutFolderBodyParams
+    _p: Annotated[FoldersPathParams, Depends()],
+    _b: PutFolderBodyParams,
 ):
     ...
 
@@ -84,5 +89,7 @@ async def replace_folder(
     "/folders/{folder_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_folder(_path: Annotated[FoldersPathParams, Depends()]):
+async def delete_folder(
+    _p: Annotated[FoldersPathParams, Depends()],
+):
     ...
