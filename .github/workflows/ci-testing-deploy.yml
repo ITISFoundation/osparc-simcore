@@ -37,9 +37,6 @@ on:
           - all
 
 env:
-  # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
-  DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
-  DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
   # NOTE: 'COLUMNS' is a shell env var that represents the width (number of columns)
   #       of the terminal or command-line interface in characters.
   COLUMNS: 120
@@ -2086,6 +2083,11 @@ jobs:
         python: ["3.11"]
         os: [ubuntu-22.04]
       fail-fast: false
+    env:
+      # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
+      DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
+      DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
+      DIRECTOR_TRACING: null
     steps:
       - uses: actions/checkout@v4
       - name: setup docker buildx
@@ -2149,6 +2151,11 @@ jobs:
         python: ["3.11"]
         os: [ubuntu-22.04]
       fail-fast: false
+    env:
+      # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
+      DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
+      DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
+      DIRECTOR_TRACING: null
     steps:
       - uses: actions/checkout@v4
       - name: setup docker buildx
