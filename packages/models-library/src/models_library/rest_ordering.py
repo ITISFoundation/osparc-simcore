@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, validator
 
 from .basic_types import IDStr
 from .rest_base import RequestParameters
-from .utils.common_validators import load_if_json_encoded_pre_validator
+from .utils.common_validators import parse_json_pre_validator
 
 
 class OrderDirection(str, Enum):
@@ -77,7 +77,7 @@ def create_ordering_query_model_classes(
         )
 
         _pre_parse_string = validator("order_by", allow_reuse=True, pre=True)(
-            load_if_json_encoded_pre_validator
+            parse_json_pre_validator
         )
 
     return _OrderQueryParams

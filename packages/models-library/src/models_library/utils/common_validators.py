@@ -20,6 +20,8 @@ import functools
 import operator
 from typing import Any
 
+from orjson import JSONDecodeError
+
 from .json_serialization import json_loads
 
 
@@ -41,10 +43,13 @@ def none_to_empty_list_pre_validator(value: Any):
     return value
 
 
-def load_if_json_encoded_pre_validator(value: Any):
+def parse_json_pre_validator(value: Any):
     if isinstance(value, str):
-        # raises JsonEncoderError which is a TypeError
-        return json_loads(value)
+        try:
+            return json_loads(value)
+        except JSONDecodeError as err:
+            msg = f"Invalid JSON {value=}: {err}"
+            raise TypeError(msg) from err
     return value
 
 

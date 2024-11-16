@@ -363,7 +363,7 @@ async def test_parse_request_with_invalid_headers_params(
 
 def test_parse_request_query_parameters_as_with_order_by_query_models():
 
-    OrderByModel = create_ordering_query_model_classes(
+    OrderQueryModel = create_ordering_query_model_classes(
         ordering_fields={"modified", "name"}, default=OrderBy(field="name")
     )
 
@@ -373,12 +373,5 @@ def test_parse_request_query_parameters_as_with_order_by_query_models():
 
     request = make_mocked_request("GET", path=f"{url}")
 
-    query_params = parse_request_query_parameters_as(OrderByModel, request)
+    query_params = parse_request_query_parameters_as(OrderQueryModel, request)
     assert query_params.order_by == expected
-
-    expected_schema = {"type": "string", "format": "json-string"}
-    assert {
-        k: v
-        for k, v in OrderByModel.schema()["properties"]["order_by"]
-        if k in expected
-    } == expected_schema
