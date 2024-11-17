@@ -12,7 +12,6 @@ import asyncio
 from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
 
-import aiopg.sa
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
@@ -34,6 +33,7 @@ from simcore_service_director_v2.modules.comp_scheduler._distributed_scheduler i
 from simcore_service_director_v2.modules.comp_scheduler._models import (
     SchedulePipelineRabbitMessage,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = [
@@ -74,23 +74,25 @@ async def scheduler_rabbit_client_parser(
     await client.unsubscribe(queue_name)
 
 
-async def test_schedule_pipelines(
+async def test_schedule_pipelines_empty_db(
     initialized_app: FastAPI,
     scheduler_rabbit_client_parser: mock.AsyncMock,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
-    async with aiopg_engine.acquire() as conn:
-        # check comp_runs is empty
+    # check comp_runs is empty
+    async with sqlalchemy_async_engine.connect() as conn:
         total_number_of_items = await conn.scalar(
             sa.select(sa.func.count()).select_from(comp_runs)
         )
     assert total_number_of_items == 0
 
     await schedule_pipelines(initialized_app)
+
+    # check nothing was distributed
     scheduler_rabbit_client_parser.assert_not_called()
 
-    async with aiopg_engine.acquire() as conn:
-        # check comp_runs is empty
+    # check comp_runs is still empty
+    async with sqlalchemy_async_engine.connect() as conn:
         total_number_of_items = await conn.scalar(
             sa.select(sa.func.count()).select_from(comp_runs)
         )
@@ -101,6 +103,7 @@ async def test_schedule_pipelines_concurently_raises_and_only_one_runs(
     initialized_app: FastAPI,
 ):
     CONCURRENCY = 5
+    # TODO: this can be flaky as an empty scheduling is very short
     with pytest.raises(
         CouldNotAcquireLockError,
         match=".+ computational-distributed-scheduler",
@@ -124,4 +127,11 @@ async def test_schedule_pipelines_with_runs(
     tasks: Callable[..., list[CompTaskAtDB]],
     runs: Callable[..., CompRunsAtDB],
 ):
-    ...
+    user = registered_user()
+    proj = await project(user, workbench=fake_workbench_without_outputs)
+    pipeline(
+        project_id=proj.uuid,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+    comp_tasks = tasks(user=user, project=proj, state=StateType.PUBLISHED, progress=0)
+    comp_runs = runs(user=user, project=proj, result=StateType.PUBLISHED)
