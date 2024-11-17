@@ -29,53 +29,6 @@ _SCHEDULER_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 _MAX_CONCURRENT_PIPELINE_SCHEDULING: Final[int] = 10
 
 
-def _redis_client_getter(*args, **kwargs) -> RedisClientSDK:
-    assert kwargs is not None  # nosec
-    app = args[0]
-    assert isinstance(app, FastAPI)  # nosec
-    return get_redis_client_manager(app).client(RedisDatabase.LOCKS)
-
-
-async def _distribute_pipeline(
-    run: CompRunsAtDB, rabbitmq_client: RabbitMQClient, db_engine: Engine
-) -> None:
-    # TODO: we should use the transaction and the asyncpg engine here to ensure 100% consistency
-    # async with transaction_context(get_asyncpg_engine(app)) as connection:
-    await rabbitmq_client.publish(
-        SchedulePipelineRabbitMessage.channel_name,
-        SchedulePipelineRabbitMessage(
-            user_id=run.user_id,
-            project_id=run.project_uuid,
-            iteration=run.iteration,
-        ),
-    )
-    await CompRunsRepository.instance(db_engine).mark_as_scheduled(
-        user_id=run.user_id, project_id=run.project_uuid, iteration=run.iteration
-    )
-
-
-async def _get_pipeline_dag(project_id: ProjectID, db_engine: Engine) -> nx.DiGraph:
-    comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
-    pipeline_at_db = await comp_pipeline_repo.get_pipeline(project_id)
-    return pipeline_at_db.get_graph()
-
-
-@exclusive(_redis_client_getter, lock_key="computational-distributed-scheduler")
-async def schedule_pipelines(app: FastAPI) -> None:
-    db_engine = get_db_engine(app)
-    runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
-        filter_by_state=SCHEDULED_STATES, scheduled_since=_SCHEDULER_INTERVAL
-    )
-    rabbitmq_client = get_rabbitmq_client(app)
-    await limited_gather(
-        *(
-            _distribute_pipeline(run, rabbitmq_client, db_engine)
-            for run in runs_to_schedule
-        ),
-        limit=_MAX_CONCURRENT_PIPELINE_SCHEDULING,
-    )
-
-
 async def run_new_pipeline(
     app: FastAPI,
     *,
@@ -139,3 +92,50 @@ async def stop_pipeline(
         # ensure the scheduler starts right away
         rabbitmq_client = get_rabbitmq_client(app)
         await _distribute_pipeline(updated_comp_run, rabbitmq_client, db_engine)
+
+
+def _redis_client_getter(*args, **kwargs) -> RedisClientSDK:
+    assert kwargs is not None  # nosec
+    app = args[0]
+    assert isinstance(app, FastAPI)  # nosec
+    return get_redis_client_manager(app).client(RedisDatabase.LOCKS)
+
+
+async def _distribute_pipeline(
+    run: CompRunsAtDB, rabbitmq_client: RabbitMQClient, db_engine: Engine
+) -> None:
+    # TODO: we should use the transaction and the asyncpg engine here to ensure 100% consistency
+    # async with transaction_context(get_asyncpg_engine(app)) as connection:
+    await rabbitmq_client.publish(
+        SchedulePipelineRabbitMessage.channel_name,
+        SchedulePipelineRabbitMessage(
+            user_id=run.user_id,
+            project_id=run.project_uuid,
+            iteration=run.iteration,
+        ),
+    )
+    await CompRunsRepository.instance(db_engine).mark_as_scheduled(
+        user_id=run.user_id, project_id=run.project_uuid, iteration=run.iteration
+    )
+
+
+async def _get_pipeline_dag(project_id: ProjectID, db_engine: Engine) -> nx.DiGraph:
+    comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
+    pipeline_at_db = await comp_pipeline_repo.get_pipeline(project_id)
+    return pipeline_at_db.get_graph()
+
+
+@exclusive(_redis_client_getter, lock_key="computational-distributed-scheduler")
+async def schedule_pipelines(app: FastAPI) -> None:
+    db_engine = get_db_engine(app)
+    runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
+        filter_by_state=SCHEDULED_STATES, scheduled_since=_SCHEDULER_INTERVAL
+    )
+    rabbitmq_client = get_rabbitmq_client(app)
+    await limited_gather(
+        *(
+            _distribute_pipeline(run, rabbitmq_client, db_engine)
+            for run in runs_to_schedule
+        ),
+        limit=_MAX_CONCURRENT_PIPELINE_SCHEDULING,
+    )
