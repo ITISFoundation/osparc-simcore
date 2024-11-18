@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, ClassVar, NamedTuple
 
 import yaml
+from common_library.pydantic_fields_extension import get_type
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel
 from pydantic import BaseModel, Field
@@ -116,8 +117,8 @@ def assert_handler_signature_against_model(
 
     # query and path parameters
     implemented_params = [
-        ParamSpec(field.name, field.type_, field.field_info)
-        for field in model_cls.__fields__.values()
+        ParamSpec(name, get_type(info), info)
+        for name, info in model_cls.model_fields.items()
     ]
 
     assert {p.name for p in implemented_params}.issubset(  # nosec
