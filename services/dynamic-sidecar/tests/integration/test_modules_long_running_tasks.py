@@ -23,11 +23,12 @@ from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_project
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
+from pytest_simcore.helpers.storage import replace_storage_endpoint
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
@@ -161,24 +162,13 @@ def state_paths_to_legacy_archives(
 async def simcore_storage_service(mocker: MockerFixture, app: FastAPI) -> None:
     storage_host: Final[str] | None = os.environ.get("STORAGE_HOST")
     storage_port: Final[str] | None = os.environ.get("STORAGE_PORT")
-
-    def correct_ip(url: AnyUrl):
-
-        assert storage_host is not None
-        assert storage_port is not None
-
-        return AnyUrl.build(
-            scheme=url.scheme,
-            host=storage_host,
-            port=storage_port,
-            path=url.path,
-            query=url.query,
-        )
+    assert storage_host is not None
+    assert storage_port is not None
 
     # NOTE: Mock to ensure container IP agrees with host IP when testing
     mocker.patch(
         "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
-        correct_ip,
+        replace_storage_endpoint(storage_host, int(storage_port)),
     )
 
 

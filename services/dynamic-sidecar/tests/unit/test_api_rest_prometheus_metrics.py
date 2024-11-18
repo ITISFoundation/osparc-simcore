@@ -10,7 +10,6 @@ from unittest.mock import AsyncMock
 import pytest
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
-from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.callbacks_mapping import CallbacksMapping
@@ -60,9 +59,7 @@ async def app(mock_rabbitmq_envs: EnvVarsDict, app: FastAPI) -> AsyncIterable[Fa
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return TypeAdapter(AnyHttpUrlLegacy).validate_python(
-        "http://backgroud.testserver.io"
-    )
+    return TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io")
 
 
 @pytest.fixture

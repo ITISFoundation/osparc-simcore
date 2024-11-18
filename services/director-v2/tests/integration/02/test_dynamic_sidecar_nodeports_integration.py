@@ -495,7 +495,7 @@ async def _get_mapped_nodeports_values(
         PORTS: Nodeports = await node_ports_v2.ports(
             user_id=user_id,
             project_id=ProjectIDStr(project_id),
-            node_uuid=NodeIDStr(node_uuid),
+            node_uuid=TypeAdapter(NodeIDStr).validate_python(node_uuid),
             db_manager=db_manager,
         )
         result[str(node_uuid)] = InputsOutputs(
@@ -699,7 +699,7 @@ async def _fetch_data_via_aioboto(
     r_clone_settings: RCloneSettings,
     dir_tag: str,
     temp_dir: Path,
-    node_id: NodeID,
+    node_id: NodeIDStr,
     project_id: ProjectID,
 ) -> Path:
     save_to = temp_dir / f"aioboto_{dir_tag}_{uuid4()}"
@@ -840,7 +840,7 @@ async def _assert_push_non_file_outputs(
     logger.debug("Going to poll task %s", task_id)
 
     async def _debug_progress_callback(
-        message: ProgressMessage, percent: ProgressPercent, task_id: TaskId
+        message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId
     ) -> None:
         logger.debug("%s: %.2f %s", task_id, percent, message)
 
@@ -1118,7 +1118,7 @@ async def test_nodeports_integration(
             dir_tag="dy",
             user_id=current_user["id"],
             project_id=current_study.uuid,
-            service_uuid=services_node_uuids.dy,
+            service_uuid=NodeID(services_node_uuids.dy),
             temp_dir=tmp_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             faker=faker,
@@ -1139,7 +1139,7 @@ async def test_nodeports_integration(
             dir_tag="dy_compose_spec",
             user_id=current_user["id"],
             project_id=current_study.uuid,
-            service_uuid=services_node_uuids.dy_compose_spec,
+            service_uuid=NodeID(services_node_uuids.dy_compose_spec),
             temp_dir=tmp_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             faker=faker,

@@ -16,7 +16,6 @@ import pytest
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
-from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
@@ -158,9 +157,7 @@ def compose_spec(request: pytest.FixtureRequest) -> str:
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return TypeAdapter(AnyHttpUrlLegacy).validate_python(
-        "http://backgroud.testserver.io"
-    )
+    return TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io")
 
 
 @pytest.fixture

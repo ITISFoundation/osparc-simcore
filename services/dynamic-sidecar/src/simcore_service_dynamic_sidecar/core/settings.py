@@ -199,7 +199,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DYNAMIC_SIDECAR_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for opentelemetry tracing",
     )
 
     @property

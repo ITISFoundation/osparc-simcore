@@ -391,10 +391,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     @property
     def endpoint(self) -> AnyHttpUrl:
         """endpoint where all the services are exposed"""
-        url = AnyHttpUrl.build(  # pylint: disable=no-member
+        return AnyHttpUrl.build(  # pylint: disable=no-member
             scheme="http", host=self.hostname, port=self.port
         )
-        return url
 
     dynamic_sidecar: DynamicSidecar = Field(
         ...,

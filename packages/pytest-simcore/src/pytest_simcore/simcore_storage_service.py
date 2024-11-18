@@ -10,13 +10,14 @@ import pytest
 import tenacity
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
+from .helpers.storage import replace_storage_endpoint
 
 
 @pytest.fixture(scope="module")
@@ -45,22 +46,12 @@ async def storage_service(
 ) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
 
-    def correct_ip(url: AnyUrl):
-        assert storage_endpoint.host is not None
-        assert storage_endpoint.port is not None
-
-        return AnyUrl.build(
-            scheme=url.scheme,
-            host=storage_endpoint.host,
-            port=f"{storage_endpoint.port}",
-            path=url.path,
-            query=url.query,
-        )
-
     # NOTE: Mock to ensure container IP agrees with host IP when testing
+    assert storage_endpoint.host is not None
+    assert storage_endpoint.port is not None
     mocker.patch(
         "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
-        correct_ip,
+        replace_storage_endpoint(storage_endpoint.host, storage_endpoint.port),
     )
 
     return storage_endpoint

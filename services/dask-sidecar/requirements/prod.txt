@@ -12,6 +12,7 @@
 # installs this repo's packages
 simcore-dask-task-models-library @ ../../packages/dask-task-models-library/
 simcore-models-library @ ../../packages/models-library/
+simcore-common-library @ ../../packages/common-library/
 simcore-service-library @ ../../packages/service-library/
 simcore-settings-library @ ../../packages/settings-library/
 

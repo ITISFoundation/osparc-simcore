@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from collections.abc import Mapping
 from typing import Any, Final
 
@@ -91,6 +92,11 @@ async def create_network(network_config: dict[str, Any]) -> NetworkId:
             raise DynamicSidecarError(msg) from e
 
 
+def _to_snake_case(string: str) -> str:
+    # Convert camelCase or PascalCase to snake_case
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", string).lower()
+
+
 async def create_service_and_get_id(
     create_service_data: AioDockerServiceSpec | dict[str, Any]
 ) -> ServiceId:
@@ -100,6 +106,8 @@ async def create_service_and_get_id(
         kwargs = jsonable_encoder(
             create_service_data, by_alias=True, exclude_unset=True
         )
+        kwargs = {_to_snake_case(k): v for k, v in kwargs.items()}
+
         logging.debug("Creating service with\n%s", json.dumps(kwargs, indent=1))
         service_start_result = await client.services.create(**kwargs)
 

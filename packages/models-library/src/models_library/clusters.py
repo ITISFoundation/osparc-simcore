@@ -1,6 +1,6 @@
 from enum import auto
 from pathlib import Path
-from typing import Final, Literal, Self, TypeAlias
+from typing import Annotated, Final, Literal, Self, TypeAlias
 
 from pydantic import (
     AnyUrl,
@@ -142,7 +142,9 @@ class BaseCluster(BaseModel):
     authentication: ClusterAuthentication = Field(
         ..., description="Dask gateway authentication", discriminator="type"
     )
-    access_rights: dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
+    access_rights: Annotated[
+        dict[GroupID, ClusterAccessRights], Field(default_factory=dict)
+    ]
 
     _from_equivalent_enums = field_validator("type", mode="before")(
         create_enums_pre_validator(ClusterTypeInModel)
