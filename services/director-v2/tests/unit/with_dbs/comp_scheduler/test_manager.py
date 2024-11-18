@@ -30,7 +30,7 @@ from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_service_director_v2.core.errors import PipelineNotFoundError
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
-from simcore_service_director_v2.modules.comp_scheduler._distributed_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler._manager import (
     SCHEDULER_INTERVAL,
     run_new_pipeline,
     schedule_pipelines,
@@ -108,7 +108,7 @@ async def test_schedule_pipelines_concurently_runs_exclusively_and_raises(
         return result
 
     mock_function = mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._distributed_scheduler.limited_gather",
+        "simcore_service_director_v2.modules.comp_scheduler._manager.limited_gather",
         autospec=True,
         side_effect=slow_limited_gather,
     )
@@ -267,19 +267,17 @@ async def test_empty_pipeline_is_not_scheduled(
 
 @pytest.fixture
 def with_fast_scheduling(mocker: MockerFixture) -> None:
-    from simcore_service_director_v2.modules.comp_scheduler import (
-        _distributed_scheduler,
-    )
+    from simcore_service_director_v2.modules.comp_scheduler import _manager
 
     mocker.patch.object(
-        _distributed_scheduler, "SCHEDULER_INTERVAL", datetime.timedelta(seconds=0.01)
+        _manager, "SCHEDULER_INTERVAL", datetime.timedelta(seconds=0.01)
     )
 
 
 @pytest.fixture
 def mocked_schedule_pipelines(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._distributed_scheduler.schedule_pipelines",
+        "simcore_service_director_v2.modules.comp_scheduler._manager.schedule_pipelines",
         autospec=True,
     )
 

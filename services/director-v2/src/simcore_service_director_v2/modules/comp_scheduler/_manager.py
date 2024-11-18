@@ -17,7 +17,6 @@ from settings_library.redis import RedisDatabase
 from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ...utils.comp_scheduler import SCHEDULED_STATES
 from ...utils.rabbitmq import publish_project_log
-from ..comp_scheduler._models import SchedulePipelineRabbitMessage
 from ..db import get_db_engine
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
@@ -28,6 +27,7 @@ from ._constants import (
     MODULE_NAME,
     SCHEDULER_INTERVAL,
 )
+from ._models import SchedulePipelineRabbitMessage
 
 _logger = logging.getLogger(__name__)
 
