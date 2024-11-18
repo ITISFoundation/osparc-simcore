@@ -17,7 +17,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Final, TypeAlias
+from typing import Final
 
 import arrow
 import networkx as nx
@@ -77,13 +77,6 @@ _logger = logging.getLogger(__name__)
 _Previous = CompTaskAtDB
 _Current = CompTaskAtDB
 _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
-_SCHEDULER_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
-_TASK_NAME_TEMPLATE: Final[str] = (
-    "computational-scheduler-{user_id}:{project_id}:{iteration}"
-)
-
-PipelineSchedulingTask: TypeAlias = asyncio.Task
-PipelineSchedulingWakeUpEvent: TypeAlias = asyncio.Event
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,15 +126,6 @@ async def _triage_changed_tasks(
         waiting_for_resources_tasks,
         lost_or_momentarily_lost_tasks,
     )
-
-
-@dataclass(kw_only=True)
-class ScheduledPipelineParams:
-    scheduler_task: asyncio.Task
-    scheduler_waker: asyncio.Event
-
-    def wake_up(self) -> None:
-        self.scheduler_waker.set()
 
 
 @dataclass
