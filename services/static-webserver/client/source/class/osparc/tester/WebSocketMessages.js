@@ -87,13 +87,24 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
           });
           break;
         }
+        case "json-viewer":
+          control = new osparc.ui.basic.JsonTreeWidget();
+          this._add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
 
     _buildLayout: function() {
       this.getChildControl("filter-text");
-      this.getChildControl("messages-table");
+      const table = this.getChildControl("messages-table");
+      const jsonViewer = this.getChildControl("json-viewer");
+
+      table.addListener("cellTap", e => {
+        const selectedRow = e.getRow();
+        const rowData = table.getTableModel().getRowData(selectedRow);
+        jsonViewer.setJson(rowData[2]);
+      }, this);
 
       this.__populateTable();
     },
@@ -112,7 +123,7 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
         });
       }
       messagesArray.sort((a, b) => {
-        return new Date(a.date) - new Date(b.date); // newest first
+        return new Date(b.date) - new Date(a.date); // newest first
       });
       const datas = [];
       messagesArray.forEach(entry => {
