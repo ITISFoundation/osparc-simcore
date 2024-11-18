@@ -16,10 +16,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
         with log_context(
             _logger, level=logging.INFO, msg="starting computational scheduler"
         ):
-            app.state.scheduler = scheduler = await _scheduler_factory.create_from_db(
-                app
-            )
-            scheduler.recover_scheduling()
+            app.state.scheduler = await _scheduler_factory.create_from_db(app)
 
     return start_scheduler
 

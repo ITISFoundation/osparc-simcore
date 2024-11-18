@@ -576,7 +576,7 @@ async def test_container_create_outputs_dirs(
     assert mock_event_filter_enqueue.call_count == 0
 
     json_outputs_labels = {
-        k: v.dict(by_alias=True) for k, v in mock_outputs_labels.items()
+        k: v.model_dump(by_alias=True) for k, v in mock_outputs_labels.items()
     }
     response = await test_client.post(
         f"/{API_VTAG}/containers/ports/outputs/dirs",

@@ -262,7 +262,7 @@ async def test_iterators_workflow(
     assert node.inputs
     node.inputs["linspace_stop"] = 4
 
-    _new_project_data = new_project.dict(**REQUEST_MODEL_POLICY)
+    _new_project_data = new_project.model_dump(**REQUEST_MODEL_POLICY)
     _new_project_data.pop("state")
     await db.replace_project(
         json_loads(json_dumps(_new_project_data)),

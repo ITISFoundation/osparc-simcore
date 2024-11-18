@@ -46,7 +46,7 @@ def test_invite_user_and_check_invitation(
     }
 
     expected = {
-        **invitation_data.dict(exclude={"product"}),
+        **invitation_data.model_dump(exclude={"product"}),
         "product": environs["INVITATIONS_DEFAULT_PRODUCT"],
     }
 

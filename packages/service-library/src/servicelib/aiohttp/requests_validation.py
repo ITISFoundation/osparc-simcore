@@ -171,7 +171,7 @@ def parse_request_query_parameters_as(
         # query parameters with the same key. However, we are not using such cases anywhere at the moment.
         data = dict(request.query)
 
-        if hasattr(parameters_schema_cls, "parse_obj"):
+        if hasattr(parameters_schema_cls, "model_validate"):
             return parameters_schema_cls.model_validate(data)
         model: ModelClass = TypeAdapter(parameters_schema_cls).validate_python(data)
         return model

@@ -109,7 +109,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
         }
     returned_computation = ComputationTask.model_validate(
         ComputationTask.model_config["json_schema_extra"]["examples"][0]
-    ).copy(
+    ).model_copy(
         update={
             "id": f"{kwargs['json']['project_id']}",
             "state": state,
@@ -133,7 +133,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     node_states = FULL_PROJECT_NODE_STATES
     returned_computation = ComputationTask.model_validate(
         ComputationTask.model_config["json_schema_extra"]["examples"][0]
-    ).copy(
+    ).model_copy(
         update={
             "id": Path(url.path).name,
             "state": state,

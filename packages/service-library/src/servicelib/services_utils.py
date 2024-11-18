@@ -22,7 +22,7 @@ def get_status_as_dict(
 ) -> dict:
     """shared between different backend services to guarantee same result to frontend"""
     return (
-        status.dict(by_alias=True)
+        status.model_dump(by_alias=True)
         if isinstance(status, DynamicServiceGet)
-        else status.dict()
+        else status.model_dump()
     )

@@ -166,7 +166,7 @@ async def update_group(request: web.Request):
     req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
     update: GroupUpdate = await parse_request_body_as(GroupUpdate, request)
-    new_group_values = update.dict(exclude_unset=True)
+    new_group_values = update.model_dump(exclude_unset=True)
 
     updated_group = await api.update_user_group(
         request.app, req_ctx.user_id, path_params.gid, new_group_values
@@ -270,7 +270,7 @@ async def update_group_user(request: web.Request):
         user_id=req_ctx.user_id,
         gid=path_params.gid,
         the_user_id_in_group=path_params.uid,
-        access_rights=update.access_rights.dict(),
+        access_rights=update.access_rights.model_dump(),
     )
     assert GroupUserGet.model_validate(user) is not None  # nosec
     return envelope_json_response(user)

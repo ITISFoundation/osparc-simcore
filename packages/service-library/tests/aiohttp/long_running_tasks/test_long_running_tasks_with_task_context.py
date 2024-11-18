@@ -53,7 +53,7 @@ def task_context_decorator(task_context: TaskContext):
         ) -> web.StreamResponse:
             """this task context callback tries to get the user_id from the query if available"""
             query_param = parse_request_query_parameters_as(query_model, request)
-            request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = query_param.dict()
+            request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = query_param.model_dump()
             return await handler(request)
 
         return _test_task_context_decorator
