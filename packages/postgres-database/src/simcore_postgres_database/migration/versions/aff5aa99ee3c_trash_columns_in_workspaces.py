@@ -1,16 +1,16 @@
 """trash columns in workspaces
 
-Revision ID: 46a50398c28a
-Revises: 8bfe65a5e294
-Create Date: 2024-11-12 17:18:46.668241+00:00
+Revision ID: aff5aa99ee3c
+Revises: 8e1f83486be7
+Create Date: 2024-11-20 13:27:26.677261+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "46a50398c28a"
-down_revision = "8bfe65a5e294"
+revision = "aff5aa99ee3c"
+down_revision = "8e1f83486be7"
 branch_labels = None
 depends_on = None
 
@@ -23,7 +23,7 @@ def upgrade():
             "trashed",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="The date and time when the workspace was marked as trashed.Null if the workspace has not been trashed [default].",
+            comment="The date and time when the workspace was marked as trashed. Null if the workspace has not been trashed [default].",
         ),
     )
     op.add_column(
@@ -32,7 +32,7 @@ def upgrade():
             "trashed_by",
             sa.BigInteger(),
             nullable=True,
-            comment="The user who marked the workspace as trashed or NULL if unknown or unmarked.",
+            comment="User who trashed the workspace, or null if not trashed or user is unknown.",
         ),
     )
     op.create_foreign_key(

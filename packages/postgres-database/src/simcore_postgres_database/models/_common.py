@@ -63,7 +63,7 @@ def column_trashed_datetime(resource_name: str) -> sa.Column:
         "trashed",
         sa.DateTime(timezone=True),
         nullable=True,
-        comment=f"The date and time when the {resource_name} was marked as trashed."
+        comment=f"The date and time when the {resource_name} was marked as trashed. "
         f"Null if the {resource_name} has not been trashed [default].",
     )
 
@@ -78,8 +78,7 @@ def column_trashed_by_user(resource_name: str, users_table: sa.Table) -> sa.Colu
             ondelete="SET NULL",
         ),
         nullable=True,
-        comment=f"The user who marked the {resource_name} as trashed "
-        "or NULL if unknown or unmarked.",
+        comment=f"User who trashed the {resource_name}, or null if not trashed or user is unknown.",
     )
 
 
