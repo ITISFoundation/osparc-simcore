@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, ClassVar
 
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Extra, Field, validator
 
 from .basic_types import IDStr
 from .rest_base import RequestParameters
@@ -24,12 +24,6 @@ class OrderBy(BaseModel):
             f" or [Z,Y,X, ...] if `{OrderDirection.DESC.value}`"
         ),
     )
-
-    class Config:
-        extra = "forbid"
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {"field": "some_field_name", "direction": "desc"}
-        }
 
 
 class _BaseOrderQueryParams(RequestParameters):
@@ -68,29 +62,43 @@ def create_ordering_query_model_classes(
     msg_direction_options = "|".join(sorted(OrderDirection))
 
     class _OrderBy(OrderBy):
+        class Config(OrderBy.Config):
+            schema_extra: ClassVar[dict[str, Any]] = {
+                "example": {
+                    "field": next(iter(ordering_fields)),
+                    "direction": OrderDirection.DESC.value,
+                }
+            }
+            extra = Extra.forbid
+            # Necessary to run _check_ordering_field_and_map in defaults and assignments
+            validate_all = True
+            validate_assignment = True
+
         @validator("field", allow_reuse=True, always=True)
         @classmethod
-        def _check_if_ordering_field(cls, v):
+        def _check_ordering_field_and_map(cls, v):
             if v not in ordering_fields:
                 msg = (
                     f"We do not support ordering by provided field '{v}'. "
                     f"Fields supported are {msg_field_options}."
                 )
                 raise ValueError(msg)
-            return v
 
-        @validator("field", allow_reuse=True, always=True)
-        @classmethod
-        def _post_rename_order_by_field_as_db_column(cls, v):
-            # API field name -> DB column_name
+            # API field name -> DB column_name conversion
             return ordering_fields_api_to_column_map.get(v) or v
 
-    order_by_example: dict[str, Any] = OrderBy.Config.schema_extra["example"]
+    order_by_example: dict[str, Any] = _OrderBy.Config.schema_extra["example"]
     order_by_example_json = json_dumps(order_by_example)
+    assert _OrderBy.parse_obj(order_by_example), "Example is invalid"  # nosec
+
+    converted_default = _OrderBy.parse_obj(
+        # NOTE: enforces ordering_fields_api_to_column_map
+        default.dict()
+    )
 
     class _OrderQueryParams(_BaseOrderQueryParams):
         order_by: _OrderBy = Field(
-            default=default,
+            default=converted_default,
             description=(
                 f"Order by field (`{msg_field_options}`) and direction (`{msg_direction_options}`). "
                 f"The default sorting order is `{json_dumps(default)}`."

@@ -104,12 +104,13 @@ def test_ordering_query_model_class__defaults():
     OrderQueryParamsModel = create_ordering_query_model_classes(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
+        ordering_fields_api_to_column_map={"modified": "modified_at"},
     )
 
     # checks  all defaults
     model = OrderQueryParamsModel()
     assert model.order_by
-    assert model.order_by.field == "modified"
+    assert model.order_by.field == "modified_at"  # NOTE that this was mapped!
     assert model.order_by.direction == OrderDirection.DESC
 
     # partial defaults
