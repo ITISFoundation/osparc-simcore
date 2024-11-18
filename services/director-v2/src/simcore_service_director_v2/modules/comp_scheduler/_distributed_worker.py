@@ -1,15 +1,20 @@
 import functools
+import logging
 from typing import cast
 
 from fastapi import FastAPI
+from servicelib.logging_utils import log_context
 
 from ..rabbitmq import get_rabbitmq_client
 from ._base_scheduler import BaseCompScheduler
 from ._models import SchedulePipelineRabbitMessage
 from ._scheduler_factory import create_scheduler
 
+_logger = logging.getLogger(__name__)
+
 
 def _empty_wake_up_callack() -> None:
+    # TODO: need to re-publish here?
     return
 
 
@@ -18,14 +23,15 @@ def _get_scheduler_worker(app: FastAPI) -> BaseCompScheduler:
 
 
 async def _handle_distributed_pipeline(app: FastAPI, data: bytes) -> bool:
-    to_schedule_pipeline = SchedulePipelineRabbitMessage.parse_raw(data)
-    await _get_scheduler_worker(app).schedule_pipeline(
-        user_id=to_schedule_pipeline.user_id,
-        project_id=to_schedule_pipeline.project_id,
-        iteration=to_schedule_pipeline.iteration,
-        wake_up_callback=_empty_wake_up_callack,
-    )
-    return True
+    with log_context(_logger, logging.DEBUG, msg="handling scheduling"):
+        to_schedule_pipeline = SchedulePipelineRabbitMessage.parse_raw(data)
+        await _get_scheduler_worker(app).schedule_pipeline(
+            user_id=to_schedule_pipeline.user_id,
+            project_id=to_schedule_pipeline.project_id,
+            iteration=to_schedule_pipeline.iteration,
+            wake_up_callback=_empty_wake_up_callack,
+        )
+        return True
 
 
 async def setup_worker(app: FastAPI) -> None:

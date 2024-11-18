@@ -9,6 +9,7 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.logging_utils import log_context
 from servicelib.rabbitmq._client import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 from servicelib.redis_utils import exclusive
@@ -97,7 +98,11 @@ async def stop_pipeline(
 
 def _redis_client_getter(*args, **kwargs) -> RedisClientSDK:
     assert kwargs is not None  # nosec
-    app = args[0]
+    if args:
+        app = args[0]
+    else:
+        assert "app" in kwargs  # nosec
+        app = kwargs["app"]
     assert isinstance(app, FastAPI)  # nosec
     return get_redis_client_manager(app).client(RedisDatabase.LOCKS)
 
@@ -128,18 +133,22 @@ async def _get_pipeline_dag(project_id: ProjectID, db_engine: Engine) -> nx.DiGr
 
 @exclusive(_redis_client_getter, lock_key="computational-distributed-scheduler")
 async def schedule_pipelines(app: FastAPI) -> None:
-    db_engine = get_db_engine(app)
-    runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
-        filter_by_state=SCHEDULED_STATES, scheduled_since=SCHEDULER_INTERVAL
-    )
-    rabbitmq_client = get_rabbitmq_client(app)
-    await limited_gather(
-        *(
-            _distribute_pipeline(run, rabbitmq_client, db_engine)
-            for run in runs_to_schedule
-        ),
-        limit=_MAX_CONCURRENT_PIPELINE_SCHEDULING,
-    )
+    with log_context(_logger, logging.DEBUG, msg="scheduling pipelines"):
+        db_engine = get_db_engine(app)
+        runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
+            filter_by_state=SCHEDULED_STATES, scheduled_since=SCHEDULER_INTERVAL
+        )
+
+        rabbitmq_client = get_rabbitmq_client(app)
+        await limited_gather(
+            *(
+                _distribute_pipeline(run, rabbitmq_client, db_engine)
+                for run in runs_to_schedule
+            ),
+            limit=_MAX_CONCURRENT_PIPELINE_SCHEDULING,
+        )
+        if runs_to_schedule:
+            _logger.debug("distributed %d pipelines", len(runs_to_schedule))
 
 
 async def setup_manager(app: FastAPI) -> None:
