@@ -20,6 +20,7 @@ class ServiceRunGet(BaseModel):
     user_email: str
     project_id: ProjectID
     project_name: str
+    project_tags: list[str]
     node_id: NodeID
     node_name: str
     root_parent_project_id: ProjectID

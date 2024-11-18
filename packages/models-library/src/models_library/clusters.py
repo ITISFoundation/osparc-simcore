@@ -152,7 +152,7 @@ class BaseCluster(BaseModel):
 
 
 ClusterID: TypeAlias = NonNegativeInt
-DEFAULT_CLUSTER_ID: Final[NonNegativeInt] = 0
+DEFAULT_CLUSTER_ID: Final[ClusterID] = 0
 
 
 class Cluster(BaseCluster):

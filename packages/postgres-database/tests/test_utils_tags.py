@@ -668,6 +668,7 @@ def test_building_tags_sql_statements():
     user_id = 425  # 4
     tag_id = 4
     project_index = 1
+    project_uuid = "106f8b4b-ffb6-459a-a27b-981c779e6d3f"
     service_key = "simcore/services/comp/isolve"
     service_version = "2.0.85"
 
@@ -726,6 +727,7 @@ def test_building_tags_sql_statements():
         add_tag_to_project_stmt,
         project_index=project_index,
         tag_id=tag_id,
+        project_uuid_for_rut=project_uuid,
     )
 
     _check(
