@@ -3,7 +3,6 @@
 """
 
 from collections import defaultdict
-from typing import List
 from uuid import UUID
 
 import httpx
@@ -24,24 +23,24 @@ from osparc_webapi import (
 
 def print_checkpoints(client: httpx.Client):
 
-    repos: List[ProjectRepo] = list(iter_repos(client))
+    repos: list[ProjectRepo] = list(iter_repos(client))
     project_id = repos[0].project_uuid
 
     for checkpoint in iter_checkpoints(client, project_id):
-        print(checkpoint.json(exclude_unset=True, indent=1))
+        print(checkpoint.model_dump_json(exclude_unset=True, indent=1))
 
 
 def print_iterations(client: httpx.Client, project_id: UUID, checkpoint: CheckPoint):
     # print-iterations
     print("Metaproject at", f"{project_id=}", f"{checkpoint=}")
     for project_iteration in iter_project_iteration(client, project_id, checkpoint.id):
-        print(project_iteration.json(exclude_unset=True, indent=1))
+        print(project_iteration.model_dump_json(exclude_unset=True, indent=1))
 
 
 def select_project_head(client: httpx.Client, project_id: UUID):
     # get head
     r = client.get(f"/repos/projects/{project_id}/checkpoints/HEAD")
-    head = Envelope[CheckPoint].parse_obj(r.json()).data
+    head = Envelope[CheckPoint].model_validate(r.json()).data
     assert head  # nosec
 
     return project_id, head
