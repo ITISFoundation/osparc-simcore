@@ -162,14 +162,14 @@ async def dy_static_file_server_project(
                 dy_static_file_server_service,
                 "LEGACY",
             ),
-            # uuid_dynamic_sidecar: _assemble_node_data(
-            #    dy_static_file_server_dynamic_sidecar_service,
-            #    "DYNAMIC",
-            # ),
-            # uuid_dynamic_sidecar_compose: _assemble_node_data(
-            #    dy_static_file_server_dynamic_sidecar_compose_spec_service,
-            #    "DYNAMIC_COMPOSE",
-            # ),
+            uuid_dynamic_sidecar: _assemble_node_data(
+                dy_static_file_server_dynamic_sidecar_service,
+                "DYNAMIC",
+            ),
+            uuid_dynamic_sidecar_compose: _assemble_node_data(
+                dy_static_file_server_dynamic_sidecar_compose_spec_service,
+                "DYNAMIC_COMPOSE",
+            ),
         },
     )
 
