@@ -247,6 +247,13 @@ qx.Class.define("osparc.wrapper.WebSocket", {
       }
       const socket = this.getSocket();
       if (socket) {
+        if (typeof (that) !== "undefined" && that !== null) {
+          socket.on(name, qx.lang.Function.bind(fn, that));
+        } else {
+          socket.on(name, fn);
+        }
+
+        // add a duplicated slot listener to keep the messages cached
         socket.on(name, message => {
           const info = {
             datetime: new Date(),
@@ -256,13 +263,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           if (this.__cache[name].length > 20) {
             this.__cache[name].length = 20;
           }
-          console.log(this.__cache);
         }, this);
-        if (typeof (that) !== "undefined" && that !== null) {
-          socket.on(name, qx.lang.Function.bind(fn, that));
-        } else {
-          socket.on(name, fn);
-        }
       }
     },
 
@@ -281,7 +282,11 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           index = this.__name.indexOf(name);
         }
       }
-    }
+    },
+
+    getCachedMessages: function() {
+      return this.__cache;
+    },
   },
 
   /**
