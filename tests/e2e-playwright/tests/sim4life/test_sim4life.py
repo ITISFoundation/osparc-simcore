@@ -11,6 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page, WebSocket
+from pydantic import AnyUrl
 from pytest_simcore.helpers.playwright import (
     ServiceType,
     web_socket_default_log_handler,
@@ -33,6 +34,7 @@ def test_sim4life(
     use_plus_button: bool,
     is_autoscaled: bool,
     check_videostreaming: bool,
+    product_url: AnyUrl,
 ):
     if use_plus_button:
         project_data = create_project_from_new_button(service_key)
@@ -54,6 +56,7 @@ def test_sim4life(
         log_in_and_out,
         autoscaled=is_autoscaled,
         copy_workspace=False,
+        product_url=product_url,
     )
     s4l_websocket = resp["websocket"]
     with web_socket_default_log_handler(s4l_websocket):
