@@ -8,13 +8,66 @@ from pathlib import Path
 from typing import Any, ClassVar, NamedTuple
 
 import yaml
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from models_library.basic_types import LogLevel
-from pydantic import BaseModel, Field
+from models_library.utils.json_serialization import json_dumps
+from pydantic import BaseModel, Field, create_model
 from pydantic.fields import FieldInfo
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
+def _create_json_type(**schema_extras):
+    class _Json(str):
+        __slots__ = ()
+
+        @classmethod
+        def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+            # openapi.json schema is corrected here
+            field_schema.update(
+                type="string",
+                # format="json-string" NOTE: we need to get rid of openapi-core in web-server before using this!
+            )
+            if schema_extras:
+                field_schema.update(schema_extras)
+
+    return _Json
+
+
+def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
+    fields = {}
+    for field_name, model_field in model_class.__fields__.items():
+
+        field_type = model_field.type_
+        default_value = model_field.default
+
+        kwargs = {
+            "alias": model_field.field_info.alias,
+            "title": model_field.field_info.title,
+            "description": model_field.field_info.description,
+            "gt": model_field.field_info.gt,
+            "ge": model_field.field_info.ge,
+            "lt": model_field.field_info.lt,
+            "le": model_field.field_info.le,
+            "min_length": model_field.field_info.min_length,
+            "max_length": model_field.field_info.max_length,
+            "regex": model_field.field_info.regex,
+            **model_field.field_info.extra,
+        }
+
+        if issubclass(field_type, BaseModel):
+            # Complex fields
+            field_type = _create_json_type(
+                description=kwargs["description"],
+                example=kwargs.get("example_json"),
+            )
+            default_value = json_dumps(default_value) if default_value else None
+
+        fields[field_name] = (field_type, Query(default=default_value, **kwargs))
+
+    new_model_name = f"{model_class.__name__}Query"
+    return create_model(new_model_name, **fields)
 
 
 class Log(BaseModel):
@@ -120,6 +173,9 @@ def assert_handler_signature_against_model(
         for field in model_cls.__fields__.values()
     ]
 
-    assert {p.name for p in implemented_params}.issubset(  # nosec
-        {p.name for p in specs_params}
-    ), f"Entrypoint {handler} does not implement OAS"
+    implemented_names = {p.name for p in implemented_params}
+    specified_names = {p.name for p in specs_params}
+
+    if not implemented_names.issubset(specified_names):
+        msg = f"Entrypoint {handler} does not implement OAS: {implemented_names} not in {specified_names}"
+        raise AssertionError(msg)
