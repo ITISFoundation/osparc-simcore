@@ -9,13 +9,14 @@
 
 
 import asyncio
-from typing import Any, AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Callable
 from unittest import mock
 
 import pytest
 import sqlalchemy as sa
+from _helpers import PublishedProject
 from fastapi import FastAPI
-from models_library.projects import ProjectAtDB
+from models_library.clusters import DEFAULT_CLUSTER_ID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -24,10 +25,9 @@ from servicelib.redis import CouldNotAcquireLockError
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_runs import comp_runs
-from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
-from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
+from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.modules.comp_scheduler._distributed_scheduler import (
+    run_new_pipeline,
     schedule_pipelines,
 )
 from simcore_service_director_v2.modules.comp_scheduler._models import (
@@ -74,17 +74,28 @@ async def scheduler_rabbit_client_parser(
     await client.unsubscribe(queue_name)
 
 
+async def _assert_comp_runs(
+    sqlalchemy_async_engine: AsyncEngine, *, expected_total: int
+) -> list[CompRunsAtDB]:
+    async with sqlalchemy_async_engine.connect() as conn:
+        list_of_comp_runs = [
+            CompRunsAtDB.from_orm(row)
+            async for row in await conn.stream(sa.select().select_from(comp_runs))
+        ]
+    assert len(list_of_comp_runs) == expected_total
+    return list_of_comp_runs
+
+
+async def _assert_comp_runs_empty(sqlalchemy_async_engine: AsyncEngine) -> None:
+    await _assert_comp_runs(sqlalchemy_async_engine, expected_total=0)
+
+
 async def test_schedule_pipelines_empty_db(
     initialized_app: FastAPI,
     scheduler_rabbit_client_parser: mock.AsyncMock,
     sqlalchemy_async_engine: AsyncEngine,
 ):
-    # check comp_runs is empty
-    async with sqlalchemy_async_engine.connect() as conn:
-        total_number_of_items = await conn.scalar(
-            sa.select(sa.func.count()).select_from(comp_runs)
-        )
-    assert total_number_of_items == 0
+    await _assert_comp_runs_empty(sqlalchemy_async_engine)
 
     await schedule_pipelines(initialized_app)
 
@@ -92,11 +103,7 @@ async def test_schedule_pipelines_empty_db(
     scheduler_rabbit_client_parser.assert_not_called()
 
     # check comp_runs is still empty
-    async with sqlalchemy_async_engine.connect() as conn:
-        total_number_of_items = await conn.scalar(
-            sa.select(sa.func.count()).select_from(comp_runs)
-        )
-    assert total_number_of_items == 0
+    await _assert_comp_runs_empty(sqlalchemy_async_engine)
 
 
 async def test_schedule_pipelines_concurently_raises_and_only_one_runs(
@@ -120,18 +127,23 @@ async def test_schedule_pipelines_concurently_raises_and_only_one_runs(
     assert results.count(None) == 1, "Only one task should have run"
 
 
-async def test_schedule_pipelines_with_runs(
-    registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
-    runs: Callable[..., CompRunsAtDB],
+async def test_schedule_pipelines_with_non_scheduled_runs(
+    initialized_app: FastAPI,
+    published_project: PublishedProject,
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    scheduler_rabbit_client_parser: mock.AsyncMock,
 ):
-    user = registered_user()
-    proj = await project(user, workbench=fake_workbench_without_outputs)
-    pipeline(
-        project_id=proj.uuid,
-        dag_adjacency_list=fake_workbench_adjacency,
+    await _assert_comp_runs_empty(sqlalchemy_async_engine)
+    # now we schedule a pipeline
+    assert published_project.project.prj_owner
+    await run_new_pipeline(
+        initialized_app,
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+        run_metadata=run_metadata,
+        use_on_demand_clusters=False,
     )
-    comp_tasks = tasks(user=user, project=proj, state=StateType.PUBLISHED, progress=0)
-    comp_runs = runs(user=user, project=proj, result=StateType.PUBLISHED)
+    scheduler_rabbit_client_parser.assert_called_once()
+    comp_run = await _assert_comp_runs(sqlalchemy_async_engine, expected_total=1)[0]

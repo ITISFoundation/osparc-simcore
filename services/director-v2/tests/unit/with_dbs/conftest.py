@@ -295,24 +295,35 @@ def cluster(
 
 
 @pytest.fixture
-async def published_project(
+async def publish_project(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
-) -> PublishedProject:
+) -> Callable[[], Awaitable[PublishedProject]]:
     user = registered_user()
-    created_project = await project(user, workbench=fake_workbench_without_outputs)
-    return PublishedProject(
-        project=created_project,
-        pipeline=pipeline(
-            project_id=f"{created_project.uuid}",
-            dag_adjacency_list=fake_workbench_adjacency,
-        ),
-        tasks=tasks(user=user, project=created_project, state=StateType.PUBLISHED),
-    )
+
+    async def _() -> PublishedProject:
+        created_project = await project(user, workbench=fake_workbench_without_outputs)
+        return PublishedProject(
+            project=created_project,
+            pipeline=pipeline(
+                project_id=f"{created_project.uuid}",
+                dag_adjacency_list=fake_workbench_adjacency,
+            ),
+            tasks=tasks(user=user, project=created_project, state=StateType.PUBLISHED),
+        )
+
+    return _
+
+
+@pytest.fixture
+async def published_project(
+    publish_project: Callable[[], Awaitable[PublishedProject]]
+) -> PublishedProject:
+    return await publish_project()
 
 
 @pytest.fixture
