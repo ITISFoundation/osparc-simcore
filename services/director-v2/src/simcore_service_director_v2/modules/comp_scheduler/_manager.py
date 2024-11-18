@@ -63,7 +63,7 @@ async def run_new_pipeline(
     )
 
     rabbitmq_client = get_rabbitmq_client(app)
-    await _distribute_pipeline(new_run, rabbitmq_client, db_engine)
+    await _request_pipeline_scheduling(new_run, rabbitmq_client, db_engine)
     await publish_project_log(
         rabbitmq_client,
         user_id,
@@ -94,7 +94,7 @@ async def stop_pipeline(
     if updated_comp_run:
         # ensure the scheduler starts right away
         rabbitmq_client = get_rabbitmq_client(app)
-        await _distribute_pipeline(updated_comp_run, rabbitmq_client, db_engine)
+        await _request_pipeline_scheduling(updated_comp_run, rabbitmq_client, db_engine)
 
 
 def _get_app_from_args(*args, **kwargs) -> FastAPI:
@@ -118,7 +118,7 @@ def _redis_lock_key_builder(*args, **kwargs) -> str:
     return f"{app.title}_{MODULE_NAME}"
 
 
-async def _distribute_pipeline(
+async def _request_pipeline_scheduling(
     run: CompRunsAtDB, rabbitmq_client: RabbitMQClient, db_engine: Engine
 ) -> None:
     # TODO: we should use the transaction and the asyncpg engine here to ensure 100% consistency
@@ -153,7 +153,7 @@ async def schedule_pipelines(app: FastAPI) -> None:
         rabbitmq_client = get_rabbitmq_client(app)
         await limited_gather(
             *(
-                _distribute_pipeline(run, rabbitmq_client, db_engine)
+                _request_pipeline_scheduling(run, rabbitmq_client, db_engine)
                 for run in runs_to_schedule
             ),
             limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
