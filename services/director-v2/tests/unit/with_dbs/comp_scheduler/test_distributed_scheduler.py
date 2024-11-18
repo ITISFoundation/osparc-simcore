@@ -145,5 +145,5 @@ async def test_schedule_pipelines_with_non_scheduled_runs(
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
-    scheduler_rabbit_client_parser.assert_called_once()
-    comp_run = await _assert_comp_runs(sqlalchemy_async_engine, expected_total=1)[0]
+    scheduler_rabbit_client_parser.assert_called_once_with()
+    comp_runs = await _assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
