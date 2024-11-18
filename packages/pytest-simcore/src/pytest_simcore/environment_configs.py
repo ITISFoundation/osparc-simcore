@@ -112,7 +112,8 @@ def docker_compose_service_environment_dict(
                     return key, value
             except KeyError:
                 pytest.fail(
-                    f"{expected_env_var} is not defined in {env_devel_file} but used in docker-compose services[{service}].environment[{key}]"
+                    f"{expected_env_var} is not defined in '{env_devel_file}' but it "
+                    f"is used as a rhs variable in the docker-compose services[{service_name}].environment[{key}]"
                 )
         return key, value
 
