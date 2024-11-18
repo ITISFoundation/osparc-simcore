@@ -107,7 +107,7 @@ async def _distribute_pipeline(
     # TODO: we should use the transaction and the asyncpg engine here to ensure 100% consistency
     # async with transaction_context(get_asyncpg_engine(app)) as connection:
     await rabbitmq_client.publish(
-        SchedulePipelineRabbitMessage.channel_name,
+        SchedulePipelineRabbitMessage.get_channel_name(),
         SchedulePipelineRabbitMessage(
             user_id=run.user_id,
             project_id=run.project_uuid,
