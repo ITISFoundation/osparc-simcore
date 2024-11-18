@@ -18,7 +18,7 @@ def test_invalid_http_basic_auth(
 ):
     response = client.post(
         f"/{API_VTAG}/invitations",
-        json=invitation_data.dict(),
+        json=invitation_data.model_dump(),
         auth=invalid_basic_auth,
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED, f"{response.json()=}"
