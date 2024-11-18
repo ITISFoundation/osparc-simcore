@@ -256,7 +256,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
         // add a duplicated slot listener to keep the messages cached
         socket.on(name, message => {
           const info = {
-            datetime: new Date(),
+            date: new Date(),
             message: message ? message : "",
           }
           this.__cache[name].unshift(info);

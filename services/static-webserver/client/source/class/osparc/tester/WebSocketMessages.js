@@ -26,9 +26,7 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
       let control;
       switch (id) {
         case "toolbar":
-          control = new qx.ui.toolbar.ToolBar().set({
-            maxHeight: 30
-          });
+          control = new qx.ui.toolbar.ToolBar();
           this._add(control);
           break;
         case "filter-text": {
@@ -80,8 +78,8 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
               defaultCellStyle: "user-select: text; text-wrap: wrap"
             })
           );
-          control.setColumnWidth(0, 100);
-          control.setColumnWidth(1, 100);
+          control.setColumnWidth(0, 80);
+          control.setColumnWidth(1, 150);
 
           control.setDataRowRenderer(new osparc.ui.table.rowrenderer.ExpandSelection(control));
           this._add(control, {
@@ -107,26 +105,25 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
       for (const channel in messagesObj) {
         messagesObj[channel].forEach(msg => {
           messagesArray.push({
-            datetime: msg.datetime,
+            date: msg.date,
             channel,
             message: msg.message,
           });
         });
       }
       messagesArray.sort((a, b) => {
-        return new Date(b.date) - new Date(a.date); // newest first
+        return new Date(a.date) - new Date(b.date); // newest first
       });
       const datas = [];
       messagesArray.forEach(entry => {
         const data = [
-          new Date(entry.datetime).toLocaleTimeString(),
+          new Date(entry.date).toLocaleTimeString(),
           entry.channel,
           JSON.stringify(entry.message),
         ];
         datas.push(data);
       });
       this.getChildControl("messages-table").getTableModel().setData(datas);
-      console.log(messagesArray);
     }
   }
 });
