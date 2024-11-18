@@ -203,7 +203,7 @@ async def get_service(
     ],
     x_simcore_products_name: str = Header(None),
 ):
-    service_data: dict[str, Any] = {}
+    service_data: dict[str, Any] = {"owner": None}
 
     # get the user groups
     user_groups = await groups_repository.list_user_groups(user_id)
