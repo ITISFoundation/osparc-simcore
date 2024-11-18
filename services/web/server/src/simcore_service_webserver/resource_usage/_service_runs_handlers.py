@@ -93,9 +93,9 @@ class ServicesResourceUsagesReportQueryParams(
 
     @validator("order_by", always=True)
     @classmethod
-    def _post_rename_order_by_field(cls, v):
-        if v.field == "credit_cost":
-            v.field = "osparc_credits"
+    def _post_rename_order_by_field_as_db_column(cls, v):
+        if v.field == "credit_cost":  # API field
+            v.field = "osparc_credits"  # DB column
         return v
 
     class Config:

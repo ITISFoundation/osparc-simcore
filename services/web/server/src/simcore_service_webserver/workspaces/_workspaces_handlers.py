@@ -79,7 +79,6 @@ WorkspacesListOrderQueryParams: type[
     ordering_fields={
         "modified_at",
         "name",
-        "description",
     },
     default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
 )
@@ -89,13 +88,13 @@ class WorkspacesListQueryParams(
     PageQueryParameters,
     WorkspacesListOrderQueryParams,  # type: ignore[misc, valid-type]
 ):
-    @validator("order_by", check_fields=False, always=True)
+    @validator("order_by", always=True)
     @classmethod
-    def _post_rename_order_by_field(cls, v):
+    def _post_rename_order_by_field_as_db_column(cls, v):
         # NOTE: PC->MD this is very error-prone (e.g. w/ defaults).
         # Rather create a map to a db interface
-        if v.field == "modified_at":
-            v.field = "modified"
+        if v.field == "modified_at":  # API field
+            v.field = "modified"  # DB column
         return v
 
 
