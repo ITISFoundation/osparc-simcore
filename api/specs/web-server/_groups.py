@@ -48,7 +48,7 @@ async def list_groups():
     response_model=Envelope[GroupGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_group(_b: GroupCreate):
+async def create_group(_body: GroupCreate):
     """
     Creates an organization group
     """
@@ -58,7 +58,7 @@ async def create_group(_b: GroupCreate):
     "/groups/{gid}",
     response_model=Envelope[GroupGet],
 )
-async def get_group(_p: Annotated[_GroupPathParams, Depends()]):
+async def get_group(_path: Annotated[_GroupPathParams, Depends()]):
     """
     Get an organization group
     """
@@ -69,8 +69,8 @@ async def get_group(_p: Annotated[_GroupPathParams, Depends()]):
     response_model=Envelope[GroupGet],
 )
 async def update_group(
-    _p: Annotated[_GroupPathParams, Depends()],
-    _b: GroupUpdate,
+    _path: Annotated[_GroupPathParams, Depends()],
+    _body: GroupUpdate,
 ):
     """
     Updates organization groups
@@ -81,7 +81,7 @@ async def update_group(
     "/groups/{gid}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_group(_p: Annotated[_GroupPathParams, Depends()]):
+async def delete_group(_path: Annotated[_GroupPathParams, Depends()]):
     """
     Deletes organization groups
     """
@@ -91,7 +91,7 @@ async def delete_group(_p: Annotated[_GroupPathParams, Depends()]):
     "/groups/{gid}/users",
     response_model=Envelope[list[GroupUserGet]],
 )
-async def get_all_group_users(_p: Annotated[_GroupPathParams, Depends()]):
+async def get_all_group_users(_path: Annotated[_GroupPathParams, Depends()]):
     """
     Gets users in organization groups
     """
@@ -102,8 +102,8 @@ async def get_all_group_users(_p: Annotated[_GroupPathParams, Depends()]):
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def add_group_user(
-    _p: Annotated[_GroupPathParams, Depends()],
-    _b: GroupUserAdd,
+    _path: Annotated[_GroupPathParams, Depends()],
+    _body: GroupUserAdd,
 ):
     """
     Adds a user to an organization group
@@ -115,7 +115,7 @@ async def add_group_user(
     response_model=Envelope[GroupUserGet],
 )
 async def get_group_user(
-    _p: Annotated[_GroupUserPathParams, Depends()],
+    _path: Annotated[_GroupUserPathParams, Depends()],
 ):
     """
     Gets specific user in an organization group
@@ -127,8 +127,8 @@ async def get_group_user(
     response_model=Envelope[GroupUserGet],
 )
 async def update_group_user(
-    _p: Annotated[_GroupUserPathParams, Depends()],
-    _b: GroupUserUpdate,
+    _path: Annotated[_GroupUserPathParams, Depends()],
+    _body: GroupUserUpdate,
 ):
     """
     Updates user (access-rights) to an organization group
@@ -140,7 +140,7 @@ async def update_group_user(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_group_user(
-    _p: Annotated[_GroupUserPathParams, Depends()],
+    _path: Annotated[_GroupUserPathParams, Depends()],
 ):
     """
     Removes a user from an organization group
@@ -157,8 +157,8 @@ async def delete_group_user(
     response_model=Envelope[dict[str, Any]],
 )
 async def get_group_classifiers(
-    _p: Annotated[_GroupPathParams, Depends()],
-    _q: Annotated[_ClassifiersQuery, Depends()],
+    _path: Annotated[_GroupPathParams, Depends()],
+    _query: Annotated[_ClassifiersQuery, Depends()],
 ):
     ...
 

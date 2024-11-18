@@ -752,13 +752,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __iFrameChanged: function(node) {
       this.__iframePage.removeAll();
 
-      const loadingPage = node.getLoadingPage();
-      const iFrame = node.getIFrame();
-      const src = iFrame.getSource();
-      const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-      this.__iframePage.add(iFrameView, {
-        flex: 1
-      });
+      if (node) {
+        const loadingPage = node.getLoadingPage();
+        const iFrame = node.getIFrame();
+        const src = iFrame.getSource();
+        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
+        this.__iframePage.add(iFrameView, {
+          flex: 1
+        });
+      }
     },
 
     __populateSecondaryColumn: function(node) {

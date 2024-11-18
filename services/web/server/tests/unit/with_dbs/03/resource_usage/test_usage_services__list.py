@@ -26,8 +26,8 @@ from simcore_service_webserver.db.models import UserRole
 
 _SERVICE_RUN_GET = ServiceRunPage(
     items=[
-        ServiceRunGet(
-            **{
+        ServiceRunGet.parse_obj(
+            {
                 "service_run_id": "comp_1_5c2110be-441b-11ee-a0e8-02420a000040_1",
                 "wallet_id": 1,
                 "wallet_name": "the super wallet!",
@@ -55,12 +55,11 @@ _SERVICE_RUN_GET = ServiceRunPage(
 
 @pytest.fixture
 def mock_list_usage_services(mocker: MockerFixture) -> tuple:
-    mock_list_usage = mocker.patch(
+    return mocker.patch(
         "simcore_service_webserver.resource_usage._service_runs_api.service_runs.get_service_run_page",
         spec=True,
         return_value=_SERVICE_RUN_GET,
     )
-    return mock_list_usage
 
 
 @pytest.fixture()
@@ -79,7 +78,10 @@ def setup_wallets_db(
             .returning(sa.literal_column("*"))
         )
         row = result.fetchone()
+        assert row
+
         yield cast(int, row[0])
+
         con.execute(wallets.delete())
 
 
@@ -160,6 +162,8 @@ async def test_list_service_usage_with_order_by_query_param(
     setup_wallets_db,
     mock_list_usage_services,
 ):
+    assert client.app
+
     # without any additional query parameter
     url = client.app.router["list_resource_usage_services"].url_for()
     resp = await client.get(f"{url}")
@@ -237,9 +241,13 @@ async def test_list_service_usage_with_order_by_query_param(
     _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert error["errors"][0]["message"].startswith(
-        "value is not a valid enumeration member"
-    )
+
+    errors = {(e["code"], e["field"]) for e in error["errors"]}
+    assert {
+        ("value_error", "order_by.field"),
+        ("type_error.enum", "order_by.direction"),
+    } == errors
+    assert len(errors) == 2
 
     # without field
     _filter = {"direction": "asc"}
@@ -253,6 +261,8 @@ async def test_list_service_usage_with_order_by_query_param(
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith("field required")
+    assert error["errors"][0]["code"] == "value_error.missing"
+    assert error["errors"][0]["field"] == "order_by.field"
 
 
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
@@ -262,6 +272,8 @@ async def test_list_service_usage_with_filters_query_param(
     setup_wallets_db,
     mock_list_usage_services,
 ):
+    assert client.app
+
     # with unable to decode filter query parameter
     url = (
         client.app.router["list_resource_usage_services"]
