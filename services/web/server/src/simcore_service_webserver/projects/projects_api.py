@@ -380,7 +380,9 @@ async def _get_default_pricing_and_hardware_info(
 _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[
     float
 ] = 0.1  # NOTE: machines always have less available RAM than advertised
-_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
+_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
+    "1GiB"
+)
 _CPUS_SAFE_MARGIN: Final[float] = 1.4
 _MIN_NUM_CPUS: Final[float] = 0.5
 
@@ -840,7 +842,7 @@ async def start_project_node(
     workbench = project.get("workbench", {})
     if not workbench.get(f"{node_id}"):
         raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
-    node_details = Node.construct(**workbench[f"{node_id}"])
+    node_details = Node.model_construct(**workbench[f"{node_id}"])
 
     await _start_dynamic_service(
         request,
@@ -1511,7 +1513,11 @@ async def is_service_deprecated(
         app, user_id, service_key, service_version, product_name
     )
     if deprecation_date := service.get("deprecated"):
-        deprecation_date_bool: bool = datetime.datetime.now(datetime.UTC) > datetime.datetime.fromisoformat(deprecation_date).replace(tzinfo=datetime.UTC)
+        deprecation_date_bool: bool = datetime.datetime.now(
+            datetime.UTC
+        ) > datetime.datetime.fromisoformat(deprecation_date).replace(
+            tzinfo=datetime.UTC
+        )
 
         return deprecation_date_bool
     return False

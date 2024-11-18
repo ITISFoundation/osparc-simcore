@@ -246,7 +246,7 @@ async def test_update_cluster(
     url = client.app.router["update_cluster"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
         f"{url}",
-        json=json.loads(cluster_patch.json(**_PATCH_EXPORT)),
+        json=json.loads(cluster_patch.model_dump_json(**_PATCH_EXPORT)),
     )
     data, error = await assert_status(rsp, expected.ok)
     if not error:
@@ -497,7 +497,9 @@ async def test_ping_cluster_with_error(
     )
     assert client.app
     url = client.app.router["ping_cluster"].url_for()
-    rsp = await client.post(f"{url}", json=json.loads(cluster_ping.json(by_alias=True)))
+    rsp = await client.post(
+        f"{url}", json=json.loads(cluster_ping.model_dump_json(by_alias=True))
+    )
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
     assert error

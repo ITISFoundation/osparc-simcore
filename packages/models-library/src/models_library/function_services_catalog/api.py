@@ -24,7 +24,7 @@ assert is_probe_service  # nosec
 def iter_service_docker_data() -> Iterator[ServiceMetaDataPublished]:
     for meta_obj in catalog.iter_metadata():
         # NOTE: the originals are this way not modified from outside
-        copied_meta_obj = meta_obj.copy(deep=True)
+        copied_meta_obj = meta_obj.model_copy(deep=True)
         assert is_function_service(copied_meta_obj.key)  # nosec
         yield copied_meta_obj
 

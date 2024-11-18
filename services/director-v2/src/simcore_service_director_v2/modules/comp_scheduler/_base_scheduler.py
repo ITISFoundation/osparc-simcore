@@ -460,7 +460,7 @@ class BaseCompScheduler(ABC):
         return [
             (
                 task,
-                task.copy(update={"state": backend_state}),
+                task.model_copy(update={"state": backend_state}),
             )
             for task, backend_state in zip(
                 processing_tasks, tasks_backend_status, strict=True

@@ -265,7 +265,7 @@ def test_get_pipeline_state_from_task_states(
     fake_task: CompTaskAtDB,
 ):
     tasks: list[CompTaskAtDB] = [
-        fake_task.copy(deep=True, update={"state": s}) for s in task_states
+        fake_task.model_copy(deep=True, update={"state": s}) for s in task_states
     ]
 
     pipeline_state: RunningState = get_pipeline_state_from_task_states(tasks)

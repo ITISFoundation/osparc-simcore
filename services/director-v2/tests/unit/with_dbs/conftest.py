@@ -245,9 +245,14 @@ def cluster(
                 for gid, rights in cluster_kwargs["access_rights"].items():
                     conn.execute(
                         pg_insert(cluster_to_groups)
-                        .values(cluster_id=created_cluster.id, gid=gid, **rights.dict())
+                        .values(
+                            cluster_id=created_cluster.id,
+                            gid=gid,
+                            **rights.model_dump(),
+                        )
                         .on_conflict_do_update(
-                            index_elements=["gid", "cluster_id"], set_=rights.dict()
+                            index_elements=["gid", "cluster_id"],
+                            set_=rights.model_dump(),
                         )
                     )
             access_rights_in_db = {}

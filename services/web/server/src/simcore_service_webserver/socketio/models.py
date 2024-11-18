@@ -12,7 +12,7 @@ from models_library.rabbitmq_messages import (
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class WebSocketMessageBase(BaseModel):
@@ -26,6 +26,7 @@ class WebSocketMessageBase(BaseModel):
     @abstractmethod
     def to_socket_dict(self) -> SocketMessageDict:
         ...
+
     model_config = ConfigDict(frozen=True)
 
 
@@ -58,7 +59,7 @@ class WebSocketProjectProgress(
     def from_rabbit_message(
         cls, message: ProgressRabbitMessageProject
     ) -> "WebSocketProjectProgress":
-        return cls.construct(
+        return cls.model_construct(
             user_id=message.user_id,
             project_id=message.project_id,
             progress_type=message.progress_type,

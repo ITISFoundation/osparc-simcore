@@ -267,7 +267,7 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
                     },
                 },
             }
-        ).dict(by_alias=True, exclude_unset=True)
+        ).model_dump(by_alias=True, exclude_unset=True)
     }
 
 
