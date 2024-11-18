@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from servicelib.logging_utils import log_context
 from settings_library.redis import RedisDatabase
 
-from ...core.errors import ConfigurationError
 from ...core.settings import AppSettings
 from ..dask_clients_pool import DaskClientsPool
 from ..db import get_db_engine
@@ -17,10 +16,6 @@ _logger = logging.getLogger(__name__)
 
 
 def create_scheduler(app: FastAPI) -> BaseCompScheduler:
-    if not hasattr(app.state, "engine"):
-        msg = "Database connection is missing. Please check application configuration."
-        raise ConfigurationError(msg)
-
     with log_context(
         _logger, logging.INFO, msg="Creating Dask-based computational scheduler"
     ):
