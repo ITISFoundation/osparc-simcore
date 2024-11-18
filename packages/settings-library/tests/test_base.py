@@ -17,7 +17,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import (
-    _DEFAULTS_TO_NONE_FSTRING,
+    _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING,
     BaseCustomSettings,
     DefaultFromEnvFactoryError,
 )
@@ -224,7 +224,9 @@ def test_auto_default_to_none_logs_a_warning(
     # Defaulting to None also logs a warning
     assert logger_warn.call_count == 1
     assert (
-        _DEFAULTS_TO_NONE_FSTRING.format(field_name="VALUE_NULLABLE_DEFAULT_ENV")
+        _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+            field_name="VALUE_NULLABLE_DEFAULT_ENV"
+        )
         in logger_warn.call_args[0][0]
     )
 

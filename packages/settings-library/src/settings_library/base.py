@@ -15,7 +15,7 @@ from pydantic_settings import (
 
 _logger = logging.getLogger(__name__)
 
-_DEFAULTS_TO_NONE_FSTRING: Final[
+_AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING: Final[
     str
 ] = "{field_name} auto_default_from_env unresolved, defaulting to None"
 
@@ -40,7 +40,9 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
         except ValidationError as err:
             if is_nullable(info):
                 # e.g. Optional[PostgresSettings] would warn if defaults to None
-                msg = _DEFAULTS_TO_NONE_FSTRING.format(field_name=field_name)
+                msg = _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+                    field_name=field_name
+                )
                 _logger.warning(msg)
                 return None
             _logger.warning("Validation errors=%s", err.errors())
