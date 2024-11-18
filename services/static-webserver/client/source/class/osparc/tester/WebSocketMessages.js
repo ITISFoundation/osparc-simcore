@@ -103,7 +103,7 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
       table.addListener("cellTap", e => {
         const selectedRow = e.getRow();
         const rowData = table.getTableModel().getRowData(selectedRow);
-        jsonViewer.setJson(rowData[2]);
+        jsonViewer.setJson(JSON.parse(rowData[2]));
       }, this);
 
       this.__populateTable();
