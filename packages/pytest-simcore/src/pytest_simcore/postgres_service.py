@@ -131,16 +131,18 @@ def database_from_template_before_each_function(
 
 
 @pytest.fixture(scope="module")
-def postgres_dsn(docker_stack: dict, testing_environ_vars: dict) -> PostgresTestConfig:
+def postgres_dsn(
+    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict
+) -> PostgresTestConfig:
     assert "pytest-simcore_postgres" in docker_stack["services"]
 
     pg_config: PostgresTestConfig = {
-        "user": testing_environ_vars["POSTGRES_USER"],
-        "password": testing_environ_vars["POSTGRES_PASSWORD"],
-        "database": testing_environ_vars["POSTGRES_DB"],
+        "user": env_vars_for_docker_compose["POSTGRES_USER"],
+        "password": env_vars_for_docker_compose["POSTGRES_PASSWORD"],
+        "database": env_vars_for_docker_compose["POSTGRES_DB"],
         "host": get_localhost_ip(),
         "port": get_service_published_port(
-            "postgres", testing_environ_vars["POSTGRES_PORT"]
+            "postgres", env_vars_for_docker_compose["POSTGRES_PORT"]
         ),
     }
 

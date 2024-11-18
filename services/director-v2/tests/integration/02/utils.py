@@ -425,7 +425,7 @@ async def assert_all_services_running(
                 )
             )
 
-            assert all(x == "running" for x in service_states)
+            assert all(state == "running" for state in service_states)
             print("--> all services are up and running!")
 
 

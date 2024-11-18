@@ -43,7 +43,7 @@ SETUP = {
     "description": "Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
     "long_description": (CURRENT_DIR / "README.md").read_text(),
     "license": "MIT license",
-    "python_requires": "~=3.10",
+    "python_requires": "~=3.11",
     "packages": find_packages(where="src"),
     "package_dir": {
         "": "src",

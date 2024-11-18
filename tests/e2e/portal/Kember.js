@@ -63,7 +63,7 @@ async function runTutorial () {
     await tutorial.takeScreenshot("viewer_after");
   }
   catch(err) {
-    await tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed();
     console.log('Tutorial error: ' + err);
   }
   finally {
