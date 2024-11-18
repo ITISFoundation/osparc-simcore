@@ -202,6 +202,7 @@ class ProjectDBAPI(BaseProjectDB):
                         await self._upsert_tags_in_project(
                             conn=conn,
                             project_index_id=project_index,
+                            project_uuid=project_uuid,
                             project_tags=project_tag_ids,
                         )
                         selected_values["tags"] = project_tag_ids
