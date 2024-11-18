@@ -443,6 +443,7 @@ def create_new_project_and_delete(
                     re.compile(r"/projects/[^:]+:open"), timeout=timeout + 5 * SECOND
                 ) as response_info,
             ):
+                open_with_resources_clicked = False
                 # Project detail view pop-ups shows
                 if press_open:
                     open_button = page.get_by_test_id("openResource")
@@ -456,6 +457,7 @@ def create_new_project_and_delete(
                             re.compile(rf"/projects\?from_study\={template_id}")
                         ) as lrt:
                             open_button.click()
+                        open_with_resources_clicked = True
                         lrt_data = lrt.value.json()
                         lrt_data = lrt_data["data"]
                         with log_context(
@@ -496,6 +498,10 @@ def create_new_project_and_delete(
                         if is_product_billable:
                             # Open project with default resources
                             page.get_by_test_id("openWithResources").click()
+                            open_with_resources_clicked = True
+                if is_product_billable and not open_with_resources_clicked:
+                    # Open project with default resources
+                    page.get_by_test_id("openWithResources").click()
             project_data = response_info.value.json()
             assert project_data
             project_uuid = project_data["data"]["uuid"]
