@@ -21,7 +21,7 @@ from models_library.rest_ordering import (
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from models_library.wallets import WalletID
-from pydantic import Extra, Field, Json, parse_obj_as, validator
+from pydantic import Extra, Field, Json, parse_obj_as
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -75,6 +75,9 @@ _ResorceUsagesListOrderQueryParams: type[
         "transaction_status",
     },
     default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
+    ordering_fields_api_to_column_map={
+        "credit_cost": "osparc_credits",
+    },
 )
 
 
@@ -90,13 +93,6 @@ class ServicesResourceUsagesReportQueryParams(
         description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is inclusive.",
         example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
     )
-
-    @validator("order_by", always=True)
-    @classmethod
-    def _post_rename_order_by_field_as_db_column(cls, v):
-        if v.field == "credit_cost":  # API field
-            v.field = "osparc_credits"  # DB column
-        return v
 
     class Config:
         extra = Extra.forbid

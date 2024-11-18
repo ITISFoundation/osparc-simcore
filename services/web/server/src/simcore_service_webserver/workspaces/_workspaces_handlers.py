@@ -19,7 +19,7 @@ from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
-from pydantic import Field, parse_obj_as, validator
+from pydantic import Field, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -81,6 +81,7 @@ WorkspacesListOrderQueryParams: type[
         "name",
     },
     default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+    ordering_fields_api_to_column_map={"modified_at": "modified"},
 )
 
 
@@ -88,14 +89,7 @@ class WorkspacesListQueryParams(
     PageQueryParameters,
     WorkspacesListOrderQueryParams,  # type: ignore[misc, valid-type]
 ):
-    @validator("order_by", always=True)
-    @classmethod
-    def _post_rename_order_by_field_as_db_column(cls, v):
-        # NOTE: PC->MD this is very error-prone (e.g. w/ defaults).
-        # Rather create a map to a db interface
-        if v.field == "modified_at":  # API field
-            v.field = "modified"  # DB column
-        return v
+    ...
 
 
 @routes.post(f"/{VTAG}/workspaces", name="create_workspace")

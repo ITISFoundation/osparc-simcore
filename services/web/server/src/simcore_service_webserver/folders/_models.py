@@ -46,6 +46,7 @@ _FolderOrderQueryParams: type[RequestParameters] = create_ordering_query_model_c
         "name",
     },
     default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+    ordering_fields_api_to_column_map={"modified_at": "modified"},
 )
 
 
@@ -72,13 +73,6 @@ class FoldersListQueryParams(
     _null_or_none_str_to_none_validator2 = validator(
         "workspace_id", allow_reuse=True, pre=True
     )(null_or_none_str_to_none_validator)
-
-    @validator("order_by", always=True)
-    @classmethod
-    def _post_rename_order_by_field_as_db_column(cls, v):
-        if v.field == "modified_at":  # API field
-            v.field = "modified"  # DB column
-        return v
 
 
 class FolderSearchQueryParams(

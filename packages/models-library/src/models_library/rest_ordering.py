@@ -40,11 +40,28 @@ def create_ordering_query_model_classes(
     *,
     ordering_fields: set[str],
     default: OrderBy,
+    ordering_fields_api_to_column_map: dict[str, str] | None = None,
 ) -> type[_BaseOrderQueryParams]:
-    """
-    Factory to create an uniform model used as ordering parameters in a query
+    """Factory to create an uniform model used as ordering parameters in a query
 
+    Arguments:
+        ordering_fields -- A set of valid fields that can be used for ordering.
+            These should correspond to API field names.
+        default -- The default ordering configuration to be applied if no explicit
+            ordering is provided
+
+    Keyword Arguments:
+        ordering_fields_api_to_column_map -- A mapping of API field names to
+            database column names. If provided, fields specified in the API
+            will be automatically translated to their corresponding database
+            column names for seamless integration with database queries.
     """
+    ordering_fields_api_to_column_map = ordering_fields_api_to_column_map or {}
+
+    assert set(ordering_fields_api_to_column_map.keys()).issubset(  # nosec
+        ordering_fields
+    )
+
     assert default.field in ordering_fields  # nosec
 
     msg_field_options = "|".join(sorted(ordering_fields))
@@ -60,7 +77,12 @@ def create_ordering_query_model_classes(
                     f"Fields supported are {msg_field_options}."
                 )
                 raise ValueError(msg)
-            return v
+
+        @validator("field", allow_reuse=True, always=True)
+        @classmethod
+        def _post_rename_order_by_field_as_db_column(cls, v):
+            # API field name -> DB column_name
+            return ordering_fields_api_to_column_map.get(v, v)
 
     order_by_example: dict[str, Any] = OrderBy.Config.schema_extra["example"]
     order_by_example_json = json_dumps(order_by_example)
