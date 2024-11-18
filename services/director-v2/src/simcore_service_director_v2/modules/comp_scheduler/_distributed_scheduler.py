@@ -25,7 +25,7 @@ from ..rabbitmq import get_rabbitmq_client
 from ..redis import get_redis_client_manager
 
 _logger = logging.getLogger(__name__)
-_SCHEDULER_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
+SCHEDULER_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 _MAX_CONCURRENT_PIPELINE_SCHEDULING: Final[int] = 10
 
 
@@ -129,7 +129,7 @@ async def _get_pipeline_dag(project_id: ProjectID, db_engine: Engine) -> nx.DiGr
 async def schedule_pipelines(app: FastAPI) -> None:
     db_engine = get_db_engine(app)
     runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
-        filter_by_state=SCHEDULED_STATES, scheduled_since=_SCHEDULER_INTERVAL
+        filter_by_state=SCHEDULED_STATES, scheduled_since=SCHEDULER_INTERVAL
     )
     rabbitmq_client = get_rabbitmq_client(app)
     await limited_gather(

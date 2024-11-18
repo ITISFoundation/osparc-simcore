@@ -34,7 +34,7 @@ from simcore_service_director_v2.core.errors import PipelineNotFoundError
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.modules.comp_scheduler._distributed_scheduler import (
-    _SCHEDULER_INTERVAL,
+    SCHEDULER_INTERVAL,
     run_new_pipeline,
     schedule_pipelines,
     stop_pipeline,
@@ -183,7 +183,7 @@ async def test_schedule_pipelines(
     start_schedule_time = comp_run.last_scheduled
     start_modified_time = comp_run.modified
 
-    await asyncio.sleep(_SCHEDULER_INTERVAL.total_seconds() - 1)
+    await asyncio.sleep(SCHEDULER_INTERVAL.total_seconds() - 1)
 
     # this will now not schedule the pipeline since it was last scheduled
     await schedule_pipelines(initialized_app)
@@ -194,7 +194,7 @@ async def test_schedule_pipelines(
     assert comp_run.cancelled is None
     assert comp_run.modified == start_modified_time
 
-    await asyncio.sleep(_SCHEDULER_INTERVAL.total_seconds() + 1)
+    await asyncio.sleep(SCHEDULER_INTERVAL.total_seconds() + 1)
     # this will now schedule the pipeline since the time passed
     await schedule_pipelines(initialized_app)
     scheduler_rabbit_client_parser.assert_called_once_with(
