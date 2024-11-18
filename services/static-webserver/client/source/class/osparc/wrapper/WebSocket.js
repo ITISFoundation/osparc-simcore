@@ -134,11 +134,13 @@ qx.Class.define("osparc.wrapper.WebSocket", {
       this.setNamespace(namespace);
     }
     this.__name = [];
+    this.__cache = {};
   },
 
   members: {
     // The name store an array of events
     __name: null,
+    __cache: null,
 
     /**
      * Trying to using socket.io to connect and plug every event from socket.io to qooxdoo one
@@ -234,12 +236,15 @@ qx.Class.define("osparc.wrapper.WebSocket", {
      * Connect and event from socket.io like qooxdoo event
      *
      * @param {string} name The event name to watch
-     * @param {function} fn The function wich will catch event response
+     * @param {function} fn The function which will catch event response
      * @param {mixed} that A link to this
      * @returns {void}
      */
     on: function(name, fn, that) {
       this.__name.push(name);
+      if (!(name in this.__cache)) {
+        this.__cache[name] = []
+      }
       const socket = this.getSocket();
       if (socket) {
         if (typeof (that) !== "undefined" && that !== null) {
