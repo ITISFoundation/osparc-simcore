@@ -1,3 +1,5 @@
+from typing import cast
+
 from fastapi import FastAPI
 from servicelib.redis import RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase
@@ -29,3 +31,7 @@ def setup(app: FastAPI) -> None:
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
+
+
+def get_redis_client_manager(app: FastAPI) -> RedisClientsManager:
+    return cast(RedisClientsManager, app.state.redis_clients_manager)

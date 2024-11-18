@@ -88,8 +88,8 @@ qx.Class.define("osparc.form.tag.TagManager", {
         newItem.addListener("tagSaved", () => this.__repopulateTags(), this);
         newItem.addListener("cancelNewTag", e => tagsContainer.remove(e.getTarget()), this);
         newItem.addListener("deleteTag", e => tagsContainer.remove(e.getTarget()), this);
-        this.__repopulateTags();
         tagsContainer.add(newItem);
+        this.__repopulateTags();
       });
       this._add(addTagButton);
 
@@ -119,25 +119,26 @@ qx.Class.define("osparc.form.tag.TagManager", {
 
     __repopulateTags: function() {
       this.__tagsContainer.removeAll();
-      const tags = osparc.store.Store.getInstance().getTags();
+      const tags = osparc.store.Tags.getInstance().getTags();
       tags.forEach(tag => this.__tagsContainer.add(this.__tagButton(tag)));
     },
 
     __tagButton: function(tag) {
-      const tagButton = new osparc.form.tag.TagToggleButton(tag, this.__selectedTags.includes(tag.id));
+      const tagId = tag.getTagId();
+      const tagButton = new osparc.form.tag.TagToggleButton(tag, this.__selectedTags.includes(tagId));
       tagButton.addListener("changeValue", evt => {
         const selected = evt.getData();
         if (this.isLiveUpdate()) {
           tagButton.setFetching(true);
           if (selected) {
-            this.__saveAddTag(tag.id, tagButton);
+            this.__saveAddTag(tagId, tagButton);
           } else {
-            this.__saveRemoveTag(tag.id, tagButton);
+            this.__saveRemoveTag(tagId, tagButton);
           }
         } else if (selected) {
-          this.__selectedTags.push(tag.id);
+          this.__selectedTags.push(tagId);
         } else {
-          this.__selectedTags.remove(tag.id);
+          this.__selectedTags.remove(tagId);
         }
       }, this);
       tagButton.subscribeToFilterGroup("studyBrowserTagManager");

@@ -28,6 +28,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
+from simcore_postgres_database.models.projects_tags import projects_tags
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -46,6 +47,7 @@ from simcore_postgres_database.models.resource_tracker_pricing_units import (
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
+from simcore_postgres_database.models.tags import tags
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
 from .....exceptions.errors import (
@@ -212,6 +214,15 @@ class ResourceTrackerRepository(
             return None
         return ServiceRunDB.from_orm(row)
 
+    _project_tags_subquery = (
+        sa.select(
+            projects_tags.c.project_uuid_for_rut,
+            sa.func.array_agg(tags.c.name).label("project_tags"),
+        )
+        .select_from(projects_tags.join(tags, projects_tags.c.tag_id == tags.c.id))
+        .group_by(projects_tags.c.project_uuid_for_rut)
+    ).subquery("project_tags_subquery")
+
     async def list_service_runs_by_product_and_user_and_wallet(
         self,
         product_name: ProductName,
@@ -260,6 +271,10 @@ class ResourceTrackerRepository(
                     resource_tracker_service_runs.c.missed_heartbeat_counter,
                     resource_tracker_credit_transactions.c.osparc_credits,
                     resource_tracker_credit_transactions.c.transaction_status,
+                    sa.func.coalesce(
+                        self._project_tags_subquery.c.project_tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.String)),
+                    ).label("project_tags"),
                 )
                 .select_from(
                     resource_tracker_service_runs.join(
@@ -272,6 +287,11 @@ class ResourceTrackerRepository(
                             resource_tracker_service_runs.c.service_run_id
                             == resource_tracker_credit_transactions.c.service_run_id
                         ),
+                        isouter=True,
+                    ).join(
+                        self._project_tags_subquery,
+                        resource_tracker_service_runs.c.project_id
+                        == self._project_tags_subquery.c.project_uuid_for_rut,
                         isouter=True,
                     )
                 )
@@ -436,7 +456,9 @@ class ResourceTrackerRepository(
                     resource_tracker_service_runs.c.service_run_id,
                     resource_tracker_service_runs.c.wallet_name,
                     resource_tracker_service_runs.c.user_email,
-                    resource_tracker_service_runs.c.project_name,
+                    resource_tracker_service_runs.c.root_parent_project_name.label(
+                        "project_name"
+                    ),
                     resource_tracker_service_runs.c.node_name,
                     resource_tracker_service_runs.c.service_key,
                     resource_tracker_service_runs.c.service_version,
@@ -445,12 +467,21 @@ class ResourceTrackerRepository(
                     resource_tracker_service_runs.c.stopped_at,
                     resource_tracker_credit_transactions.c.osparc_credits,
                     resource_tracker_credit_transactions.c.transaction_status,
+                    sa.func.coalesce(
+                        self._project_tags_subquery.c.project_tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.String)),
+                    ).label("project_tags"),
                 )
                 .select_from(
                     resource_tracker_service_runs.join(
                         resource_tracker_credit_transactions,
                         resource_tracker_service_runs.c.service_run_id
                         == resource_tracker_credit_transactions.c.service_run_id,
+                        isouter=True,
+                    ).join(
+                        self._project_tags_subquery,
+                        resource_tracker_service_runs.c.project_id
+                        == self._project_tags_subquery.c.project_uuid_for_rut,
                         isouter=True,
                     )
                 )
