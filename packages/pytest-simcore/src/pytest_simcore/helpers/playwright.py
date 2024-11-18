@@ -203,7 +203,7 @@ class SocketIONodeProgressCompleteWaiter:
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
-    _last_poll_timestamp: datetime = datetime.now(tz=UTC)  # noqa: RUF009
+    _last_poll_timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
 
     def __call__(self, message: str) -> bool:
         # socket.io encodes messages like so
@@ -248,6 +248,11 @@ class SocketIONodeProgressCompleteWaiter:
                 "Querying the service endpoint from the E2E test. Response: %s, response"
             )
             if response.status_code == 200:
+                if self.got_expected_node_progress_types():
+                    self.logger.warning(
+                        "⚠️ Progress bar didn't receive 100 percent but service is already running: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                        self.get_current_progress(),
+                    )
                 return True
             self._last_poll_timestamp = datetime.now(UTC)
 
