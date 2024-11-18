@@ -243,10 +243,21 @@ qx.Class.define("osparc.wrapper.WebSocket", {
     on: function(name, fn, that) {
       this.__name.push(name);
       if (!(name in this.__cache)) {
-        this.__cache[name] = []
+        this.__cache[name] = [];
       }
       const socket = this.getSocket();
       if (socket) {
+        socket.on(name, message => {
+          const info = {
+            datetime: new Date(),
+            message,
+          }
+          this.__cache[name].unshift(info);
+          if (this.__cache[name].length > 20) {
+            this.__cache[name].length = 20;
+          }
+          console.log(this.__cache);
+        }, this);
         if (typeof (that) !== "undefined" && that !== null) {
           socket.on(name, qx.lang.Function.bind(fn, that));
         } else {
@@ -286,6 +297,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
         }
       }
       this.__name = null;
+      this.__cache = null;
 
       this.removeAllBindings();
 
