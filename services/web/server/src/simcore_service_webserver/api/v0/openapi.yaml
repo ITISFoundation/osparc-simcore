@@ -3220,10 +3220,12 @@ paths:
           default: false
         name: hidden
         in: query
-      - required: false
+      - description: Optional simcore user agent
+        required: false
         schema:
           title: X-Simcore-User-Agent
           type: string
+          description: Optional simcore user agent
           default: undefined
         name: x-simcore-user-agent
         in: header
@@ -3253,7 +3255,7 @@ paths:
         content:
           application/json:
             schema:
-              title: ' B'
+              title: ' Body'
               anyOf:
               - $ref: '#/components/schemas/ProjectCreateNew'
               - $ref: '#/components/schemas/ProjectCopyOverride'
@@ -4387,7 +4389,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':

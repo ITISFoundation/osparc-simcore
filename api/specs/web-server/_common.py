@@ -63,10 +63,8 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
                 example=kwargs.get("example_json"),
             )
             default_value = json_dumps(default_value) if default_value else None
-            fields[field_name] = (field_type, Query(default=default_value, **kwargs))
-        else:
-            # Regular fields
-            fields[field_name] = (field_type, Query(default=default_value, **kwargs))
+
+        fields[field_name] = (field_type, Query(default=default_value, **kwargs))
 
     new_model_name = f"{model_class.__name__}Query"
     return create_model(new_model_name, **fields)
