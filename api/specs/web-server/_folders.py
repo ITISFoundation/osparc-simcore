@@ -48,7 +48,7 @@ async def create_folder(
     response_model=Envelope[list[FolderGet]],
 )
 async def list_folders(
-    _q: Annotated[as_query(FoldersListQueryParams), Depends()],
+    _query: Annotated[as_query(FoldersListQueryParams), Depends()],
 ):
     ...
 
@@ -58,7 +58,7 @@ async def list_folders(
     response_model=Envelope[list[FolderGet]],
 )
 async def list_folders_full_search(
-    _q: Annotated[as_query(FolderSearchQueryParams), Depends()],
+    _query: Annotated[as_query(FolderSearchQueryParams), Depends()],
 ):
     ...
 
@@ -68,7 +68,7 @@ async def list_folders_full_search(
     response_model=Envelope[FolderGet],
 )
 async def get_folder(
-    _p: Annotated[FoldersPathParams, Depends()],
+    _path: Annotated[FoldersPathParams, Depends()],
 ):
     ...
 
@@ -78,7 +78,7 @@ async def get_folder(
     response_model=Envelope[FolderGet],
 )
 async def replace_folder(
-    _p: Annotated[FoldersPathParams, Depends()],
+    _path: Annotated[FoldersPathParams, Depends()],
     _b: PutFolderBodyParams,
 ):
     ...
@@ -89,6 +89,6 @@ async def replace_folder(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_folder(
-    _p: Annotated[FoldersPathParams, Depends()],
+    _path: Annotated[FoldersPathParams, Depends()],
 ):
     ...

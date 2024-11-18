@@ -54,7 +54,7 @@ router = APIRouter(prefix=f"/{API_VTAG}")
     tags=["usage"],
 )
 async def list_resource_usage_services(
-    _q: Annotated[as_query(ServicesResourceUsagesListQueryParams), Depends()],
+    _query: Annotated[as_query(ServicesResourceUsagesListQueryParams), Depends()],
 ):
     ...
 
@@ -67,7 +67,7 @@ async def list_resource_usage_services(
     tags=["usage"],
 )
 async def list_osparc_credits_aggregated_usages(
-    _q: Annotated[as_query(ServicesAggregatedUsagesListQueryParams), Depends()]
+    _query: Annotated[as_query(ServicesAggregatedUsagesListQueryParams), Depends()]
 ):
     ...
 
@@ -85,7 +85,7 @@ async def list_osparc_credits_aggregated_usages(
     "user services (user and product are taken from context, optionally wallet_id parameter might be provided).",
 )
 async def export_resource_usage_services(
-    _q: Annotated[as_query(ServicesResourceUsagesReportQueryParams), Depends()]
+    _query: Annotated[as_query(ServicesResourceUsagesReportQueryParams), Depends()]
 ):
     ...
 
@@ -97,7 +97,7 @@ async def export_resource_usage_services(
     tags=["pricing-plans"],
 )
 async def get_pricing_plan_unit(
-    _p: Annotated[PricingPlanUnitGetPathParams, Depends()],
+    _path: Annotated[PricingPlanUnitGetPathParams, Depends()],
 ):
     ...
 
@@ -123,7 +123,7 @@ async def list_pricing_plans():
     tags=["admin"],
 )
 async def get_pricing_plan(
-    _p: Annotated[PricingPlanGetPathParams, Depends()],
+    _path: Annotated[PricingPlanGetPathParams, Depends()],
 ):
     ...
 
@@ -147,7 +147,7 @@ async def create_pricing_plan(
     tags=["admin"],
 )
 async def update_pricing_plan(
-    _p: Annotated[PricingPlanGetPathParams, Depends()],
+    _path: Annotated[PricingPlanGetPathParams, Depends()],
     _b: UpdatePricingPlanBodyParams,
 ):
     ...
@@ -163,7 +163,7 @@ async def update_pricing_plan(
     tags=["admin"],
 )
 async def get_pricing_unit(
-    _p: Annotated[PricingUnitGetPathParams, Depends()],
+    _path: Annotated[PricingUnitGetPathParams, Depends()],
 ):
     ...
 
@@ -175,7 +175,7 @@ async def get_pricing_unit(
     tags=["admin"],
 )
 async def create_pricing_unit(
-    _p: Annotated[PricingPlanGetPathParams, Depends()],
+    _path: Annotated[PricingPlanGetPathParams, Depends()],
     _b: CreatePricingUnitBodyParams,
 ):
     ...
@@ -188,7 +188,7 @@ async def create_pricing_unit(
     tags=["admin"],
 )
 async def update_pricing_unit(
-    _p: Annotated[PricingUnitGetPathParams, Depends()],
+    _path: Annotated[PricingUnitGetPathParams, Depends()],
     _b: UpdatePricingUnitBodyParams,
 ):
     ...
@@ -204,7 +204,7 @@ async def update_pricing_unit(
     tags=["admin"],
 )
 async def list_connected_services_to_pricing_plan(
-    _p: Annotated[PricingPlanGetPathParams, Depends()],
+    _path: Annotated[PricingPlanGetPathParams, Depends()],
 ):
     ...
 
@@ -216,7 +216,7 @@ async def list_connected_services_to_pricing_plan(
     tags=["admin"],
 )
 async def connect_service_to_pricing_plan(
-    _p: Annotated[PricingPlanGetPathParams, Depends()],
+    _path: Annotated[PricingPlanGetPathParams, Depends()],
     _b: ConnectServiceToPricingPlanBodyParams,
 ):
     ...

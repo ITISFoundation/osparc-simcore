@@ -70,7 +70,7 @@ class _ProjectCreateHeaderParams(BaseModel):
 )
 async def create_project(
     _h: Annotated[_ProjectCreateHeaderParams, Depends()],
-    _p: Annotated[ProjectCreateParams, Depends()],
+    _path: Annotated[ProjectCreateParams, Depends()],
     _b: ProjectCreateNew | ProjectCopyOverride,
 ):
     ...
@@ -81,7 +81,7 @@ async def create_project(
     response_model=Page[ProjectListItem],
 )
 async def list_projects(
-    _q: Annotated[as_query(ProjectsListQueryParams), Depends()],
+    _query: Annotated[as_query(ProjectsListQueryParams), Depends()],
 ):
     ...
 
@@ -91,7 +91,7 @@ async def list_projects(
     response_model=Envelope[ProjectGet],
 )
 async def get_active_project(
-    _q: Annotated[ProjectActiveQueryParams, Depends()],
+    _query: Annotated[ProjectActiveQueryParams, Depends()],
 ):
     ...
 
@@ -101,7 +101,7 @@ async def get_active_project(
     response_model=Envelope[ProjectGet],
 )
 async def get_project(
-    _p: Annotated[ProjectPathParams, Depends()],
+    _path: Annotated[ProjectPathParams, Depends()],
 ):
     ...
 
@@ -112,7 +112,7 @@ async def get_project(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def patch_project(
-    _p: Annotated[ProjectPathParams, Depends()],
+    _path: Annotated[ProjectPathParams, Depends()],
     _b: ProjectPatch,
 ):
     ...
@@ -123,7 +123,7 @@ async def patch_project(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_project(
-    _p: Annotated[ProjectPathParams, Depends()],
+    _path: Annotated[ProjectPathParams, Depends()],
 ):
     ...
 
@@ -134,7 +134,7 @@ async def delete_project(
     status_code=status.HTTP_201_CREATED,
 )
 async def clone_project(
-    _p: Annotated[ProjectPathParams, Depends()],
+    _path: Annotated[ProjectPathParams, Depends()],
 ):
     ...
 
@@ -144,7 +144,7 @@ async def clone_project(
     response_model=Page[ProjectListItem],
 )
 async def list_projects_full_search(
-    _q: Annotated[as_query(ProjectsSearchQueryParams), Depends()],
+    _query: Annotated[as_query(ProjectsSearchQueryParams), Depends()],
 ):
     ...
 
@@ -155,6 +155,6 @@ async def list_projects_full_search(
     status_code=status.HTTP_200_OK,
 )
 async def get_project_inactivity(
-    _p: Annotated[ProjectPathParams, Depends()],
+    _path: Annotated[ProjectPathParams, Depends()],
 ):
     ...
