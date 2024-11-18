@@ -8,13 +8,12 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
-from servicelib.rabbitmq._client import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 from servicelib.redis_utils import exclusive
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 
-from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
+from ...models.comp_runs import RunMetadataDict
 from ...utils.comp_scheduler import SCHEDULED_STATES
 from ...utils.rabbitmq import publish_project_log
 from ..db import get_db_engine
@@ -27,7 +26,7 @@ from ._constants import (
     MODULE_NAME,
     SCHEDULER_INTERVAL,
 )
-from ._models import SchedulePipelineRabbitMessage
+from ._publisher import request_pipeline_scheduling
 
 _logger = logging.getLogger(__name__)
 
@@ -63,7 +62,7 @@ async def run_new_pipeline(
     )
 
     rabbitmq_client = get_rabbitmq_client(app)
-    await _request_pipeline_scheduling(new_run, rabbitmq_client, db_engine)
+    await request_pipeline_scheduling(new_run, rabbitmq_client, db_engine)
     await publish_project_log(
         rabbitmq_client,
         user_id,
@@ -94,7 +93,7 @@ async def stop_pipeline(
     if updated_comp_run:
         # ensure the scheduler starts right away
         rabbitmq_client = get_rabbitmq_client(app)
-        await _request_pipeline_scheduling(updated_comp_run, rabbitmq_client, db_engine)
+        await request_pipeline_scheduling(updated_comp_run, rabbitmq_client, db_engine)
 
 
 def _get_app_from_args(*args, **kwargs) -> FastAPI:
@@ -118,24 +117,6 @@ def _redis_lock_key_builder(*args, **kwargs) -> str:
     return f"{app.title}_{MODULE_NAME}"
 
 
-async def _request_pipeline_scheduling(
-    run: CompRunsAtDB, rabbitmq_client: RabbitMQClient, db_engine: Engine
-) -> None:
-    # TODO: we should use the transaction and the asyncpg engine here to ensure 100% consistency
-    # async with transaction_context(get_asyncpg_engine(app)) as connection:
-    await rabbitmq_client.publish(
-        SchedulePipelineRabbitMessage.get_channel_name(),
-        SchedulePipelineRabbitMessage(
-            user_id=run.user_id,
-            project_id=run.project_uuid,
-            iteration=run.iteration,
-        ),
-    )
-    await CompRunsRepository.instance(db_engine).mark_as_scheduled(
-        user_id=run.user_id, project_id=run.project_uuid, iteration=run.iteration
-    )
-
-
 async def _get_pipeline_dag(project_id: ProjectID, db_engine: Engine) -> nx.DiGraph:
     comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
     pipeline_at_db = await comp_pipeline_repo.get_pipeline(project_id)
@@ -153,7 +134,7 @@ async def schedule_pipelines(app: FastAPI) -> None:
         rabbitmq_client = get_rabbitmq_client(app)
         await limited_gather(
             *(
-                _request_pipeline_scheduling(run, rabbitmq_client, db_engine)
+                request_pipeline_scheduling(run, rabbitmq_client, db_engine)
                 for run in runs_to_schedule
             ),
             limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
