@@ -99,6 +99,7 @@ class ServiceRunDB(BaseModel):
 class ServiceRunWithCreditsDB(ServiceRunDB):
     osparc_credits: Decimal | None = None
     transaction_status: CreditTransactionStatus | None
+    project_tags: list[str]
 
     model_config = ConfigDict(from_attributes=True)
 

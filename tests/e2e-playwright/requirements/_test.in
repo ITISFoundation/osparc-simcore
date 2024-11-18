@@ -13,3 +13,4 @@ pytest-runner
 pytest-sugar
 pyyaml
 tenacity
+httpx
