@@ -110,8 +110,8 @@ _extra_tags = ["workspaces"]
     },
 )
 def trash_workspace(
-    _p: Annotated[WorkspacesPathParams, Depends()],
-    _q: Annotated[RemoveQueryParams, Depends()],
+    _path: Annotated[WorkspacesPathParams, Depends()],
+    _query: Annotated[RemoveQueryParams, Depends()],
 ):
     ...
 
@@ -122,6 +122,6 @@ def trash_workspace(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def untrash_workspace(
-    _p: Annotated[WorkspacesPathParams, Depends()],
+    _path: Annotated[WorkspacesPathParams, Depends()],
 ):
     ...
