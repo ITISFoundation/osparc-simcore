@@ -98,6 +98,8 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
     # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
     env_devel["DIRECTOR_DEFAULT_MAX_MEMORY"] = "268435456"
     env_devel["DIRECTOR_DEFAULT_MAX_NANO_CPUS"] = "10000000"
+    env_devel["DIRECTOR_LOGLEVEL"] = "DEBUG"
+    env_devel["REGISTRY_PATH"] = "127.0.0.1:5000"
 
     env_devel.setdefault("DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS", "")
 
