@@ -1,0 +1,39 @@
+import functools
+from typing import cast
+
+from fastapi import FastAPI
+
+from ..rabbitmq import get_rabbitmq_client
+from ._base_scheduler import BaseCompScheduler
+from ._models import SchedulePipelineRabbitMessage
+from ._scheduler_factory import create_scheduler
+
+
+def _empty_wake_up_callack() -> None:
+    return
+
+
+def _get_scheduler_worker(app: FastAPI) -> BaseCompScheduler:
+    return cast(BaseCompScheduler, app.state.scheduler_worker)
+
+
+async def _handle_distributed_pipeline(app: FastAPI, data: bytes) -> bool:
+    to_schedule_pipeline = SchedulePipelineRabbitMessage.parse_raw(data)
+    await _get_scheduler_worker(app).schedule_pipeline(
+        user_id=to_schedule_pipeline.user_id,
+        project_id=to_schedule_pipeline.project_id,
+        iteration=to_schedule_pipeline.iteration,
+        wake_up_callback=_empty_wake_up_callack,
+    )
+    return True
+
+
+async def setup_worker(app: FastAPI) -> None:
+    rabbitmq_client = get_rabbitmq_client(app)
+    await rabbitmq_client.subscribe(
+        SchedulePipelineRabbitMessage.get_channel_name(),
+        functools.partial(_handle_distributed_pipeline, app),
+        exclusive_queue=False,
+    )
+
+    app.state.scheduler_worker = create_scheduler(app)

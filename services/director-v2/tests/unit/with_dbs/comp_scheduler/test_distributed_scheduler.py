@@ -69,13 +69,31 @@ def mock_env(
 
 
 @pytest.fixture
+def with_disabled_auto_scheduling(mocker: MockerFixture) -> mock.Mock:
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.stop_periodic_task",
+    )
+    return mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.start_periodic_task",
+    )
+
+
+@pytest.fixture
+def with_disabled_scheduler_worker(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.setup_worker",
+        autospec=True,
+    )
+
+
+@pytest.fixture
 async def scheduler_rabbit_client_parser(
     create_rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
 ) -> AsyncIterator[mock.AsyncMock]:
     client = create_rabbitmq_client("scheduling_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
     queue_name = await client.subscribe(
-        SchedulePipelineRabbitMessage.get_channel_name(), mock
+        SchedulePipelineRabbitMessage.get_channel_name(), mock, exclusive_queue=False
     )
     yield mock
     await client.unsubscribe(queue_name)
@@ -98,10 +116,12 @@ async def _assert_comp_runs_empty(sqlalchemy_async_engine: AsyncEngine) -> None:
 
 
 async def test_schedule_pipelines_empty_db(
+    with_disabled_auto_scheduling: mock.Mock,
     initialized_app: FastAPI,
     scheduler_rabbit_client_parser: mock.AsyncMock,
     sqlalchemy_async_engine: AsyncEngine,
 ):
+    with_disabled_auto_scheduling.assert_called_once()
     await _assert_comp_runs_empty(sqlalchemy_async_engine)
 
     await schedule_pipelines(initialized_app)
@@ -114,7 +134,10 @@ async def test_schedule_pipelines_empty_db(
 
 
 async def test_schedule_pipelines_concurently_runs_exclusively_and_raises(
-    initialized_app: FastAPI, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+    with_disabled_auto_scheduling: mock.Mock,
+    initialized_app: FastAPI,
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     CONCURRENCY = 5
     # NOTE: this ensure no flakyness as empty scheduling is very fast
@@ -144,6 +167,8 @@ async def test_schedule_pipelines_concurently_runs_exclusively_and_raises(
 
 
 async def test_schedule_pipelines(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_worker: mock.Mock,
     initialized_app: FastAPI,
     published_project: PublishedProject,
     sqlalchemy_async_engine: AsyncEngine,
@@ -183,8 +208,6 @@ async def test_schedule_pipelines(
     start_schedule_time = comp_run.last_scheduled
     start_modified_time = comp_run.modified
 
-    await asyncio.sleep(SCHEDULER_INTERVAL.total_seconds() - 1)
-
     # this will now not schedule the pipeline since it was last scheduled
     await schedule_pipelines(initialized_app)
     scheduler_rabbit_client_parser.assert_not_called()
@@ -194,8 +217,8 @@ async def test_schedule_pipelines(
     assert comp_run.cancelled is None
     assert comp_run.modified == start_modified_time
 
-    await asyncio.sleep(SCHEDULER_INTERVAL.total_seconds() + 1)
     # this will now schedule the pipeline since the time passed
+    await asyncio.sleep(SCHEDULER_INTERVAL.total_seconds() + 1)
     await schedule_pipelines(initialized_app)
     scheduler_rabbit_client_parser.assert_called_once_with(
         SchedulePipelineRabbitMessage(
@@ -236,6 +259,8 @@ async def test_schedule_pipelines(
 
 
 async def test_empty_pipeline_is_not_scheduled(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_worker: mock.Mock,
     initialized_app: FastAPI,
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],

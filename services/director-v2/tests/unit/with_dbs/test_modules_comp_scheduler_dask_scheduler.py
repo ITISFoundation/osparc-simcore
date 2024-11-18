@@ -165,7 +165,7 @@ async def schedule_all_pipelines(scheduler: BaseCompScheduler) -> None:
     local_pipelines = deepcopy(scheduler._scheduled_pipelines)  # noqa: SLF001
     results = await asyncio.gather(
         *(
-            scheduler._schedule_pipeline(  # noqa: SLF001
+            scheduler.schedule_pipeline(
                 user_id=user_id,
                 project_id=project_id,
                 iteration=iteration,

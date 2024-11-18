@@ -505,7 +505,7 @@ class BaseCompScheduler(ABC):
         comp_run: CompRunsAtDB,
     ) -> None: ...
 
-    async def _schedule_pipeline(
+    async def schedule_pipeline(
         self,
         *,
         user_id: UserID,
