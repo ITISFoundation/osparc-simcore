@@ -9,31 +9,22 @@
 from enum import Enum
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from _common import as_query
+from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.workspaces import (
     CreateWorkspaceBodyParams,
     PutWorkspaceBodyParams,
     WorkspaceGet,
 )
 from models_library.generics import Envelope
-from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.workspaces._groups_api import WorkspaceGroupGet
 from simcore_service_webserver.workspaces._models import (
-    WorkspacesFilters,
     WorkspacesGroupsBodyParams,
     WorkspacesGroupsPathParams,
-    WorkspacesOrderByJsonQueryParams,
+    WorkspacesListQueryParams,
     WorkspacesPathParams,
 )
-
-
-class _ListQueryParams(WorkspacesOrderByJsonQueryParams):
-    filters: Annotated[
-        Json | None,
-        Query(description=WorkspacesFilters.schema_json(indent=1)),
-    ] = None
-
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -49,7 +40,7 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_workspace(
-    _b: CreateWorkspaceBodyParams,
+    _body: CreateWorkspaceBodyParams,
 ):
     ...
 
@@ -59,7 +50,7 @@ async def create_workspace(
     response_model=Envelope[list[WorkspaceGet]],
 )
 async def list_workspaces(
-    _q: Annotated[_ListQueryParams, Depends()],
+    _query: Annotated[as_query(WorkspacesListQueryParams), Depends()],
 ):
     ...
 
@@ -69,7 +60,7 @@ async def list_workspaces(
     response_model=Envelope[WorkspaceGet],
 )
 async def get_workspace(
-    _p: Annotated[WorkspacesPathParams, Depends()],
+    _path: Annotated[WorkspacesPathParams, Depends()],
 ):
     ...
 
@@ -79,8 +70,8 @@ async def get_workspace(
     response_model=Envelope[WorkspaceGet],
 )
 async def replace_workspace(
-    _p: Annotated[WorkspacesPathParams, Depends()],
-    _b: PutWorkspaceBodyParams,
+    _path: Annotated[WorkspacesPathParams, Depends()],
+    _body: PutWorkspaceBodyParams,
 ):
     ...
 
@@ -90,7 +81,7 @@ async def replace_workspace(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_workspace(
-    _p: Annotated[WorkspacesPathParams, Depends()],
+    _path: Annotated[WorkspacesPathParams, Depends()],
 ):
     ...
 
@@ -106,8 +97,8 @@ _extra_tags: list[str | Enum] = ["groups"]
     tags=_extra_tags,
 )
 async def create_workspace_group(
-    _p: Annotated[WorkspacesGroupsPathParams, Depends()],
-    _b: WorkspacesGroupsBodyParams,
+    _path: Annotated[WorkspacesGroupsPathParams, Depends()],
+    _body: WorkspacesGroupsBodyParams,
 ):
     ...
 
@@ -118,7 +109,7 @@ async def create_workspace_group(
     tags=_extra_tags,
 )
 async def list_workspace_groups(
-    _p: Annotated[WorkspacesPathParams, Depends()],
+    _path: Annotated[WorkspacesPathParams, Depends()],
 ):
     ...
 
@@ -129,8 +120,8 @@ async def list_workspace_groups(
     tags=_extra_tags,
 )
 async def replace_workspace_group(
-    _p: Annotated[WorkspacesGroupsPathParams, Depends()],
-    _b: WorkspacesGroupsBodyParams,
+    _path: Annotated[WorkspacesGroupsPathParams, Depends()],
+    _body: WorkspacesGroupsBodyParams,
 ):
     ...
 
@@ -141,6 +132,6 @@ async def replace_workspace_group(
     tags=_extra_tags,
 )
 async def delete_workspace_group(
-    _p: Annotated[WorkspacesGroupsPathParams, Depends()],
+    _path: Annotated[WorkspacesGroupsPathParams, Depends()],
 ):
     ...
