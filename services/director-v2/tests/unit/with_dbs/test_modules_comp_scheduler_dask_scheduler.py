@@ -71,7 +71,7 @@ from simcore_service_director_v2.modules.comp_scheduler import (
     BaseCompScheduler,
     _get_scheduler_worker,
 )
-from simcore_service_director_v2.modules.comp_scheduler._dask_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler._scheduler_dask import (
     DaskScheduler,
 )
 from simcore_service_director_v2.modules.dask_client import (
@@ -192,7 +192,7 @@ async def schedule_all_pipelines(scheduler: BaseCompScheduler) -> None:
 
 
 @pytest.fixture
-def minimal_dask_scheduler_config(
+def minimal_scheduler_dask_config(
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
@@ -215,7 +215,7 @@ def minimal_dask_scheduler_config(
 
 @pytest.fixture
 def scheduler(
-    minimal_dask_scheduler_config: None,
+    minimal_scheduler_dask_config: None,
     aiopg_engine: aiopg.sa.engine.Engine,
     minimal_app: FastAPI,
 ) -> BaseCompScheduler:
@@ -237,7 +237,7 @@ def mocked_dask_client(mocker: MockerFixture) -> mock.MagicMock:
 @pytest.fixture
 def mocked_parse_output_data_fct(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.parse_output_data",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.parse_output_data",
         autospec=True,
     )
 
@@ -245,7 +245,7 @@ def mocked_parse_output_data_fct(mocker: MockerFixture) -> mock.Mock:
 @pytest.fixture
 def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.clean_task_output_and_log_files_if_invalid",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.clean_task_output_and_log_files_if_invalid",
         return_value=None,
         autospec=True,
     )
@@ -284,13 +284,13 @@ async def minimal_app(async_client: httpx.AsyncClient) -> FastAPI:
 @pytest.fixture
 def mocked_clean_task_output_and_log_files_if_invalid(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.clean_task_output_and_log_files_if_invalid",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.clean_task_output_and_log_files_if_invalid",
         autospec=True,
     )
 
 
 async def test_scheduler_gracefully_starts_and_stops(
-    minimal_dask_scheduler_config: None,
+    minimal_scheduler_dask_config: None,
     aiopg_engine: aiopg.sa.engine.Engine,
     dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
@@ -306,7 +306,7 @@ async def test_scheduler_gracefully_starts_and_stops(
     ],
 )
 def test_scheduler_raises_exception_for_missing_dependencies(
-    minimal_dask_scheduler_config: None,
+    minimal_scheduler_dask_config: None,
     aiopg_engine: aiopg.sa.engine.Engine,
     dask_spec_local_cluster: SpecCluster,
     monkeypatch: pytest.MonkeyPatch,
@@ -1100,7 +1100,7 @@ async def test_task_progress_triggers(
         ),
     ],
 )
-async def test_handling_of_disconnected_dask_scheduler(
+async def test_handling_of_disconnected_scheduler_dask(
     with_disabled_auto_scheduling: None,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
@@ -1112,7 +1112,7 @@ async def test_handling_of_disconnected_dask_scheduler(
 ):
     # this will create a non connected backend issue that will trigger re-connection
     mocked_dask_client_send_task = mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.DaskClient.send_computation_tasks",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.DaskClient.send_computation_tasks",
         side_effect=backend_error,
     )
     assert mocked_dask_client_send_task
@@ -1506,7 +1506,7 @@ async def test_running_pipeline_triggers_heartbeat(
 @pytest.fixture
 async def mocked_get_or_create_cluster(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.get_or_create_on_demand_cluster",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.get_or_create_on_demand_cluster",
         autospec=True,
     )
 

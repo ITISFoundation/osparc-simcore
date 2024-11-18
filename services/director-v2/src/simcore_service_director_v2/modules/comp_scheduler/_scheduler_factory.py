@@ -9,8 +9,8 @@ from ..dask_clients_pool import DaskClientsPool
 from ..db import get_db_engine
 from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from ..redis import get_redis_client_manager
-from ._dask_scheduler import DaskScheduler
 from ._scheduler_base import BaseCompScheduler
+from ._scheduler_dask import DaskScheduler
 
 _logger = logging.getLogger(__name__)
 

@@ -1,10 +1,9 @@
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Callable
 
 import arrow
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
