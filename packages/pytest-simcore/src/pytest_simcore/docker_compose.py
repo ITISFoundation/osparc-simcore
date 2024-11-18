@@ -83,11 +83,18 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
         # ensure catalog refreshes services access rights fast
     ] = "1"
 
-    # DIRECTOR -------------------
-    env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
-    # NOTE: this will make TracingSettings fail and therefore the default factory of every *_TRACING field will be set to None
+    # TRACING
+    #  NOTE: should go away with pydantic v2
     env_devel["TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT"] = "null"
     env_devel["TRACING_OPENTELEMETRY_COLLECTOR_PORT"] = "null"
+    for key in env_devel:
+        if key.endswith("_TRACING"):
+            env_devel[key] = "null"
+
+    # DIRECTOR
+    env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
+    # NOTE: this will make TracingSettings fail and therefore the default factory of every *_TRACING field will be set to None
+
     # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
     env_devel["DIRECTOR_DEFAULT_MAX_MEMORY"] = "268435456"
     env_devel["DIRECTOR_DEFAULT_MAX_NANO_CPUS"] = "10000000"
