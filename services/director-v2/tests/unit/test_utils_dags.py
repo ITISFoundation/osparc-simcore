@@ -422,7 +422,7 @@ def pipeline_test_params(
 
     # resolve the comp_tasks
     resolved_list_comp_tasks = [
-        c.copy(update={"node_id": node_name_to_uuid_map[c.node_id]})
+        c.model_copy(update={"node_id": node_name_to_uuid_map[c.node_id]})
         for c in list_comp_tasks
     ]
 
