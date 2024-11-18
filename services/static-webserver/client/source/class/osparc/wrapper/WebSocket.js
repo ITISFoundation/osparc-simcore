@@ -257,7 +257,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
         socket.on(name, message => {
           const info = {
             datetime: new Date(),
-            message,
+            message: message ? message : "",
           }
           this.__cache[name].unshift(info);
           if (this.__cache[name].length > 20) {

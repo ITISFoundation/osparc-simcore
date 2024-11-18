@@ -17,47 +17,76 @@
 
 qx.Class.define("osparc.tester.WebSocketMessages", {
   extend: osparc.po.BaseView,
+  construct: function() {
+    this.base(arguments);
+  },
 
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "statics-container":
-          control = osparc.ui.window.TabbedView.createSectionBox(this.tr("Statics"));
+        case "toolbar":
+          control = new qx.ui.toolbar.ToolBar().set({
+            maxHeight: 30
+          });
           this._add(control);
           break;
-        case "statics-content": {
-          const statics = osparc.store.Store.getInstance().get("statics");
-          const form = new qx.ui.form.Form();
-          for (let [key, value] of Object.entries(statics)) {
-            const textField = new qx.ui.form.TextField().set({
-              value: typeof value === "object" ? JSON.stringify(value) : value.toString(),
-              readOnly: true
-            });
-            form.add(textField, key, null, key);
-          }
-          control = new qx.ui.form.renderer.Single(form);
-          this.getChildControl("statics-container").add(control);
+        case "filter-text": {
+          const toolbar = this.getChildControl("toolbar");
+          control = new qx.ui.form.TextField().set({
+            appearance: "toolbar-textfield",
+            liveUpdate: true,
+            placeholder: this.tr("Filter")
+          });
+          osparc.utils.Utils.setIdToWidget(control, "logsFilterField");
+          toolbar.add(control, {
+            flex: 1
+          });
           break;
         }
-        case "local-storage-container":
-          control = osparc.ui.window.TabbedView.createSectionBox(this.tr("Local Storage"));
-          this._add(control);
-          break;
-        case "local-storage-content": {
-          const items = {
-            ...window.localStorage
+        case "messages-table": {
+          const tableModel = new qx.ui.table.model.Simple();
+          tableModel.setColumns([
+            this.tr("Date"),
+            this.tr("Channel"),
+            this.tr("Message"),
+          ]);
+          const custom = {
+            tableColumnModel: function(obj) {
+              return new qx.ui.table.columnmodel.Resize(obj);
+            }
           };
-          const form = new qx.ui.form.Form();
-          for (let [key, value] of Object.entries(items)) {
-            const textField = new qx.ui.form.TextField().set({
-              value: typeof value === "object" ? JSON.stringify(value) : value.toString(),
-              readOnly: true
-            });
-            form.add(textField, key, null, key);
-          }
-          control = new qx.ui.form.renderer.Single(form);
-          this.getChildControl("local-storage-container").add(control);
+          control = new qx.ui.table.Table(tableModel, custom).set({
+            selectable: true,
+            statusBarVisible: false,
+            showCellFocusIndicator: false,
+            forceLineHeight: false
+          });
+          control.getTableColumnModel().setDataCellRenderer(
+            1,
+            new qx.ui.table.cellrenderer.String().set({
+              defaultCellStyle: "user-select: text"
+            })
+          );
+          control.getTableColumnModel().setDataCellRenderer(
+            0,
+            new qx.ui.table.cellrenderer.String().set({
+              defaultCellStyle: "user-select: text"
+            })
+          );
+          control.getTableColumnModel().setDataCellRenderer(
+            2,
+            new osparc.ui.table.cellrenderer.Html().set({
+              defaultCellStyle: "user-select: text; text-wrap: wrap"
+            })
+          );
+          control.setColumnWidth(0, 100);
+          control.setColumnWidth(1, 100);
+
+          control.setDataRowRenderer(new osparc.ui.table.rowrenderer.ExpandSelection(control));
+          this._add(control, {
+            flex: 1
+          });
           break;
         }
       }
@@ -65,8 +94,39 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
     },
 
     _buildLayout: function() {
-      this.getChildControl("statics-content");
-      this.getChildControl("local-storage-content");
+      this.getChildControl("filter-text");
+      this.getChildControl("messages-table");
+
+      this.__populateTable();
     },
+
+    __populateTable: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const messagesObj = socket.getCachedMessages();
+      const messagesArray = [];
+      for (const channel in messagesObj) {
+        messagesObj[channel].forEach(msg => {
+          messagesArray.push({
+            datetime: msg.datetime,
+            channel,
+            message: msg.message,
+          });
+        });
+      }
+      messagesArray.sort((a, b) => {
+        return new Date(b.date) - new Date(a.date); // newest first
+      });
+      const datas = [];
+      messagesArray.forEach(entry => {
+        const data = [
+          new Date(entry.datetime).toLocaleTimeString(),
+          entry.channel,
+          JSON.stringify(entry.message),
+        ];
+        datas.push(data);
+      });
+      this.getChildControl("messages-table").getTableModel().setData(datas);
+      console.log(messagesArray);
+    }
   }
 });

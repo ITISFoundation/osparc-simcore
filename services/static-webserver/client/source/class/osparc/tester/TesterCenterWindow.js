@@ -22,10 +22,10 @@ qx.Class.define("osparc.tester.TesterCenterWindow", {
     this.base(arguments, "tester-center", this.tr("Tester Center"));
 
     const width = 800;
-    const height = 600;
+    const maxHeight = 800;
     this.set({
-      width: width,
-      height: height,
+      width,
+      maxHeight,
     });
 
     const testerCenter = new osparc.tester.TesterCenter();

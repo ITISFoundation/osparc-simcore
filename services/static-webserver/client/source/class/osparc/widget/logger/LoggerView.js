@@ -21,7 +21,7 @@
  * It consists of:
  * - a toolbar containing:
  *   - clear button
- *   - filter as you type textfiled
+ *   - filter as you type textfield
  *   - some log type filtering buttons
  * - log messages table
  *
