@@ -245,9 +245,13 @@ class SocketIONodeProgressCompleteWaiter:
             url = f"https://{self.node_id}.services.{self.get_partial_product_url()}"
             response = httpx.get(url, timeout=10)
             self.logger.info(
-                "Querying the service endpoint from the E2E test. Response: %s, response"
+                "Querying the service endpoint from the E2E test. Url: %s Response: %s",
+                url,
+                response,
             )
-            if response.status_code == 200:
+            if response.status_code <= 401:
+                # NOTE: If the response status is less than 400, it means that the backend is ready (There are some services that respond with a 3XX)
+                # MD: for now I have included 401 - as this also means that backend is ready
                 if self.got_expected_node_progress_types():
                     self.logger.warning(
                         "⚠️ Progress bar didn't receive 100 percent but service is already running: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
