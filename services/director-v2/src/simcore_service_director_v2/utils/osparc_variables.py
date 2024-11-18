@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import Any, Final, NamedTuple, TypeAlias
 
 from models_library.utils.specs_substitution import SubstitutionValue
-from pydantic import NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 
 ContextDict: TypeAlias = dict[str, Any]

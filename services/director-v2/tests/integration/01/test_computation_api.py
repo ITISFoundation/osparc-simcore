@@ -848,7 +848,7 @@ async def test_update_and_delete_computation(
 
     # try to delete the pipeline, is expected to be forbidden if force parameter is false (default)
     response = await async_client.request(
-        "DELETE", task_out.url, json={"user_id": user["id"]}
+        "DELETE", f"{task_out.url}", json={"user_id": user["id"]}
     )
     assert (
         response.status_code == status.HTTP_403_FORBIDDEN
@@ -856,7 +856,7 @@ async def test_update_and_delete_computation(
 
     # try again with force=True this should abort and delete the pipeline
     response = await async_client.request(
-        "DELETE", task_out.url, json={"user_id": user["id"], "force": True}
+        "DELETE", f"{task_out.url}", json={"user_id": user["id"], "force": True}
     )
     assert (
         response.status_code == status.HTTP_204_NO_CONTENT

@@ -119,9 +119,9 @@ class Status(BaseModel):
 
 
 class DockerContainerInspect(BaseModel):
-    container_state: ContainerState = Field(
-        ..., description="current state of container"
-    )
+    container_state: Annotated[
+        ContainerState, Field(..., description="current state of container")
+    ]
     name: str = Field(..., description="docker name of the container")
     id: str = Field(..., description="docker id of the container")
 
@@ -391,10 +391,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     @property
     def endpoint(self) -> AnyHttpUrl:
         """endpoint where all the services are exposed"""
-        url = AnyHttpUrl.build(  # pylint: disable=no-member
+        return AnyHttpUrl.build(  # pylint: disable=no-member
             scheme="http", host=self.hostname, port=self.port
         )
-        return url
 
     dynamic_sidecar: DynamicSidecar = Field(
         ...,

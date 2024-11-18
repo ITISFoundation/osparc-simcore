@@ -205,7 +205,9 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
 class ServiceGet(
     ServiceMetaDataPublished, ServiceAccessRights, ServiceMetaDataEditable
 ):  # pylint: disable=too-many-ancestors
-    owner: LowerCaseEmailStr | None
+    owner: LowerCaseEmailStr | None = Field(
+        description="None when the owner email cannot be found in the database"
+    )
 
     model_config = ConfigDict(
         extra="ignore",
@@ -230,7 +232,9 @@ class ServiceGetV2(BaseModel):
 
     contact: LowerCaseEmailStr | None
     authors: list[Author] = Field(..., min_length=1)
-    owner: LowerCaseEmailStr | None
+    owner: LowerCaseEmailStr | None = Field(
+        description="None when the owner email cannot be found in the database"
+    )
 
     inputs: ServiceInputsDict
     outputs: ServiceOutputsDict

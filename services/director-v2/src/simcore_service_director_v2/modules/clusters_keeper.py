@@ -48,6 +48,7 @@ async def get_or_create_on_demand_cluster(
             owner=user_id,
             endpoint=returned_cluster.endpoint,
             authentication=returned_cluster.authentication,
+            access_rights={},
         )
     except RemoteMethodNotRegisteredError as exc:
         # no clusters-keeper, that is not going to work!

@@ -12,4 +12,5 @@
 # installs this repo's packages
 --editable ../../packages/pytest-simcore/
 --editable ../../packages/settings-library/
+--editable ../../packages/common-library/
 --editable ../../packages/service-library/
