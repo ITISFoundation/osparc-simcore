@@ -502,7 +502,7 @@ async def test_mark_all_services_in_wallet_for_removal(
 ) -> None:
     for wallet_id in [WalletID(1), WalletID(2)]:
         for _ in range(2):
-            new_scheduler_data = scheduler_data.copy(deep=True)
+            new_scheduler_data = scheduler_data.model_copy(deep=True)
             new_scheduler_data.node_uuid = faker.uuid4(cast_to=None)
             new_scheduler_data.service_name = ServiceName(
                 f"fake_{new_scheduler_data.node_uuid}"

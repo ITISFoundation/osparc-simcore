@@ -12,7 +12,7 @@ from common_library.error_codes import create_error_code
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import field_validator, ConfigDict, BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -81,7 +81,7 @@ def _create_service_info_from(service: ValidService) -> ServiceInfo:
     )
     if service.thumbnail:
         values_map["thumbnail"] = service.thumbnail
-    return ServiceInfo.construct(_fields_set=set(values_map.keys()), **values_map)
+    return ServiceInfo.model_construct(_fields_set=set(values_map.keys()), **values_map)
 
 
 def _handle_errors_with_error_page(handler: Handler):
@@ -176,7 +176,8 @@ class ServiceAndFileParams(FileQueryParams, ServiceParams):
                 {"$ref": "#/definitions/FileParams"},
                 {"$ref": "#/definitions/ServiceParams"},
             ]
-    })
+        }
+    )
 
 
 class ViewerQueryParams(BaseModel):

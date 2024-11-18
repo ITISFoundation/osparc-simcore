@@ -34,7 +34,7 @@ async def list_tokens(app: web.Application, user_id: UserID) -> list[ThirdPartyT
         async for row in conn.execute(
             sa.select(tokens.c.token_data).where(tokens.c.user_id == user_id)
         ):
-            user_tokens.append(ThirdPartyToken.construct(**row["token_data"]))
+            user_tokens.append(ThirdPartyToken.model_construct(**row["token_data"]))
         return user_tokens
 
 
@@ -48,7 +48,7 @@ async def get_token(
             )
         )
         if row := await result.first():
-            return ThirdPartyToken.construct(**row["token_data"])
+            return ThirdPartyToken.model_construct(**row["token_data"])
         raise TokenNotFoundError(service_id=service_id)
 
 
@@ -78,7 +78,7 @@ async def update_token(
         assert resp.rowcount == 1  # nosec
         updated_token = await resp.fetchone()
         assert updated_token  # nosec
-        return ThirdPartyToken.construct(**updated_token["token_data"])
+        return ThirdPartyToken.model_construct(**updated_token["token_data"])
 
 
 async def delete_token(app: web.Application, user_id: UserID, service_id: str) -> None:

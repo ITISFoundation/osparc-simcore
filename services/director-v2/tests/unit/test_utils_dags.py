@@ -428,7 +428,7 @@ def pipeline_test_params(
 
     # resolved the expected output
 
-    resolved_expected_pipeline_details = expected_pipeline_details_output.copy(
+    resolved_expected_pipeline_details = expected_pipeline_details_output.model_copy(
         update={
             "adjacency_list": {
                 NodeID(node_name_to_uuid_map[node_a]): [
