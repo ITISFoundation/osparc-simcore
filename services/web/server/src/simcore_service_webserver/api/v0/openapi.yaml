@@ -2610,10 +2610,10 @@ paths:
         schema:
           title: Order By
           type: string
-          description: Order by field (`description|modified|name`) and direction
-            (`asc|desc`). The default sorting order is `{"field":"modified","direction":"desc"}`.
+          description: Order by field (`modified_at|name`) and direction (`asc|desc`).
+            The default sorting order is `{"field":"modified_at","direction":"desc"}`.
           default: '{"field":"modified","direction":"desc"}'
-          example: '{"field":"some_field_name","direction":"desc"}'
+          example: '{"field":"name","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -2693,10 +2693,10 @@ paths:
         schema:
           title: Order By
           type: string
-          description: Order by field (`description|modified|name`) and direction
-            (`asc|desc`). The default sorting order is `{"field":"modified","direction":"desc"}`.
+          description: Order by field (`modified_at|name`) and direction (`asc|desc`).
+            The default sorting order is `{"field":"modified_at","direction":"desc"}`.
           default: '{"field":"modified","direction":"desc"}'
-          example: '{"field":"some_field_name","direction":"desc"}'
+          example: '{"field":"name","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -3158,7 +3158,7 @@ paths:
           description: Order by field (`creation_date|description|last_change_date|name|prj_owner|type|uuid`)
             and direction (`asc|desc`). The default sorting order is `{"field":"last_change_date","direction":"desc"}`.
           default: '{"field":"last_change_date","direction":"desc"}'
-          example: '{"field":"some_field_name","direction":"desc"}'
+          example: '{"field":"name","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -3381,7 +3381,7 @@ paths:
           description: Order by field (`creation_date|description|last_change_date|name|prj_owner|type|uuid`)
             and direction (`asc|desc`). The default sorting order is `{"field":"last_change_date","direction":"desc"}`.
           default: '{"field":"last_change_date","direction":"desc"}'
-          example: '{"field":"some_field_name","direction":"desc"}'
+          example: '{"field":"name","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -4612,7 +4612,7 @@ paths:
           description: Order by field (`credit_cost|node_id|node_name|project_id|project_name|root_parent_project_id|root_parent_project_name|service_key|service_run_status|service_type|service_version|started_at|stopped_at|transaction_status|user_email|user_id|wallet_id|wallet_name`)
             and direction (`asc|desc`). The default sorting order is `{"field":"started_at","direction":"desc"}`.
           default: '{"field":"started_at","direction":"desc"}'
-          example: '{"field":"some_field_name","direction":"desc"}'
+          example: '{"field":"node_name","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -4726,7 +4726,7 @@ paths:
           description: Order by field (`credit_cost|node_id|node_name|project_id|project_name|root_parent_project_id|root_parent_project_name|service_key|service_run_status|service_type|service_version|started_at|stopped_at|transaction_status|user_email|user_id|wallet_id|wallet_name`)
             and direction (`asc|desc`). The default sorting order is `{"field":"started_at","direction":"desc"}`.
           default: '{"field":"started_at","direction":"desc"}'
-          example: '{"field":"some_field_name","direction":"desc"}'
+          example: '{"field":"node_name","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -5801,6 +5801,42 @@ paths:
       - workspaces
       summary: List Workspaces
       operationId: list_workspaces
+      parameters:
+      - required: false
+        schema:
+          title: Order By
+          type: string
+          description: Order by field (`modified_at|name`) and direction (`asc|desc`).
+            The default sorting order is `{"field":"modified_at","direction":"desc"}`.
+          default: '{"field":"modified","direction":"desc"}'
+          example: '{"field":"name","direction":"desc"}'
+        name: order_by
+        in: query
+      - required: false
+        schema:
+          title: Filters
+          type: string
+          description: Custom filter query parameter encoded as JSON
+        name: filters
+        in: query
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
       responses:
         '200':
           description: Successful Response
