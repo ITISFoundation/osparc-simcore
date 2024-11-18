@@ -250,22 +250,20 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           socket.on(name, fn);
         }
 
-        if (osparc.data.Permissions.getInstance().isTester()) {
-          // add a duplicated slot listener to keep the messages cached
-          socket.on(name, message => {
-            if (!(name in this.__cache)) {
-              this.__cache[name] = [];
-            }
-            const info = {
-              date: new Date(),
-              message: message ? message : "",
-            }
-            this.__cache[name].unshift(info);
-            if (this.__cache[name].length > 20) {
-              this.__cache[name].length = 20;
-            }
-          }, this);
-        }
+        // add a duplicated slot listener to keep the messages cached
+        socket.on(name, message => {
+          if (!(name in this.__cache)) {
+            this.__cache[name] = [];
+          }
+          const info = {
+            date: new Date(),
+            message: message ? message : "",
+          }
+          this.__cache[name].unshift(info);
+          if (this.__cache[name].length > 20) {
+            this.__cache[name].length = 20;
+          }
+        }, this);
       }
     },
 
