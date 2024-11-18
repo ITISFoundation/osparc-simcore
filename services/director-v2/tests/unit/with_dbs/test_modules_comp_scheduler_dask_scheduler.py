@@ -265,7 +265,7 @@ def with_disabled_auto_scheduling(mocker: MockerFixture) -> mock.MagicMock:
         return scheduler_task, scheduler_task_wake_up_event
 
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._base_scheduler.BaseCompScheduler._start_scheduling",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_base.BaseCompScheduler._start_scheduling",
         autospec=True,
         side_effect=_fake_starter,
     )

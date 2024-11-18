@@ -50,7 +50,7 @@ from ..dask_clients_pool import DaskClientsPool
 from ..db.repositories.clusters import ClustersRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
-from ._base_scheduler import BaseCompScheduler
+from ._scheduler_base import BaseCompScheduler
 
 _logger = logging.getLogger(__name__)
 

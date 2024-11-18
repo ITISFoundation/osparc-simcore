@@ -6,8 +6,8 @@ from fastapi import FastAPI
 from servicelib.logging_utils import log_context
 
 from ..rabbitmq import get_rabbitmq_client
-from ._base_scheduler import BaseCompScheduler
 from ._models import SchedulePipelineRabbitMessage
+from ._scheduler_base import BaseCompScheduler
 from ._scheduler_factory import create_scheduler
 
 _logger = logging.getLogger(__name__)
