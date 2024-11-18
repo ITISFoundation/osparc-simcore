@@ -16,10 +16,9 @@ class ReferenceOrderQueryParamsClass(BaseModel):
 
     # pylint: disable=unsubscriptable-object
     order_by: Json[OrderBy] = Field(
-        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
+        default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
         description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "name", "direction": "desc"}',
-        alias="order_by",
     )
 
     @validator("order_by", check_fields=False)
@@ -33,7 +32,7 @@ class ReferenceOrderQueryParamsClass(BaseModel):
             msg = f"We do not support ordering by provided field {v.field}"
             raise ValueError(msg)
         if v.field == "modified_at":
-            v.field = "modified"
+            v.field = "modified_column"
         return v
 
     class Config:
@@ -42,26 +41,21 @@ class ReferenceOrderQueryParamsClass(BaseModel):
 
 def test_ordering_query_model_class_factory():
     BaseOrderingQueryModel = create_ordering_query_model_classes(
-        ordering_fields={"modified", "name", "description"},
-        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
+        ordering_fields={"modified_at", "name", "description"},
+        default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+        ordering_fields_api_to_column_map={"modified_at": "modified_column"},
     )
 
     # inherits to add extra post-validator
     class OrderQueryParamsModel(BaseOrderingQueryModel):
-        @validator("order_by", pre=True)
-        @classmethod
-        def _validate_order_by_field(cls, v):
-            # Adds aliases!?
-            if v and v.get("field") == "modified_at":
-                v["field"] = "modified"
-            return v
+        ...
 
     # normal
     data = {"order_by": {"field": "modified_at", "direction": "asc"}}
     model = OrderQueryParamsModel.parse_obj(data)
 
     assert model.order_by
-    assert model.order_by.dict() == {"field": "modified", "direction": "asc"}
+    assert model.order_by.dict() == {"field": "modified_column", "direction": "asc"}
 
     # test against reference
     expected = ReferenceOrderQueryParamsClass.parse_obj(
@@ -131,3 +125,14 @@ def test_ordering_query_model_class__defaults():
     error = err_info.value.errors()[0]
     assert error["loc"] == ("order_by", "field")
     assert error["type"] == "value_error.missing"
+
+
+def test_ordering_query_model_with_map():
+    OrderQueryParamsModel = create_ordering_query_model_classes(
+        ordering_fields={"modified", "name", "description"},
+        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
+        ordering_fields_api_to_column_map={"modified": "some_db_column_name"},
+    )
+
+    model = OrderQueryParamsModel.parse_obj({"order_by": {"field": "modified"}})
+    assert model.order_by.field == "some_db_column_name"

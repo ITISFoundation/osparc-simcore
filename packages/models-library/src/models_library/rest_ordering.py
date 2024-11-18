@@ -77,12 +77,13 @@ def create_ordering_query_model_classes(
                     f"Fields supported are {msg_field_options}."
                 )
                 raise ValueError(msg)
+            return v
 
         @validator("field", allow_reuse=True, always=True)
         @classmethod
         def _post_rename_order_by_field_as_db_column(cls, v):
             # API field name -> DB column_name
-            return ordering_fields_api_to_column_map.get(v, v)
+            return ordering_fields_api_to_column_map.get(v) or v
 
     order_by_example: dict[str, Any] = OrderBy.Config.schema_extra["example"]
     order_by_example_json = json_dumps(order_by_example)
