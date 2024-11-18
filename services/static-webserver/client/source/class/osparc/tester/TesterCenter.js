@@ -26,22 +26,22 @@ qx.Class.define("osparc.tester.TesterCenter", {
     });
     this.addWidgetOnTopOfTheTabs(miniProfile);
 
-    this.__addStaticsPage();
     this.__addSocketMessagesPage();
+    this.__addStaticsPage();
   },
 
   members: {
+    __addSocketMessagesPage: function() {
+      const title = this.tr("Socket Messages");
+      const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
+      const maintenance = new osparc.tester.WebSocketMessages();
+      this.addTab(title, iconSrc, maintenance);
+    },
+
     __addStaticsPage: function() {
       const title = this.tr("Statics");
       const iconSrc = "@FontAwesome5Solid/wrench/22";
       const maintenance = new osparc.tester.Statics();
-      this.addTab(title, iconSrc, maintenance);
-    },
-
-    __addSocketMessagesPage: function() {
-      const title = this.tr("Socket Messages");
-      const iconSrc = "@FontAwesome5Solid/wrench/22";
-      const maintenance = new osparc.tester.WebSocketMessages();
       this.addTab(title, iconSrc, maintenance);
     },
   }

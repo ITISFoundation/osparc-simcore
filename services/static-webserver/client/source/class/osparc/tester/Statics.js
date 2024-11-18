@@ -24,7 +24,9 @@ qx.Class.define("osparc.tester.Statics", {
       switch (id) {
         case "statics-container":
           control = osparc.ui.window.TabbedView.createSectionBox(this.tr("Statics"));
-          this._add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
         case "statics-content": {
           const statics = osparc.store.Store.getInstance().get("statics");
@@ -36,7 +38,8 @@ qx.Class.define("osparc.tester.Statics", {
             });
             form.add(textField, key, null, key);
           }
-          control = new qx.ui.form.renderer.Single(form);
+          const renderer = new qx.ui.form.renderer.Single(form);
+          control = new qx.ui.container.Scroll(renderer);
           this.getChildControl("statics-container").add(control);
           break;
         }

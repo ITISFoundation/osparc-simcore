@@ -25,10 +25,10 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "filter-text": {
+        case "filter-message": {
           control = new qx.ui.form.TextField().set({
             liveUpdate : true,
-            placeholder: this.tr("search"),
+            placeholder: this.tr("Search in Message"),
           });
           this._add(control);
           break;
@@ -87,15 +87,15 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
     },
 
     _buildLayout: function() {
-      const filterText = this.getChildControl("filter-text");
+      const filterMessage = this.getChildControl("filter-message");
       const table = this.getChildControl("messages-table");
       const jsonViewer = this.getChildControl("json-viewer");
 
-      const model = table.getModel();
-      filterText.addListener("changeValue", e => {
+      const model = table.getTableModel();
+      filterMessage.addListener("changeValue", e => {
         const value = e.getData();
         model.resetHiddenRows();
-        model.addNotRegex(value, "login", true);
+        model.addNotRegex(value, "Message", true);
         model.applyFilters();
       });
       table.addListener("cellTap", e => {
