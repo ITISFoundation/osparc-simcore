@@ -22,7 +22,7 @@ from pydantic import (
     SecretStr,
     ValidationError,
 )
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=getattr(logging, os.environ.get("LOG_LEVEL", "INFO")))
@@ -201,12 +201,11 @@ class ClientSettings(BaseSettings):
     OSPARC_USER_EMAIL: EmailStr
     OSPARC_USER_PASSWORD: SecretStr
 
-    class Config:
-        env_file = ".env-osparc-web.ignore"
+    model_config = SettingsConfigDict(env_file=".env-osparc-web.ignore")
 
 
 def init():
-    env_file = Path(ClientSettings.Config.env_file)
+    env_file = Path(ClientSettings.model_config.env_file)
     log.info("Creating %s", f"{env_file}")
     kwargs = {}
     kwargs["OSPARC_API_URL"] = input("OSPARC_API_URL: ").strip() or None
