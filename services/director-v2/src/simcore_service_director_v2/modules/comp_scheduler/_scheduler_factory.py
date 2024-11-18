@@ -16,12 +16,6 @@ from ._dask_scheduler import DaskScheduler
 _logger = logging.getLogger(__name__)
 
 
-async def create_from_db(app: FastAPI) -> BaseCompScheduler:
-    scheduler = create_scheduler(app)
-    await scheduler.restore_scheduling_from_db()
-    return scheduler
-
-
 def create_scheduler(app: FastAPI) -> BaseCompScheduler:
     if not hasattr(app.state, "engine"):
         msg = "Database connection is missing. Please check application configuration."

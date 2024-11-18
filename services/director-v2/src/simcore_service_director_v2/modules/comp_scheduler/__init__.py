@@ -1,7 +1,7 @@
 import functools
 import logging
 from collections.abc import Callable, Coroutine
-from typing import Any
+from typing import Any, cast
 
 from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
@@ -74,7 +74,7 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
 
 
 def _get_scheduler_worker(app: FastAPI) -> BaseCompScheduler:
-    return app.state.scheduler_worker
+    return cast(BaseCompScheduler, app.state.scheduler_worker)
 
 
 def setup(app: FastAPI):

@@ -69,7 +69,7 @@ from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
 from simcore_service_director_v2.modules.comp_scheduler import (
     BaseCompScheduler,
-    get_scheduler,
+    _get_scheduler_worker,
 )
 from simcore_service_director_v2.modules.comp_scheduler._dask_scheduler import (
     DaskScheduler,
@@ -219,7 +219,7 @@ def scheduler(
     aiopg_engine: aiopg.sa.engine.Engine,
     minimal_app: FastAPI,
 ) -> BaseCompScheduler:
-    scheduler = get_scheduler(minimal_app)
+    scheduler = _get_scheduler_worker(minimal_app)
     assert scheduler is not None
     return scheduler
 
@@ -296,7 +296,7 @@ async def test_scheduler_gracefully_starts_and_stops(
     minimal_app: FastAPI,
 ):
     # check it started correctly
-    assert get_scheduler(minimal_app) is not None
+    assert _get_scheduler_worker(minimal_app) is not None
 
 
 @pytest.mark.parametrize(
