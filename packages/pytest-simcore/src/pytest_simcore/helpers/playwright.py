@@ -5,12 +5,15 @@ import re
 from collections import defaultdict
 from collections.abc import Generator, Iterator
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
 from typing import Any, Final
 
+import httpx
 from playwright.sync_api import FrameLocator, Page, Request
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import WebSocket
+from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 
 SECOND: Final[int] = 1000
@@ -196,9 +199,11 @@ class SocketIOOsparcMessagePrinter:
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
     logger: logging.Logger
+    product_url: AnyUrl
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
+    _last_poll_timestamp: datetime = datetime.now(tz=UTC)  # noqa: RUF009
 
     def __call__(self, message: str) -> bool:
         # socket.io encodes messages like so
@@ -234,6 +239,18 @@ class SocketIONodeProgressCompleteWaiter:
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
+
+        _current_timestamp = datetime.now(UTC)
+        if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
+            url = f"https://{self.node_id}.services.{self.get_partial_product_url()}"
+            response = httpx.get(url, timeout=10)
+            self.logger.info(
+                f"Quering service endpoint from the e2e test. Response: {response}"
+            )
+            if response.status_code == 200:
+                return True
+            self._last_poll_timestamp = datetime.now(UTC)
+
         return False
 
     def got_expected_node_progress_types(self):
@@ -244,6 +261,9 @@ class SocketIONodeProgressCompleteWaiter:
 
     def get_current_progress(self):
         return self._current_progress.values()
+
+    def get_partial_product_url(self):
+        return f"{self.product_url}".split("//")[1]
 
 
 def wait_for_pipeline_state(
@@ -332,9 +352,12 @@ def expected_service_running(
     websocket: WebSocket,
     timeout: int,
     press_start_button: bool,
+    product_url: AnyUrl,
 ) -> Generator[ServiceRunning, None, None]:
     with log_context(logging.INFO, msg="Waiting for node to run") as ctx:
-        waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id, logger=ctx.logger)
+        waiter = SocketIONodeProgressCompleteWaiter(
+            node_id=node_id, logger=ctx.logger, product_url=product_url
+        )
         service_running = ServiceRunning(iframe_locator=None)
 
         try:
@@ -366,12 +389,15 @@ def wait_for_service_running(
     websocket: WebSocket,
     timeout: int,
     press_start_button: bool,
+    product_url: AnyUrl,
 ) -> FrameLocator:
     """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
     In which case this will need further adjutment"""
 
     with log_context(logging.INFO, msg="Waiting for node to run") as ctx:
-        waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id, logger=ctx.logger)
+        waiter = SocketIONodeProgressCompleteWaiter(
+            node_id=node_id, logger=ctx.logger, product_url=product_url
+        )
         with websocket.expect_event("framereceived", waiter, timeout=timeout):
             if press_start_button:
                 _trigger_service_start(page, node_id)
