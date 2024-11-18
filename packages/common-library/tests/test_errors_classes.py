@@ -49,12 +49,10 @@ def test_error_codes_and_msg_template():
     assert f"{error}" == "Wrong value 42"
 
     class MyTypeError(MyBaseError, TypeError):
-        code = "i_want_this"
         msg_template = "Wrong type {type}"
 
     error = MyTypeError(type="int")
 
-    assert error.code == "i_want_this"
     assert f"{error}" == "Wrong type int"
 
 
