@@ -67,9 +67,19 @@ class CapturedParameterSchema(BaseModel):
             msg = "Current version cannot compute regex patterns in case of oneOf. Please go ahead and implement it yourself."
             raise NotImplementedError(msg)
         if self.anyOf:
-            return "|".join([elm.regex_pattern for elm in self.anyOf])
+            return "|".join(
+                [
+                    elm.regex_pattern
+                    for elm in self.anyOf  # pylint:disable=not-an-iterable
+                ]
+            )
         if self.allOf:
-            return "&".join([elm.regex_pattern for elm in self.allOf])
+            return "&".join(
+                [
+                    elm.regex_pattern
+                    for elm in self.allOf  # pylint:disable=not-an-iterable
+                ]
+            )
 
         # now deal with non-recursive cases
         pattern: str | None = None
