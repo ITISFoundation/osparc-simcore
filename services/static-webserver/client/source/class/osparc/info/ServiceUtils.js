@@ -184,10 +184,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
 
       const description = new osparc.ui.markdown.Markdown();
       // display markdown link content if that's the case
-      if (
-        osparc.utils.Utils.isValidHttpUrl(serviceData["description"]) &&
-        serviceData["description"].slice(-3) === ".md"
-      ) {
+      if (osparc.utils.Utils.isMarkdownLink(serviceData["description"])) {
         // if it's a link, fetch the content
         fetch(serviceData["description"])
           .then(response => response.blob())

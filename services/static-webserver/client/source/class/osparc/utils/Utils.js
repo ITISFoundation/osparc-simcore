@@ -402,6 +402,13 @@ qx.Class.define("osparc.utils.Utils", {
       return url.protocol === "http:" || url.protocol === "https:";
     },
 
+    isMarkdownLink: function(link) {
+      return (
+        osparc.utils.Utils.isValidHttpUrl(link) &&
+        link.slice(-3) === ".md"
+      );
+    },
+
     isDevelopmentPlatform: function() {
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       return (["dev", "master"].includes(platformName));
