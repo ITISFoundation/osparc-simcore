@@ -27,13 +27,21 @@ qx.Class.define("osparc.tester.TesterCenter", {
     this.addWidgetOnTopOfTheTabs(miniProfile);
 
     this.__addStaticsPage();
+    this.__addSocketMessagesPage();
   },
 
   members: {
     __addStaticsPage: function() {
-      const title = this.tr("Maintenance");
+      const title = this.tr("Statics");
       const iconSrc = "@FontAwesome5Solid/wrench/22";
       const maintenance = new osparc.tester.Statics();
+      this.addTab(title, iconSrc, maintenance);
+    },
+
+    __addSocketMessagesPage: function() {
+      const title = this.tr("Socket Messages");
+      const iconSrc = "@FontAwesome5Solid/wrench/22";
+      const maintenance = new osparc.tester.WebSocketMessages();
       this.addTab(title, iconSrc, maintenance);
     },
   }
