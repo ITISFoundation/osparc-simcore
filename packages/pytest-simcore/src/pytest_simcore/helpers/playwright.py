@@ -245,7 +245,7 @@ class SocketIONodeProgressCompleteWaiter:
             url = f"https://{self.node_id}.services.{self.get_partial_product_url()}"
             response = httpx.get(url, timeout=10)
             self.logger.info(
-                f"Querying the service endpoint from the E2E test. Response: {response}"
+                "Querying the service endpoint from the E2E test. Response: %s, response"
             )
             if response.status_code == 200:
                 return True
