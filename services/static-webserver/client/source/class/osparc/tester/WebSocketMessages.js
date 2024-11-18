@@ -25,25 +25,16 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "toolbar":
-          control = new qx.ui.toolbar.ToolBar();
-          this._add(control);
-          break;
         case "filter-text": {
-          const toolbar = this.getChildControl("toolbar");
           control = new qx.ui.form.TextField().set({
-            appearance: "toolbar-textfield",
-            liveUpdate: true,
-            placeholder: this.tr("Filter")
+            liveUpdate : true,
+            placeholder: this.tr("search"),
           });
-          osparc.utils.Utils.setIdToWidget(control, "logsFilterField");
-          toolbar.add(control, {
-            flex: 1
-          });
+          this._add(control);
           break;
         }
         case "messages-table": {
-          const tableModel = new qx.ui.table.model.Simple();
+          const tableModel = new qx.ui.table.model.Filtered();
           tableModel.setColumns([
             this.tr("Date"),
             this.tr("Channel"),
@@ -96,10 +87,17 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
     },
 
     _buildLayout: function() {
-      this.getChildControl("filter-text");
+      const filterText = this.getChildControl("filter-text");
       const table = this.getChildControl("messages-table");
       const jsonViewer = this.getChildControl("json-viewer");
 
+      const model = table.getModel();
+      filterText.addListener("changeValue", e => {
+        const value = e.getData();
+        model.resetHiddenRows();
+        model.addNotRegex(value, "login", true);
+        model.applyFilters();
+      });
       table.addListener("cellTap", e => {
         const selectedRow = e.getRow();
         const rowData = table.getTableModel().getRowData(selectedRow);
