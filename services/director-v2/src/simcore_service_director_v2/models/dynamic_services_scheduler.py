@@ -119,9 +119,9 @@ class Status(BaseModel):
 
 
 class DockerContainerInspect(BaseModel):
-    container_state: ContainerState = Field(
-        ..., description="current state of container"
-    )
+    container_state: Annotated[
+        ContainerState, Field(..., description="current state of container")
+    ]
     name: str = Field(..., description="docker name of the container")
     id: str = Field(..., description="docker id of the container")
 

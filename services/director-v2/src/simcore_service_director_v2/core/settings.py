@@ -4,6 +4,7 @@
 
 import datetime
 from functools import cached_property
+from typing import Annotated
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.basic_types import LogLevel, PortInt, VersionTag
@@ -194,28 +195,29 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
     )
 
     # App modules settings ---------------------
-    DIRECTOR_V2_STORAGE: StorageSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    DIRECTOR_V2_STORAGE: Annotated[
+        StorageSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
     DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH: StorageAuthSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
 
-    DIRECTOR_V2_CATALOG: CatalogSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    DIRECTOR_V2_CATALOG: Annotated[
+        CatalogSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
     DIRECTOR_V0: DirectorV0Settings = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
 
-    DYNAMIC_SERVICES: DynamicServicesSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    DYNAMIC_SERVICES: Annotated[
+        DynamicServicesSettings,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
 
-    POSTGRES: PostgresSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    POSTGRES: Annotated[
+        PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
     REDIS: RedisSettings = Field(json_schema_extra={"auto_default_from_env": True})
 

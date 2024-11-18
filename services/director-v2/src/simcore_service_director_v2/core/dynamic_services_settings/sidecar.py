@@ -2,6 +2,7 @@ import logging
 import warnings
 from enum import Enum
 from pathlib import Path
+from typing import Annotated
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.docker import DockerPlacementConstraint
@@ -104,12 +105,17 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
         description="dynamic-sidecar's service 'endpoint_spec' with {'Mode': 'dnsrr'}",
     )
-    DYNAMIC_SIDECAR_SC_BOOT_MODE: BootModeEnum = Field(
-        ...,
-        description="Boot mode used for the dynamic-sidecar services"
-        "By defaults, it uses the same boot mode set for the director-v2",
-        validation_alias=AliasChoices("DYNAMIC_SIDECAR_SC_BOOT_MODE", "SC_BOOT_MODE"),
-    )
+    DYNAMIC_SIDECAR_SC_BOOT_MODE: Annotated[
+        BootModeEnum,
+        Field(
+            ...,
+            description="Boot mode used for the dynamic-sidecar services"
+            "By defaults, it uses the same boot mode set for the director-v2",
+            validation_alias=AliasChoices(
+                "DYNAMIC_SIDECAR_SC_BOOT_MODE", "SC_BOOT_MODE"
+            ),
+        ),
+    ]
 
     DYNAMIC_SIDECAR_LOG_LEVEL: str = Field(
         "WARNING",
