@@ -9,6 +9,7 @@
 
 
 import asyncio
+import datetime
 import logging
 from collections.abc import AsyncIterator, Callable
 from typing import Any, Awaitable
@@ -71,10 +72,10 @@ def mock_env(
 @pytest.fixture
 def with_disabled_auto_scheduling(mocker: MockerFixture) -> mock.Mock:
     mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.stop_periodic_task",
+        "simcore_service_director_v2.modules.comp_scheduler.shutdown_manager",
     )
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.start_periodic_task",
+        "simcore_service_director_v2.modules.comp_scheduler.setup_manager",
     )
 
 
@@ -304,3 +305,33 @@ async def test_empty_pipeline_is_not_scheduled(
     assert "no computational dag defined" in caplog.records[0].message
     await _assert_comp_runs_empty(sqlalchemy_async_engine)
     scheduler_rabbit_client_parser.assert_not_called()
+
+
+@pytest.fixture
+def with_fast_scheduling(mocker: MockerFixture) -> None:
+    from simcore_service_director_v2.modules.comp_scheduler import (
+        _distributed_scheduler,
+    )
+
+    mocker.patch.object(
+        _distributed_scheduler, "SCHEDULER_INTERVAL", datetime.timedelta(seconds=0.01)
+    )
+
+
+@pytest.fixture
+def mocked_schedule_pipelines(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._distributed_scheduler.schedule_pipelines",
+        autospec=True,
+    )
+
+
+async def test_auto_scheduling(
+    with_fast_scheduling: None,
+    with_disabled_scheduler_worker: mock.Mock,
+    mocked_schedule_pipelines: mock.Mock,
+    initialized_app: FastAPI,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    await _assert_comp_runs_empty(sqlalchemy_async_engine)
+    mocked_schedule_pipelines.assert_called()

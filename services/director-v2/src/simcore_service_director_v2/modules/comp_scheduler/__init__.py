@@ -7,9 +7,9 @@ from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
 
 from ._distributed_scheduler import (
-    SCHEDULER_INTERVAL,
     run_new_pipeline,
-    schedule_pipelines,
+    setup_manager,
+    shutdown_manager,
     stop_pipeline,
 )
 from ._distributed_worker import setup_worker
@@ -24,13 +24,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
         ):
 
             await setup_worker(app)
-
-            app.state.scheduler_manager = start_periodic_task(
-                schedule_pipelines,
-                interval=SCHEDULER_INTERVAL,
-                task_name="computational-distributed-scheduler",
-                app=app,
-            )
+            await setup_manager(app)
 
     return start_scheduler
 
@@ -40,7 +34,7 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
         with log_context(
             _logger, level=logging.INFO, msg="stopping computational scheduler"
         ):
-            await stop_periodic_task(app.state.scheduler_manager)
+            await shutdown_manager(app)
 
             # TODO: we might want to stop anything running in the worker too
 

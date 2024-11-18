@@ -37,3 +37,9 @@ async def setup_worker(app: FastAPI) -> None:
     )
 
     app.state.scheduler_worker = create_scheduler(app)
+
+
+async def shutdown_worker(app: FastAPI) -> None:
+    assert app.state.scheduler_worker  # nosec
+    # TODO: we might need to cancel stuff here. not sure yet what
+    # unsubscribing is maybe not a good idea if we want to keep the data in the queue

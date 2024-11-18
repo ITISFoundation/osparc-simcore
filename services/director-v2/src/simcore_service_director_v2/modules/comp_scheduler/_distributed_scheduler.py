@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.rabbitmq._client import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 from servicelib.redis_utils import exclusive
@@ -139,3 +140,16 @@ async def schedule_pipelines(app: FastAPI) -> None:
         ),
         limit=_MAX_CONCURRENT_PIPELINE_SCHEDULING,
     )
+
+
+async def setup_manager(app: FastAPI) -> None:
+    app.state.scheduler_manager = start_periodic_task(
+        schedule_pipelines,
+        interval=SCHEDULER_INTERVAL,
+        task_name="computational-distributed-scheduler",
+        app=app,
+    )
+
+
+async def shutdown_manager(app: FastAPI) -> None:
+    await stop_periodic_task(app.state.scheduler_manager)
