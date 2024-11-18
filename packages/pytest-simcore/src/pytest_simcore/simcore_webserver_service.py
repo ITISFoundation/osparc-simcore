@@ -10,11 +10,14 @@ from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
 from .helpers.docker import get_service_published_port
+from .helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture(scope="module")
-def webserver_endpoint(docker_stack: dict, testing_environ_vars: dict) -> URL:
-    prefix = testing_environ_vars["SWARM_STACK_NAME"]
+def webserver_endpoint(
+    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict
+) -> URL:
+    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_webserver" in docker_stack["services"]
 
     endpoint = f"127.0.0.1:{get_service_published_port('webserver', 8080)}"

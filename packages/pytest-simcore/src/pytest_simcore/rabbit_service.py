@@ -36,19 +36,21 @@ async def wait_till_rabbit_responsive(url: str) -> None:
 @pytest.fixture
 def rabbit_env_vars_dict(
     docker_stack: dict,
-    testing_environ_vars: dict,
+    env_vars_for_docker_compose: EnvVarsDict,
 ) -> EnvVarsDict:
-    prefix = testing_environ_vars["SWARM_STACK_NAME"]
+    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
 
-    port = get_service_published_port("rabbit", testing_environ_vars["RABBIT_PORT"])
+    port = get_service_published_port(
+        "rabbit", env_vars_for_docker_compose["RABBIT_PORT"]
+    )
 
     return {
-        "RABBIT_USER": testing_environ_vars["RABBIT_USER"],
-        "RABBIT_PASSWORD": testing_environ_vars["RABBIT_PASSWORD"],
+        "RABBIT_USER": env_vars_for_docker_compose["RABBIT_USER"],
+        "RABBIT_PASSWORD": env_vars_for_docker_compose["RABBIT_PASSWORD"],
         "RABBIT_HOST": get_localhost_ip(),
         "RABBIT_PORT": f"{port}",
-        "RABBIT_SECURE": testing_environ_vars["RABBIT_SECURE"],
+        "RABBIT_SECURE": env_vars_for_docker_compose["RABBIT_SECURE"],
     }
 
 

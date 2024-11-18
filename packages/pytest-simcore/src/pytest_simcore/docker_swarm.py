@@ -253,12 +253,12 @@ def docker_stack(
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
-    testing_environ_vars: EnvVarsDict,
+    env_vars_for_docker_compose: EnvVarsDict,
 ) -> Iterator[dict]:
     """deploys core and ops stacks and returns as soon as all are running"""
 
     # WARNING: keep prefix "pytest-" in stack names
-    core_stack_name = testing_environ_vars["SWARM_STACK_NAME"]
+    core_stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     ops_stack_name = "pytest-ops"
 
     assert core_stack_name
