@@ -50,9 +50,9 @@ def create_ordering_query_model_classes(
             will be automatically translated to their corresponding database
             column names for seamless integration with database queries.
     """
-    ordering_fields_api_to_column_map = ordering_fields_api_to_column_map or {}
+    _ordering_fields_api_to_column_map = ordering_fields_api_to_column_map or {}
 
-    assert set(ordering_fields_api_to_column_map.keys()).issubset(  # nosec
+    assert set(_ordering_fields_api_to_column_map.keys()).issubset(  # nosec
         ordering_fields
     )
 
@@ -62,7 +62,7 @@ def create_ordering_query_model_classes(
     msg_direction_options = "|".join(sorted(OrderDirection))
 
     class _OrderBy(OrderBy):
-        class Config(OrderBy.Config):
+        class Config:
             schema_extra: ClassVar[dict[str, Any]] = {
                 "example": {
                     "field": next(iter(ordering_fields)),
@@ -85,7 +85,7 @@ def create_ordering_query_model_classes(
                 raise ValueError(msg)
 
             # API field name -> DB column_name conversion
-            return ordering_fields_api_to_column_map.get(v) or v
+            return _ordering_fields_api_to_column_map.get(v) or v
 
     order_by_example: dict[str, Any] = _OrderBy.Config.schema_extra["example"]
     order_by_example_json = json_dumps(order_by_example)
