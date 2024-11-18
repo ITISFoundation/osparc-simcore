@@ -43,7 +43,7 @@ async function runTutorial () {
     await tutorial.waitForVoilaRendered(iframe);
   }
   catch(err) {
-    await tutorial.setTutorialFailed(true, false);
+    await tutorial.setTutorialFailed();
     console.log('Tutorial error: ' + err);
   }
   finally {

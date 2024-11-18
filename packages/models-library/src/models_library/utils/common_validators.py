@@ -20,6 +20,10 @@ import functools
 import operator
 from typing import Any
 
+from orjson import JSONDecodeError
+
+from .json_serialization import json_loads
+
 
 def empty_str_to_none_pre_validator(value: Any):
     if isinstance(value, str) and value.strip() == "":
@@ -36,6 +40,16 @@ def none_to_empty_str_pre_validator(value: Any):
 def none_to_empty_list_pre_validator(value: Any):
     if value is None:
         return []
+    return value
+
+
+def parse_json_pre_validator(value: Any):
+    if isinstance(value, str):
+        try:
+            return json_loads(value)
+        except JSONDecodeError as err:
+            msg = f"Invalid JSON {value=}: {err}"
+            raise TypeError(msg) from err
     return value
 
 

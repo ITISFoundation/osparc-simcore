@@ -13,6 +13,7 @@ from pydantic import (
 )
 from pydantic.generics import GenericModel
 
+from .rest_base import RequestParameters
 from .utils.common_validators import none_to_empty_list_pre_validator
 
 # Default limit values
@@ -29,7 +30,7 @@ class PageLimitInt(ConstrainedInt):
 DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = parse_obj_as(PageLimitInt, 20)
 
 
-class PageQueryParameters(BaseModel):
+class PageQueryParameters(RequestParameters):
     """Use as pagination options in query parameters"""
 
     limit: PageLimitInt = Field(

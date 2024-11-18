@@ -65,7 +65,7 @@ async function runTutorial(user, pass, newUser, parallelUserIdx) {
     await tutorial.testS4L(s4lNodeId);
   }
   catch (err) {
-    await tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed();
     console.log('Tutorial error: ' + err);
     throw "Tutorial Failed";
   }

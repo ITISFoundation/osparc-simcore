@@ -195,7 +195,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     __centerLayout: null,
     _resourceType: null,
     _resourcesList: null,
-    _topBar: null,
     _toolbar: null,
     _searchBarFilter: null,
     __viewModeLayout: null,
