@@ -15,9 +15,9 @@ from pydantic_settings import (
 
 _logger = logging.getLogger(__name__)
 
-_DEFAULTS_TO_NONE_MSG: Final[
+_AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING: Final[
     str
-] = "%s auto_default_from_env unresolved, defaulting to None"
+] = "{field_name} auto_default_from_env unresolved, defaulting to None"
 
 
 class DefaultFromEnvFactoryError(ValueError):
@@ -40,10 +40,10 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
         except ValidationError as err:
             if is_nullable(info):
                 # e.g. Optional[PostgresSettings] would warn if defaults to None
-                _logger.warning(
-                    _DEFAULTS_TO_NONE_MSG,
-                    field_name,
+                msg = _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+                    field_name=field_name
                 )
+                _logger.warning(msg)
                 return None
             _logger.warning("Validation errors=%s", err.errors())
             raise DefaultFromEnvFactoryError(errors=err.errors()) from err
@@ -56,6 +56,9 @@ def _is_auto_default_from_env_enabled(field: FieldInfo) -> bool:
         field.json_schema_extra is not None
         and field.json_schema_extra.get("auto_default_from_env", False)  # type: ignore[union-attr]
     )
+
+
+ENABLED: Final = {}
 
 
 class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
@@ -86,7 +89,7 @@ class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
             _is_auto_default_from_env_enabled(field)
             and field.default_factory
             and field.default is None
-            and prepared_value == {}
+            and prepared_value == ENABLED
         ):
             prepared_value = field.default_factory()
         return prepared_value

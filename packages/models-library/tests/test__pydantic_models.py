@@ -6,7 +6,7 @@ check some "corner cases" or critical setups with pydantic model such that:
 
 """
 
-from typing import Union, get_args, get_origin
+from typing import Any, Union, get_args, get_origin
 
 import pytest
 from models_library.projects_nodes import InputTypes, OutputTypes
@@ -173,3 +173,36 @@ def test_union_types_coercion():
     print(model.model_dump_json(indent=1))
     assert model.input == {"w": 42, "z": False}
     assert model.output == [1, 2, 3, None]
+
+
+def test_nullable_fields_from_pydantic_v1():
+    # Tests issue found during migration. Pydantic v1 would default to None all nullable fields when they were not **explicitly** set with `...` as required
+    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/6751
+    class MyModel(BaseModel):
+        # pydanticv1 would add a default to fields set as nullable
+        nullable_required: str | None  # <--- This was default to =None in pydantic 1 !!!
+        nullable_required_with_hyphen: str | None = Field(default=...)
+        nullable_optional: str | None = None
+
+        # but with non-nullable "required" worked both ways
+        non_nullable_required: int
+        non_nullable_required_with_hyphen: int = Field(default=...)
+        non_nullable_optional: int = 42
+
+    data: dict[str, Any] = {
+        "nullable_required_with_hyphen": "foo",
+        "non_nullable_required_with_hyphen": 1,
+        "non_nullable_required": 2,
+    }
+
+    with pytest.raises(ValidationError) as err_info:
+        MyModel.model_validate(data)
+
+    assert err_info.value.error_count() == 1
+    error = err_info.value.errors()[0]
+    assert error["type"] == "missing"
+    assert error["loc"] == ("nullable_required",)
+
+    data["nullable_required"] = None
+    model = MyModel.model_validate(data)
+    assert model.model_dump(exclude_unset=True) == data
