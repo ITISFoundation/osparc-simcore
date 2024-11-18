@@ -11,8 +11,8 @@
 import asyncio
 import datetime
 import logging
-from collections.abc import AsyncIterator, Callable
-from typing import Any, Awaitable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -23,13 +23,9 @@ from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_state import RunningState
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq._client import RabbitMQClient
 from servicelib.redis import CouldNotAcquireLockError
 from servicelib.utils import limited_gather
-from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_service_director_v2.core.errors import PipelineNotFoundError
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
@@ -47,44 +43,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer", "redis-commander"]
-
-
-@pytest.fixture
-def mock_env(
-    mock_env: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-    fake_s3_envs: EnvVarsDict,
-    postgres_db: sa.engine.Engine,
-    postgres_host_config: dict[str, str],
-    rabbit_service: RabbitSettings,
-    redis_service: RedisSettings,
-) -> EnvVarsDict:
-    return mock_env | setenvs_from_dict(
-        monkeypatch,
-        {k: f"{v}" for k, v in fake_s3_envs.items()}
-        | {
-            "COMPUTATIONAL_BACKEND_ENABLED": True,
-            "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": True,
-        },
-    )
-
-
-@pytest.fixture
-def with_disabled_auto_scheduling(mocker: MockerFixture) -> mock.Mock:
-    mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.shutdown_manager",
-    )
-    return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.setup_manager",
-    )
-
-
-@pytest.fixture
-def with_disabled_scheduler_worker(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.setup_worker",
-        autospec=True,
-    )
 
 
 @pytest.fixture
