@@ -135,7 +135,7 @@ async def get_pricing_plan(
     tags=["admin"],
 )
 async def create_pricing_plan(
-    _b: CreatePricingPlanBodyParams,
+    _body: CreatePricingPlanBodyParams,
 ):
     ...
 
@@ -148,7 +148,7 @@ async def create_pricing_plan(
 )
 async def update_pricing_plan(
     _path: Annotated[PricingPlanGetPathParams, Depends()],
-    _b: UpdatePricingPlanBodyParams,
+    _body: UpdatePricingPlanBodyParams,
 ):
     ...
 
@@ -176,7 +176,7 @@ async def get_pricing_unit(
 )
 async def create_pricing_unit(
     _path: Annotated[PricingPlanGetPathParams, Depends()],
-    _b: CreatePricingUnitBodyParams,
+    _body: CreatePricingUnitBodyParams,
 ):
     ...
 
@@ -189,7 +189,7 @@ async def create_pricing_unit(
 )
 async def update_pricing_unit(
     _path: Annotated[PricingUnitGetPathParams, Depends()],
-    _b: UpdatePricingUnitBodyParams,
+    _body: UpdatePricingUnitBodyParams,
 ):
     ...
 
@@ -217,6 +217,6 @@ async def list_connected_services_to_pricing_plan(
 )
 async def connect_service_to_pricing_plan(
     _path: Annotated[PricingPlanGetPathParams, Depends()],
-    _b: ConnectServiceToPricingPlanBodyParams,
+    _body: ConnectServiceToPricingPlanBodyParams,
 ):
     ...
