@@ -23,8 +23,13 @@ def _get_scheduler_worker(app: FastAPI) -> BaseCompScheduler:
 
 
 async def _handle_distributed_pipeline(app: FastAPI, data: bytes) -> bool:
+
     with log_context(_logger, logging.DEBUG, msg="handling scheduling"):
         to_schedule_pipeline = SchedulePipelineRabbitMessage.parse_raw(data)
+        get_rabbitmq_client(app).publish(
+            SchedulePipelineRabbitMessage.get_channel_name(),
+            to_schedule_pipeline,
+        )
         await _get_scheduler_worker(app).schedule_pipeline(
             user_id=to_schedule_pipeline.user_id,
             project_id=to_schedule_pipeline.project_id,

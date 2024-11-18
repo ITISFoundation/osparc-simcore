@@ -1,6 +1,4 @@
-import datetime
 import logging
-from typing import Final
 
 import networkx as nx
 from aiopg.sa import Engine
@@ -25,10 +23,13 @@ from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..rabbitmq import get_rabbitmq_client
 from ..redis import get_redis_client_manager
+from ._constants import (
+    MAX_CONCURRENT_PIPELINE_SCHEDULING,
+    MODULE_NAME,
+    SCHEDULER_INTERVAL,
+)
 
 _logger = logging.getLogger(__name__)
-SCHEDULER_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
-_MAX_CONCURRENT_PIPELINE_SCHEDULING: Final[int] = 10
 
 
 async def run_new_pipeline(
@@ -96,7 +97,7 @@ async def stop_pipeline(
         await _distribute_pipeline(updated_comp_run, rabbitmq_client, db_engine)
 
 
-def _redis_client_getter(*args, **kwargs) -> RedisClientSDK:
+def _get_app_from_args(*args, **kwargs) -> FastAPI:
     assert kwargs is not None  # nosec
     if args:
         app = args[0]
@@ -104,7 +105,17 @@ def _redis_client_getter(*args, **kwargs) -> RedisClientSDK:
         assert "app" in kwargs  # nosec
         app = kwargs["app"]
     assert isinstance(app, FastAPI)  # nosec
+    return app
+
+
+def _redis_client_getter(*args, **kwargs) -> RedisClientSDK:
+    app = _get_app_from_args(*args, **kwargs)
     return get_redis_client_manager(app).client(RedisDatabase.LOCKS)
+
+
+def _redis_lock_key_builder(*args, **kwargs) -> str:
+    app = _get_app_from_args(*args, **kwargs)
+    return f"{app.title}_{MODULE_NAME}"
 
 
 async def _distribute_pipeline(
@@ -131,7 +142,7 @@ async def _get_pipeline_dag(project_id: ProjectID, db_engine: Engine) -> nx.DiGr
     return pipeline_at_db.get_graph()
 
 
-@exclusive(_redis_client_getter, lock_key="computational-distributed-scheduler")
+@exclusive(_redis_client_getter, lock_key=_redis_lock_key_builder)
 async def schedule_pipelines(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, msg="scheduling pipelines"):
         db_engine = get_db_engine(app)
@@ -145,7 +156,7 @@ async def schedule_pipelines(app: FastAPI) -> None:
                 _distribute_pipeline(run, rabbitmq_client, db_engine)
                 for run in runs_to_schedule
             ),
-            limit=_MAX_CONCURRENT_PIPELINE_SCHEDULING,
+            limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
         )
         if runs_to_schedule:
             _logger.debug("distributed %d pipelines", len(runs_to_schedule))
@@ -155,7 +166,7 @@ async def setup_manager(app: FastAPI) -> None:
     app.state.scheduler_manager = start_periodic_task(
         schedule_pipelines,
         interval=SCHEDULER_INTERVAL,
-        task_name="computational-distributed-scheduler",
+        task_name=MODULE_NAME,
         app=app,
     )
 
