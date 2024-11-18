@@ -96,8 +96,8 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
 
     # ensure OpenTelemetry is not enabled
     env_devel |= {
-        x: "null"
-        for x in (
+        tracing_setting: "null"
+        for tracing_setting in (
             "AGENT_TRACING",
             "API_SERVER_TRACING",
             "AUTOSCALING_TRACING",
