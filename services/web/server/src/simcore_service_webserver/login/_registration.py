@@ -192,7 +192,7 @@ async def create_invitation_token(
     return await db.create_confirmation(
         user_id=user_id,
         action=ConfirmationAction.INVITATION.name,
-        data=data_model.json(),
+        data=data_model.model_dump_json(),
     )
 
 

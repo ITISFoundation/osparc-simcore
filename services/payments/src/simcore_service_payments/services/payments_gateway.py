@@ -70,7 +70,7 @@ class PaymentsGatewayError(OsparcErrorMixin, ValueError):
     def get_detailed_message(self) -> str:
         err_json = "null"
         if model := getattr(self, "model", None):
-            err_json = model.json(indent=1)
+            err_json = model.model_dump_json(indent=1)
 
         curl_cmd = "null"
         if http_status_error := getattr(self, "http_status_error", None):
