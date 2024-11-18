@@ -74,7 +74,7 @@ class CompRunsRepository(BaseRepository):
             conditions.append(
                 or_(
                     comp_runs.c.last_scheduled.is_(None),
-                    comp_runs.c.last_scheduled >= scheduled_cutoff,
+                    comp_runs.c.last_scheduled <= scheduled_cutoff,
                 )
             )
 
