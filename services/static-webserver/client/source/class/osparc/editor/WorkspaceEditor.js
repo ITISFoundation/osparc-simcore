@@ -125,6 +125,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
             placeholder: this.tr("Title"),
             height: 30,
           });
+          osparc.utils.Utils.setIdToWidget(control, "workspaceEditorTitle");
           this.bind("label", control, "value");
           control.bind("value", this, "label");
           this._addAt(control, this.self().POS.TITLE);
@@ -170,6 +171,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           control = new osparc.ui.form.FetchButton(this.tr("Save")).set({
             appearance: "form-button"
           });
+          osparc.utils.Utils.setIdToWidget(control, "workspaceEditorSave");
           control.addListener("execute", () => this.__saveWorkspace(control), this);
           buttons.addAt(control, 1);
           break;
