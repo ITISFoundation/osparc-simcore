@@ -17,13 +17,18 @@ def store_browser_context() -> bool:
 
 @pytest.fixture
 def logged_in_context(
-    playwright, store_browser_context: bool, request: pytest.FixtureRequest
+    playwright,
+    store_browser_context: bool,
+    request: pytest.FixtureRequest,
+    pytestconfig,
 ):
+    is_headed = "--headed" in pytestconfig.invocation_params.args
+
     file_path = Path("state.json")
     if not file_path.exists():
         request.getfixturevalue("log_in_and_out")
 
-    browser = playwright.chromium.launch(headless=False)
+    browser = playwright.chromium.launch(headless=not is_headed)
     context = browser.new_context(storage_state="state.json")
     yield context
     context.close()
