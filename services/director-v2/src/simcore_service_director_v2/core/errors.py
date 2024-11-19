@@ -167,16 +167,12 @@ class TaskSchedulingError(SchedulerError):
 class MissingComputationalResourcesError(TaskSchedulingError):
     """A task cannot be scheduled because the cluster does not have the required resources"""
 
-    code = "scheduler_error.missing_resources"
-
     def __init__(self, project_id: ProjectID, node_id: NodeID, msg: str | None = None):
         super().__init__(project_id, node_id, msg=msg)
 
 
 class InsuficientComputationalResourcesError(TaskSchedulingError):
     """A task cannot be scheduled because the cluster does not have *enough* of the required resources"""
-
-    code = "scheduler_error.insuficient_resources"
 
     def __init__(self, project_id: ProjectID, node_id: NodeID, msg: str | None = None):
         super().__init__(project_id, node_id, msg=msg)

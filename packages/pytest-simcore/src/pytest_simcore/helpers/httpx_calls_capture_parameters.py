@@ -66,14 +66,14 @@ class CapturedParameterSchema(BaseModel):
         if self.oneOf:
             msg = "Current version cannot compute regex patterns in case of oneOf. Please go ahead and implement it yourself."
             raise NotImplementedError(msg)
-        if self.anyOf:
+        if self.anyOf is not None:
             return "|".join(
                 [
                     elm.regex_pattern
                     for elm in self.anyOf  # pylint:disable=not-an-iterable
                 ]
             )
-        if self.allOf:
+        if self.allOf is not None:
             return "&".join(
                 [
                     elm.regex_pattern

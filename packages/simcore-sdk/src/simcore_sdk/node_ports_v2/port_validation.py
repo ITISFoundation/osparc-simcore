@@ -23,7 +23,6 @@ log = logging.getLogger(__name__)
 
 
 class PortValueError(OsparcErrorMixin, ValueError):
-    code = "port_validation.schema_error"   # type: ignore
     msg_template = "Invalid value in port {port_key!r}: {schema_error_message}"
 
     # pylint: disable=useless-super-delegation
@@ -38,7 +37,6 @@ class PortValueError(OsparcErrorMixin, ValueError):
 
 
 class PortUnitError(OsparcErrorMixin, ValueError):
-    code = "port_validation.unit_error" # type: ignore
     msg_template = "Invalid unit in port {port_key!r}: {pint_error_msg}"
 
     # pylint: disable=useless-super-delegation
