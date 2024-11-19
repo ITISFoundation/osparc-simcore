@@ -9,6 +9,7 @@ from uuid import UUID
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.rest_ordering import (
@@ -16,7 +17,6 @@ from models_library.rest_ordering import (
     OrderDirection,
     create_ordering_query_model_classes,
 )
-from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, ConfigDict, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
