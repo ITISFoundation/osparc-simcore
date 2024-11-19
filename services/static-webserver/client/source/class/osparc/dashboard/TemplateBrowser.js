@@ -220,7 +220,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         });
       } else {
         osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
-          .then(studyId => {
+          .then(newStudyData => {
+            const studyId = newStudyData["uuid"];
             const openCB = () => this._hideLoadingPage();
             const cancelCB = () => {
               this._hideLoadingPage();
