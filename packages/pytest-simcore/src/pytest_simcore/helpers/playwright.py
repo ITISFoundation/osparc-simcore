@@ -2,19 +2,25 @@ import contextlib
 import json
 import logging
 import re
+import typing
 from collections import defaultdict
-from collections.abc import Generator, Iterator
+from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
 from typing import Any, Final
 
 import httpx
+from playwright._impl._sync_base import EventContextManager
 from playwright.sync_api import FrameLocator, Page, Request
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import WebSocket
 from pydantic import AnyUrl
-from pytest_simcore.helpers.logging_tools import log_context
+
+from .logging_tools import log_context
+
+_logger = logging.getLogger(__name__)
+
 
 SECOND: Final[int] = 1000
 MINUTE: Final[int] = 60 * SECOND
@@ -104,6 +110,94 @@ class SocketIOEvent:
 
 
 SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
+
+
+@dataclass
+class RestartableWebSocket:
+    page: Page
+    ws: WebSocket
+    _registered_events: list[tuple[str, typing.Callable | None]] = field(
+        default_factory=list
+    )
+    _number_of_restarts: int = 0
+
+    def __post_init__(self):
+        self._configure_websocket_events()
+
+    def _configure_websocket_events(self):
+        try:
+            with log_context(
+                logging.DEBUG,
+                msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
+            ) as ctx:
+
+                def on_framesent(payload: str | bytes) -> None:
+                    ctx.logger.debug("⬇️ Frame sent: %s", payload)
+
+                def on_framereceived(payload: str | bytes) -> None:
+                    ctx.logger.debug("⬆️ Frame received: %s", payload)
+
+                def on_close(_: WebSocket) -> None:
+                    ctx.logger.warning(
+                        "⚠️ WebSocket closed. Attempting to reconnect..."
+                    )
+                    self._attempt_reconnect(ctx.logger)
+
+                def on_socketerror(error_msg: str) -> None:
+                    ctx.logger.error("❌ WebSocket error: %s", error_msg)
+
+                # Attach core event listeners
+                self.ws.on("framesent", on_framesent)
+                self.ws.on("framereceived", on_framereceived)
+                self.ws.on("close", on_close)
+                self.ws.on("socketerror", on_socketerror)
+
+        finally:
+            # Detach core event listeners
+            self.ws.remove_listener("framesent", on_framesent)
+            self.ws.remove_listener("framereceived", on_framereceived)
+            self.ws.remove_listener("close", on_close)
+            self.ws.remove_listener("socketerror", on_socketerror)
+
+    def _attempt_reconnect(self, logger: logging.Logger) -> None:
+        """
+        Attempt to reconnect the WebSocket and restore event listeners.
+        """
+        try:
+            with self.page.expect_websocket() as ws_info:
+                assert not ws_info.value.is_closed()
+
+            self.ws = ws_info.value
+            self._number_of_restarts += 1
+            logger.info(
+                "🔄 Reconnected to WebSocket successfully. Number of reconnections: %s",
+                self._number_of_restarts,
+            )
+            self._configure_websocket_events()
+            # Re-register all custom event listeners
+            for event, predicate in self._registered_events:
+                self.ws.expect_event(event, predicate)
+
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error("🚨 Failed to reconnect WebSocket: %s", e)
+
+    def expect_event(
+        self,
+        event: str,
+        predicate: typing.Callable | None = None,
+        *,
+        timeout: float | None = None,
+    ) -> EventContextManager:
+        """
+        Register an event listener with support for reconnection.
+        """
+        output = self.ws.expect_event(event, predicate, timeout=timeout)
+        self._registered_events.append((event, predicate))
+        return output
+
+    @classmethod
+    def create(cls, page: Page, ws: WebSocket):
+        return cls(page, ws)
 
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:
@@ -278,7 +372,7 @@ class SocketIONodeProgressCompleteWaiter:
 def wait_for_pipeline_state(
     current_state: RunningState,
     *,
-    websocket: WebSocket,
+    websocket: RestartableWebSocket,
     if_in_states: tuple[RunningState, ...],
     expected_states: tuple[RunningState, ...],
     timeout_ms: int,
@@ -299,39 +393,6 @@ def wait_for_pipeline_state(
                     decode_socketio_42_message(event.value)
                 )
     return current_state
-
-
-@contextlib.contextmanager
-def web_socket_default_log_handler(web_socket: WebSocket) -> Iterator[None]:
-
-    try:
-        with log_context(
-            logging.DEBUG,
-            msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
-        ) as ctx:
-
-            def on_framesent(payload: str | bytes) -> None:
-                ctx.logger.debug("⬇️ Frame sent: %s", payload)
-
-            def on_framereceived(payload: str | bytes) -> None:
-                ctx.logger.debug("⬆️ Frame received: %s", payload)
-
-            def on_close(payload: WebSocket) -> None:
-                ctx.logger.warning("⚠️ Websocket closed: %s", payload)
-
-            def on_socketerror(error_msg: str) -> None:
-                ctx.logger.error("❌ Websocket error: %s", error_msg)
-
-            web_socket.on("framesent", on_framesent)
-            web_socket.on("framereceived", on_framereceived)
-            web_socket.on("close", on_close)
-            web_socket.on("socketerror", on_socketerror)
-            yield
-    finally:
-        web_socket.remove_listener("framesent", on_framesent)
-        web_socket.remove_listener("framereceived", on_framereceived)
-        web_socket.remove_listener("close", on_close)
-        web_socket.remove_listener("socketerror", on_socketerror)
 
 
 def _node_started_predicate(request: Request) -> bool:
@@ -358,12 +419,14 @@ def expected_service_running(
     *,
     page: Page,
     node_id: str,
-    websocket: WebSocket,
+    websocket: RestartableWebSocket,
     timeout: int,
     press_start_button: bool,
     product_url: AnyUrl,
 ) -> Generator[ServiceRunning, None, None]:
-    with log_context(logging.INFO, msg="Waiting for node to run") as ctx:
+    with log_context(
+        logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
+    ) as ctx:
         waiter = SocketIONodeProgressCompleteWaiter(
             node_id=node_id, logger=ctx.logger, product_url=product_url
         )
@@ -395,7 +458,7 @@ def wait_for_service_running(
     *,
     page: Page,
     node_id: str,
-    websocket: WebSocket,
+    websocket: RestartableWebSocket,
     timeout: int,
     press_start_button: bool,
     product_url: AnyUrl,
@@ -403,7 +466,9 @@ def wait_for_service_running(
     """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
     In which case this will need further adjutment"""
 
-    with log_context(logging.INFO, msg="Waiting for node to run") as ctx:
+    with log_context(
+        logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
+    ) as ctx:
         waiter = SocketIONodeProgressCompleteWaiter(
             node_id=node_id, logger=ctx.logger, product_url=product_url
         )

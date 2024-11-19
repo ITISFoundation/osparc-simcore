@@ -20,7 +20,7 @@ from typing import Any, Final
 import arrow
 import pytest
 from faker import Faker
-from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
+from playwright.sync_api import APIRequestContext, BrowserContext, Page
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
@@ -29,13 +29,13 @@ from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
     AutoRegisteredUser,
+    RestartableWebSocket,
     RunningState,
     ServiceType,
     SocketIOEvent,
     SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
-    web_socket_default_log_handler,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
 
@@ -331,7 +331,7 @@ def log_in_and_out(
     user_password: Secret4TestsStr,
     auto_register: bool,
     register: Callable[[], AutoRegisteredUser],
-) -> Iterator[WebSocket]:
+) -> Iterator[RestartableWebSocket]:
     with log_context(
         logging.INFO,
         f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
@@ -374,8 +374,8 @@ def log_in_and_out(
                     page.get_by_test_id("loginSubmitBtn").click()
                 assert response_info.value.ok, f"{response_info.value.json()}"
 
-    ws = ws_info.value
-    assert not ws.is_closed()
+    assert not ws_info.value.is_closed()
+    restartable_wb = RestartableWebSocket.create(page, ws_info.value)
 
     # Welcome to Sim4Life
     page.wait_for_timeout(5000)
@@ -389,8 +389,8 @@ def log_in_and_out(
     if quickStartWindowCloseBtnLocator.is_visible():
         quickStartWindowCloseBtnLocator.click()
 
-    with web_socket_default_log_handler(ws):
-        yield ws
+    # with web_socket_default_log_handler(ws):
+    yield restartable_wb
 
     with log_context(
         logging.INFO,
@@ -408,7 +408,7 @@ def log_in_and_out(
 @pytest.fixture
 def create_new_project_and_delete(
     page: Page,
-    log_in_and_out: WebSocket,
+    log_in_and_out: RestartableWebSocket,
     is_product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
@@ -660,7 +660,7 @@ def create_project_from_service_dashboard(
 def start_and_stop_pipeline(
     product_url: AnyUrl,
     page: Page,
-    log_in_and_out: WebSocket,
+    log_in_and_out: RestartableWebSocket,
     api_request_context: APIRequestContext,
 ) -> Iterator[Callable[[], SocketIOEvent]]:
     started_pipeline_ids = []
