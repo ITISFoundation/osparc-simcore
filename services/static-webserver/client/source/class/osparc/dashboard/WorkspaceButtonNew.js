@@ -43,6 +43,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
       opacity: 1
     });
     this.getChildControl("footer").exclude();
+
+    osparc.utils.Utils.setIdToWidget(this, "newWorkspaceButton");
   },
 
   events: {
