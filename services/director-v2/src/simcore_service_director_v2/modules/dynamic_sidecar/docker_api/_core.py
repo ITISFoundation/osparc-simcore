@@ -59,7 +59,7 @@ async def get_swarm_network(simcore_services_network_name: DockerNetworkName) ->
             f"Swarm network name (searching for '*{simcore_services_network_name}*') "
             f"is not configured.Found following networks: {networks}"
         )
-        raise DynamicSidecarError(msg)
+        raise DynamicSidecarError(msg=msg)
     return networks[0]
 
 
@@ -89,7 +89,7 @@ async def create_network(network_config: dict[str, Any]) -> NetworkId:
             # finally raise an error if a network cannot be spawned
             # pylint: disable=raise-missing-from
             msg = f"Could not create or recover a network ID for {network_config}"
-            raise DynamicSidecarError(msg) from e
+            raise DynamicSidecarError(msg=msg) from e
 
 
 def _to_snake_case(string: str) -> str:
@@ -119,7 +119,7 @@ async def create_service_and_get_id(
 
     if "ID" not in service_start_result:
         msg = f"Error while starting service: {service_start_result!s}"
-        raise DynamicSidecarError(msg)
+        raise DynamicSidecarError(msg=msg)
     service_id: ServiceId = service_start_result["ID"]
     return service_id
 
@@ -159,7 +159,10 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
             last_task: Mapping[str, Any] = sorted_tasks[-1]
             return last_task
     except GenericDockerError as err:
-        if err.original_exception.status == status.HTTP_404_NOT_FOUND:
+        if (
+            err.error_context()["original_exception"].status
+            == status.HTTP_404_NOT_FOUND
+        ):
             raise DockerServiceNotFoundError(service_id=service_id) from err
         raise
 
@@ -205,7 +208,7 @@ async def get_dynamic_sidecar_placement(
     docker_node_id: None | str = task.get("NodeID", None)
     if not docker_node_id:
         msg = f"Could not find an assigned NodeID for service_id={service_id}. Last task inspect result: {task}"
-        raise DynamicSidecarError(msg)
+        raise DynamicSidecarError(msg=msg)
 
     return docker_node_id
 
@@ -484,7 +487,7 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
             },
         )
     except GenericDockerError as e:
-        if e.original_exception.status == status.HTTP_404_NOT_FOUND:
+        if e.error_context()["original_exception"].status == status.HTTP_404_NOT_FOUND:
             log.info(
                 "Skipped labels update for service '%s' which could not be found.",
                 scheduler_data.service_name,

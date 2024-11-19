@@ -171,7 +171,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         raises DynamicSidecarNotFoundError
         """
         if node_uuid not in self._inverse_search_mapping:
-            raise DynamicSidecarNotFoundError(node_uuid)
+            raise DynamicSidecarNotFoundError(node_uuid=node_uuid)
         service_name = self._inverse_search_mapping[node_uuid]
 
         service_task = self._service_observation_task.get(service_name)
@@ -274,7 +274,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                     f"node_uuids at a global level collided. A running service for node {scheduler_data.node_uuid} already exists."
                     " Please checkout other projects which may have this issue."
                 )
-                raise DynamicSidecarError(msg)
+                raise DynamicSidecarError(msg=msg)
 
             self._inverse_search_mapping[
                 scheduler_data.node_uuid
@@ -288,7 +288,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
     def get_scheduler_data(self, node_uuid: NodeID) -> SchedulerData:
         if node_uuid not in self._inverse_search_mapping:
-            raise DynamicSidecarNotFoundError(node_uuid)
+            raise DynamicSidecarNotFoundError(node_uuid=node_uuid)
         service_name = self._inverse_search_mapping[node_uuid]
         return self._to_observe[service_name]
 
@@ -336,7 +336,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         """Marks service for removal, causing RemoveMarkedService to trigger"""
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
-                raise DynamicSidecarNotFoundError(node_uuid)
+                raise DynamicSidecarNotFoundError(node_uuid=node_uuid)
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name not in self._to_observe:
@@ -416,7 +416,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         """
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
-                raise DynamicSidecarNotFoundError(node_uuid)
+                raise DynamicSidecarNotFoundError(node_uuid=node_uuid)
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name not in self._to_observe:
@@ -438,7 +438,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         raises DynamicSidecarNotFoundError
         """
         if node_uuid not in self._inverse_search_mapping:
-            raise DynamicSidecarNotFoundError(node_uuid)
+            raise DynamicSidecarNotFoundError(node_uuid=node_uuid)
         service_name = self._inverse_search_mapping[node_uuid]
 
         scheduler_data: SchedulerData = self._to_observe[service_name]
@@ -451,7 +451,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
     ) -> RetrieveDataOutEnveloped:
         """Pulls data from input ports for the service"""
         if node_uuid not in self._inverse_search_mapping:
-            raise DynamicSidecarNotFoundError(node_uuid)
+            raise DynamicSidecarNotFoundError(node_uuid=node_uuid)
 
         service_name = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]
@@ -518,7 +518,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
     async def restart_containers(self, node_uuid: NodeID) -> None:
         """Restarts containers without saving or restoring the state or I/O ports"""
         if node_uuid not in self._inverse_search_mapping:
-            raise DynamicSidecarNotFoundError(node_uuid)
+            raise DynamicSidecarNotFoundError(node_uuid=node_uuid)
 
         service_name: ServiceName = self._inverse_search_mapping[node_uuid]
         scheduler_data: SchedulerData = self._to_observe[service_name]

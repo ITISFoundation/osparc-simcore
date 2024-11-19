@@ -79,7 +79,7 @@ def _get_s3_volume_driver_config(
         }
     else:
         msg = f"Unexpected, all {S3Provider.__name__} should be covered"
-        raise DynamicSidecarError(msg)
+        raise DynamicSidecarError(msg=msg)
 
     assert extra_options is not None  # nosec
     options: dict[str, Any] = driver_config["Options"]
