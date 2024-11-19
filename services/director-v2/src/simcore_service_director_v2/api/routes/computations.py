@@ -205,7 +205,7 @@ async def _get_project_metadata(
         _logger.exception("Could not find project: %s", f"{project_id=}")
     except ProjectNotFoundError as exc:
         _logger.exception(
-            "Could not find parent project: %s", exc.error_context()["project_id"]
+            "Could not find parent project: %s", exc.error_context().get("project_id")
         )
 
     return {}
