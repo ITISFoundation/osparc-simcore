@@ -1,4 +1,4 @@
-import FastAPI
+from fastapi import FastAPI
 from simcore_service_director_v2.modules.comp_scheduler._worker import (
     _get_scheduler_worker,
 )

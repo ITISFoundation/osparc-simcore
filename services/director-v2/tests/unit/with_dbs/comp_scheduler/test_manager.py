@@ -16,8 +16,7 @@ from typing import Any
 from unittest import mock
 
 import pytest
-import sqlalchemy as sa
-from _helpers import PublishedProject
+from _helpers import PublishedProject, assert_comp_runs, assert_comp_runs_empty
 from fastapi import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
@@ -26,10 +25,9 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq._client import RabbitMQClient
 from servicelib.redis import CouldNotAcquireLockError
 from servicelib.utils import limited_gather
-from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_service_director_v2.core.errors import PipelineNotFoundError
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
+from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.modules.comp_scheduler._manager import (
     SCHEDULER_INTERVAL,
     run_new_pipeline,
@@ -58,22 +56,6 @@ async def scheduler_rabbit_client_parser(
     await client.unsubscribe(queue_name)
 
 
-async def _assert_comp_runs(
-    sqlalchemy_async_engine: AsyncEngine, *, expected_total: int
-) -> list[CompRunsAtDB]:
-    async with sqlalchemy_async_engine.connect() as conn:
-        list_of_comp_runs = [
-            CompRunsAtDB.from_orm(row)
-            for row in await conn.execute(sa.select(comp_runs))
-        ]
-    assert len(list_of_comp_runs) == expected_total
-    return list_of_comp_runs
-
-
-async def _assert_comp_runs_empty(sqlalchemy_async_engine: AsyncEngine) -> None:
-    await _assert_comp_runs(sqlalchemy_async_engine, expected_total=0)
-
-
 @pytest.fixture
 def with_fast_scheduling(mocker: MockerFixture) -> None:
     from simcore_service_director_v2.modules.comp_scheduler import _manager
@@ -98,18 +80,18 @@ async def test_manager_starts_and_auto_schedules_pipelines(
     initialized_app: FastAPI,
     sqlalchemy_async_engine: AsyncEngine,
 ):
-    await _assert_comp_runs_empty(sqlalchemy_async_engine)
+    await assert_comp_runs_empty(sqlalchemy_async_engine)
     mocked_schedule_pipelines.assert_called()
 
 
 async def test_schedule_pipelines_empty_db(
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_worker: mock.Mock,
     initialized_app: FastAPI,
     scheduler_rabbit_client_parser: mock.AsyncMock,
     sqlalchemy_async_engine: AsyncEngine,
 ):
-    await _assert_comp_runs_empty(sqlalchemy_async_engine)
+    await assert_comp_runs_empty(sqlalchemy_async_engine)
 
     await schedule_pipelines(initialized_app)
 
@@ -117,11 +99,11 @@ async def test_schedule_pipelines_empty_db(
     scheduler_rabbit_client_parser.assert_not_called()
 
     # check comp_runs is still empty
-    await _assert_comp_runs_empty(sqlalchemy_async_engine)
+    await assert_comp_runs_empty(sqlalchemy_async_engine)
 
 
 async def test_schedule_pipelines_concurently_runs_exclusively_and_raises(
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     initialized_app: FastAPI,
     mocker: MockerFixture,
 ):
@@ -154,7 +136,7 @@ async def test_schedule_pipelines_concurently_runs_exclusively_and_raises(
 
 
 async def test_schedule_pipelines(
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_worker: mock.Mock,
     initialized_app: FastAPI,
     published_project: PublishedProject,
@@ -162,7 +144,7 @@ async def test_schedule_pipelines(
     run_metadata: RunMetadataDict,
     scheduler_rabbit_client_parser: mock.AsyncMock,
 ):
-    await _assert_comp_runs_empty(sqlalchemy_async_engine)
+    await assert_comp_runs_empty(sqlalchemy_async_engine)
     assert published_project.project.prj_owner
     # now we schedule a pipeline
     await run_new_pipeline(
@@ -182,7 +164,7 @@ async def test_schedule_pipelines(
         ).body()
     )
     scheduler_rabbit_client_parser.reset_mock()
-    comp_runs = await _assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
+    comp_runs = await assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
     comp_run = comp_runs[0]
     assert comp_run.project_uuid == published_project.project.uuid
     assert comp_run.user_id == published_project.project.prj_owner
@@ -198,7 +180,7 @@ async def test_schedule_pipelines(
     # this will now not schedule the pipeline since it was last scheduled
     await schedule_pipelines(initialized_app)
     scheduler_rabbit_client_parser.assert_not_called()
-    comp_runs = await _assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
+    comp_runs = await assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
     comp_run = comp_runs[0]
     assert comp_run.last_scheduled == start_schedule_time, "scheduled time changed!"
     assert comp_run.cancelled is None
@@ -215,7 +197,7 @@ async def test_schedule_pipelines(
         ).body()
     )
     scheduler_rabbit_client_parser.reset_mock()
-    comp_runs = await _assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
+    comp_runs = await assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
     comp_run = comp_runs[0]
     assert comp_run.last_scheduled is not None
     assert comp_run.last_scheduled > start_schedule_time
@@ -238,7 +220,7 @@ async def test_schedule_pipelines(
         ).body()
     )
     scheduler_rabbit_client_parser.reset_mock()
-    comp_runs = await _assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
+    comp_runs = await assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
     comp_run = comp_runs[0]
     assert comp_run.last_scheduled is not None
     assert comp_run.last_scheduled > last_schedule_time
@@ -246,7 +228,7 @@ async def test_schedule_pipelines(
 
 
 async def test_empty_pipeline_is_not_scheduled(
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_worker: mock.Mock,
     initialized_app: FastAPI,
     registered_user: Callable[..., dict[str, Any]],
@@ -257,7 +239,7 @@ async def test_empty_pipeline_is_not_scheduled(
     scheduler_rabbit_client_parser: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
 ):
-    await _assert_comp_runs_empty(sqlalchemy_async_engine)
+    await assert_comp_runs_empty(sqlalchemy_async_engine)
     user = registered_user()
     empty_project = await project(user)
 
@@ -271,7 +253,7 @@ async def test_empty_pipeline_is_not_scheduled(
             run_metadata=run_metadata,
             use_on_demand_clusters=False,
         )
-    await _assert_comp_runs_empty(sqlalchemy_async_engine)
+    await assert_comp_runs_empty(sqlalchemy_async_engine)
     scheduler_rabbit_client_parser.assert_not_called()
 
     # create the empty pipeline now
@@ -289,5 +271,5 @@ async def test_empty_pipeline_is_not_scheduled(
         )
     assert len(caplog.records) == 1
     assert "no computational dag defined" in caplog.records[0].message
-    await _assert_comp_runs_empty(sqlalchemy_async_engine)
+    await assert_comp_runs_empty(sqlalchemy_async_engine)
     scheduler_rabbit_client_parser.assert_not_called()

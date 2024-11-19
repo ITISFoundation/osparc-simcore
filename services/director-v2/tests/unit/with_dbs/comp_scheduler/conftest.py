@@ -40,7 +40,7 @@ def mock_env(
 
 
 @pytest.fixture
-def with_disabled_scheduler_manager(mocker: MockerFixture) -> mock.Mock:
+def with_disabled_auto_scheduling(mocker: MockerFixture) -> mock.Mock:
     mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.shutdown_manager",
     )
@@ -53,5 +53,13 @@ def with_disabled_scheduler_manager(mocker: MockerFixture) -> mock.Mock:
 def with_disabled_scheduler_worker(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.setup_worker",
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def with_disabled_scheduler_publisher(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._manager.request_pipeline_scheduling",
         autospec=True,
     )

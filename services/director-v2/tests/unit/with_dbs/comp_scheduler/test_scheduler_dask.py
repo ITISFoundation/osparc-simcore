@@ -19,7 +19,12 @@ from unittest import mock
 import aiopg
 import aiopg.sa
 import pytest
-from _helpers import PublishedProject, RunningProject
+from _helpers import (
+    PublishedProject,
+    RunningProject,
+    assert_comp_runs,
+    assert_comp_runs_empty,
+)
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import TaskOutputData
@@ -57,6 +62,7 @@ from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
+from simcore_service_director_v2.modules.comp_scheduler._manager import run_new_pipeline
 from simcore_service_director_v2.modules.comp_scheduler._scheduler_base import (
     BaseCompScheduler,
 )
@@ -72,6 +78,7 @@ from simcore_service_director_v2.modules.dask_client import (
     PublishedComputationTask,
 )
 from simcore_service_director_v2.utils.dask_client_utils import TaskHandlers
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -186,20 +193,28 @@ def mocked_clean_task_output_and_log_files_if_invalid(
 
 
 @pytest.fixture
+def mocked_wake_up_callback(mocker: MockerFixture) -> mock.Mock:
+    return mock.Mock()
+
+
+@pytest.fixture
 def scheduler(initialized_app: FastAPI) -> BaseCompScheduler:
     return _get_scheduler_worker(initialized_app)
 
 
-async def test_misconfigured_pipeline_is_not_scheduled(
-    with_disabled_scheduler_manager: mock.Mock,
+async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    initialized_app: FastAPI,
     scheduler: BaseCompScheduler,
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
+    mocked_wake_up_callback: mock.Mock,
 ):
     """A pipeline which comp_tasks are missing should not be scheduled.
     It shall be aborted and shown as such in the comp_runs db"""
@@ -209,46 +224,48 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         project_id=f"{sleepers_project.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    # check the pipeline is correctly added to the scheduled pipelines
-    await scheduler.run_new_pipeline(
+    await assert_comp_runs_empty(sqlalchemy_async_engine)
+
+    # since the publisher is disabled, it will not automatically trigger a scheduling
+    # this is done to verify the scheduler internal state
+    await run_new_pipeline(
+        initialized_app,
         user_id=user["id"],
         project_id=sleepers_project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
-    assert len(scheduler._scheduled_pipelines) == 1  # noqa: SLF001
-    for (
-        u_id,
-        p_id,
-        it,
-    ) in scheduler._scheduled_pipelines:  # noqa: SLF001
-        assert u_id == user["id"]
-        assert p_id == sleepers_project.uuid
-        assert it > 0
+    with_disabled_scheduler_publisher.assert_called_once()
     # check the database was properly updated
-    async with aiopg_engine.acquire() as conn:
-        result = await conn.execute(
-            comp_runs.select().where(
-                (comp_runs.c.user_id == user["id"])
-                & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}")
-            )  # there is only one entry
-        )
-        run_entry = CompRunsAtDB.model_validate(await result.first())
+    runs = await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        where_statement=(comp_runs.c.user_id == user["id"])
+        & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}"),
+    )
+    run_entry = runs[0]
     assert run_entry.result == RunningState.PUBLISHED
-    # let the scheduler kick in
-    await schedule_all_pipelines(scheduler)
-    # check the scheduled pipelines is again empty since it's misconfigured
-    assert len(scheduler._scheduled_pipelines) == 0  # noqa: SLF001
+    assert run_entry.metadata == run_metadata
+
+    # run now the scheduler, this will abort the run directly
+    await scheduler.schedule_pipeline(
+        user_id=run_entry.user_id,
+        project_id=run_entry.project_uuid,
+        iteration=run_entry.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
+    # the pipeline is misconfigured, so the callback will NOT be called since nothing ran
+    mocked_wake_up_callback.assert_not_called()
+
     # check the database entry is correctly updated
-    async with aiopg_engine.acquire() as conn:
-        result = await conn.execute(
-            comp_runs.select().where(
-                (comp_runs.c.user_id == user["id"])
-                & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}")
-            )  # there is only one entry
-        )
-        run_entry = CompRunsAtDB.model_validate(await result.first())
+    runs = await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        where_statement=(comp_runs.c.user_id == user["id"])
+        & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}"),
+    )
+    run_entry = runs[0]
     assert run_entry.result == RunningState.ABORTED
     assert run_entry.metadata == run_metadata
 
@@ -475,7 +492,7 @@ async def _trigger_progress_event(
 
 @pytest.mark.acceptance_test
 async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
@@ -860,7 +877,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
 
 async def test_task_progress_triggers(
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
@@ -923,7 +940,7 @@ async def test_task_progress_triggers(
     ],
 )
 async def test_handling_of_disconnected_scheduler_dask(
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
@@ -1068,7 +1085,7 @@ class RebootState:
     ],
 )
 async def test_handling_scheduling_after_reboot(
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     aiopg_engine: aiopg.sa.engine.Engine,
     running_project: RunningProject,
@@ -1150,7 +1167,7 @@ async def test_handling_scheduling_after_reboot(
 
 
 async def test_handling_cancellation_of_jobs_after_reboot(
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     aiopg_engine: aiopg.sa.engine.Engine,
     running_project_mark_for_cancellation: RunningProject,
@@ -1244,7 +1261,7 @@ def with_fast_service_heartbeat_s(monkeypatch: pytest.MonkeyPatch) -> int:
 
 
 async def test_running_pipeline_triggers_heartbeat(
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     with_fast_service_heartbeat_s: int,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
@@ -1334,7 +1351,7 @@ async def mocked_get_or_create_cluster(mocker: MockerFixture) -> mock.Mock:
 
 
 async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
     published_project: PublishedProject,
@@ -1408,7 +1425,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     [ClustersKeeperNotAvailableError],
 )
 async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
-    with_disabled_scheduler_manager: mock.Mock,
+    with_disabled_auto_scheduling: mock.Mock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
     published_project: PublishedProject,

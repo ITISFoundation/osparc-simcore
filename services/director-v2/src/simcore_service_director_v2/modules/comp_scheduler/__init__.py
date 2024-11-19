@@ -3,7 +3,6 @@ from collections.abc import Callable, Coroutine
 from typing import Any
 
 from fastapi import FastAPI
-from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
 
 from ._constants import MODULE_NAME
