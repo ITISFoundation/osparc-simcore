@@ -77,7 +77,7 @@ class MissingComputationalResourcesError(TaskSchedulingError):
     msg_template = (
         "Service {service_name}:{service_version} cannot be scheduled "
         "on cluster {cluster_id}: task needs '{task_resources}', "
-        "cluster has {cluster_resources}",
+        "cluster has {cluster_resources}"
     )
 
 
