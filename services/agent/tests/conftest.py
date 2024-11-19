@@ -3,7 +3,6 @@
 
 
 import pytest
-from common_library.pydantic_networks_extension import HttpUrl
 from faker import Faker
 from models_library.basic_types import BootModeEnum
 from moto.server import ThreadedMotoServer
