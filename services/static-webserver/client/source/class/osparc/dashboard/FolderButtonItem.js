@@ -147,6 +147,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       folder.bind("name", this, "title");
       folder.bind("lastModified", this, "lastModified");
 
+      osparc.utils.Utils.setIdToWidget(this, "folderItem_" + folder.getFolderId());
+
       this.__addMenuButton();
     },
 

@@ -160,6 +160,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       workspace.bind("accessRights", this, "accessRights");
       workspace.bind("modifiedAt", this, "modifiedAt");
       workspace.bind("myAccessRights", this, "myAccessRights");
+
+      osparc.utils.Utils.setIdToWidget(this, "workspaceItem_" + workspace.getWorkspaceId());
     },
 
     __applyTitle: function(value) {
