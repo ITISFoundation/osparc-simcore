@@ -38,8 +38,8 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     organizations: {
-      check: "Array",
-      init: []
+      check: "Object",
+      init: {}
     },
 
     meGroup: {
@@ -61,7 +61,6 @@ qx.Class.define("osparc.store.Groups", {
   events: {
     "groupAdded": "qx.event.type.Data",
     "groupRemoved": "qx.event.type.Data",
-    "groupMoved": "qx.event.type.Data",
   },
 
   statics: {
@@ -88,21 +87,13 @@ qx.Class.define("osparc.store.Groups", {
       const useCache = false;
       return osparc.data.Resources.get("organizations", {}, useCache)
         .then(resp => {
-          const everyoneGroup = new osparc.data.model.Group(resp["all"]).set({
-            groupType: "everyone"
-          });
-          const productEveryoneGroup = new osparc.data.model.Group(resp["product"]).set({
-            groupType: "productEveryone"
-          });
-          const meGroup = new osparc.data.model.Group(resp["me"]).set({
-            groupType: "productEveryone"
-          });
-          const orgs = [];
+          const everyoneGroup = this.__addToGroupsCache(resp["all"], "everyone");
+          const productEveryoneGroup = this.__addToGroupsCache(resp["product"], "productEveryone");
+          const meGroup = this.__addToGroupsCache(resp["me"], "me");
+          const orgs = {};
           resp["organizations"].forEach(organization => {
-            const org = new osparc.data.model.Group(organization).set({
-              groupType: "organization"
-            });
-            orgs.push(org);
+            const org = this.__addToGroupsCache(organization, "organization");
+            orgs[org.getGroupId()] = org;
           });
           this.setEveryoneGroup(everyoneGroup);
           this.setEveryoneProductGroup(productEveryoneGroup);
@@ -116,17 +107,17 @@ qx.Class.define("osparc.store.Groups", {
       this.fetchGroups()
         .then(orgs => {
           const orgMembersPromises = [];
-          orgs.forEach(org => {
+          Object.keys(orgs).forEach(gid => {
             const params = {
               url: {
-                gid: org.getGroupId()
+                gid
               }
             };
             orgMembersPromises.push(osparc.data.Resources.get("organizationMembers", params));
           });
           Promise.all(orgMembersPromises)
             .then(orgMemberss => {
-              const reachableMembers = this.getReachableMembers();
+              const reachableMembers = {};
               orgMemberss.forEach(orgMembers => {
                 orgMembers.forEach(orgMember => {
                   orgMember["label"] = osparc.utils.Utils.firstsUp(
@@ -136,6 +127,7 @@ qx.Class.define("osparc.store.Groups", {
                   reachableMembers[orgMember["gid"]] = orgMember;
                 });
               });
+              this.setReachableMembers(reachableMembers);
             });
         });
     },
@@ -304,7 +296,7 @@ qx.Class.define("osparc.store.Groups", {
       };
       return osparc.data.Resources.getInstance().fetch("groups", "post", params)
         .then(groupData => {
-          const group = this.__addToCache(groupData);
+          const group = this.__addToGroupsCache(groupData);
           this.fireDataEvent("groupAdded", group);
           return group;
         });
@@ -320,7 +312,7 @@ qx.Class.define("osparc.store.Groups", {
         .then(() => {
           const group = this.getGroup(groupId);
           if (group) {
-            this.__deleteFromCache(groupId, workspaceId);
+            this.__deleteFromGroupsCache(groupId, workspaceId);
             this.fireDataEvent("groupRemoved", group);
           }
         })
@@ -338,7 +330,7 @@ qx.Class.define("osparc.store.Groups", {
       };
       return osparc.data.Resources.getInstance().fetch("groups", "update", params)
         .then(groupData => {
-          this.__addToCache(groupData);
+          this.__addToGroupsCache(groupData);
           if (updateData.parentGroupId !== oldParentGroupId) {
             this.fireDataEvent("groupMoved", {
               group,
@@ -355,32 +347,28 @@ qx.Class.define("osparc.store.Groups", {
     },
     */
 
-    __addToCache: function(groupData) {
-      let group = this.groupsCached.find(f => f.getGroupId() === groupData["groupId"] && f.getWorkspaceId() === groupData["workspaceId"]);
+    __addToGroupsCache: function(groupData, groupType) {
+      let group = this.groupsCached.find(f => f.getGroupId() === groupData["gid"]);
       if (group) {
         const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Group));
         // put
         Object.keys(groupData).forEach(key => {
-          if (key === "createdAt") {
-            group.set("createdAt", new Date(groupData["createdAt"]));
-          } else if (key === "modifiedAt") {
-            group.set("lastModified", new Date(groupData["modifiedAt"]));
-          } else if (key === "trashedAt") {
-            group.set("trashedAt", new Date(groupData["trashedAt"]));
-          } else if (props.includes(key)) {
+          if (props.includes(key)) {
             group.set(key, groupData[key]);
           }
         });
       } else {
         // get and post
-        group = new osparc.data.model.Group(groupData);
+        group = new osparc.data.model.Group(groupData).set({
+          groupType
+        });
         this.groupsCached.unshift(group);
       }
       return group;
     },
 
-    __deleteFromCache: function(groupId, workspaceId) {
-      const idx = this.groupsCached.findIndex(f => f.getGroupId() === groupId && f.getWorkspaceId() === workspaceId);
+    __deleteFromGroupsCache: function(groupId, workspaceId) {
+      const idx = this.groupsCached.findIndex(f => f.getGroupId() === groupId);
       if (idx > -1) {
         this.groupsCached.splice(idx, 1);
         return true;
