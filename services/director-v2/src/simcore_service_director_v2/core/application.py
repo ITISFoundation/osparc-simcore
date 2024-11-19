@@ -126,6 +126,7 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
     for name in _NOISY_LOGGERS:
         logging.getLogger(name).setLevel(quiet_level)
 
+    assert settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
         debug=settings.SC_BOOT_MODE.is_devel_mode(),
         title=PROJECT_NAME,
