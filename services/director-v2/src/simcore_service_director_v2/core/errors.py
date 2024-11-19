@@ -224,33 +224,33 @@ class PortsValidationError(TaskSchedulingError):
         return value_errors
 
 
-class ComputationalSchedulerChangedError(OsparcErrorMixin, SchedulerError):
+class ComputationalSchedulerChangedError(OsparcErrorMixin, DirectorError):
     msg_template = "The dask scheduler ID changed from '{original_scheduler_id}' to '{current_scheduler_id}'"
 
 
-class ComputationalBackendNotConnectedError(OsparcErrorMixin, SchedulerError):
+class ComputationalBackendNotConnectedError(OsparcErrorMixin, DirectorError):
     msg_template = "The dask computational backend is not connected"
 
 
-class ComputationalBackendNoS3AccessError(OsparcErrorMixin, SchedulerError):
+class ComputationalBackendNoS3AccessError(OsparcErrorMixin, DirectorError):
     msg_template = "The S3 backend is not ready, please try again later"
 
 
-class ComputationalBackendTaskNotFoundError(OsparcErrorMixin, SchedulerError):
+class ComputationalBackendTaskNotFoundError(OsparcErrorMixin, DirectorError):
     msg_template = (
         "The dask computational backend does not know about the task '{job_id}'"
     )
 
 
-class ComputationalBackendTaskResultsNotReadyError(OsparcErrorMixin, SchedulerError):
+class ComputationalBackendTaskResultsNotReadyError(OsparcErrorMixin, DirectorError):
     msg_template = "The task result is not ready yet for job '{job_id}'"
 
 
-class ClustersKeeperNotAvailableError(OsparcErrorMixin, SchedulerError):
+class ClustersKeeperNotAvailableError(OsparcErrorMixin, DirectorError):
     msg_template = "clusters-keeper service is not available!"
 
 
-class ComputationalBackendOnDemandNotReadyError(OsparcErrorMixin, SchedulerError):
+class ComputationalBackendOnDemandNotReadyError(OsparcErrorMixin, DirectorError):
     msg_template = (
         "The on demand computational cluster is not ready 'est. remaining time: {eta}'"
     )
@@ -259,15 +259,15 @@ class ComputationalBackendOnDemandNotReadyError(OsparcErrorMixin, SchedulerError
 #
 # SCHEDULER/CLUSTER ERRORS
 #
-class ClusterNotFoundError(OsparcErrorMixin, SchedulerError):
+class ClusterNotFoundError(OsparcErrorMixin, DirectorError):
     msg_template = "The cluster '{cluster_id}' not found"
 
 
-class ClusterAccessForbiddenError(OsparcErrorMixin, SchedulerError):
+class ClusterAccessForbiddenError(OsparcErrorMixin, DirectorError):
     msg_template = "Insufficient rights to access cluster '{cluster_id}'"
 
 
-class ClusterInvalidOperationError(OsparcErrorMixin, SchedulerError):
+class ClusterInvalidOperationError(OsparcErrorMixin, DirectorError):
     msg_template = "Invalid operation on cluster '{cluster_id}'"
 
 
@@ -276,21 +276,21 @@ class ClusterInvalidOperationError(OsparcErrorMixin, SchedulerError):
 #
 
 
-class DaskClientRequestError(OsparcErrorMixin, SchedulerError):
+class DaskClientRequestError(OsparcErrorMixin, DirectorError):
     msg_template = (
         "The dask client to cluster on '{endpoint}' did an invalid request '{error}'"
     )
 
 
-class DaskClusterError(OsparcErrorMixin, SchedulerError):
+class DaskClusterError(OsparcErrorMixin, DirectorError):
     msg_template = "The dask cluster on '{endpoint}' encountered an error: '{error}'"
 
 
-class DaskGatewayServerError(OsparcErrorMixin, SchedulerError):
+class DaskGatewayServerError(OsparcErrorMixin, DirectorError):
     msg_template = "The dask gateway on '{endpoint}' encountered an error: '{error}'"
 
 
-class DaskClientAcquisisitonError(OsparcErrorMixin, SchedulerError):
+class DaskClientAcquisisitonError(OsparcErrorMixin, DirectorError):
     msg_template = (
         "The dask client to cluster '{cluster}' encountered an error '{error}'"
     )
