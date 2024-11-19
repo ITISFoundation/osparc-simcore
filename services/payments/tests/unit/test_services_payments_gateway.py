@@ -121,7 +121,7 @@ async def test_one_time_payment_workflow(
     )
 
     app_settings: ApplicationSettings = app.state.settings
-    assert submission_link.host == URL(app_settings.PAYMENTS_GATEWAY_URL).host
+    assert submission_link.host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # cancel
     payment_canceled = await payment_gateway_api.cancel_payment(payment_initiated)
@@ -160,7 +160,7 @@ async def test_payment_methods_workflow(
     )
 
     app_settings: ApplicationSettings = app.state.settings
-    assert form_link.host == URL(app_settings.PAYMENTS_GATEWAY_URL).host
+    assert form_link.host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # CRUD
     payment_method_id = initiated.payment_method_id

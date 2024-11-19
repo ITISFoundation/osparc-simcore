@@ -1,7 +1,7 @@
 from typing import Annotated, Final, Generic, TypeAlias, TypeVar
 
-from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from pydantic import (
+    AnyHttpUrl,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -100,9 +100,7 @@ class PageLinks(
     PageRefs[
         Annotated[
             str,
-            BeforeValidator(
-                lambda x: str(TypeAdapter(AnyHttpUrlLegacy).validate_python(x))
-            ),
+            BeforeValidator(lambda x: str(TypeAdapter(AnyHttpUrl).validate_python(x))),
         ]
     ]
 ):

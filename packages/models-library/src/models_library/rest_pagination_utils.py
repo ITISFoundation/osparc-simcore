@@ -1,9 +1,8 @@
 from math import ceil
 from typing import Any, Protocol, runtime_checkable
-from typing_extensions import TypedDict
 
-from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
-from pydantic import TypeAdapter
+from pydantic import AnyHttpUrl, TypeAdapter
+from typing_extensions import TypedDict
 
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
@@ -42,7 +41,7 @@ def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
         new_url = url.replace_query_params(**query)
 
     new_url_str = f"{new_url}"
-    return f"{TypeAdapter(AnyHttpUrlLegacy).validate_python(new_url_str)}"
+    return f"{TypeAdapter(AnyHttpUrl).validate_python(new_url_str)}"
 
 
 class PageDict(TypedDict):
@@ -70,7 +69,9 @@ def paginate_data(
     """
     last_page = ceil(total / limit) - 1
 
-    data = [item.model_dump() if hasattr(item, "model_dump") else item for item in chunk]
+    data = [
+        item.model_dump() if hasattr(item, "model_dump") else item for item in chunk
+    ]
 
     return PageDict(
         _meta=PageMetaInfoLimitOffset(
