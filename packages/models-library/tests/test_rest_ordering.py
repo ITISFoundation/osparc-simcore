@@ -106,7 +106,7 @@ def test_ordering_query_model_class__fails_with_invalid_direction():
 
     error = err_info.value.errors()[0]
 
-    assert error["type"] == "type_error.enum"
+    assert error["type"] == "enum"
     assert error["loc"] == ("order_by", "direction")
 
 
@@ -137,7 +137,7 @@ def test_ordering_query_model_class__defaults():
 
     error = err_info.value.errors()[0]
     assert error["loc"] == ("order_by", "field")
-    assert error["type"] == "value_error.missing"
+    assert error["type"] == "missing"
 
 
 def test_ordering_query_model_with_map():
