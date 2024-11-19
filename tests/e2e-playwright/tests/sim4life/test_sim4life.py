@@ -10,12 +10,9 @@
 from collections.abc import Callable
 from typing import Any
 
-from playwright.sync_api import Page, WebSocket
+from playwright.sync_api import Page
 from pydantic import AnyUrl
-from pytest_simcore.helpers.playwright import (
-    ServiceType,
-    web_socket_default_log_handler,
-)
+from pytest_simcore.helpers.playwright import RestartableWebSocket, ServiceType
 from pytest_simcore.helpers.playwright_sim4life import (
     check_video_streaming,
     interact_with_s4l,
@@ -29,7 +26,7 @@ def test_sim4life(
         [ServiceType, str, str | None], dict[str, Any]
     ],
     create_project_from_new_button: Callable[[str], dict[str, Any]],
-    log_in_and_out: WebSocket,
+    log_in_and_out: RestartableWebSocket,
     service_key: str,
     use_plus_button: bool,
     is_autoscaled: bool,
@@ -59,9 +56,8 @@ def test_sim4life(
         product_url=product_url,
     )
     s4l_websocket = resp["websocket"]
-    with web_socket_default_log_handler(s4l_websocket):
-        s4l_iframe = resp["iframe"]
-        interact_with_s4l(page, s4l_iframe)
+    s4l_iframe = resp["iframe"]
+    interact_with_s4l(page, s4l_iframe)
 
-        if check_videostreaming:
-            check_video_streaming(page, s4l_iframe, s4l_websocket)
+    if check_videostreaming:
+        check_video_streaming(page, s4l_iframe, s4l_websocket)
