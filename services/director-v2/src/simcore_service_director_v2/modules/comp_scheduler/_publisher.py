@@ -1,3 +1,4 @@
+from aiopg.sa import Engine
 from servicelib.rabbitmq import RabbitMQClient
 
 from ...models.comp_runs import CompRunsAtDB
