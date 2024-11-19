@@ -1,42 +1,23 @@
-#!/usr/bin/env python3
+"""Main application to be deployed by uvicorn (or equivalent) server
+
+"""
+
 import logging
 
-from aiohttp import web
+from fastapi import FastAPI
+from servicelib.logging_utils import config_all_loggers
+from simcore_service_director.core.application import create_app
+from simcore_service_director.core.settings import ApplicationSettings
 
-# NOTE: notice that servicelib is frozen to c8669fb52659b684514fefa4f3b4599f57f276a0
-# pylint: disable=no-name-in-module
-from servicelib.client_session import persistent_client_session
-from simcore_service_director import registry_cache_task, resources
-from simcore_service_director.monitoring import setup_app_monitoring
-from simcore_service_director.rest import routing
+_the_settings = ApplicationSettings.create_from_envs()
 
-from .registry_proxy import setup_registry
+# SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
+logging.basicConfig(level=_the_settings.DIRECTOR_LOGLEVEL)
+logging.root.setLevel(_the_settings.DIRECTOR_LOGLEVEL)
+config_all_loggers(
+    log_format_local_dev_enabled=_the_settings.DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED,
+    logger_filter_mapping=_the_settings.DIRECTOR_LOG_FILTER_MAPPING,
+)
 
-log = logging.getLogger(__name__)
-
-
-def setup_app() -> web.Application:
-    api_spec_path = resources.get_path(resources.RESOURCE_OPEN_API)
-    app = routing.create_web_app(api_spec_path.parent, api_spec_path.name)
-
-    # NOTE: ensure client session is context is run first, then any further get_client_sesions will be correctly closed
-    app.cleanup_ctx.append(persistent_client_session)
-    app.cleanup_ctx.append(setup_registry)
-
-    registry_cache_task.setup(app)
-
-    setup_app_monitoring(app, "simcore_service_director")
-
-    # NOTE: removed tracing from director. Users old version of servicelib and
-    # in any case this service will be completely replaced
-
-    return app
-
-
-def main() -> None:
-    app = setup_app()
-    web.run_app(app, port=8080)
-
-
-if __name__ == "__main__":
-    main()
+# SINGLETON FastAPI app
+the_app: FastAPI = create_app(_the_settings)

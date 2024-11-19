@@ -103,7 +103,7 @@ def docker_compose_service_environment_dict(
     """
     service = services_docker_compose_dict["services"][service_name]
 
-    def _substitute(key, value):
+    def _substitute(key, value) -> tuple[str, str]:
         if m := re.match(r"\${([^{}:-]\w+)", value):
             expected_env_var = m.group(1)
             try:
@@ -113,9 +113,10 @@ def docker_compose_service_environment_dict(
                     return key, value
             except KeyError:
                 pytest.fail(
-                    f"{expected_env_var} is not defined in {env_devel_file} but used in docker-compose services[{service}].environment[{key}]"
+                    f"{expected_env_var} is not defined in '{env_devel_file}' but it "
+                    f"is used as a rhs variable in the docker-compose services[{service_name}].environment[{key}]"
                 )
-        return None
+        return key, value
 
     envs: EnvVarsDict = {}
     for key, value in service.get("environment", {}).items():

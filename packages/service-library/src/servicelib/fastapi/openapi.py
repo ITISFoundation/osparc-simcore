@@ -25,7 +25,7 @@ _OAS_DEVELOPMENT_SERVER = {
 }
 
 
-def get_common_oas_options(is_devel_mode: bool) -> dict[str, Any]:
+def get_common_oas_options(*, is_devel_mode: bool) -> dict[str, Any]:
     """common OAS options for FastAPI constructor"""
     servers: list[dict[str, Any]] = [
         _OAS_DEFAULT_SERVER,

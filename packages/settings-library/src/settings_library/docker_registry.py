@@ -11,6 +11,7 @@ class RegistrySettings(BaseCustomSettings):
     REGISTRY_AUTH: bool = Field(..., description="do registry authentication")
     REGISTRY_PATH: str | None = Field(
         default=None,
+        # This is useful in case of a local registry, where the registry url (path) is relative to the host docker engine"
         description="development mode only, in case a local registry is used",
     )
     # NOTE: name is missleading, http or https protocol are not included

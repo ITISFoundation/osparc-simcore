@@ -6,44 +6,29 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
-  # Replaces 'bash ci/helpers/ensure_python_pip.bash'
-
-  echo "INFO:" "$(python --version)" "@" "$(command -v python)"
-
-  # installs pip if not in place
-  python -m ensurepip
-
-  echo "INFO:" "$(pip --version)" "@" "$(command -v pip)"
-  # NOTE: pip<22.0 for python 3.6
-  pip3 install --upgrade \
-    pip~=21.0 \
-    wheel \
-    setuptools
-  python3 -m venv .venv
+  make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/director
-  pip3 install -r requirements/ci.txt
+  make install-ci
   popd
+  uv pip list
 }
 
 test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/director
-  pytest \
-    --color=yes \
-    --cov-append \
-    --cov-config=.coveragerc \
-    --cov-report=term-missing \
-    --cov-report=xml \
-    --cov=simcore_service_director \
-    --durations=10 \
-    --keep-docker-up \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    tests/
+  make test-ci-unit
+  popd
+}
+
+typecheck() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  uv pip install mypy
+  pushd services/director
+  make mypy
   popd
 }
 

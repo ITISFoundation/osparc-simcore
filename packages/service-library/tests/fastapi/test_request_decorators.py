@@ -6,9 +6,10 @@ import asyncio
 import subprocess
 import sys
 import time
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Iterator, NamedTuple
+from typing import NamedTuple
 
 import pytest
 import requests
