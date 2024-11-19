@@ -33,77 +33,20 @@ class ConfigurationError(DirectorError):
     msg_template: str = "Application misconfiguration: {msg}"
 
 
-class GenericDockerError(DirectorError):
-    """Generic docker library error"""
-
-    def __init__(self, msg: str, original_exception: Exception):
-        super().__init__(msg + f": {original_exception}")
-        self.original_exception = original_exception
-
-
-class ServiceNotAvailableError(DirectorError):
-    """Service not found"""
-
-    def __init__(self, service_name: str, service_tag: str | None = None):
-        service_tag = service_tag or "UNDEFINED"
-        super().__init__(f"The service {service_name}:{service_tag} does not exist")
-        self.service_name = service_name
-        self.service_tag = service_tag
-
-
-class ServiceUUIDNotFoundError(DirectorError):
-    """Service not found"""
-
-    def __init__(self, service_uuid: str):
-        super().__init__(f"The service with uuid {service_uuid} was not found")
-        self.service_uuid = service_uuid
-
-
-class ServiceUUIDInUseError(DirectorError):
-    """Service UUID is already in use"""
-
-    def __init__(self, service_uuid: str):
-        super().__init__(f"The service uuid {service_uuid} is already in use")
-        self.service_uuid = service_uuid
-
-
-class ServiceStartTimeoutError(DirectorError):
-    """The service was created but never run (time-out)"""
-
-    def __init__(self, service_name: str, service_uuid: str):
-        super().__init__(f"Service {service_name}:{service_uuid} failed to start ")
-        self.service_name = service_name
-        self.service_uuid = service_uuid
-
-
 class ProjectNotFoundError(DirectorError):
-    """Project not found error"""
-
-    def __init__(self, project_id: ProjectID):
-        super().__init__(f"project {project_id} not found")
-        self.project_id = project_id
+    msg_template: str = "project {project_id} not found"
 
 
 class ProjectNetworkNotFoundError(DirectorError):
-    """Project not found error"""
-
-    def __init__(self, project_id: ProjectID):
-        super().__init__(f"no networks forund for project {project_id}")
-        self.project_id = project_id
+    msg_template: str = "no networks found for project {project_id}"
 
 
 class PricingPlanUnitNotFoundError(DirectorError):
-    """Pricing plan unit not found error"""
-
-    def __init__(self, msg: str):
-        super().__init__(msg)
+    msg_template: str = "pricing plan not found {msg}"
 
 
 class PipelineNotFoundError(DirectorError):
-    """Pipeline not found error"""
-
-    def __init__(self, pipeline_id: str):
-        super().__init__(f"pipeline {pipeline_id} not found")
+    msg_template: str = "pipeline {pipeline_id} not found"
 
 
 class ComputationalRunNotFoundError(OsparcErrorMixin, DirectorError):
