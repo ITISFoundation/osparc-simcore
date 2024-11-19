@@ -20,9 +20,6 @@ translate into something like
 """
 
 from common_library.errors_classes import OsparcErrorMixin
-from models_library.errors import ErrorDict
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
 
 
 class DirectorError(OsparcErrorMixin, RuntimeError):
@@ -93,45 +90,9 @@ class InsuficientComputationalResourcesError(TaskSchedulingError):
 
 
 class PortsValidationError(TaskSchedulingError):
-    """
-    Gathers all validation errors raised while checking input/output
-    ports in a project's node.
-    """
-
-    def __init__(self, project_id: ProjectID, node_id: NodeID, errors: list[ErrorDict]):
-        super().__init__(
-            project_id,
-            node_id,
-            msg=f"Node with {len(errors)} ports having invalid values",
-        )
-        self.errors = errors
-
-    def get_errors(self) -> list[ErrorDict]:
-        """Returns 'public errors': filters only value_error.port_validation errors for the client.
-        The rest only shown as number
-        """
-        value_errors: list[ErrorDict] = []
-        for error in self.errors:
-            # NOTE: should I filter? if error["type"].startswith("value_error."):
-
-            loc_tail: list[str] = []
-            if port_key := error.get("ctx", {}).get("port_key"):
-                loc_tail.append(f"{port_key}")
-
-            if schema_error_path := error.get("ctx", {}).get("schema_error_path"):
-                loc_tail += list(schema_error_path)
-
-            # WARNING: error in a node, might come from the previous node's port
-            # DO NOT remove project/node/port hiearchy
-            value_errors.append(
-                {
-                    "loc": (f"{self.project_id}", f"{self.node_id}", *tuple(loc_tail)),
-                    "msg": error["msg"],
-                    # NOTE: here we list the codes of the PydanticValueErrors collected in ValidationError
-                    "type": error["type"],
-                }
-            )
-        return value_errors
+    msg_template: str = (
+        "Node {node_id} in {project_id} with ports having invalid values {errors_list}"
+    )
 
 
 class ComputationalSchedulerChangedError(ComputationalSchedulerError):

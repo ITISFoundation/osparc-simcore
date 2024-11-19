@@ -129,7 +129,9 @@ async def create_node_ports(
             db_manager=db_manager,
         )
     except ValidationError as err:
-        raise PortsValidationError(project_id, node_id, list(err.errors())) from err
+        raise PortsValidationError(
+            project_id=project_id, node_id=node_id, errors_list=list(err.errors())
+        ) from err
 
 
 async def parse_output_data(
@@ -181,7 +183,9 @@ async def parse_output_data(
             ports_errors.extend(_get_port_validation_errors(port_key, err))
 
     if ports_errors:
-        raise PortsValidationError(project_id, node_id, ports_errors)
+        raise PortsValidationError(
+            project_id=project_id, node_id=node_id, errors_list=ports_errors
+        )
 
 
 async def compute_input_data(
@@ -218,11 +222,13 @@ async def compute_input_data(
             else:
                 input_data[port.key] = value
 
-        except ValidationError as err:  # noqa: PERF203
+        except ValidationError as err:
             ports_errors.extend(_get_port_validation_errors(port.key, err))
 
     if ports_errors:
-        raise PortsValidationError(project_id, node_id, ports_errors)
+        raise PortsValidationError(
+            project_id=project_id, node_id=node_id, errors_list=ports_errors
+        )
 
     return TaskInputData.model_validate(input_data)
 
