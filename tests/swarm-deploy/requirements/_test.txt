@@ -117,6 +117,8 @@ docker==7.1.0
     #   -r requirements/_test.in
 email-validator==2.2.0
     # via pydantic
+faker==30.8.2
+    # via -r requirements/_test.in
 fast-depends==2.4.12
     # via faststream
 faststream==0.5.28
@@ -365,7 +367,9 @@ pytest-runner==6.0.1
 pytest-sugar==1.0.0
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
-    # via arrow
+    # via
+    #   arrow
+    #   faker
 python-dotenv==1.0.1
     # via -r requirements/_test.in
 pyyaml==6.0.2
@@ -487,6 +491,7 @@ typing-extensions==4.12.2
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   aiodebug
     #   alembic
+    #   faker
     #   faststream
     #   flexcache
     #   flexparser

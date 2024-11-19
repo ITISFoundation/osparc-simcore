@@ -160,7 +160,14 @@ async def create_sds_directory(
     # assemble params here
     dataset_description_params = parse_obj_as(
         DatasetDescriptionParams,
-        {"name": project_data["name"], "description": project_data["description"]},
+        {
+            "name": project_data["name"],
+            "description": (
+                ""
+                if project_data["description"] is None
+                else project_data["description"]
+            ),
+        },
     )
 
     params_code_description: dict[str, Any] = {}

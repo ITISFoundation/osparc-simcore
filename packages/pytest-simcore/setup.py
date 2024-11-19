@@ -17,7 +17,7 @@ SETUP = {
     "description": "pytest plugin with fixtures and test helpers for osparc-simcore repo modules",
     "py_modules": ["pytest_simcore"],
     # WARNING: this is used in frozen services as well !!!!
-    "python_requires": ">=3.6",
+    "python_requires": "~=3.11",
     "install_requires": ["pytest>=3.5.0"],
     "extras_require": {
         "all": [
