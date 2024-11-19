@@ -403,13 +403,12 @@ def test_settings__valid_network_names(
 async def test_failed_docker_client_request(docker_swarm: None):
     missing_network_name = "this_network_cannot_be_found"
 
-    with pytest.raises(GenericDockerError) as execinfo:
+    with pytest.raises(
+        GenericDockerError,
+        match=f"Unexpected error using docker client: network {missing_network_name} not found",
+    ):
         async with docker_client() as client:
             await client.networks.get(missing_network_name)
-    assert (
-        str(execinfo.value)
-        == f"Unexpected error from docker client: network {missing_network_name} not found"
-    )
 
 
 async def test_get_swarm_network_ok(

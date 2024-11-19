@@ -14,7 +14,7 @@ class GenericDockerError(DynamicSidecarError):
         super().__init__(original_exception=original_exception, **ctx)
         self.original_exception = original_exception
 
-    msg_template: str = "Unexpected error using docker: {msg}"
+    msg_template: str = "Unexpected error using docker client: {msg}"
 
 
 class DynamicSidecarNotFoundError(DirectorError):
