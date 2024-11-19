@@ -1,6 +1,12 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.6.10"
-FROM python:${PYTHON_VERSION}-slim-buster AS base
+
+# Define arguments in the global scope
+ARG PYTHON_VERSION="3.11.9"
+ARG UV_VERSION="0.4"
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
+# we docker image is built based on debian
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base
+
 #
 #  USAGE:
 #     cd sercices/director
@@ -14,8 +20,8 @@ LABEL maintainer=sanderegg
 # for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
 RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
   echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN --mount=type=cache,id=basecache36,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt36,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
@@ -44,22 +50,13 @@ ENV LANG=C.UTF-8
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
   VIRTUAL_ENV=/home/scu/.venv
+
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
-# environment variables
-ENV REGISTRY_AUTH='' \
-  REGISTRY_USER='' \
-  REGISTRY_PW='' \
-  REGISTRY_URL='' \
-  REGISTRY_VERSION='v2' \
-  PUBLISHED_HOST_NAME='' \
-  SIMCORE_SERVICES_NETWORK_NAME='' \
-  EXTRA_HOSTS_SUFFIX='undefined'
-
-
-EXPOSE 8080
+EXPOSE 8000
+EXPOSE 3000
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -71,36 +68,26 @@ FROM base AS build
 
 ENV SC_BUILD_TARGET=build
 
-RUN --mount=type=cache,id=buildbasecache36,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=buildbaseapt36,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential \
-  git
+  build-essential
 
+# install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=uv_build /uv /uvx /bin/
 
-# NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
-RUN python -m venv "${VIRTUAL_ENV}"
+# NOTE: python virtualenv is used here such that installed
+# packages may be moved to production image easily by copying the venv
+RUN uv venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,id=pip36,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade \
-  pip~=21.3  \
+RUN --mount=type=cache,target=/root/.cache/uv \
+  uv pip install --upgrade  \
   wheel \
   setuptools
 
-# install base 3rd party dependencies (NOTE: this speeds up devel mode)
-RUN \
-  --mount=type=bind,source=packages,target=/build/packages,rw \
-  --mount=type=bind,source=services/director,target=/build/services/director,rw \
-  pip install \
-  -r /build/services/director/requirements/_base.txt
-
-# FIXME:
-# necessary to prevent duplicated files.
-# Will be removed when director is refactored using cookiecutter as this will not be necessary anymore
-COPY --chown=scu:scu api/specs/director/schemas/node-meta-v0.0.1.json \
-  /build/services/director/src/simcore_service_director/api/v0/oas-parts/schemas/node-meta-v0.0.1.json
+WORKDIR /build
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -110,12 +97,18 @@ COPY --chown=scu:scu api/specs/director/schemas/node-meta-v0.0.1.json \
 #
 FROM build AS prod-only-deps
 
-WORKDIR /build/services/director
 ENV SC_BUILD_TARGET=prod-only-deps
+
+WORKDIR /build/services/director
+
 RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/director,target=/build/services/director,rw \
-  pip install -r requirements/prod.txt
+  --mount=type=cache,target=/root/.cache/uv \
+  uv pip sync \
+  requirements/prod.txt \
+  && uv pip list
+
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
@@ -128,25 +121,32 @@ FROM base AS production
 
 ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
+
 ENV PYTHONOPTIMIZE=TRUE
+# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /home/scu
-
 # ensure home folder is read/writable for user scu
 RUN chown -R scu /home/scu
-# bring installed package without build tools
-COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+
+# Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
+COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+
+# Copies booting scripts
 COPY --chown=scu:scu services/director/docker services/director/docker
 RUN chmod +x services/director/docker/*.sh
 
 
-HEALTHCHECK --interval=30s \
-  --timeout=120s \
+HEALTHCHECK --interval=10s \
+  --timeout=5s \
   --start-period=30s \
-  --retries=3 \
-  CMD ["python3", "/home/scu/services/director/docker/healthcheck.py", "http://localhost:8080/v0/"]
-ENTRYPOINT [ "services/director/docker/entrypoint.sh" ]
-CMD ["services/director/docker/boot.sh"]
+  --start-interval=1s \
+  --retries=5 \
+  CMD ["python3", "/home/scu/services/director/docker/healthcheck.py", "http://localhost:8000/v0/"]
+
+ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/director/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
@@ -159,9 +159,12 @@ CMD ["services/director/docker/boot.sh"]
 #
 FROM build AS development
 
-ENV SC_BUILD_TARGET=development
-ENV NODE_SCHEMA_LOCATION=../../../api/specs/director/schemas/node-meta-v0.0.1.json
+ENV SC_BUILD_TARGET=development \
+  SC_DEVEL_MOUNT=/devel/services/director
+
 WORKDIR /devel
+
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
+
 ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/director/docker/boot.sh"]

@@ -12,16 +12,17 @@ from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
 from .helpers.docker import get_service_published_port
+from .helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture(scope="module")
 def traefik_endpoints(
-    docker_stack: dict, testing_environ_vars: dict
+    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict
 ) -> tuple[URL, URL, URL]:
     """get the endpoint for the given simcore_service.
     NOTE: simcore_service defined as a parametrization
     """
-    prefix = testing_environ_vars["SWARM_STACK_NAME"]
+    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_traefik" in docker_stack["services"]
 
     traefik_api_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 8080)}"

@@ -82,13 +82,13 @@ def _do_assert_error(
 
     assert is_error(expected_status_code)
 
-    assert len(error["errors"]) == 1
-
-    err = error["errors"][0]
+    assert len(error["errors"]) >= 1
     if expected_msg:
-        assert expected_msg in err["message"]
+        messages = [detail["message"] for detail in error["errors"]]
+        assert expected_msg in messages
 
     if expected_error_code:
-        assert expected_error_code == err["code"]
+        codes = [detail["code"] for detail in error["errors"]]
+        assert expected_error_code in codes
 
     return data, error

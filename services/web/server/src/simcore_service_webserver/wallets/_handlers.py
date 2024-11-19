@@ -9,12 +9,11 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletGetWithAvailableCredits,
 )
+from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import Field
 from servicelib.aiohttp.requests_validation import (
-    RequestParams,
-    StrictRequestParams,
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
@@ -106,19 +105,18 @@ def handle_wallets_exceptions(handler: Handler):
     return wrapper
 
 
-#
 # wallets COLLECTION -------------------------
 #
 
 routes = web.RouteTableDef()
 
 
-class WalletsRequestContext(RequestParams):
+class WalletsRequestContext(RequestParameters):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
-class WalletsPathParams(StrictRequestParams):
+class WalletsPathParams(StrictRequestParameters):
     wallet_id: WalletID
 
 

@@ -10,8 +10,13 @@ from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.rest_base import RequestParameters
 from models_library.rest_filters import Filters, FiltersQueryParameters
-from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_ordering import (
+    OrderBy,
+    OrderDirection,
+    create_ordering_query_model_classes,
+)
 from models_library.rest_pagination import PageQueryParameters
 from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -22,7 +27,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    Json,
     TypeAdapter,
     field_validator,
     model_validator,
@@ -96,7 +100,21 @@ class ProjectFilters(Filters):
     )
 
 
-class ProjectListParams(PageQueryParameters):
+ProjectsListOrderParams = create_ordering_query_model_classes(
+    ordering_fields={
+        "type",
+        "uuid",
+        "name",
+        "description",
+        "prj_owner",
+        "creation_date",
+        "last_change_date",
+    },
+    default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
+)
+
+
+class ProjectsListExtraQueryParams(RequestParameters):
     project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
     show_hidden: bool = Field(
         default=False, description="includes projects marked as hidden in the listing"
@@ -132,44 +150,20 @@ class ProjectListParams(PageQueryParameters):
     )(null_or_none_str_to_none_validator)
 
 
-class ProjectListSortParams(BaseModel):
-    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
-        default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
-        description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
-        examples=['{"field": "prj_owner", "direction": "desc"}'],
-        alias="order_by",
-    )
-
-    @field_validator("order_by", check_fields=False)
-    @classmethod
-    def validate_order_by_field(cls, v):
-        if v.field not in {
-            "type",
-            "uuid",
-            "name",
-            "description",
-            "prj_owner",
-            "creation_date",
-            "last_change_date",
-        }:
-            msg = f"We do not support ordering by provided field {v.field}"
-            raise ValueError(msg)
-        return v
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class ProjectListWithJsonStrParams(
-    ProjectListParams, ProjectListSortParams, FiltersQueryParameters[ProjectFilters]
+class ProjectsListQueryParams(
+    PageQueryParameters,
+    ProjectsListOrderParams,  # type: ignore[misc, valid-type]
+    FiltersQueryParameters[ProjectFilters],
+    ProjectsListExtraQueryParams,
 ):
     ...
 
 
-class ProjectActiveParams(BaseModel):
+class ProjectActiveQueryParams(BaseModel):
     client_session_id: str
 
 
-class ProjectListFullSearchParams(PageQueryParameters):
+class ProjectSearchExtraQueryParams(PageQueryParameters):
     text: str | None = Field(
         default=None,
         description="Multi column full text search, across all folders and workspaces",
@@ -190,8 +184,8 @@ class ProjectListFullSearchParams(PageQueryParameters):
     )
 
 
-class ProjectListFullSearchWithJsonStrParams(
-    ProjectListFullSearchParams, ProjectListSortParams
+class ProjectsSearchQueryParams(
+    ProjectSearchExtraQueryParams, ProjectsListOrderParams  # type: ignore[misc, valid-type]
 ):
     def tag_ids_list(self) -> list[int]:
         try:

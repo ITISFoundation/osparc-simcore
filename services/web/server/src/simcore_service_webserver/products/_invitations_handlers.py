@@ -6,9 +6,10 @@ from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
     InvitationGenerated,
 )
+from models_library.rest_base import RequestParameters
 from models_library.users import UserID
 from pydantic import Field
-from servicelib.aiohttp.requests_validation import RequestParams, parse_request_body_as
+from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
 from yarl import URL
@@ -26,7 +27,7 @@ routes = web.RouteTableDef()
 _logger = logging.getLogger(__name__)
 
 
-class _ProductsRequestContext(RequestParams):
+class _ProductsRequestContext(RequestParameters):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 

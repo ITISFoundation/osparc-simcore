@@ -3,18 +3,18 @@ from datetime import datetime
 from typing import Annotated
 
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
+from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.users import GroupID, UserID
 from pydantic import Field, PositiveInt, StringConstraints
-from servicelib.aiohttp.requests_validation import RequestParams, StrictRequestParams
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_tags import TagDict
 
 
-class TagRequestContext(RequestParams):
+class TagRequestContext(RequestParameters):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
 
 
-class TagPathParams(StrictRequestParams):
+class TagPathParams(StrictRequestParameters):
     tag_id: PositiveInt
 
 

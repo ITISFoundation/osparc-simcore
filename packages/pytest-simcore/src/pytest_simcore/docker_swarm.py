@@ -10,13 +10,15 @@ import subprocess
 from collections.abc import Iterator
 from contextlib import suppress
 from pathlib import Path
-from typing import Any
+from typing import Any, AsyncIterator, Awaitable, Callable
 
+import aiodocker
 import docker
 import pytest
 import yaml
 from docker.errors import APIError
-from tenacity import Retrying, TryAgain, retry
+from faker import Faker
+from tenacity import AsyncRetrying, Retrying, TryAgain, retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -251,12 +253,12 @@ def docker_stack(
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
-    testing_environ_vars: EnvVarsDict,
+    env_vars_for_docker_compose: EnvVarsDict,
 ) -> Iterator[dict]:
     """deploys core and ops stacks and returns as soon as all are running"""
 
     # WARNING: keep prefix "pytest-" in stack names
-    core_stack_name = testing_environ_vars["SWARM_STACK_NAME"]
+    core_stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     ops_stack_name = "pytest-ops"
 
     assert core_stack_name
@@ -390,3 +392,41 @@ def docker_stack(
                         raise _ResourceStillNotRemovedError(msg)
 
     _fetch_and_print_services(docker_client, "[AFTER REMOVED]")
+
+
+@pytest.fixture
+async def docker_network(
+    docker_swarm: None,
+    async_docker_client: aiodocker.Docker,
+    faker: Faker,
+) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
+    networks = []
+
+    async def _network_creator(**network_config_kwargs) -> dict[str, Any]:
+        network = await async_docker_client.networks.create(
+            config={"Name": faker.uuid4(), "Driver": "overlay"} | network_config_kwargs
+        )
+        assert network
+        print(f"--> created network {network=}")
+        networks.append(network)
+        return await network.show()
+
+    yield _network_creator
+
+    # wait until all networks are really gone
+    async def _wait_for_network_deletion(network: aiodocker.docker.DockerNetwork):
+        network_name = (await network.show())["Name"]
+        await network.delete()
+        async for attempt in AsyncRetrying(
+            reraise=True, wait=wait_fixed(1), stop=stop_after_delay(60)
+        ):
+            with attempt:
+                print(f"<-- waiting for network '{network_name}' deletion...")
+                list_of_network_names = [
+                    n["Name"] for n in await async_docker_client.networks.list()
+                ]
+                assert network_name not in list_of_network_names
+            print(f"<-- network '{network_name}' deleted")
+
+    print(f"<-- removing all networks {networks=}")
+    await asyncio.gather(*[_wait_for_network_deletion(network) for network in networks])
