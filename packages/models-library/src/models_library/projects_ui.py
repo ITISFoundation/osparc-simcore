@@ -6,7 +6,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic_extra_types.color import Color
-from typing_extensions import TypedDict
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from .projects_nodes_io import NodeID, NodeIDStr
 from .projects_nodes_ui import Marker, Position
