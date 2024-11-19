@@ -85,7 +85,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
     },
 
     loadStudy: function(studyData) {
-      const studyAlias = osparc.product.Utils.getStudyAlias();
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       // check if it's locked
       let locked = false;
       let lockedBy = false;
@@ -104,7 +104,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
 
       // check if it's corrupt
       if (osparc.data.model.Study.isCorrupt(studyData)) {
-        const msg = `${studyAlias} ${qx.locale.Manager.tr("is corrupt.")} ${qx.locale.Manager.tr("Please contact support.")}`;
+        const msg = `${studyAlias} ${qx.locale.Manager.tr("is corrupt.")}<br>${qx.locale.Manager.tr("Please contact support.")}`;
         throw new Error(msg);
       }
 
