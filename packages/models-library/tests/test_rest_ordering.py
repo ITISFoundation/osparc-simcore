@@ -1,12 +1,19 @@
 import pytest
+from common_library.json_serialization import json_dumps
 from models_library.basic_types import IDStr
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
     create_ordering_query_model_classes,
 )
-from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Extra, Field, Json, ValidationError, validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    Json,
+    ValidationError,
+    field_validator,
+)
 
 
 class ReferenceOrderQueryParamsClass(BaseModel):
@@ -18,10 +25,10 @@ class ReferenceOrderQueryParamsClass(BaseModel):
     order_by: Json[OrderBy] = Field(
         default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
         description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
-        example='{"field": "name", "direction": "desc"}',
+        json_schema_extra={"examples": ['{"field": "name", "direction": "desc"}']},
     )
 
-    @validator("order_by", check_fields=False)
+    @field_validator("order_by", check_fields=False)
     @classmethod
     def _validate_order_by_field(cls, v):
         if v.field not in {
@@ -35,8 +42,9 @@ class ReferenceOrderQueryParamsClass(BaseModel):
             v.field = "modified_column"
         return v
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
 
 def test_ordering_query_model_class_factory():
@@ -52,16 +60,19 @@ def test_ordering_query_model_class_factory():
 
     # normal
     data = {"order_by": {"field": "modified_at", "direction": "asc"}}
-    model = OrderQueryParamsModel.parse_obj(data)
+    model = OrderQueryParamsModel.model_validate(data)
 
     assert model.order_by
-    assert model.order_by.dict() == {"field": "modified_column", "direction": "asc"}
+    assert model.order_by.model_dump() == {
+        "field": "modified_column",
+        "direction": "asc",
+    }
 
     # test against reference
-    expected = ReferenceOrderQueryParamsClass.parse_obj(
+    expected = ReferenceOrderQueryParamsClass.model_validate(
         {"order_by": json_dumps({"field": "modified_at", "direction": "asc"})}
     )
-    assert expected.dict() == model.dict()
+    assert expected.model_dump() == model.model_dump()
 
 
 def test_ordering_query_model_class__fails_with_invalid_fields():
@@ -73,7 +84,7 @@ def test_ordering_query_model_class__fails_with_invalid_fields():
 
     # fails with invalid field to sort
     with pytest.raises(ValidationError) as err_info:
-        OrderQueryParamsModel.parse_obj({"order_by": {"field": "INVALID"}})
+        OrderQueryParamsModel.model_validate({"order_by": {"field": "INVALID"}})
 
     error = err_info.value.errors()[0]
 
@@ -89,7 +100,7 @@ def test_ordering_query_model_class__fails_with_invalid_direction():
     )
 
     with pytest.raises(ValidationError) as err_info:
-        OrderQueryParamsModel.parse_obj(
+        OrderQueryParamsModel.model_validate(
             {"order_by": {"field": "modified", "direction": "INVALID"}}
         )
 
@@ -110,18 +121,19 @@ def test_ordering_query_model_class__defaults():
     # checks  all defaults
     model = OrderQueryParamsModel()
     assert model.order_by
+    assert isinstance(model.order_by, OrderBy)  # nosec
     assert model.order_by.field == "modified_at"  # NOTE that this was mapped!
     assert model.order_by.direction == OrderDirection.DESC
 
     # partial defaults
-    model = OrderQueryParamsModel.parse_obj({"order_by": {"field": "name"}})
+    model = OrderQueryParamsModel.model_validate({"order_by": {"field": "name"}})
     assert model.order_by
     assert model.order_by.field == "name"
-    assert model.order_by.direction == OrderBy.__fields__["direction"].default
+    assert model.order_by.direction == OrderBy.model_fields["direction"].default
 
     # direction alone is invalid
     with pytest.raises(ValidationError) as err_info:
-        OrderQueryParamsModel.parse_obj({"order_by": {"direction": "asc"}})
+        OrderQueryParamsModel.model_validate({"order_by": {"direction": "asc"}})
 
     error = err_info.value.errors()[0]
     assert error["loc"] == ("order_by", "field")
@@ -135,5 +147,6 @@ def test_ordering_query_model_with_map():
         ordering_fields_api_to_column_map={"modified": "some_db_column_name"},
     )
 
-    model = OrderQueryParamsModel.parse_obj({"order_by": {"field": "modified"}})
+    model = OrderQueryParamsModel.model_validate({"order_by": {"field": "modified"}})
+    assert model.order_by
     assert model.order_by.field == "some_db_column_name"
