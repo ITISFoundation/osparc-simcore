@@ -940,7 +940,7 @@ class BaseCompScheduler(ABC):
                 project_id,
                 [exc.node_id],
                 RunningState.FAILED,
-                exc.get_errors(),  # @pcrespov I need your help here!
+                exc.get_errors(),
                 optional_progress=1.0,
                 optional_stopped=arrow.utcnow().datetime,
             )
