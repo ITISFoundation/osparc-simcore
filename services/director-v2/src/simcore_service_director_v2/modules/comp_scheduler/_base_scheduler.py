@@ -242,7 +242,7 @@ class BaseCompScheduler(ABC):
             }
             if not possible_iterations:
                 msg = f"There are no pipeline scheduled for {user_id}:{project_id}"
-                raise ComputationalSchedulerError(msg)
+                raise ComputationalSchedulerError(msg=msg)
             current_max_iteration = max(possible_iterations)
             selected_iteration = current_max_iteration
         else:
@@ -281,7 +281,7 @@ class BaseCompScheduler(ABC):
         }
         if not possible_iterations:
             msg = f"There are no pipeline scheduled for {user_id}:{project_id}"
-            raise ComputationalSchedulerError(msg)
+            raise ComputationalSchedulerError(msg=msg)
         return max(possible_iterations)
 
     def _start_scheduling(
@@ -929,23 +929,25 @@ class BaseCompScheduler(ABC):
                 comp_tasks[NodeIDStr(f"{task}")].state = RunningState.FAILED
             raise
         except TaskSchedulingError as exc:
-            exc.error_context()["project_id"]
+            err_context = exc.error_context()
             _logger.exception(
                 "Project '%s''s task '%s' could not be scheduled",
-                exc.error_context()["project_id"],
-                exc.error_context()["node_id"],
+                err_context["project_id"],
+                err_context["node_id"],
             )
             await CompTasksRepository.instance(
                 self.db_engine
             ).update_project_tasks_state(
                 project_id,
-                [exc.node_id],
+                [err_context["node_id"]],
                 RunningState.FAILED,
                 exc.get_errors(),
                 optional_progress=1.0,
                 optional_stopped=arrow.utcnow().datetime,
             )
-            comp_tasks[NodeIDStr(f"{exc.node_id}")].state = RunningState.FAILED
+            comp_tasks[
+                NodeIDStr(f"{err_context['node_id']}")
+            ].state = RunningState.FAILED
         except Exception:
             _logger.exception(
                 "Unexpected error for %s with %s on %s happened when scheduling %s:",

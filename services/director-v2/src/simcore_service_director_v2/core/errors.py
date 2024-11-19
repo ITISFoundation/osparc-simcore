@@ -62,7 +62,7 @@ class WalletNotEnoughCreditsError(DirectorError):
 # SCHEDULER ERRORS
 #
 class ComputationalSchedulerError(DirectorError):
-    msg_template = "Computational scheduler unexpected error"
+    msg_template = "Computational scheduler unexpected error {msg}"
 
 
 class InvalidPipelineError(ComputationalSchedulerError):

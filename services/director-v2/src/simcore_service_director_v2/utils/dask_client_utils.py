@@ -220,7 +220,7 @@ async def test_scheduler_endpoint(
             ) as dask_client:
                 if dask_client.status != _DASK_SCHEDULER_RUNNING_STATE:
                     msg = "internal scheduler is not running!"
-                    raise ComputationalSchedulerError(msg)
+                    raise ComputationalSchedulerError(msg=msg)
 
         else:
             gateway_auth = await get_gateway_auth_from_params(authentication)
