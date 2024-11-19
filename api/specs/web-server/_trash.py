@@ -48,8 +48,8 @@ _extra_tags: list[str | Enum] = ["projects"]
     },
 )
 def trash_project(
-    _p: Annotated[ProjectPathParams, Depends()],
-    _q: Annotated[RemoveQueryParams, Depends()],
+    _path: Annotated[ProjectPathParams, Depends()],
+    _query: Annotated[RemoveQueryParams, Depends()],
 ):
     ...
 
@@ -60,7 +60,7 @@ def trash_project(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def untrash_project(
-    _p: Annotated[ProjectPathParams, Depends()],
+    _path: Annotated[ProjectPathParams, Depends()],
 ):
     ...
 
@@ -81,8 +81,8 @@ _extra_tags = ["folders"]
     },
 )
 def trash_folder(
-    _p: Annotated[FoldersPathParams, Depends()],
-    _q: Annotated[RemoveQueryParams_duplicated, Depends()],
+    _path: Annotated[FoldersPathParams, Depends()],
+    _query: Annotated[RemoveQueryParams_duplicated, Depends()],
 ):
     ...
 
@@ -93,6 +93,6 @@ def trash_folder(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def untrash_folder(
-    _p: Annotated[FoldersPathParams, Depends()],
+    _path: Annotated[FoldersPathParams, Depends()],
 ):
     ...

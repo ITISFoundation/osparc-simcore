@@ -8,6 +8,7 @@
 #
 --constraint _base.txt
 
+aiodocker
 coverage
 docker
 faker

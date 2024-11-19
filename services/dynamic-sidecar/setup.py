@@ -49,7 +49,7 @@ SETUP = {
         "": "src",
     },
     "include_package_data": True,
-    "python_requires": "~=3.10",
+    "python_requires": "~=3.11",
     "PROD_REQUIREMENTS": PROD_REQUIREMENTS,
     "TEST_REQUIREMENTS": TEST_REQUIREMENTS,
     "setup_requires": ["setuptools_scm"],

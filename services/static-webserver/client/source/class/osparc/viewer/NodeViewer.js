@@ -93,15 +93,16 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     __iFrameChanged: function() {
       this._removeAll();
 
-      const iframeHandler = this.getNode().getIframeHandler();
-
-      const loadingPage = iframeHandler.getLoadingPage();
-      const iFrame = iframeHandler.getIFrame();
-      const src = iFrame.getSource();
-      const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-      this._add(iFrameView, {
-        flex: 1
-      });
+      if (this.getNode() && this.getNode().getIframeHandler()) {
+        const iframeHandler = this.getNode().getIframeHandler();
+        const loadingPage = iframeHandler.getLoadingPage();
+        const iFrame = iframeHandler.getIFrame();
+        const src = iFrame.getSource();
+        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
+        this._add(iFrameView, {
+          flex: 1
+        });
+      }
     },
 
     __attachSocketEventHandlers: function() {

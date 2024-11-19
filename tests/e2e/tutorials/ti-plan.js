@@ -136,7 +136,7 @@ async function runTutorial() {
       .then(() => page.click(id))
       .catch(() => console.log("Preparing Inputs window not found"));
 
-    tutorial.setTutorialFailed(true, false);
+    tutorial.setTutorialFailed(err);
     console.log('Tutorial error: ' + err);
     throw "Tutorial Failed";
   }
