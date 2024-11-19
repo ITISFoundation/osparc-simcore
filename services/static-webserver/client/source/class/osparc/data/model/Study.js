@@ -349,7 +349,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     __isAnyLinkedNodeMissing: function(studyData) {
       const existingNodeIds = Object.keys(studyData["workbench"]);
-      const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodes(studyData["workbench"]);
+      const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodeIds(studyData["workbench"]);
       const allExist = linkedNodeIds.every(linkedNodeId => existingNodeIds.includes(linkedNodeId));
       return !allExist;
     },

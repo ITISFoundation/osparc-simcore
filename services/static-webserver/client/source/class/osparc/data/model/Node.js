@@ -314,16 +314,16 @@ qx.Class.define("osparc.data.model.Node", {
       return null;
     },
 
-    getLinkedNodes: function(nodeData) {
-      const linkedNodes = new Set([]);
+    getLinkedNodeIds: function(nodeData) {
+      const linkedNodeIds = new Set([]);
       if ("inputs" in nodeData) {
         Object.values(nodeData["inputs"]).forEach(link => {
           if (link && typeof link === "object" && "nodeUuid" in link) {
-            linkedNodes.add(link["nodeUuid"]);
+            linkedNodeIds.add(link["nodeUuid"]);
           }
         });
       }
-      return Array.from(linkedNodes);
+      return Array.from(linkedNodeIds);
     },
   },
 
