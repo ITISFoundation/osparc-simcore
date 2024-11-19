@@ -9,11 +9,11 @@ class BaseDynamicSidecarError(Exception):
     """Used as base for all exceptions"""
 
     def __init__(
-        self, nessage: str, status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
+        self, message: str, status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
     ) -> None:
-        self.message: str = nessage
+        self.message: str = message
         self.status_code: int = status_code
-        super().__init__(nessage)
+        super().__init__(message)
 
 
 class VolumeNotFoundError(BaseDynamicSidecarError):

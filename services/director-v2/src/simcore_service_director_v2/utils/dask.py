@@ -478,14 +478,14 @@ def check_scheduler_is_still_the_same(
 ):
     _logger.debug("current %s", f"{client.scheduler_info()=}")
     if "id" not in client.scheduler_info():
-        raise ComputationalSchedulerChangedError(
+        raise ComputationalSchedulerChangedError(  # pylint: disable=unexpected-keyword-arg
             original_scheduler_id=original_scheduler_id,
             current_scheduler_id="No scheduler identifier",
         )
     current_scheduler_id = client.scheduler_info()["id"]
     if current_scheduler_id != original_scheduler_id:
         _logger.error("The computational backend changed!")
-        raise ComputationalSchedulerChangedError(
+        raise ComputationalSchedulerChangedError(  # pylint: disable=unexpected-keyword-arg
             original_scheduler_id=original_scheduler_id,
             current_scheduler_id=current_scheduler_id,
         )

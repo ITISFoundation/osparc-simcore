@@ -34,11 +34,11 @@ async def get_or_create_on_demand_cluster(
         )
         _logger.info("received cluster: %s", returned_cluster)
         if returned_cluster.state is not ClusterState.RUNNING:
-            raise ComputationalBackendOnDemandNotReadyError(
+            raise ComputationalBackendOnDemandNotReadyError(  # pylint: disable=unexpected-keyword-arg
                 eta=timedelta_as_minute_second(returned_cluster.eta)
             )
         if not returned_cluster.dask_scheduler_ready:
-            raise ComputationalBackendOnDemandNotReadyError(
+            raise ComputationalBackendOnDemandNotReadyError(  # pylint: disable=unexpected-keyword-arg
                 eta=timedelta_as_minute_second(returned_cluster.eta)
             )
 

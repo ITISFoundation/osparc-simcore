@@ -117,7 +117,9 @@ class CompRunsRepository(BaseRepository):
                 row = await result.first()
                 return CompRunsAtDB.model_validate(row)
         except ForeignKeyViolation as exc:
-            raise ClusterNotFoundError(cluster_id=cluster_id) from exc
+            raise ClusterNotFoundError(  # pylint: disable=unexpected-keyword-arg
+                cluster_id=cluster_id
+            ) from exc
 
     async def update(
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values

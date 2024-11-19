@@ -38,7 +38,7 @@ async def _execute_command(container_name: str, command: str | Sequence[str]) ->
         inspect_result: dict[str, Any] = await exec_instance.inspect()
         exit_code: int | None = inspect_result.get("ExitCode", None)
         if exit_code != 0:
-            raise ContainerExecCommandFailedError(
+            raise ContainerExecCommandFailedError(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
                 command=command, exit_code=exit_code, command_result=command_result
             )
 
@@ -78,9 +78,11 @@ async def run_command_in_container(
         )
     except DockerError as e:
         if e.status == status.HTTP_404_NOT_FOUND:
-            raise ContainerExecContainerNotFoundError(
+            raise ContainerExecContainerNotFoundError(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
                 container_name=container_name
             ) from e
         raise
     except asyncio.TimeoutError as e:
-        raise ContainerExecTimeoutError(timeout=timeout, command=command) from e
+        raise ContainerExecTimeoutError(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+            timeout=timeout, command=command
+        ) from e

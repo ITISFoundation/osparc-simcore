@@ -108,7 +108,9 @@ class DaskClientsPool:
         try:
             dask_client = await _concurently_safe_acquire_client()
         except Exception as exc:
-            raise DaskClientAcquisisitonError(cluster=cluster, error=exc) from exc
+            raise DaskClientAcquisisitonError(  # pylint: disable=unexpected-keyword-arg
+                cluster=cluster, error=exc
+            ) from exc
 
         try:
             yield dask_client
