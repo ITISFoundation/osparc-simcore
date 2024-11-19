@@ -20,9 +20,8 @@ import functools
 import operator
 from typing import Any
 
+from common_library.json_serialization import json_loads
 from orjson import JSONDecodeError
-
-from .json_serialization import json_loads
 
 
 def empty_str_to_none_pre_validator(value: Any):
