@@ -11,6 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page
+from pydantic import AnyUrl
 from pytest_simcore.helpers.playwright import RestartableWebSocket
 from pytest_simcore.helpers.playwright_sim4life import (
     check_video_streaming,
@@ -26,6 +27,7 @@ def test_template(
     template_id: str,
     is_autoscaled: bool,
     check_videostreaming: bool,
+    product_url: AnyUrl,
 ):
     project_data = create_project_from_template_dashboard(template_id)
 
@@ -37,10 +39,14 @@ def test_template(
     assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 
     resp = wait_for_launched_s4l(
-        page, node_ids[0], log_in_and_out, autoscaled=is_autoscaled, copy_workspace=True
+        page,
+        node_ids[0],
+        log_in_and_out,
+        autoscaled=is_autoscaled,
+        copy_workspace=True,
+        product_url=product_url,
     )
     s4l_websocket = resp["websocket"]
-    # with web_socket_default_log_handler(s4l_websocket):
     s4l_iframe = resp["iframe"]
     interact_with_s4l(page, s4l_iframe)
 
