@@ -30,23 +30,20 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 def _create_json_type(**schema_extras):
-    class _Json(str):
+    # FIXME: upgrade this to pydnatic v2 protocols
+    class _JsonStr(str):
         __slots__ = ()
 
-        # @classmethod
-        # def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-        #     # openapi.json schema is corrected here
-        #     field_schema.update(
-        #         type="string",
-        #         format="json-string" # NOTE: we need to get rid of openapi-core in web-server before using this!
-        #     )
-        #     if schema_extras:
-        #         field_schema.update(schema_extras)
+        @classmethod
+        def __get_pydantic_json_schema__(cls, schema: dict[str, Any]) -> dict[str, Any]:
+            # Update the schema with custom type and format
+            schema.update(type="string", format="json-string", **schema_extras)
+            return schema
 
-    return _Json
+    return _JsonStr
 
 
-def replace_basemodel_in_annotation(annotation, new_type):
+def _replace_basemodel_in_annotation(annotation, new_type):
     origin = get_origin(annotation)
 
     # Handle Annotated
@@ -63,7 +60,7 @@ def replace_basemodel_in_annotation(annotation, new_type):
     # Handle Optionals, Unions, or other generic types
     if origin in (Optional, Union, list, dict, tuple):  # Extendable for other generics
         new_args = tuple(
-            replace_basemodel_in_annotation(arg, new_type)
+            _replace_basemodel_in_annotation(arg, new_type)
             for arg in get_args(annotation)
         )
         return origin[new_args]
@@ -90,13 +87,14 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
             "json_schema_extra": field_info.json_schema_extra or {},
         }
 
-        json_field_type = _create_json_type(
-            description=query_kwargs["description"],
-            example=query_kwargs.get("json_schema_extra", {}).get("example_json"),
-        )
+        json_field_type = str
+        # _create_json_type(
+        #    description=query_kwargs["description"],
+        #    example=query_kwargs.get("json_schema_extra", {}).get("example_json"),
+        # )
 
-        annotation = replace_basemodel_in_annotation(
-            field_info.annotation, new_type=str
+        annotation = _replace_basemodel_in_annotation(
+            field_info.annotation, new_type=json_field_type
         )
 
         if annotation != field_info.annotation:
