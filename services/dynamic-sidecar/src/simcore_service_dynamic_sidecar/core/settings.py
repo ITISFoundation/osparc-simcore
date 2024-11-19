@@ -2,10 +2,10 @@ import warnings
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated, cast
+from typing import cast
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
-from models_library.basic_types import BootModeEnum, PortInt
+from models_library.basic_types import PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -21,8 +21,8 @@ from pydantic import (
     field_validator,
 )
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
+from settings_library.application import BaseApplicationSettings
 from settings_library.aws_s3_cli import AwsS3CliSettings
-from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.node_ports import StorageAuthSettings
 from settings_library.postgres import PostgresSettings
@@ -35,7 +35,7 @@ from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
-class ResourceTrackingSettings(BaseCustomSettings):
+class ResourceTrackingSettings(BaseApplicationSettings):
     RESOURCE_TRACKING_HEARTBEAT_INTERVAL: timedelta = Field(
         default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
         description="each time the status of the service is propagated",
@@ -46,20 +46,13 @@ class ResourceTrackingSettings(BaseCustomSettings):
     )
 
 
-class SystemMonitorSettings(BaseCustomSettings):
+class SystemMonitorSettings(BaseApplicationSettings):
     DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE: bool = Field(
         default=False, description="enabled/disabled disk usage monitoring"
     )
 
 
-class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
-    SC_BOOT_MODE: Annotated[
-        BootModeEnum,
-        Field(
-            ...,
-            description="boot mode helps determine if in development mode or normal operation",
-        ),
-    ]
+class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR: Path = Field(
         ...,
