@@ -17,6 +17,7 @@
 
 arrow
 fastapi
+fastui
 httpx
 packaging
 python-socketio

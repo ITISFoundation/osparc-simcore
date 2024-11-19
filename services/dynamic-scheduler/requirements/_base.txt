@@ -104,6 +104,8 @@ fastapi==0.115.5
     #   -r requirements/_base.in
 faststream==0.5.28
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+fastui==0.7.0
+    # via -r requirements/_base.in
 frozenlist==1.4.1
     # via
     #   aiohttp
@@ -330,6 +332,7 @@ pydantic==2.9.2
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   fast-depends
     #   fastapi
+    #   fastui
     #   pydantic-extra-types
     #   pydantic-settings
 pydantic-core==2.23.4
