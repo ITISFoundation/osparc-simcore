@@ -67,9 +67,8 @@ from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
-from simcore_service_director_v2.modules.comp_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler._scheduler_base import (
     BaseCompScheduler,
-    _get_scheduler_worker,
 )
 from simcore_service_director_v2.modules.comp_scheduler._scheduler_dask import (
     DaskScheduler,
