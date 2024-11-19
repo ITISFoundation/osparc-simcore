@@ -1,5 +1,3 @@
-from typing import TypeAlias
-
 from models_library.docker import DockerGenericTag
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -10,9 +8,9 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
-from pydantic import PositiveInt
 
 from ...models.comp_tasks import CompTaskAtDB
+from ._models import Iteration
 
 SCHEDULED_STATES: set[RunningState] = {
     RunningState.PUBLISHED,
@@ -49,9 +47,6 @@ COMPLETED_STATES: set[RunningState] = {
     RunningState.SUCCESS,
     RunningState.FAILED,
 }
-
-
-Iteration: TypeAlias = PositiveInt
 
 
 def get_resource_tracking_run_id(

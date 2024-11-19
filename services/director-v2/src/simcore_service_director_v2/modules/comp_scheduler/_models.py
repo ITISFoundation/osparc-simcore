@@ -1,10 +1,11 @@
-from typing import Literal
+from typing import Literal, TypeAlias
 
 from models_library.projects import ProjectID
 from models_library.rabbitmq_messages import RabbitMessageBase
 from models_library.users import UserID
+from pydantic import PositiveInt
 
-from ._utils import Iteration
+Iteration: TypeAlias = PositiveInt
 
 
 class SchedulePipelineRabbitMessage(RabbitMessageBase):

@@ -28,7 +28,6 @@ from models_library.projects_state import RunningState
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.users import UserID
 from networkx.classes.reportviews import InDegreeView
-from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
@@ -60,13 +59,13 @@ from ...utils.rabbitmq import (
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
+from ._models import Iteration
 from ._utils import (
     COMPLETED_STATES,
     PROCESSING_STATES,
     RUNNING_STATES,
     TASK_TO_START_STATES,
     WAITING_FOR_START_STATES,
-    Iteration,
     create_service_resources_from_task,
     get_resource_tracking_run_id,
 )
@@ -167,7 +166,7 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        iteration: PositiveInt,
+        iteration: Iteration,
         pipeline_tasks: dict[NodeIDStr, CompTaskAtDB],
     ) -> RunningState:
         pipeline_state_from_tasks: RunningState = get_pipeline_state_from_task_states(
@@ -187,7 +186,7 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        iteration: PositiveInt,
+        iteration: Iteration,
         run_result: RunningState,
     ) -> None:
         comp_runs_repo = CompRunsRepository.instance(self.db_engine)
@@ -494,7 +493,7 @@ class BaseCompScheduler(ABC):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        iteration: PositiveInt,
+        iteration: Iteration,
         wake_up_callback: Callable[[], None],
     ) -> None:
         with log_context(
