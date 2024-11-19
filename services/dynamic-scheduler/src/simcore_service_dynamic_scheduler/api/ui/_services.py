@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import AsyncIterable
-from typing import Annotated
+from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import StreamingResponse
@@ -12,9 +12,9 @@ from starlette import status
 from ..dependencies import get_app
 from ._constants import API_ROOT_PATH
 
-router = APIRouter()
+_PREFIX: Final[str] = "/services"
 
-# Add an event provider and then display stuff from there that changes
+router = APIRouter()
 
 
 # root entrypoint for the application
@@ -35,7 +35,7 @@ def api_index() -> list[AnyComponent]:
         c.Div(
             components=[
                 c.ServerLoad(
-                    path="/sse/",
+                    path=f"{_PREFIX}/sse/",
                     sse=True,
                     load_trigger=PageEvent(name="page-loaded"),
                     components=[],
@@ -48,7 +48,7 @@ def api_index() -> list[AnyComponent]:
 
 
 # SSE endpoint
-@router.get(f"{API_ROOT_PATH}/sse/")
+@router.get(f"{API_ROOT_PATH}{_PREFIX}/sse/")
 async def sse_ai_response(
     app: Annotated[FastAPI, Depends(get_app)]
 ) -> StreamingResponse:
