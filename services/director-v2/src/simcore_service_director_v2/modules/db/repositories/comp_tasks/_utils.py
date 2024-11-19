@@ -322,7 +322,7 @@ async def _update_project_node_resources_from_hardware_info(
             f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}."
             " TIP: adjust product configuration"
         )
-        raise ConfigurationError(msg) from exc
+        raise ConfigurationError(msg=msg) from exc
     except (
         RemoteMethodNotRegisteredError,
         RPCServerError,
@@ -450,9 +450,11 @@ async def generate_tasks_list_from_project(
             last_heartbeat=None,
             created=arrow.utcnow().datetime,
             modified=arrow.utcnow().datetime,
-            pricing_info=pricing_info.model_dump(exclude={"pricing_unit_cost"})
-            if pricing_info
-            else None,
+            pricing_info=(
+                pricing_info.model_dump(exclude={"pricing_unit_cost"})
+                if pricing_info
+                else None
+            ),
             hardware_info=hardware_info,
         )
 

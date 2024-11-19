@@ -25,17 +25,12 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 
 
-class DirectorError(Exception):
-    """Basic exception"""
+class DirectorError(OsparcErrorMixin, RuntimeError):
+    msg_template: str = "Director-v2 unexpected error"
 
 
 class ConfigurationError(DirectorError):
-    """An error in the director-v2 configuration"""
-
-    def __init__(self, msg: str | None = None):
-        super().__init__(
-            msg or "Invalid configuration of the director-v2 application. Please check."
-        )
+    msg_template: str = "Application misconfiguration: {msg}"
 
 
 class GenericDockerError(DirectorError):

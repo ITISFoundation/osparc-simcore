@@ -81,7 +81,7 @@ def setup(app: FastAPI) -> None:
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     if not hasattr(app.state, "rabbitmq_client"):
         msg = "RabbitMQ client is not available. Please check the configuration."
-        raise ConfigurationError(msg)
+        raise ConfigurationError(msg=msg)
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 
@@ -90,5 +90,5 @@ def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
         msg = (
             "RabbitMQ client for RPC is not available. Please check the configuration."
         )
-        raise ConfigurationError(msg)
+        raise ConfigurationError(msg=msg)
     return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)

@@ -101,7 +101,7 @@ async def _connect_to_dask_scheduler(
         )
     except TypeError as exc:
         msg = f"Scheduler has invalid configuration: {endpoint=}"
-        raise ConfigurationError(msg) from exc
+        raise ConfigurationError(msg=msg) from exc
 
 
 async def _connect_with_gateway_and_create_cluster(
@@ -155,7 +155,7 @@ async def _connect_with_gateway_and_create_cluster(
 
     except TypeError as exc:
         msg = f"Cluster has invalid configuration: {endpoint=}, {auth_params=}"
-        raise ConfigurationError(msg) from exc
+        raise ConfigurationError(msg=msg) from exc
     except ValueError as exc:
         # this is when a 404=NotFound,422=MalformedData comes up
         raise DaskClientRequestError(endpoint=endpoint, error=exc) from exc
@@ -196,10 +196,10 @@ async def get_gateway_auth_from_params(
             return dask_gateway.JupyterHubAuth(auth_params.api_token)
     except (TypeError, ValueError) as exc:
         msg = f"Cluster has invalid configuration: {auth_params}"
-        raise ConfigurationError(msg) from exc
+        raise ConfigurationError(msg=msg) from exc
 
     msg = f"Cluster has invalid configuration: {auth_params=}"
-    raise ConfigurationError(msg)
+    raise ConfigurationError(msg=msg)
 
 
 _PING_TIMEOUT_S: Final[int] = 5
@@ -251,4 +251,4 @@ async def test_scheduler_endpoint(
     ) as exc:
         logger.debug("Pinging %s, failed: %s", f"{endpoint=}", f"{exc=!r}")
         msg = f"Could not connect to cluster in {endpoint}: error: {exc}"
-        raise ConfigurationError(msg) from exc
+        raise ConfigurationError(msg=msg) from exc
