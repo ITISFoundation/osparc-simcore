@@ -72,7 +72,8 @@ def create_ordering_query_model_classes(
                     }
                 ]
             },
-            validate_assignment=True,  # Necessary to run _check_ordering_field_and_map in defaults and assignments
+            # Necessary to run _check_ordering_field_and_map in defaults and assignments
+            validate_assignment=True,
             validate_default=True,
         )
 
@@ -91,9 +92,9 @@ def create_ordering_query_model_classes(
 
     assert "json_schema_extra" in _OrderBy.model_config  # nosec
     assert isinstance(_OrderBy.model_config["json_schema_extra"], dict)  # nosec
-    assert isinstance(
+    assert isinstance(  # nosec
         _OrderBy.model_config["json_schema_extra"]["examples"], list
-    )  # nosec
+    )
     order_by_example = _OrderBy.model_config["json_schema_extra"]["examples"][0]
     order_by_example_json = json_dumps(order_by_example)
     assert _OrderBy.model_validate(order_by_example), "Example is invalid"  # nosec
