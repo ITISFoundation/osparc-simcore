@@ -229,7 +229,7 @@ class Cluster(BaseCluster):
         owner_gid = self.owner
 
         # check owner is in the access rights, if not add it
-        access_rights = dict(self.access_rights)
+        access_rights = self.access_rights.copy()
         if owner_gid not in access_rights:
             access_rights[owner_gid] = (
                 CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
