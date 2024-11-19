@@ -20,6 +20,9 @@ translate into something like
 """
 
 from common_library.errors_classes import OsparcErrorMixin
+from models_library.errors import ErrorDict
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 
 
 class DirectorError(OsparcErrorMixin, RuntimeError):
@@ -71,6 +74,24 @@ class InvalidPipelineError(ComputationalSchedulerError):
 
 class TaskSchedulingError(ComputationalSchedulerError):
     msg_template = "Computational scheduler: Task {node_id} in project {project_id} could not be scheduled {msg}"
+
+    def __init__(self, project_id: ProjectID, node_id: NodeID, msg: str | None) -> None:
+        super().__init__(msg=msg)
+        self.project_id = project_id
+        self.node_id = node_id
+
+    def get_errors(self) -> list[ErrorDict]:
+        # default implementation
+        return [
+            {
+                "loc": (
+                    f"{self.project_id}",
+                    f"{self.node_id}",
+                ),
+                "msg": f"{self.args[0]}",
+                "type": self.code,
+            },
+        ]
 
 
 class MissingComputationalResourcesError(

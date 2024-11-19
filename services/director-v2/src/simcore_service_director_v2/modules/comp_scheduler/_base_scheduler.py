@@ -929,25 +929,22 @@ class BaseCompScheduler(ABC):
                 comp_tasks[NodeIDStr(f"{task}")].state = RunningState.FAILED
             raise
         except TaskSchedulingError as exc:
-            err_context = exc.error_context()
             _logger.exception(
                 "Project '%s''s task '%s' could not be scheduled",
-                err_context["project_id"],
-                err_context["node_id"],
+                exc.project_id,
+                exc.node_id,
             )
             await CompTasksRepository.instance(
                 self.db_engine
             ).update_project_tasks_state(
                 project_id,
-                [err_context["node_id"]],
+                [exc.node_id],
                 RunningState.FAILED,
-                None,  # exc.get_errors(), # @pcrespov I need your help here!
+                exc.get_errors(),  # @pcrespov I need your help here!
                 optional_progress=1.0,
                 optional_stopped=arrow.utcnow().datetime,
             )
-            comp_tasks[
-                NodeIDStr(f"{err_context['node_id']}")
-            ].state = RunningState.FAILED
+            comp_tasks[NodeIDStr(f"{exc.node_id}")].state = RunningState.FAILED
         except Exception:
             _logger.exception(
                 "Unexpected error for %s with %s on %s happened when scheduling %s:",
