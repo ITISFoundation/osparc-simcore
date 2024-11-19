@@ -18,7 +18,6 @@ from unittest import mock
 
 import aiopg
 import aiopg.sa
-import httpx
 import pytest
 from _helpers import PublishedProject, RunningProject
 from dask.distributed import SpecCluster
@@ -216,9 +215,9 @@ def minimal_scheduler_dask_config(
 def scheduler(
     minimal_scheduler_dask_config: None,
     aiopg_engine: aiopg.sa.engine.Engine,
-    minimal_app: FastAPI,
+    initialized_app: FastAPI,
 ) -> BaseCompScheduler:
-    scheduler = _get_scheduler_worker(minimal_app)
+    scheduler = _get_scheduler_worker(initialized_app)
     assert scheduler is not None
     return scheduler
 
@@ -271,16 +270,6 @@ def with_disabled_auto_scheduling(mocker: MockerFixture) -> mock.MagicMock:
 
 
 @pytest.fixture
-async def minimal_app(async_client: httpx.AsyncClient) -> FastAPI:
-    # must use the minimal app from from the `async_client``
-    # the`client` uses starlette's TestClient which spawns
-    # a new thread on which it creates a new loop
-    # causing issues downstream with coroutines not
-    # being created on the same loop
-    return async_client._transport.app  # type: ignore  # noqa: SLF001
-
-
-@pytest.fixture
 def mocked_clean_task_output_and_log_files_if_invalid(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.clean_task_output_and_log_files_if_invalid",
@@ -292,10 +281,10 @@ async def test_scheduler_gracefully_starts_and_stops(
     minimal_scheduler_dask_config: None,
     aiopg_engine: aiopg.sa.engine.Engine,
     dask_spec_local_cluster: SpecCluster,
-    minimal_app: FastAPI,
+    initialized_app: FastAPI,
 ):
     # check it started correctly
-    assert _get_scheduler_worker(minimal_app) is not None
+    assert _get_scheduler_worker(initialized_app) is not None
 
 
 @pytest.mark.parametrize(
