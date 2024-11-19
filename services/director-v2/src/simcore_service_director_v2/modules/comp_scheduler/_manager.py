@@ -14,7 +14,6 @@ from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 
 from ...models.comp_runs import RunMetadataDict
-from ...utils.comp_scheduler import SCHEDULED_STATES
 from ...utils.rabbitmq import publish_project_log
 from ..db import get_db_engine
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
@@ -27,6 +26,7 @@ from ._constants import (
     SCHEDULER_INTERVAL,
 )
 from ._publisher import request_pipeline_scheduling
+from ._utils import SCHEDULED_STATES
 
 _logger = logging.getLogger(__name__)
 

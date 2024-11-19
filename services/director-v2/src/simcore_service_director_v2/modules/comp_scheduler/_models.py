@@ -4,7 +4,7 @@ from models_library.projects import ProjectID
 from models_library.rabbitmq_messages import RabbitMessageBase
 from models_library.users import UserID
 
-from ...utils.comp_scheduler import Iteration
+from ._utils import Iteration
 
 
 class SchedulePipelineRabbitMessage(RabbitMessageBase):

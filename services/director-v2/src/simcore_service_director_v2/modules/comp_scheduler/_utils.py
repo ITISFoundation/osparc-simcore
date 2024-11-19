@@ -12,7 +12,7 @@ from models_library.services_resources import (
 from models_library.users import UserID
 from pydantic import PositiveInt
 
-from ..models.comp_tasks import CompTaskAtDB
+from ...models.comp_tasks import CompTaskAtDB
 
 SCHEDULED_STATES: set[RunningState] = {
     RunningState.PUBLISHED,

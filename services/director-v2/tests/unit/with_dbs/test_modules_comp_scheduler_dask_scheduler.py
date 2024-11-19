@@ -74,11 +74,11 @@ from simcore_service_director_v2.modules.comp_scheduler import (
 from simcore_service_director_v2.modules.comp_scheduler._scheduler_dask import (
     DaskScheduler,
 )
+from simcore_service_director_v2.modules.comp_scheduler._utils import COMPLETED_STATES
 from simcore_service_director_v2.modules.dask_client import (
     DaskJobID,
     PublishedComputationTask,
 )
-from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES
 from simcore_service_director_v2.utils.dask_client_utils import TaskHandlers
 from starlette.testclient import TestClient
 from tenacity.asyncio import AsyncRetrying

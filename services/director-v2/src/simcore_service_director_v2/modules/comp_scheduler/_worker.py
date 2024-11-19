@@ -7,7 +7,6 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.logging_utils import log_context
 
-from ...utils.comp_scheduler import Iteration
 from ..db import get_db_engine
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..rabbitmq import get_rabbitmq_client
@@ -15,6 +14,7 @@ from ._models import SchedulePipelineRabbitMessage
 from ._publisher import request_pipeline_scheduling
 from ._scheduler_base import BaseCompScheduler
 from ._scheduler_factory import create_scheduler
+from ._utils import Iteration
 
 _logger = logging.getLogger(__name__)
 

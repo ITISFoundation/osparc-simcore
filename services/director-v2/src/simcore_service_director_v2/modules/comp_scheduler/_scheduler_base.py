@@ -50,16 +50,6 @@ from ...core.settings import ComputationalBackendSettings
 from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
-from ...utils.comp_scheduler import (
-    COMPLETED_STATES,
-    PROCESSING_STATES,
-    RUNNING_STATES,
-    TASK_TO_START_STATES,
-    WAITING_FOR_START_STATES,
-    Iteration,
-    create_service_resources_from_task,
-    get_resource_tracking_run_id,
-)
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.rabbitmq import (
     publish_project_log,
@@ -70,6 +60,16 @@ from ...utils.rabbitmq import (
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
+from ._utils import (
+    COMPLETED_STATES,
+    PROCESSING_STATES,
+    RUNNING_STATES,
+    TASK_TO_START_STATES,
+    WAITING_FOR_START_STATES,
+    Iteration,
+    create_service_resources_from_task,
+    get_resource_tracking_run_id,
+)
 
 _logger = logging.getLogger(__name__)
 

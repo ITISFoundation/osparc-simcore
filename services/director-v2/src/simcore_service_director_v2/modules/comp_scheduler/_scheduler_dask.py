@@ -30,7 +30,6 @@ from ...core.errors import (
 from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...models.dask_subsystem import DaskClientTaskState
-from ...utils.comp_scheduler import Iteration, get_resource_tracking_run_id
 from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
     parse_dask_job_id,
@@ -50,6 +49,7 @@ from ..db.repositories.clusters import ClustersRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._scheduler_base import BaseCompScheduler
+from ._utils import Iteration, get_resource_tracking_run_id
 
 _logger = logging.getLogger(__name__)
 
