@@ -69,7 +69,7 @@ qx.Class.define("osparc.filter.OrganizationsAndMembers", {
         this.__collaboratorsToBeRemoved = collaboratorsToBeRemoved.map(collaboratorToBeRemoved => parseInt(collaboratorToBeRemoved));
       }
 
-      osparc.store.Store.getInstance().getPotentialCollaborators()
+      osparc.store.Groups.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           this.__visibleCollaborators = potentialCollaborators;
           this.__addOrgsAndMembers();

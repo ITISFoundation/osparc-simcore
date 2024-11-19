@@ -112,7 +112,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         // all users can share services with ProductEveryone
         includeProductEveryone = true;
       }
-      osparc.store.Store.getInstance().getPotentialCollaborators(false, includeProductEveryone)
+      osparc.store.Groups.getInstance().getPotentialCollaborators(false, includeProductEveryone)
         .then(potentialCollaborators => {
           this.__visibleCollaborators = potentialCollaborators;
           const anyCollaborator = Object.keys(potentialCollaborators).length;

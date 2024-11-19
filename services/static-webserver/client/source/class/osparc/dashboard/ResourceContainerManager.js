@@ -474,7 +474,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           let groupContainer = this.__getGroupContainer(orgId);
           if (groupContainer === null) {
             groupContainer = this.__createGroupContainer(orgId, "loading-label");
-            osparc.store.Store.getInstance().getOrganizationOrUser(orgId)
+            const groupsStore = osparc.store.Groups.getInstance();
+            groupsStore.getOrganizationOrUser(orgId)
               .then(org => {
                 if (org && org["collabType"] !== 2) {
                   let icon = "";

@@ -96,7 +96,7 @@ qx.Class.define("osparc.workbench.Annotation", {
       let representation = null;
       switch (this.getType()) {
         case "note": {
-          const user = await osparc.store.Store.getInstance().getGroup(attrs.recipientGid);
+          const user = await osparc.store.Groups.getInstance().getGroup(attrs.recipientGid);
           representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, user ? user.label : "", attrs.text);
           break;
         }

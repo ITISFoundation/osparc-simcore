@@ -33,7 +33,7 @@ qx.Class.define("osparc.share.ShareePermissions", {
       this._add(layout);
       for (let i=0; i<shareesData.length; i++) {
         const shareeData = shareesData[i];
-        osparc.store.Store.getInstance().getGroup(shareeData.gid)
+        osparc.store.Groups.getInstance().getGroup(shareeData.gid)
           .then(group => {
             if (group) {
               layout.add(new qx.ui.basic.Label(group.label), {

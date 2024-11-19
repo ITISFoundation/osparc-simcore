@@ -142,7 +142,7 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
 
     __setRecipientGid: function(gid) {
       this.setRecipientGid(gid);
-      osparc.store.Store.getInstance().getGroup(gid)
+      osparc.store.Groups.getInstance().getGroup(gid)
         .then(user => {
           this.getChildControl("selected-recipient").setValue(user.label);
         });

@@ -257,7 +257,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
 
     __pushNotifications: function(gids) {
       // push 'STUDY_SHARED'/'TEMPLATE_SHARED' notification
-      osparc.store.Store.getInstance().getPotentialCollaborators()
+      osparc.store.Groups.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           gids.forEach(gid => {
             if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {

@@ -83,8 +83,8 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
         thumbnail.setSource(osparc.utils.Icons.organization(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
       }
       if (this.isPropertyInitialized("key")) {
-        const store = osparc.store.Store.getInstance();
-        store.getProductEveryone()
+        const groupsStore = osparc.store.Groups.getInstance();
+        groupsStore.getProductEveryone()
           .then(groupProductEveryone => {
             if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone["gid"]) {
               thumbnail.setSource(osparc.utils.Icons.everyone(osparc.ui.list.ListItemWithMenu.ICON_SIZE));

@@ -31,9 +31,10 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       }
     }
 
-    const store = osparc.store.Store.getInstance();
-    store.getGroupsMe()
+    const groupsStore = osparc.store.Groups.getInstance();
+    groupsStore.getGroupsMe()
       .then(personalGroup => {
+        const store = osparc.store.Store.getInstance();
         this.__personalWallet = store.getWallets().find(wallet => wallet.getOwner() === personalGroup.gid);
         this.__personalWalletId = this.__personalWallet.getWalletId();
         this.__buildLayout();

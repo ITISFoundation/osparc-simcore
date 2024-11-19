@@ -278,7 +278,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
             this.__organizationsAndMembers.reloadVisibleCollaborators(memberKeys);
           }
 
-          osparc.store.Store.getInstance().getPotentialCollaborators()
+          osparc.store.Groups.getInstance().getPotentialCollaborators()
             .then(potentialCollaborators => {
               clusterMembers.forEach(clusterMember => {
                 const gid = clusterMember.gid;

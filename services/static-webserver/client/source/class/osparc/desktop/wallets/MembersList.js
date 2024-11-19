@@ -211,7 +211,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
 
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const membersList = [];
-      const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators(true);
+      const potentialCollaborators = await osparc.store.Groups.getInstance().getPotentialCollaborators(true);
       const canIWrite = wallet.getMyAccessRights()["write"];
       wallet.getAccessRights().forEach(accessRights => {
         const gid = accessRights["gid"];
@@ -289,7 +289,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
             });
 
           // push 'WALLET_SHARED' notification
-          osparc.store.Store.getInstance().getPotentialCollaborators()
+          osparc.store.Groups.getInstance().getPotentialCollaborators()
             .then(potentialCollaborators => {
               gids.forEach(gid => {
                 if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {

@@ -23,9 +23,10 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
-    const store = osparc.store.Store.getInstance();
-    store.getGroupsMe()
+    const groupsStore = osparc.store.Groups.getInstance();
+    groupsStore.getGroupsMe()
       .then(personalGroup => {
+        const store = osparc.store.Store.getInstance();
         const personalWallet = store.getWallets().find(wallet => wallet.getOwner() === personalGroup.gid)
         this.__personalWalletId = personalWallet.getWalletId()
         this.__buildLayout()

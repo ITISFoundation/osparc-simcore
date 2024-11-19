@@ -61,7 +61,7 @@ qx.Class.define("osparc.share.PublishTemplate", {
       addCollaborators.addListener("addCollaborators", e => {
         const gids = e.getData();
         if (gids.length) {
-          osparc.store.Store.getInstance().getPotentialCollaborators(false, true)
+          osparc.store.Groups.getInstance().getPotentialCollaborators(false, true)
             .then(potentialCollaborators => {
               const currentGids = this.getSelectedGroups();
               gids.forEach(gid => {

@@ -117,7 +117,7 @@ qx.Class.define("osparc.info.CommentUI", {
       const commentContent = this.getChildControl("comment-content");
       commentContent.setValue(this.__comment["contents"]);
 
-      const user = osparc.store.Store.getInstance().getUser(this.__comment["user_id"])
+      const user = osparc.store.Groups.getInstance().getUser(this.__comment["user_id"])
       if (user) {
         const userSource = osparc.utils.Avatar.getUrl(user["login"], 32);
         thumbnail.setSource(userSource);
