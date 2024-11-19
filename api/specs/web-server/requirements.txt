@@ -1,5 +1,7 @@
 # Extra reqs, besides webserver's
 
-fastapi==0.96.0
+fastapi
 jsonref
+pydantic
+pydantic-extra-types
 python-multipart
