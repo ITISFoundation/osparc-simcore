@@ -10,8 +10,8 @@
 from collections.abc import Callable
 from typing import Any
 
-from playwright.sync_api import Page, WebSocket
-from pytest_simcore.helpers.playwright import web_socket_default_log_handler
+from playwright.sync_api import Page
+from pytest_simcore.helpers.playwright import RestartableWebSocket
 from pytest_simcore.helpers.playwright_sim4life import (
     check_video_streaming,
     interact_with_s4l,
@@ -22,7 +22,7 @@ from pytest_simcore.helpers.playwright_sim4life import (
 def test_template(
     page: Page,
     create_project_from_template_dashboard: Callable[[str], dict[str, Any]],
-    log_in_and_out: WebSocket,
+    log_in_and_out: RestartableWebSocket,
     template_id: str,
     is_autoscaled: bool,
     check_videostreaming: bool,
@@ -40,9 +40,9 @@ def test_template(
         page, node_ids[0], log_in_and_out, autoscaled=is_autoscaled, copy_workspace=True
     )
     s4l_websocket = resp["websocket"]
-    with web_socket_default_log_handler(s4l_websocket):
-        s4l_iframe = resp["iframe"]
-        interact_with_s4l(page, s4l_iframe)
+    # with web_socket_default_log_handler(s4l_websocket):
+    s4l_iframe = resp["iframe"]
+    interact_with_s4l(page, s4l_iframe)
 
-        if check_videostreaming:
-            check_video_streaming(page, s4l_iframe, s4l_websocket)
+    if check_videostreaming:
+        check_video_streaming(page, s4l_iframe, s4l_websocket)
