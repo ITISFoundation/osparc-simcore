@@ -30,7 +30,7 @@ def test_valid_web_application_settings(app_environment: EnvVarsDict):
         str(
             app_environment.get(
                 "DIRECTOR_DEFAULT_MAX_MEMORY",
-                ApplicationSettings.__fields__["DIRECTOR_DEFAULT_MAX_MEMORY"].default,
+                ApplicationSettings.model_fields["DIRECTOR_DEFAULT_MAX_MEMORY"].default,
             )
         )
         == f"{settings.DIRECTOR_DEFAULT_MAX_MEMORY}"
@@ -150,4 +150,4 @@ def test_docker_compose_environment_sample(
         },
     )
 
-    settings = ApplicationSettings.create_from_envs()
+    ApplicationSettings.create_from_envs()
