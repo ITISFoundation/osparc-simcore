@@ -73,7 +73,9 @@ class TaskSchedulingError(ComputationalSchedulerError):
     msg_template = "Computational scheduler: Task {node_id} in project {project_id} could not be scheduled {msg}"
 
 
-class MissingComputationalResourcesError(TaskSchedulingError):
+class MissingComputationalResourcesError(
+    TaskSchedulingError
+):  # pylint: disable=too-many-ancestors
     msg_template = (
         "Service {service_name}:{service_version} cannot be scheduled "
         "on cluster {cluster_id}: task needs '{task_resources}', "
@@ -81,7 +83,9 @@ class MissingComputationalResourcesError(TaskSchedulingError):
     )
 
 
-class InsuficientComputationalResourcesError(TaskSchedulingError):
+class InsuficientComputationalResourcesError(
+    TaskSchedulingError
+):  # pylint: disable=too-many-ancestors
     msg_template: str = (
         "Insufficient computational resources to run {service_name}:{service_version} with {service_requested_resources} on cluster {cluster_id}."
         "Cluster available workers: {cluster_available_resources}"
@@ -89,7 +93,7 @@ class InsuficientComputationalResourcesError(TaskSchedulingError):
     )
 
 
-class PortsValidationError(TaskSchedulingError):
+class PortsValidationError(TaskSchedulingError):  # pylint: disable=too-many-ancestors
     msg_template: str = (
         "Node {node_id} in {project_id} with ports having invalid values {errors_list}"
     )
