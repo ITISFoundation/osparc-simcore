@@ -78,7 +78,16 @@ qx.Class.define("osparc.data.model.Workbench", {
 
   statics: {
     CANT_ADD_NODE: qx.locale.Manager.tr("Nodes can't be added while the pipeline is running"),
-    CANT_DELETE_NODE: qx.locale.Manager.tr("Nodes can't be deleted while the pipeline is running")
+    CANT_DELETE_NODE: qx.locale.Manager.tr("Nodes can't be deleted while the pipeline is running"),
+
+    getLinkedNodeIds: function(workbenchData) {
+      const linkedNodeIDs = new Set([]);
+      Object.values(workbenchData).forEach(nodeData => {
+        const linkedNodes = osparc.data.model.Node.getLinkedNodeIds(nodeData);
+        linkedNodes.forEach(linkedNodeID => linkedNodeIDs.add(linkedNodeID))
+      });
+      return Array.from(linkedNodeIDs);
+    },
   },
 
   members: {
