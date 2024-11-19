@@ -399,9 +399,10 @@ async def test_get_stack_status_missing(
     mocked_dynamic_scheduler_events: None,
     mock_docker_api: None,
 ) -> None:
-    with pytest.raises(DynamicSidecarNotFoundError) as execinfo:
+    with pytest.raises(
+        DynamicSidecarNotFoundError, match=rf"{scheduler_data.node_uuid} not found"
+    ):
         await scheduler.get_stack_status(scheduler_data.node_uuid)
-    assert f"{scheduler_data.node_uuid} not found" in str(execinfo)
 
 
 async def test_get_stack_status_failing_sidecar(
