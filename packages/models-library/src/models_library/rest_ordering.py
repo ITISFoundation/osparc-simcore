@@ -16,17 +16,14 @@ class OrderDirection(str, Enum):
 
 class OrderBy(BaseModel):
     # Based on https://google.aip.dev/132#ordering
-    field: Annotated[IDStr, Field(..., description="field name identifier")]
-    direction: Annotated[
-        OrderDirection,
-        Field(
-            default=OrderDirection.ASC,
-            description=(
-                f"As [A,B,C,...] if `{OrderDirection.ASC.value}`"
-                f" or [Z,Y,X, ...] if `{OrderDirection.DESC.value}`"
-            ),
+    field: IDStr = Field(..., description="field name identifier")
+    direction: OrderDirection = Field(
+        default=OrderDirection.ASC,
+        description=(
+            f"As [A,B,C,...] if `{OrderDirection.ASC.value}`"
+            f" or [Z,Y,X, ...] if `{OrderDirection.DESC.value}`"
         ),
-    ]
+    )
 
 
 class _BaseOrderQueryParams(RequestParameters):

@@ -120,10 +120,11 @@ def test_ordering_query_model_class__defaults():
 
     # checks  all defaults
     model = OrderQueryParamsModel()
-    assert model.order_by
-    assert isinstance(model.order_by, OrderBy)  # nosec
-    assert model.order_by.field == "modified_at"  # NOTE that this was mapped!
-    assert model.order_by.direction == OrderDirection.DESC
+    assert model.order_by is not None
+    assert (
+        model.order_by.field == "modified_at"  # pylint: disable=no-member
+    )  # NOTE that this was mapped!
+    assert model.order_by.direction is OrderDirection.DESC  # pylint: disable=no-member
 
     # partial defaults
     model = OrderQueryParamsModel.model_validate({"order_by": {"field": "name"}})
