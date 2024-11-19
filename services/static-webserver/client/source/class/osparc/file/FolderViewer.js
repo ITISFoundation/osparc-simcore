@@ -201,24 +201,6 @@ qx.Class.define("osparc.file.FolderViewer", {
       return control || this.base(arguments, id);
     },
 
-    __getEmptyEntry: function() {
-      const items = [];
-      if (this.getMode() === "list") {
-        items.push([
-          "",
-          this.tr("Empty folder"),
-          "",
-          "",
-          ""
-        ]);
-      } else if (this.getMode() === "icons") {
-        items.push(this.self().getItemButton().set({
-          label: this.tr("Empty folder")
-        }));
-      }
-      return items;
-    },
-
     __convertEntries: function(content) {
       const items = [];
       if (this.getMode() === "list") {

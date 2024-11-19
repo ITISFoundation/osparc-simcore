@@ -37,8 +37,8 @@ on:
           - all
 
 env:
-  DEFAULT_MAX_NANO_CPUS: 10000000
-  DEFAULT_MAX_MEMORY: 268435456
+  # NOTE: 'COLUMNS' is a shell env var that represents the width (number of columns)
+  #       of the terminal or command-line interface in characters.
   COLUMNS: 120
 
 concurrency:
@@ -189,6 +189,8 @@ jobs:
               - 'packages/**'
               - 'services/director/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             director-v2:
               - 'packages/**'
               - 'services/director-v2/**'
@@ -912,11 +914,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # KEEP 3.6 Development of this service is frozen
-        # KEEP ubuntu 20.04, else no python 3.6
-        python: [3.6]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.10.4]
+        python: ["3.11"]
+        os: [ubuntu-22.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -929,12 +928,27 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.4.x"
+          enable-cache: false
+          cache-dependency-glob: "**/director/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/director.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/director.bash typecheck
       - name: test
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/director.bash test
+      - name: upload failed tests logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/director/test_failures
       - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -2132,6 +2146,11 @@ jobs:
         python: ["3.11"]
         os: [ubuntu-22.04]
       fail-fast: false
+    env:
+      # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
+      DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
+      DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
+      DIRECTOR_TRACING: null
     steps:
       - uses: actions/checkout@v4
       - name: setup docker buildx

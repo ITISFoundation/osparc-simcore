@@ -59,9 +59,9 @@ def core_services_selection(simcore_docker_compose: dict) -> list[ServiceNameStr
 
 
 @pytest.fixture(scope="module")
-def core_stack_namespace(testing_environ_vars: EnvVarsDict) -> str:
+def core_stack_namespace(env_vars_for_docker_compose: EnvVarsDict) -> str:
     """returns 'com.docker.stack.namespace' service label core stack"""
-    stack_name = testing_environ_vars["SWARM_STACK_NAME"]
+    stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert stack_name is not None
     return stack_name
 
@@ -144,7 +144,7 @@ def ops_services_selection(ops_docker_compose: ComposeSpec) -> list[ServiceNameS
 
 
 @pytest.fixture(scope="module")
-def ops_stack_namespace(testing_environ_vars: EnvVarsDict) -> str:
+def ops_stack_namespace(env_vars_for_docker_compose: EnvVarsDict) -> str:
     """returns 'com.docker.stack.namespace' service label operations stack"""
     return "pytest-ops"
 

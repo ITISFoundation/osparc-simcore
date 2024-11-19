@@ -17,14 +17,17 @@ from yarl import URL
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
+from .helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture(scope="module")
-def storage_endpoint(docker_stack: dict, testing_environ_vars: dict) -> Iterable[URL]:
-    prefix = testing_environ_vars["SWARM_STACK_NAME"]
+def storage_endpoint(
+    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict
+) -> Iterable[URL]:
+    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_storage" in docker_stack["services"]
 
-    default_port = testing_environ_vars["STORAGE_ENDPOINT"].split(":")[1]
+    default_port = env_vars_for_docker_compose["STORAGE_ENDPOINT"].split(":")[1]
     endpoint = (
         f"{get_localhost_ip()}:{get_service_published_port('storage', default_port)}"
     )

@@ -1,13 +1,14 @@
-# pylint:disable=redefined-outer-name
-# pylint:disable=too-many-arguments
-# pylint:disable=too-many-positional-arguments
-# pylint:disable=unused-argument
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import logging
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, cast
 from unittest import mock
 
 import aiodocker
@@ -46,14 +47,11 @@ pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
     "rabbit",
-    "storage",
     "redis",
+    "storage",
 ]
 
-pytest_simcore_ops_services_selection = [
-    "adminer",
-    "minio",
-]
+pytest_simcore_ops_services_selection = ["adminer", "minio", "portainer"]
 
 
 @pytest.fixture()
@@ -79,29 +77,32 @@ def mock_env(
     catalog_port = services_endpoint["catalog"].port
     assert catalog_port
 
-    env_vars: EnvVarsDict = {
-        "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
-        "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-        "SWARM_STACK_NAME": "pytest-simcore",
-        "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
-        "SC_BOOT_MODE": "production",
-        "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
-        "PROXY_EXPOSE_PORT": "true",
-        "SIMCORE_SERVICES_NETWORK_NAME": network_name,
-        "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "true",
-        "POSTGRES_HOST": f"{get_localhost_ip()}",
-        "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
-        "COMPUTATIONAL_BACKEND_ENABLED": "false",
-        "R_CLONE_PROVIDER": "MINIO",
-        "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
-        "DIRECTOR_HOST": director_host,
-        "DIRECTOR_PORT": f"{director_port}",
-        "CATALOG_HOST": catalog_host,
-        "CATALOG_PORT": f"{catalog_port}",
-    }
-    setenvs_from_dict(monkeypatch, env_vars)
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
-    return mock_env | env_vars
+    mock_env.pop("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", None)
+
+    return mock_env | setenvs_from_dict(
+        monkeypatch,
+        {
+            "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
+            "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
+            "SWARM_STACK_NAME": "pytest-simcore",
+            "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+            "SC_BOOT_MODE": "production",
+            "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
+            "PROXY_EXPOSE_PORT": "true",
+            "SIMCORE_SERVICES_NETWORK_NAME": network_name,
+            "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "true",
+            "POSTGRES_HOST": f"{get_localhost_ip()}",
+            "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
+            "COMPUTATIONAL_BACKEND_ENABLED": "false",
+            "R_CLONE_PROVIDER": "MINIO",
+            "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
+            "DIRECTOR_HOST": director_host,
+            "DIRECTOR_PORT": f"{director_port}",
+            "CATALOG_HOST": catalog_host,
+            "CATALOG_PORT": f"{catalog_port}",
+        },
+    )
 
 
 @pytest.fixture
@@ -117,17 +118,17 @@ def minimal_configuration(
 
 @pytest.fixture
 def uuid_legacy(faker: Faker) -> str:
-    return faker.uuid4()
+    return cast(str, faker.uuid4())
 
 
 @pytest.fixture
 def uuid_dynamic_sidecar(faker: Faker) -> str:
-    return faker.uuid4()
+    return cast(str, faker.uuid4())
 
 
 @pytest.fixture
 def uuid_dynamic_sidecar_compose(faker: Faker) -> str:
-    return faker.uuid4()
+    return cast(str, faker.uuid4())
 
 
 @pytest.fixture

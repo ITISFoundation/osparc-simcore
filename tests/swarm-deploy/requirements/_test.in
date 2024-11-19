@@ -11,6 +11,7 @@ aiodocker
 alembic
 click
 docker
+faker
 jsonschema
 pytest
 pytest-asyncio

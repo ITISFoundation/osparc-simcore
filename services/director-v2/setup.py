@@ -47,7 +47,7 @@ SETUP = {
     "description": "Orchestrates the pipeline of services defined by the user",
     "long_description": (CURRENT_DIR / "README.md").read_text(),
     "license": "MIT license",
-    "python_requires": "~=3.10",
+    "python_requires": "~=3.11",
     "packages": find_packages(where="src"),
     "package_dir": {
         "": "src",
