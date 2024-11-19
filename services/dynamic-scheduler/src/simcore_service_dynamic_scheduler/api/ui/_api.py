@@ -1,13 +1,15 @@
 import asyncio
-from typing import AsyncIterable
+from collections.abc import AsyncIterable
+from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import StreamingResponse
 from fastui import AnyComponent, FastUI
 from fastui import components as c
 from fastui.events import PageEvent
 from starlette import status
 
+from ..dependencies import get_app
 from ._constants import API_ROOT_PATH
 
 router = APIRouter()
@@ -47,14 +49,18 @@ def api_index() -> list[AnyComponent]:
 
 # SSE endpoint
 @router.get(f"{API_ROOT_PATH}/sse/")
-async def sse_ai_response() -> StreamingResponse:
-    return StreamingResponse(_render_messages(), media_type="text/event-stream")
+async def sse_ai_response(
+    app: Annotated[FastAPI, Depends(get_app)]
+) -> StreamingResponse:
+    return StreamingResponse(_render_messages(app), media_type="text/event-stream")
 
 
-async def _render_messages() -> AsyncIterable[str]:
+async def _render_messages(app: FastAPI) -> AsyncIterable[str]:
+    _ = app  # TODO: fetch storage and render content from here
     messages: list[AnyComponent] = []
     # Avoid the browser reconnecting
     while True:
+        # TODO: yield only if content changed, store a hash of the messages
         messages.append(c.Markdown(text="# LOL \n this is it!"))
         await asyncio.sleep(3)
         message = FastUI(root=messages)

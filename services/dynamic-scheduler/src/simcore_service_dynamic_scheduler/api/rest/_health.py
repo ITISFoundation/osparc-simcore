@@ -11,7 +11,7 @@ from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
 
-from ._dependencies import (
+from ..dependencies import (
     get_rabbitmq_client_from_request,
     get_rabbitmq_rpc_server_from_request,
     get_redis_clients_from_request,
