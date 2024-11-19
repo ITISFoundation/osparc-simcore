@@ -8,7 +8,9 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, PositiveInt, field_validator
 from simcore_postgres_database.models.comp_pipeline import StateType
-from typing_extensions import TypedDict
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from ..utils.db import DB_TO_RUNNING_STATE
 

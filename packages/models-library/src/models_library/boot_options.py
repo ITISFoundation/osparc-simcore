@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
-from typing_extensions import TypedDict
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from .basic_types import EnvVarKey
 

@@ -11,7 +11,9 @@ from typing import Literal
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
-from typing_extensions import TypedDict
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from .base import metadata
 from .groups import groups

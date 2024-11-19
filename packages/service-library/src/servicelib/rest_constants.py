@@ -2,7 +2,9 @@
 
 from typing import Final
 
-from typing_extensions import TypedDict
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 
 class PydanticExportParametersDict(TypedDict):

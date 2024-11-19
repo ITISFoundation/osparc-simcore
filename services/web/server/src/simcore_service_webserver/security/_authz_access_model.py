@@ -10,7 +10,7 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TypeAlias, TypedDict
+from typing import TypeAlias
 
 from models_library.products import ProductName
 from models_library.users import UserID
