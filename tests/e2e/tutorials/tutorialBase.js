@@ -414,12 +414,6 @@ class TutorialBase {
     await auto.showLogger(this.__page, show);
   }
 
-  async takeLoggerScreenshot() {
-    await this.takeScreenshot("logger_before");
-    await this.showLogger(true);
-    await this.takeScreenshot("logger_after");
-  }
-
   async runPipeline() {
     await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page);
@@ -835,11 +829,8 @@ class TutorialBase {
     return this.__reasonFailed;
   }
 
-  async setTutorialFailed(failed, loggerScreenshot = true, reason = "") {
-    if (failed && loggerScreenshot) {
-      await this.takeLoggerScreenshot();
-    }
-    this.__failed = failed;
+  async setTutorialFailed(reason = "") {
+    this.__failed = true;
     this.__reasonFailed = reason
   }
 }

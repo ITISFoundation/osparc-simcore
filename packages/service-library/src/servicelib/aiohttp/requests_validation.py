@@ -14,7 +14,7 @@ from typing import TypeAlias, TypeVar, Union
 
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
+from pydantic import BaseModel, ValidationError, parse_obj_as
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from . import status
@@ -22,17 +22,6 @@ from . import status
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)
 UnionOfModelTypes: TypeAlias = Union[type[ModelClass], type[ModelClass]]  # noqa: UP007
-
-
-class RequestParams(BaseModel):
-    ...
-
-
-class StrictRequestParams(BaseModel):
-    """Use a base class for context, path and query parameters"""
-
-    class Config:
-        extra = Extra.forbid  # strict
 
 
 @contextmanager

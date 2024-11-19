@@ -61,6 +61,11 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.po.POCenterWindow.openWindow(), this);
           this.add(control);
           break;
+        case "tester-center":
+          control = new qx.ui.menu.Button(this.tr("Tester Center"));
+          control.addListener("execute", () => osparc.tester.TesterCenterWindow.openWindow(), this);
+          this.add(control);
+          break;
         case "billing-center":
           control = new qx.ui.menu.Button(this.tr("Billing Center"));
           osparc.utils.Utils.setIdToWidget(control, "userMenuBillingCenterBtn");
@@ -156,6 +161,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
         }
         if (osparc.data.Permissions.getInstance().isProductOwner()) {
           this.getChildControl("po-center");
+        }
+        if (osparc.data.Permissions.getInstance().isTester()) {
+          this.getChildControl("tester-center");
         }
         if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
           this.getChildControl("billing-center");

@@ -28,8 +28,8 @@ from . import _folders_api
 from ._exceptions_handlers import handle_plugin_requests_exceptions
 from ._models import (
     FolderFilters,
-    FolderListFullSearchWithJsonStrQueryParams,
-    FolderListWithJsonStrQueryParams,
+    FolderSearchQueryParams,
+    FoldersListQueryParams,
     FoldersPathParams,
     FoldersRequestContext,
 )
@@ -66,8 +66,8 @@ async def create_folder(request: web.Request):
 @handle_plugin_requests_exceptions
 async def list_folders(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
-    query_params: FolderListWithJsonStrQueryParams = parse_request_query_parameters_as(
-        FolderListWithJsonStrQueryParams, request
+    query_params: FoldersListQueryParams = parse_request_query_parameters_as(
+        FoldersListQueryParams, request
     )
 
     if not query_params.filters:
@@ -106,10 +106,8 @@ async def list_folders(request: web.Request):
 @handle_plugin_requests_exceptions
 async def list_folders_full_search(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
-    query_params: FolderListFullSearchWithJsonStrQueryParams = (
-        parse_request_query_parameters_as(
-            FolderListFullSearchWithJsonStrQueryParams, request
-        )
+    query_params: FolderSearchQueryParams = parse_request_query_parameters_as(
+        FolderSearchQueryParams, request
     )
 
     if not query_params.filters:

@@ -6,32 +6,56 @@ IFS=$(printf '\n\t')
 
 INFO="INFO: [$(basename "$0")] "
 
-# BOOTING application ---------------------------------------------
 echo "$INFO" "Booting in ${SC_BOOT_MODE} mode ..."
-echo "  User    :$(id "$(whoami)")"
-echo "  Workdir :$(pwd)"
+echo "$INFO" "User :$(id "$(whoami)")"
+echo "$INFO" "Workdir : $(pwd)"
 
+#
+# DEVELOPMENT MODE
+#
+# - prints environ info
+# - installs requirements in mounted volume
+#
 if [ "${SC_BUILD_TARGET}" = "development" ]; then
   echo "$INFO" "Environment :"
   printenv | sed 's/=/: /' | sed 's/^/    /' | sort
   echo "$INFO" "Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
-  cd services/director || exit 1
-  # speedup for legacy service with all essential dependencies pinned
-  # in this case `--no-deps` does the trick, for details see link
-  # https://stackoverflow.com/a/65793484/2855718
-  pip install --no-cache-dir --no-deps -r requirements/dev.txt
-  cd - || exit 1
-  echo "$INFO" "PIP :"
-  pip list | sed 's/^/    /'
+
+  cd services/director
+  uv pip --quiet --no-cache-dir sync requirements/dev.txt
+  cd -
+  uv pip list
 fi
 
-# RUNNING application ----------------------------------------
-if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-  watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
-    python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
-    simcore_service_director --loglevel="${LOGLEVEL}"
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
+  # NOTE: production does NOT pre-installs debugpy
+  uv pip install --no-cache-dir debugpy
+fi
+
+#
+# RUNNING application
+#
+
+APP_LOG_LEVEL=${DIRECTOR_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
+SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
+echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
+
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
+  reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
+
+  exec sh -c "
+    cd services/director/src/simcore_service_director && \
+    python -m debugpy --listen 0.0.0.0:${DIRECTOR_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
+      --host 0.0.0.0 \
+      --reload \
+      $reload_dir_packages
+      --reload-dir . \
+      --log-level \"${SERVER_LOG_LEVEL}\"
+  "
 else
-  exec simcore-service-director --loglevel="${LOGLEVEL}"
+  exec uvicorn simcore_service_director.main:the_app \
+    --host 0.0.0.0 \
+    --log-level "${SERVER_LOG_LEVEL}"
 fi

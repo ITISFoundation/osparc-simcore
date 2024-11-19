@@ -51,7 +51,7 @@ async function runTutorial () {
     await utils.takeScreenshot(page, screenshotPrefix + 'iFrame2');
   }
   catch(err) {
-    await tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed();
     console.log('Tutorial error: ' + err);
   }
   finally {

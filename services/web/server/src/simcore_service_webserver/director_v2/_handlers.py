@@ -22,10 +22,10 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
+from ..models import RequestContext
 from ..products import api as products_api
 from ..security.decorators import permission_required
 from ..users.exceptions import UserDefaultWalletNotFoundError
@@ -41,11 +41,6 @@ _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
-
-
-class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 class _ComputationStarted(BaseModel):

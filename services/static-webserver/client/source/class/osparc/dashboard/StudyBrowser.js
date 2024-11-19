@@ -991,10 +991,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.invalidateStudies();
         this._resourcesContainer.setResourcesToList([]);
 
+        this._toolbar.show();
         if (context === "search") {
           this.__reloadFolders();
           this.__reloadStudies();
         } else if (context === "workspaces") {
+          this._toolbar.hide();
           this._searchBarFilter.resetFilters();
           this.__reloadWorkspaces();
         } else if (context === "studiesAndFolders") {

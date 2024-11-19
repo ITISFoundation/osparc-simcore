@@ -49,7 +49,7 @@ async function runTutorial() {
     await tutorial.testS4LDipole(s4lNodeId);
   }
   catch (err) {
-    tutorial.setTutorialFailed(true, false);
+    tutorial.setTutorialFailed(err);
     console.log('Tutorial error: ' + err);
     throw "Tutorial Failed";
   }

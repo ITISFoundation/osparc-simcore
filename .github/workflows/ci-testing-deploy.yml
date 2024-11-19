@@ -37,8 +37,8 @@ on:
           - all
 
 env:
-  DEFAULT_MAX_NANO_CPUS: 10000000
-  DEFAULT_MAX_MEMORY: 268435456
+  # NOTE: 'COLUMNS' is a shell env var that represents the width (number of columns)
+  #       of the terminal or command-line interface in characters.
   COLUMNS: 120
 
 concurrency:
@@ -189,6 +189,8 @@ jobs:
               - 'packages/**'
               - 'services/director/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             director-v2:
               - 'packages/**'
               - 'services/director-v2/**'
@@ -349,7 +351,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -394,7 +396,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -439,7 +441,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -484,7 +486,7 @@ jobs:
           run: ./ci/github/unit-testing/webserver.bash install
         - name: test
           run: ./ci/github/unit-testing/webserver.bash test_with_db 04
-        - uses: codecov/codecov-action@v4.6.0
+        - uses: codecov/codecov-action@v5.0.2
           env:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           with:
@@ -532,7 +534,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -582,7 +584,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/agent.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -627,7 +629,7 @@ jobs:
         run: ./ci/github/unit-testing/api.bash install
       - name: test
         run: ./ci/github/unit-testing/api.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -678,7 +680,7 @@ jobs:
       - name: OAS backwards compatibility check
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/api-server.bash openapi-diff
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -726,7 +728,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/autoscaling.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -780,7 +782,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -839,7 +841,7 @@ jobs:
           source .venv/bin/activate && \
           pushd services/clusters-keeper && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -893,7 +895,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -912,11 +914,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # KEEP 3.6 Development of this service is frozen
-        # KEEP ubuntu 20.04, else no python 3.6
-        python: [3.6]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.10.4]
+        python: ["3.11"]
+        os: [ubuntu-22.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -929,13 +928,28 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.4.x"
+          enable-cache: false
+          cache-dependency-glob: "**/director/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/director.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/director.bash typecheck
       - name: test
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/director.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - name: upload failed tests logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/director/test_failures
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -989,7 +1003,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1037,7 +1051,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/aws-library.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1085,7 +1099,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1133,7 +1147,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dask-sidecar.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1191,7 +1205,7 @@ jobs:
           source .venv/bin/activate && \
           pushd services/osparc-gateway-server && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1239,7 +1253,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/payments.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1287,7 +1301,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dynamic-scheduler.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1345,7 +1359,7 @@ jobs:
           source .venv/bin/activate && \
           pushd services/resource-usage-tracker && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1393,7 +1407,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1452,7 +1466,7 @@ jobs:
           source .venv/bin/activate && \
           pushd services/efs-guardian && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1535,7 +1549,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1583,7 +1597,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/invitations.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1631,7 +1645,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1679,7 +1693,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/service-library.bash test_all
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1727,7 +1741,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/settings-library.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1774,7 +1788,7 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1824,7 +1838,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/notifications-library.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1874,7 +1888,7 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1989,7 +2003,7 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2052,7 +2066,7 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2115,7 +2129,7 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2132,6 +2146,11 @@ jobs:
         python: ["3.11"]
         os: [ubuntu-22.04]
       fail-fast: false
+    env:
+      # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
+      DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
+      DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
+      DIRECTOR_TRACING: null
     steps:
       - uses: actions/checkout@v4
       - name: setup docker buildx
@@ -2182,7 +2201,7 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2247,7 +2266,7 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/dynamic-sidecar.bash clean_up
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2325,7 +2344,7 @@ jobs:
         run: |
           pushd services/osparc-gateway-server && \
           make down
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2388,7 +2407,7 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
-      - uses: codecov/codecov-action@v4.6.0
+      - uses: codecov/codecov-action@v5.0.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:

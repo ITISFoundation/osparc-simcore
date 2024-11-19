@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from playwright.sync_api import Page, WebSocket
+from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
@@ -92,6 +93,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
     is_autoscaled: bool,
     is_product_lite: bool,
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
+    product_url: AnyUrl,
 ):
     with log_context(logging.INFO, "Checking 'Access TIP' teaser"):
         # click to open and expand
@@ -141,6 +143,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 else _ELECTRODE_SELECTOR_MAX_STARTUP_TIME
             ),
             press_start_button=False,
+            product_url=product_url,
         )
         # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME)
@@ -200,6 +203,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
                     else _JLAB_MAX_STARTUP_MAX_TIME
                 ),
                 press_start_button=False,
+                product_url=product_url,
             ) as service_running:
                 app_mode_trigger_next_app(page)
             ti_iframe = service_running.iframe_locator
@@ -284,6 +288,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
                     else _POST_PRO_MAX_STARTUP_TIME
                 ),
                 press_start_button=False,
+                product_url=product_url,
             ) as service_running:
                 app_mode_trigger_next_app(page)
             s4l_postpro_iframe = service_running.iframe_locator

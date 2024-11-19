@@ -35,7 +35,7 @@ SETUP = {
     "author": "Pedro Crespo-Valero (pcrespov)",
     "description": "Core service library for simcore (or servicelib)",
     "license": "MIT license",
-    "python_requires": "~=3.10",
+    "python_requires": "~=3.11",
     "install_requires": tuple(PROD_REQUIREMENTS),
     "packages": find_packages(where="src"),
     "package_data": {"": ["py.typed"]},

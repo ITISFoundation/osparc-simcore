@@ -39,7 +39,7 @@ async function runTutorial () {
     await tutorial.checkNodeOutputs(1, outFiles);
   }
   catch(err) {
-    await tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed();
     console.log('Tutorial error: ' + err);
   }
   finally {

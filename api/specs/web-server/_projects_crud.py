@@ -11,7 +11,8 @@ This OAS are the source of truth
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Query, status
+from _common import as_query
+from fastapi import APIRouter, Depends, Header, status
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
@@ -27,14 +28,14 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import Page
-from pydantic import Json
+from pydantic import BaseModel
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._common_models import ProjectPathParams
 from simcore_service_webserver.projects._crud_handlers import ProjectCreateParams
 from simcore_service_webserver.projects._crud_handlers_models import (
-    ProjectFilters,
-    ProjectListFullSearchParams,
-    ProjectListParams,
+    ProjectActiveQueryParams,
+    ProjectsListQueryParams,
+    ProjectsSearchQueryParams,
 )
 
 router = APIRouter(
@@ -45,6 +46,24 @@ router = APIRouter(
 )
 
 
+class _ProjectCreateHeaderParams(BaseModel):
+    x_simcore_user_agent: Annotated[
+        str | None, Header(description="Optional simcore user agent")
+    ] = "undefined"
+    x_simcore_parent_project_uuid: Annotated[
+        ProjectID | None,
+        Header(
+            description="Optionally sets a parent project UUID (both project and node must be set)",
+        ),
+    ] = None
+    x_simcore_parent_node_id: Annotated[
+        NodeID | None,
+        Header(
+            description="Optionally sets a parent node ID (both project and node must be set)",
+        ),
+    ] = None
+
+
 @router.post(
     "/projects",
     response_model=Envelope[TaskGet],
@@ -52,21 +71,9 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_project(
-    _params: Annotated[ProjectCreateParams, Depends()],
-    _create: ProjectCreateNew | ProjectCopyOverride,
-    x_simcore_user_agent: Annotated[str | None, Header()] = "undefined",
-    x_simcore_parent_project_uuid: Annotated[
-        ProjectID | None,
-        Header(
-            description="Optionally sets a parent project UUID (both project and node must be set)",
-        ),
-    ] = None,
-    x_simcore_parent_node_id: Annotated[
-        NodeID | None,
-        Header(
-            description="Optionally sets a parent node ID (both project and node must be set)",
-        ),
-    ] = None,
+    _h: Annotated[_ProjectCreateHeaderParams, Depends()],
+    _path: Annotated[ProjectCreateParams, Depends()],
+    _body: ProjectCreateNew | ProjectCopyOverride,
 ):
     ...
 
@@ -76,18 +83,7 @@ async def create_project(
     response_model=Page[ProjectListItem],
 )
 async def list_projects(
-    _params: Annotated[ProjectListParams, Depends()],
-    order_by: Annotated[
-        Json,
-        Query(
-            description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
-            example='{"field": "last_change_date", "direction": "desc"}',
-        ),
-    ] = '{"field": "last_change_date", "direction": "desc"}',
-    filters: Annotated[
-        Json | None,
-        Query(description=ProjectFilters.schema_json(indent=1)),
-    ] = None,
+    _query: Annotated[as_query(ProjectsListQueryParams), Depends()],
 ):
     ...
 
@@ -96,7 +92,9 @@ async def list_projects(
     "/projects/active",
     response_model=Envelope[ProjectGet],
 )
-async def get_active_project(client_session_id: str):
+async def get_active_project(
+    _query: Annotated[ProjectActiveQueryParams, Depends()],
+):
     ...
 
 
@@ -104,7 +102,9 @@ async def get_active_project(client_session_id: str):
     "/projects/{project_id}",
     response_model=Envelope[ProjectGet],
 )
-async def get_project(project_id: ProjectID):
+async def get_project(
+    _path: Annotated[ProjectPathParams, Depends()],
+):
     ...
 
 
@@ -113,7 +113,10 @@ async def get_project(project_id: ProjectID):
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def patch_project(project_id: ProjectID, _new: ProjectPatch):
+async def patch_project(
+    _path: Annotated[ProjectPathParams, Depends()],
+    _body: ProjectPatch,
+):
     ...
 
 
@@ -121,7 +124,9 @@ async def patch_project(project_id: ProjectID, _new: ProjectPatch):
     "/projects/{project_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_project(project_id: ProjectID):
+async def delete_project(
+    _path: Annotated[ProjectPathParams, Depends()],
+):
     ...
 
 
@@ -131,24 +136,17 @@ async def delete_project(project_id: ProjectID):
     status_code=status.HTTP_201_CREATED,
 )
 async def clone_project(
-    _params: Annotated[ProjectPathParams, Depends()],
+    _path: Annotated[ProjectPathParams, Depends()],
 ):
     ...
 
 
 @router.get(
     "/projects:search",
-    response_model=Page[ProjectListFullSearchParams],
+    response_model=Page[ProjectListItem],
 )
 async def list_projects_full_search(
-    _params: Annotated[ProjectListFullSearchParams, Depends()],
-    order_by: Annotated[
-        Json,
-        Query(
-            description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
-            example='{"field": "last_change_date", "direction": "desc"}',
-        ),
-    ] = ('{"field": "last_change_date", "direction": "desc"}',),
+    _query: Annotated[as_query(ProjectsSearchQueryParams), Depends()],
 ):
     ...
 
@@ -159,6 +157,6 @@ async def list_projects_full_search(
     status_code=status.HTTP_200_OK,
 )
 async def get_project_inactivity(
-    _params: Annotated[ProjectPathParams, Depends()],
+    _path: Annotated[ProjectPathParams, Depends()],
 ):
     ...

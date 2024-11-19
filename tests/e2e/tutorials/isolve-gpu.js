@@ -42,7 +42,7 @@ async function runTutorial() {
     await tutorial.checkNodeLogsFunctional();
   }
   catch(err) {
-    await tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed();
     console.log('Tutorial error: ' + err);
   }
   finally {
