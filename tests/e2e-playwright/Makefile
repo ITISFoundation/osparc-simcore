@@ -66,7 +66,7 @@ RETRY_INTERVAL_SECONDS := 1
 
 install-ci-up-simcore: install-ci
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
-	@$(_transfer-to-registry)
+	@$(_transfer-images-to-registry)
 	@$(_up_simcore)
 	@$(VENV_DIR)/bin/python utils/wait_for_services.py
 
