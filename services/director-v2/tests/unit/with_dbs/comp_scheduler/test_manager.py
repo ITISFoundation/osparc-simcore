@@ -74,13 +74,41 @@ async def _assert_comp_runs_empty(sqlalchemy_async_engine: AsyncEngine) -> None:
     await _assert_comp_runs(sqlalchemy_async_engine, expected_total=0)
 
 
+@pytest.fixture
+def with_fast_scheduling(mocker: MockerFixture) -> None:
+    from simcore_service_director_v2.modules.comp_scheduler import _manager
+
+    mocker.patch.object(
+        _manager, "SCHEDULER_INTERVAL", datetime.timedelta(seconds=0.01)
+    )
+
+
+@pytest.fixture
+def mocked_schedule_pipelines(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._manager.schedule_pipelines",
+        autospec=True,
+    )
+
+
+async def test_manager_starts_and_auto_schedules_pipelines(
+    with_fast_scheduling: None,
+    with_disabled_scheduler_worker: mock.Mock,
+    mocked_schedule_pipelines: mock.Mock,
+    initialized_app: FastAPI,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    await _assert_comp_runs_empty(sqlalchemy_async_engine)
+    mocked_schedule_pipelines.assert_called()
+
+
 async def test_schedule_pipelines_empty_db(
     with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_worker: mock.Mock,
     initialized_app: FastAPI,
     scheduler_rabbit_client_parser: mock.AsyncMock,
     sqlalchemy_async_engine: AsyncEngine,
 ):
-    with_disabled_auto_scheduling.assert_called_once()
     await _assert_comp_runs_empty(sqlalchemy_async_engine)
 
     await schedule_pipelines(initialized_app)
@@ -96,10 +124,10 @@ async def test_schedule_pipelines_concurently_runs_exclusively_and_raises(
     with_disabled_auto_scheduling: mock.Mock,
     initialized_app: FastAPI,
     mocker: MockerFixture,
-    monkeypatch: pytest.MonkeyPatch,
 ):
     CONCURRENCY = 5
     # NOTE: this ensure no flakyness as empty scheduling is very fast
+    # so we slow down the limited_gather function
     original_function = limited_gather
 
     async def slow_limited_gather(*args, **kwargs):
@@ -263,31 +291,3 @@ async def test_empty_pipeline_is_not_scheduled(
     assert "no computational dag defined" in caplog.records[0].message
     await _assert_comp_runs_empty(sqlalchemy_async_engine)
     scheduler_rabbit_client_parser.assert_not_called()
-
-
-@pytest.fixture
-def with_fast_scheduling(mocker: MockerFixture) -> None:
-    from simcore_service_director_v2.modules.comp_scheduler import _manager
-
-    mocker.patch.object(
-        _manager, "SCHEDULER_INTERVAL", datetime.timedelta(seconds=0.01)
-    )
-
-
-@pytest.fixture
-def mocked_schedule_pipelines(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._manager.schedule_pipelines",
-        autospec=True,
-    )
-
-
-async def test_auto_scheduling(
-    with_fast_scheduling: None,
-    with_disabled_scheduler_worker: mock.Mock,
-    mocked_schedule_pipelines: mock.Mock,
-    initialized_app: FastAPI,
-    sqlalchemy_async_engine: AsyncEngine,
-):
-    await _assert_comp_runs_empty(sqlalchemy_async_engine)
-    mocked_schedule_pipelines.assert_called()
