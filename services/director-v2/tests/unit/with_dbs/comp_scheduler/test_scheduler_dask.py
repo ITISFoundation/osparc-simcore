@@ -20,7 +20,6 @@ import aiopg
 import aiopg.sa
 import pytest
 from _helpers import PublishedProject, RunningProject
-from dask.distributed import SpecCluster
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import TaskOutputData
@@ -42,14 +41,9 @@ from models_library.rabbitmq_messages import (
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQClient
-from servicelib.redis import CouldNotAcquireLockError
-from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
-from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
     ClustersKeeperNotAvailableError,
     ComputationalBackendNotConnectedError,
@@ -58,10 +52,7 @@ from simcore_service_director_v2.core.errors import (
     ComputationalBackendTaskResultsNotReadyError,
     ComputationalSchedulerChangedError,
     ComputationalSchedulerError,
-    ConfigurationError,
-    PipelineNotFoundError,
 )
-from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
@@ -73,12 +64,14 @@ from simcore_service_director_v2.modules.comp_scheduler._scheduler_dask import (
     DaskScheduler,
 )
 from simcore_service_director_v2.modules.comp_scheduler._utils import COMPLETED_STATES
+from simcore_service_director_v2.modules.comp_scheduler._worker import (
+    _get_scheduler_worker,
+)
 from simcore_service_director_v2.modules.dask_client import (
     DaskJobID,
     PublishedComputationTask,
 )
 from simcore_service_director_v2.utils.dask_client_utils import TaskHandlers
-from starlette.testclient import TestClient
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -155,75 +148,8 @@ async def _assert_comp_tasks_db(
     ), f"{expected_progress=}, found: {[t.progress for t in tasks]}"
 
 
-async def schedule_all_pipelines(scheduler: BaseCompScheduler) -> None:
-    # NOTE: we take a copy of the pipelines, as this could change quickly if there are
-    # misconfigured pipelines that would be removed from the scheduler
-    # NOTE: we simulate multiple dv-2 replicas by running several times
-    # the same pipeline scheduling
-    local_pipelines = deepcopy(scheduler._scheduled_pipelines)  # noqa: SLF001
-    results = await asyncio.gather(
-        *(
-            scheduler.schedule_pipeline(
-                user_id=user_id,
-                project_id=project_id,
-                iteration=iteration,
-                wake_up_callback=params.scheduler_waker.set,
-            )
-            for _ in range(3)
-            for (
-                user_id,
-                project_id,
-                iteration,
-            ), params in local_pipelines.items()
-        ),
-        return_exceptions=True,
-    )
-    # we should have exceptions 2/3 of the time
-    could_not_acquire_lock_count = sum(
-        isinstance(r, CouldNotAcquireLockError) for r in results
-    )
-    total_results_count = len(results)
-
-    # Check if 2/3 of the results are CouldNotAcquireLockError
-    # checks that scheduling is done exclusively
-    assert could_not_acquire_lock_count == (2 / 3) * total_results_count
-
-
 @pytest.fixture
-def minimal_scheduler_dask_config(
-    mock_env: EnvVarsDict,
-    postgres_host_config: dict[str, str],
-    monkeypatch: pytest.MonkeyPatch,
-    rabbit_service: RabbitSettings,
-    redis_service: RedisSettings,
-    faker: Faker,
-) -> None:
-    """set a minimal configuration for testing the dask connection only"""
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", faker.url())
-    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
-    monkeypatch.setenv("S3_REGION", faker.pystr())
-    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
-    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
-
-
-@pytest.fixture
-def scheduler(
-    minimal_scheduler_dask_config: None,
-    aiopg_engine: aiopg.sa.engine.Engine,
-    initialized_app: FastAPI,
-) -> BaseCompScheduler:
-    scheduler = _get_scheduler_worker(initialized_app)
-    assert scheduler is not None
-    return scheduler
-
-
-@pytest.fixture
-def mocked_dask_client(mocker: MockerFixture) -> mock.MagicMock:
+def mocked_dask_client(mocker: MockerFixture) -> mock.Mock:
     mocked_dask_client = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
         autospec=True,
@@ -241,7 +167,7 @@ def mocked_parse_output_data_fct(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
+def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.clean_task_output_and_log_files_if_invalid",
         return_value=None,
@@ -250,114 +176,22 @@ def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
 
 
 @pytest.fixture
-def with_disabled_auto_scheduling(mocker: MockerFixture) -> mock.MagicMock:
-    """disables the scheduler task, note that it needs to be triggered manu>ally then"""
-
-    def _fake_starter(
-        self: BaseCompScheduler,
-        *args,
-        **kwargs,
-    ):
-        scheduler_task = mocker.MagicMock()
-        scheduler_task_wake_up_event = mocker.MagicMock()
-        return scheduler_task, scheduler_task_wake_up_event
-
+def mocked_clean_task_output_and_log_files_if_invalid(
+    mocker: MockerFixture,
+) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._scheduler_base.BaseCompScheduler._start_scheduling",
-        autospec=True,
-        side_effect=_fake_starter,
-    )
-
-
-@pytest.fixture
-def mocked_clean_task_output_and_log_files_if_invalid(mocker: MockerFixture) -> None:
-    mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.clean_task_output_and_log_files_if_invalid",
         autospec=True,
     )
 
 
-async def test_scheduler_gracefully_starts_and_stops(
-    minimal_scheduler_dask_config: None,
-    aiopg_engine: aiopg.sa.engine.Engine,
-    dask_spec_local_cluster: SpecCluster,
-    initialized_app: FastAPI,
-):
-    # check it started correctly
-    assert _get_scheduler_worker(initialized_app) is not None
-
-
-@pytest.mark.parametrize(
-    "missing_dependency",
-    [
-        "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED",
-    ],
-)
-def test_scheduler_raises_exception_for_missing_dependencies(
-    minimal_scheduler_dask_config: None,
-    aiopg_engine: aiopg.sa.engine.Engine,
-    dask_spec_local_cluster: SpecCluster,
-    monkeypatch: pytest.MonkeyPatch,
-    missing_dependency: str,
-):
-    # disable the dependency
-    monkeypatch.setenv(missing_dependency, "0")
-    # create the client
-    settings = AppSettings.create_from_envs()
-    app = init_app(settings)
-
-    with pytest.raises(ConfigurationError), TestClient(
-        app, raise_server_exceptions=True
-    ) as _:
-        pass
-
-
-async def test_empty_pipeline_is_not_scheduled(
-    with_disabled_auto_scheduling: None,
-    scheduler: BaseCompScheduler,
-    registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
-    aiopg_engine: aiopg.sa.engine.Engine,
-    run_metadata: RunMetadataDict,
-):
-    user = registered_user()
-    empty_project = await project(user)
-
-    # the project is not in the comp_pipeline, therefore scheduling it should fail
-    with pytest.raises(PipelineNotFoundError):
-        await scheduler.run_new_pipeline(
-            user_id=user["id"],
-            project_id=empty_project.uuid,
-            cluster_id=DEFAULT_CLUSTER_ID,
-            run_metadata=run_metadata,
-            use_on_demand_clusters=False,
-        )
-    # create the empty pipeline now
-    pipeline(project_id=f"{empty_project.uuid}")
-
-    # creating a run with an empty pipeline is useless, check the scheduler is not kicking in
-    await scheduler.run_new_pipeline(
-        user_id=user["id"],
-        project_id=empty_project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
-        run_metadata=run_metadata,
-        use_on_demand_clusters=False,
-    )
-    assert len(scheduler._scheduled_pipelines) == 0  # noqa: SLF001
-    # check the database is empty
-    async with aiopg_engine.acquire() as conn:
-        result = await conn.scalar(
-            comp_runs.select().where(
-                (comp_runs.c.user_id == user["id"])
-                & (comp_runs.c.project_uuid == f"{empty_project.uuid}")
-            )  # there is only one entry
-        )
-        assert result is None
+@pytest.fixture
+def scheduler(initialized_app: FastAPI) -> BaseCompScheduler:
+    return _get_scheduler_worker(initialized_app)
 
 
 async def test_misconfigured_pipeline_is_not_scheduled(
-    with_disabled_auto_scheduling: None,
+    with_disabled_auto_scheduling: mock.Mock,
     scheduler: BaseCompScheduler,
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -639,7 +473,7 @@ async def _trigger_progress_event(
     )
 
 
-@pytest.mark.acceptance_test()
+@pytest.mark.acceptance_test
 async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     with_disabled_auto_scheduling: None,
     mocked_dask_client: mock.MagicMock,
