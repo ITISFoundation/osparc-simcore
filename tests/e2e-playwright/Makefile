@@ -107,19 +107,6 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 		$(CURDIR)/tests/sleepers/test_sleepers.py
 
 
-.PHONY: test-osparc-platform-dev
-test-osparc-platform-dev: _check_venv_active
-	@PWDEBUG=1 pytest \
-		-sxvv \
-		--color=yes \
-		--pdb \
-		--product-url=http://$(get_my_ip):9081 \
-		--headed \
-		--autoregister \
-		--tracing=on \
-		$(CURDIR)/tests/osparc_platform/test_platform.py
-
-
 # Define the files where user input will be saved
 SLEEPERS_INPUT_FILE := .e2e-playwright-sleepers-env.txt
 S4L_INPUT_FILE := .e2e-playwright-sim4life-env.txt
