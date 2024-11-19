@@ -317,8 +317,8 @@ qx.Class.define("osparc.data.model.Node", {
     getLinkedNodes: function(nodeData) {
       const linkedNodes = new Set([]);
       if ("inputs" in nodeData) {
-        Object.entries(nodeData["inputs"]).forEach(link => {
-          if ("nodeUuid" in link) {
+        Object.values(nodeData["inputs"]).forEach(link => {
+          if (link && typeof link === "object" && "nodeUuid" in link) {
             linkedNodes.add(link["nodeUuid"]);
           }
         });
