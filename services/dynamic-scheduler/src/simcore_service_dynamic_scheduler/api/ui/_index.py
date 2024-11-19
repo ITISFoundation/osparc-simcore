@@ -9,7 +9,7 @@ def get_index_router(prefix: str) -> APIRouter:
     @router.get("/{path:path}")
     async def landing_page() -> HTMLResponse:
         return HTMLResponse(
-            prebuilt_html(title="FastUI Demo", api_root_url=f"{prefix}/api")
+            prebuilt_html(title="Dynamic Scheduler", api_root_url=f"{prefix}/api")
         )
 
     return router
