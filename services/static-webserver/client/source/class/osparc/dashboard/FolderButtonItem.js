@@ -128,6 +128,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           control.getContentElement().setStyles({
             "border-radius": `${osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS / 2}px`
           });
+          osparc.utils.Utils.setIdToWidget(control, "folderItemMenuButton");
           this._add(control, osparc.dashboard.FolderButtonBase.POS.MENU);
           break;
         }
@@ -211,11 +212,13 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
         const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesome5Solid/folder/12");
         moveToButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
+        osparc.utils.Utils.setIdToWidget(moveToButton, "moveFolderMenuItem");
         menu.add(moveToButton);
 
         menu.addSeparator();
 
         const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+        osparc.utils.Utils.setIdToWidget(deleteButton, "deleteFolderMenuItem");
         deleteButton.addListener("execute", () => this.__deleteFolderRequested(), this);
         menu.add(deleteButton);
       }
@@ -264,6 +267,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });
+      osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteFolderButton");
       confirmationWin.center();
       confirmationWin.open();
       confirmationWin.addListener("close", () => {
