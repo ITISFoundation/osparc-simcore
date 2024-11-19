@@ -765,7 +765,7 @@ qx.Class.define("osparc.data.Resources", {
        * ORGANIZATIONS
        */
       "organizations": {
-        useCache: true,
+        useCache: false, // osparc.store.Groups handles the cache
         endpoints: {
           get: {
             method: "GET",
@@ -793,7 +793,7 @@ qx.Class.define("osparc.data.Resources", {
        * ORGANIZATION MEMBERS
        */
       "organizationMembers": {
-        useCache: false,
+        useCache: false, // osparc.store.Groups handles the cache
         endpoints: {
           get: {
             method: "GET",
