@@ -178,7 +178,7 @@ class RestartableWebSocket:
             for event, predicate in self._registered_events:
                 self.ws.expect_event(event, predicate)
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("🚨 Failed to reconnect WebSocket: %s", e)
 
     def expect_event(
