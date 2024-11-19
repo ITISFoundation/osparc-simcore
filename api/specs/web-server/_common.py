@@ -145,7 +145,7 @@ def create_and_save_openapi_specs(
     )
     with file_path.open("wt") as fh:
         yaml.safe_dump(openapi, fh, indent=1, sort_keys=False)
-    print("Saved OAS to", file_path)
+    print("Saved OAS to", file_path)  # noqa: T201
 
 
 class ParamSpec(NamedTuple):
