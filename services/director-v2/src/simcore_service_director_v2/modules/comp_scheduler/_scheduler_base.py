@@ -493,7 +493,9 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         iteration: Iteration,
-        wake_up_callback: Callable[[], None],
+        wake_up_callback: Callable[
+            [], None
+        ],  # TODO: this should not be in the interface
     ) -> None:
         with log_context(
             _logger,

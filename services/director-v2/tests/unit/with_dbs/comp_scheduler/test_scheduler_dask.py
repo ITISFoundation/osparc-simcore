@@ -16,14 +16,13 @@ from dataclasses import dataclass
 from typing import Any, cast
 from unittest import mock
 
-import aiopg
-import aiopg.sa
 import pytest
 from _helpers import (
     PublishedProject,
     RunningProject,
     assert_comp_runs,
     assert_comp_runs_empty,
+    assert_comp_tasks,
 )
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
@@ -48,7 +47,7 @@ from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_runs import comp_runs
-from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
+from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.core.errors import (
     ClustersKeeperNotAvailableError,
     ComputationalBackendNotConnectedError,
@@ -62,7 +61,10 @@ from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
-from simcore_service_director_v2.modules.comp_scheduler._manager import run_new_pipeline
+from simcore_service_director_v2.modules.comp_scheduler._manager import (
+    run_new_pipeline,
+    stop_pipeline,
+)
 from simcore_service_director_v2.modules.comp_scheduler._scheduler_base import (
     BaseCompScheduler,
 )
@@ -78,6 +80,7 @@ from simcore_service_director_v2.modules.dask_client import (
     PublishedComputationTask,
 )
 from simcore_service_director_v2.utils.dask_client_utils import TaskHandlers
+from sqlalchemy import and_
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -109,50 +112,6 @@ def _assert_dask_client_correctly_initialized(
             cast(DaskScheduler, scheduler)._task_log_change_handler,  # noqa: SLF001
         )
     )
-
-
-async def _assert_comp_run_db(
-    aiopg_engine: aiopg.sa.engine.Engine,
-    pub_project: PublishedProject,
-    expected_state: RunningState,
-) -> None:
-    # check the database is correctly updated, the run is published
-    async with aiopg_engine.acquire() as conn:
-        result = await conn.execute(
-            comp_runs.select().where(
-                (comp_runs.c.user_id == pub_project.project.prj_owner)
-                & (comp_runs.c.project_uuid == f"{pub_project.project.uuid}")
-            )  # there is only one entry
-        )
-        run_entry = CompRunsAtDB.model_validate(await result.first())
-    assert (
-        run_entry.result == expected_state
-    ), f"comp_runs: expected state '{expected_state}, found '{run_entry.result}'"
-
-
-async def _assert_comp_tasks_db(
-    aiopg_engine: aiopg.sa.engine.Engine,
-    project_uuid: ProjectID,
-    task_ids: list[NodeID],
-    *,
-    expected_state: RunningState,
-    expected_progress: float | None,
-) -> None:
-    # check the database is correctly updated, the run is published
-    async with aiopg_engine.acquire() as conn:
-        result = await conn.execute(
-            comp_tasks.select().where(
-                (comp_tasks.c.project_id == f"{project_uuid}")
-                & (comp_tasks.c.node_id.in_([f"{n}" for n in task_ids]))
-            )  # there is only one entry
-        )
-        tasks = TypeAdapter(list[CompTaskAtDB]).validate_python(await result.fetchall())
-    assert all(
-        t.state == expected_state for t in tasks
-    ), f"expected state: {expected_state}, found: {[t.state for t in tasks]}"
-    assert all(
-        t.progress == expected_progress for t in tasks
-    ), f"{expected_progress=}, found: {[t.progress for t in tasks]}"
 
 
 @pytest.fixture
@@ -241,12 +200,11 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     runs = await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
+        expected_state=RunningState.PUBLISHED,
         where_statement=(comp_runs.c.user_id == user["id"])
         & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}"),
     )
     run_entry = runs[0]
-    assert run_entry.result == RunningState.PUBLISHED
-    assert run_entry.metadata == run_metadata
 
     # run now the scheduler, this will abort the run directly
     await scheduler.schedule_pipeline(
@@ -259,62 +217,60 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     mocked_wake_up_callback.assert_not_called()
 
     # check the database entry is correctly updated
-    runs = await assert_comp_runs(
+    await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
+        expected_state=RunningState.ABORTED,
         where_statement=(comp_runs.c.user_id == user["id"])
         & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}"),
     )
-    run_entry = runs[0]
-    assert run_entry.result == RunningState.ABORTED
-    assert run_entry.metadata == run_metadata
 
 
 async def _assert_start_pipeline(
-    aiopg_engine,
+    app: FastAPI,
+    *,
+    sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
-    scheduler: BaseCompScheduler,
     run_metadata: RunMetadataDict,
-) -> list[CompTaskAtDB]:
+) -> tuple[CompRunsAtDB, list[CompTaskAtDB]]:
     exp_published_tasks = deepcopy(published_project.tasks)
     assert published_project.project.prj_owner
-    await scheduler.run_new_pipeline(
+    await run_new_pipeline(
+        app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
-    assert (
-        len(scheduler._scheduled_pipelines) == 1  # noqa: SLF001
-    ), "the pipeline is not scheduled!"
-    for (
-        u_id,
-        p_id,
-        it,
-    ) in scheduler._scheduled_pipelines:  # noqa: SLF001
-        assert u_id == published_project.project.prj_owner
-        assert p_id == published_project.project.uuid
-        assert it > 0
 
     # check the database is correctly updated, the run is published
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [p.node_id for p in exp_published_tasks],
+    runs = await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.PUBLISHED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in exp_published_tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,
     )
-    return exp_published_tasks
+    return runs[0], exp_published_tasks
 
 
 async def _assert_schedule_pipeline_PENDING(  # noqa: N802
-    aiopg_engine,
+    sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
     published_tasks: list[CompTaskAtDB],
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
+    wake_up_callback: Callable[[], None],
 ) -> list[CompTaskAtDB]:
     expected_pending_tasks = [
         published_tasks[1],
@@ -327,21 +283,35 @@ async def _assert_schedule_pipeline_PENDING(  # noqa: N802
         return [DaskClientTaskState.PENDING for job_id in job_ids]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_tasks_pending
-    await schedule_all_pipelines(scheduler)
+    assert published_project.project.prj_owner
+    await scheduler.schedule_pipeline(
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
+        iteration=1,
+        wake_up_callback=wake_up_callback,
+    )
     _assert_dask_client_correctly_initialized(mocked_dask_client, scheduler)
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [p.node_id for p in expected_pending_tasks],
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.PUBLISHED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=None,
     )
     # the other tasks are still waiting in published state
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [p.node_id for p in published_tasks],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in published_tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,  # since we bypass the API entrypoint this is correct
     )
@@ -366,19 +336,30 @@ async def _assert_schedule_pipeline_PENDING(  # noqa: N802
     mocked_dask_client.get_tasks_status.assert_not_called()
     mocked_dask_client.get_task_result.assert_not_called()
     # there is a second run of the scheduler to move comp_runs to pending, the rest does not change
-    await schedule_all_pipelines(scheduler)
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PENDING)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [p.node_id for p in expected_pending_tasks],
+    await scheduler.schedule_pipeline(
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
+        iteration=1,
+        wake_up_callback=wake_up_callback,
+    )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.PENDING,
+        where_statement=(comp_runs.c.user_id == published_project.project.prj_owner)
+        & (comp_runs.c.project_uuid == f"{published_project.project.uuid}"),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=None,
     )
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [p.node_id for p in published_tasks],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in published_tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,
     )
@@ -493,30 +474,37 @@ async def _trigger_progress_event(
 @pytest.mark.acceptance_test
 async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    initialized_app: FastAPI,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
     mocked_parse_output_data_fct: mock.Mock,
     mocked_clean_task_output_and_log_files_if_invalid: None,
     instrumentation_rabbit_client_parser: mock.AsyncMock,
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     run_metadata: RunMetadataDict,
+    mocked_wake_up_callback: mock.Mock,
 ):
     _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
 
-    expected_published_tasks = await _assert_start_pipeline(
-        aiopg_engine, published_project, scheduler, run_metadata
+    run_in_db, expected_published_tasks = await _assert_start_pipeline(
+        initialized_app,
+        sqlalchemy_async_engine=sqlalchemy_async_engine,
+        published_project=published_project,
+        run_metadata=run_metadata,
     )
 
     # -------------------------------------------------------------------------------
     # 1. first run will move comp_tasks to PENDING so the worker can take them
     expected_pending_tasks = await _assert_schedule_pipeline_PENDING(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         published_project,
         expected_published_tasks,
         mocked_dask_client,
         scheduler,
+        mocked_wake_up_callback,
     )
 
     # -------------------------------------------------------------------------------
@@ -536,28 +524,46 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         ]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_running
-
-    await schedule_all_pipelines(scheduler)
-
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PENDING)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [exp_started_task.node_id],
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
+    await asyncio.sleep(0)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.PENDING,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[exp_started_task.node_id],
         expected_state=RunningState.PENDING,
         expected_progress=None,
     )
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [p.node_id for p in expected_pending_tasks],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=None,
     )
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [p.node_id for p in expected_published_tasks],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_published_tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,  # since we bypass the API entrypoint this is correct
     )
@@ -583,27 +589,40 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         node_id=exp_started_task.node_id,
     )
 
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     # comp_run, the comp_task switch to STARTED
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.STARTED)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [exp_started_task.node_id],
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.STARTED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[exp_started_task.node_id],
         expected_state=RunningState.STARTED,
         expected_progress=0,
     )
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [p.node_id for p in expected_pending_tasks],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=None,
     )
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [p.node_id for p in expected_published_tasks],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_published_tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,
     )
@@ -649,12 +668,25 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         return TaskOutputData.model_validate({"out_1": None, "out_2": 45})
 
     mocked_dask_client.get_task_result.side_effect = _return_random_task_result
-    await schedule_all_pipelines(scheduler)
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.STARTED)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [exp_started_task.node_id],
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.STARTED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[exp_started_task.node_id],
         expected_state=RunningState.SUCCESS,
         expected_progress=1,
     )
@@ -674,17 +706,17 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     completed_tasks = [exp_started_task]
     next_pending_task = published_project.tasks[2]
     expected_pending_tasks.append(next_pending_task)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [p.node_id for p in expected_pending_tasks],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=None,
     )
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[
             p.node_id
             for p in published_project.tasks
             if p not in expected_pending_tasks + completed_tasks
@@ -746,12 +778,25 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         project_id=exp_started_task.project_id,
         node_id=exp_started_task.node_id,
     )
-    await schedule_all_pipelines(scheduler)
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.STARTED)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [exp_started_task.node_id],
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.STARTED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[exp_started_task.node_id],
         expected_state=RunningState.STARTED,
         expected_progress=0,
     )
@@ -790,12 +835,25 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     mocked_dask_client.get_tasks_status.side_effect = _return_2nd_task_failed
     mocked_dask_client.get_task_result.side_effect = None
-    await schedule_all_pipelines(scheduler)
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.STARTED)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [exp_started_task.node_id],
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.STARTED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[exp_started_task.node_id],
         expected_state=RunningState.FAILED,
         expected_progress=1,
     )
@@ -839,13 +897,26 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_dask_client.get_task_result.side_effect = _return_random_task_result
 
     # trigger the scheduler, it should switch to FAILED, as we are done
-    await schedule_all_pipelines(scheduler)
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.FAILED)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.FAILED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
 
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [exp_started_task.node_id],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[exp_started_task.node_id],
         expected_state=RunningState.SUCCESS,
         expected_progress=1,
     )
@@ -872,32 +943,35 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     assert isinstance(messages[0], RabbitResourceTrackingStartedMessage)
     assert isinstance(messages[1], RabbitResourceTrackingStoppedMessage)
 
-    # the scheduled pipeline shall be removed
-    assert scheduler._scheduled_pipelines == {}  # noqa: SLF001
-
 
 async def test_task_progress_triggers(
     with_disabled_auto_scheduling: mock.Mock,
+    initialized_app: FastAPI,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
     mocked_parse_output_data_fct: None,
     mocked_clean_task_output_and_log_files_if_invalid: None,
     run_metadata: RunMetadataDict,
+    mocked_wake_up_callback: mock.Mock,
 ):
     _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
-    expected_published_tasks = await _assert_start_pipeline(
-        aiopg_engine, published_project, scheduler, run_metadata
+    _run_in_db, expected_published_tasks = await _assert_start_pipeline(
+        initialized_app,
+        sqlalchemy_async_engine=sqlalchemy_async_engine,
+        published_project=published_project,
+        run_metadata=run_metadata,
     )
     # -------------------------------------------------------------------------------
     # 1. first run will move comp_tasks to PENDING so the worker can take them
     expected_pending_tasks = await _assert_schedule_pipeline_PENDING(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         published_project,
         expected_published_tasks,
         mocked_dask_client,
         scheduler,
+        mocked_wake_up_callback,
     )
 
     # send some progress
@@ -920,10 +994,10 @@ async def test_task_progress_triggers(
             DaskScheduler, scheduler
         )._task_progress_change_handler(progress_event.model_dump_json())
         # NOTE: not sure whether it should switch to STARTED.. it would make sense
-        await _assert_comp_tasks_db(
-            aiopg_engine,
-            published_project.project.uuid,
-            [started_task.node_id],
+        await assert_comp_tasks(
+            sqlalchemy_async_engine,
+            project_uuid=published_project.project.uuid,
+            task_ids=[started_task.node_id],
             expected_state=RunningState.STARTED,
             expected_progress=min(max(0, progress), 1),
         )
@@ -941,13 +1015,15 @@ async def test_task_progress_triggers(
 )
 async def test_handling_of_disconnected_scheduler_dask(
     with_disabled_auto_scheduling: mock.Mock,
+    initialized_app: FastAPI,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     mocker: MockerFixture,
     published_project: PublishedProject,
     backend_error: ComputationalSchedulerError,
     run_metadata: RunMetadataDict,
+    mocked_wake_up_callback: mock.Mock,
 ):
     # this will create a non connected backend issue that will trigger re-connection
     mocked_dask_client_send_task = mocker.patch(
@@ -958,7 +1034,8 @@ async def test_handling_of_disconnected_scheduler_dask(
 
     # running the pipeline will now raise and the tasks are set back to PUBLISHED
     assert published_project.project.prj_owner
-    await scheduler.run_new_pipeline(
+    await run_new_pipeline(
+        initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
@@ -968,28 +1045,43 @@ async def test_handling_of_disconnected_scheduler_dask(
 
     # since there is no cluster, there is no dask-scheduler,
     # the tasks shall all still be in PUBLISHED state now
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
+    runs_in_db = await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.PUBLISHED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    run_in_db = runs_in_db[0]
 
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [t.node_id for t in published_project.tasks],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[t.node_id for t in published_project.tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,
     )
     # on the next iteration of the pipeline it will try to re-connect
     # now try to abort the tasks since we are wondering what is happening, this should auto-trigger the scheduler
-    await scheduler.stop_pipeline(
+    await stop_pipeline(
+        initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
     )
     # we ensure the scheduler was run
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     # after this step the tasks are marked as ABORTED
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[
             t.node_id
             for t in published_project.tasks
             if t.node_class == NodeClass.COMPUTATIONAL
@@ -998,9 +1090,22 @@ async def test_handling_of_disconnected_scheduler_dask(
         expected_progress=1,
     )
     # then we have another scheduler run
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     # now the run should be ABORTED
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.ABORTED)
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.ABORTED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -1087,12 +1192,13 @@ class RebootState:
 async def test_handling_scheduling_after_reboot(
     with_disabled_auto_scheduling: mock.Mock,
     mocked_dask_client: mock.MagicMock,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     running_project: RunningProject,
     scheduler: BaseCompScheduler,
     mocked_parse_output_data_fct: mock.MagicMock,
     mocked_clean_task_output_fct: mock.MagicMock,
     reboot_state: RebootState,
+    mocked_wake_up_callback: mock.Mock,
 ):
     """After the dask client is rebooted, or that the director-v2 reboots the dv-2 internal scheduler
     shall continue scheduling correctly. Even though the task might have continued to run
@@ -1109,8 +1215,13 @@ async def test_handling_scheduling_after_reboot(
         return reboot_state.task_result
 
     mocked_dask_client.get_task_result.side_effect = mocked_get_task_result
-
-    await schedule_all_pipelines(scheduler)
+    assert running_project.project.prj_owner
+    await scheduler.schedule_pipeline(
+        user_id=running_project.project.prj_owner,
+        project_id=running_project.project.uuid,
+        iteration=1,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     # the status will be called once for all RUNNING tasks
     mocked_dask_client.get_tasks_status.assert_called_once()
     if reboot_state.expected_run_state in COMPLETED_STATES:
@@ -1142,10 +1253,10 @@ async def test_handling_scheduling_after_reboot(
     else:
         mocked_clean_task_output_fct.assert_not_called()
 
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        running_project.project.uuid,
-        [
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=running_project.project.uuid,
+        task_ids=[
             running_project.tasks[1].node_id,
             running_project.tasks[2].node_id,
             running_project.tasks[3].node_id,
@@ -1153,40 +1264,58 @@ async def test_handling_scheduling_after_reboot(
         expected_state=reboot_state.expected_task_state_group1,
         expected_progress=reboot_state.expected_task_progress_group1,
     )
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        running_project.project.uuid,
-        [running_project.tasks[4].node_id],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=running_project.project.uuid,
+        task_ids=[running_project.tasks[4].node_id],
         expected_state=reboot_state.expected_task_state_group2,
         expected_progress=reboot_state.expected_task_progress_group2,
     )
     assert running_project.project.prj_owner
-    await _assert_comp_run_db(
-        aiopg_engine, running_project, reboot_state.expected_run_state
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=reboot_state.expected_run_state,
+        where_statement=and_(
+            comp_runs.c.user_id == running_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{running_project.project.uuid}",
+        ),
     )
 
 
 async def test_handling_cancellation_of_jobs_after_reboot(
     with_disabled_auto_scheduling: mock.Mock,
     mocked_dask_client: mock.MagicMock,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     running_project_mark_for_cancellation: RunningProject,
     scheduler: BaseCompScheduler,
     mocked_parse_output_data_fct: mock.MagicMock,
     mocked_clean_task_output_fct: mock.MagicMock,
+    mocked_wake_up_callback: mock.Mock,
 ):
     """A running pipeline was cancelled by a user and the DV-2 was restarted BEFORE
     It could actually cancel the task. On reboot the DV-2 shall recover
     and actually cancel the pipeline properly"""
 
     # check initial status
-    await _assert_comp_run_db(
-        aiopg_engine, running_project_mark_for_cancellation, RunningState.STARTED
-    )
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        running_project_mark_for_cancellation.project.uuid,
-        [t.node_id for t in running_project_mark_for_cancellation.tasks],
+    run_in_db = (
+        await assert_comp_runs(
+            sqlalchemy_async_engine,
+            expected_total=1,
+            expected_state=RunningState.STARTED,
+            where_statement=and_(
+                comp_runs.c.user_id
+                == running_project_mark_for_cancellation.project.prj_owner,
+                comp_runs.c.project_uuid
+                == f"{running_project_mark_for_cancellation.project.uuid}",
+            ),
+        )
+    )[0]
+
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=running_project_mark_for_cancellation.project.uuid,
+        task_ids=[t.node_id for t in running_project_mark_for_cancellation.tasks],
         expected_state=RunningState.STARTED,
         expected_progress=0,
     )
@@ -1197,7 +1326,12 @@ async def test_handling_cancellation_of_jobs_after_reboot(
 
     mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
     # Running the scheduler, should actually cancel the run now
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     mocked_dask_client.abort_computation_task.assert_called()
     assert mocked_dask_client.abort_computation_task.call_count == len(
         [
@@ -1207,10 +1341,10 @@ async def test_handling_cancellation_of_jobs_after_reboot(
         ]
     )
     # in the DB they are still running, they will be stopped in the next iteration
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        running_project_mark_for_cancellation.project.uuid,
-        [
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=running_project_mark_for_cancellation.project.uuid,
+        task_ids=[
             t.node_id
             for t in running_project_mark_for_cancellation.tasks
             if t.node_class == NodeClass.COMPUTATIONAL
@@ -1218,8 +1352,16 @@ async def test_handling_cancellation_of_jobs_after_reboot(
         expected_state=RunningState.STARTED,
         expected_progress=0,
     )
-    await _assert_comp_run_db(
-        aiopg_engine, running_project_mark_for_cancellation, RunningState.STARTED
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.STARTED,
+        where_statement=and_(
+            comp_runs.c.user_id
+            == running_project_mark_for_cancellation.project.prj_owner,
+            comp_runs.c.project_uuid
+            == f"{running_project_mark_for_cancellation.project.uuid}",
+        ),
     )
 
     # the backend shall now report the tasks as aborted
@@ -1234,12 +1376,17 @@ async def test_handling_cancellation_of_jobs_after_reboot(
         raise TaskCancelledError
 
     mocked_dask_client.get_task_result.side_effect = _return_random_task_result
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     # now should be stopped
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        running_project_mark_for_cancellation.project.uuid,
-        [
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=running_project_mark_for_cancellation.project.uuid,
+        task_ids=[
             t.node_id
             for t in running_project_mark_for_cancellation.tasks
             if t.node_class == NodeClass.COMPUTATIONAL
@@ -1247,8 +1394,16 @@ async def test_handling_cancellation_of_jobs_after_reboot(
         expected_state=RunningState.ABORTED,
         expected_progress=1,
     )
-    await _assert_comp_run_db(
-        aiopg_engine, running_project_mark_for_cancellation, RunningState.ABORTED
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.ABORTED,
+        where_statement=and_(
+            comp_runs.c.user_id
+            == running_project_mark_for_cancellation.project.prj_owner,
+            comp_runs.c.project_uuid
+            == f"{running_project_mark_for_cancellation.project.uuid}",
+        ),
     )
     mocked_clean_task_output_fct.assert_called()
 
@@ -1263,25 +1418,31 @@ def with_fast_service_heartbeat_s(monkeypatch: pytest.MonkeyPatch) -> int:
 async def test_running_pipeline_triggers_heartbeat(
     with_disabled_auto_scheduling: mock.Mock,
     with_fast_service_heartbeat_s: int,
+    initialized_app: FastAPI,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     run_metadata: RunMetadataDict,
+    mocked_wake_up_callback: mock.Mock,
 ):
     _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
-    expected_published_tasks = await _assert_start_pipeline(
-        aiopg_engine, published_project, scheduler, run_metadata
+    run_in_db, expected_published_tasks = await _assert_start_pipeline(
+        initialized_app,
+        sqlalchemy_async_engine=sqlalchemy_async_engine,
+        published_project=published_project,
+        run_metadata=run_metadata,
     )
     # -------------------------------------------------------------------------------
     # 1. first run will move comp_tasks to PENDING so the worker can take them
     expected_pending_tasks = await _assert_schedule_pipeline_PENDING(
-        aiopg_engine,
+        sqlalchemy_async_engine,
         published_project,
         expected_published_tasks,
         mocked_dask_client,
         scheduler,
+        mocked_wake_up_callback,
     )
     # -------------------------------------------------------------------------------
     # 2. the "worker" starts processing a task
@@ -1308,7 +1469,12 @@ async def test_running_pipeline_triggers_heartbeat(
         project_id=exp_started_task.project_id,
         node_id=exp_started_task.node_id,
     )
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
 
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
@@ -1320,8 +1486,18 @@ async def test_running_pipeline_triggers_heartbeat(
     # -------------------------------------------------------------------------------
     # 3. wait a bit and run again we should get another heartbeat, but only one!
     await asyncio.sleep(with_fast_service_heartbeat_s + 1)
-    await schedule_all_pipelines(scheduler)
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
@@ -1332,8 +1508,18 @@ async def test_running_pipeline_triggers_heartbeat(
     # -------------------------------------------------------------------------------
     # 4. wait a bit and run again we should get another heartbeat, but only one!
     await asyncio.sleep(with_fast_service_heartbeat_s + 1)
-    await schedule_all_pipelines(scheduler)
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
@@ -1352,12 +1538,14 @@ async def mocked_get_or_create_cluster(mocker: MockerFixture) -> mock.Mock:
 
 async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     with_disabled_auto_scheduling: mock.Mock,
+    initialized_app: FastAPI,
     scheduler: BaseCompScheduler,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
     run_metadata: RunMetadataDict,
     mocked_get_or_create_cluster: mock.Mock,
     faker: Faker,
+    mocked_wake_up_callback: mock.Mock,
 ):
     mocked_get_or_create_cluster.side_effect = (
         ComputationalBackendOnDemandNotReadyError(
@@ -1366,7 +1554,8 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     )
     # running the pipeline will trigger a call to the clusters-keeper
     assert published_project.project.prj_owner
-    await scheduler.run_new_pipeline(
+    await run_new_pipeline(
+        initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
@@ -1375,11 +1564,21 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     )
 
     # we ask to use an on-demand cluster, therefore the tasks are published first
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [t.node_id for t in published_project.tasks],
+    run_in_db = (
+        await assert_comp_runs(
+            sqlalchemy_async_engine,
+            expected_total=1,
+            expected_state=RunningState.PUBLISHED,
+            where_statement=and_(
+                comp_runs.c.user_id == published_project.project.prj_owner,
+                comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+            ),
+        )
+    )[0]
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[t.node_id for t in published_project.tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,
     )
@@ -1389,32 +1588,54 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         published_project.tasks[1],
         published_project.tasks[3],
     ]
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     mocked_get_or_create_cluster.assert_called()
     assert mocked_get_or_create_cluster.call_count == 1
     mocked_get_or_create_cluster.reset_mock()
-    await _assert_comp_run_db(
-        aiopg_engine, published_project, RunningState.WAITING_FOR_CLUSTER
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.WAITING_FOR_CLUSTER,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
     )
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [t.node_id for t in expected_waiting_tasks],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[t.node_id for t in expected_waiting_tasks],
         expected_state=RunningState.WAITING_FOR_CLUSTER,
         expected_progress=None,
     )
     # again will trigger the same response
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     mocked_get_or_create_cluster.assert_called()
     assert mocked_get_or_create_cluster.call_count == 1
     mocked_get_or_create_cluster.reset_mock()
-    await _assert_comp_run_db(
-        aiopg_engine, published_project, RunningState.WAITING_FOR_CLUSTER
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.WAITING_FOR_CLUSTER,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
     )
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [t.node_id for t in expected_waiting_tasks],
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[t.node_id for t in expected_waiting_tasks],
         expected_state=RunningState.WAITING_FOR_CLUSTER,
         expected_progress=None,
     )
@@ -1426,17 +1647,20 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
 )
 async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     with_disabled_auto_scheduling: mock.Mock,
+    initialized_app: FastAPI,
     scheduler: BaseCompScheduler,
-    aiopg_engine: aiopg.sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
     run_metadata: RunMetadataDict,
     mocked_get_or_create_cluster: mock.Mock,
     get_or_create_exception: Exception,
+    mocked_wake_up_callback: mock.Mock,
 ):
     mocked_get_or_create_cluster.side_effect = get_or_create_exception
     # running the pipeline will trigger a call to the clusters-keeper
     assert published_project.project.prj_owner
-    await scheduler.run_new_pipeline(
+    await run_new_pipeline(
+        initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
@@ -1445,11 +1669,21 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     )
 
     # we ask to use an on-demand cluster, therefore the tasks are published first
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [t.node_id for t in published_project.tasks],
+    run_in_db = (
+        await assert_comp_runs(
+            sqlalchemy_async_engine,
+            expected_total=1,
+            expected_state=RunningState.PUBLISHED,
+            where_statement=and_(
+                comp_runs.c.user_id == published_project.project.prj_owner,
+                comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+            ),
+        )
+    )[0]
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[t.node_id for t in published_project.tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,
     )
@@ -1458,26 +1692,52 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
         published_project.tasks[1],
         published_project.tasks[3],
     ]
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     mocked_get_or_create_cluster.assert_called()
     assert mocked_get_or_create_cluster.call_count == 1
     mocked_get_or_create_cluster.reset_mock()
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.FAILED)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [t.node_id for t in expected_failed_tasks],
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.FAILED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[t.node_id for t in expected_failed_tasks],
         expected_state=RunningState.FAILED,
         expected_progress=1.0,
     )
     # again will not re-trigger the call to clusters-keeper
-    await schedule_all_pipelines(scheduler)
+    await scheduler.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+        wake_up_callback=mocked_wake_up_callback,
+    )
     mocked_get_or_create_cluster.assert_not_called()
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.FAILED)
-    await _assert_comp_tasks_db(
-        aiopg_engine,
-        published_project.project.uuid,
-        [t.node_id for t in expected_failed_tasks],
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.FAILED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[t.node_id for t in expected_failed_tasks],
         expected_state=RunningState.FAILED,
         expected_progress=1.0,
     )
