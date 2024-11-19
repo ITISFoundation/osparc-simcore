@@ -29,9 +29,9 @@ openapi_modules = [
         # add-ons ---
         "_activity",
         "_announcements",
-        "_catalog",
+        # "_catalog", < ---- FIXME:  Invalid args for response field! Hint: check that <class 'models_library.api_schemas_webserver.catalog.ServiceResourcesGet'> is a valid Pydantic field type
         "_catalog_tags",  # after _catalog
-        "_cluster",
+        # "_cluster", # <--- FIXME: :TypeError: unhashable type: 'ClusterAccessRights'
         "_computations",
         "_exporter",
         "_folders",
@@ -51,7 +51,7 @@ openapi_modules = [
         "_projects_tags",
         "_projects_wallet",
         "_projects_workspaces",
-        "_publications",
+        # "_publications", #  <--- FIXME:  RuntimeWarning: fields may not start with an underscore, ignoring "_file"
         "_resource_usage",
         "_statics",
         "_storage",
