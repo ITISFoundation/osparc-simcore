@@ -351,7 +351,7 @@ qx.Class.define("osparc.data.model.Study", {
       const existingNodeIds = Object.keys(studyData["workbench"]);
       const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodes(studyData["workbench"]);
       const allExist = linkedNodeIds.every(linkedNodeId => existingNodeIds.includes(linkedNodeId));
-      console.log(allExist, existingNodeIds, allExist);
+      return !allExist;
     },
 
     isCorrupt: function(studyData) {
