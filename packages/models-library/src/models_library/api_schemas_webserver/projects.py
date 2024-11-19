@@ -33,8 +33,8 @@ from .permalinks import ProjectPermalink
 class ProjectCreateNew(InputSchema):
     uuid: ProjectID | None = None  # NOTE: suggested uuid! but could be different!
     name: str
-    description: str | None
-    thumbnail: HttpUrl | None
+    description: str | None = None
+    thumbnail: HttpUrl | None = None
     workbench: NodesDict
     access_rights: dict[GroupIDStr, AccessRights]
     tags: list[int] = Field(default_factory=list)
@@ -55,8 +55,8 @@ class ProjectCreateNew(InputSchema):
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
 class ProjectCopyOverride(InputSchema):
     name: str
-    description: str | None
-    thumbnail: HttpUrl | None
+    description: str | None = None
+    thumbnail: HttpUrl | None = None
     prj_owner: LowerCaseEmailStr
 
     _empty_is_none = field_validator("thumbnail", mode="before")(
