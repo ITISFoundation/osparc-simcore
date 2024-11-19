@@ -29,7 +29,7 @@ qx.Class.define("osparc.data.model.Group", {
     this.base(arguments);
 
     this.set({
-      groupId: groupData.groupId,
+      groupId: groupData.gid,
       label: groupData.label,
       description: groupData.description,
       accessRights: groupData.accessRights,
