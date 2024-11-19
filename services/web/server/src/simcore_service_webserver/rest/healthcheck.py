@@ -47,10 +47,13 @@ Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
 import asyncio
 import inspect
 from collections.abc import Awaitable, Callable
-from typing import TypeAlias, TypedDict
+from typing import TypeAlias
 
 from aiohttp import web
 from aiosignal import Signal
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from .._constants import APP_SETTINGS_KEY
 
