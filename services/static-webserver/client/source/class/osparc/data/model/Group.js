@@ -29,26 +29,15 @@ qx.Class.define("osparc.data.model.Group", {
     this.base(arguments);
 
     this.set({
-      workspaceId: groupData.workspaceId,
       groupId: groupData.groupId,
-      parentGroupId: groupData.parentGroupId,
-      name: groupData.name,
-      myAccessRights: groupData.myAccessRights,
-      owner: groupData.owner,
-      createdAt: new Date(groupData.createdAt),
-      lastModified: new Date(groupData.modifiedAt),
-      trashedAt: groupData.trashedAt ? new Date(groupData.trashedAt) : this.getTrashedAt(),
+      label: groupData.label,
+      description: groupData.description,
+      accessRights: groupData.accessRights,
+      thumbnail: groupData.thumbnail,
     });
   },
 
   properties: {
-    workspaceId: {
-      check: "Number",
-      nullable: true,
-      init: null,
-      event: "changeWorkspaceId"
-    },
-
     groupId: {
       check: "Number",
       nullable: false,
@@ -56,51 +45,36 @@ qx.Class.define("osparc.data.model.Group", {
       event: "changeGroupId"
     },
 
-    parentGroupId: {
-      check: "Number",
-      nullable: true,
-      init: null,
-      event: "changeParentGroupId"
-    },
-
-    name: {
+    label: {
       check: "String",
       nullable: false,
       init: null,
-      event: "changeName"
+      event: "changeLabel"
     },
 
-    myAccessRights: {
+    description: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeDescription"
+    },
+
+    accessRights: {
       check: "Object",
       nullable: false,
       init: null,
-      event: "changeMyAccessRights"
+      event: "changeAccessRights"
     },
 
-    owner: {
-      check: "Number",
+    thumbnail: {
+      check: "String",
       nullable: true,
-      init: null,
-      event: "changeOwner"
+      init: ""
     },
 
-    createdAt: {
-      check: "Date",
-      nullable: true,
-      init: null,
-      event: "changeCreatedAt"
-    },
-
-    lastModified: {
-      check: "Date",
-      nullable: true,
-      init: null,
-      event: "changeLastModified"
-    },
-
-    trashedAt: {
-      check: "Date",
-      nullable: true,
+    groupType: {
+      check: ["me", "organization", "productEveryone", "everyone"],
+      nullable: false,
       init: null,
     },
   },

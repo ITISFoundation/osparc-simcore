@@ -23,11 +23,27 @@ qx.Class.define("osparc.store.Groups", {
     this.base(arguments);
 
     this.groupsCached = [];
+    this.usersCached = [];
   },
 
   properties: {
+    everyoneGroup: {
+      check: "osparc.data.model.Group",
+      init: {}
+    },
+
+    everyoneProductGroup: {
+      check: "osparc.data.model.Group",
+      init: {}
+    },
+
     organizations: {
-      check: "Object",
+      check: "Array",
+      init: []
+    },
+
+    meGroup: {
+      check: "osparc.data.model.Group",
       init: {}
     },
 
@@ -37,16 +53,6 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     reachableMembers: {
-      check: "Object",
-      init: {}
-    },
-
-    everyoneProductGroup: {
-      check: "Object",
-      init: {}
-    },
-
-    everyoneGroup: {
       check: "Object",
       init: {}
     },
@@ -71,6 +77,7 @@ qx.Class.define("osparc.store.Groups", {
 
   members: {
     groupsCached: null,
+    usersCached: null,
 
     fetchGroups: function() {
       if (osparc.auth.Data.getInstance().isGuest()) {
@@ -78,15 +85,58 @@ qx.Class.define("osparc.store.Groups", {
           resolve([]);
         });
       }
-
-      return osparc.data.Resources.getInstance().getAllPages("groups")
-        .then(groupsData => {
-          const groups = [];
-          groupsData.forEach(groupData => {
-            const group = this.__addToCache(groupData);
-            groups.push(group);
+      const useCache = false;
+      return osparc.data.Resources.get("organizations", {}, useCache)
+        .then(resp => {
+          const everyoneGroup = new osparc.data.model.Group(resp["all"]).set({
+            groupType: "everyone"
           });
-          return groups;
+          const productEveryoneGroup = new osparc.data.model.Group(resp["product"]).set({
+            groupType: "productEveryone"
+          });
+          const meGroup = new osparc.data.model.Group(resp["me"]).set({
+            groupType: "productEveryone"
+          });
+          const orgs = [];
+          resp["organizations"].forEach(organization => {
+            const org = new osparc.data.model.Group(organization).set({
+              groupType: "organization"
+            });
+            orgs.push(org);
+          });
+          this.setEveryoneGroup(everyoneGroup);
+          this.setEveryoneProductGroup(productEveryoneGroup);
+          this.setMeGroup(meGroup);
+          this.setOrganizations(orgs);
+          return orgs;
+        });
+    },
+
+    fetchAll: function() {
+      this.fetchGroups()
+        .then(orgs => {
+          const orgMembersPromises = [];
+          orgs.forEach(org => {
+            const params = {
+              url: {
+                gid: org.getGroupId()
+              }
+            };
+            orgMembersPromises.push(osparc.data.Resources.get("organizationMembers", params));
+          });
+          Promise.all(orgMembersPromises)
+            .then(orgMemberss => {
+              const reachableMembers = this.getReachableMembers();
+              orgMemberss.forEach(orgMembers => {
+                orgMembers.forEach(orgMember => {
+                  orgMember["label"] = osparc.utils.Utils.firstsUp(
+                    `${"first_name" in orgMember && orgMember["first_name"] != null ? orgMember["first_name"] : orgMember["login"]}`,
+                    `${orgMember["last_name"] ? orgMember["last_name"] : ""}`
+                  );
+                  reachableMembers[orgMember["gid"]] = orgMember;
+                });
+              });
+            });
         });
     },
 
@@ -163,40 +213,6 @@ qx.Class.define("osparc.store.Groups", {
               resolve(orgs[idx]);
             }
             resolve(null);
-          });
-      });
-    },
-
-    getAllGroupsAndMembers: function() {
-      return new Promise(resolve => {
-        osparc.data.Resources.get("organizations")
-          .then(resp => {
-            this.setEveryoneGroup(resp["all"]);
-            this.setEveryoneProductGroup(resp["product"]);
-            const orgMembersPromises = [];
-            const orgs = resp["organizations"];
-            orgs.forEach(org => {
-              const params = {
-                url: {
-                  "gid": org["gid"]
-                }
-              };
-              orgMembersPromises.push(osparc.data.Resources.get("organizationMembers", params));
-            });
-            Promise.all(orgMembersPromises)
-              .then(orgMemberss => {
-                const reachableMembers = this.getReachableMembers();
-                orgMemberss.forEach(orgMembers => {
-                  orgMembers.forEach(orgMember => {
-                    orgMember["label"] = osparc.utils.Utils.firstsUp(
-                      `${"first_name" in orgMember && orgMember["first_name"] != null ? orgMember["first_name"] : orgMember["login"]}`,
-                      `${orgMember["last_name"] ? orgMember["last_name"] : ""}`
-                    );
-                    reachableMembers[orgMember["gid"]] = orgMember;
-                  });
-                });
-                resolve();
-              });
           });
       });
     },
