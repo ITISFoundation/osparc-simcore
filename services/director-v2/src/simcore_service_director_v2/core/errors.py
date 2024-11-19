@@ -19,6 +19,8 @@ translate into something like
 }
 """
 
+from typing import Any
+
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -75,8 +77,8 @@ class InvalidPipelineError(ComputationalSchedulerError):
 class TaskSchedulingError(ComputationalSchedulerError):
     msg_template = "Computational scheduler: Task {node_id} in project {project_id} could not be scheduled {msg}"
 
-    def __init__(self, project_id: ProjectID, node_id: NodeID, msg: str | None) -> None:
-        super().__init__(msg=msg)
+    def __init__(self, project_id: ProjectID, node_id: NodeID, **ctx: Any) -> None:
+        super().__init__(project_id=project_id, node_id=node_id, **ctx)
         self.project_id = project_id
         self.node_id = node_id
 
