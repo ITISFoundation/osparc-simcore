@@ -48,7 +48,7 @@ def parse_json_pre_validator(value: Any):
             return json_loads(value)
         except JSONDecodeError as err:
             msg = f"Invalid JSON {value=}: {err}"
-            raise TypeError(msg) from err
+            raise ValueError(msg) from err
     return value
 
 

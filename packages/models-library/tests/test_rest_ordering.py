@@ -151,3 +151,22 @@ def test_ordering_query_model_with_map():
     model = OrderQueryParamsModel.model_validate({"order_by": {"field": "modified"}})
     assert model.order_by
     assert model.order_by.field == "some_db_column_name"
+
+
+def test_ordering_query_parse_json_pre_validator():
+
+    OrderQueryParamsModel = create_ordering_query_model_classes(
+        ordering_fields={"modified", "name"},
+        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
+    )
+
+    bad_json_value = ",invalid json"
+    with pytest.raises(ValidationError) as err_info:
+        OrderQueryParamsModel.model_validate({"order_by": bad_json_value})
+
+    exc = err_info.value
+    assert exc.error_count() == 1
+    error = exc.errors()[0]
+    assert error["loc"] == ("order_by",)
+    assert error["type"] == "value_error"
+    assert error["input"] == bad_json_value
