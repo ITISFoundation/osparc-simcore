@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, ConfigDict
 
 
 class RequestParameters(BaseModel):
@@ -15,5 +15,4 @@ class RequestParameters(BaseModel):
 class StrictRequestParameters(RequestParameters):
     """Use a base class for context, path and query parameters"""
 
-    class Config:
-        extra = Extra.forbid  # strict
+    model_config = ConfigDict(extra="forbid")

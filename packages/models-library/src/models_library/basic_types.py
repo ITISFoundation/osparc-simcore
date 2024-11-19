@@ -1,7 +1,7 @@
 from decimal import Decimal
 from enum import StrEnum
 from re import Pattern
-from typing import Annotated, Final, TypeAlias
+from typing import Annotated, ClassVar, Final, TypeAlias
 
 from pydantic import Field, HttpUrl, PositiveInt, StringConstraints
 from pydantic_core import core_schema
@@ -137,7 +137,7 @@ PrimaryKeyInt: TypeAlias = PositiveInt
 
 # https e.g. https://techterms.com/definition/https
 class HttpSecureUrl(HttpUrl):
-    allowed_schemes = {"https"}
+    allowed_schemes: ClassVar[set[str]] = {"https"}
 
 
 class HttpUrlWithCustomMinLength(HttpUrl):

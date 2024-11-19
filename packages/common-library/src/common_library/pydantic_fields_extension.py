@@ -7,7 +7,7 @@ from pydantic.fields import FieldInfo
 def get_type(info: FieldInfo) -> Any:
     field_type = info.annotation
     if args := get_args(info.annotation):
-        field_type = next(a for a in args if a != type(None))
+        field_type = next(a for a in args if a is not type(None))
     return field_type
 
 

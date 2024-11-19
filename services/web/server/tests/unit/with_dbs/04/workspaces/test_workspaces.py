@@ -26,13 +26,13 @@ from simcore_service_webserver.workspaces._workspaces_handlers import (
 def test_workspaces_order_query_model_post_validator():
 
     # on default
-    query_params = WorkspacesListQueryParams.parse_obj({})
+    query_params = WorkspacesListQueryParams.model_validate({})
     assert query_params.order_by
     assert query_params.order_by.field == "modified"
     assert query_params.order_by.direction == OrderDirection.DESC
 
     # on partial default
-    query_params = WorkspacesListQueryParams.parse_obj(
+    query_params = WorkspacesListQueryParams.model_validate(
         {"order_by": {"field": "modified_at"}}
     )
     assert query_params.order_by

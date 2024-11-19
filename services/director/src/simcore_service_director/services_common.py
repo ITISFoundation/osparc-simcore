@@ -3,7 +3,8 @@
 # since this service is frozen and MUST NOT ADD ANY MORE DEPENDENCIES
 #
 #
-from pydantic import BaseSettings, Field, PositiveInt
+from pydantic import Field, PositiveInt
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _BASE_TIMEOUT_FOR_STOPPING_SERVICES = 60 * 60
 
@@ -34,7 +35,6 @@ class ServicesCommonSettings(BaseSettings):
             "allow the service to finish the operation."
         ),
     )
-
-    class Config:
-        env_prefix = "SERVICES_COMMON_"
-        case_sensitive = False
+    model_config = SettingsConfigDict(
+        env_prefix="SERVICES_COMMON_", case_sensitive=False
+    )

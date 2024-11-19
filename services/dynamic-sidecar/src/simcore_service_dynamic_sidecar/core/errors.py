@@ -36,7 +36,7 @@ class UnexpectedDockerError(BaseDynamicSidecarError):
 
 
 class BaseError(OsparcErrorMixin, BaseDynamicSidecarError):
-    code = "dy_sidecar.error"  # type: ignore[assignment]
+    ...
 
 
 class ContainerExecContainerNotFoundError(BaseError):

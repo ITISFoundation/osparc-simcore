@@ -100,7 +100,7 @@ class ServicesResourceUsagesReportQueryParams(
 class ServicesResourceUsagesListQueryParams(
     PageQueryParameters, ServicesResourceUsagesReportQueryParams
 ):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid")  # type: ignore[misc]
 
 
 class ServicesAggregatedUsagesListQueryParams(PageQueryParameters):
