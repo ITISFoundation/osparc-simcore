@@ -22,7 +22,7 @@ class ProjectsNetworksRepository(BaseRepository):
                 )
             ).first()
         if not row:
-            raise ProjectNetworkNotFoundError(project_id)
+            raise ProjectNetworkNotFoundError(project_id=project_id)
         return ProjectsNetworks.model_validate(row)
 
     async def upsert_projects_networks(

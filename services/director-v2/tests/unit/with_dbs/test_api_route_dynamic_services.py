@@ -252,7 +252,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     # MOCKING get_stack_status
     def get_stack_status(node_uuid: NodeID) -> RunningDynamicServiceDetails:
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
-            raise DynamicSidecarNotFoundError(node_uuid)
+            raise DynamicSidecarNotFoundError(node_uuid=node_uuid)
 
         return RunningDynamicServiceDetails.model_validate(
             RunningDynamicServiceDetails.model_config["json_schema_extra"]["examples"][
@@ -269,7 +269,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     # MOCKING remove_service
     def remove_service(node_uuid: NodeID, *ars: Any, **kwargs: Any) -> None:
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
-            raise DynamicSidecarNotFoundError(node_uuid)
+            raise DynamicSidecarNotFoundError(node_uuid=node_uuid)
 
     mocker.patch(
         f"{module_base}._task.DynamicSidecarsScheduler.mark_service_for_removal",

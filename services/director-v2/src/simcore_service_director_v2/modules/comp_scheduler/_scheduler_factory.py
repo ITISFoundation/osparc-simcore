@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 async def create_from_db(app: FastAPI) -> BaseCompScheduler:
     if not hasattr(app.state, "engine"):
         msg = "Database connection is missing. Please check application configuration."
-        raise ConfigurationError(msg)
+        raise ConfigurationError(msg=msg)
     db_engine = app.state.engine
 
     with log_context(
