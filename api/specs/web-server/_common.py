@@ -8,10 +8,10 @@ from pathlib import Path
 from typing import Any, ClassVar, NamedTuple
 
 import yaml
+from common_library.json_serialization import json_dumps
 from common_library.pydantic_fields_extension import get_type
 from fastapi import FastAPI, Query
 from models_library.basic_types import LogLevel
-from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, create_model
 from pydantic.fields import FieldInfo
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
@@ -38,31 +38,28 @@ def _create_json_type(**schema_extras):
 
 def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
     fields = {}
-    for field_name, model_field in model_class.__fields__.items():
+    for field_name, field_info in model_class.model_fields.items():
 
-        field_type = model_field.type_
-        default_value = model_field.default
+        field_type = get_type(field_info)
+        default_value = field_info.default
 
         kwargs = {
-            "alias": model_field.field_info.alias,
-            "title": model_field.field_info.title,
-            "description": model_field.field_info.description,
-            "gt": model_field.field_info.gt,
-            "ge": model_field.field_info.ge,
-            "lt": model_field.field_info.lt,
-            "le": model_field.field_info.le,
-            "min_length": model_field.field_info.min_length,
-            "max_length": model_field.field_info.max_length,
-            "regex": model_field.field_info.regex,
-            **model_field.field_info.extra,
+            "alias": field_info.alias,
+            "title": field_info.title,
+            "description": field_info.description,
+            "metadata": field_info.metadata,
+            "json_schema_extra": field_info.json_schema_extra,
         }
 
         if issubclass(field_type, BaseModel):
             # Complex fields
+            assert "json_schema_extra" in kwargs  # nosec
+            assert kwargs["json_schema_extra"]  # nosec
             field_type = _create_json_type(
                 description=kwargs["description"],
-                example=kwargs.get("example_json"),
+                example=kwargs.get("json_schema_extra", {}).get("example_json"),
             )
+
             default_value = json_dumps(default_value) if default_value else None
 
         fields[field_name] = (field_type, Query(default=default_value, **kwargs))
@@ -148,7 +145,7 @@ def create_and_save_openapi_specs(
     )
     with file_path.open("wt") as fh:
         yaml.safe_dump(openapi, fh, indent=1, sort_keys=False)
-    print("Saved OAS to", file_path)
+    print("Saved OAS to", file_path)  # noqa: T201
 
 
 class ParamSpec(NamedTuple):

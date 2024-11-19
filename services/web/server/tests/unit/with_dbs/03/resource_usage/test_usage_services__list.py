@@ -26,7 +26,7 @@ from simcore_service_webserver.db.models import UserRole
 
 _SERVICE_RUN_GET = ServiceRunPage(
     items=[
-        ServiceRunGet.parse_obj(
+        ServiceRunGet.model_validate(
             {
                 "service_run_id": "comp_1_5c2110be-441b-11ee-a0e8-02420a000040_1",
                 "wallet_id": 1,
