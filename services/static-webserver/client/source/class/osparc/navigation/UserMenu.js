@@ -177,10 +177,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.getChildControl("theme-switcher");
       this.addSeparator();
 
-      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
-      if (announcementUIFactory.hasUserMenuAnnouncement()) {
-        this.add(announcementUIFactory.createUserMenuAnnouncement());
-      }
+      this.__addAnnouncements();
       this.getChildControl("about");
       if (osparc.product.Utils.showAboutProduct()) {
         this.getChildControl("about-product");
@@ -194,6 +191,13 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.getChildControl("log-out");
 
       osparc.utils.Utils.prettifyMenu(this);
+    },
+
+    __addAnnouncements: function() {
+      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
+      if (announcementUIFactory.hasUserMenuAnnouncement()) {
+        announcementUIFactory.createUserMenuAnnouncements().forEach(announcement => this.add(announcement));
+      }
     },
 
     populateMenuCompact: function() {
@@ -233,10 +237,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.getChildControl("theme-switcher");
       this.addSeparator();
 
-      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
-      if (announcementUIFactory.hasUserMenuAnnouncement()) {
-        this.add(announcementUIFactory.createUserMenuAnnouncement());
-      }
+      this.__addAnnouncements();
       this.getChildControl("about");
       if (!osparc.product.Utils.isProduct("osparc")) {
         this.getChildControl("about-product");
