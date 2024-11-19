@@ -2,6 +2,7 @@
 """
 
 import inspect
+import pprint
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -32,15 +33,15 @@ def _create_json_type(**schema_extras):
     class _Json(str):
         __slots__ = ()
 
-        @classmethod
-        def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-            # openapi.json schema is corrected here
-            field_schema.update(
-                type="string",
-                # format="json-string" NOTE: we need to get rid of openapi-core in web-server before using this!
-            )
-            if schema_extras:
-                field_schema.update(schema_extras)
+        # @classmethod
+        # def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+        #     # openapi.json schema is corrected here
+        #     field_schema.update(
+        #         type="string",
+        #         format="json-string" # NOTE: we need to get rid of openapi-core in web-server before using this!
+        #     )
+        #     if schema_extras:
+        #         field_schema.update(schema_extras)
 
     return _Json
 
@@ -79,8 +80,9 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
     fields = {}
     for field_name, field_info in model_class.model_fields.items():
 
+        field_default = field_info.default
+        assert not field_info.default_factory  # nosec
         query_kwargs = {
-            "default": field_info.default,
             "alias": field_info.alias,
             "title": field_info.title,
             "description": field_info.description,
@@ -94,18 +96,17 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
         )
 
         annotation = replace_basemodel_in_annotation(
-            field_info.annotation, new_type=json_field_type
+            field_info.annotation, new_type=str
         )
 
         if annotation != field_info.annotation:
             # Complex fields are transformed to Json
-            query_kwargs["default"] = (
-                json_dumps(query_kwargs["default"]) if query_kwargs["default"] else None
-            )
+            field_default = json_dumps(field_default) if field_default else None
 
-        fields[field_name] = (annotation, Query(**query_kwargs))
+        fields[field_name] = (annotation, Query(default=field_default, **query_kwargs))
 
     new_model_name = f"{model_class.__name__}Query"
+    pprint.pprint(fields)
     return create_model(new_model_name, **fields)
 
 
