@@ -158,19 +158,13 @@ async def _connect_with_gateway_and_create_cluster(
         raise ConfigurationError(msg) from exc
     except ValueError as exc:
         # this is when a 404=NotFound,422=MalformedData comes up
-        raise DaskClientRequestError(  # pylint: disable=unexpected-keyword-arg
-            endpoint=endpoint, error=exc
-        ) from exc
+        raise DaskClientRequestError(endpoint=endpoint, error=exc) from exc
     except dask_gateway.GatewayClusterError as exc:
         # this is when a 409=Conflict/Cannot complete request comes up
-        raise DaskClusterError(  # pylint: disable=unexpected-keyword-arg
-            endpoint=endpoint, error=exc
-        ) from exc
+        raise DaskClusterError(endpoint=endpoint, error=exc) from exc
     except dask_gateway.GatewayServerError as exc:
         # this is when a 500 comes up
-        raise DaskGatewayServerError(  # pylint: disable=unexpected-keyword-arg
-            endpoint=endpoint, error=exc
-        ) from exc
+        raise DaskGatewayServerError(endpoint=endpoint, error=exc) from exc
 
 
 def _is_dask_scheduler(authentication: ClusterAuthentication) -> bool:

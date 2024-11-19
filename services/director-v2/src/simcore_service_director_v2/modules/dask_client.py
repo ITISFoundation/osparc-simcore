@@ -522,9 +522,7 @@ class DaskClient:
                 await task_future.result(timeout=_DASK_DEFAULT_TIMEOUT_S),
             )
         except KeyError as exc:
-            raise ComputationalBackendTaskNotFoundError(  # pylint: disable=unexpected-keyword-arg
-                job_id=job_id
-            ) from exc
+            raise ComputationalBackendTaskNotFoundError(job_id=job_id) from exc
         except distributed.TimeoutError as exc:
             raise ComputationalBackendTaskResultsNotReadyError from exc
 

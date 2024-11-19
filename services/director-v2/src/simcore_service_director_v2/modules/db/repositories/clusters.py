@@ -110,9 +110,7 @@ async def _compute_user_access_rights(
 
     solved_rights = CLUSTER_NO_RIGHTS.model_dump()
     for group_row in filter(lambda ugrp: ugrp[1] != GroupType.PRIMARY, user_groups):
-        grp_access = cluster.access_rights.get(
-            group_row.gid, CLUSTER_NO_RIGHTS
-        ).model_dump()
+        grp_access = cluster.access_rights.get(group_row.gid, CLUSTER_NO_RIGHTS).model_dump()
         for operation in ["read", "write", "delete"]:
             solved_rights[operation] |= grp_access[operation]
     return ClusterAccessRights(**solved_rights)
@@ -161,9 +159,7 @@ class ClustersRepository(BaseRepository):
         async with self.db_engine.acquire() as conn:
             clusters_list = await _clusters_from_cluster_ids(conn, {cluster_id})
             if not clusters_list:
-                raise ClusterNotFoundError(  # pylint: disable=unexpected-keyword-arg
-                    cluster_id=cluster_id
-                )
+                raise ClusterNotFoundError(cluster_id=cluster_id)
             the_cluster = clusters_list[0]
 
             access_rights = await _compute_user_access_rights(
@@ -175,9 +171,7 @@ class ClustersRepository(BaseRepository):
                 f"{access_rights=}",
             )
         if not access_rights.read:
-            raise ClusterAccessForbiddenError(  # pylint: disable=unexpected-keyword-arg
-                cluster_id=cluster_id
-            )
+            raise ClusterAccessForbiddenError(cluster_id=cluster_id)
 
         return the_cluster
 
@@ -189,9 +183,7 @@ class ClustersRepository(BaseRepository):
                 conn, {cluster_id}
             )
             if len(clusters_list) != 1:
-                raise ClusterNotFoundError(  # pylint: disable=unexpected-keyword-arg
-                    cluster_id=cluster_id
-                )
+                raise ClusterNotFoundError(cluster_id=cluster_id)
             the_cluster = clusters_list[0]
 
             this_user_access_rights = await _compute_user_access_rights(
@@ -204,16 +196,12 @@ class ClustersRepository(BaseRepository):
             )
 
             if not this_user_access_rights.write:
-                raise ClusterAccessForbiddenError(  # pylint: disable=unexpected-keyword-arg
-                    cluster_id=cluster_id
-                )
+                raise ClusterAccessForbiddenError(cluster_id=cluster_id)
 
             if updated_cluster.owner and updated_cluster.owner != the_cluster.owner:
                 # if the user wants to change the owner, we need more rights here
                 if this_user_access_rights != CLUSTER_ADMIN_RIGHTS:
-                    raise ClusterAccessForbiddenError(  # pylint: disable=unexpected-keyword-arg
-                        cluster_id=cluster_id
-                    )
+                    raise ClusterAccessForbiddenError(cluster_id=cluster_id)
 
                 # ensure the new owner has admin rights, too
                 if not updated_cluster.access_rights:
@@ -237,9 +225,7 @@ class ClustersRepository(BaseRepository):
                         ]:
                             # a manager cannot change the owner abilities or create
                             # managers/admins
-                            raise ClusterAccessForbiddenError(  # pylint: disable=unexpected-keyword-arg
-                                cluster_id=cluster_id
-                            )
+                            raise ClusterAccessForbiddenError(cluster_id=cluster_id)
 
                 resolved_access_rights.update(updated_cluster.access_rights)
                 # ensure the user is not trying to mess around owner admin rights
@@ -249,9 +235,7 @@ class ClustersRepository(BaseRepository):
                     )
                     != CLUSTER_ADMIN_RIGHTS
                 ):
-                    raise ClusterAccessForbiddenError(  # pylint: disable=unexpected-keyword-arg
-                        cluster_id=cluster_id
-                    )
+                    raise ClusterAccessForbiddenError(cluster_id=cluster_id)
 
             # ok we can update now
             try:
@@ -261,16 +245,12 @@ class ClustersRepository(BaseRepository):
                     .values(to_clusters_db(updated_cluster, only_update=True))
                 )
             except psycopg2.DatabaseError as e:
-                raise ClusterInvalidOperationError(  # pylint: disable=unexpected-keyword-arg
-                    cluster_id=cluster_id
-                ) from e
+                raise ClusterInvalidOperationError(cluster_id=cluster_id) from e
             # upsert the rights
             if updated_cluster.access_rights:
                 for grp, rights in resolved_access_rights.items():
                     insert_stmt = pg_insert(cluster_to_groups).values(
-                        **rights.model_dump(by_alias=True),
-                        gid=grp,
-                        cluster_id=the_cluster.id,
+                        **rights.model_dump(by_alias=True), gid=grp, cluster_id=the_cluster.id
                     )
                     on_update_stmt = insert_stmt.on_conflict_do_update(
                         index_elements=[
@@ -283,18 +263,14 @@ class ClustersRepository(BaseRepository):
 
             clusters_list = await _clusters_from_cluster_ids(conn, {cluster_id})
             if not clusters_list:
-                raise ClusterNotFoundError(  # pylint: disable=unexpected-keyword-arg
-                    cluster_id=cluster_id
-                )
+                raise ClusterNotFoundError(cluster_id=cluster_id)
             return clusters_list[0]
 
     async def delete_cluster(self, user_id: UserID, cluster_id: ClusterID) -> None:
         async with self.db_engine.acquire() as conn:
             clusters_list = await _clusters_from_cluster_ids(conn, {cluster_id})
             if not clusters_list:
-                raise ClusterNotFoundError(  # pylint: disable=unexpected-keyword-arg
-                    cluster_id=cluster_id
-                )
+                raise ClusterNotFoundError(cluster_id=cluster_id)
             the_cluster = clusters_list[0]
 
             access_rights = await _compute_user_access_rights(
@@ -306,7 +282,5 @@ class ClustersRepository(BaseRepository):
                 f"{access_rights=}",
             )
             if not access_rights.delete:
-                raise ClusterAccessForbiddenError(  # pylint: disable=unexpected-keyword-arg
-                    cluster_id=cluster_id
-                )
+                raise ClusterAccessForbiddenError(cluster_id=cluster_id)
             await conn.execute(sa.delete(clusters).where(clusters.c.id == cluster_id))

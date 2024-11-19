@@ -1094,7 +1094,7 @@ async def test_task_progress_triggers(
     "backend_error",
     [
         ComputationalBackendNotConnectedError(msg="faked disconnected backend"),
-        ComputationalSchedulerChangedError(  # pylint: disable=unexpected-keyword-arg
+        ComputationalSchedulerChangedError(
             original_scheduler_id="some_old_scheduler_id",
             current_scheduler_id="some_new_scheduler_id",
         ),
@@ -1181,9 +1181,7 @@ class RebootState:
         pytest.param(
             RebootState(
                 dask_task_status=DaskClientTaskState.LOST,
-                task_result=ComputationalBackendTaskNotFoundError(  # pylint: disable=unexpected-keyword-arg
-                    job_id="fake_job_id"
-                ),
+                task_result=ComputationalBackendTaskNotFoundError(job_id="fake_job_id"),
                 expected_task_state_group1=RunningState.FAILED,
                 expected_task_progress_group1=1,
                 expected_task_state_group2=RunningState.ABORTED,
@@ -1219,7 +1217,7 @@ class RebootState:
         pytest.param(
             RebootState(
                 dask_task_status=DaskClientTaskState.PENDING_OR_STARTED,
-                task_result=ComputationalBackendTaskResultsNotReadyError(  # pylint: disable=unexpected-keyword-arg
+                task_result=ComputationalBackendTaskResultsNotReadyError(
                     job_id="fake_job_id"
                 ),
                 expected_task_state_group1=RunningState.STARTED,
@@ -1519,8 +1517,10 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     mocked_get_or_create_cluster: mock.Mock,
     faker: Faker,
 ):
-    mocked_get_or_create_cluster.side_effect = ComputationalBackendOnDemandNotReadyError(  # pylint: disable=unexpected-keyword-arg
-        eta=faker.time_delta(datetime.timedelta(hours=1))
+    mocked_get_or_create_cluster.side_effect = (
+        ComputationalBackendOnDemandNotReadyError(
+            eta=faker.time_delta(datetime.timedelta(hours=1))
+        )
     )
     # running the pipeline will trigger a call to the clusters-keeper
     assert published_project.project.prj_owner
