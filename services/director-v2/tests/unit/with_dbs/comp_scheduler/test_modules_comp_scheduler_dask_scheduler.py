@@ -41,7 +41,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingStoppedMessage,
 )
 from models_library.users import UserID
-from pydantic import TypeAdapter
+from pydantic import parse_obj_as, parse_raw_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQClient
@@ -67,18 +67,17 @@ from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
-from simcore_service_director_v2.modules.comp_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler._scheduler_base import (
     BaseCompScheduler,
-    get_scheduler,
 )
-from simcore_service_director_v2.modules.comp_scheduler._dask_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler._scheduler_dask import (
     DaskScheduler,
 )
+from simcore_service_director_v2.modules.comp_scheduler._utils import COMPLETED_STATES
 from simcore_service_director_v2.modules.dask_client import (
     DaskJobID,
     PublishedComputationTask,
 )
-from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES
 from simcore_service_director_v2.utils.dask_client_utils import TaskHandlers
 from starlette.testclient import TestClient
 from tenacity.asyncio import AsyncRetrying
@@ -126,7 +125,7 @@ async def _assert_comp_run_db(
                 & (comp_runs.c.project_uuid == f"{pub_project.project.uuid}")
             )  # there is only one entry
         )
-        run_entry = CompRunsAtDB.model_validate(await result.first())
+        run_entry = CompRunsAtDB.parse_obj(await result.first())
     assert (
         run_entry.result == expected_state
     ), f"comp_runs: expected state '{expected_state}, found '{run_entry.result}'"
@@ -148,7 +147,7 @@ async def _assert_comp_tasks_db(
                 & (comp_tasks.c.node_id.in_([f"{n}" for n in task_ids]))
             )  # there is only one entry
         )
-        tasks = TypeAdapter(list[CompTaskAtDB]).validate_python(await result.fetchall())
+        tasks = parse_obj_as(list[CompTaskAtDB], await result.fetchall())
     assert all(
         t.state == expected_state for t in tasks
     ), f"expected state: {expected_state}, found: {[t.state for t in tasks]}"
@@ -165,7 +164,7 @@ async def schedule_all_pipelines(scheduler: BaseCompScheduler) -> None:
     local_pipelines = deepcopy(scheduler._scheduled_pipelines)  # noqa: SLF001
     results = await asyncio.gather(
         *(
-            scheduler._schedule_pipeline(  # noqa: SLF001
+            scheduler.schedule_pipeline(
                 user_id=user_id,
                 project_id=project_id,
                 iteration=iteration,
@@ -192,7 +191,7 @@ async def schedule_all_pipelines(scheduler: BaseCompScheduler) -> None:
 
 
 @pytest.fixture
-def minimal_dask_scheduler_config(
+def minimal_scheduler_dask_config(
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
@@ -215,11 +214,11 @@ def minimal_dask_scheduler_config(
 
 @pytest.fixture
 def scheduler(
-    minimal_dask_scheduler_config: None,
+    minimal_scheduler_dask_config: None,
     aiopg_engine: aiopg.sa.engine.Engine,
     minimal_app: FastAPI,
 ) -> BaseCompScheduler:
-    scheduler = get_scheduler(minimal_app)
+    scheduler = _get_scheduler_worker(minimal_app)
     assert scheduler is not None
     return scheduler
 
@@ -237,7 +236,7 @@ def mocked_dask_client(mocker: MockerFixture) -> mock.MagicMock:
 @pytest.fixture
 def mocked_parse_output_data_fct(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.parse_output_data",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.parse_output_data",
         autospec=True,
     )
 
@@ -245,7 +244,7 @@ def mocked_parse_output_data_fct(mocker: MockerFixture) -> mock.Mock:
 @pytest.fixture
 def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.clean_task_output_and_log_files_if_invalid",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.clean_task_output_and_log_files_if_invalid",
         return_value=None,
         autospec=True,
     )
@@ -265,7 +264,7 @@ def with_disabled_auto_scheduling(mocker: MockerFixture) -> mock.MagicMock:
         return scheduler_task, scheduler_task_wake_up_event
 
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._base_scheduler.BaseCompScheduler._start_scheduling",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_base.BaseCompScheduler._start_scheduling",
         autospec=True,
         side_effect=_fake_starter,
     )
@@ -284,19 +283,19 @@ async def minimal_app(async_client: httpx.AsyncClient) -> FastAPI:
 @pytest.fixture
 def mocked_clean_task_output_and_log_files_if_invalid(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.clean_task_output_and_log_files_if_invalid",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.clean_task_output_and_log_files_if_invalid",
         autospec=True,
     )
 
 
 async def test_scheduler_gracefully_starts_and_stops(
-    minimal_dask_scheduler_config: None,
+    minimal_scheduler_dask_config: None,
     aiopg_engine: aiopg.sa.engine.Engine,
     dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
 ):
     # check it started correctly
-    assert get_scheduler(minimal_app) is not None
+    assert _get_scheduler_worker(minimal_app) is not None
 
 
 @pytest.mark.parametrize(
@@ -306,7 +305,7 @@ async def test_scheduler_gracefully_starts_and_stops(
     ],
 )
 def test_scheduler_raises_exception_for_missing_dependencies(
-    minimal_dask_scheduler_config: None,
+    minimal_scheduler_dask_config: None,
     aiopg_engine: aiopg.sa.engine.Engine,
     dask_spec_local_cluster: SpecCluster,
     monkeypatch: pytest.MonkeyPatch,
@@ -412,7 +411,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
                 & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}")
             )  # there is only one entry
         )
-        run_entry = CompRunsAtDB.model_validate(await result.first())
+        run_entry = CompRunsAtDB.parse_obj(await result.first())
     assert run_entry.result == RunningState.PUBLISHED
     # let the scheduler kick in
     await schedule_all_pipelines(scheduler)
@@ -426,7 +425,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
                 & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}")
             )  # there is only one entry
         )
-        run_entry = CompRunsAtDB.model_validate(await result.first())
+        run_entry = CompRunsAtDB.parse_obj(await result.first())
     assert run_entry.result == RunningState.ABORTED
     assert run_entry.metadata == run_metadata
 
@@ -647,7 +646,7 @@ async def _trigger_progress_event(
         ),
     )
     await cast(DaskScheduler, scheduler)._task_progress_change_handler(  # noqa: SLF001
-        event.model_dump_json()
+        event.json()
     )
 
 
@@ -775,20 +774,18 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
     messages = await _assert_message_received(
-        instrumentation_rabbit_client_parser,
-        1,
-        InstrumentationRabbitMessage.model_validate_json,
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
     )
     assert messages[0].metrics == "service_started"
     assert messages[0].service_uuid == exp_started_task.node_id
 
     def _parser(x) -> RabbitResourceTrackingMessages:
-        return TypeAdapter(RabbitResourceTrackingMessages).validate_json(x)
+        return parse_raw_as(RabbitResourceTrackingMessages, x)
 
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingStartedMessage.model_validate_json,
+        RabbitResourceTrackingStartedMessage.parse_raw,
     )
     assert messages[0].node_id == exp_started_task.node_id
 
@@ -807,7 +804,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_success
 
     async def _return_random_task_result(job_id) -> TaskOutputData:
-        return TaskOutputData.model_validate({"out_1": None, "out_2": 45})
+        return TaskOutputData.parse_obj({"out_1": None, "out_2": 45})
 
     mocked_dask_client.get_task_result.side_effect = _return_random_task_result
     await schedule_all_pipelines(scheduler)
@@ -820,16 +817,14 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         expected_progress=1,
     )
     messages = await _assert_message_received(
-        instrumentation_rabbit_client_parser,
-        1,
-        InstrumentationRabbitMessage.model_validate_json,
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
     )
     assert messages[0].metrics == "service_stopped"
     assert messages[0].service_uuid == exp_started_task.node_id
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingStoppedMessage.model_validate_json,
+        RabbitResourceTrackingStoppedMessage.parse_raw,
     )
 
     completed_tasks = [exp_started_task]
@@ -924,16 +919,14 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
     messages = await _assert_message_received(
-        instrumentation_rabbit_client_parser,
-        1,
-        InstrumentationRabbitMessage.model_validate_json,
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
     )
     assert messages[0].metrics == "service_started"
     assert messages[0].service_uuid == exp_started_task.node_id
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingStartedMessage.model_validate_json,
+        RabbitResourceTrackingStartedMessage.parse_raw,
     )
     assert messages[0].node_id == exp_started_task.node_id
 
@@ -970,16 +963,14 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_parse_output_data_fct.assert_not_called()
     expected_pending_tasks.remove(exp_started_task)
     messages = await _assert_message_received(
-        instrumentation_rabbit_client_parser,
-        1,
-        InstrumentationRabbitMessage.model_validate_json,
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
     )
     assert messages[0].metrics == "service_stopped"
     assert messages[0].service_uuid == exp_started_task.node_id
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingStoppedMessage.model_validate_json,
+        RabbitResourceTrackingStoppedMessage.parse_raw,
     )
 
     # -------------------------------------------------------------------------------
@@ -1016,9 +1007,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     )
     mocked_dask_client.get_task_result.assert_called_once_with(exp_started_task.job_id)
     messages = await _assert_message_received(
-        instrumentation_rabbit_client_parser,
-        2,
-        InstrumentationRabbitMessage.model_validate_json,
+        instrumentation_rabbit_client_parser, 2, InstrumentationRabbitMessage.parse_raw
     )
     # NOTE: the service was fast and went directly to success
     assert messages[0].metrics == "service_started"
@@ -1079,7 +1068,7 @@ async def test_task_progress_triggers(
         )
         await cast(  # noqa: SLF001
             DaskScheduler, scheduler
-        )._task_progress_change_handler(progress_event.model_dump_json())
+        )._task_progress_change_handler(progress_event.json())
         # NOTE: not sure whether it should switch to STARTED.. it would make sense
         await _assert_comp_tasks_db(
             aiopg_engine,
@@ -1100,7 +1089,7 @@ async def test_task_progress_triggers(
         ),
     ],
 )
-async def test_handling_of_disconnected_dask_scheduler(
+async def test_handling_of_disconnected_scheduler_dask(
     with_disabled_auto_scheduling: None,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
@@ -1112,7 +1101,7 @@ async def test_handling_of_disconnected_dask_scheduler(
 ):
     # this will create a non connected backend issue that will trigger re-connection
     mocked_dask_client_send_task = mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.DaskClient.send_computation_tasks",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.DaskClient.send_computation_tasks",
         side_effect=backend_error,
     )
     assert mocked_dask_client_send_task
@@ -1231,7 +1220,7 @@ class RebootState:
         pytest.param(
             RebootState(
                 dask_task_status=DaskClientTaskState.SUCCESS,
-                task_result=TaskOutputData.model_validate({"whatever_output": 123}),
+                task_result=TaskOutputData.parse_obj({"whatever_output": 123}),
                 expected_task_state_group1=RunningState.SUCCESS,
                 expected_task_progress_group1=1,
                 expected_task_state_group2=RunningState.SUCCESS,
@@ -1471,7 +1460,7 @@ async def test_running_pipeline_triggers_heartbeat(
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingStartedMessage.model_validate_json,
+        RabbitResourceTrackingStartedMessage.parse_raw,
     )
     assert messages[0].node_id == exp_started_task.node_id
 
@@ -1483,7 +1472,7 @@ async def test_running_pipeline_triggers_heartbeat(
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingHeartbeatMessage.model_validate_json,
+        RabbitResourceTrackingHeartbeatMessage.parse_raw,
     )
     assert isinstance(messages[0], RabbitResourceTrackingHeartbeatMessage)
 
@@ -1495,7 +1484,7 @@ async def test_running_pipeline_triggers_heartbeat(
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingHeartbeatMessage.model_validate_json,
+        RabbitResourceTrackingHeartbeatMessage.parse_raw,
     )
     assert isinstance(messages[0], RabbitResourceTrackingHeartbeatMessage)
 
@@ -1503,7 +1492,7 @@ async def test_running_pipeline_triggers_heartbeat(
 @pytest.fixture
 async def mocked_get_or_create_cluster(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.get_or_create_on_demand_cluster",
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_dask.get_or_create_on_demand_cluster",
         autospec=True,
     )
 

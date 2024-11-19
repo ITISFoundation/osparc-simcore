@@ -345,11 +345,10 @@ class DaskScheduler(BaseCompScheduler):
             except TaskSchedulingError as err:
                 task_final_state = RunningState.FAILED
                 simcore_platform_status = SimcorePlatformStatus.BAD
-                errors = err.get_errors()
                 _logger.debug(
                     "Unexpected failure while processing results of %s: %s",
                     f"{task=}",
-                    f"{errors=}",
+                    f"{err=}",
                 )
 
             # resource tracking

@@ -608,18 +608,25 @@ def check_if_cluster_is_able_to_run_pipeline(
         raise MissingComputationalResourcesError(
             project_id=project_id,
             node_id=node_id,
-            msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled "
-            f"on cluster {cluster_id}: task needs '{task_resources}', "
-            f"cluster has {cluster_resources}",
+            service_name=node_image.name,
+            service_version=node_image.tag,
+            cluster_id=cluster_id,
+            task_resources=task_resources,
+            cluster_resources=cluster_resources,
         )
 
     # well then our workers are not powerful enough
     raise InsuficientComputationalResourcesError(
         project_id=project_id,
         node_id=node_id,
-        msg=f"Insufficient computational resources to run {node_image.name}:{node_image.tag} with {_to_human_readable_resource_values( task_resources)} on cluster {cluster_id}."
-        f"Cluster available workers: {[_to_human_readable_resource_values( worker.get('resources', None)) for worker in workers.values()]}"
-        "TIP: Reduce service required resources or contact oSparc support",
+        service_name=node_image.name,
+        service_version=node_image.tag,
+        service_requested_resources=_to_human_readable_resource_values(task_resources),
+        cluster_id=cluster_id,
+        cluster_available_resources=[
+            _to_human_readable_resource_values(worker.get("resources", None))
+            for worker in workers.values()
+        ],
     )
 
 

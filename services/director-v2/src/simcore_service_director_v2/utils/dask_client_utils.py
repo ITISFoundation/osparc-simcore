@@ -26,11 +26,11 @@ from models_library.clusters import (
 from pydantic import AnyUrl
 
 from ..core.errors import (
+    ComputationalSchedulerError,
     ConfigurationError,
     DaskClientRequestError,
     DaskClusterError,
     DaskGatewayServerError,
-    SchedulerError,
 )
 from .dask import check_maximize_workers, wrap_client_async_routine
 
@@ -220,7 +220,7 @@ async def test_scheduler_endpoint(
             ) as dask_client:
                 if dask_client.status != _DASK_SCHEDULER_RUNNING_STATE:
                     msg = "internal scheduler is not running!"
-                    raise SchedulerError(msg)
+                    raise ComputationalSchedulerError(msg)
 
         else:
             gateway_auth = await get_gateway_auth_from_params(authentication)
@@ -247,7 +247,7 @@ async def test_scheduler_endpoint(
         ClientConnectionError,
         ClientResponseError,
         httpx.HTTPError,
-        SchedulerError,
+        ComputationalSchedulerError,
     ) as exc:
         logger.debug("Pinging %s, failed: %s", f"{endpoint=}", f"{exc=!r}")
         msg = f"Could not connect to cluster in {endpoint}: error: {exc}"

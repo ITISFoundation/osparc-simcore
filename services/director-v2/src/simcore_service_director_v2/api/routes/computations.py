@@ -53,10 +53,10 @@ from ...core.errors import (
     ClusterNotFoundError,
     ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
+    ComputationalSchedulerError,
     ConfigurationError,
     PricingPlanUnitNotFoundError,
     ProjectNotFoundError,
-    SchedulerError,
     WalletNotEnoughCreditsError,
 )
 from ...models.comp_pipelines import CompPipelineAtDB
@@ -510,7 +510,9 @@ async def get_computation(
         pipeline_details=pipeline_details,
         url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
         stop_url=(
-            TypeAdapter(AnyHttpUrl).validate_python(f"{self_url}:stop?user_id={user_id}")
+            TypeAdapter(AnyHttpUrl).validate_python(
+                f"{self_url}:stop?user_id={user_id}"
+            )
             if pipeline_state.is_running()
             else None
         ),
@@ -598,7 +600,7 @@ async def stop_computation(
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except SchedulerError as e:
+    except ComputationalSchedulerError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
 
@@ -639,7 +641,7 @@ async def delete_computation(
             # abort the pipeline first
             try:
                 await scheduler.stop_pipeline(computation_stop.user_id, project_id)
-            except SchedulerError as e:
+            except ComputationalSchedulerError as e:
                 _logger.warning(
                     "Project %s could not be stopped properly.\n reason: %s",
                     project_id,
