@@ -8,10 +8,10 @@ from pathlib import Path
 from typing import Any, ClassVar, NamedTuple
 
 import yaml
+from common_library.json_serialization import json_dumps
 from common_library.pydantic_fields_extension import get_type
 from fastapi import FastAPI, Query
 from models_library.basic_types import LogLevel
-from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, create_model
 from pydantic.fields import FieldInfo
 from servicelib.fastapi.openapi import override_fastapi_openapi_method

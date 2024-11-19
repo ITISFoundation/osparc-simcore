@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, ClassVar
 
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 from pydantic import BaseModel, Extra, Field, field_validator
 
 from .basic_types import IDStr

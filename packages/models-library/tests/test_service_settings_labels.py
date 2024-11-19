@@ -291,7 +291,9 @@ def test_container_outgoing_permit_list_and_container_allow_internet_without_com
             )
         },
     ):
-        assert TypeAdapter(DynamicSidecarServiceLabels).validate_json(json.dumps(dict_data))
+        assert TypeAdapter(DynamicSidecarServiceLabels).validate_json(
+            json.dumps(dict_data)
+        )
 
 
 def test_container_allow_internet_no_compose_spec_not_ok():
@@ -557,7 +559,7 @@ def test_can_parse_labels_with_osparc_identifiers(
 
 
 def servicelib__json_serialization__json_dumps(obj: Any, **kwargs):
-    # Analogous to 'models_library.utils.json_serialization.json_dumps'
+    # Analogous to 'common_library.json_serialization.json_dumps'
     return json.dumps(obj, default=pydantic_encoder, **kwargs)
 
 

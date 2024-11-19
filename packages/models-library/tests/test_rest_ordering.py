@@ -1,11 +1,11 @@
 import pytest
+from common_library.json_serialization import json_dumps
 from models_library.basic_types import IDStr
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
     create_ordering_query_model_classes,
 )
-from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Extra, Field, Json, ValidationError, validator
 
 
