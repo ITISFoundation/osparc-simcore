@@ -2,7 +2,7 @@ import warnings
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
-from typing import cast
+from typing import Annotated, cast
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.basic_types import BootModeEnum, PortInt
@@ -53,10 +53,13 @@ class SystemMonitorSettings(BaseCustomSettings):
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
-    SC_BOOT_MODE: BootModeEnum = Field(
-        ...,
-        description="boot mode helps determine if in development mode or normal operation",
-    )
+    SC_BOOT_MODE: Annotated[
+        BootModeEnum,
+        Field(
+            ...,
+            description="boot mode helps determine if in development mode or normal operation",
+        ),
+    ]
 
     DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR: Path = Field(
         ...,
