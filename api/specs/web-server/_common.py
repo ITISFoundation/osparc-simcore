@@ -6,23 +6,14 @@ import pprint
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import (
-    Annotated,
-    Any,
-    ClassVar,
-    NamedTuple,
-    Optional,
-    Union,
-    get_args,
-    get_origin,
-)
+from typing import Annotated, Any, NamedTuple, Optional, Union, get_args, get_origin
 
 import yaml
 from common_library.json_serialization import json_dumps
 from common_library.pydantic_fields_extension import get_type
 from fastapi import FastAPI, Query
 from models_library.basic_types import LogLevel
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic.fields import FieldInfo
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
@@ -118,14 +109,15 @@ class Log(BaseModel):
         None, description="name of the logger receiving this message"
     )
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "message": "Hi there, Mr user",
                 "level": "INFO",
                 "logger": "user-logger",
             }
         }
+    )
 
 
 class ErrorItem(BaseModel):
