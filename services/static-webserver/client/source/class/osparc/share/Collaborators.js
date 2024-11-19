@@ -402,10 +402,10 @@ qx.Class.define("osparc.share.Collaborators", {
       // reload list
       this.__collaboratorsModel.removeAll();
 
-      const store = osparc.store.Store.getInstance();
+      const groupsStore = osparc.store.Groups.getInstance();
       const everyoneGIds = [
-        store.getEveryoneProductGroup()["gid"],
-        store.getEveryoneGroup()["gid"]
+        groupsStore.getEveryoneProductGroup()["gid"],
+        groupsStore.getEveryoneGroup()["gid"]
       ];
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];

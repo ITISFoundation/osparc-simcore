@@ -25,6 +25,33 @@ qx.Class.define("osparc.store.Groups", {
     this.groupsCached = [];
   },
 
+  properties: {
+    organizations: {
+      check: "Object",
+      init: {}
+    },
+
+    organizationMembers: {
+      check: "Object",
+      init: {}
+    },
+
+    reachableMembers: {
+      check: "Object",
+      init: {}
+    },
+
+    everyoneProductGroup: {
+      check: "Object",
+      init: {}
+    },
+
+    everyoneGroup: {
+      check: "Object",
+      init: {}
+    },
+  },
+
   events: {
     "groupAdded": "qx.event.type.Data",
     "groupRemoved": "qx.event.type.Data",

@@ -174,26 +174,6 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
-    organizations: {
-      check: "Object",
-      init: {}
-    },
-    organizationMembers: {
-      check: "Object",
-      init: {}
-    },
-    reachableMembers: {
-      check: "Object",
-      init: {}
-    },
-    everyoneProductGroup: {
-      check: "Object",
-      init: {}
-    },
-    everyoneGroup: {
-      check: "Object",
-      init: {}
-    },
     clusters: {
       check: "Array",
       init: [],

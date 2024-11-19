@@ -107,14 +107,16 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     },
 
     getEveryoneProductObj: function(isStudy) {
-      const everyoneProductGroup = osparc.store.Store.getInstance().getEveryoneProductGroup();
+      const groupsStore = osparc.store.Groups.getInstance();
+      const everyoneProductGroup = groupsStore.getEveryoneProductGroup();
       const everyone = osparc.utils.Utils.deepCloneObject(everyoneProductGroup);
       everyone["accessRights"] = isStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
       return everyone;
     },
 
     getEveryoneObj: function(isStudy) {
-      const everyoneGroup = osparc.store.Store.getInstance().getEveryoneGroup();
+      const groupsStore = osparc.store.Groups.getInstance();
+      const everyoneGroup = groupsStore.getEveryoneGroup();
       const everyone = osparc.utils.Utils.deepCloneObject(everyoneGroup);
       everyone["accessRights"] = isStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
       return everyone;

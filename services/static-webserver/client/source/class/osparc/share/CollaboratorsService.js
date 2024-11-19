@@ -66,14 +66,16 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     },
 
     getEveryoneProductObj: function() {
-      const everyoneProductGroup = osparc.store.Store.getInstance().getEveryoneProductGroup();
+      const groupsStore = osparc.store.Groups.getInstance();
+      const everyoneProductGroup = groupsStore.getEveryoneProductGroup();
       const everyone = osparc.utils.Utils.deepCloneObject(everyoneProductGroup);
       everyone["accessRights"] = this.getCollaboratorAccessRight();
       return everyone;
     },
 
     getEveryoneObj: function() {
-      const everyoneGroup = osparc.store.Store.getInstance().getEveryoneGroup();
+      const groupsStore = osparc.store.Groups.getInstance();
+      const everyoneGroup = groupsStore.getEveryoneGroup();
       const everyone = osparc.utils.Utils.deepCloneObject(everyoneGroup);
       everyone["accessRights"] = this.getCollaboratorAccessRight();
       return everyone;
