@@ -9,7 +9,6 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceInputKey,
     ServiceOutputGet,
     ServiceOutputKey,
-    ServiceResourcesGet,
 )
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
@@ -127,7 +126,7 @@ def get_compatible_outputs_given_target_input(
 
 @router.get(
     "/catalog/services/{service_key}/{service_version}/resources",
-    response_model=ServiceResourcesGet,
+    # response_model=ServiceResourcesGet,
 )
 def get_service_resources(
     _params: Annotated[ServicePathParams, Depends()],

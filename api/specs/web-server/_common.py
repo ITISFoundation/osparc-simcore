@@ -5,7 +5,16 @@ import inspect
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, ClassVar, NamedTuple
+from typing import (
+    Annotated,
+    Any,
+    ClassVar,
+    NamedTuple,
+    Optional,
+    Union,
+    get_args,
+    get_origin,
+)
 
 import yaml
 from common_library.json_serialization import json_dumps
@@ -36,33 +45,65 @@ def _create_json_type(**schema_extras):
     return _Json
 
 
+def replace_basemodel_in_annotation(annotation, new_type):
+    origin = get_origin(annotation)
+
+    # Handle Annotated
+    if origin is Annotated:
+        args = get_args(annotation)
+        base_type = args[0]
+        metadata = args[1:]
+        if isinstance(base_type, type) and issubclass(base_type, BaseModel):
+            # Replace the BaseModel subclass
+            base_type = new_type
+
+        return Annotated[(base_type, *metadata)]
+
+    # Handle Optionals, Unions, or other generic types
+    if origin in (Optional, Union, list, dict, tuple):  # Extendable for other generics
+        new_args = tuple(
+            replace_basemodel_in_annotation(arg, new_type)
+            for arg in get_args(annotation)
+        )
+        return origin[new_args]
+
+    # Replace BaseModel subclass directly
+    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+        return new_type
+
+    # Return as-is if no changes
+    return annotation
+
+
 def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
     fields = {}
     for field_name, field_info in model_class.model_fields.items():
 
-        field_type = get_type(field_info)
-        default_value = field_info.default
-
-        kwargs = {
+        query_kwargs = {
+            "default": field_info.default,
             "alias": field_info.alias,
             "title": field_info.title,
             "description": field_info.description,
             "metadata": field_info.metadata,
-            "json_schema_extra": field_info.json_schema_extra,
+            "json_schema_extra": field_info.json_schema_extra or {},
         }
 
-        if issubclass(field_type, BaseModel):
-            # Complex fields
-            assert "json_schema_extra" in kwargs  # nosec
-            assert kwargs["json_schema_extra"]  # nosec
-            field_type = _create_json_type(
-                description=kwargs["description"],
-                example=kwargs.get("json_schema_extra", {}).get("example_json"),
+        json_field_type = _create_json_type(
+            description=query_kwargs["description"],
+            example=query_kwargs.get("json_schema_extra", {}).get("example_json"),
+        )
+
+        annotation = replace_basemodel_in_annotation(
+            field_info.annotation, new_type=json_field_type
+        )
+
+        if annotation != field_info.annotation:
+            # Complex fields are transformed to Json
+            query_kwargs["default"] = (
+                json_dumps(query_kwargs["default"]) if query_kwargs["default"] else None
             )
 
-            default_value = json_dumps(default_value) if default_value else None
-
-        fields[field_name] = (field_type, Query(default=default_value, **kwargs))
+        fields[field_name] = (annotation, Query(**query_kwargs))
 
     new_model_name = f"{model_class.__name__}Query"
     return create_model(new_model_name, **fields)
