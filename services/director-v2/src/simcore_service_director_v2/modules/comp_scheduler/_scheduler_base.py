@@ -47,7 +47,7 @@ from ...core.errors import (
 )
 from ...core.settings import ComputationalBackendSettings
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
+from ...models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.rabbitmq import (
@@ -59,7 +59,6 @@ from ...utils.rabbitmq import (
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
-from ._models import Iteration
 from ._utils import (
     COMPLETED_STATES,
     PROCESSING_STATES,

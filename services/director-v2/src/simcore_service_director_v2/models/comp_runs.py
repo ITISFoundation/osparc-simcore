@@ -1,5 +1,6 @@
 import datetime
 from contextlib import suppress
+from typing import TypeAlias
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
@@ -37,12 +38,15 @@ class RunMetadataDict(TypedDict, total=False):
     project_metadata: ProjectMetadataDict
 
 
+Iteration: TypeAlias = PositiveInt
+
+
 class CompRunsAtDB(BaseModel):
     run_id: PositiveInt
     project_uuid: ProjectID
     user_id: UserID
     cluster_id: ClusterID | None
-    iteration: PositiveInt
+    iteration: Iteration
     result: RunningState
     created: datetime.datetime
     modified: datetime.datetime

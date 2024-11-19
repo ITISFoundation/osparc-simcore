@@ -27,7 +27,7 @@ from ...core.errors import (
     ComputationalBackendOnDemandNotReadyError,
     TaskSchedulingError,
 )
-from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
+from ...models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...models.dask_subsystem import DaskClientTaskState
 from ...utils.dask import (
@@ -48,7 +48,6 @@ from ..dask_clients_pool import DaskClientsPool
 from ..db.repositories.clusters import ClustersRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
-from ._models import Iteration
 from ._scheduler_base import BaseCompScheduler
 from ._utils import get_resource_tracking_run_id
 

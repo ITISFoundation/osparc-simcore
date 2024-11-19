@@ -9,8 +9,8 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 
+from ...models.comp_runs import Iteration
 from ...models.comp_tasks import CompTaskAtDB
-from ._models import Iteration
 
 SCHEDULED_STATES: set[RunningState] = {
     RunningState.PUBLISHED,
