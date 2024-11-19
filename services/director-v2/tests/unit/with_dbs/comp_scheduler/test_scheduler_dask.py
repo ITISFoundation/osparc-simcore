@@ -191,7 +191,7 @@ def scheduler(initialized_app: FastAPI) -> BaseCompScheduler:
 
 
 async def test_misconfigured_pipeline_is_not_scheduled(
-    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_manager: mock.Mock,
     scheduler: BaseCompScheduler,
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
@@ -475,7 +475,7 @@ async def _trigger_progress_event(
 
 @pytest.mark.acceptance_test
 async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
-    with_disabled_auto_scheduling: None,
+    with_disabled_scheduler_manager: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
@@ -860,7 +860,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
 
 async def test_task_progress_triggers(
-    with_disabled_auto_scheduling: None,
+    with_disabled_scheduler_manager: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
@@ -923,7 +923,7 @@ async def test_task_progress_triggers(
     ],
 )
 async def test_handling_of_disconnected_scheduler_dask(
-    with_disabled_auto_scheduling: None,
+    with_disabled_scheduler_manager: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
@@ -1068,7 +1068,7 @@ class RebootState:
     ],
 )
 async def test_handling_scheduling_after_reboot(
-    with_disabled_auto_scheduling: None,
+    with_disabled_scheduler_manager: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     aiopg_engine: aiopg.sa.engine.Engine,
     running_project: RunningProject,
@@ -1150,7 +1150,7 @@ async def test_handling_scheduling_after_reboot(
 
 
 async def test_handling_cancellation_of_jobs_after_reboot(
-    with_disabled_auto_scheduling: None,
+    with_disabled_scheduler_manager: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     aiopg_engine: aiopg.sa.engine.Engine,
     running_project_mark_for_cancellation: RunningProject,
@@ -1244,7 +1244,7 @@ def with_fast_service_heartbeat_s(monkeypatch: pytest.MonkeyPatch) -> int:
 
 
 async def test_running_pipeline_triggers_heartbeat(
-    with_disabled_auto_scheduling: None,
+    with_disabled_scheduler_manager: mock.Mock,
     with_fast_service_heartbeat_s: int,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
@@ -1334,7 +1334,7 @@ async def mocked_get_or_create_cluster(mocker: MockerFixture) -> mock.Mock:
 
 
 async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
-    with_disabled_auto_scheduling: None,
+    with_disabled_scheduler_manager: mock.Mock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
     published_project: PublishedProject,
@@ -1408,7 +1408,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     [ClustersKeeperNotAvailableError],
 )
 async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
-    with_disabled_auto_scheduling: None,
+    with_disabled_scheduler_manager: mock.Mock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
     published_project: PublishedProject,

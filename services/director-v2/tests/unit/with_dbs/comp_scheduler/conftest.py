@@ -40,7 +40,7 @@ def mock_env(
 
 
 @pytest.fixture
-def with_disabled_auto_scheduling(mocker: MockerFixture) -> mock.Mock:
+def with_disabled_scheduler_manager(mocker: MockerFixture) -> mock.Mock:
     mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.shutdown_manager",
     )

@@ -103,7 +103,7 @@ async def test_manager_starts_and_auto_schedules_pipelines(
 
 
 async def test_schedule_pipelines_empty_db(
-    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_manager: mock.Mock,
     with_disabled_scheduler_worker: mock.Mock,
     initialized_app: FastAPI,
     scheduler_rabbit_client_parser: mock.AsyncMock,
@@ -121,7 +121,7 @@ async def test_schedule_pipelines_empty_db(
 
 
 async def test_schedule_pipelines_concurently_runs_exclusively_and_raises(
-    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_manager: mock.Mock,
     initialized_app: FastAPI,
     mocker: MockerFixture,
 ):
@@ -154,7 +154,7 @@ async def test_schedule_pipelines_concurently_runs_exclusively_and_raises(
 
 
 async def test_schedule_pipelines(
-    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_manager: mock.Mock,
     with_disabled_scheduler_worker: mock.Mock,
     initialized_app: FastAPI,
     published_project: PublishedProject,
@@ -246,7 +246,7 @@ async def test_schedule_pipelines(
 
 
 async def test_empty_pipeline_is_not_scheduled(
-    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_manager: mock.Mock,
     with_disabled_scheduler_worker: mock.Mock,
     initialized_app: FastAPI,
     registered_user: Callable[..., dict[str, Any]],
