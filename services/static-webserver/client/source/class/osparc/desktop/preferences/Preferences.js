@@ -32,9 +32,6 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
     if (osparc.product.Utils.showClusters()) {
       this.__addClustersPage();
     }
-    if (osparc.data.Permissions.getInstance().canDo("statics.read")) {
-      this.__addTestersPage();
-    }
   },
 
   members: {
@@ -85,12 +82,5 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
           .catch(err => console.error(err));
       }
     },
-
-    __addTestersPage: function() {
-      const title = this.tr("Tester");
-      const iconSrc = "@FontAwesome5Solid/user-md/24";
-      const testerPage = new osparc.desktop.preferences.pages.TesterPage();
-      this.addTab(title, iconSrc, testerPage);
-    }
   }
 });
