@@ -59,7 +59,7 @@ async def trash_workspace(
         )
 
         # IMPLICIT trash
-        child_folders: list[FolderID] = []  # TODO: find children
+        child_folders: list[FolderID] = []  # TODO: find children. Check with MD
 
         for folder_id in child_folders:
             await trash_folder(
@@ -70,7 +70,7 @@ async def trash_workspace(
                 force_stop_first=force_stop_first,
             )
 
-        child_projects: list[ProjectID] = []  # TODO: find children
+        child_projects: list[ProjectID] = []  # TODO: find children. Check with MD
 
         for project_id in child_projects:
             await trash_project(
@@ -104,7 +104,7 @@ async def untrash_workspace(
             updates=WorkspaceUpdateDB(trashed=None, trashed_by=None),
         )
 
-        child_folders: list[FolderID] = []  # TODO: find children
+        child_folders: list[FolderID] = []  # TODO: find children. Check with MD
 
         for folder_id in child_folders:
             await untrash_folder(
@@ -114,7 +114,7 @@ async def untrash_workspace(
                 folder_id=folder_id,
             )
 
-        child_projects: list[ProjectID] = []  # TODO: find children
+        child_projects: list[ProjectID] = []  # TODO: find children. Check with MD
 
         for project_id in child_projects:
             await untrash_project(

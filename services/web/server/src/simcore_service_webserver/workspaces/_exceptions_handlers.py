@@ -7,7 +7,11 @@ from ..exceptions_handlers import (
     HttpErrorInfo,
     create_exception_handlers_decorator,
 )
-from ..projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
+from ..projects.exceptions import (
+    BaseProjectError,
+    ProjectRunningConflictError,
+    ProjectStoppingError,
+)
 from .errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceGroupNotFoundError,
@@ -44,6 +48,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 
 
 handle_plugin_requests_exceptions = create_exception_handlers_decorator(
-    exceptions_catch=(WorkspacesValueError),
+    exceptions_catch=(BaseProjectError, WorkspacesValueError),
     exc_to_status_map=_TO_HTTP_ERROR_MAP,
 )
