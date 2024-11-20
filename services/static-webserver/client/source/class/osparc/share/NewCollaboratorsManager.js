@@ -28,7 +28,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     this.__renderLayout();
 
-    this.__selectedCollaborators = new qx.data.Array();
+    this.__selectedCollaborators = [];
     this.__visibleCollaborators = {};
     this.__reloadCollaborators();
 
@@ -131,9 +131,9 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();
         if (selected) {
-          this.__selectedCollaborators.push(collaborator.gid);
+          this.__selectedCollaborators.push(collaborator.getGroupId());
         } else {
-          this.__selectedCollaborators.remove(collaborator.gid);
+          this.__selectedCollaborators.remove(collaborator.getGroupId());
         }
         this.__shareButton.setEnabled(Boolean(this.__selectedCollaborators.length));
       }, this);
@@ -173,7 +173,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const existingCollaborators = existingCollabs.map(c => parseInt(c));
       visibleCollaborators.forEach(visibleCollaborator => {
         // do not list the visibleCollaborators that are already collaborators
-        if (existingCollaborators.includes(visibleCollaborator["gid"])) {
+        if (existingCollaborators.includes(visibleCollaborator.getGroupId())) {
           return;
         }
         if (this.__showOrganizations === false && visibleCollaborator["collabType"] !== 2) {
@@ -187,13 +187,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       this.__collabButtonsContainer.setEnabled(false);
       this.__shareButton.setFetching(true);
 
-      const addCollabs = [];
-      for (let i=0; i<this.__selectedCollaborators.length; i++) {
-        const collabId = this.__selectedCollaborators.getItem(i);
-        addCollabs.push(collabId);
-      }
-      if (addCollabs.length) {
-        this.fireDataEvent("addCollaborators", addCollabs);
+      if (this.__selectedCollaborators.length) {
+        this.fireDataEvent("addCollaborators", this.__selectedCollaborators);
       }
       // The parent class will close the window
     }
