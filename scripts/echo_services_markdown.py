@@ -29,7 +29,7 @@ def to_row(values: Iterable):
 
 
 def generate_markdown_table(openapi_files: list[tuple[Path, Path]]) -> str:
-    title = ("service", "rest API", "", "docker")
+    title = ("service", "rest API", "  ", "docker")
     lines = ["-" * 10] * len(title)
 
     table = to_row(title)
