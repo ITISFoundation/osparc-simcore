@@ -2,7 +2,6 @@
 """
 
 import inspect
-import pprint
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -95,7 +94,6 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
         fields[field_name] = (annotation, Query(default=field_default, **query_kwargs))
 
     new_model_name = f"{model_class.__name__}Query"
-    pprint.pprint(fields)
     return create_model(new_model_name, **fields)
 
 
