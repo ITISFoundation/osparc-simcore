@@ -1,9 +1,5 @@
 # web/server
 
-[![ReDoc](https://img.shields.io/badge/OpenAPI-ReDoc-85ea2d?logo=openapiinitiative)](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml)
-[![Swagger UI](https://img.shields.io/badge/OpenAPI-Swagger_UI-85ea2d?logo=swagger)](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml)
-[![Docker Pulls](https://img.shields.io/docker/pulls/itisfoundation/webserver.svg)](https://hub.docker.com/r/itisfoundation/webserver/tags)
-
 Corresponds to the ```webserver``` service (see all services in ``services/docker-compose.yml``)
 
 
