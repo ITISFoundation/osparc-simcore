@@ -1,8 +1,18 @@
+from enum import Enum
 from typing import Final
 
 import sqlalchemy as sa
 
 from ..constants import DECIMAL_PLACES
+
+
+class ReferentialAction(str, Enum):
+    # SEE https://docs.sqlalchemy.org/en/20/orm/cascades.html
+    CASCADE = "CASCADE"
+    SET_NULL = "SET NULL"
+    SET_DEFAULT = "SET DEFAULT"
+    RESTRICT = "RESTRICT"
+    NO_ACTION = "NO ACTION"
 
 
 def column_created_datetime(*, timezone: bool = True) -> sa.Column:
@@ -34,8 +44,8 @@ def column_created_by_user(
         sa.Integer,
         sa.ForeignKey(
             users_table.c.id,
-            onupdate="CASCADE",
-            ondelete="SET NULL",
+            onupdate=ReferentialAction.CASCADE,
+            ondelete=ReferentialAction.SET_NULL,
         ),
         nullable=not required,
         doc="Who created this row at `created`",
@@ -50,8 +60,8 @@ def column_modified_by_user(
         sa.Integer,
         sa.ForeignKey(
             users_table.c.id,
-            onupdate="CASCADE",
-            ondelete="SET NULL",
+            onupdate=ReferentialAction.CASCADE,
+            ondelete=ReferentialAction.SET_NULL,
         ),
         nullable=not required,
         doc="Who modified this row at `modified`",
@@ -74,8 +84,8 @@ def column_trashed_by_user(resource_name: str, users_table: sa.Table) -> sa.Colu
         sa.BigInteger,
         sa.ForeignKey(
             users_table.c.id,
-            onupdate="CASCADE",
-            ondelete="SET NULL",
+            onupdate=ReferentialAction.CASCADE,
+            ondelete=ReferentialAction.SET_NULL,
         ),
         nullable=True,
         comment=f"User who trashed the {resource_name}, or null if not trashed or user is unknown.",
