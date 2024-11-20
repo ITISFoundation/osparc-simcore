@@ -371,9 +371,9 @@ def test_parse_request_query_parameters_as_with_order_by_query_models():
 
     expected = OrderBy(field="name", direction=OrderDirection.ASC)
 
-    url = URL("/test").with_query(order_by=expected.json())
+    url = URL("/test").with_query(order_by=expected.model_dump_json())
 
     request = make_mocked_request("GET", path=f"{url}")
 
     query_params = parse_request_query_parameters_as(OrderQueryModel, request)
-    assert query_params.order_by == expected
+    assert query_params.order_by.model_dump() == expected.model_dump()

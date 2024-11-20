@@ -58,9 +58,9 @@ from simcore_service_director_v2.core.errors import (
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
     ComputationalSchedulerChangedError,
+    ComputationalSchedulerError,
     ConfigurationError,
     PipelineNotFoundError,
-    SchedulerError,
 )
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
@@ -1107,7 +1107,7 @@ async def test_handling_of_disconnected_dask_scheduler(
     aiopg_engine: aiopg.sa.engine.Engine,
     mocker: MockerFixture,
     published_project: PublishedProject,
-    backend_error: SchedulerError,
+    backend_error: ComputationalSchedulerError,
     run_metadata: RunMetadataDict,
 ):
     # this will create a non connected backend issue that will trigger re-connection

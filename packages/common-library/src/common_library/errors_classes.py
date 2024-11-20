@@ -45,7 +45,7 @@ class OsparcErrorMixin(PydanticErrorMixin):
         ]
         return ".".join(reversed(relevant_classes))
 
-    def error_context(self):
+    def error_context(self) -> dict[str, Any]:
         """Returns context in which error occurred and stored within the exception"""
         return dict(**self.__dict__)
 

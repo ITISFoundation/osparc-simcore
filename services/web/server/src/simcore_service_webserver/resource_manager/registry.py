@@ -14,12 +14,14 @@
 """
 
 import logging
-from typing import TypedDict
 
 import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.basic_types import UUIDStr
 from servicelib.redis_utils import handle_redis_returns_union_types
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from ..redis import get_redis_resources_client
 from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY

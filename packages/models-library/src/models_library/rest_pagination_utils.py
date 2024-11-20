@@ -1,9 +1,11 @@
 from math import ceil
 from typing import Any, Protocol, runtime_checkable
-from typing_extensions import TypedDict
 
 from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from pydantic import TypeAdapter
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
@@ -70,7 +72,9 @@ def paginate_data(
     """
     last_page = ceil(total / limit) - 1
 
-    data = [item.model_dump() if hasattr(item, "model_dump") else item for item in chunk]
+    data = [
+        item.model_dump() if hasattr(item, "model_dump") else item for item in chunk
+    ]
 
     return PageDict(
         _meta=PageMetaInfoLimitOffset(

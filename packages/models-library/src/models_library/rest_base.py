@@ -8,7 +8,7 @@ class RequestParameters(BaseModel):
     """
 
     def as_params(self, **export_options) -> dict[str, str]:
-        data = self.dict(**export_options)
+        data = self.model_dump(**export_options)
         return {k: f"{v}" for k, v in data.items()}
 
 

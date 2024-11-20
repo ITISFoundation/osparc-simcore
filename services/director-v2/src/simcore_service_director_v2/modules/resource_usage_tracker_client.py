@@ -91,7 +91,7 @@ class ResourceUsageTrackerClient:
         )
         if response.status_code == status.HTTP_404_NOT_FOUND:
             msg = "No pricing plan defined"
-            raise PricingPlanUnitNotFoundError(msg)
+            raise PricingPlanUnitNotFoundError(msg=msg)
 
         response.raise_for_status()
         return PricingPlanGet.model_validate(response.json())
@@ -117,7 +117,7 @@ class ResourceUsageTrackerClient:
                     unit.specific_info.aws_ec2_instances,
                 )
         msg = "Default pricing plan and unit does not exist"
-        raise PricingPlanUnitNotFoundError(msg)
+        raise PricingPlanUnitNotFoundError(msg=msg)
 
     async def get_pricing_unit(
         self,

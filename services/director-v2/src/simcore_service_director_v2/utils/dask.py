@@ -129,7 +129,9 @@ async def create_node_ports(
             db_manager=db_manager,
         )
     except ValidationError as err:
-        raise PortsValidationError(project_id, node_id, list(err.errors())) from err
+        raise PortsValidationError(
+            project_id=project_id, node_id=node_id, errors_list=list(err.errors())
+        ) from err
 
 
 async def parse_output_data(
@@ -181,7 +183,9 @@ async def parse_output_data(
             ports_errors.extend(_get_port_validation_errors(port_key, err))
 
     if ports_errors:
-        raise PortsValidationError(project_id, node_id, ports_errors)
+        raise PortsValidationError(
+            project_id=project_id, node_id=node_id, errors_list=ports_errors
+        )
 
 
 async def compute_input_data(
@@ -218,11 +222,13 @@ async def compute_input_data(
             else:
                 input_data[port.key] = value
 
-        except ValidationError as err:  # noqa: PERF203
+        except ValidationError as err:
             ports_errors.extend(_get_port_validation_errors(port.key, err))
 
     if ports_errors:
-        raise PortsValidationError(project_id, node_id, ports_errors)
+        raise PortsValidationError(
+            project_id=project_id, node_id=node_id, errors_list=ports_errors
+        )
 
     return TaskInputData.model_validate(input_data)
 
@@ -608,18 +614,25 @@ def check_if_cluster_is_able_to_run_pipeline(
         raise MissingComputationalResourcesError(
             project_id=project_id,
             node_id=node_id,
-            msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled "
-            f"on cluster {cluster_id}: task needs '{task_resources}', "
-            f"cluster has {cluster_resources}",
+            service_name=node_image.name,
+            service_version=node_image.tag,
+            cluster_id=cluster_id,
+            task_resources=task_resources,
+            cluster_resources=cluster_resources,
         )
 
     # well then our workers are not powerful enough
     raise InsuficientComputationalResourcesError(
         project_id=project_id,
         node_id=node_id,
-        msg=f"Insufficient computational resources to run {node_image.name}:{node_image.tag} with {_to_human_readable_resource_values( task_resources)} on cluster {cluster_id}."
-        f"Cluster available workers: {[_to_human_readable_resource_values( worker.get('resources', None)) for worker in workers.values()]}"
-        "TIP: Reduce service required resources or contact oSparc support",
+        service_name=node_image.name,
+        service_version=node_image.tag,
+        service_requested_resources=_to_human_readable_resource_values(task_resources),
+        cluster_id=cluster_id,
+        cluster_available_resources=[
+            _to_human_readable_resource_values(worker.get("resources", None))
+            for worker in workers.values()
+        ],
     )
 
 

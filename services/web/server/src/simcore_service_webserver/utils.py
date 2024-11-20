@@ -16,7 +16,9 @@ from typing import Any
 import orjson
 from common_library.error_codes import ErrorCodeStr
 from models_library.basic_types import SHA1Str
-from typing_extensions import TypedDict
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 _CURRENT_DIR = (
     Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent

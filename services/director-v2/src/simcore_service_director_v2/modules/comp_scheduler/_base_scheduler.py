@@ -45,10 +45,10 @@ from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
     ComputationalSchedulerChangedError,
+    ComputationalSchedulerError,
     DaskClientAcquisisitonError,
     InvalidPipelineError,
     PipelineNotFoundError,
-    SchedulerError,
     TaskSchedulingError,
 )
 from ...core.settings import ComputationalBackendSettings
@@ -242,7 +242,7 @@ class BaseCompScheduler(ABC):
             }
             if not possible_iterations:
                 msg = f"There are no pipeline scheduled for {user_id}:{project_id}"
-                raise SchedulerError(msg)
+                raise ComputationalSchedulerError(msg=msg)
             current_max_iteration = max(possible_iterations)
             selected_iteration = current_max_iteration
         else:
@@ -281,7 +281,7 @@ class BaseCompScheduler(ABC):
         }
         if not possible_iterations:
             msg = f"There are no pipeline scheduled for {user_id}:{project_id}"
-            raise SchedulerError(msg)
+            raise ComputationalSchedulerError(msg=msg)
         return max(possible_iterations)
 
     def _start_scheduling(
@@ -342,10 +342,10 @@ class BaseCompScheduler(ABC):
         }
         if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):  # type: ignore[arg-type]
             msg = (
-                f"{project_id}The tasks defined for {project_id} do not contain all"
+                f"The tasks defined for {project_id} do not contain all"
                 f" the tasks defined in the pipeline [{list(pipeline_dag.nodes)}]! Please check."
             )
-            raise InvalidPipelineError(msg)
+            raise InvalidPipelineError(pipeline_id=project_id, msg=msg)
         return pipeline_comp_tasks
 
     async def _update_run_result_from_tasks(
