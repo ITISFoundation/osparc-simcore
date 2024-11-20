@@ -12,9 +12,9 @@ from typing import Annotated
 from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.workspaces import (
-    CreateWorkspaceBodyParams,
-    PutWorkspaceBodyParams,
+    WorkspaceCreateBodyParams,
     WorkspaceGet,
+    WorkspaceReplaceBodyParams,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
@@ -40,7 +40,7 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_workspace(
-    _body: CreateWorkspaceBodyParams,
+    _body: WorkspaceCreateBodyParams,
 ):
     ...
 
@@ -71,7 +71,7 @@ async def get_workspace(
 )
 async def replace_workspace(
     _path: Annotated[WorkspacesPathParams, Depends()],
-    _body: PutWorkspaceBodyParams,
+    _body: WorkspaceReplaceBodyParams,
 ):
     ...
 

@@ -26,7 +26,7 @@ class WorkspaceGetPage(NamedTuple):
     total: PositiveInt
 
 
-class CreateWorkspaceBodyParams(InputSchema):
+class WorkspaceCreateBodyParams(InputSchema):
     name: str
     description: str | None = None
     thumbnail: str | None = None
@@ -35,7 +35,7 @@ class CreateWorkspaceBodyParams(InputSchema):
         extra = Extra.forbid
 
 
-class PutWorkspaceBodyParams(InputSchema):
+class WorkspaceReplaceBodyParams(InputSchema):
     name: IDStr
     description: str | None = None
     thumbnail: str | None = None

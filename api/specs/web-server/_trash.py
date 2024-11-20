@@ -77,7 +77,7 @@ _extra_tags = ["folders"]
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Not such a folder"},
         status.HTTP_409_CONFLICT: {
-            "description": "One or more projects are in use and cannot be trashed"
+            "description": "One or more projects in the folder are in use and cannot be trashed"
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Trash service error"},
     },
@@ -110,7 +110,7 @@ _extra_tags = ["workspaces"]
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Not such a workspace"},
         status.HTTP_409_CONFLICT: {
-            "description": "One or more projects are in use and cannot be trashed"
+            "description": "One or more projects in the workspace are in use and cannot be trashed"
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Trash service error"},
     },

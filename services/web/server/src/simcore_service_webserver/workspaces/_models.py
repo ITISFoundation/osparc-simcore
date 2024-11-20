@@ -29,7 +29,7 @@ class WorkspacesPathParams(StrictRequestParameters):
     workspace_id: WorkspaceID
 
 
-WorkspacesListOrderQueryParams: type[
+_WorkspacesListOrderQueryParams: type[
     RequestParameters
 ] = create_ordering_query_model_classes(
     ordering_fields={
@@ -51,7 +51,7 @@ class WorkspacesFilters(Filters):
 class WorkspacesListQueryParams(
     PageQueryParameters,
     FiltersQueryParameters[WorkspacesFilters],
-    WorkspacesListOrderQueryParams,  # type: ignore[misc, valid-type]
+    _WorkspacesListOrderQueryParams,  # type: ignore[misc, valid-type]
 ):
     ...
 

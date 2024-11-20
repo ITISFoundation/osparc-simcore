@@ -2,10 +2,10 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.workspaces import (
-    CreateWorkspaceBodyParams,
-    PutWorkspaceBodyParams,
+    WorkspaceCreateBodyParams,
     WorkspaceGet,
     WorkspaceGetPage,
+    WorkspaceReplaceBodyParams,
 )
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
@@ -27,10 +27,10 @@ from ..utils_aiohttp import envelope_json_response
 from . import _workspaces_api
 from ._exceptions_handlers import handle_plugin_requests_exceptions
 from ._models import (
+    WorkspacesFilters,
     WorkspacesListQueryParams,
     WorkspacesPathParams,
     WorkspacesRequestContext,
-    WorkspacesFilters
 )
 
 _logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ routes = web.RouteTableDef()
 @handle_plugin_requests_exceptions
 async def create_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
-    body_params = await parse_request_body_as(CreateWorkspaceBodyParams, request)
+    body_params = await parse_request_body_as(WorkspaceCreateBodyParams, request)
 
     workspace: WorkspaceGet = await _workspaces_api.create_workspace(
         request.app,
@@ -126,7 +126,7 @@ async def get_workspace(request: web.Request):
 async def replace_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
-    body_params = await parse_request_body_as(PutWorkspaceBodyParams, request)
+    body_params = await parse_request_body_as(WorkspaceReplaceBodyParams, request)
 
     workspace: WorkspaceGet = await _workspaces_api.update_workspace(
         app=request.app,
