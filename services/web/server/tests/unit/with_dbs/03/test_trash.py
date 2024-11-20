@@ -7,8 +7,7 @@
 
 
 import asyncio
-from collections.abc import Callable
-from typing import AsyncIterable
+from collections.abc import AsyncIterable, Callable
 from uuid import UUID
 
 import arrow
@@ -424,7 +423,49 @@ async def test_trash_empty_workspace(
 ):
     assert client.app
 
-    # LIST NOT trashed
+    # LIST NOT trashed (default)
+    resp = await client.get("/v0/workspaces")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0] == workspace
+
+    # LIST trashed
+    resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 0
+
+    # -------------
+
+    # TRASH
+    resp = await client.post(f"/v0/folders/{workspace.workspace_id}:trash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # LIST NOT trashed (default)
+    resp = await client.get("/v0/workspaces")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 0
+
+    # LIST trashed
+    resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0] == workspace
+
+    # --------
+
+    # UN_TRASH
+    resp = await client.post(f"/v0/workspaces/{workspace.workspace_id}:untrash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # LIST NOT trashed (default)
     resp = await client.get("/v0/workspaces")
     await assert_status(resp, status.HTTP_200_OK)
 
