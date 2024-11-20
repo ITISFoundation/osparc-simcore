@@ -73,8 +73,8 @@ def test_create_and_decrypt_invitation(
         base_url=faker.url(),
         default_product=default_product,
     )
-    assert URL(invitation_link).fragment
-    query_params = dict(parse.parse_qsl((URL(URL(invitation_link).fragment).query)))
+    assert URL(f"{invitation_link}").fragment
+    query_params = dict(parse.parse_qsl(URL(URL(f"{invitation_link}").fragment).query))
 
     # will raise TokenError or ValidationError
     invitation = decrypt_invitation(
@@ -196,4 +196,10 @@ def test_invalid_invitation_data(secret_key: str, default_product: ProductName):
 
 
 def test_aliases_uniqueness():
-    assert not [item for item, count in Counter([field.alias for field in _ContentWithShortNames.model_fields.values()]).items() if count > 1]  #nosec
+    assert not [
+        item
+        for item, count in Counter(
+            [field.alias for field in _ContentWithShortNames.model_fields.values()]
+        ).items()
+        if count > 1
+    ]  # nosec

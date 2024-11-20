@@ -198,7 +198,7 @@ def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]
     settings: ApplicationSettings = app.state.settings
 
     with respx.mock(
-        base_url=settings.PAYMENTS_GATEWAY_URL,
+        base_url=f"{settings.PAYMENTS_GATEWAY_URL}",
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
@@ -410,7 +410,7 @@ def mock_payments_stripe_api_base(app: FastAPI) -> Iterator[MockRouter]:
     settings: ApplicationSettings = app.state.settings
 
     with respx.mock(
-        base_url=settings.PAYMENTS_STRIPE_URL,
+        base_url=f"{settings.PAYMENTS_STRIPE_URL}",
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:

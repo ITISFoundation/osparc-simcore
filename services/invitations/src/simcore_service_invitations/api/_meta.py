@@ -2,8 +2,7 @@ import logging
 from collections.abc import Callable
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
-from common_library.pydantic_networks_extension import HttpUrlLegacy
+from pydantic import BaseModel, HttpUrl
 
 from .._meta import API_VERSION, PROJECT_NAME
 from ._dependencies import get_reverse_url_mapper
@@ -21,7 +20,7 @@ INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 class _Meta(BaseModel):
     name: str
     version: str
-    docs_url: HttpUrlLegacy
+    docs_url: HttpUrl
 
 
 #

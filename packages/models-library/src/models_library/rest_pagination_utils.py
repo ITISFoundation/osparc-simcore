@@ -1,7 +1,7 @@
 from math import ceil
 from typing import Any, Protocol, runtime_checkable
 
-from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
+from pydantic import AnyHttpUrl, TypeAdapter
 from pydantic import TypeAdapter
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
@@ -44,7 +44,7 @@ def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
         new_url = url.replace_query_params(**query)
 
     new_url_str = f"{new_url}"
-    return f"{TypeAdapter(AnyHttpUrlLegacy).validate_python(new_url_str)}"
+    return f"{TypeAdapter(AnyHttpUrl).validate_python(new_url_str)}"
 
 
 class PageDict(TypedDict):
