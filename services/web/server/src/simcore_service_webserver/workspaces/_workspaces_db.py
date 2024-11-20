@@ -132,9 +132,9 @@ async def list_workspaces_for_user(
 
     if filter_trashed is not None:
         base_query = base_query.where(
-            workspaces.c.trashed_at.is_not(None)
+            workspaces.c.trashed.is_not(None)
             if filter_trashed
-            else workspaces.c.trashed_at.is_(None)
+            else workspaces.c.trashed.is_(None)
         )
 
     # Select total count from base_query

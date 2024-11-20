@@ -8,6 +8,7 @@
 
 import asyncio
 from collections.abc import Callable
+from typing import AsyncIterable
 from uuid import UUID
 
 import arrow
@@ -16,6 +17,7 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.api_schemas_webserver.folders_v2 import FolderGet
 from models_library.api_schemas_webserver.projects import ProjectGet, ProjectListItem
+from models_library.api_schemas_webserver.workspaces import WorkspaceGet
 from models_library.rest_pagination import Page
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -395,3 +397,44 @@ async def test_trash_folder_with_content(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = ProjectGet.parse_obj(data)
     assert got.trashed_at is None
+
+
+@pytest.fixture
+async def workspace(
+    client: TestClient, logged_user: UserInfoDict
+) -> AsyncIterable[WorkspaceGet]:
+
+    # CREATE a workspace
+    resp = await client.post("/v0/workspaces", json={"name": "My first workspace"})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    workspace = WorkspaceGet.parse_obj(data)
+
+    yield workspace
+
+    # DELETE a workspace
+    resp = await client.delete(f"/v0/workspaces/{workspace.workspace_id}")
+    data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-simcore/pull/6690"
+)
+async def test_trash_empty_workspace(
+    client: TestClient, logged_user: UserInfoDict, workspace: WorkspaceGet
+):
+    assert client.app
+
+    # LIST NOT trashed
+    resp = await client.get("/v0/workspaces")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0] == workspace
+
+    # LIST trashed
+    resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 0
