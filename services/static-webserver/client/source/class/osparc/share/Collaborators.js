@@ -412,14 +412,18 @@ qx.Class.define("osparc.share.Collaborators", {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
           const collab = this.__collaborators[gid];
           // Do not override collaborator object
-          const collaborator = osparc.utils.Utils.deepCloneObject(collab);
-          if ("first_name" in collaborator) {
+          const collaborator = {
+            "gid": collab.getGroupId(),
+            "thumbnail": collab.getThumbnail(),
+          };
+          if ("getUserId" in collab) {
             // user
-            collaborator["thumbnail"] = collaborator.getThumbnail();
-            collaborator["name"] = collaborator.getLabel();
-          } else if (everyoneGIds.includes(parseInt(gid))) {
-            // everyone product or everyone
-            if (collaborator["thumbnail"] === null) {
+            collaborator["name"] = collab.getLabel();
+            collaborator["login"] = collab.getLogin();
+          } else {
+            collaborator["label"] = collab.getLabel();
+            collaborator["description"] = collab.getDescription();
+            if (everyoneGIds.includes(parseInt(gid))) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
             }
           }
