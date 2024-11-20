@@ -3,7 +3,6 @@ import binascii
 import logging
 from urllib import parse
 
-from common_library.pydantic_networks_extension import HttpUrlLegacy
 from cryptography.fernet import Fernet, InvalidToken
 from models_library.invitations import InvitationContent, InvitationInputs
 from models_library.products import ProductName
@@ -67,7 +66,7 @@ def _build_link(
     # Adds query to fragment
     base_url = f"{base_url}/"
     url = URL(base_url).replace(fragment=f"{r}")
-    return TypeAdapter(HttpUrlLegacy).validate_python(f"{url}")
+    return TypeAdapter(HttpUrl).validate_python(f"{url}")
 
 
 def _fernet_encrypt_as_urlsafe_code(

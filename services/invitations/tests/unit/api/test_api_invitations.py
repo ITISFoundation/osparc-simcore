@@ -100,7 +100,7 @@ def test_check_valid_invitation(
     # check invitation_url
     response = client.post(
         f"/{API_VTAG}/invitations:extract",
-        json={"invitation_url": invitation_url},
+        json={"invitation_url": f"{invitation_url}"},
         auth=basic_auth,
     )
     assert response.status_code == 200, f"{response.json()=}"
@@ -130,7 +130,7 @@ def test_check_invalid_invitation_with_different_secret(
     # check invitation_url
     response = client.post(
         f"/{API_VTAG}/invitations:extract",
-        json={"invitation_url": invitation_url},
+        json={"invitation_url": f"{invitation_url}"},
         auth=basic_auth,
     )
     assert (
@@ -173,7 +173,7 @@ def test_check_invalid_invitation_with_wrong_code(
         default_product=default_product,
     )
 
-    invitation_url_with_invalid_code = invitation_url[:-3]
+    invitation_url_with_invalid_code = f"{invitation_url}"[:-3]
 
     # check invitation_url
     response = client.post(

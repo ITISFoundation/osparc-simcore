@@ -209,7 +209,7 @@ def setup_payments_gateway(app: FastAPI):
 
     # create
     api = PaymentsGatewayApi.from_client_kwargs(
-        base_url=settings.PAYMENTS_GATEWAY_URL,
+        base_url=f"{settings.PAYMENTS_GATEWAY_URL}",
         headers={"accept": "application/json"},
         auth=_GatewayApiAuth(
             secret=settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()

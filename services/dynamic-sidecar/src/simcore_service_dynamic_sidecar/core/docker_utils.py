@@ -50,7 +50,13 @@ async def get_volume_by_label(label: str, run_id: RunID) -> dict[str, Any]:
         volumes = data["Volumes"]
         _logger.debug("volumes query for label=%s volumes=%s", label, volumes)
         if len(volumes) != 1:
-            raise VolumeNotFoundError(label, run_id, volumes)
+            raise VolumeNotFoundError(
+                volume_count=len(volumes),
+                source_label=label,
+                run_id=run_id,
+                volume_names=" ".join(v.get("Name", "UNKNOWN") for v in volumes),
+                status_code=http_status.HTTP_404_NOT_FOUND,
+            )
         volume_details: dict[str, Any] = volumes[0]
         return volume_details
 
