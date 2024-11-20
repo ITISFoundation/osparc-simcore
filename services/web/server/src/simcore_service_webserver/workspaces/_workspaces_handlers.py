@@ -77,7 +77,7 @@ async def list_workspaces(request: web.Request):
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        trashed=query_params.filters.trashed,
+        filter_trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
         order_by=parse_obj_as(OrderBy, query_params.order_by),

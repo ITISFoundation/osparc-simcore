@@ -7,6 +7,7 @@ from models_library.workspaces import WorkspaceID
 from pydantic import Extra, PositiveInt
 
 from ..access_rights import AccessRights
+from ..users import UserID
 from ._base import InputSchema, OutputSchema
 
 
@@ -17,6 +18,8 @@ class WorkspaceGet(OutputSchema):
     thumbnail: str | None
     created_at: datetime
     modified_at: datetime
+    trashed_at: datetime | None
+    trashed_by: UserID | None
     my_access_rights: AccessRights
     access_rights: dict[GroupID, AccessRights]
 

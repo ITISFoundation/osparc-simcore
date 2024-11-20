@@ -109,7 +109,7 @@ async def list_workspaces_for_user(
     *,
     user_id: UserID,
     product_name: ProductName,
-    trashed: bool | None,
+    filter_trashed: bool | None,
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
@@ -130,10 +130,10 @@ async def list_workspaces_for_user(
         .where(workspaces.c.product_name == product_name)
     )
 
-    if trashed is not None:
+    if filter_trashed is not None:
         base_query = base_query.where(
             workspaces.c.trashed_at.is_not(None)
-            if trashed
+            if filter_trashed
             else workspaces.c.trashed_at.is_(None)
         )
 
