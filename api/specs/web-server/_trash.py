@@ -10,7 +10,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from models_library.trash import RemoveQueryParams
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.folders._models import FoldersPathParams
+from simcore_service_webserver.folders._models import (
+    FoldersPathParams,
+    FolderTrashQueryParams,
+)
 from simcore_service_webserver.projects._trash_handlers import ProjectPathParams
 from simcore_service_webserver.workspaces._models import WorkspacesPathParams
 
@@ -78,7 +81,7 @@ _extra_tags = ["folders"]
 )
 def trash_folder(
     _path: Annotated[FoldersPathParams, Depends()],
-    _query: Annotated[RemoveQueryParams, Depends()],
+    _query: Annotated[FolderTrashQueryParams, Depends()],
 ):
     ...
 

@@ -94,6 +94,5 @@ class FolderSearchQueryParams(
         extra = Extra.forbid
 
 
-assert RemoveQueryParams  # nosec
-
-__all__: tuple[str, ...] = ("RemoveQueryParams",)
+class FolderTrashQueryParams(RemoveQueryParams):
+    ...
