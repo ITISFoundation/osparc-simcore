@@ -530,13 +530,6 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         iteration=run_in_db.iteration,
         wake_up_callback=mocked_wake_up_callback,
     )
-    await asyncio.sleep(0)
-    await scheduler.schedule_pipeline(
-        user_id=run_in_db.user_id,
-        project_id=run_in_db.project_uuid,
-        iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
-    )
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
@@ -946,6 +939,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
 async def test_task_progress_triggers(
     with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
     initialized_app: FastAPI,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
@@ -1015,6 +1009,7 @@ async def test_task_progress_triggers(
 )
 async def test_handling_of_disconnected_scheduler_dask(
     with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
     initialized_app: FastAPI,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
@@ -1191,6 +1186,7 @@ class RebootState:
 )
 async def test_handling_scheduling_after_reboot(
     with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     sqlalchemy_async_engine: AsyncEngine,
     running_project: RunningProject,
@@ -1285,6 +1281,7 @@ async def test_handling_scheduling_after_reboot(
 
 async def test_handling_cancellation_of_jobs_after_reboot(
     with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
     mocked_dask_client: mock.MagicMock,
     sqlalchemy_async_engine: AsyncEngine,
     running_project_mark_for_cancellation: RunningProject,
@@ -1417,6 +1414,7 @@ def with_fast_service_heartbeat_s(monkeypatch: pytest.MonkeyPatch) -> int:
 
 async def test_running_pipeline_triggers_heartbeat(
     with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
     with_fast_service_heartbeat_s: int,
     initialized_app: FastAPI,
     mocked_dask_client: mock.MagicMock,
@@ -1538,6 +1536,7 @@ async def mocked_get_or_create_cluster(mocker: MockerFixture) -> mock.Mock:
 
 async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
     initialized_app: FastAPI,
     scheduler: BaseCompScheduler,
     sqlalchemy_async_engine: AsyncEngine,
@@ -1647,6 +1646,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
 )
 async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
     initialized_app: FastAPI,
     scheduler: BaseCompScheduler,
     sqlalchemy_async_engine: AsyncEngine,
