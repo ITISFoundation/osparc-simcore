@@ -1,8 +1,8 @@
 from decimal import Decimal
-from enum import StrEnum
 from re import Pattern
 from typing import Annotated, ClassVar, Final, TypeAlias
 
+from common_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from pydantic import Field, HttpUrl, PositiveInt, StringConstraints
 from pydantic_core import core_schema
 
@@ -12,6 +12,17 @@ from .basic_regex import (
     SIMPLE_VERSION_RE,
     UUID_RE,
 )
+
+assert LogLevel  # nosec
+assert BootModeEnum  # nosec
+assert BuildTargetEnum  # nosec
+
+__all__: tuple[str, ...] = (
+    "LogLevel",
+    "BootModeEnum",
+    "BuildTargetEnum",
+)
+
 
 NonNegativeDecimal: TypeAlias = Annotated[Decimal, Field(ge=0)]
 
@@ -143,43 +154,6 @@ class HttpSecureUrl(HttpUrl):
 class HttpUrlWithCustomMinLength(HttpUrl):
     # Overwriting min length to be back compatible when generating OAS
     min_length = 0
-
-
-class LogLevel(StrEnum):
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-
-
-class BootModeEnum(StrEnum):
-    """
-    Values taken by SC_BOOT_MODE environment variable
-    set in Dockerfile and used during docker/boot.sh
-    """
-
-    DEFAULT = "default"
-    LOCAL = "local-development"
-    DEBUG = "debug"
-    PRODUCTION = "production"
-    DEVELOPMENT = "development"
-
-    def is_devel_mode(self) -> bool:
-        """returns True if this boot mode is used for development"""
-        return self in (self.DEBUG, self.DEVELOPMENT, self.LOCAL)
-
-
-class BuildTargetEnum(StrEnum):
-    """
-    Values taken by SC_BUILD_TARGET environment variable
-    set in Dockerfile that defines the stage targeted in the
-    docker image build
-    """
-
-    BUILD = "build"
-    CACHE = "cache"
-    PRODUCTION = "production"
-    DEVELOPMENT = "development"
 
 
 KeyIDStr = Annotated[str, StringConstraints(pattern=PROPERTY_KEY_RE)]
