@@ -208,13 +208,13 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const membersModel = this.__membersModel;
       membersModel.removeAll();
 
-      const orgModel = this.__currentOrg;
-      if (orgModel === null) {
+      const organization = this.__currentOrg;
+      if (organization === null) {
         return;
       }
 
-      const canIWrite = orgModel.getAccessRights().getWrite();
-      const canIDelete = orgModel.getAccessRights().getDelete();
+      const canIWrite = organization.getAccessRights()["write"];
+      const canIDelete = organization.getAccessRights()["delete"];
 
       const introText = canIWrite ?
         this.tr("You can add new members and promote or demote existing ones.") :
@@ -227,7 +227,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const params = {
         url: {
-          "gid": orgModel.getGroupId()
+          "gid": organization.getGroupId()
         }
       };
       osparc.data.Resources.get("organizationMembers", params)

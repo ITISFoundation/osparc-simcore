@@ -53,7 +53,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       orgModel.bind("thumbnail", organizationListItem, "thumbnail");
       orgModel.bind("label", organizationListItem, "title");
       orgModel.bind("description", organizationListItem, "subtitle");
-      orgModel.bindProperty("groupMembers", "role", {
+      orgModel.bind("groupMembers", organizationListItem, "role", {
         converter: groupMembers => groupMembers ? Object.keys(groupMembers).length + this.tr(" members") : "-"
       });
       orgModel.bind("accessRights", organizationListItem, "accessRights");
