@@ -456,6 +456,7 @@ qx.Class.define("osparc.store.Store", {
           });
       });
     },
+
     __getGroups: function(group) {
       return new Promise(resolve => {
         osparc.data.Resources.get("organizations")
@@ -464,10 +465,6 @@ qx.Class.define("osparc.store.Store", {
           })
           .catch(err => console.error(err));
       });
-    },
-
-    getGroupsMe: function() {
-      return this.__getGroups("me");
     },
 
     getGroupsOrganizations: function() {

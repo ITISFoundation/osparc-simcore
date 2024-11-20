@@ -24,13 +24,11 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     this._setLayout(new qx.ui.layout.VBox(20));
 
     const groupsStore = osparc.store.Groups.getInstance();
-    groupsStore.getGroupsMe()
-      .then(personalGroup => {
-        const store = osparc.store.Store.getInstance();
-        const personalWallet = store.getWallets().find(wallet => wallet.getOwner() === personalGroup.gid)
-        this.__personalWalletId = personalWallet.getWalletId()
-        this.__buildLayout()
-      });
+    const myGid = groupsStore.getMyGroupId();
+    const store = osparc.store.Store.getInstance();
+    const personalWallet = store.getWallets().find(wallet => wallet.getOwner() === myGid)
+    this.__personalWalletId = personalWallet.getWalletId()
+    this.__buildLayout()
   },
 
   properties: {

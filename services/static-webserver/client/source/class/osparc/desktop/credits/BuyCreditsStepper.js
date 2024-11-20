@@ -11,12 +11,10 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
     this.base(arguments);
     this.__paymentMethods = paymentMethods;
     const groupsStore = osparc.store.Groups.getInstance();
-    groupsStore.getGroupsMe()
-      .then(personalGroup => {
-        const store = osparc.store.Store.getInstance();
-        this.__personalWallet = store.getWallets().find(wallet => wallet.getOwner() === personalGroup.gid)
-        this.__buildLayout()
-      });
+    const myGid = groupsStore.getMyGroupId()
+    const store = osparc.store.Store.getInstance();
+    this.__personalWallet = store.getWallets().find(wallet => wallet.getOwner() === myGid)
+    this.__buildLayout()
   },
   events: {
     "completed": "qx.event.type.Event"

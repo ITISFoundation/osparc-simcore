@@ -42,7 +42,7 @@ qx.Class.define("osparc.store.Groups", {
       init: {}
     },
 
-    meGroup: {
+    groupMe: {
       check: "osparc.data.model.Group",
       init: {}
     },
@@ -89,7 +89,7 @@ qx.Class.define("osparc.store.Groups", {
         .then(resp => {
           const everyoneGroup = this.__addToGroupsCache(resp["all"], "everyone");
           const productEveryoneGroup = this.__addToGroupsCache(resp["product"], "productEveryone");
-          const meGroup = this.__addToGroupsCache(resp["me"], "me");
+          const groupMe = this.__addToGroupsCache(resp["me"], "me");
           const orgs = {};
           resp["organizations"].forEach(organization => {
             const org = this.__addToGroupsCache(organization, "organization");
@@ -97,7 +97,7 @@ qx.Class.define("osparc.store.Groups", {
           });
           this.setEveryoneGroup(everyoneGroup);
           this.setEveryoneProductGroup(productEveryoneGroup);
-          this.setMeGroup(meGroup);
+          this.setGroupMe(groupMe);
           this.setOrganizations(orgs);
           return orgs;
         });
@@ -142,8 +142,8 @@ qx.Class.define("osparc.store.Groups", {
       });
     },
 
-    getGroupsMe: function() {
-      return this.__getGroups("me");
+    getMyGroupId: function() {
+      return this.getGroupMe().getGroupId();
     },
 
     getGroupsOrganizations: function() {
@@ -161,7 +161,7 @@ qx.Class.define("osparc.store.Groups", {
     __getAllGroups: function() {
       return new Promise(resolve => {
         const promises = [];
-        promises.push(this.getGroupsMe());
+        promises.push(this.getGroupMe());
         promises.push(this.getReachableMembers());
         promises.push(this.getGroupsOrganizations());
         promises.push(this.getProductEveryone());

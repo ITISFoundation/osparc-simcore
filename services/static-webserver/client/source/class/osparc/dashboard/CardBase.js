@@ -99,7 +99,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     filterSharedWith: function(checks, sharedWith) {
       if (sharedWith && sharedWith !== "show-all") {
-        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+        const groupsStore = osparc.store.Groups.getInstance();
+        const myGroupId = groupsStore.getMyGroupId();
         if (checks && myGroupId in checks) {
           const myAccessRights = checks[myGroupId];
           const totalAccess = "delete" in myAccessRights ? myAccessRights["delete"] : myAccessRights["write"];
@@ -108,10 +109,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
           } else if (sharedWith === "shared-with-me") {
             return totalAccess;
           } else if (sharedWith === "shared-with-everyone") {
-            const groupsStore = osparc.store.Groups.getInstance();
             const everyoneGroupIds = [
-              groupsStore.getEveryoneProductGroup()["gid"],
-              groupsStore.getEveryoneGroup()["gid"]
+              groupsStore.getEveryoneProductGroup().getGroupId(),
+              groupsStore.getEveryoneGroup().getGroupId(),
             ];
             const found = Object.keys(checks).some(gId => everyoneGroupIds.includes(parseInt(gId)));
             return !found;
