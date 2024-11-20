@@ -168,7 +168,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           if (gid === myGroupId) {
             continue;
           }
-          const grp = groups[i].find(group => "gid" in group ? group["gid"] === gid : group.getGroupId() === gid);
+          const grp = groups[i].find(group => group.getGroupId() === gid);
           if (grp) {
             sharedGrp.push(grp);
           }
@@ -203,7 +203,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           sharedGrpLabels.push("...");
           break;
         }
-        const sharedGrpLabel = sharedGrps[i]["label"];
+        const sharedGrpLabel = sharedGrps[i].getLabel();
         if (!sharedGrpLabels.includes(sharedGrpLabel)) {
           sharedGrpLabels.push(sharedGrpLabel);
         }

@@ -478,8 +478,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             const org = groupsStore.getOrganizationOrUser(orgId);
             if (org) {
               let icon = "";
-              if ("thumbnail" in org || ("getThumbnail" in org && org.getThumbnail())) {
-                icon = "thumbnail" in org ? org["thumbnail"] : org.getThumbnail();
+              if (org.getThumbnail()) {
+                icon = org.getThumbnail();
               } else if (org["collabType"] === 0) {
                 icon = "@FontAwesome5Solid/globe/24";
               } else if (org["collabType"] === 1) {
@@ -489,7 +489,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
               }
               groupContainer.set({
                 headerIcon: icon,
-                headerLabel: "label" in org ? org["label"] : org.getLabel(),
+                headerLabel: org.getLabel(),
               });
             } else {
               groupContainer.exclude();

@@ -154,7 +154,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         if (a["collabType"] < b["collabType"]) {
           return -1;
         }
-        if (a["label"] > b["label"]) {
+        if (a.getLabel() > b.getLabel()) {
           return 1;
         }
         return -1;

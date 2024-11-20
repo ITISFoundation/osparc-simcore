@@ -40,6 +40,7 @@ qx.Class.define("osparc.data.model.User", {
       groupId: userData.gid,
       label: label,
       login: userData.login,
+      thumbnail: osparc.utils.Avatar.getUrl(userData.login, 32),
       accessRights: userData.accessRights,
     });
   },
@@ -78,6 +79,13 @@ qx.Class.define("osparc.data.model.User", {
       nullable: false,
       init: null,
       event: "changeAccessRights",
+    },
+
+    thumbnail: {
+      check: "String",
+      nullable: true,
+      init: "",
+      event: "changeThumbnail",
     },
   }
 });

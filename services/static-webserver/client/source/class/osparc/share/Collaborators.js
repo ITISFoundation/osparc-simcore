@@ -417,13 +417,8 @@ qx.Class.define("osparc.share.Collaborators", {
           const collaborator = osparc.utils.Utils.deepCloneObject(collab);
           if ("first_name" in collaborator) {
             // user
-            collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
-            collaborator["name"] = osparc.utils.Utils.firstsUp(
-              `${"first_name" in collaborator && collaborator["first_name"] != null ?
-                collaborator["first_name"] : collaborator["login"]}`,
-              `${"last_name" in collaborator && collaborator["last_name"] ?
-                collaborator["last_name"] : ""}`
-            );
+            collaborator["thumbnail"] = collaborator.getThumbnail();
+            collaborator["name"] = collaborator.getLabel();
           } else if (everyoneGIds.includes(parseInt(gid))) {
             // everyone product or everyone
             if (collaborator["thumbnail"] === null) {

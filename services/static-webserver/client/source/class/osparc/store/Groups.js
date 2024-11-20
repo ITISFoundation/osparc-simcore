@@ -110,7 +110,7 @@ qx.Class.define("osparc.store.Groups", {
           if (group) {
             group.setGroupMembers({});
             orgMembers.forEach(orgMember => {
-              const user = new osparc.data.model.User(orgMember)
+              const user = new osparc.data.model.User(orgMember);
               group.getGroupMembers()[orgMember["gid"]] = user;
               this.getReachableMembers()[orgMember["gid"]] = user;
             });
@@ -167,9 +167,9 @@ qx.Class.define("osparc.store.Groups", {
       return groups;
     },
 
-    getOrganizationOrUser: function(orgId) {
+    getOrganizationOrUser: function(groupId) {
       const orgs = this.__getAllGroups();
-      const idx = orgs.findIndex(org => "gid" in org ? org["gid"] === parseInt(orgId) : org.getGroupId() === parseInt(orgId));
+      const idx = orgs.findIndex(org => org.getGroupId() === parseInt(groupId));
       if (idx > -1) {
         return orgs[idx];
       }

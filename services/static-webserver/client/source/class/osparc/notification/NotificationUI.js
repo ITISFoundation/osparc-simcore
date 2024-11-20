@@ -135,7 +135,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           icon.setSource("@FontAwesome5Solid/users/14");
           if (resourceId) {
             osparc.store.Groups.getInstance().fetchGroup(resourceId)
-              .then(group => descriptionLabel.setValue("You're now member of '" + group["label"] + "'"))
+              .then(group => descriptionLabel.setValue("You're now member of '" + group.getLabel() + "'"))
               .catch(() => this.setEnabled(false));
           }
           break;
@@ -159,7 +159,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           if (userFromId) {
             const user = osparc.store.Groups.getInstance().getUser(userFromId);
             if (user) {
-              descriptionLabel.setValue("was shared by " + user["label"]);
+              descriptionLabel.setValue("was shared by " + user.getLabel());
             }
           }
           break;
@@ -179,7 +179,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           if (userFromId) {
             const user = osparc.store.Groups.getInstance().getUser(userFromId);
             if (user) {
-              descriptionLabel.setValue("was shared by " + user["label"]);
+              descriptionLabel.setValue("was shared by " + user.getLabel());
             }
           }
           break;
@@ -198,7 +198,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           if (userFromId) {
             const user = osparc.store.Groups.getInstance().getUser(userFromId);
             if (user) {
-              descriptionLabel.setValue("was added by " + user["label"]);
+              descriptionLabel.setValue("was added by " + user.getLabel());
             }
           }
           break;
