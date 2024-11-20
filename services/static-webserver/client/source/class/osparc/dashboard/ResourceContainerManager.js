@@ -475,29 +475,25 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           if (groupContainer === null) {
             groupContainer = this.__createGroupContainer(orgId, "loading-label");
             const groupsStore = osparc.store.Groups.getInstance();
-            groupsStore.getOrganizationOrUser(orgId)
-              .then(org => {
-                if (org && org["collabType"] !== 2) {
-                  let icon = "";
-                  if (org.thumbnail) {
-                    icon = org.thumbnail;
-                  } else if (org["collabType"] === 0) {
-                    icon = "@FontAwesome5Solid/globe/24";
-                  } else if (org["collabType"] === 1) {
-                    icon = "@FontAwesome5Solid/users/24";
-                  }
-                  groupContainer.set({
-                    headerIcon: icon,
-                    headerLabel: org.label
-                  });
-                } else {
-                  groupContainer.exclude();
-                }
-              })
-              .finally(() => {
-                this._add(groupContainer);
-                this.__moveNoGroupToLast();
+            const org = groupsStore.getOrganizationOrUser(orgId);
+            if (org && org["collabType"] !== 2) {
+              let icon = "";
+              if (org.getThumbnail()) {
+                icon = org.getThumbnail();
+              } else if (org["collabType"] === 0) {
+                icon = "@FontAwesome5Solid/globe/24";
+              } else if (org["collabType"] === 1) {
+                icon = "@FontAwesome5Solid/users/24";
+              }
+              groupContainer.set({
+                headerIcon: icon,
+                headerLabel: org.getLabel(),
               });
+            } else {
+              groupContainer.exclude();
+            }
+            this._add(groupContainer);
+            this.__moveNoGroupToLast();
           }
           const card = this.__createCard(resourceData);
           this.__addCardToContainer(card, groupContainer);

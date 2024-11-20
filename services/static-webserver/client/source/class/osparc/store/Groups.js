@@ -141,54 +141,39 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     __getAllGroups: function() {
-      return new Promise(resolve => {
-        const promises = [];
-        promises.push(this.getGroupMe());
-        promises.push(this.getReachableMembers());
-        promises.push(this.getOrganizations());
-        promises.push(this.getProductEveryone());
-        promises.push(this.getGroupEveryone());
-        Promise.all(promises)
-          .then(values => {
-            const groups = [];
-            const groupMe = values[0];
-            groupMe["collabType"] = 2;
-            groups.push(groupMe);
-            const orgMembers = values[1];
-            for (const gid of Object.keys(orgMembers)) {
-              orgMembers[gid]["collabType"] = 2;
-              groups.push(orgMembers[gid]);
-            }
-            values[2].forEach(org => {
-              org["collabType"] = 1;
-              groups.push(org);
-            });
-            const groupProductEveryone = values[3];
-            if (groupProductEveryone) {
-              groupProductEveryone["collabType"] = 0;
-              groups.push(groupProductEveryone);
-            }
-            const groupEveryone = values[4];
-            if (groupEveryone) {
-              groupEveryone["collabType"] = 0;
-              groups.push(groupEveryone);
-            }
-            resolve(groups);
-          });
+      const groups = [];
+      const groupMe = this.getGroupMe();
+      groupMe["collabType"] = 2;
+      groups.push(groupMe);
+      const orgMembers = this.getReachableMembers();
+      for (const gid of Object.keys(orgMembers)) {
+        orgMembers[gid]["collabType"] = 2;
+        groups.push(orgMembers[gid]);
+      }
+      Object.values(this.getOrganizations()).forEach(org => {
+        org["collabType"] = 1;
+        groups.push(org);
       });
+      const groupProductEveryone = this.getEveryoneProductGroup();
+      if (groupProductEveryone) {
+        groupProductEveryone["collabType"] = 0;
+        groups.push(groupProductEveryone);
+      }
+      const groupEveryone = this.getEveryoneGroup();
+      if (groupEveryone) {
+        groupEveryone["collabType"] = 0;
+        groups.push(groupEveryone);
+      }
+      return groups;
     },
 
     getOrganizationOrUser: function(orgId) {
-      return new Promise(resolve => {
-        this.__getAllGroups()
-          .then(orgs => {
-            const idx = orgs.findIndex(org => org.gid === parseInt(orgId));
-            if (idx > -1) {
-              resolve(orgs[idx]);
-            }
-            resolve(null);
-          });
-      });
+      const orgs = this.__getAllGroups();
+      const idx = orgs.findIndex(org => org.gid === parseInt(orgId));
+      if (idx > -1) {
+        return orgs[idx];
+      }
+      return null;
     },
 
     getPotentialCollaborators: function(includeMe = false, includeProductEveryone = false) {

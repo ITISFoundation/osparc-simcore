@@ -458,6 +458,7 @@ qx.Class.define("osparc.store.Store", {
     },
 
     __getGroups: function(group) {
+      throw Error();
       return new Promise(resolve => {
         osparc.data.Resources.get("organizations")
           .then(groups => {
@@ -468,18 +469,22 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getGroupsOrganizations: function() {
+      throw Error();
       return this.__getGroups("organizations");
     },
 
     getProductEveryone: function() {
+      throw Error();
       return this.__getGroups("product");
     },
 
     getGroupEveryone: function() {
+      throw Error();
       return this.__getGroups("all");
     },
 
     __getAllGroups: function() {
+      throw Error();
       return new Promise(resolve => {
         const promises = [];
         promises.push(this.getGroupsMe());
@@ -518,6 +523,7 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getOrganizationOrUser: function(orgId) {
+      throw Error();
       return new Promise(resolve => {
         this.__getAllGroups()
           .then(orgs => {
@@ -531,6 +537,7 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getAllGroupsAndMembers: function() {
+      throw Error();
       return new Promise(resolve => {
         osparc.data.Resources.get("organizations")
           .then(resp => {
@@ -565,6 +572,7 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getPotentialCollaborators: function(includeMe = false, includeProductEveryone = false) {
+      throw Error();
       return new Promise((resolve, reject) => {
         const promises = [];
         promises.push(this.getGroupsOrganizations());
@@ -615,6 +623,7 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getGroup: function(gid) {
+      throw Error();
       return new Promise(resolve => {
         if (gid) {
           this.getPotentialCollaborators()
@@ -633,6 +642,7 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getUser: function(uid) {
+      throw Error();
       if (uid) {
         const visibleMembers = this.getReachableMembers();
         return Object.values(visibleMembers).find(member => member.id === uid);
