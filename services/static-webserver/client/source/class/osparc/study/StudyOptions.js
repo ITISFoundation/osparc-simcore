@@ -130,6 +130,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = new qx.ui.form.TextField().set({
             maxWidth: 220
           });
+          control.addListener("changeValue", () => this.__evaluateOpenButton());
           osparc.utils.Utils.setIdToWidget(control, "studyTitleField");
           this.getChildControl("title-layout").add(control);
           break;
@@ -227,7 +228,8 @@ qx.Class.define("osparc.study.StudyOptions", {
             minWidth: 150,
             maxWidth: 150,
             height: 35,
-            center: true
+            center: true,
+            enabled: false,
           });
           osparc.utils.Utils.setIdToWidget(control, "openWithResources");
           this.getChildControl("buttons-layout").addAt(control, 1);
@@ -277,7 +279,13 @@ qx.Class.define("osparc.study.StudyOptions", {
         });
       }
 
-      this.getChildControl("open-button").setEnabled(Boolean(wallet));
+      this.__evaluateOpenButton();
+    },
+
+    __evaluateOpenButton: function() {
+      const hasTitle = Boolean(this.getChildControl("title-field").getValue());
+      const walletSelected = Boolean(this.getWallet());
+      this.getChildControl("open-button").setEnabled(hasTitle && walletSelected);
     },
 
     __buildLayout: function() {
