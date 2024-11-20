@@ -69,7 +69,7 @@ async def test_workspaces_workflow(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data == []
 
-    # create a new workspace
+    # CREATE a new workspace
     url = client.app.router["create_workspace"].url_for()
     resp = await client.post(
         f"{url}",
@@ -82,7 +82,7 @@ async def test_workspaces_workflow(
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
     added_workspace = WorkspaceGet.parse_obj(data)
 
-    # list user workspaces
+    # LIST user workspaces
     url = client.app.router["list_workspaces"].url_for()
     resp = await client.get(f"{url}")
     data, _, meta, links = await assert_status(
@@ -93,7 +93,7 @@ async def test_workspaces_workflow(
     assert meta["count"] == 1
     assert links
 
-    # get a user workspace
+    # GET a user workspace
     url = client.app.router["get_workspace"].url_for(
         workspace_id=f"{added_workspace.workspace_id}"
     )
@@ -103,7 +103,7 @@ async def test_workspaces_workflow(
     assert data["name"] == "My first workspace"
     assert data["description"] == "Custom description"
 
-    # update a workspace
+    # REPLACE a workspace
     url = client.app.router["replace_workspace"].url_for(
         workspace_id=f"{added_workspace.workspace_id}"
     )
@@ -115,23 +115,23 @@ async def test_workspaces_workflow(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    second_workspace = WorkspaceGet.parse_obj(data)
+    replaced_workspace = WorkspaceGet.parse_obj(data)
 
-    # list user workspaces
+    # LIST user workspaces
     url = client.app.router["list_workspaces"].url_for()
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
-    assert data[0] == second_workspace.dict()
+    assert data[0] == replaced_workspace.dict()
 
-    # delete a workspace
+    # DELETE a workspace
     url = client.app.router["delete_workspace"].url_for(
         workspace_id=f"{added_workspace.workspace_id}"
     )
     resp = await client.delete(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # list user workspaces
+    # LIST user workspaces
     url = client.app.router["list_workspaces"].url_for()
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
