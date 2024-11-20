@@ -11,7 +11,6 @@ import logging
 import os
 import random
 import re
-import time
 import urllib.parse
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
@@ -463,7 +462,6 @@ def create_new_project_and_delete(
                             open_button.click()
                             # Open project with default resources
                             open_button = page.get_by_test_id("openWithResources")
-                            time.sleep(2)  # wait until the study options are filled up
                         # it returns a Long Running Task
                         with page.expect_response(
                             re.compile(rf"/projects\?from_study\={template_id}")
@@ -510,13 +508,11 @@ def create_new_project_and_delete(
                         if is_product_billable:
                             # Open project with default resources
                             open_button = page.get_by_test_id("openWithResources")
-                            time.sleep(2)  # wait until the study options are filled up
                             open_button.click()
                             open_with_resources_clicked = True
                 if is_product_billable and not open_with_resources_clicked:
                     # Open project with default resources
                     open_button = page.get_by_test_id("openWithResources")
-                    time.sleep(2)  # wait until the study options are filled up
                     open_button.click()
             project_data = response_info.value.json()
             assert project_data
