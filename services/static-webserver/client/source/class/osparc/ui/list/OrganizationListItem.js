@@ -84,12 +84,10 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       }
       if (this.isPropertyInitialized("key")) {
         const groupsStore = osparc.store.Groups.getInstance();
-        groupsStore.getProductEveryone()
-          .then(groupProductEveryone => {
-            if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone["gid"]) {
-              thumbnail.setSource(osparc.utils.Icons.everyone(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
-            }
-          });
+        const groupProductEveryone = groupsStore.getEveryoneProductGroup();
+        if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone.getGroupId()) {
+          thumbnail.setSource(osparc.utils.Icons.everyone(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
+        }
       }
     }
   }

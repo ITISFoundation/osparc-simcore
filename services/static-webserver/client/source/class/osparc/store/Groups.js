@@ -140,24 +140,6 @@ qx.Class.define("osparc.store.Groups", {
       return Object.keys(this.getOrganizations());
     },
 
-    __getGroups: function(group) {
-      return new Promise(resolve => {
-        osparc.data.Resources.get("organizations")
-          .then(groups => {
-            resolve(groups[group]);
-          })
-          .catch(err => console.error(err));
-      });
-    },
-
-    getProductEveryone: function() {
-      return this.__getGroups("product");
-    },
-
-    getGroupEveryone: function() {
-      return this.__getGroups("all");
-    },
-
     __getAllGroups: function() {
       return new Promise(resolve => {
         const promises = [];

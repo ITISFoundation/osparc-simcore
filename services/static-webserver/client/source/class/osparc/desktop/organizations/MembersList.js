@@ -310,8 +310,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       }
 
       const groupsStore = osparc.store.Groups.getInstance();
-      const productEveryone = await groupsStore.getProductEveryone();
-
+      const productEveryone = groupsStore.getEveryoneProductGroup();
       const orgId = this.__currentOrg.getGid();
       const params = {
         url: {
