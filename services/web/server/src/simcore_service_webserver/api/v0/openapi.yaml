@@ -2625,6 +2625,8 @@ paths:
         schema:
           anyOf:
           - type: string
+            contentMediaType: application/json
+            contentSchema: {}
           - type: 'null'
           title: Filters
       - name: order_by
@@ -2632,6 +2634,8 @@ paths:
         required: false
         schema:
           type: string
+          contentMediaType: application/json
+          contentSchema: {}
           default: '{"field":"modified","direction":"desc"}'
           title: Order By
       - name: limit
@@ -2688,6 +2692,8 @@ paths:
         schema:
           anyOf:
           - type: string
+            contentMediaType: application/json
+            contentSchema: {}
           - type: 'null'
           title: Filters
       - name: order_by
@@ -2695,6 +2701,8 @@ paths:
         required: false
         schema:
           type: string
+          contentMediaType: application/json
+          contentSchema: {}
           default: '{"field":"modified","direction":"desc"}'
           title: Order By
       - name: limit
@@ -3234,6 +3242,8 @@ paths:
         schema:
           anyOf:
           - type: string
+            contentMediaType: application/json
+            contentSchema: {}
           - type: 'null'
           title: Filters
       - name: order_by
@@ -3241,6 +3251,8 @@ paths:
         required: false
         schema:
           type: string
+          contentMediaType: application/json
+          contentSchema: {}
           default: '{"field":"last_change_date","direction":"desc"}'
           title: Order By
       - name: limit
@@ -3376,6 +3388,8 @@ paths:
         required: false
         schema:
           type: string
+          contentMediaType: application/json
+          contentSchema: {}
           default: '{"field":"last_change_date","direction":"desc"}'
           title: Order By
       - name: limit
@@ -4382,7 +4396,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -4605,6 +4619,8 @@ paths:
         required: false
         schema:
           type: string
+          contentMediaType: application/json
+          contentSchema: {}
           default: '{"field":"started_at","direction":"desc"}'
           title: Order By
       - name: wallet_id
@@ -4624,8 +4640,7 @@ paths:
           anyOf:
           - type: string
             contentMediaType: application/json
-            contentSchema:
-              type: string
+            contentSchema: {}
           - type: 'null'
           title: Filters
       - name: limit
@@ -4709,6 +4724,8 @@ paths:
         required: false
         schema:
           type: string
+          contentMediaType: application/json
+          contentSchema: {}
           default: '{"field":"started_at","direction":"desc"}'
           title: Order By
       - name: wallet_id
@@ -4728,8 +4745,7 @@ paths:
           anyOf:
           - type: string
             contentMediaType: application/json
-            contentSchema:
-              type: string
+            contentSchema: {}
           - type: 'null'
           title: Filters
       responses:

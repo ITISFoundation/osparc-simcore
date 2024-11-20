@@ -12,7 +12,7 @@ from common_library.json_serialization import json_dumps
 from common_library.pydantic_fields_extension import get_type
 from fastapi import FastAPI, Query
 from models_library.basic_types import LogLevel
-from pydantic import BaseModel, ConfigDict, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field, Json, create_model
 from pydantic.fields import FieldInfo
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
@@ -77,7 +77,7 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
             "json_schema_extra": field_info.json_schema_extra or {},
         }
 
-        json_field_type = str
+        json_field_type = Json
         # _create_json_type(
         #    description=query_kwargs["description"],
         #    example=query_kwargs.get("json_schema_extra", {}).get("example_json"),
