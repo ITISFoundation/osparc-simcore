@@ -323,6 +323,11 @@ def register(
     return _do
 
 
+@pytest.fixture(scope="session")
+def store_browser_context() -> bool:
+    return False
+
+
 @pytest.fixture
 def log_in_and_out(
     page: Page,
@@ -331,6 +336,8 @@ def log_in_and_out(
     user_password: Secret4TestsStr,
     auto_register: bool,
     register: Callable[[], AutoRegisteredUser],
+    store_browser_context: bool,
+    context: BrowserContext,
 ) -> Iterator[RestartableWebSocket]:
     with log_context(
         logging.INFO,
@@ -388,6 +395,9 @@ def log_in_and_out(
     quickStartWindowCloseBtnLocator = page.get_by_test_id("quickStartWindowCloseBtn")
     if quickStartWindowCloseBtnLocator.is_visible():
         quickStartWindowCloseBtnLocator.click()
+
+    if store_browser_context:
+        context.storage_state(path="state.json")
 
     # with web_socket_default_log_handler(ws):
     yield restartable_wb
