@@ -80,8 +80,7 @@ _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
 def _temporary_empty_wake_up_callack(
     user_id: UserID, project_id: ProjectID, iteration: Iteration
 ) -> Callable[[], None]:
-    def _cb() -> None:
-        ...
+    def _cb() -> None: ...
 
     # async def _async_cb():
     #     db_engine = get_db_engine(app)
@@ -482,17 +481,17 @@ class BaseCompScheduler(ABC):
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         comp_run: CompRunsAtDB,
         wake_up_callback: Callable[[], None],
-    ) -> None: ...
+    ) -> None: ...  # pragma: no cover
 
     @abstractmethod
     async def _get_tasks_status(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
-    ) -> list[RunningState]: ...
+    ) -> list[RunningState]: ...  # pragma: no cover
 
     @abstractmethod
     async def _stop_tasks(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
-    ) -> None: ...
+    ) -> None: ...  # pragma: no cover
 
     @abstractmethod
     async def _process_completed_tasks(
@@ -501,7 +500,7 @@ class BaseCompScheduler(ABC):
         tasks: list[CompTaskAtDB],
         iteration: Iteration,
         comp_run: CompRunsAtDB,
-    ) -> None: ...
+    ) -> None: ...  # pragma: no cover
 
     async def schedule_pipeline(
         self,
