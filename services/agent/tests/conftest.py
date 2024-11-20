@@ -48,7 +48,7 @@ def mock_environment(
             "LOGLEVEL": "DEBUG",
             "SC_BOOT_MODE": BootModeEnum.DEBUG,
             "AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME": swarm_stack_name,
-            "AGENT_VOLUMES_CLEANUP_S3_ENDPOINT": mocked_s3_server_url,
+            "AGENT_VOLUMES_CLEANUP_S3_ENDPOINT": f"{mocked_s3_server_url}",
             "AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY": "xxx",
             "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY": "xxx",
             "AGENT_VOLUMES_CLEANUP_S3_BUCKET": bucket,
