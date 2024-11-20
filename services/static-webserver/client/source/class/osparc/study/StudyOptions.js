@@ -283,7 +283,7 @@ qx.Class.define("osparc.study.StudyOptions", {
 
     __evaluateOpenButton: function() {
       const hasTitle = Boolean(this.getChildControl("title-field").getValue());
-      const walletSelected = Boolean(this.getChildControl("wallet-selector").getSelection());
+      const walletSelected = Boolean(this.getChildControl("wallet-selector").getSelection().length);
       this.getChildControl("open-button").setEnabled(hasTitle && walletSelected);
     },
 
