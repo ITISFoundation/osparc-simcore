@@ -58,7 +58,7 @@ def _is_auto_default_from_env_enabled(field: FieldInfo) -> bool:
     )
 
 
-ENABLED: Final = {}
+_MARKED_AS_UNSET: Final[dict] = {}
 
 
 class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
@@ -89,7 +89,7 @@ class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
             _is_auto_default_from_env_enabled(field)
             and field.default_factory
             and field.default is None
-            and prepared_value == ENABLED
+            and prepared_value == _MARKED_AS_UNSET
         ):
             prepared_value = field.default_factory()
         return prepared_value
