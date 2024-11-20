@@ -49,7 +49,7 @@ SETUP = {
     "description": DESCRIPTION,
     "long_description": README,
     "license": "MIT license",
-    "python_requires": "~=3.10",
+    "python_requires": "~=3.11",
     "packages": find_packages(where="src"),
     "package_dir": {
         "": "src",

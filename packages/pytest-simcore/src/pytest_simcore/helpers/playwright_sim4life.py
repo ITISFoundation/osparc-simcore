@@ -13,6 +13,7 @@ from .playwright import (
     MINUTE,
     SECOND,
     SOCKETIO_MESSAGE_PREFIX,
+    RestartableWebSocket,
     SocketIOEvent,
     decode_socketio_42_message,
     wait_for_service_running,
@@ -100,7 +101,7 @@ class WaitForS4LDict(TypedDict):
 def wait_for_launched_s4l(
     page: Page,
     node_id,
-    log_in_and_out: WebSocket,
+    log_in_and_out: RestartableWebSocket,
     *,
     autoscaled: bool,
     copy_workspace: bool,

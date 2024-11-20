@@ -61,6 +61,11 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.po.POCenterWindow.openWindow(), this);
           this.add(control);
           break;
+        case "tester-center":
+          control = new qx.ui.menu.Button(this.tr("Tester Center"));
+          control.addListener("execute", () => osparc.tester.TesterCenterWindow.openWindow(), this);
+          this.add(control);
+          break;
         case "billing-center":
           control = new qx.ui.menu.Button(this.tr("Billing Center"));
           osparc.utils.Utils.setIdToWidget(control, "userMenuBillingCenterBtn");
@@ -157,6 +162,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
         if (osparc.data.Permissions.getInstance().isProductOwner()) {
           this.getChildControl("po-center");
         }
+        if (osparc.data.Permissions.getInstance().isTester()) {
+          this.getChildControl("tester-center");
+        }
         if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
           this.getChildControl("billing-center");
         }
@@ -169,10 +177,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.getChildControl("theme-switcher");
       this.addSeparator();
 
-      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
-      if (announcementUIFactory.hasUserMenuAnnouncement()) {
-        this.add(announcementUIFactory.createUserMenuAnnouncement());
-      }
+      this.__addAnnouncements();
       this.getChildControl("about");
       if (osparc.product.Utils.showAboutProduct()) {
         this.getChildControl("about-product");
@@ -186,6 +191,13 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.getChildControl("log-out");
 
       osparc.utils.Utils.prettifyMenu(this);
+    },
+
+    __addAnnouncements: function() {
+      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
+      if (announcementUIFactory.hasUserMenuAnnouncement()) {
+        announcementUIFactory.createUserMenuAnnouncements().forEach(announcement => this.add(announcement));
+      }
     },
 
     populateMenuCompact: function() {
@@ -225,10 +237,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.getChildControl("theme-switcher");
       this.addSeparator();
 
-      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
-      if (announcementUIFactory.hasUserMenuAnnouncement()) {
-        this.add(announcementUIFactory.createUserMenuAnnouncement());
-      }
+      this.__addAnnouncements();
       this.getChildControl("about");
       if (!osparc.product.Utils.isProduct("osparc")) {
         this.getChildControl("about-product");

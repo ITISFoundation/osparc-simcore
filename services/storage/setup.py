@@ -38,7 +38,7 @@ SETUP = {
     "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
     "description": "Service to manage data storage in simcore",
     "author": "Manuel Guidon (mguidon)",
-    "python_requires": "~=3.10",
+    "python_requires": "~=3.11",
     "packages": find_packages(where="src"),
     "package_dir": {"": "src"},
     "include_package_data": True,

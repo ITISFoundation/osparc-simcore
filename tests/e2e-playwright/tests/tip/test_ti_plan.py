@@ -19,6 +19,7 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
+    RestartableWebSocket,
     app_mode_trigger_next_app,
     expected_service_running,
     wait_for_service_running,
@@ -89,7 +90,7 @@ class _JLabWebSocketWaiter:
 
 def test_classic_ti_plan(  # noqa: PLR0915
     page: Page,
-    log_in_and_out: WebSocket,
+    log_in_and_out: RestartableWebSocket,
     is_autoscaled: bool,
     is_product_lite: bool,
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
@@ -209,11 +210,12 @@ def test_classic_ti_plan(  # noqa: PLR0915
             ti_iframe = service_running.iframe_locator
             assert ti_iframe
 
-        jlab_websocket = ws_info.value
+        assert not ws_info.value.is_closed()
+        restartable_jlab_websocket = RestartableWebSocket.create(page, ws_info.value)
 
         with (
             log_context(logging.INFO, "Run optimization"),
-            jlab_websocket.expect_event(
+            restartable_jlab_websocket.expect_event(
                 "framereceived",
                 _JLabWebSocketWaiter(
                     expected_header_msg_type="stream",
@@ -228,11 +230,18 @@ def test_classic_ti_plan(  # noqa: PLR0915
             )
 
         with log_context(logging.INFO, "Create report"):
-
-            ti_iframe.get_by_role("button", name="Load Analysis").click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-            ti_iframe.get_by_role("button", name="Load").nth(1).click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+            with log_context(
+                logging.INFO,
+                f"Click button - `Load Analysis` and wait for {_JLAB_REPORTING_MAX_TIME}",
+            ):
+                ti_iframe.get_by_role("button", name="Load Analysis").click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+            with log_context(
+                logging.INFO,
+                f"Click button - `Load` and wait for {_JLAB_REPORTING_MAX_TIME}",
+            ):
+                ti_iframe.get_by_role("button", name="Load").nth(1).click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
 
             if is_product_lite:
                 assert (
@@ -248,14 +257,34 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 ).is_enabled()
 
             else:
-                ti_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
-                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-                ti_iframe.get_by_role("button", name="Export to S4L").click()
-                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-                ti_iframe.get_by_role("button", name="Add to Report (1)").nth(1).click()
-                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-                ti_iframe.get_by_role("button", name="Export Report").click()
-                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                with log_context(
+                    logging.INFO,
+                    f"Click button - `Add to Report (0)` and wait for {_JLAB_REPORTING_MAX_TIME}",
+                ):
+                    ti_iframe.get_by_role("button", name="Add to Report (0)").nth(
+                        0
+                    ).click()
+                    page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                with log_context(
+                    logging.INFO,
+                    f"Click button - `Export to S4L` and wait for {_JLAB_REPORTING_MAX_TIME}",
+                ):
+                    ti_iframe.get_by_role("button", name="Export to S4L").click()
+                    page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                with log_context(
+                    logging.INFO,
+                    f"Click button - `Add to Report (1)` and wait for {_JLAB_REPORTING_MAX_TIME}",
+                ):
+                    ti_iframe.get_by_role("button", name="Add to Report (1)").nth(
+                        1
+                    ).click()
+                    page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                with log_context(
+                    logging.INFO,
+                    f"Click button - `Export Report` and wait for {_JLAB_REPORTING_MAX_TIME}",
+                ):
+                    ti_iframe.get_by_role("button", name="Export Report").click()
+                    page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
 
         with log_context(logging.INFO, "Check outputs"):
             if is_product_lite:

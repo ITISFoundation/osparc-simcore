@@ -137,6 +137,12 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
               return isOpen;
             },
           }, item, id);
+        },
+        configureItem: item => {
+          item.addListener("changeModel", e => {
+            const model = e.getData();
+            osparc.utils.Utils.setIdToWidget(item, `workspacesAndFoldersTreeItem_${model.getWorkspaceId()}_${model.getFolderId()}`);
+          })
         }
       });
 

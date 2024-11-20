@@ -51,12 +51,12 @@ from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFound
 from . import _crud_api_create, _crud_api_read, projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
-    ProjectActiveParams,
+    ProjectActiveQueryParams,
     ProjectCreateHeaders,
     ProjectCreateParams,
     ProjectFilters,
-    ProjectListFullSearchWithJsonStrParams,
-    ProjectListWithJsonStrParams,
+    ProjectsListQueryParams,
+    ProjectsSearchQueryParams,
 )
 from ._permalink_api import update_or_pop_permalink_in_project
 from .exceptions import (
@@ -188,8 +188,8 @@ async def list_projects(request: web.Request):
 
     """
     req_ctx = RequestContext.parse_obj(request)
-    query_params: ProjectListWithJsonStrParams = parse_request_query_parameters_as(
-        ProjectListWithJsonStrParams, request
+    query_params: ProjectsListQueryParams = parse_request_query_parameters_as(
+        ProjectsListQueryParams, request
     )
 
     if not query_params.filters:
@@ -233,10 +233,8 @@ async def list_projects(request: web.Request):
 @_handle_projects_exceptions
 async def list_projects_full_search(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
-    query_params: ProjectListFullSearchWithJsonStrParams = (
-        parse_request_query_parameters_as(
-            ProjectListFullSearchWithJsonStrParams, request
-        )
+    query_params: ProjectsSearchQueryParams = parse_request_query_parameters_as(
+        ProjectsSearchQueryParams, request
     )
     tag_ids_list = query_params.tag_ids_list()
 
@@ -283,8 +281,8 @@ async def get_active_project(request: web.Request) -> web.Response:
         web.HTTPNotFound: If active project is not found
     """
     req_ctx = RequestContext.parse_obj(request)
-    query_params: ProjectActiveParams = parse_request_query_parameters_as(
-        ProjectActiveParams, request
+    query_params: ProjectActiveQueryParams = parse_request_query_parameters_as(
+        ProjectActiveQueryParams, request
     )
 
     try:
