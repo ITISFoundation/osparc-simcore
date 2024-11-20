@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import (
     AnyHttpUrl,
@@ -92,9 +92,10 @@ class ClusterDetails(BaseModel):
 
 
 class ClusterGet(Cluster):
-    access_rights: dict[GroupID, ClusterAccessRights] = Field(
-        alias="accessRights", default_factory=dict
-    )
+    access_rights: Annotated[
+        dict[GroupID, ClusterAccessRights],
+        Field(alias="accessRights", default_factory=dict),
+    ] = {}
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 

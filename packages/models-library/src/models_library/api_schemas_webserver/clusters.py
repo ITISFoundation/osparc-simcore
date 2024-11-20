@@ -13,7 +13,7 @@ class ClusterPathParams(BaseModel):
     )
 
 
-class ClusterGet(directorv2_clusters.ClusterGet):
+class ClusterGet(directorv2_clusters.ClusterCreate):
     model_config = OutputSchema.model_config
 
 
