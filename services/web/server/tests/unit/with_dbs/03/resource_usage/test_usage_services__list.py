@@ -249,7 +249,7 @@ async def test_list_service_usage_with_order_by_query_param(
     errors = {(e["code"], e["field"]) for e in error["errors"]}
     assert {
         ("value_error", "order_by.field"),
-        ("type_error.enum", "order_by.direction"),
+        ("enum", "order_by.direction"),
     } == errors
     assert len(errors) == 2
 
@@ -265,7 +265,7 @@ async def test_list_service_usage_with_order_by_query_param(
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith("field required")
-    assert error["errors"][0]["code"] == "value_error.missing"
+    assert error["errors"][0]["code"] == "missing"
     assert error["errors"][0]["field"] == "order_by.field"
 
 
