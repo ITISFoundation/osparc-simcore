@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Final
 
 import sqlalchemy as sa
@@ -6,7 +5,7 @@ import sqlalchemy as sa
 from ..constants import DECIMAL_PLACES
 
 
-class ReferentialAction(str, Enum):
+class ReferentialAction:
     # SEE https://docs.sqlalchemy.org/en/20/orm/cascades.html
     CASCADE = "CASCADE"
     SET_NULL = "SET NULL"
@@ -86,6 +85,7 @@ def column_trashed_by_user(resource_name: str, users_table: sa.Table) -> sa.Colu
             users_table.c.id,
             onupdate=ReferentialAction.CASCADE,
             ondelete=ReferentialAction.SET_NULL,
+            name=f"fk_{resource_name}_trashed_by_user_id",
         ),
         nullable=True,
         comment=f"User who trashed the {resource_name}, or null if not trashed or user is unknown.",
