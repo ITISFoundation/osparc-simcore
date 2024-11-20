@@ -15,7 +15,10 @@ from simcore_service_webserver.folders._models import (
     FolderTrashQueryParams,
 )
 from simcore_service_webserver.projects._trash_handlers import ProjectPathParams
-from simcore_service_webserver.workspaces._models import WorkspacesPathParams
+from simcore_service_webserver.workspaces._models import (
+    WorkspacesPathParams,
+    WorkspaceTrashQueryParams,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -114,7 +117,7 @@ _extra_tags = ["workspaces"]
 )
 def trash_workspace(
     _path: Annotated[WorkspacesPathParams, Depends()],
-    _query: Annotated[RemoveQueryParams, Depends()],
+    _query: Annotated[WorkspaceTrashQueryParams, Depends()],
 ):
     ...
 

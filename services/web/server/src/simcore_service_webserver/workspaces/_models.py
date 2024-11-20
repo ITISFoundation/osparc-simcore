@@ -73,6 +73,5 @@ class WorkspacesGroupsBodyParams(BaseModel):
         extra = Extra.forbid
 
 
-assert RemoveQueryParams  # nosec
-
-__all__: tuple[str, ...] = ("RemoveQueryParams",)
+class WorkspaceTrashQueryParams(RemoveQueryParams):
+    ...
