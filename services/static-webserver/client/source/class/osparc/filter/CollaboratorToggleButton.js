@@ -37,7 +37,7 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
       label = collaborator["login"];
     } else {
       // org
-      label = collaborator["label"];
+      label = collaborator.getLabel();
     }
     this.setLabel(label);
 
