@@ -42,7 +42,7 @@ service_names_aliases: dict[str, str] = {"web": "webserver"}
 def generate_markdown_table(
     *catpured_files: Iterable[CaptureTuple],
 ) -> str:
-    title = ("service", "rest API", "  ", "docker")
+    title = ("Name", "Files", "  ")
     lines = ["-" * 10] * len(title)
 
     table = _to_row(title)
@@ -59,24 +59,22 @@ def generate_markdown_table(
                 f"**{name.upper()}**",
                 "",
                 "",
-                "",
             )
         )
         for _, file_path in service_files:
             linked_path = f"[{file_path}](./{file_path})"
 
             # SEE https://shields.io/badges
-            docker_badges = []
-            openapi_badges = []
+            badges = []
 
             if file_path.stem.lower() == "dockerfile":
                 repo = service_names_aliases.get(f"{name}") or name
-                docker_badges = [
+                badges = [
                     f"[![Docker Image Size](https://img.shields.io/docker/image-size/itisfoundation/{repo})](https://hub.docker.com/r/itisfoundation/{repo}/tags)"
                 ]
 
             elif file_path.stem.lower() == "openapi":
-                openapi_badges = [
+                badges = [
                     f"[![ReDoc](https://img.shields.io/badge/OpenAPI-ReDoc-85ea2d?logo=openapiinitiative)]({_REDOC_URL_PREFIX}/{file_path}) "
                     f"[![Swagger UI](https://img.shields.io/badge/OpenAPI-Swagger_UI-85ea2d?logo=swagger)]({_SWAGGER_URL_PREFIX}/{file_path})",
                 ]
@@ -85,8 +83,7 @@ def generate_markdown_table(
                 (
                     "",
                     linked_path,
-                    " ".join(openapi_badges),
-                    " ".join(docker_badges),
+                    " ".join(badges),
                 )
             )
 
