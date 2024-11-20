@@ -292,6 +292,8 @@ qx.Class.define("osparc.study.StudyOptions", {
       this.__buildTopSummaryLayout();
       this.__buildOptionsLayout();
       this.__buildButtons();
+
+      this.__evaluateOpenButton();
     },
 
     __buildTopSummaryLayout: function() {
