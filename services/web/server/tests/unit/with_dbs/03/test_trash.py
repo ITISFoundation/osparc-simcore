@@ -423,6 +423,9 @@ async def test_trash_empty_workspace(
 ):
     assert client.app
 
+    assert workspace.trashed_at is None
+    assert workspace.trashed_by is None
+
     # LIST NOT trashed (default)
     resp = await client.get("/v0/workspaces")
     await assert_status(resp, status.HTTP_200_OK)
@@ -440,7 +443,10 @@ async def test_trash_empty_workspace(
 
     # -------------
 
+    _exclude_attrs = {"trashed_by", "trashed_at", "modified_at"}
+
     # TRASH
+    before_trash = arrow.utcnow().datetime
     resp = await client.post(f"/v0/workspaces/{workspace.workspace_id}:trash")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
@@ -457,7 +463,12 @@ async def test_trash_empty_workspace(
 
     page = Page[WorkspaceGet].parse_obj(await resp.json())
     assert page.meta.total == 1
-    assert page.data[0] == workspace
+    assert page.data[0].dict(exclude=_exclude_attrs) == workspace.dict(
+        exclude=_exclude_attrs
+    )
+    assert page.data[0].trashed_at is not None
+    assert before_trash < page.data[0].trashed_at
+    assert page.data[0].trashed_by == logged_user["id"]
 
     # --------
 
@@ -471,7 +482,12 @@ async def test_trash_empty_workspace(
 
     page = Page[WorkspaceGet].parse_obj(await resp.json())
     assert page.meta.total == 1
-    assert page.data[0] == workspace
+    assert page.data[0].dict(exclude=_exclude_attrs) == workspace.dict(
+        exclude=_exclude_attrs
+    )
+
+    assert page.data[0].trashed_at is None
+    assert page.data[0].trashed_by is None
 
     # LIST trashed
     resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})

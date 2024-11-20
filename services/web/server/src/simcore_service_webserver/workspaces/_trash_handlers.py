@@ -25,7 +25,7 @@ routes = web.RouteTableDef()
 @routes.post(f"/{VTAG}/workspaces/{{workspace_id}}:trash", name="trash_workspace")
 @requires_dev_feature_enabled
 @login_required
-@permission_required("workspace.delete")
+@permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
 async def trash_workspace(request: web.Request):
     user_id = get_user_id(request)
@@ -49,7 +49,7 @@ async def trash_workspace(request: web.Request):
 @routes.post(f"/{VTAG}/workspaces/{{workspace_id}}:untrash", name="untrash_workspace")
 @requires_dev_feature_enabled
 @login_required
-@permission_required("workspace.delete")
+@permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
 async def untrash_workspace(request: web.Request):
     user_id = get_user_id(request)

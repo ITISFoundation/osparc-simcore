@@ -175,5 +175,10 @@ async def check_user_workspace_access(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
     if getattr(workspace_db.my_access_rights, permission, False) is False:
-        raise WorkspaceAccessForbiddenError
+        raise WorkspaceAccessForbiddenError(
+            user_id=user_id,
+            workspace_id=workspace_id,
+            product_name=product_name,
+            permission_checked=permission,
+        )
     return workspace_db
