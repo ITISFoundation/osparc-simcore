@@ -264,7 +264,7 @@ async def test_list_service_usage_with_order_by_query_param(
     _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert error["errors"][0]["message"].startswith("field required")
+    assert error["errors"][0]["message"].startswith("Field required")
     assert error["errors"][0]["code"] == "missing"
     assert error["errors"][0]["field"] == "order_by.field"
 

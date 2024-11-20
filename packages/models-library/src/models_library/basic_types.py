@@ -1,4 +1,5 @@
 from decimal import Decimal
+from enum import Enum
 from re import Pattern
 from typing import Annotated, ClassVar, Final, TypeAlias
 
@@ -13,9 +14,9 @@ from .basic_regex import (
     UUID_RE,
 )
 
-assert LogLevel  # nosec
-assert BootModeEnum  # nosec
-assert BuildTargetEnum  # nosec
+assert issubclass(LogLevel, Enum)  # nosec
+assert issubclass(BootModeEnum, Enum)  # nosec
+assert issubclass(BuildTargetEnum, Enum)  # nosec
 
 __all__: tuple[str, ...] = (
     "LogLevel",
