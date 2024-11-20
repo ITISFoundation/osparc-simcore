@@ -115,5 +115,7 @@ async def test_list_service_usage(
     assert mock_export_usage_services.called
     args = mock_export_usage_services.call_args[1]
 
-    assert args["order_by"] == OrderBy.model_validate(_order_by)
+    assert (
+        args["order_by"].model_dump() == OrderBy.model_validate(_order_by).model_dump()
+    )
     assert args["filters"] == ServiceResourceUsagesFilters.model_validate(_filter)
