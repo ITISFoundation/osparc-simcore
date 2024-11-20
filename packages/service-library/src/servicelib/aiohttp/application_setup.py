@@ -4,11 +4,14 @@ import logging
 from collections.abc import Callable
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Protocol, TypedDict
+from typing import Any, Protocol
 
 import arrow
 from aiohttp import web
 from pydantic import TypeAdapter
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 

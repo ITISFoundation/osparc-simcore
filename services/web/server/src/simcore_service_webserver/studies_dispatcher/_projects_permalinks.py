@@ -1,5 +1,4 @@
 import logging
-from typing import TypedDict
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -7,6 +6,9 @@ from models_library.projects import ProjectID, ProjectIDStr
 from pydantic import HttpUrl, TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import ProjectType, projects
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from ..db.plugin import get_database_engine
 from ..projects.api import ProjectPermalink, register_permalink_factory

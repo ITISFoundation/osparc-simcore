@@ -267,7 +267,7 @@ async def _extract_osparc_involved_service_labels(
             f"docker_image_name_by_services={docker_image_name_by_services}"
         )
         log.error(message)
-        raise DynamicSidecarError(message)
+        raise DynamicSidecarError(msg=message)
 
     return remap_to_compose_spec_key()
 

@@ -403,13 +403,12 @@ def test_settings__valid_network_names(
 async def test_failed_docker_client_request(docker_swarm: None):
     missing_network_name = "this_network_cannot_be_found"
 
-    with pytest.raises(GenericDockerError) as execinfo:
+    with pytest.raises(
+        GenericDockerError,
+        match=f"Unexpected error using docker client: network {missing_network_name} not found",
+    ):
         async with docker_client() as client:
             await client.networks.get(missing_network_name)
-    assert (
-        str(execinfo.value)
-        == f"Unexpected error from docker client: network {missing_network_name} not found"
-    )
 
 
 async def test_get_swarm_network_ok(
@@ -428,15 +427,15 @@ async def test_get_swarm_network_missing_network(
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     docker_swarm: None,
 ):
-    with pytest.raises(DynamicSidecarError) as excinfo:
+    with pytest.raises(
+        DynamicSidecarError,
+        match=r"Unexpected dynamic sidecar error: "
+        r"Swarm network name \(searching for \'\*test_network_name\*\'\) is not configured."
+        r"Found following networks: \[\]",
+    ):
         await docker_api.get_swarm_network(
             dynamic_services_scheduler_settings.SIMCORE_SERVICES_NETWORK_NAME
         )
-
-    assert str(excinfo.value) == (
-        "Swarm network name (searching for '*test_network_name*') is not configured."
-        "Found following networks: []"
-    )
 
 
 async def test_recreate_network_multiple_times(

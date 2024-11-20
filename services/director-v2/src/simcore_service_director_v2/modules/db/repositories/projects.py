@@ -22,7 +22,7 @@ class ProjectsRepository(BaseRepository):
                 )
             ).first()
         if not row:
-            raise ProjectNotFoundError(project_id)
+            raise ProjectNotFoundError(project_id=project_id)
         return ProjectAtDB.model_validate(row)
 
     async def is_node_present_in_workbench(
