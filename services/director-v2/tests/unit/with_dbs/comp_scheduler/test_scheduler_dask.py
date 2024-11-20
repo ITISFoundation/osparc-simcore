@@ -173,7 +173,6 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     fake_workbench_adjacency: dict[str, Any],
     sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
-    mocked_wake_up_callback: mock.Mock,
 ):
     """A pipeline which comp_tasks are missing should not be scheduled.
     It shall be aborted and shown as such in the comp_runs db"""
@@ -211,10 +210,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
         user_id=run_entry.user_id,
         project_id=run_entry.project_uuid,
         iteration=run_entry.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
-    # the pipeline is misconfigured, so the callback will NOT be called since nothing ran
-    mocked_wake_up_callback.assert_not_called()
 
     # check the database entry is correctly updated
     await assert_comp_runs(
@@ -270,7 +266,6 @@ async def _assert_schedule_pipeline_PENDING(  # noqa: N802
     published_tasks: list[CompTaskAtDB],
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
-    wake_up_callback: Callable[[], None],
 ) -> list[CompTaskAtDB]:
     expected_pending_tasks = [
         published_tasks[1],
@@ -288,7 +283,6 @@ async def _assert_schedule_pipeline_PENDING(  # noqa: N802
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         iteration=1,
-        wake_up_callback=wake_up_callback,
     )
     _assert_dask_client_correctly_initialized(mocked_dask_client, scheduler)
     await assert_comp_runs(
@@ -340,7 +334,6 @@ async def _assert_schedule_pipeline_PENDING(  # noqa: N802
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         iteration=1,
-        wake_up_callback=wake_up_callback,
     )
     await assert_comp_runs(
         sqlalchemy_async_engine,
@@ -485,7 +478,6 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     instrumentation_rabbit_client_parser: mock.AsyncMock,
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     run_metadata: RunMetadataDict,
-    mocked_wake_up_callback: mock.Mock,
 ):
     _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
 
@@ -504,7 +496,6 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         expected_published_tasks,
         mocked_dask_client,
         scheduler,
-        mocked_wake_up_callback,
     )
 
     # -------------------------------------------------------------------------------
@@ -528,7 +519,6 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     await assert_comp_runs(
         sqlalchemy_async_engine,
@@ -586,7 +576,6 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     # comp_run, the comp_task switch to STARTED
     await assert_comp_runs(
@@ -665,7 +654,6 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     await assert_comp_runs(
         sqlalchemy_async_engine,
@@ -775,7 +763,6 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     await assert_comp_runs(
         sqlalchemy_async_engine,
@@ -832,7 +819,6 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     await assert_comp_runs(
         sqlalchemy_async_engine,
@@ -894,7 +880,6 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     await assert_comp_runs(
         sqlalchemy_async_engine,
@@ -948,7 +933,6 @@ async def test_task_progress_triggers(
     mocked_parse_output_data_fct: None,
     mocked_clean_task_output_and_log_files_if_invalid: None,
     run_metadata: RunMetadataDict,
-    mocked_wake_up_callback: mock.Mock,
 ):
     _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
     _run_in_db, expected_published_tasks = await _assert_start_pipeline(
@@ -965,7 +949,6 @@ async def test_task_progress_triggers(
         expected_published_tasks,
         mocked_dask_client,
         scheduler,
-        mocked_wake_up_callback,
     )
 
     # send some progress
@@ -1018,7 +1001,6 @@ async def test_handling_of_disconnected_scheduler_dask(
     published_project: PublishedProject,
     backend_error: ComputationalSchedulerError,
     run_metadata: RunMetadataDict,
-    mocked_wake_up_callback: mock.Mock,
 ):
     # this will create a non connected backend issue that will trigger re-connection
     mocked_dask_client_send_task = mocker.patch(
@@ -1070,7 +1052,6 @@ async def test_handling_of_disconnected_scheduler_dask(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     # after this step the tasks are marked as ABORTED
     await assert_comp_tasks(
@@ -1089,7 +1070,6 @@ async def test_handling_of_disconnected_scheduler_dask(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     # now the run should be ABORTED
     await assert_comp_runs(
@@ -1194,7 +1174,6 @@ async def test_handling_scheduling_after_reboot(
     mocked_parse_output_data_fct: mock.MagicMock,
     mocked_clean_task_output_fct: mock.MagicMock,
     reboot_state: RebootState,
-    mocked_wake_up_callback: mock.Mock,
 ):
     """After the dask client is rebooted, or that the director-v2 reboots the dv-2 internal scheduler
     shall continue scheduling correctly. Even though the task might have continued to run
@@ -1216,7 +1195,6 @@ async def test_handling_scheduling_after_reboot(
         user_id=running_project.project.prj_owner,
         project_id=running_project.project.uuid,
         iteration=1,
-        wake_up_callback=mocked_wake_up_callback,
     )
     # the status will be called once for all RUNNING tasks
     mocked_dask_client.get_tasks_status.assert_called_once()
@@ -1288,7 +1266,6 @@ async def test_handling_cancellation_of_jobs_after_reboot(
     scheduler: BaseCompScheduler,
     mocked_parse_output_data_fct: mock.MagicMock,
     mocked_clean_task_output_fct: mock.MagicMock,
-    mocked_wake_up_callback: mock.Mock,
 ):
     """A running pipeline was cancelled by a user and the DV-2 was restarted BEFORE
     It could actually cancel the task. On reboot the DV-2 shall recover
@@ -1327,7 +1304,6 @@ async def test_handling_cancellation_of_jobs_after_reboot(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     mocked_dask_client.abort_computation_task.assert_called()
     assert mocked_dask_client.abort_computation_task.call_count == len(
@@ -1377,7 +1353,6 @@ async def test_handling_cancellation_of_jobs_after_reboot(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     # now should be stopped
     await assert_comp_tasks(
@@ -1423,7 +1398,6 @@ async def test_running_pipeline_triggers_heartbeat(
     published_project: PublishedProject,
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     run_metadata: RunMetadataDict,
-    mocked_wake_up_callback: mock.Mock,
 ):
     _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
     run_in_db, expected_published_tasks = await _assert_start_pipeline(
@@ -1440,7 +1414,6 @@ async def test_running_pipeline_triggers_heartbeat(
         expected_published_tasks,
         mocked_dask_client,
         scheduler,
-        mocked_wake_up_callback,
     )
     # -------------------------------------------------------------------------------
     # 2. the "worker" starts processing a task
@@ -1471,7 +1444,6 @@ async def test_running_pipeline_triggers_heartbeat(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
 
     messages = await _assert_message_received(
@@ -1488,13 +1460,11 @@ async def test_running_pipeline_triggers_heartbeat(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     await scheduler.schedule_pipeline(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
@@ -1510,13 +1480,11 @@ async def test_running_pipeline_triggers_heartbeat(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     await scheduler.schedule_pipeline(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
@@ -1544,7 +1512,6 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     run_metadata: RunMetadataDict,
     mocked_get_or_create_cluster: mock.Mock,
     faker: Faker,
-    mocked_wake_up_callback: mock.Mock,
 ):
     mocked_get_or_create_cluster.side_effect = (
         ComputationalBackendOnDemandNotReadyError(
@@ -1591,7 +1558,6 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     mocked_get_or_create_cluster.assert_called()
     assert mocked_get_or_create_cluster.call_count == 1
@@ -1617,7 +1583,6 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     mocked_get_or_create_cluster.assert_called()
     assert mocked_get_or_create_cluster.call_count == 1
@@ -1654,7 +1619,6 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     run_metadata: RunMetadataDict,
     mocked_get_or_create_cluster: mock.Mock,
     get_or_create_exception: Exception,
-    mocked_wake_up_callback: mock.Mock,
 ):
     mocked_get_or_create_cluster.side_effect = get_or_create_exception
     # running the pipeline will trigger a call to the clusters-keeper
@@ -1696,7 +1660,6 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     mocked_get_or_create_cluster.assert_called()
     assert mocked_get_or_create_cluster.call_count == 1
@@ -1722,7 +1685,6 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
-        wake_up_callback=mocked_wake_up_callback,
     )
     mocked_get_or_create_cluster.assert_not_called()
     await assert_comp_runs(

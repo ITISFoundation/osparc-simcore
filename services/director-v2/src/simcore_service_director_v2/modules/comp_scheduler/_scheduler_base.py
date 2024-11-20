@@ -77,6 +77,22 @@ _Current = CompTaskAtDB
 _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
 
 
+def _temporary_empty_wake_up_callack(
+    user_id: UserID, project_id: ProjectID, iteration: Iteration
+) -> Callable[[], None]:
+    def _cb() -> None:
+        ...
+
+    # async def _async_cb():
+    #     db_engine = get_db_engine(app)
+    #     rabbit_mq_client = get_rabbitmq_client(app)
+    #     comp_run = await CompRunsRepository.instance(db_engine).get(
+    #         user_id=user_id, project_id=project_id, iteration=iteration
+    #     )
+    #     await request_pipeline_scheduling(comp_run, rabbit_mq_client, db_engine)
+    return _cb
+
+
 @dataclass(frozen=True, slots=True)
 class SortedTasks:
     started: list[CompTaskAtDB]
@@ -493,9 +509,6 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         iteration: Iteration,
-        wake_up_callback: Callable[
-            [], None
-        ],  # TODO: this should not be in the interface
     ) -> None:
         """schedules a pipeline for a given user, project and iteration.
 
@@ -534,7 +547,9 @@ class BaseCompScheduler(ABC):
                         comp_tasks=comp_tasks,
                         dag=dag,
                         comp_run=comp_run,
-                        wake_up_callback=wake_up_callback,
+                        wake_up_callback=_temporary_empty_wake_up_callack(
+                            user_id, project_id, iteration
+                        ),
                     )
                 # 4. timeout if waiting for cluster has been there for more than X minutes
                 comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(

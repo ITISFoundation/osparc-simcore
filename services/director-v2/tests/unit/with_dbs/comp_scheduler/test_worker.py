@@ -67,5 +67,4 @@ async def test_worker_properly_calls_scheduler_api(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         iteration=1,
-        wake_up_callback=mock.ANY,
     )
