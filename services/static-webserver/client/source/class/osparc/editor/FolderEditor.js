@@ -60,6 +60,7 @@ qx.Class.define("osparc.editor.FolderEditor", {
             placeholder: this.tr("Title"),
             height: 27
           });
+          osparc.utils.Utils.setIdToWidget(control, "folderEditorTitle");
           this.bind("label", control, "value");
           control.bind("value", this, "label");
           this._add(control);
@@ -78,6 +79,7 @@ qx.Class.define("osparc.editor.FolderEditor", {
               this.fireEvent("createFolder");
             }
           }, this);
+          osparc.utils.Utils.setIdToWidget(control, "folderEditorCreate");
           buttons.addAt(control, 1);
           break;
         }
@@ -94,6 +96,7 @@ qx.Class.define("osparc.editor.FolderEditor", {
               this.fireEvent("updateFolder");
             }
           }, this);
+          osparc.utils.Utils.setIdToWidget(control, "folderEditorSave");
           buttons.addAt(control, 1);
           break;
         }

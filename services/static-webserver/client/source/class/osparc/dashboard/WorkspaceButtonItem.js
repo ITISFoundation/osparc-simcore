@@ -127,6 +127,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           control.getContentElement().setStyles({
             "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
           });
+          osparc.utils.Utils.setIdToWidget(control, "workspaceItemMenuButton");
           layout = this.getChildControl("header");
           layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.HPOS.MENU);
           break;
@@ -159,6 +160,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       workspace.bind("accessRights", this, "accessRights");
       workspace.bind("modifiedAt", this, "modifiedAt");
       workspace.bind("myAccessRights", this, "myAccessRights");
+
+      osparc.utils.Utils.setIdToWidget(this, "workspaceItem_" + workspace.getWorkspaceId());
     },
 
     __applyTitle: function(value) {
@@ -201,6 +204,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
         menu.addSeparator();
 
         const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+        osparc.utils.Utils.setIdToWidget(deleteButton, "deleteWorkspaceMenuItem");
         deleteButton.addListener("execute", () => this.__deleteWorkspaceRequested(), this);
         menu.add(deleteButton);
 
@@ -254,6 +258,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });
+      osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteWorkspaceButton");
       confirmationWin.center();
       confirmationWin.open();
       confirmationWin.addListener("close", () => {

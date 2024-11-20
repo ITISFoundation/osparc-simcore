@@ -36,11 +36,21 @@ qx.Class.define("osparc.ui.basic.JsonTreeWidget", {
    * @param data {Object} Json object to be displayed by JsonTreeViewer
    */
   construct: function(data) {
-    const prettyJson = JSON.stringify(data, null, "&emsp;").replace(/\n/ig, "<br>");
-    this.base(arguments, prettyJson);
+    this.base(arguments);
     this.set({
       rich: true,
       selectable: true
     });
+
+    if (data) {
+      this.setJson(data);
+    }
+  },
+
+  members: {
+    setJson(data) {
+      const prettyJson = JSON.stringify(data, null, "&emsp;").replace(/\n/ig, "<br>");
+      this.setValue(prettyJson);
+    }
   }
 });

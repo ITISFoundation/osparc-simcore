@@ -134,11 +134,13 @@ qx.Class.define("osparc.wrapper.WebSocket", {
       this.setNamespace(namespace);
     }
     this.__name = [];
+    this.__cache = {};
   },
 
   members: {
     // The name store an array of events
     __name: null,
+    __cache: null,
 
     /**
      * Trying to using socket.io to connect and plug every event from socket.io to qooxdoo one
@@ -234,7 +236,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
      * Connect and event from socket.io like qooxdoo event
      *
      * @param {string} name The event name to watch
-     * @param {function} fn The function wich will catch event response
+     * @param {function} fn The function which will catch event response
      * @param {mixed} that A link to this
      * @returns {void}
      */
@@ -247,6 +249,21 @@ qx.Class.define("osparc.wrapper.WebSocket", {
         } else {
           socket.on(name, fn);
         }
+
+        // add a duplicated slot listener to keep the messages cached
+        socket.on(name, message => {
+          if (!(name in this.__cache)) {
+            this.__cache[name] = [];
+          }
+          const info = {
+            date: new Date(),
+            message: message ? message : "",
+          }
+          this.__cache[name].unshift(info);
+          if (this.__cache[name].length > 20) {
+            this.__cache[name].length = 20;
+          }
+        }, this);
       }
     },
 
@@ -265,7 +282,11 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           index = this.__name.indexOf(name);
         }
       }
-    }
+    },
+
+    getCachedMessages: function() {
+      return this.__cache;
+    },
   },
 
   /**
@@ -281,6 +302,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
         }
       }
       this.__name = null;
+      this.__cache = null;
 
       this.removeAllBindings();
 

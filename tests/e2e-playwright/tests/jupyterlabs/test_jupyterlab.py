@@ -16,7 +16,12 @@ from typing import Any, Final, Literal
 from playwright.sync_api import Page, WebSocket
 from pydantic import ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import MINUTE, SECOND, ServiceType
+from pytest_simcore.helpers.playwright import (
+    MINUTE,
+    SECOND,
+    RestartableWebSocket,
+    ServiceType,
+)
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = (
     10 * MINUTE
@@ -110,8 +115,11 @@ def test_jupyterlab(
             iframe.get_by_role("button", name="New Launcher").click()
             with page.expect_websocket(_JLabWaitForTerminalWebSocket()) as ws_info:
                 iframe.get_by_label("Launcher").get_by_text("Terminal").click()
-            terminal_web_socket = ws_info.value
-            assert not terminal_web_socket.is_closed()
+
+            assert not ws_info.value.is_closed()
+            restartable_terminal_web_socket = RestartableWebSocket.create(
+                page, ws_info.value
+            )
 
             terminal = iframe.locator(
                 "#jp-Terminal-0 > div > div.xterm-screen"
@@ -122,7 +130,7 @@ def test_jupyterlab(
             terminal.press("Enter")
             # NOTE: this call creates a large file with random blocks inside
             blocks_count = int(large_file_size / large_file_block_size)
-            with terminal_web_socket.expect_event(
+            with restartable_terminal_web_socket.expect_event(
                 "framereceived",
                 _JLabTerminalWebSocketWaiter(
                     expected_message_type="stdout", expected_message_contents="copied"
