@@ -130,6 +130,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = new qx.ui.form.TextField().set({
             maxWidth: 220
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyTitleField");
           this.getChildControl("title-layout").add(control);
           break;
         case "wallet-selector-layout":
