@@ -25,7 +25,7 @@ from .errors import WorkspaceAccessForbiddenError
 _logger = logging.getLogger(__name__)
 
 
-def _to_api_model(workspace_db: UserWorkspaceAccessRightsDB):
+def _to_api_model(workspace_db: UserWorkspaceAccessRightsDB) -> WorkspaceGet:
     return WorkspaceGet(
         workspace_id=workspace_db.workspace_id,
         name=workspace_db.name,

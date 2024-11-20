@@ -2,17 +2,16 @@ import logging
 
 import arrow
 from aiohttp import web
+from models_library.folders import FolderID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from models_library.workspaces import WorkspaceID
+from models_library.workspaces import WorkspaceID, WorkspaceUpdateDB
 from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
-from ..folders._folders_db import FolderID
 from ..folders._trash_api import trash_folder, untrash_folder
 from ..projects._trash_api import trash_project, untrash_project
-from ..workspaces._workspaces_api import WorkspaceUpdateDB
 from ._workspaces_api import check_user_workspace_access
 from ._workspaces_db import update_workspace
 
