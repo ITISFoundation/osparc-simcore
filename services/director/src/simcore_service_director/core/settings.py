@@ -4,7 +4,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
-from pydantic import Field, NonNegativeInt, validator
+from pydantic import Field, NonNegativeInt, PositiveInt, validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_registry import RegistrySettings
@@ -93,6 +93,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DIRECTOR_MONITORING_ENABLED: bool = Field(
         ..., env=["DIRECTOR_MONITORING_ENABLED", "MONITORING_ENABLED"]
     )
+
+    DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS: PositiveInt = 20
+    DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS: PositiveInt = 30
 
     @validator("DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod

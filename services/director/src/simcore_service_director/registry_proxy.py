@@ -5,7 +5,7 @@ import re
 from collections.abc import Mapping
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any, Final, cast
+from typing import Any, cast
 
 from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
 from aiohttp import BasicAuth, ClientSession, client_exceptions
@@ -33,9 +33,6 @@ from .core.settings import ApplicationSettings, get_application_settings
 
 DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
 
-NUMBER_OF_RETRIEVED_REPOS: int = 50
-NUMBER_OF_RETRIEVED_TAGS: int = 50
-_MAX_CONCURRENT_CALLS: Final[int] = 50
 VERSION_REG = re.compile(
     r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 )
@@ -277,7 +274,7 @@ def setup(app: FastAPI) -> None:
 async def _list_repositories(app: FastAPI) -> list[str]:
     logger.debug("listing repositories")
     # if there are more repos, the Link will be available in the response headers until none available
-    path = f"/v2/_catalog?n={NUMBER_OF_RETRIEVED_REPOS}"
+    path = f"/v2/_catalog?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
     repos_list: list = []
     while True:
         result, headers = await registry_request(app, path)
@@ -294,7 +291,7 @@ async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
     logger.debug("listing image tags in %s", image_key)
     image_tags: list = []
     # get list of image tags
-    path = f"/v2/{image_key}/tags/list?n={NUMBER_OF_RETRIEVED_TAGS}"
+    path = f"/v2/{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
     while True:
         tags, headers = await registry_request(app, path)
         if tags["tags"]:
@@ -385,7 +382,9 @@ async def get_repo_details(app: FastAPI, image_key: str) -> list[dict[str, Any]]
         *[get_image_details(app, image_key, tag) for tag in image_tags],
         reraise=False,
         log=logger,
-        limit=_MAX_CONCURRENT_CALLS,
+        limit=get_application_settings(
+            app
+        ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
     )
     return [result for result in results if not isinstance(result, BaseException)]
 
@@ -407,7 +406,9 @@ async def list_services(app: FastAPI, service_type: ServiceType) -> list[dict]:
         *[get_repo_details(app, repo) for repo in repos],
         reraise=False,
         log=logger,
-        limit=_MAX_CONCURRENT_CALLS,
+        limit=get_application_settings(
+            app
+        ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
     )
 
     return [
