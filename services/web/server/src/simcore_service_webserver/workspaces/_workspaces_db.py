@@ -50,6 +50,8 @@ _SELECTION_ARGS = (
     workspaces.c.trashed_by,
 )
 
+assert set(WorkspaceDB.__fields__) == {c.name for c in _SELECTION_ARGS}  # nosec
+
 
 async def create_workspace(
     app: web.Application,
