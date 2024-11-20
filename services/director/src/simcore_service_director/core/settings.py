@@ -4,7 +4,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
-from pydantic import Field, NonNegativeInt, PositiveInt, field_validator
+from pydantic import AliasChoices, Field, NonNegativeInt, PositiveInt, field_validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_registry import RegistrySettings
