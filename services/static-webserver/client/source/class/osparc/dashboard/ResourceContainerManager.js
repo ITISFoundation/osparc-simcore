@@ -476,18 +476,20 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             groupContainer = this.__createGroupContainer(orgId, "loading-label");
             const groupsStore = osparc.store.Groups.getInstance();
             const org = groupsStore.getOrganizationOrUser(orgId);
-            if (org && org["collabType"] !== 2) {
+            if (org) {
               let icon = "";
-              if (org.getThumbnail()) {
-                icon = org.getThumbnail();
+              if ("thumbnail" in org || ("getThumbnail" in org && org.getThumbnail())) {
+                icon = "thumbnail" in org ? org["thumbnail"] : org.getThumbnail();
               } else if (org["collabType"] === 0) {
                 icon = "@FontAwesome5Solid/globe/24";
               } else if (org["collabType"] === 1) {
                 icon = "@FontAwesome5Solid/users/24";
+              } else if (org["collabType"] === 2) {
+                icon = "@FontAwesome5Solid/user/24";
               }
               groupContainer.set({
                 headerIcon: icon,
-                headerLabel: org.getLabel(),
+                headerLabel: "label" in org ? org["label"] : org.getLabel(),
               });
             } else {
               groupContainer.exclude();

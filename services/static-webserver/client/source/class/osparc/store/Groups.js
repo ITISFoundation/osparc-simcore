@@ -142,34 +142,35 @@ qx.Class.define("osparc.store.Groups", {
 
     __getAllGroups: function() {
       const groups = [];
+
       const groupMe = this.getGroupMe();
       groupMe["collabType"] = 2;
       groups.push(groupMe);
-      const orgMembers = this.getReachableMembers();
-      for (const gid of Object.keys(orgMembers)) {
-        orgMembers[gid]["collabType"] = 2;
-        groups.push(orgMembers[gid]);
-      }
+
+      Object.values(this.getReachableMembers()).forEach(member => {
+        member["collabType"] = 2;
+        groups.push(member);
+      });
+
       Object.values(this.getOrganizations()).forEach(org => {
         org["collabType"] = 1;
         groups.push(org);
       });
+
       const groupProductEveryone = this.getEveryoneProductGroup();
-      if (groupProductEveryone) {
-        groupProductEveryone["collabType"] = 0;
-        groups.push(groupProductEveryone);
-      }
+      groupProductEveryone["collabType"] = 0;
+      groups.push(groupProductEveryone);
+
       const groupEveryone = this.getEveryoneGroup();
-      if (groupEveryone) {
-        groupEveryone["collabType"] = 0;
-        groups.push(groupEveryone);
-      }
+      groupEveryone["collabType"] = 0;
+      groups.push(groupEveryone);
+
       return groups;
     },
 
     getOrganizationOrUser: function(orgId) {
       const orgs = this.__getAllGroups();
-      const idx = orgs.findIndex(org => org.gid === parseInt(orgId));
+      const idx = orgs.findIndex(org => "gid" in org ? org["gid"] === parseInt(orgId) : org.getGroupId() === parseInt(orgId));
       if (idx > -1) {
         return orgs[idx];
       }
