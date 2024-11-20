@@ -1,9 +1,9 @@
 # services
 >
-> Auto generated on 2024-11-20 21:34:46 by
+> Auto generated on 2024-11-20 21:36:46 by
 ```cmd
 cd osparc-simcore
-python ./scripts/echo_services_markdown.py > services.md
+python ./scripts/echo_services_markdown.py
 ```
 | Name|Files|   |
 | ----------|----------|---------- |
