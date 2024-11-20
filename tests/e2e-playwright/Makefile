@@ -64,7 +64,8 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 RETRY_DURATION_SECONDS := 30
 RETRY_INTERVAL_SECONDS := 1
 
-install-ci-up-simcore: install-ci
+.PHONY: install-ci-up-simcore
+install-ci-up-simcore: install-ci  ## run registry and simcore stack locally (push sleepers image and modifies DB)
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_transfer-images-to-registry)
 	@$(_up_simcore)
@@ -105,6 +106,28 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 		--headed \
 		--autoregister \
 		$(CURDIR)/tests/sleepers/test_sleepers.py
+
+.PHONY: test-platform
+test-platform: _check_venv_active ## runs platform test on local deploy
+	@pytest \
+		-sxvv \
+		--color=yes \
+		--product-url=http://$(get_my_ip):9081 \
+		--autoregister \
+		--tracing=on \
+		$(CURDIR)/tests/platform_CI_tests/test_platform.py
+
+.PHONY: test-platform-dev
+test-platform-dev: _check_venv_active  ## runs platform test on local deploy (with PWDEBUG=1)
+	@PWDEBUG=1 pytest \
+		-sxvv \
+		--color=yes \
+		--pdb \
+		--product-url=http://$(get_my_ip):9081 \
+		--headed \
+		--autoregister \
+		--tracing=on \
+		$(CURDIR)/tests/platform_CI_tests/test_platform.py
 
 
 # Define the files where user input will be saved
