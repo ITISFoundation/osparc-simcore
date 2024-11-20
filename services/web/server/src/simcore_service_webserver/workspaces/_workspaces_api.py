@@ -10,7 +10,11 @@ from models_library.api_schemas_webserver.workspaces import (
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
-from models_library.workspaces import UserWorkspaceAccessRightsDB, WorkspaceID
+from models_library.workspaces import (
+    UserWorkspaceAccessRightsDB,
+    WorkspaceID,
+    WorkspaceUpdateDB,
+)
 from pydantic import NonNegativeInt
 
 from ..projects._db_utils import PermissionStr
@@ -110,13 +114,12 @@ async def list_workspaces(
 async def update_workspace(
     app: web.Application,
     *,
+    product_name: ProductName,
     user_id: UserID,
     workspace_id: WorkspaceID,
-    name: str,
-    description: str | None,
-    thumbnail: str | None,
-    product_name: ProductName,
+    **updates,
 ) -> WorkspaceGet:
+
     await check_user_workspace_access(
         app=app,
         user_id=user_id,
@@ -127,10 +130,8 @@ async def update_workspace(
     await db.update_workspace(
         app,
         workspace_id=workspace_id,
-        name=name,
-        description=description,
-        thumbnail=thumbnail,
         product_name=product_name,
+        updates=WorkspaceUpdateDB(**updates),
     )
     workspace_db = await db.get_workspace_for_user(
         app,

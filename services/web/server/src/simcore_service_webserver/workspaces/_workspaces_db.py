@@ -15,6 +15,7 @@ from models_library.workspaces import (
     UserWorkspaceAccessRightsDB,
     WorkspaceDB,
     WorkspaceID,
+    WorkspaceUpdateDB,
 )
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.workspaces import workspaces
@@ -51,6 +52,9 @@ _SELECTION_ARGS = (
 )
 
 assert set(WorkspaceDB.__fields__) == {c.name for c in _SELECTION_ARGS}  # nosec
+assert set(WorkspaceUpdateDB.__fields__).issubset(  # nosec
+    c.name for c in workspaces.columns
+)
 
 
 async def create_workspace(
@@ -200,21 +204,20 @@ async def update_workspace(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    workspace_id: WorkspaceID,
-    name: str,
-    description: str | None,
-    thumbnail: str | None,
     product_name: ProductName,
+    workspace_id: WorkspaceID,
+    updates: WorkspaceUpdateDB,
 ) -> WorkspaceDB:
+    # NOTE: at least 'touch' if updated_values is empty
+    _updates = {
+        **updates.dict(exclude_unset=True),
+        "modified": func.now(),
+    }
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             workspaces.update()
-            .values(
-                name=name,
-                description=description,
-                thumbnail=thumbnail,
-                modified=func.now(),
-            )
+            .values(**_updates)
             .where(
                 (workspaces.c.workspace_id == workspace_id)
                 & (workspaces.c.product_name == product_name)

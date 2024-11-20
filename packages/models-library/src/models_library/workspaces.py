@@ -69,3 +69,11 @@ class UserWorkspaceAccessRightsDB(WorkspaceDB):
 
     class Config:
         orm_mode = True
+
+
+class WorkspaceUpdateDB(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    thumbnail: str | None = None
+    trashed: datetime | None = None
+    trashed_by: UserID | None = None
