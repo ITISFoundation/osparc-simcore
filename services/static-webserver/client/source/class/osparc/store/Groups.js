@@ -110,12 +110,9 @@ qx.Class.define("osparc.store.Groups", {
           if (group) {
             group.setGroupMembers({});
             orgMembers.forEach(orgMember => {
-              orgMember["label"] = osparc.utils.Utils.firstsUp(
-                `${"first_name" in orgMember && orgMember["first_name"] != null ? orgMember["first_name"] : orgMember["login"]}`,
-                `${orgMember["last_name"] ? orgMember["last_name"] : ""}`
-              );
-              group.getGroupMembers()[orgMember["gid"]] = orgMember;
-              this.getReachableMembers()[orgMember["gid"]] = orgMember;
+              const user = new osparc.data.model.User(orgMember)
+              group.getGroupMembers()[orgMember["gid"]] = user;
+              this.getReachableMembers()[orgMember["gid"]] = user;
             });
           }
         });
@@ -180,42 +177,40 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     getPotentialCollaborators: function(includeMe = false, includeProductEveryone = false) {
-      return new Promise((resolve, reject) => {
-        const potentialCollaborators = {};
-        const orgs = this.getOrganizations();
-        const productEveryone = this.getEveryoneProductGroup();
-        Object.values(orgs).forEach(org => {
-          if (org.getAccessRights()["read"]) {
-            // maybe because of migration script, some users have access to the product everyone group
-            // rely on the includeProductEveryone argument to exclude it if necessary
-            if (org.getGroupId() === productEveryone.getGroupId() && !includeProductEveryone) {
-              return;
-            }
-            org["collabType"] = 1;
-            potentialCollaborators[org.getGroupId()] = org;
+      const potentialCollaborators = {};
+      const orgs = this.getOrganizations();
+      const productEveryone = this.getEveryoneProductGroup();
+      Object.values(orgs).forEach(org => {
+        if (org.getAccessRights()["read"]) {
+          // maybe because of migration script, some users have access to the product everyone group
+          // rely on the includeProductEveryone argument to exclude it if necessary
+          if (org.getGroupId() === productEveryone.getGroupId() && !includeProductEveryone) {
+            return;
           }
-        });
-        const members = this.getReachableMembers();
-        for (const gid of Object.keys(members)) {
-          members[gid]["collabType"] = 2;
-          potentialCollaborators[gid] = members[gid];
+          org["collabType"] = 1;
+          potentialCollaborators[org.getGroupId()] = org;
         }
-        if (includeMe) {
-          const myData = osparc.auth.Data.getInstance();
-          const myGid = myData.getGroupId();
-          potentialCollaborators[myGid] = {
-            "login": myData.getEmail(),
-            "first_name": myData.getFirstName(),
-            "last_name": myData.getLastName(),
-            "collabType": 2
-          };
-        }
-        if (includeProductEveryone && productEveryone) {
-          productEveryone["collabType"] = 0;
-          potentialCollaborators[productEveryone.getGroupId()] = productEveryone;
-        }
-        resolve(potentialCollaborators);
       });
+      const members = this.getReachableMembers();
+      for (const gid of Object.keys(members)) {
+        members[gid]["collabType"] = 2;
+        potentialCollaborators[gid] = members[gid];
+      }
+      if (includeMe) {
+        const myData = osparc.auth.Data.getInstance();
+        const myGid = myData.getGroupId();
+        potentialCollaborators[myGid] = {
+          "login": myData.getEmail(),
+          "first_name": myData.getFirstName(),
+          "last_name": myData.getLastName(),
+          "collabType": 2
+        };
+      }
+      if (includeProductEveryone && productEveryone) {
+        productEveryone["collabType"] = 0;
+        potentialCollaborators[productEveryone.getGroupId()] = productEveryone;
+      }
+      return potentialCollaborators;
     },
 
     getGroup: function(groupId = null) {

@@ -277,36 +277,34 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         this.__organizationsAndMembers.reloadVisibleCollaborators(memberKeys);
       }
 
-      osparc.store.Groups.getInstance().getPotentialCollaborators()
-        .then(potentialCollaborators => {
-          clusterMembers.forEach(clusterMember => {
-            const gid = clusterMember.gid;
-            if (gid in potentialCollaborators) {
-              const collaborator = potentialCollaborators[gid];
-              const collabObj = {};
-              if (collaborator["collabType"] === 1) {
-                collabObj["thumbnail"] = collaborator["thumbnail"] || "@FontAwesome5Solid/users/24";
-                collabObj["name"] = osparc.utils.Utils.firstsUp(collaborator["label"]);
-                collabObj["login"] = collaborator["description"];
-              } else if (collaborator["collabType"] === 2) {
-                collabObj["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
-                collaborator["name"] = osparc.utils.Utils.firstsUp(
-                  `${"first_name" in collaborator && collaborator["first_name"] != null ?
-                    collaborator["first_name"] : collaborator["login"]}`,
-                  `${"last_name" in collaborator && collaborator["last_name"] ?
-                    collaborator["last_name"] : ""}`
-                );
-                collabObj["login"] = collaborator["login"];
-              }
-              if (Object.keys(collabObj).length) {
-                collabObj["id"] = collaborator["gid"];
-                collabObj["accessRights"] = JSON.parse(qx.util.Serializer.toJson(clusterMember));
-                collabObj["showOptions"] = canWrite;
-                membersArrayModel.append(qx.data.marshal.Json.createModel(collabObj));
-              }
-            }
-          });
-        });
+      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
+      clusterMembers.forEach(clusterMember => {
+        const gid = "gid" in clusterMember ? clusterMember["gid"] : clusterMember.getGroupId();
+        if (gid in potentialCollaborators) {
+          const collaborator = potentialCollaborators[gid];
+          const collabObj = {};
+          if (collaborator["collabType"] === 1) {
+            collabObj["thumbnail"] = collaborator["thumbnail"] || "@FontAwesome5Solid/users/24";
+            collabObj["name"] = osparc.utils.Utils.firstsUp(collaborator["label"]);
+            collabObj["login"] = collaborator["description"];
+          } else if (collaborator["collabType"] === 2) {
+            collabObj["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
+            collaborator["name"] = osparc.utils.Utils.firstsUp(
+              `${"first_name" in collaborator && collaborator["first_name"] != null ?
+                collaborator["first_name"] : collaborator["login"]}`,
+              `${"last_name" in collaborator && collaborator["last_name"] ?
+                collaborator["last_name"] : ""}`
+            );
+            collabObj["login"] = collaborator["login"];
+          }
+          if (Object.keys(collabObj).length) {
+            collabObj["id"] = collaborator["gid"];
+            collabObj["accessRights"] = JSON.parse(qx.util.Serializer.toJson(clusterMember));
+            collabObj["showOptions"] = canWrite;
+            membersArrayModel.append(qx.data.marshal.Json.createModel(collabObj));
+          }
+        }
+      });
     },
 
     __openEditCluster: function(clusterId) {
