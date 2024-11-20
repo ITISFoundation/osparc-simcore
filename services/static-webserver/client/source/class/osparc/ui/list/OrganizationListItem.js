@@ -43,7 +43,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
     _getOptionsMenu: function() {
       let menu = null;
       const accessRights = this.getAccessRights();
-      if (accessRights.getWrite()) {
+      if (accessRights["write"]) {
         const optionsMenu = this.getChildControl("options");
         optionsMenu.show();
 
@@ -51,7 +51,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
           position: "bottom-right"
         });
 
-        if (accessRights.getWrite()) {
+        if (accessRights["write"]) {
           const editOrgButton = new qx.ui.menu.Button(this.tr("Edit details..."));
           editOrgButton.addListener("execute", () => {
             this.fireDataEvent("openEditOrganization", this.getKey());
@@ -59,7 +59,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
           menu.add(editOrgButton);
         }
 
-        if (accessRights.getDelete()) {
+        if (accessRights["delete"]) {
           const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
           this.bind("showDeleteButton", deleteOrgButton, "visibility", {
             converter: show => show ? "visible" : "excluded"

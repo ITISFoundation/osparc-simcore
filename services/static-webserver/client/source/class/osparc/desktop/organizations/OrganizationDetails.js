@@ -104,13 +104,13 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
     },
 
     __updateOrganization: function(win, button, orgEditor) {
-      const orgKey = orgEditor.getGid();
+      const groupId = orgEditor.getGroupId();
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
       const thumbnail = orgEditor.getThumbnail();
       const params = {
         url: {
-          "gid": orgKey
+          "gid": groupId
         },
         data: {
           "label": name,

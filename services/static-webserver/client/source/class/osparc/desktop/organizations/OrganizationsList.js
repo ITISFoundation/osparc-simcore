@@ -65,14 +65,11 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
 
   statics: {
     sortOrganizations: function(a, b) {
-      const sorted = osparc.share.Collaborators.sortByAccessRights(a["accessRights"], b["accessRights"]);
+      const sorted = osparc.share.Collaborators.sortByAccessRights(a.getAccessRights(), b.getAccessRights());
       if (sorted !== 0) {
         return sorted;
       }
-      if (("label" in a) && ("label" in b)) {
-        return a["label"].localeCompare(b["label"]);
-      }
-      return 0;
+      return a.getLabel().localeCompare(b.getLabel());
     }
   },
 
@@ -83,7 +80,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     getOrgModel: function(orgId) {
       let org = null;
       this.__orgsModel.forEach(orgModel => {
-        if (orgModel.getGid() === parseInt(orgId)) {
+        if (orgModel.getGroupId() === parseInt(orgId)) {
           org = orgModel;
         }
       });
@@ -133,8 +130,8 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       orgsCtrl.setDelegate({
         createItem: () => new osparc.ui.list.OrganizationListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("gid", "key", null, item, id);
-          ctrl.bindProperty("gid", "model", null, item, id);
+          ctrl.bindProperty("groupId", "key", null, item, id);
+          ctrl.bindProperty("groupId", "model", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("label", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
@@ -180,28 +177,19 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       const orgsModel = this.__orgsModel;
       orgsModel.removeAll();
 
-      const useCache = false;
-      osparc.data.Resources.get("organizations", {}, useCache)
-        .then(async respOrgs => {
-          const orgs = respOrgs["organizations"];
-          const promises = await orgs.map(async org => {
-            const params = {
-              url: {
-                gid: org["gid"]
-              }
-            };
-            const respOrgMembers = await osparc.data.Resources.get("organizationMembers", params);
-            org["nMembers"] = Object.keys(respOrgMembers).length + this.tr(" members");
-            return org;
-          });
-          const orgsList = await Promise.all(promises);
-          orgsList.sort(this.self().sortOrganizations);
-          orgsList.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
-          this.setOrganizationsLoaded(true);
-          if (orgId) {
-            this.fireDataEvent("organizationSelected", orgId);
-          }
-        });
+      const groupsStore = osparc.store.Groups.getInstance();
+      const orgs = Object.values(groupsStore.getOrganizations());
+      const orgsList = orgs.map(org => {
+        const respOrgMembers = groupsStore.getOrganizationMembers(org["gid"]);
+        org["nMembers"] = Object.keys(respOrgMembers).length + this.tr(" members");
+        return org;
+      });
+      orgsList.sort(this.self().sortOrganizations);
+      orgsList.forEach(org => orgsModel.append(org));
+      this.setOrganizationsLoaded(true);
+      if (orgId) {
+        this.fireDataEvent("organizationSelected", orgId);
+      }
     },
 
     __openEditOrganization: function(orgId) {
@@ -222,7 +210,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     __deleteOrganization: function(orgKey) {
       let org = null;
       this.__orgsModel.forEach(orgModel => {
-        if (orgModel.getGid() === parseInt(orgKey)) {
+        if (orgModel.getGroupId() === parseInt(orgKey)) {
           org = orgModel;
         }
       });
@@ -267,13 +255,13 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     },
 
     __createOrganization: function(win, button, orgEditor) {
-      const orgKey = orgEditor.getGid();
+      const groupId = orgEditor.getGroupId();
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
       const thumbnail = orgEditor.getThumbnail();
       const params = {
         url: {
-          "gid": orgKey
+          "gid": groupId
         },
         data: {
           "label": name,
@@ -305,13 +293,13 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     },
 
     __updateOrganization: function(win, button, orgEditor) {
-      const orgKey = orgEditor.getGid();
+      const groupId = orgEditor.getGroupId();
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
       const thumbnail = orgEditor.getThumbnail();
       const params = {
         url: {
-          "gid": orgKey
+          "gid": groupId
         },
         data: {
           "label": name,

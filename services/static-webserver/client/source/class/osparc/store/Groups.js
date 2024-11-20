@@ -103,9 +103,41 @@ qx.Class.define("osparc.store.Groups", {
         });
     },
 
+    __fetchGroupMembers: function(groupId) {
+      const params = {
+        url: {
+          gid: groupId
+        }
+      };
+      return osparc.data.Resources.get("organizationMembers", params)
+        .then(orgMembers => {
+          this.getOrganizationMembers()[groupId] = {};
+          orgMembers.forEach(orgMember => {
+            orgMember["label"] = osparc.utils.Utils.firstsUp(
+              `${"first_name" in orgMember && orgMember["first_name"] != null ? orgMember["first_name"] : orgMember["login"]}`,
+              `${orgMember["last_name"] ? orgMember["last_name"] : ""}`
+            );
+            this.getOrganizationMembers()[groupId][orgMember["gid"]] = orgMember;
+          });
+        });
+    },
+
     fetchAll: function() {
       this.fetchGroups()
         .then(orgs => {
+          this.resetOrganizationMembers();
+          this.resetReachableMembers();
+          const memberPromises = Object.keys(orgs).map(orgId => this.__fetchGroupMembers(orgId));
+          Promise.all(memberPromises)
+            .then(() => {
+              Object.values(this.getOrganizationMembers()).forEach(orgMembers => {
+                Object.values(orgMembers).forEach(reachableMember => {
+                  this.getReachableMembers()[reachableMember["gid"]] = reachableMember;
+                });
+              });
+            });
+
+          /*
           const orgMembersPromises = [];
           Object.keys(orgs).forEach(gid => {
             const params = {
@@ -129,6 +161,7 @@ qx.Class.define("osparc.store.Groups", {
               });
               this.setReachableMembers(reachableMembers);
             });
+          */
         });
     },
 
