@@ -481,17 +481,17 @@ class BaseCompScheduler(ABC):
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         comp_run: CompRunsAtDB,
         wake_up_callback: Callable[[], None],
-    ) -> None: ...  # pragma: no cover
+    ) -> None: ...
 
     @abstractmethod
     async def _get_tasks_status(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
-    ) -> list[RunningState]: ...  # pragma: no cover
+    ) -> list[RunningState]: ...
 
     @abstractmethod
     async def _stop_tasks(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
-    ) -> None: ...  # pragma: no cover
+    ) -> None: ...
 
     @abstractmethod
     async def _process_completed_tasks(
@@ -500,7 +500,7 @@ class BaseCompScheduler(ABC):
         tasks: list[CompTaskAtDB],
         iteration: Iteration,
         comp_run: CompRunsAtDB,
-    ) -> None: ...  # pragma: no cover
+    ) -> None: ...
 
     async def schedule_pipeline(
         self,
