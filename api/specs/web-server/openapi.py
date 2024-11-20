@@ -51,7 +51,7 @@ openapi_modules = [
         "_projects_tags",
         "_projects_wallet",
         "_projects_workspaces",
-        # "_publications", #  <--- FIXME:  RuntimeWarning: fields may not start with an underscore, ignoring "_file"
+        "_publications",  #  <--- FIXME:  RuntimeWarning: fields may not start with an underscore, ignoring "_file"
         "_resource_usage",
         "_statics",
         "_storage",

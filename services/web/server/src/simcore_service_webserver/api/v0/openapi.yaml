@@ -4233,7 +4233,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -4424,6 +4424,22 @@ paths:
             minimum: 0
           - type: 'null'
           title: Workspace Id
+      responses:
+        '204':
+          description: Successful Response
+  /v0/publications/service-submission:
+    post:
+      tags:
+      - publication
+      summary: Service Submission
+      description: Submits files with new service candidate
+      operationId: service_submission
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_service_submission'
+        required: true
       responses:
         '204':
           description: Successful Response
@@ -6172,6 +6188,17 @@ components:
       - name
       - email
       title: Author
+    Body_service_submission:
+      properties:
+        file:
+          type: string
+          format: binary
+          title: File
+          description: metadata.json submission file
+      type: object
+      required:
+      - file
+      title: Body_service_submission
     BootChoice:
       properties:
         label:
