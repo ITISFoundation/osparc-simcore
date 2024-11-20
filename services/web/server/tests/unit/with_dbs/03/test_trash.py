@@ -441,7 +441,7 @@ async def test_trash_empty_workspace(
     # -------------
 
     # TRASH
-    resp = await client.post(f"/v0/folders/{workspace.workspace_id}:trash")
+    resp = await client.post(f"/v0/workspaces/{workspace.workspace_id}:trash")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # LIST NOT trashed (default)
