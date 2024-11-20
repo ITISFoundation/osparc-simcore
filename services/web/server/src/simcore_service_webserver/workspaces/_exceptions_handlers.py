@@ -7,6 +7,7 @@ from ..exceptions_handlers import (
     HttpErrorInfo,
     create_exception_handlers_decorator,
 )
+from ..projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
 from .errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceGroupNotFoundError,
@@ -29,6 +30,15 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     WorkspaceNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         "Workspace not found. {reason}",
+    ),
+    # Trashing
+    ProjectRunningConflictError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        "One or more studies in this workspace are in use and cannot be trashed. Please stop all services first and try again",
+    ),
+    ProjectStoppingError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        "Something went wrong while stopping running services in studies within this workspace before trashing. Aborting trash.",
     ),
 }
 
