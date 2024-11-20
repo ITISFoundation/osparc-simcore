@@ -142,6 +142,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = osparc.desktop.credits.Utils.createWalletSelector("read").set({
             allowGrowX: false
           });
+          control.addListener("changeSelection", () => this.__evaluateOpenButton());
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "advanced-layout":
@@ -278,13 +279,11 @@ qx.Class.define("osparc.study.StudyOptions", {
           }
         });
       }
-
-      this.__evaluateOpenButton();
     },
 
     __evaluateOpenButton: function() {
       const hasTitle = Boolean(this.getChildControl("title-field").getValue());
-      const walletSelected = Boolean(this.getWallet());
+      const walletSelected = Boolean(this.getChildControl("wallet-selector").getSelection());
       this.getChildControl("open-button").setEnabled(hasTitle && walletSelected);
     },
 
