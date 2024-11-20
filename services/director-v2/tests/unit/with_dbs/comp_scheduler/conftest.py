@@ -51,6 +51,10 @@ def with_disabled_auto_scheduling(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.fixture
 def with_disabled_scheduler_worker(mocker: MockerFixture) -> mock.Mock:
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.shutdown_worker",
+        autospec=True,
+    )
     return mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.setup_worker",
         autospec=True,
