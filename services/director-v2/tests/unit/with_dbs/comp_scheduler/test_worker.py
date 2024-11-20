@@ -17,7 +17,6 @@ from pytest_mock import MockerFixture
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.modules.comp_scheduler._manager import run_new_pipeline
 from simcore_service_director_v2.modules.comp_scheduler._worker import (
-    _empty_wake_up_callack,
     _get_scheduler_worker,
 )
 
@@ -68,5 +67,5 @@ async def test_worker_properly_calls_scheduler_api(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         iteration=1,
-        wake_up_callback=_empty_wake_up_callack,
+        wake_up_callback=mock.ANY,
     )

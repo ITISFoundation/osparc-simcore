@@ -1,12 +1,14 @@
 import functools
 import logging
-from typing import cast
+from typing import Callable, cast
 
 from fastapi import FastAPI
+from models_library.projects import ProjectID
+from models_library.users import UserID
 from servicelib.logging_utils import log_context
 
 from ..rabbitmq import get_rabbitmq_client
-from ._models import SchedulePipelineRabbitMessage
+from ._models import Iteration, SchedulePipelineRabbitMessage
 from ._scheduler_base import BaseCompScheduler
 from ._scheduler_factory import create_scheduler
 
@@ -14,8 +16,11 @@ _logger = logging.getLogger(__name__)
 
 
 def _empty_wake_up_callack(
-    # app: FastAPI, user_id: UserID, project_id: ProjectID, iteration: Iteration
-) -> None:
+    app: FastAPI, user_id: UserID, project_id: ProjectID, iteration: Iteration
+) -> Callable[[], None]:
+    def _cb() -> None:
+        ...
+
     # async def _async_cb():
     #     db_engine = get_db_engine(app)
     #     rabbit_mq_client = get_rabbitmq_client(app)
@@ -23,7 +28,7 @@ def _empty_wake_up_callack(
     #         user_id=user_id, project_id=project_id, iteration=iteration
     #     )
     #     await request_pipeline_scheduling(comp_run, rabbit_mq_client, db_engine)
-    ...
+    return _cb
 
 
 def _get_scheduler_worker(app: FastAPI) -> BaseCompScheduler:
@@ -34,15 +39,16 @@ async def _handle_distributed_pipeline(app: FastAPI, data: bytes) -> bool:
 
     with log_context(_logger, logging.DEBUG, msg="handling scheduling"):
         to_schedule_pipeline = SchedulePipelineRabbitMessage.parse_raw(data)
-        # get_rabbitmq_client(app).publish(
-        #     SchedulePipelineRabbitMessage.get_channel_name(),
-        #     to_schedule_pipeline,
-        # )
         await _get_scheduler_worker(app).schedule_pipeline(
             user_id=to_schedule_pipeline.user_id,
             project_id=to_schedule_pipeline.project_id,
             iteration=to_schedule_pipeline.iteration,
-            wake_up_callback=_empty_wake_up_callack,
+            wake_up_callback=_empty_wake_up_callack(
+                app,
+                to_schedule_pipeline.user_id,
+                to_schedule_pipeline.project_id,
+                to_schedule_pipeline.iteration,
+            ),
         )
         return True
 
