@@ -104,7 +104,7 @@ _extra_tags = ["workspaces"]
 
 
 @router.post(
-    "/workspace/{workspace_id}:trash",
+    "/workspaces/{workspace_id}:trash",
     tags=_extra_tags,
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
@@ -123,7 +123,7 @@ def trash_workspace(
 
 
 @router.post(
-    "/workspace/{workspace_id}:untrash",
+    "/workspaces/{workspace_id}:untrash",
     tags=_extra_tags,
     status_code=status.HTTP_204_NO_CONTENT,
 )
