@@ -44,15 +44,6 @@ qx.Class.define("osparc.auth.Data", {
     },
 
     /**
-     *  org IDs
-     */
-    orgIds: {
-      init: [],
-      nullable: false,
-      check: "Array"
-    },
-
-    /**
      *  Basic authentification with a token
     */
     auth: {

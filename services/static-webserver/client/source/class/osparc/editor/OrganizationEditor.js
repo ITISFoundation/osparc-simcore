@@ -40,7 +40,7 @@ qx.Class.define("osparc.editor.OrganizationEditor", {
       });
     } else {
       const groupsStore = osparc.store.Groups.getInstance();
-      groupsStore.getGroupsOrganizations()
+      groupsStore.getOrganizations()
         .then(orgs => {
           const existingNames = orgs.map(org => org["label"]);
           const defaultName = osparc.utils.Utils.getUniqueName("New Organization", existingNames)

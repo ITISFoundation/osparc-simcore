@@ -265,6 +265,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
 
       const clusterMembers = clusterModel.getMembersList();
 
+      const groupsStore = osparc.store.Groups.getInstance();
       const myGid = groupsStore.getMyGroupId();
       const membersModel = clusterModel.getMembers();
       const getter = "get"+String(myGid);

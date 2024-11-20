@@ -221,7 +221,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         groupsStore.getGroupEveryone(),
         groupsStore.getProductEveryone(),
         groupsStore.getReachableMembers(),
-        groupsStore.getGroupsOrganizations()
+        groupsStore.getOrganizations()
       ])
         .then(values => {
           const everyone = values[0] ? [values[0]] : [];

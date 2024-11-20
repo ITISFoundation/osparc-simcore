@@ -132,6 +132,14 @@ qx.Class.define("osparc.store.Groups", {
         });
     },
 
+    getMyGroupId: function() {
+      return this.getGroupMe().getGroupId();
+    },
+
+    getOrganizationIds: function() {
+      return Object.keys(this.getOrganizations()).map(org => org.getGroupsId());
+    },
+
     __getGroups: function(group) {
       return new Promise(resolve => {
         osparc.data.Resources.get("organizations")
@@ -140,14 +148,6 @@ qx.Class.define("osparc.store.Groups", {
           })
           .catch(err => console.error(err));
       });
-    },
-
-    getMyGroupId: function() {
-      return this.getGroupMe().getGroupId();
-    },
-
-    getGroupsOrganizations: function() {
-      return this.__getGroups("organizations");
     },
 
     getProductEveryone: function() {
@@ -163,7 +163,7 @@ qx.Class.define("osparc.store.Groups", {
         const promises = [];
         promises.push(this.getGroupMe());
         promises.push(this.getReachableMembers());
-        promises.push(this.getGroupsOrganizations());
+        promises.push(this.getOrganizations());
         promises.push(this.getProductEveryone());
         promises.push(this.getGroupEveryone());
         Promise.all(promises)
@@ -212,7 +212,7 @@ qx.Class.define("osparc.store.Groups", {
     getPotentialCollaborators: function(includeMe = false, includeProductEveryone = false) {
       return new Promise((resolve, reject) => {
         const promises = [];
-        promises.push(this.getGroupsOrganizations());
+        promises.push(this.getOrganizations());
         promises.push(this.getReachableMembers());
         promises.push(this.getEveryoneProductGroup());
         Promise.all(promises)
