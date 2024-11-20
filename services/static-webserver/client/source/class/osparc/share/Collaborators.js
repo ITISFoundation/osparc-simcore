@@ -341,11 +341,9 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __getCollaborators: function() {
-      osparc.store.Groups.getInstance().getPotentialCollaborators()
-        .then(potentialCollaborators => {
-          this.__collaborators = Object.assign(this.__collaborators, potentialCollaborators);
-          this._reloadCollaboratorsList();
-        });
+      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
+      this.__collaborators = Object.assign(this.__collaborators, potentialCollaborators);
+      this._reloadCollaboratorsList();
     },
 
     __getLeaveStudyButton: function() {

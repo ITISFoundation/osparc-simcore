@@ -259,24 +259,21 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
 
     __pushNotifications: function(gids) {
       // push 'STUDY_SHARED'/'TEMPLATE_SHARED' notification
-      osparc.store.Groups.getInstance().getPotentialCollaborators()
-        .then(potentialCollaborators => {
-          gids.forEach(gid => {
-            if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
-              // it's a user, not an organization
-              const collab = potentialCollaborators[gid];
-              const uid = collab["id"];
-              if (this._resourceType === "study") {
-                osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
-              } else if (this._resourceType === "template") {
-                // do not push TEMPLATE_SHARED notification if users are not supposed to see the templates
-                if (osparc.data.Permissions.getInstance().canRoleDo("user", "dashboard.templates.read")) {
-                  osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
-                }
-              }
+      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
+      gids.forEach(gid => {
+        if (gid in potentialCollaborators && "getUserId" in potentialCollaborators[gid]) {
+          // it's a user, not an organization
+          const uid = potentialCollaborators[gid].getUserId();
+          if (this._resourceType === "study") {
+            osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
+          } else if (this._resourceType === "template") {
+            // do not push TEMPLATE_SHARED notification if users are not supposed to see the templates
+            if (osparc.data.Permissions.getInstance().canRoleDo("user", "dashboard.templates.read")) {
+              osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
             }
-          });
-        });
+          }
+        }
+      });
     },
 
     __checkShareePermissions: function(gids) {

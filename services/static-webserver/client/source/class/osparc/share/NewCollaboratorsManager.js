@@ -112,20 +112,18 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         // all users can share services with ProductEveryone
         includeProductEveryone = true;
       }
-      osparc.store.Groups.getInstance().getPotentialCollaborators(false, includeProductEveryone)
-        .then(potentialCollaborators => {
-          this.__visibleCollaborators = potentialCollaborators;
-          const anyCollaborator = Object.keys(potentialCollaborators).length;
-          // tell the user that belonging to an organization is required to start sharing
-          this.__introLabel.setVisibility(anyCollaborator ? "excluded" : "visible");
-          this.__orgsButton.setVisibility(anyCollaborator ? "excluded" : "visible");
+      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, includeProductEveryone)
+      this.__visibleCollaborators = potentialCollaborators;
+      const anyCollaborator = Object.keys(potentialCollaborators).length;
+      // tell the user that belonging to an organization is required to start sharing
+      this.__introLabel.setVisibility(anyCollaborator ? "excluded" : "visible");
+      this.__orgsButton.setVisibility(anyCollaborator ? "excluded" : "visible");
 
-          // or start sharing
-          this.__textFilter.setVisibility(anyCollaborator ? "visible" : "excluded");
-          this.__collabButtonsContainer.setVisibility(anyCollaborator ? "visible" : "excluded");
-          this.__shareButton.setVisibility(anyCollaborator ? "visible" : "excluded");
-          this.__addEditors();
-        });
+      // or start sharing
+      this.__textFilter.setVisibility(anyCollaborator ? "visible" : "excluded");
+      this.__collabButtonsContainer.setVisibility(anyCollaborator ? "visible" : "excluded");
+      this.__shareButton.setVisibility(anyCollaborator ? "visible" : "excluded");
+      this.__addEditors();
     },
 
     __collaboratorButton: function(collaborator) {
