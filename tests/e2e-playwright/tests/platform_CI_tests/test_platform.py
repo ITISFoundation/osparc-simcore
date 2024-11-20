@@ -50,12 +50,19 @@ def test_simple_folder_workflow(logged_in_context, product_url, test_module_tear
 
     page.goto(f"{product_url}")
     page.wait_for_timeout(1000)
-    page.get_by_test_id("dashboard").get_by_text("New folder", exact=True).click()
-    page.get_by_placeholder("Title").fill("My new folder")
-    page.get_by_placeholder("Title").press("Enter")
+    page.get_by_test_id("newFolderButton").click()
 
-    page.get_by_test_id("dashboard").get_by_text("My new folder").click()
-    page.get_by_test_id("contextTree").get_by_text("My Workspace").click()
+    with page.expect_response(
+        lambda response: "folders" in response.url
+        and response.status == 201
+        and response.request.method == "POST"
+    ) as response_info:
+        page.get_by_test_id("folderEditorTitle").fill("My new folder")
+        page.get_by_test_id("folderEditorCreate").click()
+
+    _folder_id = response_info.value.json()["data"]["folderId"]
+    page.get_by_test_id(f"folderItem_{_folder_id}").click()
+    page.get_by_test_id("workspacesAndFoldersTreeItem_null_null").click()
 
 
 def test_simple_workspace_workflow(
@@ -65,4 +72,15 @@ def test_simple_workspace_workflow(
 
     page.goto(f"{product_url}")
     page.wait_for_timeout(1000)
-    page.get_by_text("Shared Workspaces").click()
+    page.get_by_test_id("workspacesAndFoldersTreeItem_-1_null").click()
+
+    with page.expect_response(
+        lambda response: "workspaces" in response.url
+        and response.status == 201
+        and response.request.method == "POST"
+    ) as response_info:
+        page.get_by_test_id("newWorkspaceButton").click()
+        page.get_by_test_id("workspaceEditorSave").click()
+    _workspace_id = response_info.value.json()["data"]["workspaceId"]
+    page.get_by_test_id(f"workspaceItem_{_workspace_id}").click()
+    page.get_by_test_id("workspacesAndFoldersTreeItem_null_null").click()
