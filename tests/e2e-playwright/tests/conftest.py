@@ -11,7 +11,6 @@ import logging
 import os
 import random
 import re
-import time
 import urllib.parse
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
@@ -405,6 +404,18 @@ def log_in_and_out(
         page.wait_for_timeout(500)
 
 
+def _open_with_resources(page: Page, click_it: bool):
+    page.wait_for_function(
+        """element => element.value === 'asdf'""",
+        arg=page.get_by_test_id("studyTitleField"),
+    )
+    # Open project with default resources
+    open_with_resources_button = page.get_by_test_id("openWithResources")
+    if click_it:
+        open_with_resources_button.click()
+    return open_with_resources_button
+
+
 @pytest.fixture
 def create_new_project_and_delete(
     page: Page,
@@ -451,9 +462,7 @@ def create_new_project_and_delete(
                     if template_id is not None:
                         if is_product_billable:
                             open_button.click()
-                            # Open project with default resources
-                            open_button = page.get_by_test_id("openWithResources")
-                            time.sleep(2)  # wait until the study options are filled up
+                            open_button = _open_with_resources(page, False)
                         # it returns a Long Running Task
                         with page.expect_response(
                             re.compile(rf"/projects\?from_study\={template_id}")
@@ -498,16 +507,10 @@ def create_new_project_and_delete(
                     else:
                         open_button.click()
                         if is_product_billable:
-                            # Open project with default resources
-                            open_button = page.get_by_test_id("openWithResources")
-                            time.sleep(2)  # wait until the study options are filled up
-                            open_button.click()
+                            _open_with_resources(page, True)
                             open_with_resources_clicked = True
                 if is_product_billable and not open_with_resources_clicked:
-                    # Open project with default resources
-                    open_button = page.get_by_test_id("openWithResources")
-                    time.sleep(2)  # wait until the study options are filled up
-                    open_button.click()
+                    _open_with_resources(page, True)
             project_data = response_info.value.json()
             assert project_data
             project_uuid = project_data["data"]["uuid"]
