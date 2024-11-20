@@ -1,6 +1,6 @@
 from typing import Any, TypeAlias
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, RootModel
 from pydantic.main import BaseModel
 
 from ..api_schemas_catalog import services as api_schemas_catalog_services
@@ -228,8 +228,8 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
     )
 
 
-class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
-    model_config = OutputSchema.model_config
+class ServiceResourcesGet(RootModel[api_schemas_catalog_services.ServiceResourcesGet]):
+    ...
 
 
 class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
