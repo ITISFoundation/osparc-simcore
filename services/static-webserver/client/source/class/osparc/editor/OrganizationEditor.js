@@ -40,16 +40,10 @@ qx.Class.define("osparc.editor.OrganizationEditor", {
       });
     } else {
       const groupsStore = osparc.store.Groups.getInstance();
-      groupsStore.getOrganizations()
-        .then(orgs => {
-          const existingNames = orgs.map(org => org["label"]);
-          const defaultName = osparc.utils.Utils.getUniqueName("New Organization", existingNames)
-          title.setValue(defaultName);
-        })
-        .catch(err => {
-          console.error(err);
-          title.setValue("New Organization");
-        });
+      const orgs = groupsStore.getOrganizations()
+      const existingNames = orgs.map(org => org["label"]);
+      const defaultName = osparc.utils.Utils.getUniqueName("New Organization", existingNames)
+      title.setValue(defaultName);
     }
 
     this.addListener("appear", () => {

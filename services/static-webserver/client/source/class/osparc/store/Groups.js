@@ -137,7 +137,7 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     getOrganizationIds: function() {
-      return Object.keys(this.getOrganizations()).map(org => org.getGroupsId());
+      return Object.keys(this.getOrganizations());
     },
 
     __getGroups: function(group) {
@@ -212,16 +212,15 @@ qx.Class.define("osparc.store.Groups", {
     getPotentialCollaborators: function(includeMe = false, includeProductEveryone = false) {
       return new Promise((resolve, reject) => {
         const promises = [];
-        promises.push(this.getOrganizations());
         promises.push(this.getReachableMembers());
         promises.push(this.getEveryoneProductGroup());
         Promise.all(promises)
           .then(values => {
-            const orgs = values[0]; // array
-            const members = values[1]; // object
-            const productEveryone = values[2]; // entry
+            const orgs = this.getOrganizations(); // object
+            const members = values[0]; // object
+            const productEveryone = values[1]; // entry
             const potentialCollaborators = {};
-            orgs.forEach(org => {
+            Object.values(orgs).forEach(org => {
               if (org["accessRights"]["read"]) {
                 // maybe because of migration script, some users have access to the product everyone group
                 // rely on the includeProductEveryone argument to exclude it if necessary

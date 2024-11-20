@@ -168,7 +168,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           if (gid === myGroupId) {
             continue;
           }
-          const grp = groups[i].find(group => group["gid"] === gid);
+          const grp = groups[i].find(group => "gid" in group ? group["gid"] === gid : group.getGroupId() === gid);
           if (grp) {
             sharedGrp.push(grp);
           }
@@ -217,24 +217,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
     populateShareIcon: function(shareIcon, accessRights) {
       const groupsStore = osparc.store.Groups.getInstance();
-      Promise.all([
-        groupsStore.getGroupEveryone(),
-        groupsStore.getProductEveryone(),
-        groupsStore.getReachableMembers(),
-        groupsStore.getOrganizations()
-      ])
-        .then(values => {
-          const everyone = values[0] ? [values[0]] : [];
-          const productEveryone = values[1] ? [values[1]] : [];
-          const orgMembs = [];
-          const orgMembers = values[2];
-          for (const gid of Object.keys(orgMembers)) {
-            orgMembs.push(orgMembers[gid]);
-          }
-          const orgs = values.length === 4 ? values[3] : [];
-          const groups = [orgMembs, orgs, productEveryone, everyone];
-          osparc.dashboard.CardBase.setIconAndTooltip(shareIcon, accessRights, groups);
-        });
+      const orgMembs = Object.values(groupsStore.getReachableMembers());
+      const orgs = Object.values(groupsStore.getOrganizations());
+      const productEveryone = [groupsStore.getEveryoneProductGroup()];
+      const everyone = [groupsStore.getEveryoneGroup()];
+      const groups = [orgMembs, orgs, productEveryone, everyone];
+      osparc.dashboard.CardBase.setIconAndTooltip(shareIcon, accessRights, groups);
     },
   },
 

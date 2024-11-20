@@ -779,38 +779,36 @@ qx.Class.define("osparc.store.Store", {
           return;
         }
         const groupsStore = osparc.store.Groups.getInstance();
-        groupsStore.getGroupsOrganizations()
-          .then(orgs => {
-            if (orgs.length === 0) {
+        const orgs = Object.values(groupsStore.getOrganizations());
+        if (orgs.length === 0) {
+          this.setClassifiers([]);
+          resolve([]);
+          return;
+        }
+        const classifierPromises = [];
+        orgs.forEach(org => {
+          classifierPromises.push(this.__getOrgClassifiers(org["gid"], !reload));
+        });
+        Promise.all(classifierPromises)
+          .then(orgsClassifiersMD => {
+            if (orgsClassifiersMD.length === 0) {
               this.setClassifiers([]);
               resolve([]);
               return;
             }
-            const classifierPromises = [];
-            orgs.forEach(org => {
-              classifierPromises.push(this.__getOrgClassifiers(org["gid"], !reload));
-            });
-            Promise.all(classifierPromises)
-              .then(orgsClassifiersMD => {
-                if (orgsClassifiersMD.length === 0) {
-                  this.setClassifiers([]);
-                  resolve([]);
-                  return;
-                }
-                const allClassifiers = [];
-                orgsClassifiersMD.forEach(orgClassifiersMD => {
-                  if ("classifiers" in orgClassifiersMD) {
-                    const classifiers = orgClassifiersMD["classifiers"];
-                    Object.keys(classifiers).forEach(key => {
-                      const classifier = classifiers[key];
-                      classifier.key = key;
-                      allClassifiers.push(classifier);
-                    });
-                  }
+            const allClassifiers = [];
+            orgsClassifiersMD.forEach(orgClassifiersMD => {
+              if ("classifiers" in orgClassifiersMD) {
+                const classifiers = orgClassifiersMD["classifiers"];
+                Object.keys(classifiers).forEach(key => {
+                  const classifier = classifiers[key];
+                  classifier.key = key;
+                  allClassifiers.push(classifier);
                 });
-                this.setClassifiers(allClassifiers);
-                resolve(allClassifiers);
-              });
+              }
+            });
+            this.setClassifiers(allClassifiers);
+            resolve(allClassifiers);
           });
       });
     }
