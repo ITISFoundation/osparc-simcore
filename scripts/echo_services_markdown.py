@@ -23,9 +23,6 @@ _REDOC_URL_PREFIX: Final[str] = f"https://redocly.github.io/redoc/?url={_URL_PRE
 _SWAGGER_URL_PREFIX: Final[str] = f"https://petstore.swagger.io/?url={_URL_PREFIX}"
 
 
-# SEE https://shields.io/badges
-
-
 def _to_row(values: Iterable):
     return f"| {'|'.join(map(str, values))} |\n"
 
