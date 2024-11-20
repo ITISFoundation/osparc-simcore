@@ -47,11 +47,6 @@ qx.Class.define("osparc.store.Groups", {
       init: {}
     },
 
-    organizationMembers: {
-      check: "Object",
-      init: {}
-    },
-
     reachableMembers: {
       check: "Object",
       init: {}
@@ -78,7 +73,7 @@ qx.Class.define("osparc.store.Groups", {
     groupsCached: null,
     usersCached: null,
 
-    fetchGroups: function() {
+    __fetchGroups: function() {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
           resolve([]);
@@ -111,58 +106,32 @@ qx.Class.define("osparc.store.Groups", {
       };
       return osparc.data.Resources.get("organizationMembers", params)
         .then(orgMembers => {
-          this.getOrganizationMembers()[groupId] = {};
-          orgMembers.forEach(orgMember => {
-            orgMember["label"] = osparc.utils.Utils.firstsUp(
-              `${"first_name" in orgMember && orgMember["first_name"] != null ? orgMember["first_name"] : orgMember["login"]}`,
-              `${orgMember["last_name"] ? orgMember["last_name"] : ""}`
-            );
-            this.getOrganizationMembers()[groupId][orgMember["gid"]] = orgMember;
-          });
+          const group = this.getOrganizations()[groupId];
+          if (group) {
+            group.setGroupMembers({});
+            orgMembers.forEach(orgMember => {
+              orgMember["label"] = osparc.utils.Utils.firstsUp(
+                `${"first_name" in orgMember && orgMember["first_name"] != null ? orgMember["first_name"] : orgMember["login"]}`,
+                `${orgMember["last_name"] ? orgMember["last_name"] : ""}`
+              );
+              group.getGroupMembers()[orgMember["gid"]] = orgMember;
+              this.getReachableMembers()[orgMember["gid"]] = orgMember;
+            });
+          }
         });
     },
 
-    fetchAll: function() {
-      this.fetchGroups()
-        .then(orgs => {
-          this.resetOrganizationMembers();
-          this.resetReachableMembers();
-          const memberPromises = Object.keys(orgs).map(orgId => this.__fetchGroupMembers(orgId));
-          Promise.all(memberPromises)
-            .then(() => {
-              Object.values(this.getOrganizationMembers()).forEach(orgMembers => {
-                Object.values(orgMembers).forEach(reachableMember => {
-                  this.getReachableMembers()[reachableMember["gid"]] = reachableMember;
-                });
-              });
-            });
-
-          /*
-          const orgMembersPromises = [];
-          Object.keys(orgs).forEach(gid => {
-            const params = {
-              url: {
-                gid
-              }
-            };
-            orgMembersPromises.push(osparc.data.Resources.get("organizationMembers", params));
+    fetchGroupsAndMembers: function() {
+      return new Promise(resolve => {
+        this.__fetchGroups()
+          .then(orgs => {
+            this.resetReachableMembers();
+            const promises = Object.keys(orgs).map(orgId => this.__fetchGroupMembers(orgId));
+            Promise.all(promises)
+              .then(() => resolve())
+              .catch(err => console.error(err));
           });
-          Promise.all(orgMembersPromises)
-            .then(orgMemberss => {
-              const reachableMembers = {};
-              orgMemberss.forEach(orgMembers => {
-                orgMembers.forEach(orgMember => {
-                  orgMember["label"] = osparc.utils.Utils.firstsUp(
-                    `${"first_name" in orgMember && orgMember["first_name"] != null ? orgMember["first_name"] : orgMember["login"]}`,
-                    `${orgMember["last_name"] ? orgMember["last_name"] : ""}`
-                  );
-                  reachableMembers[orgMember["gid"]] = orgMember;
-                });
-              });
-              this.setReachableMembers(reachableMembers);
-            });
-          */
-        });
+      })
     },
 
     getMyGroupId: function() {
@@ -249,7 +218,11 @@ qx.Class.define("osparc.store.Groups", {
       });
     },
 
-    getGroup: function(gid) {
+    getGroup: function(groupId = null) {
+      return this.groupsCached.find(f => f.getGroupId() === groupId);
+    },
+
+    fetchGroup: function(gid) {
       return new Promise(resolve => {
         if (gid) {
           this.getPotentialCollaborators()
@@ -330,12 +303,6 @@ qx.Class.define("osparc.store.Groups", {
         })
         .catch(console.error);
     },
-
-    /*
-    getGroup: function(groupId = null) {
-      return this.groupsCached.find(f => f.getGroupId() === groupId);
-    },
-    */
 
     __addToGroupsCache: function(groupData, groupType) {
       let group = this.groupsCached.find(f => f.getGroupId() === groupData["gid"]);

@@ -48,12 +48,14 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       this.__orgModel = orgModel;
 
       const organizationListItem = this.__addOrganizationListItem();
-      orgModel.bind("gid", organizationListItem, "key");
-      orgModel.bind("gid", organizationListItem, "model");
+      orgModel.bind("groupId", organizationListItem, "key");
+      orgModel.bind("groupId", organizationListItem, "model");
       orgModel.bind("thumbnail", organizationListItem, "thumbnail");
       orgModel.bind("label", organizationListItem, "title");
       orgModel.bind("description", organizationListItem, "subtitle");
-      orgModel.bind("nMembers", organizationListItem, "role");
+      orgModel.bindProperty("groupMembers", "role", {
+        converter: groupMembers => groupMembers ? Object.keys(groupMembers).length + this.tr(" members") : "-"
+      });
       orgModel.bind("accessRights", organizationListItem, "accessRights");
 
       // set orgModel to the tab views

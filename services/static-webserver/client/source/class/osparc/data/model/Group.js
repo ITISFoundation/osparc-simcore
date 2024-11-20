@@ -42,34 +42,42 @@ qx.Class.define("osparc.data.model.Group", {
       check: "Number",
       nullable: false,
       init: null,
-      event: "changeGroupId"
+      event: "changeGroupId",
     },
 
     label: {
       check: "String",
       nullable: false,
       init: null,
-      event: "changeLabel"
+      event: "changeLabel",
     },
 
     description: {
       check: "String",
       nullable: true,
       init: null,
-      event: "changeDescription"
+      event: "changeDescription",
     },
 
     accessRights: {
       check: "Object",
       nullable: false,
       init: null,
-      event: "changeAccessRights"
+      event: "changeAccessRights",
     },
 
     thumbnail: {
       check: "String",
       nullable: true,
-      init: ""
+      init: "",
+      event: "changeThumbnail",
+    },
+
+    groupMembers: {
+      check: "Object",
+      nullable: true,
+      init: null,
+      event: "changeGroupMembers",
     },
 
     groupType: {

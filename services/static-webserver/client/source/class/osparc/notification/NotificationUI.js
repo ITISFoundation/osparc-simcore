@@ -134,7 +134,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
         case "NEW_ORGANIZATION":
           icon.setSource("@FontAwesome5Solid/users/14");
           if (resourceId) {
-            osparc.store.Groups.getInstance().getGroup(resourceId)
+            osparc.store.Groups.getInstance().fetchGroup(resourceId)
               .then(group => descriptionLabel.setValue("You're now member of '" + group["label"] + "'"))
               .catch(() => this.setEnabled(false));
           }
@@ -264,7 +264,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
 
     __openOrganizationDetails: function(orgId) {
       // make sure org is available
-      osparc.store.Groups.getInstance().getGroup(orgId)
+      osparc.store.Groups.getInstance().fetchGroup(orgId)
         .then(org => {
           if (org) {
             const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();

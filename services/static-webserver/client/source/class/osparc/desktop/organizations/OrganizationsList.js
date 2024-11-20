@@ -135,7 +135,9 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("label", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
-          ctrl.bindProperty("nMembers", "role", null, item, id);
+          ctrl.bindProperty("groupMembers", "role", {
+            converter: groupMembers => groupMembers ? Object.keys(groupMembers).length + this.tr(" members") : "-"
+          }, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
         },
         configureItem: item => {
@@ -179,13 +181,8 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
 
       const groupsStore = osparc.store.Groups.getInstance();
       const orgs = Object.values(groupsStore.getOrganizations());
-      const orgsList = orgs.map(org => {
-        const respOrgMembers = groupsStore.getOrganizationMembers(org["gid"]);
-        org["nMembers"] = Object.keys(respOrgMembers).length + this.tr(" members");
-        return org;
-      });
-      orgsList.sort(this.self().sortOrganizations);
-      orgsList.forEach(org => orgsModel.append(org));
+      orgs.sort(this.self().sortOrganizations);
+      orgs.forEach(org => orgsModel.append(org));
       this.setOrganizationsLoaded(true);
       if (orgId) {
         this.fireDataEvent("organizationSelected", orgId);
