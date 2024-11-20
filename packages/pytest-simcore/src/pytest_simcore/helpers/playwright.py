@@ -339,9 +339,14 @@ class SocketIONodeProgressCompleteWaiter:
             url = f"https://{self.node_id}.services.{self.get_partial_product_url()}"
             response = httpx.get(url, timeout=10)
             self.logger.info(
-                "Querying the service endpoint from the E2E test. Url: %s Response: %s",
+                "Querying the service endpoint from the E2E test. Url: %s Response: %s TIP: %s",
                 url,
                 response,
+                (
+                    "Response 401 is OK. It means that service is ready."
+                    if response.status_code == 401
+                    else "We are emulating the frontend; a 500 response is acceptable if the service is not yet ready."
+                ),
             )
             if response.status_code <= 401:
                 # NOTE: If the response status is less than 400, it means that the backend is ready (There are some services that respond with a 3XX)
