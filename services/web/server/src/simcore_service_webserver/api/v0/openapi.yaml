@@ -2613,7 +2613,7 @@ paths:
           description: Order by field (`modified_at|name`) and direction (`asc|desc`).
             The default sorting order is `{"field":"modified_at","direction":"desc"}`.
           default: '{"field":"modified","direction":"desc"}'
-          example: '{"field":"modified_at","direction":"desc"}'
+          example: '{"field":"name","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -2666,7 +2666,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateFolderBodyParams'
+              $ref: '#/components/schemas/FolderCreateBodyParams'
         required: true
       responses:
         '201':
@@ -2696,7 +2696,7 @@ paths:
           description: Order by field (`modified_at|name`) and direction (`asc|desc`).
             The default sorting order is `{"field":"modified_at","direction":"desc"}`.
           default: '{"field":"modified","direction":"desc"}'
-          example: '{"field":"modified_at","direction":"desc"}'
+          example: '{"field":"name","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -2771,7 +2771,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PutFolderBodyParams'
+              $ref: '#/components/schemas/FolderReplaceBodyParams'
         required: true
       responses:
         '200':
@@ -3158,7 +3158,7 @@ paths:
           description: Order by field (`creation_date|description|last_change_date|name|prj_owner|type|uuid`)
             and direction (`asc|desc`). The default sorting order is `{"field":"last_change_date","direction":"desc"}`.
           default: '{"field":"last_change_date","direction":"desc"}'
-          example: '{"field":"prj_owner","direction":"desc"}'
+          example: '{"field":"type","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -3381,7 +3381,7 @@ paths:
           description: Order by field (`creation_date|description|last_change_date|name|prj_owner|type|uuid`)
             and direction (`asc|desc`). The default sorting order is `{"field":"last_change_date","direction":"desc"}`.
           default: '{"field":"last_change_date","direction":"desc"}'
-          example: '{"field":"prj_owner","direction":"desc"}'
+          example: '{"field":"type","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -4612,7 +4612,7 @@ paths:
           description: Order by field (`credit_cost|node_id|node_name|project_id|project_name|root_parent_project_id|root_parent_project_name|service_key|service_run_status|service_type|service_version|started_at|stopped_at|transaction_status|user_email|user_id|wallet_id|wallet_name`)
             and direction (`asc|desc`). The default sorting order is `{"field":"started_at","direction":"desc"}`.
           default: '{"field":"started_at","direction":"desc"}'
-          example: '{"field":"service_key","direction":"desc"}'
+          example: '{"field":"root_parent_project_id","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -4726,7 +4726,7 @@ paths:
           description: Order by field (`credit_cost|node_id|node_name|project_id|project_name|root_parent_project_id|root_parent_project_name|service_key|service_run_status|service_type|service_version|started_at|stopped_at|transaction_status|user_email|user_id|wallet_id|wallet_name`)
             and direction (`asc|desc`). The default sorting order is `{"field":"started_at","direction":"desc"}`.
           default: '{"field":"started_at","direction":"desc"}'
-          example: '{"field":"service_key","direction":"desc"}'
+          example: '{"field":"root_parent_project_id","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -5500,7 +5500,8 @@ paths:
         '404':
           description: Not such a folder
         '409':
-          description: One or more projects are in use and cannot be trashed
+          description: One or more projects in the folder are in use and cannot be
+            trashed
         '503':
           description: Trash service error
   /v0/folders/{folder_id}:untrash:
@@ -5551,7 +5552,8 @@ paths:
         '404':
           description: Not such a workspace
         '409':
-          description: One or more projects are in use and cannot be trashed
+          description: One or more projects in the workspace are in use and cannot
+            be trashed
         '503':
           description: Trash service error
   /v0/workspace/{workspace_id}:untrash:
@@ -5809,7 +5811,7 @@ paths:
           description: Order by field (`modified_at|name`) and direction (`asc|desc`).
             The default sorting order is `{"field":"modified_at","direction":"desc"}`.
           default: '{"field":"modified","direction":"desc"}'
-          example: '{"field":"modified_at","direction":"desc"}'
+          example: '{"field":"name","direction":"desc"}'
         name: order_by
         in: query
       - required: false
@@ -5853,7 +5855,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateWorkspaceBodyParams'
+              $ref: '#/components/schemas/WorkspaceCreateBodyParams'
         required: true
       responses:
         '201':
@@ -5902,7 +5904,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PutWorkspaceBodyParams'
+              $ref: '#/components/schemas/WorkspaceReplaceBodyParams'
         required: true
       responses:
         '200':
@@ -7070,28 +7072,6 @@ components:
         alpha2:
           title: Alpha2
           type: string
-    CreateFolderBodyParams:
-      title: CreateFolderBodyParams
-      required:
-      - name
-      type: object
-      properties:
-        name:
-          title: Name
-          maxLength: 100
-          minLength: 1
-          type: string
-        parentFolderId:
-          title: Parentfolderid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        workspaceId:
-          title: Workspaceid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-      additionalProperties: false
     CreatePricingPlanBodyParams:
       title: CreatePricingPlanBodyParams
       required:
@@ -7171,22 +7151,6 @@ components:
           title: Comment
           maxLength: 100
           type: string
-    CreateWorkspaceBodyParams:
-      title: CreateWorkspaceBodyParams
-      required:
-      - name
-      type: object
-      properties:
-        name:
-          title: Name
-          type: string
-        description:
-          title: Description
-          type: string
-        thumbnail:
-          title: Thumbnail
-          type: string
-      additionalProperties: false
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -8594,6 +8558,28 @@ components:
             format: uri
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+    FolderCreateBodyParams:
+      title: FolderCreateBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          maxLength: 100
+          minLength: 1
+          type: string
+        parentFolderId:
+          title: Parentfolderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+      additionalProperties: false
     FolderGet:
       title: FolderGet
       required:
@@ -8642,6 +8628,23 @@ components:
           minimum: 0
         myAccessRights:
           $ref: '#/components/schemas/models_library__access_rights__AccessRights'
+    FolderReplaceBodyParams:
+      title: FolderReplaceBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          maxLength: 100
+          minLength: 1
+          type: string
+        parentFolderId:
+          title: Parentfolderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+      additionalProperties: false
     GenerateInvitation:
       title: GenerateInvitation
       required:
@@ -11150,23 +11153,6 @@ components:
           description: Timestamp with last update
           format: date-time
       additionalProperties: false
-    PutFolderBodyParams:
-      title: PutFolderBodyParams
-      required:
-      - name
-      type: object
-      properties:
-        name:
-          title: Name
-          maxLength: 100
-          minLength: 1
-          type: string
-        parentFolderId:
-          title: Parentfolderid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-      additionalProperties: false
     PutWalletBodyParams:
       title: PutWalletBodyParams
       required:
@@ -11185,24 +11171,6 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/WalletStatus'
-    PutWorkspaceBodyParams:
-      title: PutWorkspaceBodyParams
-      required:
-      - name
-      type: object
-      properties:
-        name:
-          title: Name
-          maxLength: 100
-          minLength: 1
-          type: string
-        description:
-          title: Description
-          type: string
-        thumbnail:
-          title: Thumbnail
-          type: string
-      additionalProperties: false
     RegisterBody:
       title: RegisterBody
       required:
@@ -13182,6 +13150,22 @@ components:
           allOf:
           - $ref: '#/components/schemas/TaskCounts'
           description: task details
+    WorkspaceCreateBodyParams:
+      title: WorkspaceCreateBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+      additionalProperties: false
     WorkspaceGet:
       title: WorkspaceGet
       required:
@@ -13215,6 +13199,15 @@ components:
           title: Modifiedat
           type: string
           format: date-time
+        trashedAt:
+          title: Trashedat
+          type: string
+          format: date-time
+        trashedBy:
+          title: Trashedby
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
         myAccessRights:
           $ref: '#/components/schemas/models_library__access_rights__AccessRights'
         accessRights:
@@ -13255,6 +13248,24 @@ components:
           title: Modified
           type: string
           format: date-time
+    WorkspaceReplaceBodyParams:
+      title: WorkspaceReplaceBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          maxLength: 100
+          minLength: 1
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+      additionalProperties: false
     WorkspacesGroupsBodyParams:
       title: WorkspacesGroupsBodyParams
       required:

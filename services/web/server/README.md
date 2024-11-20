@@ -1,5 +1,6 @@
 # web/server
 
+[![ReDoc](https://img.shields.io/badge/OpenAPI-ReDoc-85ea2d?logo=openapiinitiative)](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml)
 [![Docker Pulls](https://img.shields.io/docker/pulls/itisfoundation/webserver.svg)](https://hub.docker.com/r/itisfoundation/webserver/tags)
 [![](https://images.microbadger.com/badges/image/itisfoundation/webserver.svg)](https://microbadger.com/images/itisfoundation/webserver "More on service image in registry")
 [![](https://images.microbadger.com/badges/version/itisfoundation/webserver.svg)](https://microbadger.com/images/itisfoundation/webserver "More on service image in registry")
