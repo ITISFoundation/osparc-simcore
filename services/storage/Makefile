@@ -7,7 +7,7 @@ include ../../scripts/common-service.Makefile
 
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications
-	$(MAKE) -C $(CURDIR)/src/simcore_service_${APP_NAME}/api $@
+	$(MAKE_C) $(REPO_BASE_DIR)/api/specs/$(APP_NAME) all
 
 
 .PHONY: tests
