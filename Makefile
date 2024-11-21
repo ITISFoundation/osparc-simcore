@@ -604,7 +604,7 @@ auto-doc: .stack-simcore-version.yml ## Auto generates diagrams for README.md
 .PHONY: services.md
 services.md: ## Auto generates service.md
 	# Making $@
-	scripts/echo_services_markdown.py > $@
+	scripts/echo_services_markdown.py > services.ignore.md
 
 
 .PHONY: postgres-upgrade
