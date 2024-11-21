@@ -132,18 +132,14 @@ jsonschema==4.21.1
     #   openapi-schema-validator
     #   openapi-spec-validator
 jsonschema-path==0.3.2
-    # via
-    #   -c requirements/_base.txt
-    #   openapi-spec-validator
+    # via openapi-spec-validator
 jsonschema-specifications==2023.7.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
     #   openapi-schema-validator
 lazy-object-proxy==1.10.0
-    # via
-    #   -c requirements/_base.txt
-    #   openapi-spec-validator
+    # via openapi-spec-validator
 lupa==2.2
     # via fakeredis
 markupsafe==2.1.5
@@ -169,13 +165,9 @@ networkx==3.3
 numpy==2.1.1
     # via pandas
 openapi-schema-validator==0.6.2
-    # via
-    #   -c requirements/_base.txt
-    #   openapi-spec-validator
+    # via openapi-spec-validator
 openapi-spec-validator==0.7.1
-    # via
-    #   -c requirements/_base.txt
-    #   moto
+    # via moto
 packaging==24.0
     # via
     #   -c requirements/_base.txt
@@ -184,9 +176,7 @@ packaging==24.0
 pandas==2.2.3
     # via -r requirements/_test.in
 pathable==0.4.3
-    # via
-    #   -c requirements/_base.txt
-    #   jsonschema-path
+    # via jsonschema-path
 pluggy==1.5.0
     # via pytest
 ply==3.11
@@ -283,9 +273,7 @@ requests==2.32.2
 responses==0.25.3
     # via moto
 rfc3339-validator==0.1.4
-    # via
-    #   -c requirements/_base.txt
-    #   openapi-schema-validator
+    # via openapi-schema-validator
 rpds-py==0.18.0
     # via
     #   -c requirements/_base.txt
