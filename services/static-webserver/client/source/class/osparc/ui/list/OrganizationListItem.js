@@ -31,6 +31,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       nullable: true,
       init: null,
       event: "changeGroupMembers",
+      apply: "updateNMembers",
     },
   },
 
