@@ -113,27 +113,11 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
       const thumbnail = orgEditor.getThumbnail();
-      const params = {
-        url: {
-          "gid": groupId
-        },
-        data: {
-          "label": name,
-          "description": description,
-          "thumbnail": thumbnail || null
-        }
-      };
-      osparc.data.Resources.fetch("organizations", "patch", params)
+      osparc.store.Groups.getInstance().patchGroup(groupId, name, description, thumbnail)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);
           win.close();
-          osparc.store.Store.getInstance().reset("organizations");
-          this.__orgModel.set({
-            label: name,
-            description: description,
-            thumbnail: thumbnail || null
-          });
         })
         .catch(err => {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");

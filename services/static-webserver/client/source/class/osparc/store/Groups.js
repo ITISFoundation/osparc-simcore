@@ -247,6 +247,7 @@ qx.Class.define("osparc.store.Groups", {
       return null;
     },
 
+    // CRUD GROUP
     postGroup: function(name, parentGroupId = null, workspaceId = null) {
       const newGroupData = {
         name,
@@ -281,28 +282,32 @@ qx.Class.define("osparc.store.Groups", {
         .catch(console.error);
     },
 
-    putGroup: function(groupId, updateData) {
-      const group = this.getOrganization(groupId);
-      const oldParentGroupId = group.getParentGroupId();
+    patchGroup: function(groupId, name, description, thumbnail) {
       const params = {
-        "url": {
-          groupId
+        url: {
+          "gid": groupId
         },
-        data: updateData
+        data: {
+          "label": name,
+          "description": description,
+          "thumbnail": thumbnail || null
+        }
       };
-      return osparc.data.Resources.getInstance().fetch("groups", "update", params)
-        .then(groupData => {
-          this.__addToGroupsCache(groupData);
-          if (updateData.parentGroupId !== oldParentGroupId) {
-            this.fireDataEvent("groupMoved", {
-              group,
-              oldParentGroupId,
+      return osparc.data.Resources.fetch("organizations", "patch", params)
+        .then(() => {
+          const organization = this.getOrganization(groupId);
+          if (organization) {
+            organization.set({
+              label: name,
+              description: description,
+              thumbnail: thumbnail || null
             });
           }
-        })
-        .catch(console.error);
+        });
     },
+    // CRUD GROUP
 
+    // CRUD GROUP MEMBERS
     postMember: function(orgId, newMemberEmail) {
       const gid = parseInt(orgId);
       const params = {
@@ -363,6 +368,7 @@ qx.Class.define("osparc.store.Groups", {
           this.__removeUserFromCache(parseInt(userId), parseInt(orgId));
         });
     },
+    // CRUD GROUP MEMBERS
 
     __addToGroupsCache: function(groupData, groupType) {
       let group = this.groupsCached.find(f => f.getGroupId() === groupData["gid"]);
