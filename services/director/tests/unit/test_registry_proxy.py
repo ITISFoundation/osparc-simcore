@@ -1,13 +1,16 @@
 # pylint: disable=W0613, W0621
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 import time
 
 import pytest
 from fastapi import FastAPI
+from pytest_benchmark.plugin import BenchmarkFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.docker_registry import RegistrySettings
 from simcore_service_director import registry_proxy
 from simcore_service_director.core.settings import ApplicationSettings
 
@@ -203,6 +206,19 @@ async def test_get_image_details(
         assert details == service_description
 
 
+async def test_list_services(
+    configure_registry_access: EnvVarsDict,
+    configure_number_concurrency_calls: EnvVarsDict,
+    app: FastAPI,
+    push_services,
+):
+    await push_services(
+        number_of_computational_services=21, number_of_interactive_services=21
+    )
+    services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
+    assert len(services) == 42
+
+
 @pytest.fixture
 def configure_registry_caching(
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
@@ -237,17 +253,41 @@ async def test_registry_caching(
     print("time to retrieve services with cache: ", time_to_retrieve_with_cache)
 
 
-@pytest.mark.skip(reason="test needs credentials to real registry")
-async def test_get_services_performance(
-    configure_registry_access: EnvVarsDict,
-    app: FastAPI,
-):
-    start_time = time.perf_counter()
-    services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
-    stop_time = time.perf_counter()
-    print(
-        f"\nTime to run getting services: {stop_time - start_time}s, #services {len(services)}, time per call {(stop_time - start_time) / len(services)}s/service"
+@pytest.fixture
+def configure_number_concurrency_calls(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS": "50",
+            "DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS": "50",
+        },
     )
+
+
+def test_list_services_performance(
+    configure_external_registry_access: EnvVarsDict,
+    configure_number_concurrency_calls: EnvVarsDict,
+    registry_settings: RegistrySettings,
+    app: FastAPI,
+    benchmark: BenchmarkFixture,
+):
+    async def _list_services():
+        start_time = time.perf_counter()
+        services = await registry_proxy.list_services(
+            app, registry_proxy.ServiceType.ALL
+        )
+        stop_time = time.perf_counter()
+        print(
+            f"\nTime to list services: {stop_time - start_time:.3}s, {len(services)} services in {registry_settings.resolved_registry_url}, rate: {(stop_time - start_time) / len(services or [1]):.3}s/service"
+        )
+
+    def run_async_test() -> None:
+        asyncio.get_event_loop().run_until_complete(_list_services())
+
+    benchmark.pedantic(run_async_test, rounds=1)
 
 
 async def test_generate_service_extras(
