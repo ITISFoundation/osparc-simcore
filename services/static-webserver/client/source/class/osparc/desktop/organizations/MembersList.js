@@ -151,8 +151,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       membersCtrl.setDelegate({
         createItem: () => new osparc.ui.list.MemberListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("groupId", "model", null, item, id);
-          ctrl.bindProperty("groupId", "key", null, item, id);
+          ctrl.bindProperty("userId", "model", null, item, id);
+          ctrl.bindProperty("userId", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
@@ -229,6 +229,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const groupMembers = organization.getGroupMembers();
       Object.values(groupMembers).forEach(groupMember => {
         const member = {};
+        member["userId"] = groupMember.getUserId();
         member["groupId"] = groupMember.getGroupId();
         member["thumbnail"] = groupMember.getThumbnail();
         member["name"] = groupMember.getLabel();
@@ -485,17 +486,11 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     __doDeleteMember: function(listedMember) {
-      const params = {
-        url: {
-          "gid": this.__currentOrg.getGroupId(),
-          "uid": listedMember["id"]
-        }
-      };
-      return osparc.data.Resources.fetch("organizationMembers", "delete", params)
+      const groupsStore = osparc.store.Groups.getInstance();
+      return groupsStore.removeMember(this.__currentOrg.getGroupId(), listedMember["id"])
         .then(() => {
-          // OM not sure
           osparc.FlashMessenger.getInstance().logAs(listedMember["name"] + this.tr(" successfully removed"));
-          osparc.store.Store.getInstance().reset("organizationMembers");
+          this.__reloadOrgMembers();
         })
         .catch(err => {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + listedMember["name"], "ERROR");

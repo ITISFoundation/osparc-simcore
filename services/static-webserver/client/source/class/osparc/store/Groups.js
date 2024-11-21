@@ -290,22 +290,30 @@ qx.Class.define("osparc.store.Groups", {
     postMember: function(orgId, newMemberEmail) {
       const params = {
         url: {
-          "gid": orgId
+          "gid": parseInt(orgId)
         },
         data: {
           "email": newMemberEmail
         }
       };
-      osparc.data.Resources.fetch("organizationMembers", "post", params)
+      return osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(newMember => {
           const user = new osparc.data.model.User(newMember);
-          this.__addToUsersCache(user, orgId);
+          this.__addToUsersCache(parseInt(user), parseInt(orgId));
           return user;
-        })
-        .catch(err => {
-          const errorMessage = err["message"] || this.tr("Something went wrong adding the user");
-          osparc.FlashMessenger.getInstance().logAs(errorMessage, "ERROR");
-          console.error(err);
+        });
+    },
+
+    removeMember: function(orgId, userId) {
+      const params = {
+        url: {
+          "gid": parseInt(orgId),
+          "uid": parseInt(userId),
+        }
+      };
+      return osparc.data.Resources.fetch("organizationMembers", "delete", params)
+        .then(() => {
+          this.__removeUserFromCache(parseInt(userId), parseInt(orgId));
         });
     },
 
@@ -346,6 +354,18 @@ qx.Class.define("osparc.store.Groups", {
         }
       }
       this.getReachableUsers()[user.getGroupId()] = user;
-    }
+    },
+
+    __removeUserFromCache: function(userId, orgId) {
+      if (orgId) {
+        const organization = this.getOrganization(orgId);
+        if (organization) {
+          const groupMember = Object.values(organization.getGroupMembers()).find(user => user.getUserId() === userId);
+          if (groupMember) {
+            delete organization.getGroupMembers()[groupMember.getGroupId()]
+          }
+        }
+      }
+    },
   }
 });
