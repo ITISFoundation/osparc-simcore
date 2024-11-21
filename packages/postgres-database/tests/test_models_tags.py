@@ -6,6 +6,7 @@
 
 import pytest
 import sqlalchemy as sa
+from simcore_postgres_database.models._common import RefActions
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.models.tags_access_rights import tags_access_rights
 from simcore_postgres_database.models.users import users
