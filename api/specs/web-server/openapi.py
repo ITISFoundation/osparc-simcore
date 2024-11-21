@@ -6,9 +6,9 @@
 import importlib
 
 import yaml
-from _common import create_openapi_specs
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
+from servicelib.fastapi.openapi import create_openapi_specs
 from simcore_service_webserver._meta import API_VERSION, PROJECT_NAME, SUMMARY
 from simcore_service_webserver._resources import webserver_resources
 

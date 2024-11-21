@@ -7,14 +7,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, NamedTuple, Optional, Union, get_args, get_origin
 
-import yaml
 from common_library.json_serialization import json_dumps
 from common_library.pydantic_fields_extension import get_type
-from fastapi import FastAPI, Query
+from fastapi import Query
 from models_library.basic_types import LogLevel
 from pydantic import BaseModel, ConfigDict, Field, Json, create_model
 from pydantic.fields import FieldInfo
-from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -117,48 +115,6 @@ class Error(BaseModel):
     logs: list[Log] | None = Field(None, description="log messages")
     errors: list[ErrorItem] | None = Field(None, description="errors metadata")
     status: int | None = Field(None, description="HTTP error code")
-
-
-def create_openapi_specs(
-    app: FastAPI,
-    *,
-    drop_fastapi_default_422: bool = True,
-    remove_main_sections: bool = True,
-):
-    override_fastapi_openapi_method(app)
-    openapi = app.openapi()
-
-    # Remove these sections
-    if remove_main_sections:
-        for section in ("info", "openapi"):
-            openapi.pop(section, None)
-
-    schemas = openapi["components"]["schemas"]
-    for section in ("HTTPValidationError", "ValidationError"):
-        schemas.pop(section, None)
-
-    # Removes default response 422
-    if drop_fastapi_default_422:
-        for method_item in openapi.get("paths", {}).values():
-            for param in method_item.values():
-                # NOTE: If description is like this,
-                # it assumes it is the default HTTPValidationError from fastapi
-                if (e422 := param.get("responses", {}).get("422", None)) and e422.get(
-                    "description"
-                ) == "Validation Error":
-                    param.get("responses", {}).pop("422", None)
-    return openapi
-
-
-def create_and_save_openapi_specs(
-    app: FastAPI, file_path: Path, *, drop_fastapi_default_422: bool = True
-):
-    openapi = create_openapi_specs(
-        app=app, drop_fastapi_default_422=drop_fastapi_default_422
-    )
-    with file_path.open("wt") as fh:
-        yaml.safe_dump(openapi, fh, indent=1, sort_keys=False)
-    print("Saved OAS to", file_path)  # noqa: T201
 
 
 class ParamSpec(NamedTuple):
