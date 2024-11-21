@@ -106,7 +106,7 @@ qx.Class.define("osparc.store.Groups", {
       };
       return osparc.data.Resources.get("organizationMembers", params)
         .then(orgMembers => {
-          const group = this.getOrganizations()[groupId];
+          const group = this.getOrganization(groupId);
           if (group) {
             group.setGroupMembers({});
             orgMembers.forEach(orgMember => {
@@ -208,9 +208,8 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     getOrganization: function(groupId) {
-      if (groupId) {
-        const orgs = this.getOrganizations();
-        return Object.values(orgs).find(org => org.getGroupId() === groupId);
+      if (groupId && groupId in this.getOrganizations()) {
+        return this.getOrganizations()[groupId];
       }
       return null;
     },
