@@ -2,7 +2,16 @@
 
 """
 
+import importlib
+import importlib.machinery
+import inspect
 import logging
+import sys
+from functools import wraps
+from importlib.abc import Loader, MetaPathFinder
+from importlib.machinery import ModuleSpec
+from types import ModuleType
+from typing import Callable, Sequence
 
 from fastapi import FastAPI
 from httpx import AsyncClient, Client
@@ -127,3 +136,60 @@ def setup_tracing(
 
 def setup_httpx_client_tracing(client: AsyncClient | Client):
     HTTPXClientInstrumentor.instrument_client(client)
+
+
+def _create_opentelemetry_function_span(func: Callable):
+    """Decorator that wraps a function call in an OpenTelemetry span."""
+    tracer = trace.get_tracer(__name__)
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        with tracer.start_as_current_span(f"{func.__module__}.{func.__name__}"):
+            return func(*args, **kwargs)
+
+    @wraps(func)
+    async def async_wrapper(*args, **kwargs):
+        with tracer.start_as_current_span(f"{func.__module__}.{func.__name__}"):
+            return await func(*args, **kwargs)
+
+    if inspect.iscoroutinefunction(func):
+        return async_wrapper
+    else:
+        return wrapper
+
+
+class _AddTracingSpansLoader(Loader):
+    def __init__(self, loader: Loader):
+        self.loader = loader
+
+    def exec_module(self, module: ModuleType):
+        # Execute the module normally
+        self.loader.exec_module(module)
+        for name, func in inspect.getmembers(module, inspect.isfunction):
+            if name in module.__dict__:
+                setattr(module, name, _create_opentelemetry_function_span(func))
+
+
+class _AddTracingSpansFinder(MetaPathFinder):
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[str] | None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
+        if fullname.startswith("simcore_service"):
+            # Find the original spec
+            spec = importlib.machinery.PathFinder.find_spec(
+                fullname=fullname, path=path
+            )
+            # spec = find_spec(fullname, path)
+            if spec and spec.loader:
+                # Wrap the loader with our DecoratingLoader
+                spec.loader = _AddTracingSpansLoader(spec.loader)
+                return spec
+
+        return None
+
+
+def setup_tracing_spans_for_simcore_service_functions():
+    sys.meta_path.insert(0, _AddTracingSpansFinder())
