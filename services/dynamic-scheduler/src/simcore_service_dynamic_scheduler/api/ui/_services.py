@@ -1,4 +1,6 @@
-import asyncio
+import logging
+from asyncio import Task
+from datetime import timedelta
 from typing import Annotated, Any, Final
 
 from fastapi import APIRouter, Depends, FastAPI
@@ -6,9 +8,11 @@ from fastapi.responses import StreamingResponse
 from fastui import AnyComponent, FastUI
 from fastui import components as c
 from fastui.events import PageEvent
+from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from starlette import status
 
+from ...services.service_tracker import get_all_tracked_services
 from ..dependencies import get_app
 from ._constants import API_ROOT_PATH
 from ._sse_utils import (
@@ -16,6 +20,8 @@ from ._sse_utils import (
     render_items_on_change,
     update_renderer_items,
 )
+
+_logger = logging.getLogger(__name__)
 
 _PREFIX: Final[str] = "/services"
 
@@ -72,38 +78,46 @@ async def not_found():
     return {"message": "Not Found"}
 
 
-class MockMessagesProvider(SingletonInAppStateMixin):
-    app_state_name: str = "mock_messages_provider"
+class ServicesStatusRetriever(SingletonInAppStateMixin):
+    app_state_name: str = "services_status_retriever"
 
-    def __init__(self, app: FastAPI) -> None:
+    def __init__(self, app: FastAPI, poll_interval: timedelta) -> None:
         self.app = app
-        self._task: asyncio.Task | None = None
+        self.poll_interval = poll_interval
 
-    async def _publish_mock_data(self) -> None:
-        messages: list[Any] = []
-        while True:
-            await asyncio.sleep(3)
+        self._task: Task | None = None
 
-            messages.append({"name": "a", "surname": "b"})
-            await update_renderer_items(
-                self.app, renderer_type=ServicesSSERenderer, items=messages
-            )
+    async def _task_service_state_retrieval(self) -> None:
+        all_tracked_services = await get_all_tracked_services(self.app)
+
+        items = sorted(all_tracked_services.items(), reverse=True)
+        _logger.error(f"PROPAGATING: {items=}")
+        await update_renderer_items(
+            self.app, renderer_type=ServicesSSERenderer, items=items
+        )
 
     def startup(self) -> None:
-        self._task = asyncio.create_task(self._publish_mock_data())
+        self._task = start_periodic_task(
+            self._task_service_state_retrieval,
+            interval=self.poll_interval,
+            task_name="sse_periodic_status_poll",
+        )
 
     async def shutdown(self) -> None:
         if self._task:
-            self._task.cancel()
-            await self._task
+            await stop_periodic_task(self._task, timeout=5)
 
 
 def setup_services(app: FastAPI) -> None:
     async def on_startup() -> None:
-        MockMessagesProvider.get_from_app_state(app).startup()
+        status_retriever = ServicesStatusRetriever(
+            app, poll_interval=timedelta(seconds=1)
+        )
+        status_retriever.set_to_app_state(app)
+        status_retriever.startup()
 
     async def on_shutdown() -> None:
-        await MockMessagesProvider.get_from_app_state(app).shutdown()
+        await ServicesStatusRetriever.get_from_app_state(app).shutdown()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
