@@ -24,26 +24,32 @@ _REDOC_URL_PREFIX: Final[str] = f"https://redocly.github.io/redoc/?url={_URL_PRE
 _SWAGGER_URL_PREFIX: Final[str] = f"https://petstore.swagger.io/?url={_URL_PREFIX}"
 
 
-def _to_row(values: Iterable):
-    return f"| {'|'.join(map(str, values))} |\n"
-
-
 class CaptureTuple(NamedTuple):
     service_name: str
     file_path: Path
 
 
-service_names_aliases: dict[str, str] = {"web": "webserver"}
+_service_names_aliases: dict[str, str] = {
+    "web": "webserver",
+}
 
 
 def generate_markdown_table(
     *captured_files: Iterable[CaptureTuple],
 ) -> str:
     title = ("Name", "Files", "  ")
+    num_cols = len(title)
     lines = ["-" * 10] * len(title)
 
-    table = _to_row(title)
-    table += _to_row(lines)
+    def _to_row_data(values: Iterable) -> list[str]:
+        row = list(map(str, values))
+        assert len(row) == num_cols, f"len({row=}) != {num_cols=}"
+        return row
+
+    rows = [
+        _to_row_data(title),
+        _to_row_data(lines),
+    ]
 
     found = itertools.groupby(
         sorted(itertools.chain(*captured_files), key=attrgetter("service_name")),
@@ -51,11 +57,13 @@ def generate_markdown_table(
     )
 
     for name, service_files in found:
-        table += _to_row(
-            (
-                f"**{name.upper()}**",
-                "",
-                "",
+        rows.append(
+            _to_row_data(
+                (
+                    f"**{name.upper()}**",
+                    "",
+                    "",
+                )
             )
         )
         for _, file_path in service_files:
@@ -65,7 +73,7 @@ def generate_markdown_table(
             badges = []
 
             if file_path.stem.lower() == "dockerfile":
-                repo = service_names_aliases.get(f"{name}") or name
+                repo = _service_names_aliases.get(f"{name}") or name
                 badges = [
                     f"[![Docker Image Size](https://img.shields.io/docker/image-size/itisfoundation/{repo})](https://hub.docker.com/r/itisfoundation/{repo}/tags)"
                 ]
@@ -76,16 +84,19 @@ def generate_markdown_table(
                     f"[![Swagger UI](https://img.shields.io/badge/OpenAPI-Swagger_UI-85ea2d?logo=swagger)]({_SWAGGER_URL_PREFIX}/{file_path})",
                 ]
 
-            table += _to_row(
-                (
-                    "",
-                    linked_path,
-                    " ".join(badges),
+            rows.append(
+                _to_row_data(
+                    (
+                        "",
+                        linked_path,
+                        " ".join(badges),
+                    )
                 )
             )
+    rows.append(_to_row_data(["" * 10] * len(title)))
 
-    table += _to_row(["" * 10] * len(title))
-    return table
+    # converts to markdown table
+    return "\n".join(f"| {'|'.join(r)} |" for r in rows)
 
 
 if __name__ == "__main__":
@@ -115,7 +126,7 @@ if __name__ == "__main__":
 
     print("# services")
     print(">")
-    print(f"> Auto generated on {now} by ")
+    print(f"> Auto generated on `{now}` using ")
     print("```cmd")
     print("cd osparc-simcore")
     print(f"python ./{CURRENT_FILE.relative_to(repo_base_path)}")

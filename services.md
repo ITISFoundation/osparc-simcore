@@ -1,6 +1,6 @@
 # services
 >
-> Auto generated on 2024-11-20 21:36:46 by
+> Auto generated on `2024-11-21 10:29:41` using
 ```cmd
 cd osparc-simcore
 python ./scripts/echo_services_markdown.py
