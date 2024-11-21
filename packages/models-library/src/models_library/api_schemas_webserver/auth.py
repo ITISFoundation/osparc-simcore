@@ -1,7 +1,7 @@
 from datetime import timedelta
-from typing import Any, ClassVar
+from typing import Any
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from ..emails import LowerCaseEmailStr
 from ._base import InputSchema
@@ -11,11 +11,13 @@ class AccountRequestInfo(InputSchema):
     form: dict[str, Any]
     captcha: str
 
-    class Config:
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_max_length=200,
         # NOTE: this is just informative. The format of the form is defined
         # currently in the front-end and it might change
         # SEE image in  https://github.com/ITISFoundation/osparc-simcore/pull/5378
-        schema_extra: ClassVar[dict[str, Any]] = {
+        json_schema_extra={
             "example": {
                 "form": {
                     "firstName": "James",
@@ -35,9 +37,8 @@ class AccountRequestInfo(InputSchema):
                 },
                 "captcha": "A12B34",
             }
-        }
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+        },
+    )
 
 
 class UnregisterCheck(InputSchema):
@@ -57,8 +58,8 @@ class ApiKeyCreate(BaseModel):
         description="Time delta from creation time to expiration. If None, then it does not expire.",
     )
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "display_name": "test-api-forever",
@@ -73,6 +74,7 @@ class ApiKeyCreate(BaseModel):
                 },
             ]
         }
+    )
 
 
 class ApiKeyGet(BaseModel):
@@ -80,9 +82,11 @@ class ApiKeyGet(BaseModel):
     api_key: str
     api_secret: str
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "examples": [
                 {"display_name": "myapi", "api_key": "key", "api_secret": "secret"},
             ]
-        }
+        },
+    )

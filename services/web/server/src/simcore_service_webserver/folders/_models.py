@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
@@ -17,7 +18,7 @@ from models_library.utils.common_validators import (
     null_or_none_str_to_none_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import Extra, Field, validator
+from pydantic import BeforeValidator, ConfigDict, Field
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -54,44 +55,35 @@ _FolderOrderQueryParams: type[RequestParameters] = create_ordering_query_model_c
 class FoldersListQueryParams(
     PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]  # type: ignore[misc, valid-type]
 ):
-    folder_id: FolderID | None = Field(
+    folder_id: Annotated[
+        FolderID | None, BeforeValidator(null_or_none_str_to_none_validator)
+    ] = Field(
         default=None,
         description="List the subfolders of this folder. By default, list the subfolders of the root directory (Folder ID is None).",
     )
-    workspace_id: WorkspaceID | None = Field(
+    workspace_id: Annotated[
+        WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)
+    ] = Field(
         default=None,
         description="List folders in specific workspace. By default, list in the user private workspace",
     )
 
-    class Config:
-        extra = Extra.forbid
-
-    # validators
-    _null_or_none_str_to_none_validator = validator(
-        "folder_id", allow_reuse=True, pre=True
-    )(null_or_none_str_to_none_validator)
-
-    _null_or_none_str_to_none_validator2 = validator(
-        "workspace_id", allow_reuse=True, pre=True
-    )(null_or_none_str_to_none_validator)
+    model_config = ConfigDict(extra="forbid")
 
 
 class FolderSearchQueryParams(
     PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]  # type: ignore[misc, valid-type]
 ):
-    text: str | None = Field(
+    text: Annotated[
+        str | None, BeforeValidator(empty_str_to_none_pre_validator)
+    ] = Field(
         default=None,
         description="Multi column full text search, across all folders and workspaces",
         max_length=100,
-        example="My Project",
+        examples=["My Project"],
     )
 
-    _empty_is_none = validator("text", allow_reuse=True, pre=True)(
-        empty_str_to_none_pre_validator
-    )
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class FolderTrashQueryParams(RemoveQueryParams):

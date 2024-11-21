@@ -162,7 +162,11 @@ def mocked_director_v0(
             ),
             name="service labels",
         ).respond(
-            json={"data": SimcoreServiceLabels.Config.schema_extra["examples"][0]}
+            json={
+                "data": SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
+            }
         )
         yield mock
 
@@ -395,9 +399,10 @@ async def test_get_stack_status_missing(
     mocked_dynamic_scheduler_events: None,
     mock_docker_api: None,
 ) -> None:
-    with pytest.raises(DynamicSidecarNotFoundError) as execinfo:
+    with pytest.raises(
+        DynamicSidecarNotFoundError, match=rf"{scheduler_data.node_uuid} not found"
+    ):
         await scheduler.get_stack_status(scheduler_data.node_uuid)
-    assert f"{scheduler_data.node_uuid} not found" in str(execinfo)
 
 
 async def test_get_stack_status_failing_sidecar(
@@ -498,7 +503,7 @@ async def test_mark_all_services_in_wallet_for_removal(
 ) -> None:
     for wallet_id in [WalletID(1), WalletID(2)]:
         for _ in range(2):
-            new_scheduler_data = scheduler_data.copy(deep=True)
+            new_scheduler_data = scheduler_data.model_copy(deep=True)
             new_scheduler_data.node_uuid = faker.uuid4(cast_to=None)
             new_scheduler_data.service_name = ServiceName(
                 f"fake_{new_scheduler_data.node_uuid}"
@@ -525,9 +530,9 @@ async def test_mark_all_services_in_wallet_for_removal(
         wallet_id = scheduler_data.wallet_info.wallet_id
         can_remove = scheduler_data.dynamic_sidecar.service_removal_state.can_remove
         match wallet_id:
-            case WalletID(1):
+            case 1:
                 assert can_remove is True
-            case WalletID(2):
+            case 2:
                 assert can_remove is False
             case _:
                 pytest.fail("unexpected case")

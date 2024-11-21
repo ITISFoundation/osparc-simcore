@@ -24,7 +24,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -39,9 +39,8 @@ from simcore_service_webserver.projects.models import ProjectDict
 
 @pytest.fixture
 def mock_service_resources() -> ServiceResourcesDict:
-    return parse_obj_as(
-        ServiceResourcesDict,
-        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
+    return TypeAdapter(ServiceResourcesDict).validate_python(
+        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
     )
 
 
@@ -255,7 +254,7 @@ def assert_get_same_project_caller() -> Callable:
     ) -> dict:
         # GET /v0/projects/{project_id} with a project owned by user
         url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
         data, error = await assert_status(resp, expected)
 
         if not error:
@@ -509,4 +508,4 @@ def workbench_db_column() -> dict[str, Any]:
 @pytest.fixture
 def workbench(workbench_db_column: dict[str, Any]) -> dict[NodeID, Node]:
     # convert to  model
-    return parse_obj_as(dict[NodeID, Node], workbench_db_column)
+    return TypeAdapter(dict[NodeID, Node]).validate_python(workbench_db_column)

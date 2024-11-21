@@ -96,7 +96,7 @@ async def periodic_task_result(
 
     async def _status_update() -> TaskStatus:
         task_status: TaskStatus = await client.get_task_status(task_id)
-        logger.debug("Task status %s", task_status.json())
+        logger.debug("Task status %s", task_status.model_dump_json())
         await progress_manager.update(
             task_id=task_id,
             message=task_status.task_progress.message,
@@ -118,7 +118,7 @@ async def periodic_task_result(
         logger.debug("%s, %s", f"{task_id=}", f"{result=}")
 
         yield result
-    except asyncio.TimeoutError as e:
+    except TimeoutError as e:
         await client.cancel_and_delete_task(task_id)
         raise TaskClientTimeoutError(
             task_id=task_id,

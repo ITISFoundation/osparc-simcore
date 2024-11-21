@@ -82,5 +82,5 @@ class StorageClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return S3Settings.parse_obj(unenvelope_or_raise_error(resp))
+            return S3Settings.model_validate(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

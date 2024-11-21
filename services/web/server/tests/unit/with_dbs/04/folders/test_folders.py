@@ -12,7 +12,7 @@ from unittest import mock
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.folders_v2 import FolderGet
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
@@ -63,7 +63,7 @@ async def test_folders_full_workflow(
     url = client.app.router["create_folder"].url_for()
     resp = await client.post(f"{url}", json={"name": "My first folder"})
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    added_folder = FolderGet.parse_obj(data)
+    added_folder = FolderGet.model_validate(data)
 
     # list user folders
     url = client.app.router["list_folders"].url_for()
@@ -81,7 +81,7 @@ async def test_folders_full_workflow(
     url = client.app.router["get_folder"].url_for(folder_id=f"{added_folder.folder_id}")
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got_folder = FolderGet.parse_obj(data)
+    got_folder = FolderGet.model_validate(data)
     assert got_folder.folder_id == added_folder.folder_id
     assert got_folder.name == added_folder.name
 
@@ -94,7 +94,7 @@ async def test_folders_full_workflow(
         json={"name": "My Second folder"},
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    updated_folder = FolderGet.parse_obj(data)
+    updated_folder = FolderGet.model_validate(data)
     assert updated_folder.folder_id == got_folder.folder_id
     assert updated_folder.name != got_folder.name
 
@@ -215,7 +215,7 @@ async def test_sub_folders_full_workflow(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert FolderGet.parse_obj(data)
+    assert FolderGet.model_validate(data)
 
     # list user root folders
     url = client.app.router["list_folders"].url_for().with_query({"folder_id": "null"})
@@ -332,7 +332,9 @@ async def test_project_listing_inside_of_private_folder(
         await update_or_insert_project_group(
             client.app,
             project_id=user_project["uuid"],
-            group_id=parse_obj_as(GroupID, new_logged_user["primary_gid"]),
+            group_id=TypeAdapter(GroupID).validate_python(
+                new_logged_user["primary_gid"]
+            ),
             read=True,
             write=True,
             delete=False,
@@ -413,7 +415,7 @@ async def test_folders_deletion(
     url = client.app.router["create_folder"].url_for()
     resp = await client.post(f"{url}", json={"name": "My first folder"})
     root_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    assert FolderGet.parse_obj(root_folder)
+    assert FolderGet.model_validate(root_folder)
 
     # create a subfolder folder
     url = client.app.router["create_folder"].url_for()

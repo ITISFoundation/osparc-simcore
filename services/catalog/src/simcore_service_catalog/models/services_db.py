@@ -1,24 +1,27 @@
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Annotated, Any
 
 from models_library.products import ProductName
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
 from models_library.services_metadata_editable import ServiceMetaDataEditable
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
 
 
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
-    # for a partial update all members must be Optional
-    classifiers: list[str] | None = Field(default_factory=list)
-    owner: PositiveInt | None
+    # for a partial update all Editable members must be Optional
+    name: str | None = None
+    thumbnail: Annotated[str, HttpUrl] | None = None
+    description: str | None = None
 
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    classifiers: list[str] | None = Field(default_factory=list)
+    owner: PositiveInt | None = None
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "example": {
                 "key": "simcore/services/dynamic/sim4life",
                 "version": "1.0.9",
@@ -49,7 +52,8 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
                     },
                 },
             }
-        }
+        },
+    )
 
 
 class ReleaseFromDB(BaseModel):
@@ -83,19 +87,18 @@ class ServiceWithHistoryFromDB(BaseModel):
 
 
 assert (  # nosec
-    set(ReleaseFromDB.__fields__)
+    set(ReleaseFromDB.model_fields)
     .difference({"compatibility_policy"})
-    .issubset(set(ServiceWithHistoryFromDB.__fields__))
+    .issubset(set(ServiceWithHistoryFromDB.model_fields))
 )
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
     gid: PositiveInt
     product_name: ProductName
-
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "example": {
                 "key": "simcore/services/dynamic/sim4life",
                 "version": "1.0.9",
@@ -106,4 +109,5 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
                 "created": "2021-01-18 12:46:57.7315",
                 "modified": "2021-01-19 12:45:00",
             }
-        }
+        },
+    )

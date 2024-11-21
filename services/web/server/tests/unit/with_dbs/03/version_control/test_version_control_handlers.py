@@ -32,7 +32,7 @@ async def assert_resp_page(
     assert resp.status == status.HTTP_200_OK, f"Got {await resp.text()}"
     body = await resp.json()
 
-    page = expected_page_cls.parse_obj(body)
+    page = expected_page_cls.model_validate(body)
     assert page.meta.total == expected_total
     assert page.meta.count == expected_count
     return page
@@ -42,7 +42,7 @@ async def assert_status_and_body(
     resp, expected_cls: HTTPStatus, expected_model: type[BaseModel]
 ) -> BaseModel:
     data, _ = await assert_status(resp, expected_cls)
-    return expected_model.parse_obj(data)
+    return expected_model.model_validate(data)
 
 
 @pytest.mark.acceptance_test()
@@ -59,7 +59,7 @@ async def test_workflow(
     # get existing project
     resp = await client.get(f"/{VX}/projects/{project_uuid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    project = Project.parse_obj(data)
+    project = Project.model_validate(data)
     assert project.uuid == UUID(project_uuid)
 
     #
@@ -78,7 +78,7 @@ async def test_workflow(
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     assert data
-    checkpoint1 = CheckpointApiModel.parse_obj(data)  # NOTE: this is NOT API model
+    checkpoint1 = CheckpointApiModel.model_validate(data)  # NOTE: this is NOT API model
 
     #
     # this project now has a repo
@@ -87,20 +87,20 @@ async def test_workflow(
         resp, expected_page_cls=Page[ProjectDict], expected_total=1, expected_count=1
     )
 
-    repo = RepoApiModel.parse_obj(page.data[0])
+    repo = RepoApiModel.model_validate(page.data[0])
     assert repo.project_uuid == UUID(project_uuid)
 
     # GET checkpoint with HEAD
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints/HEAD")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert CheckpointApiModel.parse_obj(data) == checkpoint1
+    assert CheckpointApiModel.model_validate(data) == checkpoint1
 
     # TODO: GET checkpoint with tag
     with pytest.raises(aiohttp.ClientResponseError) as excinfo:
         resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints/v1")
         resp.raise_for_status()
 
-    assert CheckpointApiModel.parse_obj(data) == checkpoint1
+    assert CheckpointApiModel.model_validate(data) == checkpoint1
 
     assert excinfo.value.status == status.HTTP_501_NOT_IMPLEMENTED
 
@@ -108,8 +108,8 @@ async def test_workflow(
     resp = await client.get(
         f"/{VX}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}"
     )
-    assert str(resp.url) == checkpoint1.url
-    assert CheckpointApiModel.parse_obj(data) == checkpoint1
+    assert f"{resp.url}" == f"{checkpoint1.url}"
+    assert CheckpointApiModel.model_validate(data) == checkpoint1
 
     # LIST checkpoints
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")
@@ -120,15 +120,14 @@ async def test_workflow(
         expected_count=1,
     )
 
-    assert CheckpointApiModel.parse_obj(page.data[0]) == checkpoint1
-
+    assert CheckpointApiModel.model_validate(page.data[0]) == checkpoint1
     # UPDATE checkpoint annotations
     resp = await client.patch(
         f"/{VX}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}",
         json={"message": "updated message", "tag": "Version 1"},
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    checkpoint1_updated = CheckpointApiModel.parse_obj(data)
+    checkpoint1_updated = CheckpointApiModel.model_validate(data)
 
     assert checkpoint1.id == checkpoint1_updated.id
     assert checkpoint1.checksum == checkpoint1_updated.checksum
@@ -142,7 +141,7 @@ async def test_workflow(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert (
         data["workbench"]
-        == project.dict(exclude_none=True, exclude_unset=True)["workbench"]
+        == project.model_dump(exclude_none=True, exclude_unset=True)["workbench"]
     )
 
     # do some changes in project
@@ -154,30 +153,30 @@ async def test_workflow(
         json={"tag": "v2", "message": "new commit"},
     )
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    checkpoint2 = CheckpointApiModel.parse_obj(data)
+    checkpoint2 = CheckpointApiModel.model_validate(data)
     assert checkpoint2.tags == ("v2",)
 
     # GET checkpoint with HEAD
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints/HEAD")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert CheckpointApiModel.parse_obj(data) == checkpoint2
+    assert CheckpointApiModel.model_validate(data) == checkpoint2
 
     # CHECKOUT
     resp = await client.post(
         f"/{VX}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}:checkout"
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert CheckpointApiModel.parse_obj(data) == checkpoint1_updated
+    assert CheckpointApiModel.model_validate(data) == checkpoint1_updated
 
     # GET checkpoint with HEAD
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints/HEAD")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert CheckpointApiModel.parse_obj(data) == checkpoint1_updated
+    assert CheckpointApiModel.model_validate(data) == checkpoint1_updated
 
     # get working copy
     resp = await client.get(f"/{VX}/projects/{project_uuid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    project_wc = Project.parse_obj(data)
+    project_wc = Project.model_validate(data)
     assert project_wc.uuid == UUID(project_uuid)
     assert project_wc != project
 
@@ -193,7 +192,7 @@ async def test_create_checkpoint_without_changes(
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     assert data
-    checkpoint1 = CheckpointApiModel.parse_obj(data)  # NOTE: this is NOT API model
+    checkpoint1 = CheckpointApiModel.model_validate(data)  # NOTE: this is NOT API model
 
     # CREATE checkpoint WITHOUT changes
     resp = await client.post(
@@ -203,7 +202,7 @@ async def test_create_checkpoint_without_changes(
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     assert data
-    checkpoint2 = CheckpointApiModel.parse_obj(data)  # NOTE: this is NOT API model
+    checkpoint2 = CheckpointApiModel.model_validate(data)  # NOTE: this is NOT API model
 
     assert (
         checkpoint1 == checkpoint2

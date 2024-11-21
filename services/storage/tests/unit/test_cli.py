@@ -29,7 +29,7 @@ def test_cli_settings_as_json(
     assert result.exit_code == os.EX_OK, result
     # reuse resulting json to build settings
     settings: dict = json.loads(result.stdout)
-    assert Settings.parse_obj(settings)
+    assert Settings(settings)
 
 
 def test_cli_settings_env_file(
@@ -41,9 +41,9 @@ def test_cli_settings_env_file(
     # reuse resulting env_file to build settings
     env_file = StringIO(result.stdout)
 
-    settings: dict = dotenv_values(stream=env_file)
+    settings = dotenv_values(stream=env_file)
     for key, value in settings.items():
         with contextlib.suppress(json.decoder.JSONDecodeError):
             settings[key] = json.loads(str(value))
 
-    assert Settings.parse_obj(settings)
+    assert Settings(settings)

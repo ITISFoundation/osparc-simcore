@@ -7,18 +7,16 @@
 
 
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 from models_library.projects_nodes import OutputsDict
 from models_library.projects_nodes_io import NodeIDStr
-from pydantic import BaseModel, ConstrainedInt, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 _logger = logging.getLogger(__name__)
 
 
-class ProgressInt(ConstrainedInt):
-    ge = 0
-    le = 100
+ProgressInt = Annotated[int, Field(ge=0, le=100)]
 
 
 class ExtractedResults(BaseModel):
@@ -31,9 +29,8 @@ class ExtractedResults(BaseModel):
     values: dict[NodeIDStr, OutputsDict] = Field(
         ..., description="Captured outputs per node"
     )
-
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 # sample with 2 computational services, 2 data sources (iterator+parameter) and 2 observers (probes)
                 "progress": {
@@ -57,6 +54,7 @@ class ExtractedResults(BaseModel):
                 },
             }
         }
+    )
 
 
 def extract_project_results(workbench: dict[str, Any]) -> ExtractedResults:
@@ -112,5 +110,5 @@ def extract_project_results(workbench: dict[str, Any]) -> ExtractedResults:
             values = node["outputs"]
             results[noid], labels[noid] = values, label
 
-    res = ExtractedResults(progress=progress, labels=labels, values=results)  # type: ignore[arg-type]
+    res = ExtractedResults(progress=progress, labels=labels, values=results)
     return res

@@ -87,9 +87,6 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
     #  NOTE: should go away with pydantic v2
     env_devel["TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT"] = "null"
     env_devel["TRACING_OPENTELEMETRY_COLLECTOR_PORT"] = "null"
-    for key in env_devel:
-        if key.endswith("_TRACING"):
-            env_devel[key] = "null"
 
     # DIRECTOR
     env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
@@ -113,13 +110,37 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
     # ensure we do not use the bucket of simcore or so
     env_devel["S3_BUCKET_NAME"] = "pytestbucket"
 
+    # ensure OpenTelemetry is not enabled
+    env_devel |= {
+        tracing_setting: "null"
+        for tracing_setting in (
+            "AGENT_TRACING",
+            "API_SERVER_TRACING",
+            "AUTOSCALING_TRACING",
+            "CATALOG_TRACING",
+            "CLUSTERS_KEEPER_TRACING",
+            "DATCORE_ADAPTER_TRACING",
+            "DIRECTOR_TRACING",
+            "DIRECTOR_V2_TRACING",
+            "DYNAMIC_SCHEDULER_TRACING",
+            "EFS_GUARDIAN_TRACING",
+            "INVITATIONS_TRACING",
+            "PAYMENTS_TRACING",
+            "RESOURCE_USAGE_TRACKER_TRACING",
+            "STORAGE_TRACING",
+            "WB_DB_EL_TRACING",
+            "WB_GC_TRACING",
+            "WEBSERVER_TRACING",
+        )
+    }
+
     return {key: value for key, value in env_devel.items() if value is not None}
 
 
 @pytest.fixture(scope="module")
 def env_file_for_docker_compose(
     temp_folder: Path,
-    env_vars_for_docker_compose: dict[str, str],
+    env_vars_for_docker_compose: EnvVarsDict,
     osparc_simcore_root_dir: Path,
 ) -> Iterator[Path]:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file

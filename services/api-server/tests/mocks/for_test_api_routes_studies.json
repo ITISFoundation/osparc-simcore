@@ -89,6 +89,9 @@
      "thumbnail": "",
      "creationDate": "2023-07-18T12:18:04.314Z",
      "lastChangeDate": "2023-07-20T20:02:42.535Z",
+     "workspaceId": 278,
+     "folderId": 123,
+     "trashedAt": "2023-07-20T20:02:55.535Z",
      "workbench": {
       "deea006c-a223-4103-b46e-7b677428de9f": {
        "key": "simcore/services/frontend/file-picker",
@@ -308,6 +311,9 @@
     "thumbnail": "",
     "creationDate": "2023-07-18T12:18:04.314Z",
     "lastChangeDate": "2023-07-20T20:04:05.607Z",
+    "workspaceId": 278,
+    "folderId": 123,
+    "trashedAt": "2023-07-20T20:04:10.607Z",
     "workbench": {
      "deea006c-a223-4103-b46e-7b677428de9f": {
       "key": "simcore/services/frontend/file-picker",

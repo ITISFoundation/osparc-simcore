@@ -18,7 +18,6 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingUnitGet,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -53,7 +52,7 @@ async def test_project_node_pricing_unit_user_role_access(
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     assert (
         resp.status == status.HTTP_401_UNAUTHORIZED
         if user_role == UserRole.ANONYMOUS
@@ -72,7 +71,7 @@ async def test_project_node_pricing_unit_user_project_access(
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data == None
 
@@ -81,7 +80,7 @@ async def test_project_node_pricing_unit_user_project_access(
         base_url = client.app.router["get_project_node_pricing_unit"].url_for(
             project_id=user_project["uuid"], node_id=node_id
         )
-        resp = await client.get(base_url)
+        resp = await client.get(f"{base_url}")
         _, errors = await assert_status(resp, status.HTTP_403_FORBIDDEN)
         assert errors
 
@@ -98,12 +97,12 @@ def mock_rut_api_responses(
     assert client.app
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
-    pricing_unit_get_base = parse_obj_as(
-        PricingUnitGet, PricingUnitGet.Config.schema_extra["examples"][0]
+    pricing_unit_get_base = PricingUnitGet.model_validate(
+        PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
     )
-    pricing_unit_get_1 = pricing_unit_get_base.copy()
+    pricing_unit_get_1 = pricing_unit_get_base.model_copy()
     pricing_unit_get_1.pricing_unit_id = _PRICING_UNIT_ID_1
-    pricing_unit_get_2 = pricing_unit_get_base.copy()
+    pricing_unit_get_2 = pricing_unit_get_base.model_copy()
     pricing_unit_get_2.pricing_unit_id = _PRICING_UNIT_ID_2
 
     aioresponses_mocker.get(

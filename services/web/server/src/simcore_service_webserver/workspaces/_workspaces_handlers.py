@@ -10,7 +10,6 @@ from models_library.api_schemas_webserver.workspaces import (
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -44,7 +43,7 @@ routes = web.RouteTableDef()
 @permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
 async def create_workspace(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     body_params = await parse_request_body_as(WorkspaceCreateBodyParams, request)
 
     workspace: WorkspaceGet = await _workspaces_api.create_workspace(
@@ -64,7 +63,7 @@ async def create_workspace(request: web.Request):
 @permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
 async def list_workspaces(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     query_params: WorkspacesListQueryParams = parse_request_query_parameters_as(
         WorkspacesListQueryParams, request
     )
@@ -80,10 +79,10 @@ async def list_workspaces(request: web.Request):
         filter_trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=parse_obj_as(OrderBy, query_params.order_by),
+        order_by=OrderBy.model_validate(query_params.order_by),
     )
 
-    page = Page[WorkspaceGet].parse_obj(
+    page = Page[WorkspaceGet].model_validate(
         paginate_data(
             chunk=workspaces.items,
             request_url=request.url,
@@ -93,7 +92,7 @@ async def list_workspaces(request: web.Request):
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
 
@@ -103,7 +102,7 @@ async def list_workspaces(request: web.Request):
 @permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
 async def get_workspace(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
     workspace: WorkspaceGet = await _workspaces_api.get_workspace(
@@ -124,7 +123,7 @@ async def get_workspace(request: web.Request):
 @permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
 async def replace_workspace(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
     body_params = await parse_request_body_as(WorkspaceReplaceBodyParams, request)
 
@@ -133,7 +132,7 @@ async def replace_workspace(request: web.Request):
         user_id=req_ctx.user_id,
         workspace_id=path_params.workspace_id,
         product_name=req_ctx.product_name,
-        **body_params.dict(),
+        **body_params.model_dump(),
     )
     return envelope_json_response(workspace)
 
@@ -146,7 +145,7 @@ async def replace_workspace(request: web.Request):
 @permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
 async def delete_workspace(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
     await _workspaces_api.delete_workspace(

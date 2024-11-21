@@ -7,10 +7,10 @@ from contextlib import suppress
 from typing import Any
 
 import httpx
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
-from models_library.utils.json_serialization import json_dumps
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
@@ -154,7 +154,7 @@ class DirectorApi:
         # NOTE: the fact that it returns a list of one element is a defect of the director API
         assert isinstance(data, list)  # nosec
         assert len(data) == 1  # nosec
-        return ServiceMetaDataPublished.parse_obj(data[0])
+        return ServiceMetaDataPublished.model_validate(data[0])
 
 
 async def setup_director(

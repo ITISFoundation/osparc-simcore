@@ -15,7 +15,7 @@ from httpx import (
     TransportError,
     codes,
 )
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from respx import MockRouter
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
@@ -78,12 +78,14 @@ async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
 
 
 @pytest.fixture
-def test_url() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
+def test_url() -> str:
+    url = TypeAdapter(AnyHttpUrl).validate_python("http://missing-host:1111")
+    return f"{url}"
 
 
 async def test_connection_error(
-    thick_client: FakeThickClient, test_url: AnyHttpUrl
+    thick_client: FakeThickClient,
+    test_url: str,
 ) -> None:
     with pytest.raises(ClientHttpError) as exe_info:
         await thick_client.get_provided_url(test_url)
@@ -94,7 +96,7 @@ async def test_connection_error(
 
 async def test_retry_on_errors(
     request_timeout: int,
-    test_url: AnyHttpUrl,
+    test_url: str,
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
     client = FakeThickClient(
@@ -112,7 +114,7 @@ async def test_retry_on_errors_by_error_type(
     error_class: type[RequestError],
     caplog_info_level: pytest.LogCaptureFixture,
     request_timeout: int,
-    test_url: AnyHttpUrl,
+    test_url: str,
 ) -> None:
     class ATestClient(BaseThinClient):
         # pylint: disable=no-self-use
@@ -185,12 +187,12 @@ async def test_methods_do_not_return_response(
 
 
 async def test_expect_state_decorator(
-    test_url: AnyHttpUrl,
+    test_url: str,
     respx_mock: MockRouter,
     request_timeout: int,
 ) -> None:
-    url_get_200_ok = f"{test_url}/ok"
-    get_wrong_state = f"{test_url}/wrong-state"
+    url_get_200_ok = f"{test_url}ok"
+    get_wrong_state = f"{test_url}wrong-state"
     error_status = codes.NOT_FOUND
 
     class ATestClient(BaseThinClient):

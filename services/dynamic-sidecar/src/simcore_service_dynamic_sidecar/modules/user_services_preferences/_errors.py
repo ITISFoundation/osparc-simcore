@@ -1,8 +1,8 @@
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
-class BaseServicesPreferencesError(PydanticErrorMixin, Exception):
-    code = "dynamic_sidecar.user_service_preferences"
+class BaseServicesPreferencesError(OsparcErrorMixin, Exception):
+    ...
 
 
 class DestinationIsNotADirectoryError(BaseServicesPreferencesError):

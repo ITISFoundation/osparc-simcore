@@ -7,7 +7,7 @@ from asyncio.subprocess import Process
 from typing import NamedTuple
 
 import psutil
-from models_library.error_codes import create_error_code
+from common_library.error_codes import create_error_code
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from ..modules.mounted_fs import MountedVolumes
@@ -74,7 +74,7 @@ async def async_command(
     try:
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         proc.terminate()
         _close_transport(proc)
 

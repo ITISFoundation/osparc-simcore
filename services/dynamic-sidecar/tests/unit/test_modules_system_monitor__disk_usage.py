@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
@@ -17,9 +18,8 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import (
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import RunID
 from models_library.users import UserID
-from models_library.utils.json_serialization import json_dumps
 from psutil._common import sdiskusage
-from pydantic import ByteSize
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
@@ -98,7 +98,7 @@ def _get_entry(mock: Mock, *, index: int) -> dict[Path, DiskUsage]:
 
 
 def _get_byte_size(byte_size_as_str: str) -> ByteSize:
-    return ByteSize.validate(byte_size_as_str)
+    return TypeAdapter(ByteSize).validate_python(byte_size_as_str)
 
 
 def _get_mocked_disk_usage(byte_size_as_str: str) -> DiskUsage:

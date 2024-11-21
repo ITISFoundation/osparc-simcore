@@ -1,5 +1,5 @@
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
-class BaseDynamicSchedulerError(PydanticErrorMixin, ValueError):
-    code = "simcore.service.dynamic.scheduler"
+class BaseDynamicSchedulerError(OsparcErrorMixin, ValueError):
+    ...

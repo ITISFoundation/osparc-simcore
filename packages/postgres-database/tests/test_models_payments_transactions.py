@@ -6,6 +6,7 @@
 
 import decimal
 from collections.abc import Callable
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -43,14 +44,25 @@ async def test_numerics_precission_and_scale(connection: SAConnection):
         assert float(got) == expected
 
 
+def _remove_not_required(data: dict[str, Any]) -> dict[str, Any]:
+    for to_remove in (
+        "completed_at",
+        "invoice_url",
+        "invoice_pdf_url",
+        "state",
+        "state_message",
+        "stripe_invoice_id",
+    ):
+        data.pop(to_remove)
+    return data
+
+
 @pytest.fixture
 def init_transaction(connection: SAConnection):
     async def _init(payment_id: str):
         # get payment_id from payment-gateway
-        values = random_payment_transaction(payment_id=payment_id)
-        # remove states
-        values.pop("state")
-        values.pop("completed_at")
+        values = _remove_not_required(random_payment_transaction(payment_id=payment_id))
+
         # init successful: set timestamp
         values["initiated_at"] = utcnow()
 
@@ -180,10 +192,8 @@ def create_fake_user_transactions(connection: SAConnection, user_id: int) -> Cal
     async def _go(expected_total=5):
         payment_ids = []
         for _ in range(expected_total):
-            values = random_payment_transaction(user_id=user_id)
-            # remove states
-            values.pop("state")
-            values.pop("completed_at")
+            values = _remove_not_required(random_payment_transaction(user_id=user_id))
+
             payment_id = await insert_init_payment_transaction(connection, **values)
             assert payment_id
             payment_ids.append(payment_id)

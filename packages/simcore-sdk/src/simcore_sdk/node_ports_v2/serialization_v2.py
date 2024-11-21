@@ -5,8 +5,8 @@ from pprint import pformat
 from typing import Any
 
 import pydantic
+from common_library.json_serialization import json_dumps
 from models_library.projects_nodes_io import NodeID
-from models_library.utils.json_serialization import json_dumps
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
 from settings_library.aws_s3_cli import AwsS3CliSettings
@@ -115,7 +115,7 @@ async def dump(nodeports: Nodeports) -> None:
         "dumping node_ports_v2 object %s",
         pformat(nodeports, indent=2),
     )
-    _nodeports_cfg = nodeports.dict(
+    _nodeports_cfg = nodeports.model_dump(
         include={"internal_inputs", "internal_outputs"},
         by_alias=True,
         exclude_unset=True,

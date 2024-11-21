@@ -121,15 +121,15 @@ def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
 
     settings = SMTPSettings.create_from_envs()
 
-    cfg = settings.dict(exclude_unset=True)
+    cfg = settings.model_dump(exclude_unset=True)
 
     for env_name in cfg:
         assert env_name in os.environ
 
-    cfg = settings.dict()
+    cfg = settings.model_dump()
 
     config = LoginOptions(**cfg)
-    print(config.json(indent=1))
+    print(config.model_dump_json(indent=1))
 
     assert not hasattr(config, "SMTP_SENDER"), "was deprecated and now we use product"
 
@@ -137,6 +137,6 @@ def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
 def test_product_login_settings_in_plugin_settings():
     # pylint: disable=no-member
     customizable_attributes = set(ProductLoginSettingsDict.__annotations__.keys())
-    settings_atrributes = set(LoginSettingsForProduct.__fields__.keys())
+    settings_atrributes = set(LoginSettingsForProduct.model_fields.keys())
 
     assert customizable_attributes.issubset(settings_atrributes)

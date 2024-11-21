@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import Any, ClassVar, Final, cast
+from typing import Final, Self, cast
 
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2Tags
 from fastapi import FastAPI
@@ -14,14 +14,16 @@ from models_library.basic_types import (
 from models_library.clusters import InternalClusterAuthentication
 from models_library.docker import DockerLabelKey
 from pydantic import (
+    AliasChoices,
     AnyUrl,
     Field,
     NonNegativeInt,
     PositiveInt,
-    parse_obj_as,
-    root_validator,
-    validator,
+    TypeAdapter,
+    field_validator,
+    model_validator,
 )
+from pydantic_settings import SettingsConfigDict
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -43,10 +45,9 @@ class AutoscalingSSMSettings(SSMSettings):
 
 
 class AutoscalingEC2Settings(EC2Settings):
-    class Config(EC2Settings.Config):
-        env_prefix = AUTOSCALING_ENV_PREFIX
-
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+    model_config = SettingsConfigDict(
+        env_prefix=AUTOSCALING_ENV_PREFIX,
+        json_schema_extra={
             "examples": [
                 {
                     f"{AUTOSCALING_ENV_PREFIX}EC2_ACCESS_KEY_ID": "my_access_key_id",
@@ -55,7 +56,8 @@ class AutoscalingEC2Settings(EC2Settings):
                     f"{AUTOSCALING_ENV_PREFIX}EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
                 }
             ],
-        }
+        },
+    )
 
 
 class EC2InstancesSettings(BaseCustomSettings):
@@ -96,7 +98,7 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
         ...,
-        min_items=1,
+        min_length=1,
         description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
         " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html), "
         " this is required to start a new EC2 instance",
@@ -133,7 +135,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         description="ARN the EC2 instance should be attached to (example: arn:aws:iam::XXXXX:role/NAME), to disable pass an empty string",
     )
 
-    @validator("EC2_INSTANCES_TIME_BEFORE_DRAINING")
+    @field_validator("EC2_INSTANCES_TIME_BEFORE_DRAINING")
     @classmethod
     def _ensure_draining_delay_time_is_in_range(
         cls, value: datetime.timedelta
@@ -144,7 +146,7 @@ class EC2InstancesSettings(BaseCustomSettings):
             value = datetime.timedelta(minutes=1)
         return value
 
-    @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
+    @field_validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
     def _ensure_termination_delay_time_is_in_range(
         cls, value: datetime.timedelta
@@ -155,14 +157,14 @@ class EC2InstancesSettings(BaseCustomSettings):
             value = datetime.timedelta(minutes=59)
         return value
 
-    @validator("EC2_INSTANCES_ALLOWED_TYPES")
+    @field_validator("EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def _check_valid_instance_names_and_not_empty(
         cls, value: dict[str, EC2InstanceBootSpecific]
     ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        parse_obj_as(list[InstanceTypeType], list(value))
+        TypeAdapter(list[InstanceTypeType]).validate_python(list(value))
 
         if not value:
             # NOTE: Field( ... , min_items=...) cannot be used to contraint number of iterms in a dict
@@ -226,41 +228,46 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
     AUTOSCALING_DEBUG: bool = Field(
-        default=False, description="Debug mode", env=["AUTOSCALING_DEBUG", "DEBUG"]
+        default=False,
+        description="Debug mode",
+        validation_alias=AliasChoices("AUTOSCALING_DEBUG", "DEBUG"),
     )
-    AUTOSCALING_REMOTE_DEBUG_PORT: PortInt = PortInt(3000)
+    AUTOSCALING_REMOTE_DEBUG_PORT: PortInt = 3000
 
     AUTOSCALING_LOGLEVEL: LogLevel = Field(
-        LogLevel.INFO, env=["AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        LogLevel.INFO,
+        validation_alias=AliasChoices("AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
     )
     AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=AliasChoices(
             "AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     AUTOSCALING_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
-        env=["AUTOSCALING_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        validation_alias=AliasChoices(
+            "AUTOSCALING_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
     AUTOSCALING_EC2_ACCESS: AutoscalingEC2Settings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     AUTOSCALING_SSM_ACCESS: AutoscalingSSMSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     AUTOSCALING_EC2_INSTANCES: EC2InstancesSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     AUTOSCALING_NODES_MONITORING: NodesMonitoringSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     AUTOSCALING_POLL_INTERVAL: datetime.timedelta = Field(
@@ -269,13 +276,21 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
-    AUTOSCALING_RABBITMQ: RabbitSettings | None = Field(auto_default_from_env=True)
+    AUTOSCALING_RABBITMQ: RabbitSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    AUTOSCALING_REDIS: RedisSettings = Field(auto_default_from_env=True)
+    AUTOSCALING_REDIS: RedisSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    AUTOSCALING_REGISTRY: RegistrySettings | None = Field(auto_default_from_env=True)
+    AUTOSCALING_REGISTRY: RegistrySettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    AUTOSCALING_DASK: DaskMonitoringSettings | None = Field(auto_default_from_env=True)
+    AUTOSCALING_DASK: DaskMonitoringSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     AUTOSCALING_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
@@ -286,7 +301,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "but a docker node label named osparc-services-ready is attached",
     )
     AUTOSCALING_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+        description="settings for opentelemetry tracing",
+        json_schema_extra={"auto_default_from_env": True},
     )
 
     AUTOSCALING_DOCKER_JOIN_DRAINED: bool = Field(
@@ -304,21 +320,20 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self):  # noqa: N802
         return self.AUTOSCALING_LOGLEVEL
 
-    @validator("AUTOSCALING_LOGLEVEL", pre=True)
+    @field_validator("AUTOSCALING_LOGLEVEL", mode="before")
     @classmethod
     def _valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
-    @root_validator()
-    @classmethod
-    def _exclude_both_dynamic_computational_mode(cls, values):
+    @model_validator(mode="after")
+    def exclude_both_dynamic_computational_mode(self) -> Self:
         if (
-            values.get("AUTOSCALING_DASK") is not None
-            and values.get("AUTOSCALING_NODES_MONITORING") is not None
+            self.AUTOSCALING_DASK is not None
+            and self.AUTOSCALING_NODES_MONITORING is not None
         ):
             msg = "Autoscaling cannot be set to monitor both computational and dynamic services (both AUTOSCALING_DASK and AUTOSCALING_NODES_MONITORING are currently set!)"
             raise ValueError(msg)
-        return values
+        return self
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:

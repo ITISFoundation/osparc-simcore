@@ -116,7 +116,7 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
         log_format_local_dev_enabled=settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
     )
-    _logger.debug(settings.json(indent=2))
+    _logger.debug(settings.model_dump_json(indent=2))
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
@@ -126,6 +126,7 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
     for name in _NOISY_LOGGERS:
         logging.getLogger(name).setLevel(quiet_level)
 
+    assert settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
         debug=settings.SC_BOOT_MODE.is_devel_mode(),
         title=PROJECT_NAME,

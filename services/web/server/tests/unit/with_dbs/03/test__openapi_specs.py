@@ -56,7 +56,7 @@ def app(app_environment: EnvVarsDict) -> web.Application:
     # - all plugins are setup but app is NOT started (i.e events are not triggered)
     #
     app_ = create_application()
-    print(get_application_settings(app_).json(indent=1))
+    print(get_application_settings(app_).model_dump_json(indent=1))
     return app_
 
 

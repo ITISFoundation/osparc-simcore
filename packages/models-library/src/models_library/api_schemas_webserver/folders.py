@@ -6,7 +6,7 @@ from models_library.folders import FolderID
 from models_library.projects_access import AccessRights
 from models_library.users import GroupID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
-from pydantic import Extra, PositiveInt, validator
+from pydantic import ConfigDict, PositiveInt, field_validator
 
 from ._base import InputSchema, OutputSchema
 
@@ -34,11 +34,10 @@ class CreateFolderBodyParams(InputSchema):
     description: str
     parent_folder_id: FolderID | None = None
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
-    _null_or_none_str_to_none_validator = validator(
-        "parent_folder_id", allow_reuse=True, pre=True
+    _null_or_none_str_to_none_validator = field_validator(
+        "parent_folder_id", mode="before"
     )(null_or_none_str_to_none_validator)
 
 
@@ -46,5 +45,4 @@ class PutFolderBodyParams(InputSchema):
     name: IDStr
     description: str
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")

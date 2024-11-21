@@ -5,9 +5,10 @@
 # type:ignore
 
 from enum import Enum
-from typing import Any
+from typing import Any, TypeAlias
 
-from pydantic import BaseModel, ConstrainedInt, Extra, Field, conint, constr
+from pydantic import BaseModel, ConfigDict, Field, RootModel, StringConstraints
+from typing_extensions import Annotated
 
 #  MODIFICATIONS -------------------------------------------------------------------------
 #
@@ -19,17 +20,14 @@ from pydantic import BaseModel, ConstrainedInt, Extra, Field, conint, constr
 # UserWarning: format of 'subnet_ip_address' not understood for 'string' - using default
 
 # port number range
-class PortInt(ConstrainedInt):
-    gt = 0
-    lt = 65535
+PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 
 
 # ----------------------------------------------------------------------------------------
 
 
 class Configuration(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     source: str | None = None
     target: str | None = None
@@ -39,8 +37,7 @@ class Configuration(BaseModel):
 
 
 class CredentialSpec(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     config: str | None = None
     file: str | None = None
@@ -54,31 +51,29 @@ class Condition(Enum):
 
 
 class DependsOn(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     condition: Condition
 
 
 class Extend(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     service: str
     file: str | None = None
 
 
 class Logging(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     driver: str | None = None
-    options: dict[constr(regex=r"^.+$"), str | float | None] | None = None
+    options: dict[
+        Annotated[str, StringConstraints(pattern=r"^.+$")], str | float | None
+    ] | None = None
 
 
 class Port(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     mode: str | None = None
     host_ip: str | None = None
@@ -96,8 +91,7 @@ class PullPolicy(Enum):
 
 
 class Secret1(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     source: str | None = None
     target: str | None = None
@@ -107,38 +101,33 @@ class Secret1(BaseModel):
 
 
 class Ulimit(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     hard: int
     soft: int
 
 
 class Bind(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     propagation: str | None = None
     create_host_path: bool | None = None
 
 
 class Volume2(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     nocopy: bool | None = None
 
 
 class Tmpfs(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
-    size: conint(ge=0) | str | None = None
+    size: Annotated[int, Field(ge=0)] | str | None = None
 
 
 class Volume1(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     type: str
     source: str | None = None
@@ -151,8 +140,7 @@ class Volume1(BaseModel):
 
 
 class Healthcheck(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     disable: bool | None = None
     interval: str | None = None
@@ -168,8 +156,7 @@ class Order(Enum):
 
 
 class RollbackConfig(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     parallelism: int | None = None
     delay: str | None = None
@@ -185,8 +172,7 @@ class Order1(Enum):
 
 
 class UpdateConfig(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     parallelism: int | None = None
     delay: str | None = None
@@ -197,16 +183,14 @@ class UpdateConfig(BaseModel):
 
 
 class Limits(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     cpus: float | str | None = None
     memory: str | None = None
 
 
 class RestartPolicy(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     condition: str | None = None
     delay: str | None = None
@@ -215,15 +199,13 @@ class RestartPolicy(BaseModel):
 
 
 class Preference(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     spread: str | None = None
 
 
 class Placement(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     constraints: list[str] | None = None
     preferences: list[Preference] | None = None
@@ -231,53 +213,49 @@ class Placement(BaseModel):
 
 
 class DiscreteResourceSpec(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     kind: str | None = None
     value: float | None = None
 
 
 class GenericResource(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     discrete_resource_spec: DiscreteResourceSpec | None = None
 
 
-class GenericResources(BaseModel):
-    __root__: list[GenericResource]
+class GenericResources(RootModel):
+    root: list[GenericResource]
 
 
 class ConfigItem(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     subnet: str | None = None
     ip_range: str | None = None
     gateway: str | None = None
-    aux_addresses: dict[constr(regex=r"^.+$"), str] | None = None
+    aux_addresses: dict[
+        Annotated[str, StringConstraints(pattern=r"^.+$")], str
+    ] | None = None
 
 
 class Ipam(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     driver: str | None = None
     config: list[ConfigItem] | None = None
-    options: dict[constr(regex=r"^.+$"), str] | None = None
+    options: dict[Annotated[str, StringConstraints(pattern=r"^.+$")], str] | None = None
 
 
 class External(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     name: str | None = None
 
 
 class External1(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     name: str | None = None
 
@@ -290,37 +268,39 @@ class External3(BaseModel):
     name: str | None = None
 
 
-class ListOfStrings(BaseModel):
-    __root__: list[str]
+class ListOfStrings(RootModel):
+    root: list[str]
 
 
-class ListOrDict(BaseModel):
-    __root__: (dict[constr(regex=r".+"), str | float | bool | None] | list[str])
+class ListOrDict(RootModel):
+    root: (
+        dict[
+            Annotated[str, StringConstraints(pattern=r".+")], str | float | bool | None
+        ]
+        | list[str]
+    )
 
 
 class BlkioLimit(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     path: str | None = None
     rate: int | str | None = None
 
 
 class BlkioWeight(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     path: str | None = None
     weight: int | None = None
 
 
-class Constraints(BaseModel):
-    __root__: Any
+class Constraints(RootModel):
+    root: Any = None
 
 
 class BuildItem(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     context: str | None = None
     dockerfile: str | None = None
@@ -335,8 +315,7 @@ class BuildItem(BaseModel):
 
 
 class BlkioConfig(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     device_read_bps: list[BlkioLimit] | None = None
     device_read_iops: list[BlkioLimit] | None = None
@@ -347,8 +326,7 @@ class BlkioConfig(BaseModel):
 
 
 class Network1(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     aliases: ListOfStrings | None = None
     ipv4_address: str | None = None
@@ -358,8 +336,7 @@ class Network1(BaseModel):
 
 
 class Device(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     capabilities: ListOfStrings | None = None
     count: str | int | None = None
@@ -368,17 +345,18 @@ class Device(BaseModel):
     options: ListOrDict | None = None
 
 
-class Devices(BaseModel):
-    __root__: list[Device]
+class Devices(RootModel):
+    root: list[Device]
 
 
 class Network(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     name: str | None = None
     driver: str | None = None
-    driver_opts: dict[constr(regex=r"^.+$"), str | float] | None = None
+    driver_opts: dict[
+        Annotated[str, StringConstraints(pattern=r"^.+$")], str | float
+    ] | None = None
     ipam: Ipam | None = None
     external: External | None = None
     internal: bool | None = None
@@ -388,32 +366,33 @@ class Network(BaseModel):
 
 
 class Volume(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     name: str | None = None
     driver: str | None = None
-    driver_opts: dict[constr(regex=r"^.+$"), str | float] | None = None
+    driver_opts: dict[
+        Annotated[str, StringConstraints(pattern=r"^.+$")], str | float
+    ] | None = None
     external: External1 | None = None
     labels: ListOrDict | None = None
 
 
 class Secret(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     name: str | None = None
     file: str | None = None
     external: External2 | None = None
     labels: ListOrDict | None = None
     driver: str | None = None
-    driver_opts: dict[constr(regex=r"^.+$"), str | float] | None = None
+    driver_opts: dict[
+        Annotated[str, StringConstraints(pattern=r"^.+$")], str | float
+    ] | None = None
     template_driver: str | None = None
 
 
 class ComposeSpecConfig(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     name: str | None = None
     file: str | None = None
@@ -422,13 +401,12 @@ class ComposeSpecConfig(BaseModel):
     template_driver: str | None = None
 
 
-class StringOrList(BaseModel):
-    __root__: str | ListOfStrings
+class StringOrList(RootModel):
+    root: str | ListOfStrings
 
 
 class Reservations(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     cpus: float | str | None = None
     memory: str | None = None
@@ -437,16 +415,14 @@ class Reservations(BaseModel):
 
 
 class Resources(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     limits: Limits | None = None
     reservations: Reservations | None = None
 
 
 class Deployment(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     mode: str | None = None
     endpoint_mode: str | None = None
@@ -460,8 +436,7 @@ class Deployment(BaseModel):
 
 
 class Service(BaseModel):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     deploy: Deployment | None = None
     build: str | BuildItem | None = None
@@ -472,8 +447,8 @@ class Service(BaseModel):
     command: str | list[str] | None = None
     configs: list[str | Configuration] | None = None
     container_name: str | None = None
-    cpu_count: conint(ge=0) | None = None
-    cpu_percent: conint(ge=0, le=100) | None = None
+    cpu_count: Annotated[int, Field(ge=0)] | None = None
+    cpu_percent: Annotated[int, Field(ge=0, le=100)] | None = None
     cpu_shares: float | str | None = None
     cpu_quota: float | str | None = None
     cpu_period: float | str | None = None
@@ -483,7 +458,10 @@ class Service(BaseModel):
     cpuset: str | None = None
     credential_spec: CredentialSpec | None = None
     depends_on: None | (
-        ListOfStrings | dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), DependsOn]
+        ListOfStrings
+        | dict[
+            Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9._-]+$")], DependsOn
+        ]
     ) = None
     device_cgroup_rules: ListOfStrings | None = None
     devices: list[str] | None = None
@@ -515,10 +493,14 @@ class Service(BaseModel):
     memswap_limit: float | str | None = None
     network_mode: str | None = None
     networks: None | (
-        ListOfStrings | dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Network1 | None]
+        ListOfStrings
+        | dict[
+            Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9._-]+$")],
+            Network1 | None,
+        ]
     ) = None
     oom_kill_disable: bool | None = None
-    oom_score_adj: conint(ge=-1000, le=1000) | None = None
+    oom_score_adj: Annotated[int, Field(ge=-1000, le=1000)] | None = None
     pid: str | None = None
     pids_limit: float | str | None = None
     platform: str | None = None
@@ -540,7 +522,9 @@ class Service(BaseModel):
     storage_opt: dict[str, Any] | None = None
     tmpfs: StringOrList | None = None
     tty: bool | None = None
-    ulimits: dict[constr(regex=r"^[a-z]+$"), int | Ulimit] | None = None
+    ulimits: dict[
+        Annotated[str, StringConstraints(pattern=r"^[a-z]+$")], int | Ulimit
+    ] | None = None
     user: str | None = None
     userns_mode: str | None = None
     volumes: list[str | Volume1] | None = None
@@ -553,15 +537,27 @@ class ComposeSpecification(BaseModel):
     The Compose file is a YAML file defining a multi-containers based application.
     """
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     version: str | None = Field(
         None,
         description="Version of the Compose specification used. Tools not implementing required version MUST reject the configuration file.",
     )
-    services: dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Service] | None = None
-    networks: dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Network] | None = None
-    volumes: dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Volume] | None = None
-    secrets: dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Secret] | None = None
-    configs: None | (dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), ComposeSpecConfig]) = None
+    services: dict[
+        Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9._-]+$")], Service
+    ] | None = None
+    networks: dict[
+        Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9._-]+$")], Network
+    ] | None = None
+    volumes: dict[
+        Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9._-]+$")], Volume
+    ] | None = None
+    secrets: dict[
+        Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9._-]+$")], Secret
+    ] | None = None
+    configs: None | (
+        dict[
+            Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9._-]+$")],
+            ComposeSpecConfig,
+        ]
+    ) = None

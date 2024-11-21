@@ -10,7 +10,7 @@ import httpx
 import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
-from pydantic import parse_file_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
@@ -45,8 +45,8 @@ def mocked_backend(
 
     captures = {
         c.name: c
-        for c in parse_file_as(
-            list[HttpApiCallCaptureModel], project_tests_dir / "mocks" / mock_name
+        for c in TypeAdapter(list[HttpApiCallCaptureModel]).validate_json(
+            Path(project_tests_dir / "mocks" / mock_name).read_text()
         )
     }
 
@@ -112,10 +112,10 @@ async def test_get_and_update_job_metadata(
                 "title": "Temperature",
                 "enabled": True,
             }
-        ).dict(),
+        ).model_dump(),
     )
     assert resp.status_code == status.HTTP_201_CREATED
-    job = Job.parse_obj(resp.json())
+    job = Job.model_validate(resp.json())
 
     # Get metadata
     resp = await client.get(
@@ -123,7 +123,7 @@ async def test_get_and_update_job_metadata(
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK
-    job_meta = JobMetadata.parse_obj(resp.json())
+    job_meta = JobMetadata.model_validate(resp.json())
 
     assert job_meta.metadata == {}
 
@@ -132,11 +132,11 @@ async def test_get_and_update_job_metadata(
     resp = await client.patch(
         f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}/metadata",
         auth=auth,
-        json=JobMetadataUpdate(metadata=my_metadata).dict(),
+        json=JobMetadataUpdate(metadata=my_metadata).model_dump(),
     )
     assert resp.status_code == status.HTTP_200_OK
 
-    job_meta = JobMetadata.parse_obj(resp.json())
+    job_meta = JobMetadata.model_validate(resp.json())
     assert job_meta.metadata == my_metadata
 
     # Get metadata after update
@@ -145,7 +145,7 @@ async def test_get_and_update_job_metadata(
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK
-    job_meta = JobMetadata.parse_obj(resp.json())
+    job_meta = JobMetadata.model_validate(resp.json())
 
     assert job_meta.metadata == my_metadata
 

@@ -52,7 +52,7 @@ class CompRunsRepository(BaseRepository):
             row: RowProxy | None = await result.first()
             if not row:
                 raise ComputationalRunNotFoundError
-            return CompRunsAtDB.from_orm(row)
+            return CompRunsAtDB.model_validate(row)
 
     async def list(
         self, filter_by_state: set[RunningState] | None = None
@@ -71,7 +71,7 @@ class CompRunsRepository(BaseRepository):
                     )
                 )
             ):
-                runs_in_db.append(CompRunsAtDB.from_orm(row))
+                runs_in_db.append(CompRunsAtDB.model_validate(row))
         return list(runs_in_db)
 
     async def create(
@@ -115,7 +115,7 @@ class CompRunsRepository(BaseRepository):
                     .returning(literal_column("*"))
                 )
                 row = await result.first()
-                return CompRunsAtDB.from_orm(row)
+                return CompRunsAtDB.model_validate(row)
         except ForeignKeyViolation as exc:
             raise ClusterNotFoundError(cluster_id=cluster_id) from exc
 
@@ -134,7 +134,7 @@ class CompRunsRepository(BaseRepository):
                 .returning(literal_column("*"))
             )
             row = await result.first()
-            return CompRunsAtDB.from_orm(row) if row else None
+            return CompRunsAtDB.model_validate(row) if row else None
 
     async def set_run_result(
         self,

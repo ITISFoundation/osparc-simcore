@@ -2,7 +2,10 @@ aiohappyeyeballs==2.4.0
     # via aiohttp
 aiohttp==3.10.5
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_aiohttp.in
@@ -20,7 +23,10 @@ attrs==24.2.0
     #   referencing
 certifi==2024.8.30
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -119,7 +125,10 @@ psycopg2-binary==2.9.9
     #   sqlalchemy
 pyyaml==6.0.2
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema-path
@@ -145,13 +154,19 @@ six==1.16.0
     #   rfc3339-validator
 sqlalchemy==1.4.54
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   aiopg
 urllib3==2.2.3
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests

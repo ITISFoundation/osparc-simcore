@@ -58,7 +58,7 @@ def rabbit_env_vars_dict(
 async def rabbit_settings(rabbit_env_vars_dict: EnvVarsDict) -> RabbitSettings:
     """Returns the settings of a rabbit service that is up and responsive"""
 
-    settings = RabbitSettings.parse_obj(rabbit_env_vars_dict)
+    settings = RabbitSettings.model_validate(rabbit_env_vars_dict)
     await wait_till_rabbit_responsive(settings.dsn)
     return settings
 

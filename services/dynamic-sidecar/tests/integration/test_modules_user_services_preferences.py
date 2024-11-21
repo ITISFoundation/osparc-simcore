@@ -14,7 +14,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from simcore_service_dynamic_sidecar.core.application import create_app
@@ -46,17 +46,19 @@ def dy_sidecar_user_preferences_path(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def service_key() -> ServiceKey:
-    return parse_obj_as(ServiceKey, "simcore/services/dynamic/test-service-34")
+    return TypeAdapter(ServiceKey).validate_python(
+        "simcore/services/dynamic/test-service-34"
+    )
 
 
 @pytest.fixture
 def service_version() -> ServiceVersion:
-    return parse_obj_as(ServiceVersion, "1.0.0")
+    return TypeAdapter(ServiceVersion).validate_python("1.0.0")
 
 
 @pytest.fixture
 def product_name() -> ProductName:
-    return parse_obj_as(ProductName, "osparc")
+    return TypeAdapter(ProductName).validate_python("osparc")
 
 
 @pytest.fixture

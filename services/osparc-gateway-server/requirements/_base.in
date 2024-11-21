@@ -7,4 +7,5 @@
 aiodocker
 async-timeout
 dask-gateway-server[local]
+pydantic-settings
 pydantic[email,dotenv]

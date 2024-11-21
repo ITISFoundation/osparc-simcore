@@ -132,7 +132,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
 ]
 
 _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING: dict[PreferenceName, PreferenceIdentifier] = {
-    p.get_preference_name(): p.__fields__["preference_identifier"].default
+    p.get_preference_name(): p.model_fields["preference_identifier"].default
     for p in ALL_FRONTEND_PREFERENCES
 }
 _PREFERENCE_IDENTIFIER_TO_NAME_MAPPING: dict[PreferenceIdentifier, PreferenceName] = {

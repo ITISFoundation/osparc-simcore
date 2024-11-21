@@ -1,10 +1,15 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
+
 import os
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import sqlalchemy as sa
 from moto.server import ThreadedMotoServer
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -24,26 +29,19 @@ _USER_ID = 1
 
 
 @pytest.fixture
-async def mocked_export(mocker: MockerFixture):
-    mock_export = mocker.patch(
+async def mocked_export(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
         "simcore_service_resource_usage_tracker.services.service_runs.ResourceTrackerRepository.export_service_runs_table_to_s3",
         autospec=True,
     )
 
-    return mock_export
-
 
 @pytest.fixture
-async def mocked_presigned_link(mocker: MockerFixture):
-    mock_presigned_link = mocker.patch(
+async def mocked_presigned_link(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
         "simcore_service_resource_usage_tracker.services.service_runs.SimcoreS3API.create_single_presigned_download_link",
-        return_value=parse_obj_as(
-            AnyUrl,
-            "https://www.testing.com/",
-        ),
+        return_value=TypeAdapter(AnyUrl).validate_python("https://www.testing.com/"),
     )
-
-    return mock_presigned_link
 
 
 @pytest.fixture
@@ -77,6 +75,6 @@ async def test_rpc_list_service_runs_which_was_billed(
         user_id=_USER_ID,
         product_name="osparc",
     )
-    assert isinstance(download_url, AnyUrl)
+    assert isinstance(download_url, AnyUrl)  # nosec
     assert mocked_export.called
     assert mocked_presigned_link.called

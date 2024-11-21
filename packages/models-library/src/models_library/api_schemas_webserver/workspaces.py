@@ -4,7 +4,7 @@ from typing import NamedTuple
 from models_library.basic_types import IDStr
 from models_library.users import GroupID
 from models_library.workspaces import WorkspaceID
-from pydantic import Extra, PositiveInt
+from pydantic import ConfigDict, PositiveInt
 
 from ..access_rights import AccessRights
 from ..users import UserID
@@ -34,8 +34,7 @@ class WorkspaceCreateBodyParams(InputSchema):
     description: str | None = None
     thumbnail: str | None = None
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class WorkspaceReplaceBodyParams(InputSchema):
@@ -43,5 +42,4 @@ class WorkspaceReplaceBodyParams(InputSchema):
     description: str | None = None
     thumbnail: str | None = None
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")

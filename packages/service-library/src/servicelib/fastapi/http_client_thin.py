@@ -5,9 +5,9 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from common_library.errors_classes import OsparcErrorMixin
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
-from pydantic.errors import PydanticErrorMixin
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from settings_library.tracing import TracingSettings
 from tenacity import RetryCallState
@@ -32,7 +32,7 @@ Exception hierarchy:
 """
 
 
-class BaseClientError(PydanticErrorMixin, Exception):
+class BaseClientError(OsparcErrorMixin, Exception):
     """Used as based for all the raised errors"""
 
     msg_template: str = "{message}"

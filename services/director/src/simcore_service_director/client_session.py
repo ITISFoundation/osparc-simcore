@@ -1,6 +1,6 @@
 from aiohttp import ClientSession, ClientTimeout
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from models_library.utils.json_serialization import json_dumps
 from servicelib.utils import (
     get_http_client_request_aiohttp_connect_timeout,
     get_http_client_request_aiohttp_sock_connect_timeout,

@@ -48,7 +48,7 @@ def test_exclusive_min_openapi_issue(app: FastAPI):
 
 def test_overriding_openapi_method(app: FastAPI):
     assert not hasattr(app, "_original_openapi")
-    assert app.openapi.__doc__ is None
+    # assert app.openapi.__doc__ is None # PC why was this set to check that it is none? it's coming from the base fastapi applicaiton and now they provide some docs
 
     override_fastapi_openapi_method(app)
 

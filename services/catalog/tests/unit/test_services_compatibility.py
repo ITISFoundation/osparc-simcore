@@ -160,9 +160,10 @@ def test_get_latest_compatible_version(versions_history: list[Version]):
 
 def _create_as(cls, **overrides):
     kwargs = {
-        "deprecated": None,
-        "created": arrow.now().datetime,
         "compatibility_policy": None,
+        "created": arrow.now().datetime,
+        "deprecated": None,
+        "version_display": None,
     }
     kwargs.update(overrides)
     return cls(**kwargs)
@@ -265,7 +266,7 @@ async def test_evaluate_service_compatibility_map_with_deprecated_versions(
 ):
     service_release_history = [
         _create_as(ReleaseFromDB, version="1.0.0"),
-        _create_as(ReleaseFromDB, version="1.0.1", deprecated=True),
+        _create_as(ReleaseFromDB, version="1.0.1", deprecated=arrow.now().datetime),
         _create_as(ReleaseFromDB, version="1.2.0"),
         _create_as(ReleaseFromDB, version="1.2.5"),
     ]

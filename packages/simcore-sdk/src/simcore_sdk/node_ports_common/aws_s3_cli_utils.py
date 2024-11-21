@@ -1,7 +1,7 @@
 import logging
 import re
 
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 
@@ -35,5 +35,5 @@ class SyncAwsCliS3ProgressLogParser(BaseLogParser):
         _logger.debug("received logs: %s", logs)
         with log_catch(_logger, reraise=False):
             if _size := _parse_size(logs):
-                _bytes = parse_obj_as(ByteSize, _size)
+                _bytes = TypeAdapter(ByteSize).validate_python(_size)
                 await self.progress_bar.set_(_bytes)

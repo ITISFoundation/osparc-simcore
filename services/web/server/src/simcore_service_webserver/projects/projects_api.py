@@ -22,6 +22,7 @@ from typing import Any, Final, cast
 from uuid import UUID, uuid4
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
@@ -60,10 +61,9 @@ from models_library.services_resources import (
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID, UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from models_library.workspaces import UserWorkspaceAccessRightsDB
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -216,10 +216,11 @@ async def get_project_for_user(
             )
         )
         project["accessRights"] = {
-            gid: access.dict() for gid, access in workspace_db.access_rights.items()
+            f"{gid}": access.model_dump()
+            for gid, access in workspace_db.access_rights.items()
         }
 
-    Project.parse_obj(project)  # NOTE: only validates
+    Project.model_validate(project)  # NOTE: only validates
     return project
 
 
@@ -379,7 +380,9 @@ async def _get_default_pricing_and_hardware_info(
 _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[
     float
 ] = 0.1  # NOTE: machines always have less available RAM than advertised
-_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = parse_obj_as(ByteSize, "1GiB")
+_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
+    "1GiB"
+)
 _CPUS_SAFE_MARGIN: Final[float] = 1.4
 _MIN_NUM_CPUS: Final[float] = 0.5
 
@@ -636,8 +639,8 @@ async def _start_dynamic_service(
                 )
                 if user_default_wallet_preference is None:
                     raise UserDefaultWalletNotFoundError(uid=user_id)
-                project_wallet_id = parse_obj_as(
-                    WalletID, user_default_wallet_preference.value
+                project_wallet_id = TypeAdapter(WalletID).validate_python(
+                    user_default_wallet_preference.value
                 )
                 await connect_wallet_to_project(
                     request.app,
@@ -793,7 +796,7 @@ async def add_project_node(
         ProjectNodeCreate(
             node_id=node_uuid, required_resources=jsonable_encoder(default_resources)
         ),
-        Node.parse_obj(
+        Node.model_validate(
             {
                 "key": service_key,
                 "version": service_version,
@@ -839,7 +842,7 @@ async def start_project_node(
     workbench = project.get("workbench", {})
     if not workbench.get(f"{node_id}"):
         raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
-    node_details = Node.construct(**workbench[f"{node_id}"])
+    node_details = Node.model_construct(**workbench[f"{node_id}"])
 
     await _start_dynamic_service(
         request,
@@ -1419,7 +1422,7 @@ async def _get_project_lock_state(
             )
             return ProjectLocked(
                 value=False,
-                owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),  # type: ignore[arg-type]
+                owner=Owner(user_id=next(iter(set_user_ids)), **usernames[0]),
                 status=ProjectStatus.OPENED,
             )
     # the project is opened in another tab or browser, or by another user, both case resolves to the project being locked, and opened
@@ -1430,7 +1433,7 @@ async def _get_project_lock_state(
     )
     return ProjectLocked(
         value=True,
-        owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),  # type: ignore[arg-type]
+        owner=Owner(user_id=next(iter(set_user_ids)), **usernames[0]),
         status=ProjectStatus.OPENED,
     )
 
@@ -1484,7 +1487,7 @@ async def add_project_states_for_user(
                 if prj_node is None:
                     continue
                 node_state_dict = json.loads(
-                    node_state.json(by_alias=True, exclude_unset=True)
+                    node_state.model_dump_json(by_alias=True, exclude_unset=True)
                 )
                 prj_node.setdefault("state", {}).update(node_state_dict)
                 prj_node_progress = node_state_dict.get("progress", None) or 0
@@ -1492,7 +1495,7 @@ async def add_project_states_for_user(
 
     project["state"] = ProjectState(
         locked=lock_state, state=ProjectRunningState(value=running_state)
-    ).dict(by_alias=True, exclude_unset=True)
+    ).model_dump(by_alias=True, exclude_unset=True)
     return project
 
 
@@ -1510,8 +1513,12 @@ async def is_service_deprecated(
         app, user_id, service_key, service_version, product_name
     )
     if deprecation_date := service.get("deprecated"):
-        deprecation_date = parse_obj_as(datetime.datetime, deprecation_date)
-        deprecation_date_bool: bool = datetime.datetime.utcnow() > deprecation_date
+        deprecation_date_bool: bool = datetime.datetime.now(
+            datetime.UTC
+        ) > datetime.datetime.fromisoformat(deprecation_date).replace(
+            tzinfo=datetime.UTC
+        )
+
         return deprecation_date_bool
     return False
 
@@ -1546,8 +1553,8 @@ async def get_project_node_resources(
     db = ProjectDBAPI.get_from_app_context(app)
     try:
         project_node = await db.get_project_node(project_id, node_id)
-        node_resources = parse_obj_as(
-            ServiceResourcesDict, project_node.required_resources
+        node_resources = TypeAdapter(ServiceResourcesDict).validate_python(
+            project_node.required_resources
         )
         if not node_resources:
             # get default resources
@@ -1576,8 +1583,8 @@ async def update_project_node_resources(
     try:
         # validate the resource are applied to the same container names
         current_project_node = await db.get_project_node(project_id, node_id)
-        current_resources = parse_obj_as(
-            ServiceResourcesDict, current_project_node.required_resources
+        current_resources = TypeAdapter(ServiceResourcesDict).validate_python(
+            current_project_node.required_resources
         )
         if not current_resources:
             # NOTE: this can happen after the migration
@@ -1597,7 +1604,9 @@ async def update_project_node_resources(
             required_resources=jsonable_encoder(resources),
             check_update_allowed=True,
         )
-        return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
+        return TypeAdapter(ServiceResourcesDict).validate_python(
+            project_node.required_resources
+        )
     except ProjectNodesNodeNotFoundError as exc:
         raise NodeNotFoundError(
             project_uuid=f"{project_id}", node_uuid=f"{node_id}"
@@ -1866,4 +1875,4 @@ async def get_project_inactivity(
             project_settings.PROJECTS_INACTIVITY_INTERVAL.total_seconds()
         ),
     )
-    return parse_obj_as(GetProjectInactivityResponse, project_inactivity)
+    return GetProjectInactivityResponse.model_validate(project_inactivity)

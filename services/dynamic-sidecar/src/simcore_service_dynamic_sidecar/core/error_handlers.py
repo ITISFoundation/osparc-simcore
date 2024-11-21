@@ -12,7 +12,7 @@ async def http_error_handler(
 ) -> JSONResponse:
     return JSONResponse(
         content=jsonable_encoder({"errors": [exception.message]}),
-        status_code=exception.status_code,
+        status_code=exception.status_code,  # type:ignore[attr-defined]
     )
 
 

@@ -2,7 +2,14 @@ from datetime import datetime
 from enum import auto
 from typing import TypeAlias
 
-from pydantic import BaseModel, Field, PositiveInt, validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    ValidationInfo,
+    field_validator,
+)
 
 from .access_rights import AccessRights
 from .users import GroupID, UserID
@@ -21,10 +28,10 @@ class WorkspaceQuery(BaseModel):
     workspace_scope: WorkspaceScope
     workspace_id: PositiveInt | None = None
 
-    @validator("workspace_id", pre=True, always=True)
+    @field_validator("workspace_id", mode="before")
     @classmethod
-    def validate_workspace_id(cls, value, values):
-        scope = values.get("workspace_scope")
+    def validate_workspace_id(cls, value, info: ValidationInfo):
+        scope = info.data.get("workspace_scope")
         if scope == WorkspaceScope.SHARED and value is None:
             msg = f"workspace_id must be provided when workspace_scope is SHARED. Got {scope=}, {value=}"
             raise ValueError(msg)
@@ -59,16 +66,14 @@ class WorkspaceDB(BaseModel):
     trashed: datetime | None
     trashed_by: UserID | None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserWorkspaceAccessRightsDB(WorkspaceDB):
     my_access_rights: AccessRights
     access_rights: dict[GroupID, AccessRights]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkspaceUpdateDB(BaseModel):

@@ -232,7 +232,6 @@ qx.Class.define("osparc.study.StudyOptions", {
             center: true,
             enabled: false,
           });
-          osparc.utils.Utils.setIdToWidget(control, "openWithResources");
           this.getChildControl("buttons-layout").addAt(control, 1);
           break;
       }
@@ -284,7 +283,13 @@ qx.Class.define("osparc.study.StudyOptions", {
     __evaluateOpenButton: function() {
       const hasTitle = Boolean(this.getChildControl("title-field").getValue());
       const walletSelected = Boolean(this.getChildControl("wallet-selector").getSelection().length);
-      this.getChildControl("open-button").setEnabled(hasTitle && walletSelected);
+      const openButton = this.getChildControl("open-button");
+      openButton.setEnabled(hasTitle && walletSelected);
+      if (hasTitle && walletSelected) {
+        osparc.utils.Utils.setIdToWidget(openButton, "openWithResources");
+      } else {
+        osparc.utils.Utils.removeIdAttribute(openButton);
+      }
     },
 
     __buildLayout: function() {

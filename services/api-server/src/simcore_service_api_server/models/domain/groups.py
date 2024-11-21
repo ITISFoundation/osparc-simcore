@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 
 
 class UsersGroup(BaseModel):
-    gid: str
+    gid: str = Field(..., coerce_numbers_to_str=True)
     label: str
     description: str | None = None
 

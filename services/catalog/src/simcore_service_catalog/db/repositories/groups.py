@@ -3,7 +3,7 @@ from typing import cast
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import GroupAtDB
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 
 from ...exceptions.errors import UninitializedGroupError
@@ -15,7 +15,7 @@ class GroupsRepository(BaseRepository):
     async def list_user_groups(self, user_id: int) -> list[GroupAtDB]:
         async with self.db_engine.connect() as conn:
             return [
-                GroupAtDB.from_orm(row)
+                GroupAtDB.model_validate(row)
                 async for row in await conn.stream(
                     sa.select(groups)
                     .select_from(
@@ -66,7 +66,7 @@ class GroupsRepository(BaseRepository):
             email = await conn.scalar(
                 sa.select(users.c.email).where(users.c.primary_gid == gid)
             )
-            return cast(LowerCaseEmailStr, f"{email}") if email else None
+            return email or None
 
     async def list_user_emails_from_gids(
         self, gids: set[PositiveInt]
@@ -79,7 +79,7 @@ class GroupsRepository(BaseRepository):
                 )
             ):
                 service_owners[row[users.c.primary_gid]] = (
-                    parse_obj_as(LowerCaseEmailStr, row[users.c.email])
+                    TypeAdapter(LowerCaseEmailStr).validate_python(row[users.c.email])
                     if row[users.c.email]
                     else None
                 )

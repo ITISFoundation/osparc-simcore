@@ -17,7 +17,7 @@ from models_library.api_schemas_storage import FileUploadSchema
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.faker_factories import random_project, random_user
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings, S3Provider
@@ -80,7 +80,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[str]:
 
 @pytest.fixture(scope="module")
 def node_uuid() -> NodeIDStr:
-    return NodeIDStr(f"{uuid4()}")
+    return TypeAdapter(NodeIDStr).validate_python(f"{uuid4()}")
 
 
 @pytest.fixture(scope="session")
@@ -94,7 +94,7 @@ def create_valid_file_uuid(
 ) -> Callable[[str, Path], SimcoreS3FileID]:
     def _create(key: str, file_path: Path) -> SimcoreS3FileID:
         clean_path = Path(f"{project_id}/{node_uuid}/{key}/{file_path.name}")
-        return parse_obj_as(SimcoreS3FileID, f"{clean_path}")
+        return TypeAdapter(SimcoreS3FileID).validate_python(f"{clean_path}")
 
     return _create
 
@@ -142,7 +142,7 @@ def create_store_link(
         async with ClientSession() as session:
             async with session.put(url) as resp:
                 resp.raise_for_status()
-                presigned_links_enveloped = Envelope[FileUploadSchema].parse_obj(
+                presigned_links_enveloped = Envelope[FileUploadSchema].model_validate(
                     await resp.json()
                 )
             assert presigned_links_enveloped.data
@@ -156,7 +156,7 @@ def create_store_link(
                 "Content-Type": "application/binary",
             }
             async with session.put(
-                link, data=file_path.read_bytes(), headers=extra_hdr
+                f"{link}", data=file_path.read_bytes(), headers=extra_hdr
             ) as resp:
                 resp.raise_for_status()
 

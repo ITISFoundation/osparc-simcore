@@ -192,7 +192,7 @@ typing-extensions==4.12.2
     #   -c requirements/_base.txt
     #   mypy
     #   sqlalchemy2-stubs
-urllib3==2.2.1
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt

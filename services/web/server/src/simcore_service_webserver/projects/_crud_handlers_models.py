@@ -4,7 +4,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 """
 
-from typing import Any
+from typing import Annotated, Self
 
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
@@ -23,7 +23,14 @@ from models_library.utils.common_validators import (
     null_or_none_str_to_none_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, Extra, Field, parse_obj_as, root_validator, validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    field_validator,
+    model_validator,
+)
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_PARENT_NODE_ID,
@@ -54,22 +61,16 @@ class ProjectCreateHeaders(BaseModel):
         alias=X_SIMCORE_PARENT_NODE_ID,
     )
 
-    @root_validator
-    @classmethod
-    def check_parent_valid(cls, values: dict[str, Any]) -> dict[str, Any]:
-        if (
-            values.get("parent_project_uuid") is None
-            and values.get("parent_node_id") is not None
-        ) or (
-            values.get("parent_project_uuid") is not None
-            and values.get("parent_node_id") is None
+    @model_validator(mode="after")
+    def check_parent_valid(self) -> Self:
+        if (self.parent_project_uuid is None and self.parent_node_id is not None) or (
+            self.parent_project_uuid is not None and self.parent_node_id is None
         ):
             msg = "Both parent_project_uuid and parent_node_id must be set or both null or both unset"
             raise ValueError(msg)
-        return values
+        return self
 
-    class Config:
-        allow_population_by_field_name = False
+    model_config = ConfigDict(populate_by_name=False)
 
 
 class ProjectCreateParams(BaseModel):
@@ -89,9 +90,7 @@ class ProjectCreateParams(BaseModel):
         default=False,
         description="Enables/disables hidden flag. Hidden projects are by default unlisted",
     )
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class ProjectFilters(Filters):
@@ -124,7 +123,7 @@ class ProjectsListExtraQueryParams(RequestParameters):
         default=None,
         description="Multi column full text search",
         max_length=100,
-        example="My Project",
+        examples=["My Project"],
     )
     folder_id: FolderID | None = Field(
         default=None,
@@ -135,19 +134,19 @@ class ProjectsListExtraQueryParams(RequestParameters):
         description="Filter projects in specific workspace. Default filtering is a private workspace.",
     )
 
-    @validator("search", pre=True)
+    @field_validator("search", mode="before")
     @classmethod
     def search_check_empty_string(cls, v):
         if not v:
             return None
         return v
 
-    _null_or_none_str_to_none_validator = validator(
-        "folder_id", allow_reuse=True, pre=True
-    )(null_or_none_str_to_none_validator)
+    _null_or_none_str_to_none_validator = field_validator("folder_id", mode="before")(
+        null_or_none_str_to_none_validator
+    )
 
-    _null_or_none_str_to_none_validator2 = validator(
-        "workspace_id", allow_reuse=True, pre=True
+    _null_or_none_str_to_none_validator2 = field_validator(
+        "workspace_id", mode="before"
     )(null_or_none_str_to_none_validator)
 
 
@@ -169,15 +168,18 @@ class ProjectSearchExtraQueryParams(PageQueryParameters):
         default=None,
         description="Multi column full text search, across all folders and workspaces",
         max_length=100,
-        example="My Project",
+        examples=["My Project"],
     )
-    tag_ids: str | None = Field(
-        default=None,
-        description="Search by tag ID (multiple tag IDs may be provided separated by column)",
-        example="1,3",
-    )
+    tag_ids: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Search by tag ID (multiple tag IDs may be provided separated by column)",
+            examples=["1,3"],
+        ),
+    ]
 
-    _empty_is_none = validator("text", allow_reuse=True, pre=True)(
+    _empty_is_none = field_validator("text", mode="before")(
         empty_str_to_none_pre_validator
     )
 
@@ -191,7 +193,7 @@ class ProjectsSearchQueryParams(
             if self.tag_ids:
                 tag_ids_list = list(map(int, self.tag_ids.split(",")))
                 # Validate that the tag_ids_list is indeed a list of integers
-                parse_obj_as(list[int], tag_ids_list)
+                TypeAdapter(list[int]).validate_python(tag_ids_list)
             else:
                 tag_ids_list = []
         except ValueError as exc:

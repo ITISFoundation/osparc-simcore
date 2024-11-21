@@ -7,6 +7,7 @@
 
 # NOTE: These input-requirements under packages are tested using latest updates
 # NOTE: Make sure these packages are added in setup.install_requires
+--requirement ../../../packages/common-library/requirements/_base.in
 --requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/postgres-database/requirements/_base.in
 # service-library[fastapi]

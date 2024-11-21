@@ -89,7 +89,7 @@ class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attrib
 
     last_state_change: float = Field(
         default_factory=lambda: arrow.utcnow().timestamp(),
-        metadata={"description": "keeps track when the current_state was last updated"},
+        description="keeps track when the current_state was last updated",
     )
 
     #############################
@@ -131,7 +131,9 @@ class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attrib
     #####################
 
     def to_bytes(self) -> bytes:
-        result: bytes = umsgpack.packb(self.dict(), ext_handlers=_PACKB_EXTENSION_TYPES)
+        result: bytes = umsgpack.packb(
+            self.model_dump(), ext_handlers=_PACKB_EXTENSION_TYPES
+        )
         return result
 
     @classmethod

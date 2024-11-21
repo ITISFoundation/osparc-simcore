@@ -293,7 +293,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         return Client(
             app=self._app,
             async_client=self._async_client,
-            base_url=dynamic_sidecar_endpoint,
+            base_url=f"{dynamic_sidecar_endpoint}",
         )
 
     async def _await_for_result(
@@ -358,7 +358,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         result: Any | None = await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT.total_seconds(),
             _debug_progress_callback,
         )
         assert isinstance(result, int)  # nosec
@@ -392,7 +392,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         result: Any | None = await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT.total_seconds(),
             progress_callback,
         )
         assert isinstance(result, int)  # nosec
@@ -411,7 +411,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         transferred_bytes = await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT.total_seconds(),
             _debug_progress_callback,
         )
         return transferred_bytes or 0
@@ -429,7 +429,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         result: Any | None = await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT.total_seconds(),
             _debug_progress_callback,
         )
         assert isinstance(result, int)  # nosec
@@ -448,7 +448,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
-            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT.total_seconds(),
             progress_callback,
         )
 
@@ -495,7 +495,9 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             dynamic_sidecar_endpoint
         )
         decoded_response = response.json()
-        return ActivityInfo.parse_obj(decoded_response) if decoded_response else None
+        return (
+            ActivityInfo.model_validate(decoded_response) if decoded_response else None
+        )
 
     async def free_reserved_disk_space(
         self, dynamic_sidecar_endpoint: AnyHttpUrl

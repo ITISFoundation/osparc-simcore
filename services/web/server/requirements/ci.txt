@@ -14,6 +14,7 @@
 --requirement _tools.txt
 
 # installs this repo's packages
+simcore-common-library @ ../../../packages/common-library
 simcore-models-library @ ../../../packages/models-library
 simcore-postgres-database @ ../../../packages/postgres-database
 simcore-settings-library @ ../../../packages/settings-library

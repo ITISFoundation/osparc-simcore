@@ -291,6 +291,6 @@ def test_merge_service_resources_with_user_specs(
     assert all(key in merged_resources for key in expected_resources)
     for resource_key, resource_value in merged_resources.items():
         # NOTE: so that float values are compared correctly
-        assert resource_value.dict() == pytest.approx(
-            expected_resources[resource_key].dict()
+        assert resource_value.model_dump() == pytest.approx(
+            expected_resources[resource_key].model_dump()
         )

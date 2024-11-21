@@ -22,7 +22,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
-    message = WalletCreditsLimitReachedMessage.parse_raw(data)
+    message = WalletCreditsLimitReachedMessage.model_validate_json(data)
 
     scheduler: "DynamicSidecarsScheduler" = app.state.dynamic_sidecar_scheduler  # type: ignore[name-defined] # noqa: F821
     settings: AppSettings = app.state.settings
@@ -81,7 +81,7 @@ def setup(app: FastAPI) -> None:
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     if not hasattr(app.state, "rabbitmq_client"):
         msg = "RabbitMQ client is not available. Please check the configuration."
-        raise ConfigurationError(msg)
+        raise ConfigurationError(msg=msg)
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 
@@ -90,5 +90,5 @@ def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
         msg = (
             "RabbitMQ client for RPC is not available. Please check the configuration."
         )
-        raise ConfigurationError(msg)
+        raise ConfigurationError(msg=msg)
     return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)

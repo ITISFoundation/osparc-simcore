@@ -1,17 +1,21 @@
+import json
 import logging
 import os
 from collections.abc import Callable
+from enum import Enum
 from pprint import pformat
 from typing import Any
 
 import rich
 import typer
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from pydantic import ValidationError
-from pydantic.env_settings import BaseSettings
+from pydantic_core import to_jsonable_python
+from pydantic_settings import BaseSettings
 
 from ._constants import HEADER_STR
 from .base import BaseCustomSettings
-from .utils_encoders import create_json_encoder_wo_secrets
 
 
 def print_as_envfile(
@@ -24,14 +28,15 @@ def print_as_envfile(
 ):
     exclude_unset = pydantic_export_options.get("exclude_unset", False)
 
-    for field in settings_obj.__fields__.values():
-        auto_default_from_env = field.field_info.extra.get(
-            "auto_default_from_env", False
+    for name, field in settings_obj.model_fields.items():
+        auto_default_from_env = (
+            field.json_schema_extra is not None
+            and field.json_schema_extra.get("auto_default_from_env", False)
         )
 
-        value = getattr(settings_obj, field.name)
+        value = getattr(settings_obj, name)
 
-        if exclude_unset and field.name not in settings_obj.__fields_set__:
+        if exclude_unset and name not in settings_obj.model_fields_set:
             if not auto_default_from_env:
                 continue
             if value is None:
@@ -39,10 +44,14 @@ def print_as_envfile(
 
         if isinstance(value, BaseSettings):
             if compact:
-                value = f"'{value.json(**pydantic_export_options)}'"  # flat
+                value = json.dumps(
+                    model_dump_with_secrets(
+                        value, show_secrets=show_secrets, **pydantic_export_options
+                    )
+                )  # flat
             else:
                 if verbose:
-                    typer.echo(f"\n# --- {field.name} --- ")
+                    typer.echo(f"\n# --- {name} --- ")
                 print_as_envfile(
                     value,
                     compact=False,
@@ -54,22 +63,35 @@ def print_as_envfile(
         elif show_secrets and hasattr(value, "get_secret_value"):
             value = value.get_secret_value()
 
-        if verbose:
-            field_info = field.field_info
-            if field_info.description:
-                typer.echo(f"# {field_info.description}")
+        if verbose and field.description:
+            typer.echo(f"# {field.description}")
+        if isinstance(value, Enum):
+            value = value.value
+        typer.echo(f"{name}={value}")
 
-        typer.echo(f"{field.name}={value}")
 
-
-def print_as_json(settings_obj, *, compact=False, **pydantic_export_options):
+def print_as_json(
+    settings_obj,
+    *,
+    compact: bool = False,
+    show_secrets: bool,
+    json_serializer,
+    **pydantic_export_options,
+):
     typer.echo(
-        settings_obj.json(indent=None if compact else 2, **pydantic_export_options)
+        json_serializer(
+            model_dump_with_secrets(
+                settings_obj, show_secrets=show_secrets, **pydantic_export_options
+            ),
+            indent=None if compact else 2,
+        )
     )
 
 
 def create_settings_command(
-    settings_cls: type[BaseCustomSettings], logger: logging.Logger | None = None
+    settings_cls: type[BaseCustomSettings],
+    logger: logging.Logger | None = None,
+    json_serializer=json_dumps,
 ) -> Callable:
     """Creates typer command function for settings"""
 
@@ -94,14 +116,24 @@ def create_settings_command(
         """Resolves settings and prints envfile"""
 
         if as_json_schema:
-            typer.echo(settings_cls.schema_json(indent=0 if compact else 2))
+            typer.echo(
+                json.dumps(
+                    settings_cls.model_json_schema(),
+                    default=to_jsonable_python,
+                    indent=0 if compact else 2,
+                )
+            )
             return
 
         try:
             settings_obj = settings_cls.create_from_envs()
 
         except ValidationError as err:
-            settings_schema = settings_cls.schema_json(indent=2)
+            settings_schema = json.dumps(
+                settings_cls.model_json_schema(),
+                default=to_jsonable_python,
+                indent=2,
+            )
 
             assert logger is not None  # nosec
             logger.error(  # noqa: TRY400
@@ -128,14 +160,15 @@ def create_settings_command(
             raise
 
         pydantic_export_options: dict[str, Any] = {"exclude_unset": exclude_unset}
-        if show_secrets:
-            # NOTE: this option is for json-only
-            pydantic_export_options["encoder"] = create_json_encoder_wo_secrets(
-                settings_cls
-            )
 
         if as_json:
-            print_as_json(settings_obj, compact=compact, **pydantic_export_options)
+            print_as_json(
+                settings_obj,
+                compact=compact,
+                show_secrets=show_secrets,
+                json_serializer=json_serializer,
+                **pydantic_export_options,
+            )
         else:
             print_as_envfile(
                 settings_obj,

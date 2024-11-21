@@ -1,7 +1,7 @@
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
-class ApplicationRuntimeError(PydanticErrorMixin, RuntimeError):
+class ApplicationRuntimeError(OsparcErrorMixin, RuntimeError):
     pass
 
 

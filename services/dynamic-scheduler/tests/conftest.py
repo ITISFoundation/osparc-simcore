@@ -60,7 +60,7 @@ def docker_compose_service_dynamic_scheduler_env_vars(
     for name, value in environment.items():
         try:
             envs[name] = string.Template(value).substitute(env_devel_dict)
-        except (KeyError, ValueError) as err:  # noqa: PERF203
+        except (KeyError, ValueError) as err:
             pytest.fail(
                 f"{err}: {value} is not defined in .env-devel but used as RHS in docker-compose services['dynamic-schdlr'].environment[{name}]"
             )
@@ -115,8 +115,8 @@ def disable_status_monitor_setup(mocker: MockerFixture) -> None:
     mocker.patch(f"{_PATH_APPLICATION}.setup_status_monitor")
 
 
-MAX_TIME_FOR_APP_TO_STARTUP = 10
-MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
+MAX_TIME_FOR_APP_TO_STARTUP: Final[float] = 10
+MAX_TIME_FOR_APP_TO_SHUTDOWN: Final[float] = 10
 
 
 @pytest.fixture

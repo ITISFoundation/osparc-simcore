@@ -39,7 +39,7 @@ routes = web.RouteTableDef()
 @permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
 async def create_workspace_group(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesGroupsPathParams, request)
     body_params = await parse_request_body_as(WorkspacesGroupsBodyParams, request)
 
@@ -62,7 +62,7 @@ async def create_workspace_group(request: web.Request):
 @permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
 async def list_workspace_groups(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
     workspaces_groups: list[
@@ -85,7 +85,7 @@ async def list_workspace_groups(request: web.Request):
 @permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
 async def replace_workspace_group(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesGroupsPathParams, request)
     body_params = await parse_request_body_as(WorkspacesGroupsBodyParams, request)
 
@@ -110,7 +110,7 @@ async def replace_workspace_group(request: web.Request):
 @permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
 async def delete_workspace_group(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesGroupsPathParams, request)
 
     await _groups_api.delete_workspace_group(

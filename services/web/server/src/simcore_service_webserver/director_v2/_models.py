@@ -1,5 +1,3 @@
-from typing import Any, ClassVar
-
 from models_library.clusters import (
     CLUSTER_ADMIN_RIGHTS,
     CLUSTER_MANAGER_RIGHTS,
@@ -10,7 +8,7 @@ from models_library.clusters import (
     ExternalClusterAuthentication,
 )
 from models_library.users import GroupID
-from pydantic import AnyHttpUrl, BaseModel, Field, validator
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, field_validator
 from pydantic.networks import AnyUrl, HttpUrl
 from simcore_postgres_database.models.clusters import ClusterType
 
@@ -33,7 +31,7 @@ class ClusterCreate(BaseCluster):
         alias="accessRights", default_factory=dict
     )
 
-    @validator("thumbnail", always=True, pre=True)
+    @field_validator("thumbnail", mode="before")
     @classmethod
     def set_default_thumbnail_if_empty(cls, v, values):
         if v is None and (
@@ -42,12 +40,12 @@ class ClusterCreate(BaseCluster):
             return _DEFAULT_THUMBNAILS[f"{cluster_type}"]
         return v
 
-    class Config(BaseCluster.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "name": "My awesome cluster",
-                    "type": ClusterType.ON_PREMISE,  # can use also values from equivalent enum
+                    "type": f"{ClusterType.ON_PREMISE}",  # can use also values from equivalent enum
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
                         "type": "simple",
@@ -58,7 +56,7 @@ class ClusterCreate(BaseCluster):
                 {
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
-                    "type": ClusterType.AWS,
+                    "type": f"{ClusterType.AWS}",
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
@@ -67,13 +65,14 @@ class ClusterCreate(BaseCluster):
                         "password": "somepassword",
                     },
                     "access_rights": {
-                        154: CLUSTER_ADMIN_RIGHTS,
-                        12: CLUSTER_MANAGER_RIGHTS,
-                        7899: CLUSTER_USER_RIGHTS,
+                        154: CLUSTER_ADMIN_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        12: CLUSTER_MANAGER_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        7899: CLUSTER_USER_RIGHTS.model_dump(),  # type:ignore[dict-item]
                     },
                 },
             ]
         }
+    )
 
 
 class ClusterPatch(BaseCluster):

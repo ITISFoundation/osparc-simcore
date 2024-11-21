@@ -15,8 +15,8 @@ from typing import Any, NamedTuple
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from common_library.json_serialization import json_dumps
 from models_library.projects_state import RunningState
-from models_library.utils.json_serialization import json_dumps
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application

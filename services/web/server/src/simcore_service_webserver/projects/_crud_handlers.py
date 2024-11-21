@@ -8,6 +8,7 @@ import functools
 import logging
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_webserver.projects import (
     EmptyModel,
     ProjectCopyOverride,
@@ -21,8 +22,6 @@ from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
-from pydantic import parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
@@ -110,17 +109,15 @@ def _handle_projects_exceptions(handler: Handler):
 routes = web.RouteTableDef()
 
 
-#
-# - Create https://google.aip.dev/133
-#
-
-
 @routes.post(f"/{VTAG}/projects", name="create_project")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_project(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    #
+    # - Create https://google.aip.dev/133
+    #
+    req_ctx = RequestContext.model_validate(request)
     query_params: ProjectCreateParams = parse_request_query_parameters_as(
         ProjectCreateParams, request
     )
@@ -144,7 +141,7 @@ async def create_project(request: web.Request):
             ProjectCreateNew | ProjectCopyOverride | EmptyModel, request  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
         )
         predefined_project = (
-            project_create.dict(
+            project_create.model_dump(
                 exclude_unset=True,
                 by_alias=True,
                 exclude_none=True,
@@ -172,22 +169,21 @@ async def create_project(request: web.Request):
     )
 
 
-# - List https://google.aip.dev/132
-#
-
-
 @routes.get(f"/{VTAG}/projects", name="list_projects")
 @login_required
 @permission_required("project.read")
 @_handle_projects_exceptions
 async def list_projects(request: web.Request):
+    #
+    # - List https://google.aip.dev/132
+    #
     """
 
     Raises:
         web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
 
     """
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     query_params: ProjectsListQueryParams = parse_request_query_parameters_as(
         ProjectsListQueryParams, request
     )
@@ -207,12 +203,12 @@ async def list_projects(request: web.Request):
         limit=query_params.limit,
         offset=query_params.offset,
         search=query_params.search,
-        order_by=parse_obj_as(OrderBy, query_params.order_by),
+        order_by=OrderBy.model_validate(query_params.order_by),
         folder_id=query_params.folder_id,
         workspace_id=query_params.workspace_id,
     )
 
-    page = Page[ProjectDict].parse_obj(
+    page = Page[ProjectDict].model_validate(
         paginate_data(
             chunk=projects,
             request_url=request.url,
@@ -222,7 +218,7 @@ async def list_projects(request: web.Request):
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
 
@@ -232,7 +228,7 @@ async def list_projects(request: web.Request):
 @permission_required("project.read")
 @_handle_projects_exceptions
 async def list_projects_full_search(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     query_params: ProjectsSearchQueryParams = parse_request_query_parameters_as(
         ProjectsSearchQueryParams, request
     )
@@ -249,7 +245,7 @@ async def list_projects_full_search(request: web.Request):
         tag_ids_list=tag_ids_list,
     )
 
-    page = Page[ProjectDict].parse_obj(
+    page = Page[ProjectDict].model_validate(
         paginate_data(
             chunk=projects,
             request_url=request.url,
@@ -259,28 +255,26 @@ async def list_projects_full_search(request: web.Request):
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
-
-
-#
-# - Get https://google.aip.dev/131
-# - Get active project: Singleton per-session resources https://google.aip.dev/156
-#
 
 
 @routes.get(f"/{VTAG}/projects/active", name="get_active_project")
 @login_required
 @permission_required("project.read")
 async def get_active_project(request: web.Request) -> web.Response:
+    #
+    # - Get https://google.aip.dev/131
+    # - Get active project: Singleton per-session resources https://google.aip.dev/156
+    #
     """
 
     Raises:
         web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
         web.HTTPNotFound: If active project is not found
     """
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     query_params: ProjectActiveQueryParams = parse_request_query_parameters_as(
         ProjectActiveQueryParams, request
     )
@@ -305,7 +299,7 @@ async def get_active_project(request: web.Request) -> web.Response:
             # updates project's permalink field
             await update_or_pop_permalink_in_project(request, project)
 
-            data = ProjectGet.parse_obj(project).data(exclude_unset=True)
+            data = ProjectGet.model_validate(project).data(exclude_unset=True)
 
         return web.json_response({"data": data}, dumps=json_dumps)
 
@@ -326,7 +320,7 @@ async def get_project(request: web.Request):
         web.HTTPNotFound: This project was not found
     """
 
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     user_available_services: list[dict] = await get_services_for_user_in_product(
@@ -361,7 +355,7 @@ async def get_project(request: web.Request):
         # Adds permalink
         await update_or_pop_permalink_in_project(request, project)
 
-        data = ProjectGet.parse_obj(project).data(exclude_unset=True)
+        data = ProjectGet.model_validate(project).data(exclude_unset=True)
         return web.json_response({"data": data}, dumps=json_dumps)
 
     except ProjectInvalidRightsError as exc:
@@ -388,18 +382,16 @@ async def get_project_inactivity(request: web.Request):
     return web.json_response(Envelope(data=project_inactivity), dumps=json_dumps)
 
 
-#
-# - Update https://google.aip.dev/134
-#
-
-
 @routes.patch(f"/{VTAG}/projects/{{project_id}}", name="patch_project")
 @login_required
 @permission_required("project.update")
 @permission_required("services.pipeline.*")
 @_handle_projects_exceptions
 async def patch_project(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    #
+    # Update https://google.aip.dev/134
+    #
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
 
@@ -414,15 +406,11 @@ async def patch_project(request: web.Request):
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-#
-# - Delete https://google.aip.dev/135
-#
-
-
 @routes.delete(f"/{VTAG}/projects/{{project_id}}", name="delete_project")
 @login_required
 @permission_required("project.delete")
 async def delete_project(request: web.Request):
+    # Delete https://google.aip.dev/135
     """
 
     Raises:
@@ -435,8 +423,7 @@ async def delete_project(request: web.Request):
         web.HTTPConflict: Somethine went wrong while deleting
         web.HTTPNoContent: Sucess
     """
-
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
@@ -511,7 +498,7 @@ async def delete_project(request: web.Request):
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def clone_project(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     return await start_long_running_task(

@@ -82,7 +82,7 @@ async def create_workspace(
             .returning(*_SELECTION_ARGS)
         )
         row = await result.first()
-        return WorkspaceDB.from_orm(row)
+        return WorkspaceDB.model_validate(row)
 
 
 _access_rights_subquery = (
@@ -157,7 +157,7 @@ async def list_workspaces_for_user(
 
         result = await conn.stream(list_query)
         items: list[UserWorkspaceAccessRightsDB] = [
-            UserWorkspaceAccessRightsDB.from_orm(row) async for row in result
+            UserWorkspaceAccessRightsDB.model_validate(row) async for row in result
         ]
 
         return cast(int, total_count), items
@@ -197,7 +197,7 @@ async def get_workspace_for_user(
             raise WorkspaceAccessForbiddenError(
                 reason=f"User {user_id} does not have access to the workspace {workspace_id}. Or workspace does not exist.",
             )
-        return UserWorkspaceAccessRightsDB.from_orm(row)
+        return UserWorkspaceAccessRightsDB.model_validate(row)
 
 
 async def update_workspace(
@@ -227,7 +227,7 @@ async def update_workspace(
         row = await result.first()
         if row is None:
             raise WorkspaceNotFoundError(reason=f"Workspace {workspace_id} not found.")
-        return WorkspaceDB.from_orm(row)
+        return WorkspaceDB.model_validate(row)
 
 
 async def delete_workspace(

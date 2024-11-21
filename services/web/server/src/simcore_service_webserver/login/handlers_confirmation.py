@@ -4,17 +4,17 @@ from json import JSONDecodeError
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.error_codes import create_error_code
 from models_library.emails import LowerCaseEmailStr
-from models_library.error_codes import create_error_code
 from models_library.products import ProductName
 from pydantic import (
     BaseModel,
     Field,
     PositiveInt,
     SecretStr,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
-    validator,
+    field_validator,
 )
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -73,7 +73,7 @@ def _parse_extra_credits_in_usd_or_none(
 ) -> PositiveInt | None:
     with suppress(ValidationError, JSONDecodeError):
         confirmation_data = confirmation.get("data", "EMPTY") or "EMPTY"
-        invitation = InvitationData.parse_raw(confirmation_data)
+        invitation = InvitationData.model_validate_json(confirmation_data)
         return invitation.extra_credits_in_usd
     return None
 
@@ -110,7 +110,11 @@ async def _handle_confirm_change_email(
     # update and consume confirmation token
     await db.delete_confirmation_and_update_user(
         user_id=user_id,
-        updates={"email": parse_obj_as(LowerCaseEmailStr, confirmation["data"])},
+        updates={
+            "email": TypeAdapter(LowerCaseEmailStr).validate_python(
+                confirmation["data"]
+            )
+        },
         confirmation=confirmation,
     )
 
@@ -265,9 +269,7 @@ class ResetPasswordConfirmation(InputSchema):
     password: SecretStr
     confirm: SecretStr
 
-    _password_confirm_match = validator("confirm", allow_reuse=True)(
-        check_confirm_password_match
-    )
+    _password_confirm_match = field_validator("confirm")(check_confirm_password_match)
 
 
 @routes.post("/v0/auth/reset-password/{code}", name="auth_reset_password_allowed")

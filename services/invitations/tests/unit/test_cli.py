@@ -8,6 +8,7 @@ import os
 import pytest
 from faker import Faker
 from models_library.products import ProductName
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import load_dotenv, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_invitations._meta import API_VERSION
@@ -45,7 +46,7 @@ def test_invite_user_and_check_invitation(
     }
 
     expected = {
-        **invitation_data.dict(exclude={"product"}),
+        **invitation_data.model_dump(exclude={"product"}),
         "product": environs["INVITATIONS_DEFAULT_PRODUCT"],
     }
 
@@ -71,7 +72,10 @@ def test_invite_user_and_check_invitation(
         env=environs,
     )
     assert result.exit_code == os.EX_OK, result.output
-    assert expected == InvitationInputs.parse_raw(result.stdout).dict()
+    assert (
+        expected
+        == TypeAdapter(InvitationInputs).validate_json(result.stdout).model_dump()
+    )
 
 
 def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
@@ -82,7 +86,7 @@ def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
     environs = load_dotenv(result.stdout)
 
     envs = setenvs_from_dict(monkeypatch, environs)
-    settings_from_obj = ApplicationSettings.parse_obj(envs)
+    settings_from_obj = ApplicationSettings.model_validate(envs)
     settings_from_envs = ApplicationSettings.create_from_envs()
 
     assert settings_from_envs == settings_from_obj
@@ -93,5 +97,5 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
     assert result.exit_code == os.EX_OK, result.output
 
     print(result.output)
-    settings = ApplicationSettings.parse_raw(result.output)
+    settings = ApplicationSettings.model_validate_json(result.output)
     assert settings == ApplicationSettings.create_from_envs()

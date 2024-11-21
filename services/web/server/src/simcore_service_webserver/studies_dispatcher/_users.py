@@ -17,7 +17,7 @@ from datetime import datetime
 import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel, TypeAdapter
 from redis.exceptions import LockNotOwnedError
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
@@ -80,7 +80,9 @@ async def create_temporary_guest_user(request: web.Request):
     random_user_name = "".join(
         secrets.choice(string.ascii_lowercase) for _ in range(10)
     )
-    email = parse_obj_as(LowerCaseEmailStr, f"{random_user_name}@guest-at-osparc.io")
+    email = TypeAdapter(LowerCaseEmailStr).validate_python(
+        f"{random_user_name}@guest-at-osparc.io"
+    )
     password = generate_password(length=12)
     expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 

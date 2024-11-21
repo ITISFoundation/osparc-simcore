@@ -210,7 +210,7 @@ def request_update_project(
 
         # add a node
         node_id = faker.uuid4()
-        node = Node.parse_obj(
+        node = Node.model_validate(
             {
                 "key": f"simcore/services/comp/test_{__name__}",
                 "version": "1.0.0",

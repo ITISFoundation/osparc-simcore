@@ -82,14 +82,14 @@ class StripeApi(
         response = await self.client.get(f"/v1/invoices/{stripe_invoice_id}")
         response.raise_for_status()
 
-        return InvoiceData.parse_raw(response.text)
+        return InvoiceData.model_validate_json(response.text)
 
 
 def setup_stripe(app: FastAPI):
     assert app.state  # nosec
     settings: ApplicationSettings = app.state.settings
     api = StripeApi.from_client_kwargs(
-        base_url=settings.PAYMENTS_STRIPE_URL,
+        base_url=f"{settings.PAYMENTS_STRIPE_URL}",
         auth=_StripeBearerAuth(settings.PAYMENTS_STRIPE_API_SECRET.get_secret_value()),
     )
     if settings.PAYMENTS_TRACING:

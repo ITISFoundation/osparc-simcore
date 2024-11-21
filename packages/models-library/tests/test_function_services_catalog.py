@@ -31,7 +31,7 @@ def test_catalog_frontend_services_registry():
     registry = {(s.key, s.version): s for s in iter_service_docker_data()}
 
     for s in registry.values():
-        print(s.json(exclude_unset=True, indent=1))
+        print(s.model_dump_json(exclude_unset=True, indent=1))
 
     # one version per front-end service?
     versions_per_service = defaultdict(list)

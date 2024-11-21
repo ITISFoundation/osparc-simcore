@@ -13,13 +13,14 @@ from uuid import uuid4
 import pytest
 from aiohttp import ClientError
 from faker import Faker
+from models_library.basic_types import IDStr
 from models_library.projects_nodes_io import (
     LocationID,
     SimcoreS3DirectoryID,
     SimcoreS3FileID,
 )
 from models_library.users import UserID
-from pydantic import BaseModel, ByteSize, parse_obj_as
+from pydantic import BaseModel, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from servicelib.progress_bar import ProgressBarData
@@ -70,7 +71,9 @@ def optional_sync_settings(
 
 
 def _file_size(size_str: str, **pytest_params):
-    return pytest.param(parse_obj_as(ByteSize, size_str), id=size_str, **pytest_params)
+    return pytest.param(
+        TypeAdapter(ByteSize).validate_python(size_str), id=size_str, **pytest_params
+    )
 
 
 @pytest.mark.parametrize(
@@ -99,7 +102,9 @@ async def test_valid_upload_download(
     file_path = create_file_of_size(file_size, "test.test")
 
     file_id = create_valid_file_uuid("", file_path)
-    async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
+    async with ProgressBarData(
+        num_steps=2, description=IDStr(faker.pystr())
+    ) as progress_bar:
         upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
             user_id=user_id,
             store_id=s3_simcore_location,
@@ -187,7 +192,9 @@ async def test_valid_upload_download_using_file_object(
     assert file_metadata.etag == e_tag
 
     download_folder = Path(tmpdir) / "downloads"
-    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
+    async with ProgressBarData(
+        num_steps=1, description=IDStr(faker.pystr())
+    ) as progress_bar:
         download_file_path = await filemanager.download_path_from_s3(
             user_id=user_id,
             store_id=s3_simcore_location,
@@ -356,9 +363,9 @@ async def test_invalid_file_path(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.S3InvalidPathError):  # noqa: PT012
+    with pytest.raises(exceptions.S3InvalidPathError):
         async with ProgressBarData(
-            num_steps=1, description=faker.pystr()
+            num_steps=1, description=IDStr(faker.pystr())
         ) as progress_bar:
             await filemanager.download_path_from_s3(
                 user_id=user_id,
@@ -412,7 +419,7 @@ async def test_errors_upon_invalid_file_identifiers(
     download_folder = Path(tmpdir) / "downloads"
     with pytest.raises(exceptions.S3InvalidPathError):  # noqa: PT012
         async with ProgressBarData(
-            num_steps=1, description=faker.pystr()
+            num_steps=1, description=IDStr(faker.pystr())
         ) as progress_bar:
             invalid_s3_path = SimcoreS3FileID("")
             await filemanager.download_path_from_s3(
@@ -427,15 +434,17 @@ async def test_errors_upon_invalid_file_identifiers(
                 aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
             )
 
-    with pytest.raises(exceptions.S3InvalidPathError):  # noqa: PT012
+    with pytest.raises(exceptions.S3InvalidPathError):
         async with ProgressBarData(
-            num_steps=1, description=faker.pystr()
+            num_steps=1, description=IDStr(faker.pystr())
         ) as progress_bar:
             await filemanager.download_path_from_s3(
                 user_id=user_id,
                 store_id=store,
                 store_name=None,
-                s3_object=SimcoreS3FileID(f"{project_id}/{uuid4()}/invisible.txt"),
+                s3_object=TypeAdapter(SimcoreS3FileID).validate_python(
+                    f"{project_id}/{uuid4()}/invisible.txt"
+                ),
                 local_path=download_folder,
                 io_log_redirect_cb=None,
                 r_clone_settings=optional_sync_settings.r_clone_settings,
@@ -469,9 +478,9 @@ async def test_invalid_store(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.S3InvalidStore):  # noqa: PT012
+    with pytest.raises(exceptions.S3InvalidStore):
         async with ProgressBarData(
-            num_steps=1, description=faker.pystr()
+            num_steps=1, description=IDStr(faker.pystr())
         ) as progress_bar:
             await filemanager.download_path_from_s3(
                 user_id=user_id,
@@ -662,7 +671,7 @@ async def test_upload_path_source_is_a_folder(
     directory_id = SimcoreS3DirectoryID.from_simcore_s3_object(
         f"{project_id}/{faker.uuid4()}/some-dir-in-node-root/"
     )
-    s3_object = SimcoreS3FileID(directory_id)
+    s3_object = TypeAdapter(SimcoreS3FileID).validate_python(directory_id)
 
     upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
@@ -677,7 +686,9 @@ async def test_upload_path_source_is_a_folder(
     assert isinstance(upload_result, UploadedFolder)
     assert source_dir.exists()
 
-    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
+    async with ProgressBarData(
+        num_steps=1, description=IDStr(faker.pystr())
+    ) as progress_bar:
         await filemanager.download_path_from_s3(
             user_id=user_id,
             store_name=None,

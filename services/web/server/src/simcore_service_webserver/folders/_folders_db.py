@@ -99,7 +99,7 @@ async def create(
             .returning(*_SELECTION_ARGS)
         )
         row = await result.first()
-        return FolderDB.from_orm(row)
+        return FolderDB.model_validate(row)
 
 
 async def list_(  # pylint: disable=too-many-arguments,too-many-branches
@@ -245,7 +245,7 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
 
         result = await conn.stream(list_query)
         folders: list[UserFolderAccessRightsDB] = [
-            UserFolderAccessRightsDB.from_orm(row) async for row in result
+            UserFolderAccessRightsDB.model_validate(row) async for row in result
         ]
         return cast(int, total_count), folders
 
@@ -273,7 +273,7 @@ async def get(
             raise FolderAccessForbiddenError(
                 reason=f"Folder {folder_id} does not exist.",
             )
-        return FolderDB.from_orm(row)
+        return FolderDB.model_validate(row)
 
 
 async def get_for_user_or_workspace(
@@ -310,7 +310,7 @@ async def get_for_user_or_workspace(
             raise FolderAccessForbiddenError(
                 reason=f"User does not have access to the folder {folder_id}. Or folder does not exist.",
             )
-        return FolderDB.from_orm(row)
+        return FolderDB.model_validate(row)
 
 
 async def update(
@@ -354,7 +354,7 @@ async def update(
         row = await result.first()
         if row is None:
             raise FolderNotFoundError(reason=f"Folder {folders_id_or_ids} not found.")
-        return FolderDB.from_orm(row)
+        return FolderDB.model_validate(row)
 
 
 async def delete_recursively(

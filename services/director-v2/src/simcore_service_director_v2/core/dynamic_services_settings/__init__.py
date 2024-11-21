@@ -13,22 +13,22 @@ class DynamicServicesSettings(BaseCustomSettings):
         default=True, description="Enables/Disables the dynamic_sidecar submodule"
     )
 
-    DYNAMIC_SIDECAR: DynamicSidecarSettings = Field(auto_default_from_env=True)
+    DYNAMIC_SIDECAR: DynamicSidecarSettings = Field(json_schema_extra={"auto_default_from_env": True})
 
     DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS: EgressProxySettings = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: PlacementSettings = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
-    WEBSERVER_SETTINGS: WebServerSettings = Field(auto_default_from_env=True)
+    WEBSERVER_SETTINGS: WebServerSettings = Field(json_schema_extra={"auto_default_from_env": True})

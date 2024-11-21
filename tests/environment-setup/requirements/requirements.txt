@@ -1,3 +1,5 @@
+annotated-types==0.7.0
+    # via pydantic
 iniconfig==2.0.0
     # via pytest
 packaging==24.1
@@ -6,16 +8,20 @@ packaging==24.1
     #   pytest-sugar
 pluggy==1.5.0
     # via pytest
-pydantic==1.10.18
+pydantic==2.9.2
     # via
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/_base.in
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
+pydantic-core==2.23.4
+    # via pydantic
 pytest==8.3.3
     # via
     #   -r requirements/requirements.in
@@ -24,9 +30,13 @@ pytest==8.3.3
     #   pytest-sugar
 pytest-asyncio==0.23.8
     # via
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
@@ -38,13 +48,19 @@ pytest-sugar==1.0.0
     # via -r requirements/requirements.in
 pyyaml==6.0.2
     # via
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
 termcolor==2.4.0
     # via pytest-sugar
 typing-extensions==4.12.2
-    # via pydantic
+    # via
+    #   pydantic
+    #   pydantic-core

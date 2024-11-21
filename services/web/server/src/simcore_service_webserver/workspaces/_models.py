@@ -12,7 +12,7 @@ from models_library.rest_pagination import PageQueryParameters
 from models_library.trash import RemoveQueryParams
 from models_library.users import GroupID, UserID
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, ConfigDict, Field
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -59,18 +59,14 @@ class WorkspacesListQueryParams(
 class WorkspacesGroupsPathParams(BaseModel):
     workspace_id: WorkspaceID
     group_id: GroupID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class WorkspacesGroupsBodyParams(BaseModel):
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class WorkspaceTrashQueryParams(RemoveQueryParams):
