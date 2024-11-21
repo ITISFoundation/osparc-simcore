@@ -215,8 +215,8 @@ qx.Class.define("osparc.store.Groups", {
 
     getOrganization: function(groupId) {
       if (groupId) {
-        const visibleMembers = this.getOrganizations();
-        return Object.values(visibleMembers).find(member => member.getGroupId() === groupId);
+        const orgs = this.getOrganizations();
+        return Object.values(orgs).find(org => org.getGroupId() === groupId);
       }
       return null;
     },

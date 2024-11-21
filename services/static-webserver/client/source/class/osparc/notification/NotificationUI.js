@@ -134,9 +134,12 @@ qx.Class.define("osparc.notification.NotificationUI", {
         case "NEW_ORGANIZATION":
           icon.setSource("@FontAwesome5Solid/users/14");
           if (resourceId) {
-            osparc.store.Groups.getInstance().fetchGroup(resourceId)
-              .then(group => descriptionLabel.setValue("You're now member of '" + group.getLabel() + "'"))
-              .catch(() => this.setEnabled(false));
+            const org = osparc.store.Groups.getInstance().getOrganization(resourceId);
+            if (org) {
+              descriptionLabel.setValue("You're now member of '" + org.getLabel() + "'")
+            } else {
+              this.setEnabled(false);
+            }
           }
           break;
         case "STUDY_SHARED":
@@ -264,16 +267,14 @@ qx.Class.define("osparc.notification.NotificationUI", {
 
     __openOrganizationDetails: function(orgId) {
       // make sure org is available
-      osparc.store.Groups.getInstance().fetchGroup(orgId)
-        .then(org => {
-          if (org) {
-            const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();
-            orgsWindow.openOrganizationDetails(orgId);
-          } else {
-            const msg = this.tr("You don't have access anymore");
-            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-          }
-        });
+      const org = osparc.store.Groups.getInstance().getOrganization(orgId)
+      if (org) {
+        const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();
+        orgsWindow.openOrganizationDetails(orgId);
+      } else {
+        const msg = this.tr("You don't have access anymore");
+        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+      }
     },
 
     __openStudyDetails: function(studyId, notification) {
