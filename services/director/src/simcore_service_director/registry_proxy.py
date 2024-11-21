@@ -313,19 +313,35 @@ async def _list_repositories_gen(
                 return
 
 
+async def list_image_tags_gen(
+    app: FastAPI, image_key: str
+) -> AsyncGenerator[list[str], None]:
+    with log_context(logger, logging.DEBUG, msg=f"listing image tags in {image_key}"):
+        path = f"/v2/{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
+        tags, headers = await registry_request(app, path)  # initial call
+        while True:
+            if "Link" in headers:
+                next_path = str(headers["Link"]).split(";")[0].strip("<>")
+                prefetch_task = asyncio.create_task(registry_request(app, next_path))
+            else:
+                prefetch_task = None
+
+            yield list(
+                filter(
+                    VERSION_REG.match,
+                    tags["tags"],
+                )
+            )
+            if prefetch_task:
+                tags, headers = await prefetch_task
+            else:
+                return
+
+
 async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
-    logger.debug("listing image tags in %s", image_key)
-    image_tags: list = []
-    # get list of image tags
-    path = f"/v2/{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
-    while True:
-        tags, headers = await registry_request(app, path)
-        if tags["tags"]:
-            image_tags.extend([tag for tag in tags["tags"] if VERSION_REG.match(tag)])
-        if "Link" not in headers:
-            break
-        path = str(headers["Link"]).split(";")[0].strip("<>")
-    logger.debug("Found %s image tags in %s", len(image_tags), image_key)
+    image_tags = []
+    async for tags in list_image_tags_gen(app, image_key):
+        image_tags.extend(tags)
     return image_tags
 
 
@@ -401,17 +417,17 @@ async def get_image_details(
 
 
 async def get_repo_details(app: FastAPI, image_key: str) -> list[dict[str, Any]]:
-    image_tags = await list_image_tags(app, image_key)
     repo_details = []
-    async for image_details_future in limited_as_completed(
-        (get_image_details(app, image_key, tag) for tag in image_tags),
-        limit=get_application_settings(
-            app
-        ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
-    ):
-        with log_catch(logger, reraise=False):
-            if image_details := await image_details_future:
-                repo_details.append(image_details)
+    async for image_tags in list_image_tags_gen(app, image_key):
+        async for image_details_future in limited_as_completed(
+            (get_image_details(app, image_key, tag) for tag in image_tags),
+            limit=get_application_settings(
+                app
+            ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
+        ):
+            with log_catch(logger, reraise=False):
+                if image_details := await image_details_future:
+                    repo_details.append(image_details)
     return repo_details
 
 
