@@ -481,17 +481,20 @@ class BaseCompScheduler(ABC):
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         comp_run: CompRunsAtDB,
         wake_up_callback: Callable[[], None],
-    ) -> None: ...
+    ) -> None:
+        """start tasks in the 3rd party backend"""
 
     @abstractmethod
     async def _get_tasks_status(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
-    ) -> list[RunningState]: ...
+    ) -> list[RunningState]:
+        """returns tasks status from the 3rd party backend"""
 
     @abstractmethod
     async def _stop_tasks(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
-    ) -> None: ...
+    ) -> None:
+        """stop tasks in the 3rd party backend"""
 
     @abstractmethod
     async def _process_completed_tasks(
@@ -500,7 +503,8 @@ class BaseCompScheduler(ABC):
         tasks: list[CompTaskAtDB],
         iteration: Iteration,
         comp_run: CompRunsAtDB,
-    ) -> None: ...
+    ) -> None:
+        """process tasks from the 3rd party backend"""
 
     async def schedule_pipeline(
         self,
