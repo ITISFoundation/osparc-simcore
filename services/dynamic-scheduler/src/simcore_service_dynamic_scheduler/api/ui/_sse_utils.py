@@ -44,7 +44,7 @@ class AbstractSSERenderer(ABC):
     @staticmethod
     @abstractmethod
     def render_item(item: Any) -> AnyComponent:
-        """return a rendered component to display"""
+        """returns a `fastui.component` to which renders the content of the item"""
 
     def get_messages(self) -> tuple[UpdateID, list[AnyComponent]]:
         return self._get_update_id(), [self.render_item(x) for x in self._items]
@@ -93,9 +93,17 @@ async def render_items_on_change(
     app: FastAPI,
     *,
     renderer_type: type[AbstractSSERenderer],
-    messages_check_interval: NonNegativeFloat = 1,
+    check_interval: NonNegativeFloat = 1,
 ) -> AsyncIterable[str]:
-    """used by the sse endpoint to render the content as it changes"""
+    """Used by an SSE endpoint to provide updates for a specific renderer.
+    Only sends out new updates if the underlying dataset canged.
+
+    Arguments:
+        renderer_type -- the class rendering an item to be displayed, must be defined by the user
+
+    Keyword Arguments:
+        check_interval -- interval at which to check for new updates (default: {1})
+    """
 
     async with renderer_type(app) as renderer:
 
@@ -103,7 +111,7 @@ async def render_items_on_change(
 
         # Avoid the browser reconnecting
         while True:
-            await asyncio.sleep(messages_check_interval)
+            await asyncio.sleep(check_interval)
 
             update_id, messages = renderer.get_messages()
 
