@@ -288,7 +288,7 @@ def test_list_services_performance(
     def run_async_test() -> None:
         asyncio.get_event_loop().run_until_complete(_list_services())
 
-    benchmark.pedantic(run_async_test, rounds=1)
+    benchmark.pedantic(run_async_test, rounds=5)
 
 
 async def test_generate_service_extras(
