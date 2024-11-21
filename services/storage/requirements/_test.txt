@@ -125,6 +125,8 @@ jsonpath-ng==1.6.1
     # via moto
 jsonpointer==3.0.0
     # via jsonpatch
+jsonref==1.1.0
+    # via -r requirements/_test.in
 jsonschema==4.21.1
     # via
     #   -c requirements/_base.txt

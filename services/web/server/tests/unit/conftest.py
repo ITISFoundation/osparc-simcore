@@ -16,7 +16,6 @@ import pytest
 import yaml
 from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.webserver_projects import empty_project_data
-from simcore_service_webserver.rest._utils import get_openapi_specs_path
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -77,9 +76,3 @@ def disable_gc_manual_guest_users(mocker):
         "simcore_service_webserver.garbage_collector._core.remove_users_manually_marked_as_guests",
         return_value=None,
     )
-
-
-@pytest.fixture
-def openapi_specs_path(api_version_prefix: str) -> Path:
-    # overrides pytest_simcore.openapi_specs.app_openapi_specs_path fixture
-    return get_openapi_specs_path(api_version_prefix)

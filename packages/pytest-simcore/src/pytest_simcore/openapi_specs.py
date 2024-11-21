@@ -3,10 +3,11 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+from collections.abc import Callable
 from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, NamedTuple
+from typing import Any, NamedTuple
 
 import jsonref
 import pytest

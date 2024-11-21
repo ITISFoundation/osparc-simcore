@@ -5,6 +5,7 @@
 
 
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 from aiohttp import web
@@ -14,6 +15,13 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.openapi_specs import Entrypoint
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings import get_application_settings
+from simcore_service_webserver.rest._utils import get_openapi_specs_path
+
+
+@pytest.fixture
+def openapi_specs_path(api_version_prefix: str) -> Path:
+    # overrides pytest_simcore.openapi_specs.app_openapi_specs_path fixture
+    return get_openapi_specs_path(api_version_prefix)
 
 
 @pytest.fixture
@@ -46,6 +54,7 @@ def app_environment(
 
 @pytest.fixture
 def app(app_environment: EnvVarsDict) -> web.Application:
+    assert app_environment
     # Expects that:
     # - routings happen during setup!
     # - all plugins are setup but app is NOT started (i.e events are not triggered)
@@ -55,14 +64,19 @@ def app(app_environment: EnvVarsDict) -> web.Application:
     return app_
 
 
-def test_app_named_resources_against_openapi_specs(
-    openapi_specs_entrypoints: set[Entrypoint],
+@pytest.fixture
+def app_rest_entrypoints(
     app: web.Application,
     create_aiohttp_app_rest_entrypoints: Callable[[web.Application], set[Entrypoint]],
-):
+) -> set[Entrypoint]:
     # check whether exposed routes implements openapi.json contract
-    app_rest_entrypoints: set[Entrypoint] = create_aiohttp_app_rest_entrypoints(app)
+    return create_aiohttp_app_rest_entrypoints(app)
 
+
+def test_app_named_resources_against_openapi_specs(
+    openapi_specs_entrypoints: set[Entrypoint],
+    app_rest_entrypoints: set[Entrypoint],
+):
     assert app_rest_entrypoints == openapi_specs_entrypoints
 
     # NOTE: missing here is:
