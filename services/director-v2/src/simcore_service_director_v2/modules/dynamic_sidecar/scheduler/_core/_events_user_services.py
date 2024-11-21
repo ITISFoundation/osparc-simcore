@@ -7,7 +7,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion, ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from tenacity import RetryError
 from tenacity.asyncio import AsyncRetrying
@@ -168,7 +168,7 @@ async def create_user_services(  # pylint: disable=too-many-statements
         project_name=project_name,
         node_name=node_name,
         service_key=scheduler_data.key,
-        service_version=parse_obj_as(ServiceVersion, scheduler_data.version),
+        service_version=TypeAdapter(ServiceVersion).validate_python(scheduler_data.version),
         service_resources=scheduler_data.service_resources,
         service_additional_metadata={},
     )

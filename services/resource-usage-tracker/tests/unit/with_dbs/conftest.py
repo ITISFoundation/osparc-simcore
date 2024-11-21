@@ -19,6 +19,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingMessageType,
     RabbitResourceTrackingStartedMessage,
 )
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -175,7 +176,7 @@ async def assert_service_runs_db_row(
             )
             row = result.first()
             assert row
-            service_run_db = ServiceRunDB.from_orm(row)
+            service_run_db = ServiceRunDB.model_validate(row)
             if status:
                 assert service_run_db.service_run_status == status
             return service_run_db
@@ -200,7 +201,7 @@ async def assert_credit_transactions_db_row(
             )
             row = result.first()
             assert row
-            credit_transaction_db = CreditTransactionDB.from_orm(row)
+            credit_transaction_db = CreditTransactionDB.model_validate(row)
             if modified_at:
                 assert credit_transaction_db.modified > modified_at
             return credit_transaction_db
@@ -214,7 +215,9 @@ def random_rabbit_message_heartbeat(
     def _creator(**kwargs: dict[str, Any]) -> RabbitResourceTrackingHeartbeatMessage:
         msg_config = {"service_run_id": faker.uuid4(), **kwargs}
 
-        return RabbitResourceTrackingHeartbeatMessage(**msg_config)
+        return TypeAdapter(RabbitResourceTrackingHeartbeatMessage).validate_python(
+            msg_config
+        )
 
     return _creator
 
@@ -264,7 +267,9 @@ def random_rabbit_message_start(
             **kwargs,
         }
 
-        return RabbitResourceTrackingStartedMessage(**msg_config)
+        return TypeAdapter(RabbitResourceTrackingStartedMessage).validate_python(
+            msg_config
+        )
 
     return _creator
 

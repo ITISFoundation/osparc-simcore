@@ -54,24 +54,24 @@
         "operationId": "get_credit_transactions_sum_v1_credit_transactions_credits_sum_post",
         "parameters": [
           {
+            "name": "product_name",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "string",
               "title": "Product Name"
-            },
-            "name": "product_name",
-            "in": "query"
+            }
           },
           {
+            "name": "wallet_id",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "integer",
               "exclusiveMinimum": true,
               "title": "Wallet Id",
               "minimum": 0
-            },
-            "name": "wallet_id",
-            "in": "query"
+            }
           }
         ],
         "responses": {
@@ -149,33 +149,33 @@
         "operationId": "get_service_default_pricing_plan",
         "parameters": [
           {
+            "name": "service_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Service Key"
-            },
-            "name": "service_key",
-            "in": "path"
+            }
           },
           {
+            "name": "service_version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Service Version"
-            },
-            "name": "service_version",
-            "in": "path"
+            }
           },
           {
+            "name": "product_name",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "string",
               "title": "Product Name"
-            },
-            "name": "product_name",
-            "in": "query"
+            }
           }
         ],
         "responses": {
@@ -212,35 +212,35 @@
         "operationId": "list_service_pricing_plans",
         "parameters": [
           {
+            "name": "pricing_plan_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
               "exclusiveMinimum": true,
               "title": "Pricing Plan Id",
               "minimum": 0
-            },
-            "name": "pricing_plan_id",
-            "in": "path"
+            }
           },
           {
+            "name": "pricing_unit_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
               "exclusiveMinimum": true,
               "title": "Pricing Unit Id",
               "minimum": 0
-            },
-            "name": "pricing_unit_id",
-            "in": "path"
+            }
           },
           {
+            "name": "product_name",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "string",
               "title": "Product Name"
-            },
-            "name": "product_name",
-            "in": "query"
+            }
           }
         ],
         "responses": {
@@ -297,7 +297,14 @@
             "title": "User Email"
           },
           "osparc_credits": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
             "title": "Osparc Credits"
           },
           "payment_transaction_id": {
@@ -373,8 +380,8 @@
         "enum": [
           "TIER"
         ],
-        "title": "PricingPlanClassification",
-        "description": "An enumeration."
+        "const": "TIER",
+        "title": "PricingPlanClassification"
       },
       "PricingPlanGet": {
         "properties": {
@@ -405,10 +412,17 @@
             "title": "Pricing Plan Key"
           },
           "pricing_units": {
-            "items": {
-              "$ref": "#/components/schemas/PricingUnitGet"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PricingUnitGet"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Pricing Units"
           },
           "is_active": {
@@ -424,6 +438,7 @@
           "classification",
           "created_at",
           "pricing_plan_key",
+          "pricing_units",
           "is_active"
         ],
         "title": "PricingPlanGet"
@@ -482,13 +497,16 @@
           },
           "RAM": {
             "type": "integer",
+            "minimum": 0,
             "title": "Ram"
           },
           "VRAM": {
             "type": "integer",
+            "minimum": 0,
             "title": "Vram"
           }
         },
+        "additionalProperties": true,
         "type": "object",
         "required": [
           "CPU",

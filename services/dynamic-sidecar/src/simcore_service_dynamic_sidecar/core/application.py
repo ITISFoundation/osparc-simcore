@@ -133,11 +133,11 @@ def create_base_app() -> FastAPI:
     # settings
     settings = ApplicationSettings.create_from_envs()
     setup_logger(settings)
-    logger.debug(settings.json(indent=2))
+    logger.debug(settings.model_dump_json(indent=2))
 
     # minimal
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE.is_devel_mode(),
+        debug=settings.SC_BOOT_MODE.is_devel_mode(),  # pylint: disable=no-member
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
@@ -195,8 +195,10 @@ def create_app():
         setup_tracing(app, application_settings.DYNAMIC_SIDECAR_TRACING, PROJECT_NAME)
 
     # ERROR HANDLERS  ------------
-    app.add_exception_handler(NodeNotFound, node_not_found_error_handler)
-    app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
+    app.add_exception_handler(
+        NodeNotFound, node_not_found_error_handler  # type: ignore[arg-type]
+    )
+    app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)  # type: ignore[arg-type]
 
     # EVENTS ---------------------
 

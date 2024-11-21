@@ -2,17 +2,16 @@
 
 """
 
-
 import re
 import sys
 from contextlib import suppress
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 import pycountry
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from pydantic import Field, root_validator, validator
+from pydantic import ConfigDict, Field, ValidationInfo, field_validator, model_validator
 from simcore_postgres_database.models.users import UserStatus
 
 
@@ -33,7 +32,7 @@ class UserProfile(OutputSchema):
     )
 
     # authorization
-    invited_by: str | None = None
+    invited_by: str | None = Field(default=None)
 
     # user status
     registered: bool
@@ -43,10 +42,10 @@ class UserProfile(OutputSchema):
         description="List of products this users is included or None if fields is unset",
     )
 
-    @validator("status")
+    @field_validator("status")
     @classmethod
-    def _consistency_check(cls, v, values):
-        registered = values["registered"]
+    def _consistency_check(cls, v, info: ValidationInfo):
+        registered = info.data["registered"]
         status = v
         if not registered and status is not None:
             msg = f"{registered=} and {status=} is not allowed"
@@ -61,24 +60,27 @@ class PreUserProfile(InputSchema):
     first_name: str
     last_name: str
     email: LowerCaseEmailStr
-    institution: str | None = Field(None, description="company, university, ...")
+    institution: str | None = Field(
+        default=None, description="company, university, ..."
+    )
     phone: str | None
     # billing details
     address: str
     city: str
-    state: str | None
+    state: str | None = Field(default=None)
     postal_code: str
     country: str
-    extras: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Keeps extra information provided in the request form. At most MAX_NUM_EXTRAS fields",
-    )
+    extras: Annotated[
+        dict[str, Any],
+        Field(
+            default_factory=dict,
+            description="Keeps extra information provided in the request form. At most MAX_NUM_EXTRAS fields",
+        ),
+    ]
 
-    class Config(InputSchema.Config):
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def _preprocess_aliases_and_extras(cls, values):
         # multiple aliases for "institution"
@@ -92,8 +94,8 @@ class PreUserProfile(InputSchema):
         # collect extras
         extra_fields = {}
         field_names_and_aliases = (
-            set(cls.__fields__.keys())
-            | {f.alias for f in cls.__fields__.values() if f.alias}
+            set(cls.model_fields.keys())
+            | {f.alias for f in cls.model_fields.values() if f.alias}
             | set(alias_by_priority)
         )
         for key, value in values.items():
@@ -111,7 +113,7 @@ class PreUserProfile(InputSchema):
 
         return values
 
-    @validator("first_name", "last_name", "institution", pre=True)
+    @field_validator("first_name", "last_name", "institution", mode="before")
     @classmethod
     def _pre_normalize_given_names(cls, v):
         if v:
@@ -120,7 +122,7 @@ class PreUserProfile(InputSchema):
                 return re.sub(r"\b\w+\b", lambda m: m.group(0).capitalize(), name)
         return v
 
-    @validator("country", pre=True)
+    @field_validator("country", mode="before")
     @classmethod
     def _pre_check_and_normalize_country(cls, v):
         if v:
@@ -131,4 +133,4 @@ class PreUserProfile(InputSchema):
         return v
 
 
-assert set(PreUserProfile.__fields__).issubset(UserProfile.__fields__)  # nosec
+assert set(PreUserProfile.model_fields).issubset(UserProfile.model_fields)  # nosec

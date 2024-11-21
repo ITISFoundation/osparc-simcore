@@ -145,7 +145,7 @@ async def test_scicrunch_get_fields_from_invalid_rrid(
 
 async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSettings):
 
-    expected: list[dict[str, Any]] = ListOfResourceHits.parse_obj(
+    expected: list[dict[str, Any]] = ListOfResourceHits.model_validate(
         [
             {
                 "rid": "SCR_000860",
@@ -159,7 +159,7 @@ async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSetting
             },
             {"rid": "SCR_014398", "original_id": "SCR_014398", "name": "GNU Octave"},
         ]
-    ).dict()["__root__"]
+    ).model_dump()["root"]
 
     async with ClientSession() as client:
 
@@ -167,6 +167,6 @@ async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSetting
 
             resource_hits = await autocomplete_by_name("octave", client, settings)
 
-            hits = resource_hits.dict()["__root__"]
+            hits = resource_hits.model_dump()["root"]
 
             assert expected == hits, f"for {guess_name}"

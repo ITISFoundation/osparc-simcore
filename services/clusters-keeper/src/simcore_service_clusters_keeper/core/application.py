@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
-    logger.info("app settings: %s", settings.json(indent=1))
+    logger.info("app settings: %s", settings.model_dump_json(indent=1))
 
     app = FastAPI(
         debug=settings.CLUSTERS_KEEPER_DEBUG,

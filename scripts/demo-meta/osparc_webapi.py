@@ -7,7 +7,7 @@ import os
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Generic, Iterator, Optional, Type, TypeVar
+from typing import Annotated, Any, Generic, Iterator, TypeVar
 from uuid import UUID
 
 import httpx
@@ -16,15 +16,13 @@ from pydantic import (
     AnyHttpUrl,
     AnyUrl,
     BaseModel,
-    BaseSettings,
     EmailStr,
     Field,
     NonNegativeInt,
     SecretStr,
     ValidationError,
-    conint,
 )
-from pydantic.generics import GenericModel
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=getattr(logging, os.environ.get("LOG_LEVEL", "INFO")))
@@ -46,32 +44,32 @@ class Meta(BaseModel):
 class PageLinks(BaseModel):
     self: AnyHttpUrl
     first: AnyHttpUrl
-    prev: Optional[AnyHttpUrl]
-    next: Optional[AnyHttpUrl]
+    prev: AnyHttpUrl | None
+    next: AnyHttpUrl | None
     last: AnyHttpUrl
 
 
-class Page(GenericModel, Generic[ItemT]):
+class Page(BaseModel, Generic[ItemT]):
     meta: Meta = Field(..., alias="_meta")
     data: list[ItemT]
     links: PageLinks = Field(..., alias="_links")
 
 
-class Envelope(GenericModel, Generic[DataT]):
-    data: Optional[DataT]
-    error: Optional[Any]
+class Envelope(BaseModel, Generic[DataT]):
+    data: DataT | None
+    error: Any | None
 
     @classmethod
     def parse_data(cls, obj):
-        return cls.parse_obj({"data": obj})
+        return cls.model_validate({"data": obj})
 
 
 class CheckPoint(BaseModel):
     id: NonNegativeInt
     checksum: str
-    tag: Optional[str] = None
-    message: Optional[str] = None
-    parent: Optional[NonNegativeInt] = None
+    tag: str | None = None
+    message: str | None = None
+    parent: NonNegativeInt | None = None
     created_at: datetime
 
 
@@ -98,7 +96,7 @@ Outputs = dict[OutputIDStr, Any]
 
 
 class ExtractedResults(BaseModel):
-    progress: dict[NodeIDStr, conint(ge=0, le=100)] = Field(
+    progress: dict[NodeIDStr, Annotated[int, Field(ge=0, le=100)]] = Field(
         ..., description="Progress in each computational node"
     )
     labels: dict[NodeIDStr, str] = Field(
@@ -140,19 +138,19 @@ def login(client: httpx.Client, user: str, password: str):
 
 def get_profile(client: httpx.Client):
     r = client.get("/me")
-    assert r.status_code == 200
+    assert r.status_code == httpx.codes.OK
     return r.json()["data"]
 
 
 def iter_items(
-    client: httpx.Client, url_path: str, item_cls: Type[ItemT]
+    client: httpx.Client, url_path: str, item_cls: type[ItemT]
 ) -> Iterator[ItemT]:
     """iterates items returned by a List std-method
 
     SEE https://google.aip.dev/132
     """
 
-    def _relative_url_path(page_link: Optional[AnyHttpUrl]) -> Optional[str]:
+    def _relative_url_path(page_link: AnyHttpUrl | None) -> str | None:
         if page_link:
             return f"{page_link.path}".replace(client.base_url.path, "")
         return None
@@ -165,9 +163,8 @@ def iter_items(
         r = client.get(next_url)
         r.raise_for_status()
 
-        page = Page[item_cls].parse_raw(r.text)
-        for item in page.data:
-            yield item
+        page = Page[item_cls].model_validate_json(r.text)
+        yield from page.data
 
         next_url = _relative_url_path(page.links.next)
         last_url = _relative_url_path(page.links.last)
@@ -198,16 +195,17 @@ def iter_project_iteration(
 # SETUP ------------------------------------------
 class ClientSettings(BaseSettings):
 
-    OSPARC_API_URL: AnyUrl = Field(default="http://127.0.0.1.nip.io:9081/v0") #  NOSONAR
+    OSPARC_API_URL: AnyUrl = Field(
+        default="http://127.0.0.1.nip.io:9081/v0"
+    )  #  NOSONAR
     OSPARC_USER_EMAIL: EmailStr
     OSPARC_USER_PASSWORD: SecretStr
 
-    class Config:
-        env_file = ".env-osparc-web.ignore"
+    model_config = SettingsConfigDict(env_file=".env-osparc-web.ignore")
 
 
 def init():
-    env_file = Path(ClientSettings.Config.env_file)
+    env_file = Path(ClientSettings.model_config.env_file)
     log.info("Creating %s", f"{env_file}")
     kwargs = {}
     kwargs["OSPARC_API_URL"] = input("OSPARC_API_URL: ").strip() or None
@@ -215,7 +213,7 @@ def init():
         input("OSPARC_USER_EMAIL: ") or getpass.getuser() + "@itis.swiss"
     )
     kwargs["OSPARC_USER_PASSWORD"] = getpass.getpass()
-    with open(env_file, "wt") as fh:
+    with env_file.open("w") as fh:
         for key, value in kwargs.items():
             print(key, value)
             if value is not None:
@@ -234,7 +232,7 @@ def query_if_invalid_config():
 def setup_client() -> Iterator[httpx.Client]:
     settings = ClientSettings()
 
-    client = httpx.Client(base_url=settings.OSPARC_API_URL)
+    client = httpx.Client(base_url=f"{settings.OSPARC_API_URL}")
     try:
         # check if online and login
         print(ping(client))

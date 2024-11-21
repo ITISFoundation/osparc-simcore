@@ -32,6 +32,7 @@ class ProfileDict(TypedDict):
     first_name: str
     last_name: str
     email: str
+    login: str
     role: osparc.UserRoleEnum
     groups: ProfileGroupsDict
     gravatar_id: str
@@ -44,7 +45,7 @@ def expected_profile(registered_user: RegisteredUserDict) -> ProfileDict:
     username = email.split("@")[0]
 
     return ProfileDict(
-        **{
+        **{  # noqa: PIE804
             "first_name": first_name,
             "last_name": registered_user["last_name"],
             "login": email,

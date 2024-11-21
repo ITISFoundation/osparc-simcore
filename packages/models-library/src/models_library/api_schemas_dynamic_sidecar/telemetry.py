@@ -8,8 +8,7 @@ from pydantic import (
     Field,
     NonNegativeFloat,
     NonNegativeInt,
-    root_validator,
-    validator,
+    model_validator,
 )
 
 from ..projects_nodes_io import NodeID
@@ -56,29 +55,13 @@ class DiskUsage(BaseModel):
     free: ByteSize = Field(description="remaining space")
 
     total: ByteSize = Field(description="total space = free + used")
-    used_percent: NonNegativeFloat = Field(
-        gte=0.00,
-        lte=100.00,
+    used_percent: float = Field(
+        ge=0.00,
+        le=100.00,
         description="Percent of used space relative to the total space",
     )
 
-    @validator("free")
-    @classmethod
-    def _free_positive(cls, v: float) -> float:
-        if v < 0:
-            msg = f"free={v} cannot be a negative value"
-            raise ValueError(msg)
-        return v
-
-    @validator("used")
-    @classmethod
-    def _used_positive(cls, v: float) -> float:
-        if v < 0:
-            msg = f"used={v} cannot be a negative value"
-            raise ValueError(msg)
-        return v
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def _check_total(cls, values: dict[str, Any]) -> dict[str, Any]:
         total = values["total"]

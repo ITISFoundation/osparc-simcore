@@ -14,7 +14,6 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import status
-from pydantic import parse_obj_as
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -45,7 +44,7 @@ async def test_studies_jobs_workflow(
     resp = await client.get("/v0/studies/{study_id}", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
-    study = parse_obj_as(Study, resp.json())
+    study = Study.model_validate(resp.json())
     assert study.uid == study_id
 
     # Lists study jobs
@@ -56,7 +55,7 @@ async def test_studies_jobs_workflow(
     resp = await client.post("/v0/studies/{study_id}/jobs", auth=auth)
     assert resp.status_code == status.HTTP_201_CREATED
 
-    job = parse_obj_as(Job, resp.json())
+    job = Job.model_validate(resp.json())
     job_id = job.id
 
     # Get Study Job
@@ -358,7 +357,7 @@ async def test_get_job_logs(
         f"{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs/log-links", auth=auth
     )
     assert response.status_code == status.HTTP_200_OK
-    _ = JobLogsMap.parse_obj(response.json())
+    _ = JobLogsMap.model_validate(response.json())
 
 
 async def test_get_study_outputs(
@@ -394,17 +393,17 @@ async def test_get_study_outputs(
         },
     )
     assert response.status_code == status.HTTP_200_OK
-    _job = Job.parse_obj(response.json())
+    _job = Job.model_validate(response.json())
     _job_id = _job.id
 
     response = await client.post(
         f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}:start", auth=auth
     )
     assert response.status_code == status.HTTP_202_ACCEPTED
-    _ = JobStatus.parse_obj(response.json())
+    _ = JobStatus.model_validate(response.json())
 
     response = await client.post(
         f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs", auth=auth
     )
     assert response.status_code == status.HTTP_200_OK
-    _ = JobOutputs.parse_obj(response.json())
+    _ = JobOutputs.model_validate(response.json())

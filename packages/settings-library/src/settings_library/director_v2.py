@@ -1,6 +1,5 @@
 from functools import cached_property
 
-from pydantic import parse_obj_as
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (
@@ -13,7 +12,7 @@ from settings_library.utils_service import (
 class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     DIRECTOR_V2_HOST: str = "director-v2"
     DIRECTOR_V2_PORT: PortInt = DEFAULT_FASTAPI_PORT
-    DIRECTOR_V2_VTAG: VersionTag = parse_obj_as(VersionTag, "v2")
+    DIRECTOR_V2_VTAG: VersionTag = "v2"
 
     @cached_property
     def api_base_url(self) -> str:

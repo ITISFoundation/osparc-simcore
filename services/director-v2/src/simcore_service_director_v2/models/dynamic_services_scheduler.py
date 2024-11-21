@@ -1,22 +1,21 @@
 import json
 import logging
-import re
 from collections.abc import Mapping
 from datetime import datetime
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
 import arrow
+from common_library.error_codes import ErrorCodeStr
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     CommonServiceDetails,
 )
 from models_library.basic_types import PortInt
 from models_library.callbacks_mapping import CallbacksMapping
-from models_library.error_codes import ErrorCodeStr
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo, PricingInfo
@@ -31,11 +30,11 @@ from models_library.wallets import WalletInfo
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
-    ConstrainedStr,
-    Extra,
+    ConfigDict,
     Field,
-    parse_obj_as,
-    validator,
+    StringConstraints,
+    TypeAdapter,
+    field_validator,
 )
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -55,18 +54,17 @@ MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 DockerStatus: TypeAlias = Status2
 
 
-class DockerId(ConstrainedStr):
-    max_length = 25
-    regex = re.compile(r"[A-Za-z0-9]{25}")
-
+DockerId: TypeAlias = Annotated[
+    str, StringConstraints(max_length=25, pattern=r"[A-Za-z0-9]{25}")
+]
 
 ServiceId: TypeAlias = DockerId
 NetworkId: TypeAlias = DockerId
 
 
-class ServiceName(ConstrainedStr):
-    strip_whitespace = True
-    min_length = 2
+ServiceName: TypeAlias = Annotated[
+    str, StringConstraints(min_length=2, strip_whitespace=True)
+]
 
 
 logger = logging.getLogger()
@@ -116,21 +114,21 @@ class Status(BaseModel):
     @classmethod
     def create_as_initially_ok(cls) -> "Status":
         # the service is initially ok when started
-        initial_state: "Status" = cls(current=DynamicSidecarStatus.OK, info="")
+        initial_state: Status = cls(current=DynamicSidecarStatus.OK, info="")
         return initial_state
 
 
 class DockerContainerInspect(BaseModel):
-    container_state: ContainerState = Field(
-        ..., description="current state of container"
-    )
+    container_state: Annotated[
+        ContainerState, Field(..., description="current state of container")
+    ]
     name: str = Field(..., description="docker name of the container")
     id: str = Field(..., description="docker id of the container")
 
     @cached_property
     def status(self) -> DockerStatus:
-        assert self.container_state.Status  # nosec
-        result: DockerStatus = self.container_state.Status
+        assert self.container_state.status  # nosec
+        result: DockerStatus = self.container_state.status
         return result
 
     @classmethod
@@ -141,9 +139,7 @@ class DockerContainerInspect(BaseModel):
             id=container["Id"],
         )
 
-    class Config:
-        keep_untouched = (cached_property,)
-        allow_mutation = False
+    model_config = ConfigDict(ignored_types=(cached_property,), frozen=True)
 
 
 class ServiceRemovalState(BaseModel):
@@ -202,7 +198,7 @@ class DynamicSidecar(BaseModel):
 
     is_ready: bool = Field(
         default=False,
-        scription=(
+        description=(
             "is True while the health check on the dynamic-sidecar is responding. "
             "Meaning that the dynamic-sidecar is reachable and can accept requests"
         ),
@@ -224,7 +220,7 @@ class DynamicSidecar(BaseModel):
 
     containers_inspect: list[DockerContainerInspect] = Field(
         [],
-        scription="docker inspect results from all the container ran at regular intervals",
+        description="docker inspect results from all the container ran at regular intervals",
     )
 
     was_dynamic_sidecar_started: bool = False
@@ -279,7 +275,7 @@ class DynamicSidecar(BaseModel):
     )
 
     instrumentation: ServicesInstrumentation = Field(
-        default_factory=lambda: ServicesInstrumentation.parse_obj({}),
+        default_factory=lambda: ServicesInstrumentation.model_validate({}),
         description="keeps track times for various operations",
     )
 
@@ -317,9 +313,7 @@ class DynamicSidecar(BaseModel):
             "this value will be set to None."
         ),
     )
-
-    class Config:
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)
 
 
 class DynamicSidecarNamesHelper(BaseModel):
@@ -337,25 +331,25 @@ class DynamicSidecarNamesHelper(BaseModel):
 
     service_name_dynamic_sidecar: str = Field(
         ...,
-        regex=REGEX_DY_SERVICE_SIDECAR,
+        pattern=REGEX_DY_SERVICE_SIDECAR,
         max_length=MAX_ALLOWED_SERVICE_NAME_LENGTH,
         description="unique name of the dynamic-sidecar service",
     )
     proxy_service_name: str = Field(
         ...,
-        regex=REGEX_DY_SERVICE_PROXY,
+        pattern=REGEX_DY_SERVICE_PROXY,
         max_length=MAX_ALLOWED_SERVICE_NAME_LENGTH,
         description="name of the proxy for the dynamic-sidecar",
     )
 
     simcore_traefik_zone: str = Field(
         ...,
-        regex=REGEX_DY_SERVICE_SIDECAR,
+        pattern=REGEX_DY_SERVICE_SIDECAR,
         description="unique name for the traefik constraints",
     )
     dynamic_sidecar_network_name: str = Field(
         ...,
-        regex=REGEX_DY_SERVICE_SIDECAR,
+        pattern=REGEX_DY_SERVICE_SIDECAR,
         description="based on the node_id and project_id",
     )
 
@@ -392,17 +386,14 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     hostname: str = Field(
         ..., description="dy-sidecar's service hostname (provided by docker-swarm)"
     )
-    port: PortInt = Field(
-        default=parse_obj_as(PortInt, 8000), description="dynamic-sidecar port"
-    )
+    port: PortInt = Field(default=8000, description="dynamic-sidecar port")
 
     @property
     def endpoint(self) -> AnyHttpUrl:
         """endpoint where all the services are exposed"""
-        url: AnyHttpUrl = parse_obj_as(
-            AnyHttpUrl, f"http://{self.hostname}:{self.port}"  # NOSONAR
+        return AnyHttpUrl.build(  # pylint: disable=no-member
+            scheme="http", host=self.hostname, port=self.port
         )
-        return url
 
     dynamic_sidecar: DynamicSidecar = Field(
         ...,
@@ -425,7 +416,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     )
 
     service_port: PortInt = Field(
-        default=parse_obj_as(PortInt, TEMPORARY_PORT_NUMBER),
+        default=TEMPORARY_PORT_NUMBER,
         description=(
             "port where the service is exposed defined by the service; "
             "NOTE: temporary default because it will be changed once the service "
@@ -470,8 +461,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     def get_proxy_endpoint(self) -> AnyHttpUrl:
         """get the endpoint where the proxy's admin API is exposed"""
         assert self.proxy_admin_api_port  # nosec
-        url: AnyHttpUrl = parse_obj_as(
-            AnyHttpUrl,
+        url: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(
             f"http://{self.proxy_service_name}:{self.proxy_admin_api_port}",  # nosec  # NOSONAR
         )
         return url
@@ -528,9 +518,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         }
         if run_id:
             obj_dict["run_id"] = run_id
-        return cls.parse_obj(obj_dict)
+        return cls.model_validate(obj_dict)
 
-    @validator("user_preferences_path", pre=True)
+    @field_validator("user_preferences_path", mode="before")
     @classmethod
     def strip_path_serialization_to_none(cls, v):
         if v == "None":
@@ -542,15 +532,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         cls, service_inspect: Mapping[str, Any]
     ) -> "SchedulerData":
         labels = service_inspect["Spec"]["Labels"]
-        return cls.parse_raw(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
+        return cls.model_validate_json(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
 
     def as_label_data(self) -> str:
         # compose_spec needs to be json encoded before encoding it to json
         # and storing it in the label
-        return self.copy(
+        return self.model_copy(
             update={"compose_spec": json.dumps(self.compose_spec)}, deep=True
-        ).json()
+        ).model_dump_json()
 
-    class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
+    model_config = ConfigDict(extra="allow", populate_by_name=True)

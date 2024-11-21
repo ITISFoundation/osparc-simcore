@@ -171,7 +171,7 @@ async def ack_payment(id_: PaymentID, acked: AckPayment, settings: Settings):
     async with httpx.AsyncClient() as client:
         await client.post(
             f"{settings.PAYMENTS_SERVICE_API_BASE_URL}/v1/payments/{id_}:ack",
-            json=acked.dict(),
+            json=acked.model_dump(),
             auth=PaymentsAuth(
                 username=settings.PAYMENTS_USERNAME,
                 password=settings.PAYMENTS_PASSWORD.get_secret_value(),
@@ -185,7 +185,7 @@ async def ack_payment_method(
     async with httpx.AsyncClient() as client:
         await client.post(
             f"{settings.PAYMENTS_SERVICE_API_BASE_URL}/v1/payments-methods/{id_}:ack",
-            json=acked.dict(),
+            json=acked.model_dump(),
             auth=PaymentsAuth(
                 username=settings.PAYMENTS_USERNAME,
                 password=settings.PAYMENTS_PASSWORD.get_secret_value(),
@@ -429,7 +429,7 @@ def create_app():
     override_fastapi_openapi_method(app)
 
     app.state.settings = Settings.create_from_envs()
-    logging.info(app.state.settings.json(indent=2))
+    logging.info(app.state.settings.model_dump_json(indent=2))
 
     for factory in (
         create_payment_router,

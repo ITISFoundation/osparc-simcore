@@ -3,7 +3,7 @@ import logging
 from collections.abc import AsyncIterator
 
 from aiohttp import web
-from models_library.utils.json_serialization import JsonNamespace
+from common_library.json_serialization import JsonNamespace
 from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
 from socketio import AsyncAioPikaManager, AsyncServer  # type: ignore[import-untyped]
 

@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 import yaml
-from models_library.utils.json_serialization import json_loads
+from common_library.json_serialization import json_loads
 from service_integration import cli
 from typer.testing import CliRunner, Result
 

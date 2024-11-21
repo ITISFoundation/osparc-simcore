@@ -71,9 +71,9 @@ async def test_workflow(
         vc_repo, project_uuid, HEAD, message="updated message"
     )
 
-    assert checkpoint2_updated.dict(exclude={"message"}) == checkpoint2.dict(
+    assert checkpoint2_updated.model_dump(
         exclude={"message"}
-    )
+    ) == checkpoint2.model_dump(exclude={"message"})
 
     # -------------------------------------
     # checking out to v1

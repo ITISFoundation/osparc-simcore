@@ -175,7 +175,7 @@ tornado==6.4
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway
     #   distributed
-urllib3==2.2.1
+urllib3==2.2.3
     # via
     #   -c requirements/../../../../../requirements/constraints.txt
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt

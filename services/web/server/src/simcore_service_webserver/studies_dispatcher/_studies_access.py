@@ -20,7 +20,7 @@ from uuid import UUID, uuid5
 
 from aiohttp import web
 from aiohttp_session import get_session
-from models_library.error_codes import create_error_code
+from common_library.error_codes import create_error_code
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler

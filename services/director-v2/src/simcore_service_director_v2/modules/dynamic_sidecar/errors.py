@@ -1,34 +1,28 @@
-from aiodocker.exceptions import DockerError
-from models_library.projects_nodes_io import NodeID
-from pydantic.errors import PydanticErrorMixin
+from typing import Any
+
+from aiodocker import DockerError
 
 from ...core.errors import DirectorError
 
 
 class DynamicSidecarError(DirectorError):
-    pass
+    msg_template: str = "Unexpected dynamic sidecar error: {msg}"
 
 
 class GenericDockerError(DynamicSidecarError):
-    """Generic docker library error"""
-
-    def __init__(self, msg: str, original_exception: DockerError):
-        super().__init__(msg + f": {original_exception.message}")
+    def __init__(self, original_exception: DockerError, **ctx: Any) -> None:
+        super().__init__(original_exception=original_exception, **ctx)
         self.original_exception = original_exception
+
+    msg_template: str = "Unexpected error using docker client: {msg}"
 
 
 class DynamicSidecarNotFoundError(DirectorError):
-    """Dynamic sidecar was not found"""
-
-    def __init__(self, node_uuid: NodeID):
-        super().__init__(f"node {node_uuid} not found")
+    msg_template: str = "node {node_uuid} not found"
 
 
 class DockerServiceNotFoundError(DirectorError):
-    """Raised when an expected docker service is not found"""
-
-    def __init__(self, service_id: str):
-        super().__init__(f"docker service with {service_id=} not found")
+    msg_template: str = "docker service with {service_id} not found"
 
 
 class EntrypointContainerNotFoundError(DynamicSidecarError):
@@ -39,6 +33,5 @@ class LegacyServiceIsNotSupportedError(DirectorError):
     """This API is not implemented by the director-v0"""
 
 
-class UnexpectedContainerStatusError(PydanticErrorMixin, DynamicSidecarError):
-    code = "dynamic_sidecar.container_status"
-    msg_template = "Unexpected status from containers: {containers_with_error}"
+class UnexpectedContainerStatusError(DynamicSidecarError):
+    msg_template: str = "Unexpected status from containers: {containers_with_error}"

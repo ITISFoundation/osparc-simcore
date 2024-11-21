@@ -6,20 +6,21 @@
         - Link to another port: PortLink
 """
 
-import re
 from pathlib import Path
-from typing import Any, ClassVar, TypeAlias
+from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from models_library.basic_types import KeyIDStr
+from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
     AnyUrl,
     BaseModel,
-    ConstrainedStr,
-    Extra,
+    BeforeValidator,
+    ConfigDict,
     Field,
-    parse_obj_as,
-    validator,
+    StringConstraints,
+    TypeAdapter,
+    ValidationInfo,
+    field_validator,
 )
 
 from .basic_regex import (
@@ -31,10 +32,7 @@ from .basic_regex import (
 
 NodeID = UUID
 
-
-class UUIDStr(ConstrainedStr):
-    regex: re.Pattern[str] | None = re.compile(UUID_RE)
-
+UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
 
 NodeIDStr = UUIDStr
 
@@ -42,8 +40,9 @@ LocationID = int
 LocationName = str
 
 
-class SimcoreS3FileID(ConstrainedStr):
-    regex: re.Pattern[str] | None = re.compile(SIMCORE_S3_FILE_ID_RE)
+SimcoreS3FileID: TypeAlias = Annotated[
+    str, StringConstraints(pattern=SIMCORE_S3_FILE_ID_RE)
+]
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):
@@ -52,7 +51,7 @@ class SimcoreS3DirectoryID(ConstrainedStr):
         `{project_id}/{node_id}/simcore-dir-name/`
     """
 
-    regex: re.Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
+    pattern: str = SIMCORE_S3_DIRECTORY_ID_RE
 
     @staticmethod
     def _get_parent(s3_object: str, *, parent_index: int) -> str:
@@ -72,8 +71,8 @@ class SimcoreS3DirectoryID(ConstrainedStr):
             raise ValueError(msg) from err
 
     @classmethod
-    def validate(cls, value: str) -> str:
-        value = super().validate(value)
+    def _validate(cls, __input_value: str) -> str:
+        value = super()._validate(__input_value)
         value = value.rstrip("/")
         parent = cls._get_parent(value, parent_index=3)
 
@@ -86,12 +85,10 @@ class SimcoreS3DirectoryID(ConstrainedStr):
     @classmethod
     def from_simcore_s3_object(cls, s3_object: str) -> "SimcoreS3DirectoryID":
         parent_path: str = cls._get_parent(s3_object, parent_index=4)
-        return parse_obj_as(cls, f"{parent_path}/")
+        return TypeAdapter(cls).validate_python(f"{parent_path}/")
 
 
-class DatCoreFileID(ConstrainedStr):
-    regex: re.Pattern[str] | None = re.compile(DATCORE_FILE_ID_RE)
-
+DatCoreFileID: TypeAlias = Annotated[str, StringConstraints(pattern=DATCORE_FILE_ID_RE)]
 
 StorageFileID: TypeAlias = SimcoreS3FileID | DatCoreFileID
 
@@ -108,10 +105,9 @@ class PortLink(BaseModel):
         ...,
         description="The port key in the node given by nodeUuid",
     )
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 # minimal
                 {
@@ -119,25 +115,28 @@ class PortLink(BaseModel):
                     "output": "out_2",
                 }
             ],
-        }
+        },
+    )
 
 
 class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
-    download_link: AnyUrl = Field(..., alias="downloadLink")
+    download_link: Annotated[
+        str, BeforeValidator(lambda x: str(TypeAdapter(AnyUrl).validate_python(x)))
+    ] = Field(..., alias="downloadLink")
     label: str | None = Field(default=None, description="Display name")
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 # minimal
                 {
                     "downloadLink": "https://fakeimg.pl/250x100/",
                 }
             ],
-        }
+        },
+    )
 
 
 ## CUSTOM STORAGE SERVICES -----------
@@ -147,16 +146,17 @@ class BaseFileLink(BaseModel):
     store: LocationID = Field(
         ...,
         description="The store identifier: 0 for simcore S3, 1 for datcore",
+        validate_default=True,
     )
 
     path: StorageFileID = Field(
         ...,
         description="The path to the file in the storage provider domain",
+        union_mode="left_to_right",
     )
 
     label: str | None = Field(
-        default=None,
-        description="The real file name",
+        default=None, description="The real file name", validate_default=True
     )
 
     e_tag: str | None = Field(
@@ -165,13 +165,15 @@ class BaseFileLink(BaseModel):
         alias="eTag",
     )
 
-    @validator("store", pre=True)
+    @field_validator("store", mode="before")
     @classmethod
     def legacy_enforce_str_to_int(cls, v):
         # SEE example 'legacy: store as string'
         if isinstance(v, str):
             return int(v)
         return v
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class SimCoreFileLink(BaseFileLink):
@@ -182,7 +184,7 @@ class SimCoreFileLink(BaseFileLink):
         deprecated=True,
     )
 
-    @validator("store", always=True)
+    @field_validator("store")
     @classmethod
     def check_discriminator(cls, v):
         """Used as discriminator to cast to this class"""
@@ -191,16 +193,16 @@ class SimCoreFileLink(BaseFileLink):
             raise ValueError(msg)
         return 0
 
-    @validator("label", always=True, pre=True)
+    @field_validator("label", mode="before")
     @classmethod
-    def pre_fill_label_with_filename_ext(cls, v, values):
-        if v is None and "path" in values:
-            return Path(values["path"]).name
+    def pre_fill_label_with_filename_ext(cls, v, info: ValidationInfo):
+        if v is None and "path" in info.data:
+            return Path(info.data["path"]).name
         return v
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {
                     "store": 0,
@@ -225,7 +227,8 @@ class SimCoreFileLink(BaseFileLink):
                     "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt",
                 },
             ],
-        }
+        },
+    )
 
 
 class DatCoreFileLink(BaseFileLink):
@@ -241,7 +244,7 @@ class DatCoreFileLink(BaseFileLink):
         description="Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
     )
 
-    @validator("store", always=True)
+    @field_validator("store")
     @classmethod
     def check_discriminator(cls, v):
         """Used as discriminator to cast to this class"""
@@ -251,9 +254,9 @@ class DatCoreFileLink(BaseFileLink):
             raise ValueError(msg)
         return 1
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {
                     # minimal
@@ -270,7 +273,8 @@ class DatCoreFileLink(BaseFileLink):
                     "label": "initial_WTstates",
                 },
             ],
-        }
+        },
+    )
 
 
 # Bundles all model links to a file vs PortLink

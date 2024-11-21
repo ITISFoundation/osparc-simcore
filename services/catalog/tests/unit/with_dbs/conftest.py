@@ -1,7 +1,6 @@
 # pylint: disable=not-context-manager
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
-# pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -18,7 +17,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
-from pydantic import Extra, parse_obj_as
+from pydantic import ConfigDict, TypeAdapter
 from pytest_simcore.helpers.faker_factories import (
     random_service_access_rights,
     random_service_meta_data,
@@ -122,13 +121,13 @@ async def product(
 
 @pytest.fixture
 def target_product(product: dict[str, Any], product_name: ProductName) -> ProductName:
-    assert product_name == parse_obj_as(ProductName, product["name"])
+    assert product_name == TypeAdapter(ProductName).validate_python(product["name"])
     return product_name
 
 
 @pytest.fixture
 def other_product(product: dict[str, Any]) -> ProductName:
-    other = parse_obj_as(ProductName, "osparc")
+    other = TypeAdapter(ProductName).validate_python("osparc")
     assert other != product["name"]
     return other
 
@@ -347,7 +346,7 @@ async def service_metadata_faker(faker: Faker) -> Callable:
         data = deepcopy(template)
         data.update(**overrides)
 
-        assert ServiceMetaDataPublished.parse_obj(
+        assert ServiceMetaDataPublished.model_validate(
             data
         ), "Invalid fake data. Out of sync!"
         return data
@@ -454,9 +453,7 @@ def create_director_list_services_from() -> (
     """
 
     class _Loader(ServiceMetaDataPublished):
-        class Config:
-            extra = Extra.ignore
-            allow_population_by_field_name = True
+        model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     def _(
         expected_director_list_services: list[dict[str, Any]],
@@ -464,7 +461,7 @@ def create_director_list_services_from() -> (
     ):
         return [
             jsonable_encoder(
-                _Loader.parse_obj(
+                _Loader.model_validate(
                     {
                         **next(itertools.cycle(expected_director_list_services)),
                         **data[0],  # service, **access_rights = data

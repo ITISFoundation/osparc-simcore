@@ -1,6 +1,10 @@
 # SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict
 
-from typing import Final, TypedDict
+from typing import Final
+
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 
 class PydanticExportParametersDict(TypedDict):

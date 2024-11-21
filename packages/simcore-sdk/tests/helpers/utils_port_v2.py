@@ -45,5 +45,5 @@ def create_valid_port_mapping(
         key=key_for_file_port,
         fileToKeyMap={file_to_key: key_for_file_port} if file_to_key else None,
     )
-    port_mapping = mapping_class(**{"__root__": port_cfgs})
+    port_mapping = mapping_class(**{"root": port_cfgs})
     return port_mapping

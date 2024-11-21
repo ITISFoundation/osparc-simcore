@@ -35,7 +35,7 @@ from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -53,10 +53,10 @@ from ...core.errors import (
     ClusterNotFoundError,
     ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
+    ComputationalSchedulerError,
     ConfigurationError,
     PricingPlanUnitNotFoundError,
     ProjectNotFoundError,
-    SchedulerError,
     WalletNotEnoughCreditsError,
 )
 from ...models.comp_pipelines import CompPipelineAtDB
@@ -204,7 +204,9 @@ async def _get_project_metadata(
     except DBProjectNotFoundError:
         _logger.exception("Could not find project: %s", f"{project_id=}")
     except ProjectNotFoundError as exc:
-        _logger.exception("Could not find parent project: %s", f"{exc.project_id=}")
+        _logger.exception(
+            "Could not find parent project: %s", exc.error_context().get("project_id")
+        )
 
     return {}
 
@@ -399,13 +401,11 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
             pipeline_details=await compute_pipeline_details(
                 complete_dag, minimal_computational_dag, comp_tasks
             ),
-            url=parse_obj_as(
-                AnyHttpUrl,
+            url=TypeAdapter(AnyHttpUrl).validate_python(
                 f"{request.url}/{computation.project_id}?user_id={computation.user_id}",
             ),
             stop_url=(
-                parse_obj_as(
-                    AnyHttpUrl,
+                TypeAdapter(AnyHttpUrl).validate_python(
                     f"{request.url}/{computation.project_id}:stop?user_id={computation.user_id}",
                 )
                 if computation.start_pipeline
@@ -510,9 +510,11 @@ async def get_computation(
         id=project_id,
         state=pipeline_state,
         pipeline_details=pipeline_details,
-        url=parse_obj_as(AnyHttpUrl, f"{request.url}"),
+        url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
         stop_url=(
-            parse_obj_as(AnyHttpUrl, f"{self_url}:stop?user_id={user_id}")
+            TypeAdapter(AnyHttpUrl).validate_python(
+                f"{self_url}:stop?user_id={user_id}"
+            )
             if pipeline_state.is_running()
             else None
         ),
@@ -588,7 +590,7 @@ async def stop_computation(
             pipeline_details=await compute_pipeline_details(
                 complete_dag, pipeline_dag, tasks
             ),
-            url=parse_obj_as(AnyHttpUrl, f"{request.url}"),
+            url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
             stop_url=None,
             iteration=last_run.iteration if last_run else None,
             cluster_id=last_run.cluster_id if last_run else None,
@@ -600,7 +602,7 @@ async def stop_computation(
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except SchedulerError as e:
+    except ComputationalSchedulerError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
 
@@ -641,7 +643,7 @@ async def delete_computation(
             # abort the pipeline first
             try:
                 await scheduler.stop_pipeline(computation_stop.user_id, project_id)
-            except SchedulerError as e:
+            except ComputationalSchedulerError as e:
                 _logger.warning(
                     "Project %s could not be stopped properly.\n reason: %s",
                     project_id,

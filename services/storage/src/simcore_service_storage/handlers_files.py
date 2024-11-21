@@ -5,6 +5,7 @@ from typing import cast
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -17,8 +18,7 @@ from models_library.api_schemas_storage import (
     SoftCopyBody,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -72,7 +72,7 @@ async def get_files_metadata(request: web.Request) -> web.Response:
         project_id=query_params.project_id,
     )
     return web.json_response(
-        {"data": [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]},
+        {"data": [jsonable_encoder(FileMetaDataGet(**d.model_dump())) for d in data]},
         dumps=json_dumps,
     )
 
@@ -87,7 +87,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
     )
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
-        "received call to get_files_metadata_dataset with %s",
+        "received call to get_file_metadata_dataset with %s",
         f"{path_params=}, {query_params=}",
     )
 
@@ -134,7 +134,10 @@ async def get_file_metadata(request: web.Request) -> web.Response:
             dumps=json_dumps,
         )
 
-    return jsonable_encoder(FileMetaDataGet.from_orm(data))  # type: ignore[no-any-return] # middleware takes care of enveloping
+    return web.json_response(
+        {"data": jsonable_encoder(FileMetaDataGet(**data.model_dump()))},
+        dumps=json_dumps,
+    )
 
 
 @routes.get(
@@ -177,7 +180,8 @@ async def upload_file(request: web.Request) -> web.Response:
         - client calls complete_upload handle which will reconstruct the file on S3 backend
         - client waits for completion to finish and then the file is accessible on S3 backend
 
-    Use-case v1: if query.file_size is not defined, returns a PresignedLink model (backward compatibility)
+
+    Use-case v1: query.file_size is not defined, returns a PresignedLink model (backward compatibility)
     Use-case v1.1: if query.link_type=presigned or None, returns a presigned link (limited to a single 5GB file)
     Use-case v1.2: if query.link_type=s3, returns a s3 direct link (limited to a single 5TB file)
 
@@ -205,10 +209,12 @@ async def upload_file(request: web.Request) -> web.Response:
         is_directory=query_params.is_directory,
         sha256_checksum=query_params.sha256_checksum,
     )
-    if query_params.file_size is None and not query_params.is_directory:
+    if query_params.is_v1_upload:
         # return v1 response
         assert len(links.urls) == 1  # nosec
-        response = {"data": {"link": jsonable_encoder(links.urls[0], by_alias=True)}}
+        response = {
+            "data": {"link": jsonable_encoder(f"{links.urls[0]}", by_alias=True)}
+        }
         log.debug("Returning v1 response: %s", response)
         return web.json_response(response, dumps=json_dumps)
 
@@ -233,11 +239,8 @@ async def upload_file(request: web.Request) -> web.Response:
         chunk_size=links.chunk_size,
         urls=links.urls,
         links=FileUploadLinks(
-            abort_upload=parse_obj_as(AnyUrl, f"{abort_url}"),
-            complete_upload=parse_obj_as(
-                AnyUrl,
-                f"{complete_url}",
-            ),
+            abort_upload=TypeAdapter(AnyUrl).validate_python(f"{abort_url}"),
+            complete_upload=TypeAdapter(AnyUrl).validate_python(f"{complete_url}"),
         ),
     )
     log.debug("returning v2 response: %s", v2_response)
@@ -306,7 +309,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     complete_task_state_url = f"{request.url.scheme}://{ip_addr}:{port}{route}"
     response = FileUploadCompleteResponse(
         links=FileUploadCompleteLinks(
-            state=parse_obj_as(AnyUrl, complete_task_state_url)
+            state=TypeAdapter(AnyUrl).validate_python(complete_task_state_url)
         )
     )
     return web.json_response(
@@ -408,4 +411,4 @@ async def copy_as_soft_link(request: web.Request):
         query_params.user_id, path_params.file_id, body.link_id
     )
 
-    return jsonable_encoder(FileMetaDataGet.from_orm(file_link))
+    return jsonable_encoder(FileMetaDataGet(**file_link.model_dump()))

@@ -10,13 +10,13 @@ from copy import deepcopy
 from typing import Any, Literal, Optional
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.basic_types import KeyIDStr, SHA1Str
 from models_library.function_services_catalog import is_iterator_service
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, OutputID, OutputTypes
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceMetaDataPublished
-from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
@@ -156,7 +156,7 @@ class ProjectIteration(BaseModel):
     ) -> Optional["ProjectIteration"]:
         """Parses iteration info from tag name"""
         try:
-            return cls.parse_obj(parse_iteration_tag_name(tag_name))
+            return cls.model_validate(parse_iteration_tag_name(tag_name))
         except ValidationError as err:
             if return_none_if_fails:
                 _logger.debug("%s", f"{err=}")
@@ -218,7 +218,7 @@ async def get_or_create_runnable_projects(
         raise web.HTTPForbidden(reason="Unauthenticated request") from err
 
     project_nodes: dict[NodeID, Node] = {
-        nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
+        nid: Node.model_validate(n) for nid, n in project["workbench"].items()
     }
 
     # init returns
@@ -280,7 +280,7 @@ async def get_or_create_runnable_projects(
         project["workbench"].update(
             {
                 # converts model in dict patching first thumbnail
-                nid: n.copy(update={"thumbnail": n.thumbnail or ""}).dict(
+                nid: n.model_copy(update={"thumbnail": n.thumbnail or ""}).model_dump(
                     by_alias=True, exclude_unset=True
                 )
                 for nid, n in updated_nodes.items()
@@ -326,7 +326,7 @@ async def get_runnable_projects_ids(
     project: ProjectDict = await vc_repo.get_project(str(project_uuid))
     assert project["uuid"] == str(project_uuid)  # nosec
     project_nodes: dict[NodeID, Node] = {
-        nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
+        nid: Node.model_validate(n) for nid, n in project["workbench"].items()
     }
 
     # init returns

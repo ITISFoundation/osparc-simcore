@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import aiodocker
 from aiodocker.containers import DockerContainer
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ def num_available_gpus() -> int:
                     if container_data.setdefault("StatusCode", 127) == 0
                     else 0
                 )
-            except asyncio.TimeoutError as err:
+            except TimeoutError as err:
                 logger.warning(
                     "num_gpus timedout while check-run %s: %s", spec_config, err
                 )
@@ -100,14 +100,14 @@ def video_memory() -> int:
                     Coroutine,
                     container.log(stdout=True, stderr=True, follow=False),
                 )
-                video_ram = parse_obj_as(ByteSize, 0)
+                video_ram = TypeAdapter(ByteSize).validate_python(0)
                 if container_data.setdefault("StatusCode", 127) == 0:
                     for line in container_logs:
-                        video_ram = parse_obj_as(
-                            ByteSize, video_ram + parse_obj_as(ByteSize, line)
+                        video_ram = TypeAdapter(ByteSize).validate_python(
+                            video_ram + TypeAdapter(ByteSize).validate_python(line)
                         )
 
-            except asyncio.TimeoutError as err:
+            except TimeoutError as err:
                 logger.warning(
                     "num_gpus timedout while check-run %s: %s", spec_config, err
                 )

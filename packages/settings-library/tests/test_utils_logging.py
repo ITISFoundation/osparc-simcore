@@ -1,8 +1,8 @@
 import logging
 
-from pydantic import Field, validator
+from pydantic import AliasChoices, Field, field_validator
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import BootMode
+from settings_library.basic_types import BootModeEnum
 from settings_library.utils_logging import MixinLoggingSettings
 
 
@@ -14,22 +14,22 @@ def test_mixin_logging(monkeypatch):
 
     class Settings(BaseCustomSettings, MixinLoggingSettings):
         # DOCKER
-        SC_BOOT_MODE: BootMode | None
+        SC_BOOT_MODE: BootModeEnum | None = None
 
         # LOGGING
         LOG_LEVEL: str = Field(
             "WARNING",
-            env=[
+            validation_alias=AliasChoices(
                 "APPNAME_LOG_LEVEL",
                 "LOG_LEVEL",
-            ],
+            ),
         )
 
         APPNAME_DEBUG: bool = Field(
             default=False, description="Starts app in debug mode"
         )
 
-        @validator("LOG_LEVEL", pre=True)
+        @field_validator("LOG_LEVEL", mode="before")
         @classmethod
         def _v(cls, value: str) -> str:
             return cls.validate_log_level(value)
@@ -42,14 +42,9 @@ def test_mixin_logging(monkeypatch):
     assert settings.LOG_LEVEL == "DEBUG"
 
     assert (
-        settings.json()
-        == '{"SC_BOOT_MODE": null, "LOG_LEVEL": "DEBUG", "APPNAME_DEBUG": false}'
+        settings.model_dump_json()
+        == '{"SC_BOOT_MODE":null,"LOG_LEVEL":"DEBUG","APPNAME_DEBUG":false}'
     )
 
     # test cached-property
     assert settings.log_level == logging.DEBUG
-    # log_level is cached-property (notice that is lower-case!), and gets added after first use
-    assert (
-        settings.json()
-        == '{"SC_BOOT_MODE": null, "LOG_LEVEL": "DEBUG", "APPNAME_DEBUG": false, "log_level": 10}'
-    )

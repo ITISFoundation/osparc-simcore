@@ -5,7 +5,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 """
 
 from models_library.projects import ProjectID
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..models import RequestContext
 
@@ -14,10 +14,7 @@ assert RequestContext.__name__  # nosec
 
 class ProjectPathParams(BaseModel):
     project_id: ProjectID
-
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
 class RemoveQueryParams(BaseModel):

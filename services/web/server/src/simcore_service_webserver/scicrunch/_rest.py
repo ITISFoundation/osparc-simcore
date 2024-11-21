@@ -15,10 +15,10 @@
 """
 
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 from aiohttp import ClientSession
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 from yarl import URL
 
 from .models import ResourceHit
@@ -41,7 +41,7 @@ class FieldItem(BaseModel):
 
 
 class ResourceView(BaseModel):
-    resource_fields: list[FieldItem] = Field([], alias="fields")
+    resource_fields: Annotated[list[FieldItem], Field([], alias="fields")]
     version: int
     curation_status: str
     last_curated_version: int
@@ -49,7 +49,7 @@ class ResourceView(BaseModel):
 
     @classmethod
     def from_response_payload(cls, payload: dict):
-        assert payload["success"] == True  # nosec
+        assert payload["success"] is True  # nosec
         return cls(**payload["data"])
 
     @property
@@ -60,7 +60,8 @@ class ResourceView(BaseModel):
         for field in self.resource_fields:
             if field.field_name == fieldname:
                 return field.value
-        raise ValueError(f"Cannot file expected field {fieldname}")
+        msg = f"Cannot file expected field {fieldname}"
+        raise ValueError(msg)
 
     def get_name(self):
         return str(self._get_field("Resource Name"))
@@ -72,8 +73,8 @@ class ResourceView(BaseModel):
         return URL(str(self._get_field("Resource URL")))
 
 
-class ListOfResourceHits(BaseModel):
-    __root__: list[ResourceHit]
+class ListOfResourceHits(RootModel[list[ResourceHit]]):
+    ...
 
 
 # REQUESTS
@@ -120,4 +121,4 @@ async def autocomplete_by_name(
     ) as resp:
         body = await resp.json()
         assert body.get("success")  # nosec
-        return ListOfResourceHits.parse_obj(body.get("data", []))
+        return ListOfResourceHits.model_validate(body.get("data", []))

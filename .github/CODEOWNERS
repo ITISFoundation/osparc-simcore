@@ -13,7 +13,8 @@ Makefile                                  @pcrespov @sanderegg
 /api/                                     @sanderegg @pcrespov @matusdrobuliak66
 /ci/                                      @sanderegg @pcrespov
 /docs/                                    @pcrespov
-/packages/models-library/                 @sanderegg @pcrespov @matusdrobuliak66
+/packages/common-library/                 @giancarloromeo
+/packages/models-library/                 @sanderegg @pcrespov @matusdrobuliak66 @giancarloromeo
 /packages/postgres-database/              @matusdrobuliak66
 /packages/pytest-simcore/                 @pcrespov @sanderegg
 /packages/service-integration/            @pcrespov @sanderegg @GitHK

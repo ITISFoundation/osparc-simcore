@@ -212,4 +212,4 @@ async def get_user_billing_details(
         user_billing_details = await UsersRepo.get_billing_details(conn, user_id)
         if not user_billing_details:
             raise BillingDetailsNotFoundError(user_id=user_id)
-        return UserBillingDetails.from_orm(user_billing_details)
+        return UserBillingDetails.model_validate(user_billing_details)

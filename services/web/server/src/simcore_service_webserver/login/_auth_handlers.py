@@ -4,7 +4,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.authentification import TwoFactorAuthentificationMethod
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, Field, PositiveInt, SecretStr, parse_obj_as
+from pydantic import BaseModel, Field, PositiveInt, SecretStr, TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import get_log_record_extra, log_context
@@ -137,9 +137,9 @@ async def login(request: web.Request):
             value=user_2fa_authentification_method,
         )
     else:
-        user_2fa_authentification_method = parse_obj_as(
-            TwoFactorAuthentificationMethod, user_2fa_preference.value
-        )
+        user_2fa_authentification_method = TypeAdapter(
+            TwoFactorAuthentificationMethod
+        ).validate_python(user_2fa_preference.value)
 
     if user_2fa_authentification_method == TwoFactorAuthentificationMethod.DISABLED:
         return await login_granted_response(request, user=user)
@@ -275,7 +275,7 @@ async def login_2fa(request: web.Request):
 
 class LogoutBody(InputSchema):
     client_session_id: str | None = Field(
-        None, example="5ac57685-c40f-448f-8711-70be1936fd63"
+        None, examples=["5ac57685-c40f-448f-8711-70be1936fd63"]
     )
 
 

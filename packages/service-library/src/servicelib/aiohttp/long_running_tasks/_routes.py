@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 

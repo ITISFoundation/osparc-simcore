@@ -85,7 +85,7 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
 
             async with cluster.get_client() as client:
                 print(f"--> created new client {client=}, submitting a job")
-                res = await client.submit(lambda x: x + 1, 1)  # type: ignore
+                res = await client.submit(lambda x: x + 1, 1)
                 assert res == 2
 
             print(f"--> scaling cluster {cluster=} back to 0")
@@ -114,12 +114,12 @@ async def test_get_default_cluster_details(
         f"/v2/clusters/default/details?user_id={user_1['id']}"
     )
     assert response.status_code == status.HTTP_200_OK
-    default_cluster_out = ClusterDetailsGet.parse_obj(response.json())
+    default_cluster_out = ClusterDetailsGet.model_validate(response.json())
     response = await async_client.get(
         f"/v2/clusters/{0}/details?user_id={user_1['id']}"
     )
     assert response.status_code == status.HTTP_200_OK
-    assert default_cluster_out == ClusterDetailsGet.parse_obj(response.json())
+    assert default_cluster_out == ClusterDetailsGet.model_validate(response.json())
 
 
 async def _get_cluster_details(
@@ -130,7 +130,7 @@ async def _get_cluster_details(
     )
     assert response.status_code == status.HTTP_200_OK
     print(f"<-- received cluster details response {response=}")
-    cluster_out = ClusterDetailsGet.parse_obj(response.json())
+    cluster_out = ClusterDetailsGet.model_validate(response.json())
     assert cluster_out
     print(f"<-- received cluster details {cluster_out=}")
     assert cluster_out.scheduler, "the cluster's scheduler is not started!"
@@ -155,7 +155,7 @@ async def test_get_cluster_details(
         authentication=SimpleAuthentication(
             username=gateway_username,
             password=SecretStr(local_dask_gateway_server.password),
-        ).dict(by_alias=True),
+        ).model_dump(by_alias=True),
     )
     # in its present state, the cluster should have no workers
     cluster_out = await _get_cluster_details(

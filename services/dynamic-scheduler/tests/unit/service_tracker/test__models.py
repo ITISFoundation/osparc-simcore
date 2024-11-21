@@ -12,6 +12,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )
 from models_library.projects import ProjectID
+from pydantic import TypeAdapter
 from servicelib.deferred_tasks import TaskUID
 from simcore_service_dynamic_scheduler.services.service_tracker._models import (
     SchedulerServiceState,
@@ -51,8 +52,8 @@ def test_serialization(
     "dynamic_service_start",
     [
         None,
-        DynamicServiceStart.parse_obj(
-            DynamicServiceStart.Config.schema_extra["example"]
+        TypeAdapter(DynamicServiceStart).validate_python(
+            DynamicServiceStart.model_config["json_schema_extra"]["example"]
         ),
     ],
 )

@@ -7,7 +7,7 @@ from .._utils import OM, FunctionServices
 # NOTE: DO not mistake with simcore/services/frontend/nodes-group/macros/
 #  which needs to be redefined.
 #
-META = ServiceMetaDataPublished.parse_obj(
+META = ServiceMetaDataPublished.model_validate(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/nodes-group",

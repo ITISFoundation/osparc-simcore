@@ -61,7 +61,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         log_format_local_dev_enabled=settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.API_SERVER_LOG_FILTER_MAPPING,
     )
-    _logger.debug("App settings:\n%s", settings.json(indent=2))
+    _logger.debug("App settings:\n%s", settings.model_dump_json(indent=2))
 
     # Labeling
     title = "osparc.io public API"

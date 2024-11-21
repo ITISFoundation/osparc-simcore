@@ -6,6 +6,7 @@ from copy import deepcopy
 from typing import Any
 from uuid import uuid4
 
+from pydantic import TypeAdapter
 import pytest
 import yaml
 from models_library.docker import to_simcore_runtime_docker_label_key
@@ -21,7 +22,6 @@ from models_library.services_resources import (
     ServiceResourcesDict,
 )
 from models_library.users import UserID
-from pydantic import parse_obj_as
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_compose_specs
 
@@ -74,8 +74,7 @@ environment:
     [
         pytest.param(
             {"version": "2.3", "services": {DEFAULT_SINGLE_SERVICE_NAME: {}}},
-            parse_obj_as(
-                ServiceResourcesDict,
+            TypeAdapter(ServiceResourcesDict).validate_python(
                 {
                     DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -90,8 +89,7 @@ environment:
         ),
         pytest.param(
             {"version": "3.7", "services": {DEFAULT_SINGLE_SERVICE_NAME: {}}},
-            parse_obj_as(
-                ServiceResourcesDict,
+            TypeAdapter(ServiceResourcesDict).validate_python(
                 {
                     DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -156,7 +154,7 @@ async def test_inject_resource_limits_and_reservations(
     [
         pytest.param(
             json.loads(
-                SimcoreServiceLabels.Config.schema_extra["examples"][2][
+                SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2][
                     "simcore.service.compose-spec"
                 ]
             ),
@@ -200,7 +198,7 @@ def test_regression_service_has_no_reservations():
         "version": "3.7",
         "services": {DEFAULT_SINGLE_SERVICE_NAME: {}},
     }
-    service_resources: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, {})
+    service_resources: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python({})
 
     spec_before = deepcopy(service_spec)
     docker_compose_specs._update_resource_limits_and_reservations(

@@ -13,6 +13,7 @@
 
 # installs this repo's packages
 simcore-aws-library @ ../../packages/aws-library
+simcore-common-library @ ../../packages/common-library
 simcore-models-library @ ../../packages/models-library
 pytest-simcore @ ../../packages/pytest-simcore
 simcore-service-library[fastapi] @ ../../packages/service-library

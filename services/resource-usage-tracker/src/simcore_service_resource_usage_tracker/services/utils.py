@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
@@ -41,9 +41,9 @@ async def sum_credit_transactions_and_publish_to_rabbitmq(
             wallet_id,
         )
     )
-    publish_message = WalletCreditsMessage.construct(
+    publish_message = WalletCreditsMessage.model_construct(
         wallet_id=wallet_id,
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
         credits=wallet_total_credits.available_osparc_credits,
         product_name=product_name,
     )

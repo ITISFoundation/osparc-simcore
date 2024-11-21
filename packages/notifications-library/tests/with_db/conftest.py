@@ -14,7 +14,7 @@ from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from notifications_library._templates import get_default_named_templates
-from pydantic import validate_arguments
+from pydantic import validate_call
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
@@ -165,7 +165,7 @@ def set_template_to_product(
     sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
 ):
     # NOTE: needs all fixture products in db
-    @validate_arguments
+    @validate_call
     async def _(template_name: IDStr, product_name: ProductName) -> None:
         async with sqlalchemy_async_engine.begin() as conn:
             await conn.execute(
@@ -179,7 +179,7 @@ def set_template_to_product(
 
 @pytest.fixture
 def unset_template_to_product(sqlalchemy_async_engine: AsyncEngine):
-    @validate_arguments
+    @validate_call
     async def _(template_name: IDStr, product_name: ProductName) -> None:
         async with sqlalchemy_async_engine.begin() as conn:
             await conn.execute(

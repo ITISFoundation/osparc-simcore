@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import Any, Final, NamedTuple, TypeAlias
 
 from models_library.utils.specs_substitution import SubstitutionValue
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 
 ContextDict: TypeAlias = dict[str, Any]
@@ -89,7 +89,7 @@ class OsparcVariablesTable:
         return {k: self._variables_getters[k] for k in selection}
 
 
-_HANDLERS_TIMEOUT: Final[NonNegativeInt] = parse_obj_as(NonNegativeInt, 4)
+_HANDLERS_TIMEOUT: Final[NonNegativeInt] = 4
 
 
 async def resolve_variables_from_context(

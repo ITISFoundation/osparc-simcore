@@ -44,13 +44,17 @@ def app_environment(
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR_V2": "null",
             "WEBSERVER_EXPORTER": "null",
+            "WEBSERVER_EMAIL": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_GROUPS": "1",
+            "WEBSERVER_LOGIN": "null",
             "WEBSERVER_META_MODELING": "0",
+            "WEBSERVER_PAYMENTS": "null",
             "WEBSERVER_PRODUCTS": "1",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_RABBITMQ": "null",
             "WEBSERVER_REMOTE_DEBUG": "0",
+            "WEBSERVER_SCICRUNCH": "null",
             "WEBSERVER_STORAGE": "null",
             "WEBSERVER_SOCKETIO": "0",
             "WEBSERVER_TAGS": "1",
@@ -63,6 +67,7 @@ def app_environment(
     )
     # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
     # setup_logging(level=logging.DEBUG)
+    print(env_vars)
     return env_vars
 
 

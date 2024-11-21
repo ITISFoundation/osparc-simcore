@@ -1,4 +1,5 @@
 httpx
 pandas
 pydantic[dotenv,email]
+pydantic-settings
 tabulate

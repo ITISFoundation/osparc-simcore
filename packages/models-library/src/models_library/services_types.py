@@ -1,8 +1,9 @@
-import re
+from typing import Annotated, Any, TypeAlias
 from uuid import uuid4
 
 import arrow
-from pydantic import ConstrainedStr
+from pydantic import GetCoreSchemaHandler, StringConstraints, ValidationInfo
+from pydantic_core import CoreSchema, core_schema
 
 from .basic_regex import PROPERTY_KEY_RE, SIMPLE_VERSION_RE
 from .services_regex import (
@@ -13,48 +14,25 @@ from .services_regex import (
     SERVICE_KEY_RE,
 )
 
+ServicePortKey: TypeAlias = Annotated[str, StringConstraints(pattern=PROPERTY_KEY_RE)]
 
-class ServicePortKey(ConstrainedStr):
-    regex = re.compile(PROPERTY_KEY_RE)
+FileName: TypeAlias = Annotated[str, StringConstraints(pattern=FILENAME_RE)]
 
-    class Config:
-        frozen = True
+ServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_KEY_RE)]
 
+ServiceKeyEncoded: TypeAlias = Annotated[
+    str, StringConstraints(pattern=SERVICE_ENCODED_KEY_RE)
+]
 
-class FileName(ConstrainedStr):
-    regex = re.compile(FILENAME_RE)
+DynamicServiceKey: TypeAlias = Annotated[
+    str, StringConstraints(pattern=DYNAMIC_SERVICE_KEY_RE)
+]
 
-    class Config:
-        frozen = True
+ComputationalServiceKey: TypeAlias = Annotated[
+    str, StringConstraints(pattern=COMPUTATIONAL_SERVICE_KEY_RE)
+]
 
-
-class ServiceKey(ConstrainedStr):
-    regex = SERVICE_KEY_RE
-
-    class Config:
-        frozen = True
-
-
-class ServiceKeyEncoded(ConstrainedStr):
-    regex = re.compile(SERVICE_ENCODED_KEY_RE)
-
-    class Config:
-        frozen = True
-
-
-class DynamicServiceKey(ServiceKey):
-    regex = DYNAMIC_SERVICE_KEY_RE
-
-
-class ComputationalServiceKey(ServiceKey):
-    regex = COMPUTATIONAL_SERVICE_KEY_RE
-
-
-class ServiceVersion(ConstrainedStr):
-    regex = re.compile(SIMPLE_VERSION_RE)
-
-    class Config:
-        frozen = True
+ServiceVersion: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
 
 
 class RunID(str):
@@ -80,3 +58,20 @@ class RunID(str):
         utc_int_timestamp: int = arrow.utcnow().int_timestamp
         run_id_format = f"{utc_int_timestamp}_{uuid4()}"
         return cls(run_id_format)
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,  # pylint:disable=unused-argument
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(cls, handler(str))
+
+    @classmethod
+    def validate(cls, v: "RunID | str", _: ValidationInfo) -> "RunID":
+        if isinstance(v, cls):
+            return v
+        if isinstance(v, str):
+            return cls(v)
+        msg = f"Invalid value for RunID: {v}"
+        raise TypeError(msg)

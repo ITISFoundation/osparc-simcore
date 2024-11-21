@@ -9,6 +9,8 @@ from unittest import mock
 
 import pytest
 from _dask_helpers import DaskGatewayServer
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from models_library.clusters import (
@@ -24,7 +26,6 @@ from models_library.clusters import (
 from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.utils_encoders import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
@@ -87,7 +88,7 @@ def fake_clusters(faker: Faker) -> Callable[[int], list[Cluster]]:
         fake_clusters = []
         for n in range(num_clusters):
             fake_clusters.append(
-                Cluster.parse_obj(
+                Cluster.model_validate(
                     {
                         "id": faker.pyint(),
                         "name": faker.name(),
@@ -126,10 +127,15 @@ def default_scheduler_set_as_osparc_gateway(
         )
         monkeypatch.setenv(
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH",
-            SimpleAuthentication(
-                username=faker.user_name(),
-                password=SecretStr(local_dask_gateway_server.password),
-            ).json(encoder=create_json_encoder_wo_secrets(SimpleAuthentication)),
+            json_dumps(
+                model_dump_with_secrets(
+                    SimpleAuthentication(
+                        username=faker.user_name(),
+                        password=SecretStr(local_dask_gateway_server.password),
+                    ),
+                    show_secrets=True,
+                )
+            ),
         )
 
     return creator
@@ -194,11 +200,11 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
                 cluster_type=ClusterTypeInModel.ON_PREMISE,
             )
         )
-        async with clients_pool.acquire(cluster) as dask_client:
+        async with clients_pool.acquire(cluster):
             # on start it is created
             mocked_dask_client.create.assert_has_calls(mocked_creation_calls)
 
-        async with clients_pool.acquire(cluster) as dask_client:
+        async with clients_pool.acquire(cluster):
             # the connection already exists, so there is no new call to create
             mocked_dask_client.create.assert_has_calls(mocked_creation_calls)
 
@@ -278,5 +284,5 @@ async def test_acquire_default_cluster(
         )
         future = dask_client.backend.client.submit(just_a_quick_fct, 12, 23)
         assert future
-        result = await future.result(timeout=10)  # type: ignore
+        result = await future.result(timeout=10)
     assert result == 35

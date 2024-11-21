@@ -74,10 +74,10 @@ ServiceMessage = str
 def _extract_container_status(
     container_state: ContainerState,
 ) -> tuple[ServiceState, ServiceMessage]:
-    assert container_state.Status  # nosec
+    assert container_state.status  # nosec
     return (
-        _CONTAINER_STATE_TO_SERVICE_STATE[container_state.Status],
-        container_state.Error if container_state.Error else "",
+        _CONTAINER_STATE_TO_SERVICE_STATE[container_state.status],
+        container_state.error if container_state.error else "",
     )
 
 

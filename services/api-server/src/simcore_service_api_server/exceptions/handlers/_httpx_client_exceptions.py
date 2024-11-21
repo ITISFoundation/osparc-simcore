@@ -14,13 +14,14 @@ from ._utils import create_error_json_response
 _logger = logging.getLogger(__file__)
 
 
-async def handle_httpx_client_exceptions(request: Request, exc: HTTPError):
+async def handle_httpx_client_exceptions(request: Request, exc: Exception):
     """
     Default httpx exception handler.
     See https://www.python-httpx.org/exceptions/
     With this in place only HTTPStatusErrors need to be customized closer to the httpx client itself.
     """
     assert request  # nosec
+    assert isinstance(exc, HTTPError)
 
     status_code: Any
     detail: str

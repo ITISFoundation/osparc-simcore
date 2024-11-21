@@ -10,10 +10,9 @@ from ..log_streaming_errors import (
 from ._utils import create_error_json_response
 
 
-async def log_handling_error_handler(
-    request: Request, exc: LogStreamingBaseError
-) -> JSONResponse:
+async def log_handling_error_handler(request: Request, exc: Exception) -> JSONResponse:
     assert request  # nosec
+    assert isinstance(exc, LogStreamingBaseError)
 
     msg = f"{exc}"
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR

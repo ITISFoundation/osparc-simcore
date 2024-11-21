@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import Final
 
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.projects_networks import DockerNetworkName
 from pydantic import Field, NonNegativeInt, PositiveFloat
 from settings_library.base import BaseCustomSettings
@@ -102,8 +103,8 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         ),
     )
 
-    DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(
-        60.0 * _MINUTE,
+    DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: timedelta = Field(
+        timedelta(hours=1),
         description=(
             "When saving and restoring the state of a dynamic service, depending on the payload "
             "some services take longer or shorter to save and restore. Across the "
@@ -165,4 +166,13 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
 
     DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL: timedelta = Field(
         timedelta(0), description="time to sleep before removing a container"
+    )
+
+    _validate_director_v2_dynamic_scheduler_interval = (
+        validate_numeric_string_as_timedelta("DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL")
+    )
+    _validate_director_v2_dynamic_sidecar_sleep_after_container_removal = (
+        validate_numeric_string_as_timedelta(
+            "DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL"
+        )
     )

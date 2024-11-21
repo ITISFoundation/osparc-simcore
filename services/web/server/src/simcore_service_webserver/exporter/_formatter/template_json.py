@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import aiofiles
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 
 from ...projects.models import ProjectDict
 

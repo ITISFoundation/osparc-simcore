@@ -13,5 +13,6 @@
 simcore-service-library[fastapi] @ ../../packages/service-library
 simcore-settings-library @ ../../packages/settings-library
 simcore-models-library @ ../../packages/models-library
+simcore-common-library @ ../../packages/common-library/
 # installs current package
 simcore-service-invitations @ .

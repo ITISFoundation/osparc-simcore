@@ -1,7 +1,7 @@
 import datetime
 from enum import auto
 
-from pydantic import AnyUrl, BaseModel
+from pydantic import AnyUrl, BaseModel, Field
 
 from ..clusters import ClusterAuthentication
 from ..users import UserID
@@ -17,7 +17,7 @@ class ClusterState(StrAutoEnum):
 
 class OnDemandCluster(BaseModel):
     endpoint: AnyUrl
-    authentication: ClusterAuthentication
+    authentication: ClusterAuthentication = Field(discriminator="type")
     state: ClusterState
     user_id: UserID
     wallet_id: WalletID | None

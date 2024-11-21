@@ -2,13 +2,13 @@
 
 
 """
+
 import datetime
 import logging
 from typing import Any
 
 from aiohttp import web
-from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel
 from servicelib.aiohttp import status
 
 from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
@@ -85,9 +85,9 @@ async def get_config(request: web.Request):
 
 
 class _ScheduledMaintenanceGet(BaseModel):
-    start: datetime.datetime = FieldNotRequired()
-    end: datetime.datetime = FieldNotRequired()
-    reason: str = FieldNotRequired()
+    start: datetime.datetime | None = None
+    end: datetime.datetime | None = None
+    reason: str | None = None
 
 
 @routes.get(f"/{API_VTAG}/scheduled_maintenance", name="get_scheduled_maintenance")
@@ -104,7 +104,7 @@ async def get_scheduled_maintenance(request: web.Request):
 
     if maintenance_data := await redis_client.get(hash_key):
         assert (  # nosec
-            parse_obj_as(_ScheduledMaintenanceGet, maintenance_data) is not None
+            _ScheduledMaintenanceGet.model_validate(maintenance_data) is not None
         )
         return envelope_json_response(maintenance_data)
 

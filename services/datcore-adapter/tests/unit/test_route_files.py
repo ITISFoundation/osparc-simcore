@@ -5,7 +5,7 @@
 from unittest.mock import Mock
 
 import httpx
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_service_datcore_adapter.models.domains.files import FileDownloadOut
 from starlette import status
 
@@ -23,7 +23,7 @@ async def test_download_file_entrypoint(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
-    parse_obj_as(FileDownloadOut, data)
+    TypeAdapter(FileDownloadOut).validate_python(data)
 
 
 async def test_delete_file_entrypoint(

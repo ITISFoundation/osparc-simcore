@@ -3,32 +3,31 @@
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
+from common_library.json_serialization import json_dumps
 from pydantic import (
     BaseModel,
     ByteSize,
-    Extra,
+    ConfigDict,
     Field,
     Json,
     PrivateAttr,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
-    root_validator,
-    validator,
+    ValidationInfo,
+    field_validator,
+    model_validator,
 )
 
 from .callbacks_mapping import CallbacksMapping
 from .generics import ListModel
 from .service_settings_nat_rule import NATRule
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
-from .utils.json_serialization import json_dumps
 
-
-class _BaseConfig:
-    arbitrary_types_allowed = True
-    extra = Extra.forbid
-    keep_untouched = (cached_property,)
+_BaseConfig = ConfigDict(
+    extra="forbid", arbitrary_types_allowed=True, ignored_types=(cached_property,)
+)
 
 
 class ContainerSpec(BaseModel):
@@ -40,18 +39,19 @@ class ContainerSpec(BaseModel):
         alias="Command",
         description="Used to override the container's command",
         # NOTE: currently constraint to our use cases. Might mitigate some security issues.
-        min_items=1,
-        max_items=2,
+        min_length=1,
+        max_length=2,
     )
 
-    class Config(_BaseConfig):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = _BaseConfig | ConfigDict(
+        json_schema_extra={
             "examples": [
                 {"Command": ["executable"]},
                 {"Command": ["executable", "subcommand"]},
                 {"Command": ["ofs", "linear-regression"]},
             ]
-        }
+        },
+    )
 
 
 class SimcoreServiceSettingLabelEntry(BaseModel):
@@ -93,7 +93,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
         # as fields
         return self._destination_containers
 
-    @validator("setting_type", pre=True)
+    @field_validator("setting_type", mode="before")
     @classmethod
     def ensure_backwards_compatible_setting_type(cls, v):
         if v == "resources":
@@ -101,9 +101,9 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
             return "Resources"
         return v
 
-    class Config(_BaseConfig):
-        allow_population_by_field_name = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = _BaseConfig | ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
             "examples": [
                 # constraints
                 {
@@ -157,7 +157,8 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     },
                 },
             ]
-        }
+        },
+    )
 
 
 SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
@@ -174,7 +175,7 @@ class PathMappingsLabel(BaseModel):
         description="folder path where the service is expected to provide all its outputs",
     )
     state_paths: list[Path] = Field(
-        [],
+        default_factory=list,
         description="optional list of paths which contents need to be persisted",
     )
 
@@ -191,23 +192,23 @@ class PathMappingsLabel(BaseModel):
         ),
     )
 
-    @validator("volume_size_limits")
+    @field_validator("volume_size_limits")
     @classmethod
-    def validate_volume_limits(cls, v, values) -> str | None:
+    def validate_volume_limits(cls, v, info: ValidationInfo) -> str | None:
         if v is None:
             return v
 
         for path_str, size_str in v.items():
             # checks that format is correct
             try:
-                parse_obj_as(ByteSize, size_str)
+                TypeAdapter(ByteSize).validate_python(size_str)
             except ValidationError as e:
                 msg = f"Provided size='{size_str}' contains invalid charactes: {e!s}"
                 raise ValueError(msg) from e
 
-            inputs_path: Path | None = values.get("inputs_path")
-            outputs_path: Path | None = values.get("outputs_path")
-            state_paths: list[Path] | None = values.get("state_paths")
+            inputs_path: Path | None = info.data.get("inputs_path")
+            outputs_path: Path | None = info.data.get("outputs_path")
+            state_paths: list[Path] | None = info.data.get("state_paths")
             path = Path(path_str)
             if not (
                 path in (inputs_path, outputs_path)
@@ -218,8 +219,8 @@ class PathMappingsLabel(BaseModel):
         output: str | None = v
         return output
 
-    class Config(_BaseConfig):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = _BaseConfig | ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "outputs_path": "/tmp/outputs",  # noqa: S108 nosec
@@ -249,7 +250,8 @@ class PathMappingsLabel(BaseModel):
                     },
                 },
             ]
-        }
+        },
+    )
 
 
 ComposeSpecLabelDict: TypeAlias = dict[str, Any]
@@ -274,7 +276,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    compose_spec: Json[ComposeSpecLabelDict] | None = Field(
+    compose_spec: Json[ComposeSpecLabelDict | None] | None = Field(
         None,
         alias="simcore.service.compose-spec",
         description=(
@@ -292,6 +294,7 @@ class DynamicSidecarServiceLabels(BaseModel):
             "specified. Required by dynamic-sidecar when "
             "compose_spec is set."
         ),
+        validate_default=True,
     )
 
     user_preferences_path: Path | None = Field(
@@ -314,13 +317,14 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    containers_allowed_outgoing_permit_list: None | (
-        Json[dict[str, list[NATRule]]]
-    ) = Field(
-        None,
-        alias="simcore.service.containers-allowed-outgoing-permit-list",
-        description="allow internet access to certain domain names and ports per container",
-    )
+    containers_allowed_outgoing_permit_list: Annotated[
+        None | (Json[dict[str, list[NATRule]]]),
+        Field(
+            None,
+            alias="simcore.service.containers-allowed-outgoing-permit-list",
+            description="allow internet access to certain domain names and ports per container",
+        ),
+    ]
 
     containers_allowed_outgoing_internet: Json[set[str]] | None = Field(
         None,
@@ -339,25 +343,29 @@ class DynamicSidecarServiceLabels(BaseModel):
         """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
         return self.paths_mapping is not None
 
-    @validator("container_http_entry", always=True)
+    @field_validator("container_http_entry")
     @classmethod
-    def compose_spec_requires_container_http_entry(cls, v, values) -> str | None:
+    def compose_spec_requires_container_http_entry(
+        cls, v, info: ValidationInfo
+    ) -> str | None:
         v = None if v == "" else v
-        if v is None and values.get("compose_spec") is not None:
+        if v is None and info.data.get("compose_spec") is not None:
             msg = "Field `container_http_entry` must be defined but is missing"
             raise ValueError(msg)
-        if v is not None and values.get("compose_spec") is None:
+        if v is not None and info.data.get("compose_spec") is None:
             msg = "`container_http_entry` not allowed if `compose_spec` is missing"
             raise ValueError(msg)
         return f"{v}" if v else v
 
-    @validator("containers_allowed_outgoing_permit_list")
+    @field_validator("containers_allowed_outgoing_permit_list")
     @classmethod
-    def _containers_allowed_outgoing_permit_list_in_compose_spec(cls, v, values):
+    def _containers_allowed_outgoing_permit_list_in_compose_spec(
+        cls, v, info: ValidationInfo
+    ):
         if v is None:
             return v
 
-        compose_spec: dict | None = values.get("compose_spec")
+        compose_spec: dict | None = info.data.get("compose_spec")
         if compose_spec is None:
             keys = set(v.keys())
             if len(keys) != 1 or DEFAULT_SINGLE_SERVICE_NAME not in keys:
@@ -372,13 +380,15 @@ class DynamicSidecarServiceLabels(BaseModel):
 
         return v
 
-    @validator("containers_allowed_outgoing_internet")
+    @field_validator("containers_allowed_outgoing_internet")
     @classmethod
-    def _containers_allowed_outgoing_internet_in_compose_spec(cls, v, values):
+    def _containers_allowed_outgoing_internet_in_compose_spec(
+        cls, v, info: ValidationInfo
+    ):
         if v is None:
-            return v
+            return None
 
-        compose_spec: dict | None = values.get("compose_spec")
+        compose_spec: dict | None = info.data.get("compose_spec")
         if compose_spec is None:
             if {DEFAULT_SINGLE_SERVICE_NAME} != v:
                 err_msg = (
@@ -393,10 +403,10 @@ class DynamicSidecarServiceLabels(BaseModel):
                     raise ValueError(err_msg)
         return v
 
-    @validator("callbacks_mapping")
+    @field_validator("callbacks_mapping")
     @classmethod
     def _ensure_callbacks_mapping_container_names_defined_in_compose_spec(
-        cls, v: CallbacksMapping, values
+        cls, v: CallbacksMapping, info: ValidationInfo
     ):
         if v is None:
             return {}
@@ -408,7 +418,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         if len(defined_services) == 0:
             return v
 
-        compose_spec: dict | None = values.get("compose_spec")
+        compose_spec: dict | None = info.data.get("compose_spec")
         if compose_spec is None:
             if {DEFAULT_SINGLE_SERVICE_NAME} != defined_services:
                 err_msg = f"Expected only 1 entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{defined_services}'"
@@ -421,17 +431,17 @@ class DynamicSidecarServiceLabels(BaseModel):
                     raise ValueError(err_msg)
         return v
 
-    @validator("user_preferences_path", pre=True)
+    @field_validator("user_preferences_path", mode="before")
     @classmethod
     def _deserialize_from_json(cls, v):
-        return f"{v}".removeprefix('"').removesuffix('"')
+        return f"{v}".removeprefix('"').removesuffix('"') if v else None
 
-    @validator("user_preferences_path")
+    @field_validator("user_preferences_path")
     @classmethod
     def _user_preferences_path_no_included_in_other_volumes(
-        cls, v: CallbacksMapping, values
+        cls, v: CallbacksMapping, info: ValidationInfo
     ):
-        paths_mapping: PathMappingsLabel | None = values.get("paths_mapping", None)
+        paths_mapping: PathMappingsLabel | None = info.data.get("paths_mapping", None)
         if paths_mapping is None:
             return v
 
@@ -445,33 +455,24 @@ class DynamicSidecarServiceLabels(BaseModel):
                 raise ValueError(msg)
         return v
 
-    @root_validator
-    @classmethod
-    def _not_allowed_in_both_specs(cls, values):
+    @model_validator(mode="after")
+    def _not_allowed_in_both_specs(self):
         match_keys = {
             "containers_allowed_outgoing_internet",
             "containers_allowed_outgoing_permit_list",
         }
-        if match_keys & set(values.keys()) != match_keys:
-            err_msg = (
-                f"Expected the following keys {match_keys} to be present {values=}"
-            )
+        if match_keys & set(self.model_fields) != match_keys:
+            err_msg = f"Expected the following keys {match_keys} to be present {self.model_fields=}"
             raise ValueError(err_msg)
 
-        containers_allowed_outgoing_internet = values[
-            "containers_allowed_outgoing_internet"
-        ]
-        containers_allowed_outgoing_permit_list = values[
-            "containers_allowed_outgoing_permit_list"
-        ]
         if (
-            containers_allowed_outgoing_internet is None
-            or containers_allowed_outgoing_permit_list is None
+            self.containers_allowed_outgoing_internet is None
+            or self.containers_allowed_outgoing_permit_list is None
         ):
-            return values
+            return self
 
-        common_containers = set(containers_allowed_outgoing_internet) & set(
-            containers_allowed_outgoing_permit_list.keys()
+        common_containers = set(self.containers_allowed_outgoing_internet) & set(
+            self.containers_allowed_outgoing_permit_list.keys()
         )
         if len(common_containers) > 0:
             err_msg = (
@@ -481,10 +482,9 @@ class DynamicSidecarServiceLabels(BaseModel):
             )
             raise ValueError(err_msg)
 
-        return values
+        return self
 
-    class Config(_BaseConfig):
-        ...
+    model_config = _BaseConfig
 
 
 class SimcoreServiceLabels(DynamicSidecarServiceLabels):
@@ -513,24 +513,32 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
         ),
     )
 
-    class Config(_BaseConfig):
-        extra = Extra.allow
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = _BaseConfig | ConfigDict(
+        extra="allow",
+        json_schema_extra={
             "examples": [
                 # WARNING: do not change order. Used in tests!
                 # legacy service
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+                        SimcoreServiceSettingLabelEntry.model_config[
+                            "json_schema_extra"
+                        ][
+                            "examples"
+                        ]  # type: ignore[index]
                     )
                 },
                 # dynamic-service
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+                        SimcoreServiceSettingLabelEntry.model_config[
+                            "json_schema_extra"
+                        ][
+                            "examples"
+                        ]  # type: ignore[index]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.Config.schema_extra["examples"][0]
+                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][0]  # type: ignore [index]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
                     "simcore.service.callbacks-mapping": json_dumps(
@@ -549,10 +557,14 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                 # dynamic-service with compose spec
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+                        SimcoreServiceSettingLabelEntry.model_config[
+                            "json_schema_extra"
+                        ][
+                            "examples"
+                        ]  # type: ignore[index]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.Config.schema_extra["examples"][0]
+                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index]
                     ),
                     "simcore.service.compose-spec": json_dumps(
                         {
@@ -580,8 +592,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.container-http-entrypoint": "rt-web",
                     "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
                     "simcore.service.callbacks-mapping": json_dumps(
-                        CallbacksMapping.Config.schema_extra["examples"][3]
+                        CallbacksMapping.model_config["json_schema_extra"]["examples"][3]  # type: ignore [index]
                     ),
                 },
             ]
-        }
+        },
+    )

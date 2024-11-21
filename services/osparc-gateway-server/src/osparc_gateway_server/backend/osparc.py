@@ -67,7 +67,7 @@ class OsparcBackend(DBBackendBase):
         assert isinstance(self.log, logging.Logger)  # nosec
         self.log.info(
             "osparc-gateway-server application settings:\n%s",
-            self.settings.json(indent=2),
+            self.settings.model_dump_json(indent=2),
         )
 
         if self.settings.SC_BOOT_MODE in [BootModeEnum.DEBUG]:

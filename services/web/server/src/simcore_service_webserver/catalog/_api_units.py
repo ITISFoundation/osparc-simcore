@@ -57,10 +57,10 @@ async def replace_service_input_outputs(
 
     # replace if above is successful
     for input_key, new_input in zip(service["inputs"], new_inputs, strict=True):
-        service["inputs"][input_key] = new_input.dict(**export_options)
+        service["inputs"][input_key] = new_input.model_dump(**export_options)
 
     for output_key, new_output in zip(service["outputs"], new_outputs, strict=True):
-        service["outputs"][output_key] = new_output.dict(**export_options)
+        service["outputs"][output_key] = new_output.model_dump(**export_options)
 
 
 def can_connect(

@@ -28,7 +28,7 @@ from models_library.rabbitmq_messages import (
     SimcorePlatformStatus,
 )
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
@@ -79,7 +79,7 @@ def compose_spec(raw_compose_spec: dict[str, Any]) -> str:
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
+    return TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io")
 
 
 @pytest.fixture
@@ -113,7 +113,7 @@ async def httpx_async_client(
 ) -> AsyncIterable[AsyncClient]:
     # crete dir here
     async with AsyncClient(
-        app=app, base_url=backend_url, headers={"Content-Type": "application/json"}
+        app=app, base_url=f"{backend_url}", headers={"Content-Type": "application/json"}
     ) as client:
         yield client
 
@@ -122,7 +122,7 @@ async def httpx_async_client(
 def client(
     app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
 ) -> Client:
-    return Client(app=app, async_client=httpx_async_client, base_url=backend_url)
+    return Client(app=app, async_client=httpx_async_client, base_url=f"{backend_url}")
 
 
 @pytest.fixture
@@ -146,15 +146,16 @@ async def _get_task_id_create_service_containers(
     compose_spec: str,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ) -> TaskId:
-    ctontainers_compose_spec = ContainersComposeSpec(
+    containers_compose_spec = ContainersComposeSpec(
         docker_compose_yaml=compose_spec,
     )
     await httpx_async_client.post(
-        f"/{API_VTAG}/containers/compose-spec", json=ctontainers_compose_spec.dict()
+        f"/{API_VTAG}/containers/compose-spec",
+        json=containers_compose_spec.model_dump(),
     )
     containers_create = ContainersCreate(metrics_params=mock_metrics_params)
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers", json=containers_create.dict()
+        f"/{API_VTAG}/containers", json=containers_create.model_dump()
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
@@ -189,7 +190,7 @@ async def _wait_for_containers_to_be_running(app: FastAPI) -> None:
             running_container_statuses = [
                 x
                 for x in containers_statuses.values()
-                if x is not None and x.Status == ContainerStatus.running
+                if x is not None and x.status == ContainerStatus.running
             ]
 
             if len(running_container_statuses) != len(shared_store.container_names):
@@ -361,8 +362,8 @@ def mock_one_container_oom_killed(mocker: MockerFixture) -> Callable[[], None]:
             results = await get_container_states(container_names)
             for result in results.values():
                 if result:
-                    result.OOMKilled = True
-                    result.Status = ContainerStatus.exited
+                    result.oom_killed = True
+                    result.status = ContainerStatus.exited
                 break
             return results
 

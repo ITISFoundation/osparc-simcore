@@ -45,10 +45,10 @@ from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
     ComputationalSchedulerChangedError,
+    ComputationalSchedulerError,
     DaskClientAcquisisitonError,
     InvalidPipelineError,
     PipelineNotFoundError,
-    SchedulerError,
     TaskSchedulingError,
 )
 from ...core.settings import ComputationalBackendSettings
@@ -84,9 +84,9 @@ _Previous = CompTaskAtDB
 _Current = CompTaskAtDB
 _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
 _SCHEDULER_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
-_TASK_NAME_TEMPLATE: Final[str] = (
-    "computational-scheduler-{user_id}:{project_id}:{iteration}"
-)
+_TASK_NAME_TEMPLATE: Final[
+    str
+] = "computational-scheduler-{user_id}:{project_id}:{iteration}"
 
 PipelineSchedulingTask: TypeAlias = asyncio.Task
 PipelineSchedulingWakeUpEvent: TypeAlias = asyncio.Event
@@ -219,9 +219,9 @@ class BaseCompScheduler(ABC):
         task, wake_up_event = self._start_scheduling(
             user_id, project_id, new_run.iteration
         )
-        self._scheduled_pipelines[(user_id, project_id, new_run.iteration)] = (
-            ScheduledPipelineParams(scheduler_task=task, scheduler_waker=wake_up_event)
-        )
+        self._scheduled_pipelines[
+            (user_id, project_id, new_run.iteration)
+        ] = ScheduledPipelineParams(scheduler_task=task, scheduler_waker=wake_up_event)
         await publish_project_log(
             self.rabbitmq_client,
             user_id,
@@ -242,7 +242,7 @@ class BaseCompScheduler(ABC):
             }
             if not possible_iterations:
                 msg = f"There are no pipeline scheduled for {user_id}:{project_id}"
-                raise SchedulerError(msg)
+                raise ComputationalSchedulerError(msg=msg)
             current_max_iteration = max(possible_iterations)
             selected_iteration = current_max_iteration
         else:
@@ -281,7 +281,7 @@ class BaseCompScheduler(ABC):
         }
         if not possible_iterations:
             msg = f"There are no pipeline scheduled for {user_id}:{project_id}"
-            raise SchedulerError(msg)
+            raise ComputationalSchedulerError(msg=msg)
         return max(possible_iterations)
 
     def _start_scheduling(
@@ -342,10 +342,10 @@ class BaseCompScheduler(ABC):
         }
         if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):  # type: ignore[arg-type]
             msg = (
-                f"{project_id}The tasks defined for {project_id} do not contain all"
+                f"The tasks defined for {project_id} do not contain all"
                 f" the tasks defined in the pipeline [{list(pipeline_dag.nodes)}]! Please check."
             )
-            raise InvalidPipelineError(msg)
+            raise InvalidPipelineError(pipeline_id=project_id, msg=msg)
         return pipeline_comp_tasks
 
     async def _update_run_result_from_tasks(
@@ -470,7 +470,7 @@ class BaseCompScheduler(ABC):
         return [
             (
                 task,
-                task.copy(update={"state": backend_state}),
+                task.model_copy(update={"state": backend_state}),
             )
             for task, backend_state in zip(
                 processing_tasks, tasks_backend_status, strict=True
@@ -653,17 +653,20 @@ class BaseCompScheduler(ABC):
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         comp_run: CompRunsAtDB,
         wake_up_callback: Callable[[], None],
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @abstractmethod
     async def _get_tasks_status(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
-    ) -> list[RunningState]: ...
+    ) -> list[RunningState]:
+        ...
 
     @abstractmethod
     async def _stop_tasks(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @abstractmethod
     async def _process_completed_tasks(
@@ -672,7 +675,8 @@ class BaseCompScheduler(ABC):
         tasks: list[CompTaskAtDB],
         iteration: Iteration,
         comp_run: CompRunsAtDB,
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @staticmethod
     def _build_exclusive_lock_key(*args, **kwargs) -> str:
@@ -875,9 +879,9 @@ class BaseCompScheduler(ABC):
                 RunningState.WAITING_FOR_CLUSTER,
             )
             for task in tasks_ready_to_start:
-                comp_tasks[NodeIDStr(f"{task}")].state = (
-                    RunningState.WAITING_FOR_CLUSTER
-                )
+                comp_tasks[
+                    NodeIDStr(f"{task}")
+                ].state = RunningState.WAITING_FOR_CLUSTER
 
         except ComputationalBackendOnDemandNotReadyError as exc:
             _logger.info(
@@ -899,9 +903,9 @@ class BaseCompScheduler(ABC):
                 RunningState.WAITING_FOR_CLUSTER,
             )
             for task in tasks_ready_to_start:
-                comp_tasks[NodeIDStr(f"{task}")].state = (
-                    RunningState.WAITING_FOR_CLUSTER
-                )
+                comp_tasks[
+                    NodeIDStr(f"{task}")
+                ].state = RunningState.WAITING_FOR_CLUSTER
         except ClustersKeeperNotAvailableError:
             _logger.exception("Unexpected error while starting tasks:")
             await publish_project_log(

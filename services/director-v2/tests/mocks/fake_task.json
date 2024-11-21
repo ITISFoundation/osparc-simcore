@@ -60,6 +60,7 @@
   "end": "2008-03-24T07:02:09.279Z",
   "created": "1961-07-06T11:24:30.877Z",
   "modified": "2008-03-24T07:02:09.279Z",
+  "pricing_info": null,
   "last_heartbeat": null,
   "hardware_info": {
     "aws_ec2_instances": []

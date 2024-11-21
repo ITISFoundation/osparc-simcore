@@ -3,6 +3,7 @@
 import logging
 from typing import Any, Final
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
@@ -17,7 +18,6 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import RunID
-from models_library.utils.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
@@ -242,19 +242,19 @@ class CreateSidecars(DynamicSchedulerEvent):
                 scheduler_data.user_id, scheduler_data.key, scheduler_data.version
             )
         ).get("sidecar", {}) or {}
-        user_specific_service_spec = AioDockerServiceSpec.parse_obj(
+        user_specific_service_spec = AioDockerServiceSpec.model_validate(
             user_specific_service_spec
         )
         # NOTE: since user_specific_service_spec follows Docker Service Spec and not Aio
         # we do not use aliases when exporting dynamic_sidecar_service_spec_base
-        dynamic_sidecar_service_final_spec = AioDockerServiceSpec.parse_obj(
+        dynamic_sidecar_service_final_spec = AioDockerServiceSpec.model_validate(
             nested_update(
                 jsonable_encoder(dynamic_sidecar_service_spec_base, exclude_unset=True),
                 jsonable_encoder(user_specific_service_spec, exclude_unset=True),
                 include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
             )
         )
-        rabbit_message = ProgressRabbitMessageNode.construct(
+        rabbit_message = ProgressRabbitMessageNode.model_construct(
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,
@@ -272,7 +272,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             )
         )
 
-        rabbit_message = ProgressRabbitMessageNode.construct(
+        rabbit_message = ProgressRabbitMessageNode.model_construct(
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,

@@ -12,46 +12,56 @@ would still have these invariants.
 
 """
 
-
-from pydantic import BaseSettings, validator
-from pydantic.fields import ModelField, Undefined
+from common_library.pydantic_fields_extension import is_nullable
+from pydantic import ValidationInfo, field_validator
+from pydantic_core import PydanticUndefined
+from pydantic_settings import BaseSettings
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 
 
 def assert_field_specs(
-    model_cls, name, is_required, is_nullable, explicit_default, defaults
+    model_cls: type[BaseSettings],
+    name: str,
+    required: bool,
+    nullable: bool,
+    explicit_default,
 ):
-    field: ModelField = model_cls.__fields__[name]
-    print(field, field.field_info)
+    info = model_cls.model_fields[name]
+    print(info)
 
-    assert field.required == is_required
-    assert field.allow_none == is_nullable
-    assert field.field_info.default == explicit_default
+    assert info.is_required() == required
+    assert is_nullable(info) == nullable
 
-    assert field.default == defaults
-    if field.required:
+    if info.is_required():
         # in this case, default is not really used
-        assert field.default is None
+        assert info.default is PydanticUndefined
+    else:
+        assert info.default == explicit_default
 
 
 class Settings(BaseSettings):
     VALUE: int
     VALUE_DEFAULT: int = 42
 
-    VALUE_NULLABLE_REQUIRED: int | None = ...  # type: ignore
-    VALUE_NULLABLE_OPTIONAL: int | None
+    VALUE_NULLABLE_REQUIRED: int | None = ...  # type: ignore[assignment]
+    VALUE_NULLABLE_REQUIRED_AS_WELL: int | None
 
     VALUE_NULLABLE_DEFAULT_VALUE: int | None = 42
     VALUE_NULLABLE_DEFAULT_NULL: int | None = None
 
     # Other ways to write down "required" is using ...
-    VALUE_ALSO_REQUIRED: int = ...  # type: ignore
+    VALUE_REQUIRED_AS_WELL: int = ...  # type: ignore[assignment]
 
-    @validator("*", pre=True)
+    @field_validator("*", mode="before")
     @classmethod
-    def _parse_none(cls, v, values, field: ModelField):
+    def parse_none(cls, v, info: ValidationInfo):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
-        if field.allow_none and isinstance(v, str) and v.lower() in ("null", "none"):
+        if (
+            info.field_name
+            and is_nullable(cls.model_fields[info.field_name])
+            and isinstance(v, str)
+            and v.lower() in ("null", "none")
+        ):
             return None
         return v
 
@@ -64,37 +74,33 @@ def test_fields_declarations():
     assert_field_specs(
         Settings,
         "VALUE",
-        is_required=True,
-        is_nullable=False,
-        explicit_default=Undefined,
-        defaults=None,
+        required=True,
+        nullable=False,
+        explicit_default=PydanticUndefined,
     )
 
     assert_field_specs(
         Settings,
         "VALUE_DEFAULT",
-        is_required=False,
-        is_nullable=False,
+        required=False,
+        nullable=False,
         explicit_default=42,
-        defaults=42,
     )
 
     assert_field_specs(
         Settings,
         "VALUE_NULLABLE_REQUIRED",
-        is_required=True,
-        is_nullable=True,
+        required=True,
+        nullable=True,
         explicit_default=Ellipsis,
-        defaults=None,
     )
 
     assert_field_specs(
         Settings,
-        "VALUE_NULLABLE_OPTIONAL",
-        is_required=False,
-        is_nullable=True,
-        explicit_default=Undefined,  # <- difference wrt VALUE_NULLABLE_DEFAULT_NULL
-        defaults=None,
+        "VALUE_NULLABLE_REQUIRED_AS_WELL",
+        required=True,
+        nullable=True,
+        explicit_default=PydanticUndefined,  # <- difference wrt VALUE_NULLABLE_DEFAULT_NULL
     )
 
     # VALUE_NULLABLE_OPTIONAL interpretation has always been confusing
@@ -104,28 +110,25 @@ def test_fields_declarations():
     assert_field_specs(
         Settings,
         "VALUE_NULLABLE_DEFAULT_VALUE",
-        is_required=False,
-        is_nullable=True,
+        required=False,
+        nullable=True,
         explicit_default=42,
-        defaults=42,
     )
 
     assert_field_specs(
         Settings,
         "VALUE_NULLABLE_DEFAULT_NULL",
-        is_required=False,
-        is_nullable=True,
-        explicit_default=None,  # <- difference wrt VALUE_NULLABLE_OPTIONAL
-        defaults=None,
+        required=False,
+        nullable=True,
+        explicit_default=None,
     )
 
     assert_field_specs(
         Settings,
-        "VALUE_ALSO_REQUIRED",
-        is_required=True,
-        is_nullable=False,
+        "VALUE_REQUIRED_AS_WELL",
+        required=True,
+        nullable=False,
         explicit_default=Ellipsis,
-        defaults=None,
     )
 
 
@@ -133,11 +136,12 @@ def test_construct(monkeypatch):
     # from __init__
     settings_from_init = Settings(
         VALUE=1,
-        VALUE_ALSO_REQUIRED=10,
         VALUE_NULLABLE_REQUIRED=None,
+        VALUE_NULLABLE_REQUIRED_AS_WELL=None,
+        VALUE_REQUIRED_AS_WELL=32,
     )
 
-    print(settings_from_init.json(exclude_unset=True, indent=1))
+    print(settings_from_init.model_dump_json(exclude_unset=True, indent=1))
 
     # from env vars
     setenvs_from_dict(
@@ -146,18 +150,20 @@ def test_construct(monkeypatch):
             "VALUE": "1",
             "VALUE_ALSO_REQUIRED": "10",
             "VALUE_NULLABLE_REQUIRED": "null",
+            "VALUE_NULLABLE_REQUIRED_AS_WELL": "null",
+            "VALUE_REQUIRED_AS_WELL": "32",
         },
     )  # WARNING: set this env to None would not work w/o ``parse_none`` validator! bug???
 
-    settings_from_env = Settings()
-    print(settings_from_env.json(exclude_unset=True, indent=1))
+    settings_from_env = Settings()  # type: ignore[call-arg]
+    print(settings_from_env.model_dump_json(exclude_unset=True, indent=1))
 
     assert settings_from_init == settings_from_env
 
     # mixed
-    settings_from_both = Settings(VALUE_NULLABLE_REQUIRED=3)
-    print(settings_from_both.json(exclude_unset=True, indent=1))
+    settings_from_both = Settings(VALUE_NULLABLE_REQUIRED=3)  # type: ignore[call-arg]
+    print(settings_from_both.model_dump_json(exclude_unset=True, indent=1))
 
-    assert settings_from_both == settings_from_init.copy(
+    assert settings_from_both == settings_from_init.model_copy(
         update={"VALUE_NULLABLE_REQUIRED": 3}
     )

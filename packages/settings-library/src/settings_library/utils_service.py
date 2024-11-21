@@ -4,14 +4,13 @@
 """
 from enum import Enum, auto
 
-from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
 
 from .basic_types import PortInt
 
-DEFAULT_AIOHTTP_PORT: PortInt = parse_obj_as(PortInt, 8080)
-DEFAULT_FASTAPI_PORT: PortInt = parse_obj_as(PortInt, 8000)
+DEFAULT_AIOHTTP_PORT: PortInt = 8080
+DEFAULT_FASTAPI_PORT: PortInt = 8000
 
 
 class URLPart(Enum):
@@ -96,6 +95,8 @@ class MixinServiceSettings:
         assert prefix  # nosec
         prefix = prefix.upper()
 
+        port_value = self._safe_getattr(f"{prefix}_PORT", port)
+
         parts = {
             "scheme": (
                 "https"
@@ -103,30 +104,32 @@ class MixinServiceSettings:
                 else "http"
             ),
             "host": self._safe_getattr(f"{prefix}_HOST", URLPart.REQUIRED),
-            "user": self._safe_getattr(f"{prefix}_USER", user),
+            "port": int(port_value) if port_value is not None else None,
+            "username": self._safe_getattr(f"{prefix}_USER", user),
             "password": self._safe_getattr(f"{prefix}_PASSWORD", password),
-            "port": self._safe_getattr(f"{prefix}_PORT", port),
         }
 
         if vtag != URLPart.EXCLUDE:  # noqa: SIM102
             if v := self._safe_getattr(f"{prefix}_VTAG", vtag):
-                parts["path"] = f"/{v}"
+                parts["path"] = f"{v}"
 
         # post process parts dict
         kwargs = {}
-        for k, v in parts.items():
-            value = v
+        for k, v in parts.items():  # type: ignore[assignment]
             if isinstance(v, SecretStr):
                 value = v.get_secret_value()
-            elif v is not None:
-                value = f"{v}"
+            else:
+                value = v
 
-            kwargs[k] = value
+            if value is not None:
+                kwargs[k] = value
 
-        assert all(isinstance(v, str) or v is None for v in kwargs.values())  # nosec
+        assert all(
+            isinstance(v, (str, int)) or v is None for v in kwargs.values()
+        )  # nosec
 
-        composed_url: str = AnyUrl.build(**kwargs)
-        return composed_url
+        composed_url: str = str(AnyUrl.build(**kwargs))  # type: ignore[arg-type]
+        return composed_url.rstrip("/")
 
     def _build_api_base_url(self, *, prefix: str) -> str:
         return self._compose_url(

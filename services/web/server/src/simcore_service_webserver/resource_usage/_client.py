@@ -22,7 +22,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt
 from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
@@ -101,7 +101,7 @@ async def get_default_service_pricing_plan(
             async with session.get(url) as response:
                 response.raise_for_status()
                 body: dict = await response.json()
-                return parse_obj_as(PricingPlanGet, body)
+                return PricingPlanGet.model_validate(body)
         except ClientResponseError as e:
             if e.status == status.HTTP_404_NOT_FOUND:
                 raise DefaultPricingPlanNotFoundError from e
@@ -130,7 +130,7 @@ async def get_pricing_plan_unit(
         async with session.get(url) as response:
             response.raise_for_status()
             body: dict = await response.json()
-            return parse_obj_as(PricingUnitGet, body)
+            return PricingUnitGet.model_validate(body)
 
 
 async def sum_total_available_credits_in_the_wallet(
@@ -151,7 +151,7 @@ async def sum_total_available_credits_in_the_wallet(
         async with session.post(url) as response:
             response.raise_for_status()
             body: dict = await response.json()
-            return WalletTotalCredits.construct(**body)
+            return WalletTotalCredits.model_construct(**body)
 
 
 async def add_credits_to_wallet(

@@ -26,7 +26,7 @@ from simcore_service_webserver.db.models import UserRole
 
 _SERVICE_RUN_GET = ServiceRunPage(
     items=[
-        ServiceRunGet.parse_obj(
+        ServiceRunGet.model_validate(
             {
                 "service_run_id": "comp_1_5c2110be-441b-11ee-a0e8-02420a000040_1",
                 "wallet_id": 1,
@@ -46,6 +46,8 @@ _SERVICE_RUN_GET = ServiceRunPage(
                 "started_at": "2023-08-26T14:18:17.600493+00:00",
                 "stopped_at": "2023-08-26T14:18:19.358355+00:00",
                 "service_run_status": "SUCCESS",
+                "credit_cost": None,
+                "transaction_status": None,
             }
         )
     ],
@@ -104,6 +106,7 @@ async def test_list_service_usage_user_role_access(
     user_role: UserRole,
     expected: HTTPStatus,
 ):
+    assert client.app
     url = client.app.router["list_resource_usage_services"].url_for()
     resp = await client.get(f"{url}")
     await assert_status(resp, expected)
@@ -117,6 +120,7 @@ async def test_list_service_usage(
     mock_list_usage_services,
 ):
     # list service usage without wallets
+    assert client.app
     url = client.app.router["list_resource_usage_services"].url_for()
     resp = await client.get(f"{url}")
     await assert_status(resp, status.HTTP_200_OK)
@@ -204,7 +208,7 @@ async def test_list_service_usage_with_order_by_query_param(
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith(
-        "We do not support ordering by provided field"
+        "Value error, We do not support ordering by provided field"
     )
 
     # with non-parsable field in order by query parameter
@@ -217,7 +221,7 @@ async def test_list_service_usage_with_order_by_query_param(
     _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert error["errors"][0]["message"].startswith("Invalid JSON")
+    assert "Invalid JSON" in error["errors"][0]["message"]
 
     # with order by without direction
     _filter = {"field": "started_at"}
@@ -245,7 +249,7 @@ async def test_list_service_usage_with_order_by_query_param(
     errors = {(e["code"], e["field"]) for e in error["errors"]}
     assert {
         ("value_error", "order_by.field"),
-        ("type_error.enum", "order_by.direction"),
+        ("enum", "order_by.direction"),
     } == errors
     assert len(errors) == 2
 
@@ -260,8 +264,8 @@ async def test_list_service_usage_with_order_by_query_param(
     _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert error["errors"][0]["message"].startswith("field required")
-    assert error["errors"][0]["code"] == "value_error.missing"
+    assert error["errors"][0]["message"].startswith("Field required")
+    assert error["errors"][0]["code"] == "missing"
     assert error["errors"][0]["field"] == "order_by.field"
 
 

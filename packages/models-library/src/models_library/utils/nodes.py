@@ -5,7 +5,7 @@ from collections.abc import Callable, Coroutine
 from copy import deepcopy
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
 from ..projects import Project
 from ..projects_nodes_io import NodeID, PortLink, UUIDStr
@@ -20,7 +20,7 @@ def project_node_io_payload_cb(
 
     async def node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
         node_io_payload: dict[str, Any] = {"inputs": None, "outputs": None}
-        node = project.workbench.get(UUIDStr(node_id))
+        node = project.workbench.get(TypeAdapter(UUIDStr).validate_python(node_id))
         if node:
             node_io_payload = {"inputs": node.inputs, "outputs": node.outputs}
 
@@ -58,7 +58,7 @@ async def compute_node_hash(
 
             # ensure we do not get pydantic types for hashing here, only jsoneable stuff
             if isinstance(payload, BaseModel):
-                payload = payload.dict(by_alias=True, exclude_unset=True)
+                payload = payload.model_dump(by_alias=True, exclude_unset=True)
 
             # remove the payload if it is null and it was resolved
             if payload is not None:

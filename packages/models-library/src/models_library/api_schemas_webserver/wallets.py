@@ -1,12 +1,18 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, ClassVar, Literal, TypeAlias
+from typing import Annotated, Literal, TypeAlias
 
-from pydantic import Field, HttpUrl, validator
+from pydantic import (
+    ConfigDict,
+    Field,
+    HttpUrl,
+    PlainSerializer,
+    ValidationInfo,
+    field_validator,
+)
 
 from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
 from ..users import GroupID
-from ..utils.pydantic_tools_extension import FieldNotRequired
 from ..wallets import WalletID, WalletStatus
 from ._base import InputSchema, OutputSchema
 
@@ -21,9 +27,11 @@ class WalletGet(OutputSchema):
     created: datetime
     modified: datetime
 
+    model_config = ConfigDict(from_attributes=True, frozen=False)
+
 
 class WalletGetWithAvailableCredits(WalletGet):
-    available_credits: Decimal
+    available_credits: Annotated[Decimal, PlainSerializer(float)]
 
 
 class WalletGetPermissions(WalletGet):
@@ -56,7 +64,7 @@ PaymentMethodID: TypeAlias = IDStr
 
 class CreateWalletPayment(InputSchema):
     price_dollars: AmountDecimal
-    comment: str = FieldNotRequired(max_length=100)
+    comment: str | None = Field(default=None, max_length=100)
 
 
 class WalletPaymentInitiated(OutputSchema):
@@ -73,15 +81,15 @@ class PaymentTransaction(OutputSchema):
     price_dollars: Decimal
     wallet_id: WalletID
     osparc_credits: Decimal
-    comment: str = FieldNotRequired()
+    comment: str | None = Field(default=None)
     created_at: datetime
     completed_at: datetime | None
     # SEE PaymentTransactionState enum
     state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"] = Field(
         ..., alias="completedStatus"
     )
-    state_message: str = FieldNotRequired()
-    invoice_url: HttpUrl = FieldNotRequired()
+    state_message: str | None = Field(default=None)
+    invoice_url: HttpUrl | None = Field(default=None)
 
 
 class PaymentMethodInitiated(OutputSchema):
@@ -91,8 +99,8 @@ class PaymentMethodInitiated(OutputSchema):
         ..., description="Link to external site that holds the payment submission form"
     )
 
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "wallet_id": 1,
@@ -101,6 +109,7 @@ class PaymentMethodInitiated(OutputSchema):
                 }
             ]
         }
+    )
 
 
 class PaymentMethodTransaction(OutputSchema):
@@ -109,8 +118,8 @@ class PaymentMethodTransaction(OutputSchema):
     payment_method_id: PaymentMethodID
     state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"]
 
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "walletId": 1,
@@ -119,6 +128,7 @@ class PaymentMethodTransaction(OutputSchema):
                 }
             ]
         }
+    )
 
 
 class PaymentMethodGet(OutputSchema):
@@ -135,8 +145,9 @@ class PaymentMethodGet(OutputSchema):
         description="If true, this payment-method is used for auto-recharge",
     )
 
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        frozen=False,
+        json_schema_extra={
             "examples": [
                 {
                     "idr": "pm_1234567890",
@@ -156,7 +167,8 @@ class PaymentMethodGet(OutputSchema):
                     "autoRecharge": "False",
                 },
             ],
-        }
+        },
+    )
 
 
 #
@@ -194,10 +206,10 @@ class ReplaceWalletAutoRecharge(InputSchema):
     top_up_amount_in_usd: NonNegativeDecimal
     monthly_limit_in_usd: NonNegativeDecimal | None
 
-    @validator("monthly_limit_in_usd")
+    @field_validator("monthly_limit_in_usd")
     @classmethod
-    def _monthly_limit_greater_than_top_up(cls, v, values):
-        top_up = values["top_up_amount_in_usd"]
+    def _monthly_limit_greater_than_top_up(cls, v, info: ValidationInfo):
+        top_up = info.data["top_up_amount_in_usd"]
         if v is not None and v < top_up:
             msg = "Monthly limit ({v} USD) should be greater than top up amount ({top_up} USD)"
             raise ValueError(msg)

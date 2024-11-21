@@ -2,13 +2,13 @@ import functools
 import logging
 
 from aiohttp import web
+from common_library.error_codes import create_error_code
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     PutWalletBodyParams,
     WalletGet,
     WalletGetWithAvailableCredits,
 )
-from models_library.error_codes import create_error_code
 from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -126,7 +126,7 @@ class WalletsPathParams(StrictRequestParameters):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def create_wallet(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     body_params = await parse_request_body_as(CreateWalletBodyParams, request)
 
     wallet: WalletGet = await _api.create_wallet(
@@ -146,7 +146,7 @@ async def create_wallet(request: web.Request):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def list_wallets(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
 
     wallets: list[
         WalletGetWithAvailableCredits
@@ -162,7 +162,7 @@ async def list_wallets(request: web.Request):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def get_default_wallet(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
 
     wallet: WalletGetWithAvailableCredits = (
         await _api.get_user_default_wallet_with_available_credits(
@@ -177,7 +177,7 @@ async def get_default_wallet(request: web.Request):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def get_wallet(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
     wallet: WalletGetWithAvailableCredits = (
@@ -200,7 +200,7 @@ async def get_wallet(request: web.Request):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def update_wallet(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     body_params = await parse_request_body_as(PutWalletBodyParams, request)
 

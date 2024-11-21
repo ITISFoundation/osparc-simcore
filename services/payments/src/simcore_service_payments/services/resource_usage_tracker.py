@@ -64,7 +64,7 @@ class ResourceUsageTrackerApi(
                 )
             ),
         )
-        credit_transaction = CreditTransactionCreated.parse_raw(response.text)
+        credit_transaction = CreditTransactionCreated.model_validate_json(response.text)
         return credit_transaction.credit_transaction_id
 
 

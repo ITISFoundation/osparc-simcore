@@ -70,7 +70,7 @@ async def get_api_key(
 ) -> ApiKeyGet | None:
     repo = ApiKeyRepo.create_from_app(app)
     row = await repo.get(display_name=name, user_id=user_id, product_name=product_name)
-    return ApiKeyGet.parse_obj(row) if row else None
+    return ApiKeyGet.model_validate(row) if row else None
 
 
 async def get_or_create_api_key(
@@ -93,7 +93,7 @@ async def get_or_create_api_key(
         api_key=api_key,
         api_secret=api_secret,
     )
-    return ApiKeyGet.construct(
+    return ApiKeyGet.model_construct(
         display_name=row.display_name, api_key=row.api_key, api_secret=row.api_secret
     )
 

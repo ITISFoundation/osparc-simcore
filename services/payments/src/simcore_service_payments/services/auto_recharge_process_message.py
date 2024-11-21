@@ -14,7 +14,7 @@ from models_library.payments import InvoiceDataGet
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as, parse_raw_as
+from pydantic import TypeAdapter
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.db.payments_transactions_repo import (
@@ -36,7 +36,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def process_message(app: FastAPI, data: bytes) -> bool:
-    rabbit_message = parse_raw_as(WalletCreditsMessage, data)
+    rabbit_message = TypeAdapter(WalletCreditsMessage).validate_json(data)
     _logger.debug("Process msg: %s", rabbit_message)
 
     settings: ApplicationSettings = app.state.settings
@@ -142,12 +142,12 @@ async def _perform_auto_recharge(
 
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_invoice_data"),
+        TypeAdapter(RPCMethodName).validate_python("get_invoice_data"),
         user_id=payment_method_db.user_id,
         dollar_amount=wallet_auto_recharge.top_up_amount_in_usd,
         product_name=rabbit_message.product_name,
     )
-    invoice_data_get = parse_obj_as(InvoiceDataGet, result)
+    invoice_data_get = TypeAdapter(InvoiceDataGet).validate_python(result)
 
     await pay_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),

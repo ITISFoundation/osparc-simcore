@@ -17,8 +17,8 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
 
     osparc_spec: dict = yaml.safe_load((tests_data_dir / "runtime.yml").read_text())
 
-    pm_spec1 = PathMappingsLabel.parse_obj(osparc_spec["paths-mapping"])
-    pm_spec2 = PathMappingsLabel.parse_obj(
+    pm_spec1 = PathMappingsLabel.model_validate(osparc_spec["paths-mapping"])
+    pm_spec2 = PathMappingsLabel.model_validate(
         {
             "outputs_path": "/outputs",
             "inputs_path": "/inputs",
@@ -58,12 +58,12 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
 
     # FIXME: ensure all sources are different! (e.g. a/b/c  and z/c have the same name!)
 
-    print(Service(volumes=volumes).json(exclude_unset=True, indent=2))
+    print(Service(volumes=volumes).model_dump_json(exclude_unset=True, indent=2))
 
     # TODO: _auto_map_to_service(osparc_spec["settings"])
     data = {}
     for obj in osparc_spec["settings"]:
-        item = SettingsItem.parse_obj(obj)
+        item = SettingsItem.model_validate(obj)
 
         if item.name == "resources":
             # https://docs.docker.com/compose/compose-file/compose-file-v3/#resources
@@ -87,7 +87,7 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
         else:
             raise AssertionError(item)
 
-    print(Service(**data).json(exclude_unset=True, indent=2))
+    print(Service(**data).model_dump_json(exclude_unset=True, indent=2))
 
 
 def test_compatibility():

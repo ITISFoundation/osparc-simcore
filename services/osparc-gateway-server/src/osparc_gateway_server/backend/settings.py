@@ -1,6 +1,7 @@
 from enum import Enum
 
-from pydantic import BaseSettings, Field, NonNegativeInt, PositiveInt
+from pydantic import AliasChoices, Field, NonNegativeInt, PositiveInt
+from pydantic_settings import BaseSettings
 
 
 class BootModeEnum(str, Enum):
@@ -23,13 +24,13 @@ class AppSettings(BaseSettings):
     COMPUTATIONAL_SIDECAR_LOG_LEVEL: str | None = Field(
         default="WARNING",
         description="The computational sidecar log level",
-        env=[
+        validation_alias=AliasChoices(
             "COMPUTATIONAL_SIDECAR_LOG_LEVEL",
             "LOG_LEVEL",
             "LOGLEVEL",
             "SIDECAR_LOG_LEVEL",
             "SIDECAR_LOGLEVEL",
-        ],
+        ),
     )
     COMPUTATIONAL_SIDECAR_VOLUME_NAME: str = Field(
         ..., description="Named volume for the computational sidecars"
@@ -58,7 +59,7 @@ class AppSettings(BaseSettings):
         description="The hostname of the gateway server in the GATEWAY_WORKERS_NETWORK network",
     )
 
-    SC_BOOT_MODE: BootModeEnum | None
+    SC_BOOT_MODE: BootModeEnum | None = None
 
     GATEWAY_SERVER_ONE_WORKER_PER_NODE: bool = Field(
         default=True,

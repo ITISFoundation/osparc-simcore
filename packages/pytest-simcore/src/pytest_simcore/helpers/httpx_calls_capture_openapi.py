@@ -5,7 +5,7 @@ from urllib.parse import unquote
 
 import httpx
 import jsonref
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.storage import StorageSettings
@@ -87,7 +87,7 @@ def _get_params(
             raise VerbNotInPathError(msg)
         if (params := verb_spec.get("parameters")) is None:
             continue
-        all_params += parse_obj_as(list[CapturedParameter], params)
+        all_params += TypeAdapter(list[CapturedParameter]).validate_python(params)
     return set(all_params)
 
 

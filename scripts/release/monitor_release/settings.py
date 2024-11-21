@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Final
+from typing import Final, Self
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, HttpUrl, TypeAdapter, model_validator
@@ -47,7 +47,7 @@ class ReleaseSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
 
     @model_validator(mode="after")
-    def deduce_portainer_url(self):
+    def deduce_portainer_url(self) -> Self:
         self.portainer_url = TypeAdapter(HttpUrl).validate_python(
             f"https://{self.PORTAINER_DOMAIN}"
         )
