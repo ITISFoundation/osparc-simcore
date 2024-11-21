@@ -8,7 +8,6 @@ from typing import NamedTuple
 import pytest
 from aiohttp import web
 from faker import Faker
-from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.application import create_application
@@ -61,17 +60,17 @@ def app(app_environment: EnvVarsDict) -> web.Application:
 
 
 @pytest.fixture
-def expected_openapi_entrypoints(openapi_specs: OpenApiSpecs) -> set[Entrypoint]:
+def expected_openapi_entrypoints(openapi_specs: dict) -> set[Entrypoint]:
     entrypoints: set[Entrypoint] = set()
 
     # openapi-specifications, i.e. "contract"
-    for path, path_obj in openapi_specs.paths.items():
-        for operation, operation_obj in path_obj.operations.items():
+    for path, path_obj in openapi_specs["paths"].items():
+        for operation, operation_obj in path_obj.items():
             entrypoints.add(
                 Entrypoint(
                     method=operation.upper(),
                     path=path,
-                    name=operation_obj.operation_id,
+                    name=operation_obj["operationId"],
                 )
             )
     return entrypoints

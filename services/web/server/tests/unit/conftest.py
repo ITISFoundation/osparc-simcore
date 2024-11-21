@@ -8,19 +8,17 @@
 import json
 import sys
 from collections.abc import Callable, Iterable
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
+import jsonref
 import pytest
 import yaml
-from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.webserver_projects import empty_project_data
-from simcore_service_webserver.rest._utils import (
-    get_openapi_specs_path,
-    load_openapi_specs,
-)
+from simcore_service_webserver.rest._utils import get_openapi_specs_path
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -83,7 +81,23 @@ def disable_gc_manual_guest_users(mocker):
     )
 
 
+@lru_cache  # ANE: required to boost tests speed, gains 3.5s per test
+def _load_openapi_specs(spec_path: Path | None = None) -> dict:
+    if spec_path is None:
+        spec_path = get_openapi_specs_path()
+
+    with spec_path.open() as fh:
+        spec_dict = yaml.safe_load(fh)
+
+    # SEE https://jsonref.readthedocs.io/en/latest/#lazy-load-and-load-on-repr
+    openapi: dict = jsonref.replace_refs(
+        spec_dict, base_uri=spec_path.as_uri(), lazy_load=True, merge_props=False
+    )
+    return openapi
+
+
 @pytest.fixture
-def openapi_specs(api_version_prefix) -> OpenApiSpecs:
+def openapi_specs(api_version_prefix) -> dict:
+
     spec_path = get_openapi_specs_path(api_version_prefix)
-    return load_openapi_specs(spec_path)
+    return _load_openapi_specs(spec_path)
