@@ -9,6 +9,7 @@ import itertools
 import sys
 from collections.abc import Iterable
 from datetime import datetime
+from operator import attrgetter
 from pathlib import Path
 from typing import Final, NamedTuple
 
@@ -32,15 +33,11 @@ class CaptureTuple(NamedTuple):
     file_path: Path
 
 
-def _by_service_name(e: CaptureTuple):
-    return e.service_name
-
-
 service_names_aliases: dict[str, str] = {"web": "webserver"}
 
 
 def generate_markdown_table(
-    *catpured_files: Iterable[CaptureTuple],
+    *captured_files: Iterable[CaptureTuple],
 ) -> str:
     title = ("Name", "Files", "  ")
     lines = ["-" * 10] * len(title)
@@ -49,8 +46,8 @@ def generate_markdown_table(
     table += _to_row(lines)
 
     found = itertools.groupby(
-        sorted(itertools.chain(*catpured_files), key=_by_service_name),
-        key=_by_service_name,
+        sorted(itertools.chain(*captured_files), key=attrgetter("service_name")),
+        key=attrgetter("service_name"),
     )
 
     for name, service_files in found:
@@ -88,7 +85,6 @@ def generate_markdown_table(
             )
 
     table += _to_row(["" * 10] * len(title))
-
     return table
 
 
