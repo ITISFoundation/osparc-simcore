@@ -4,6 +4,8 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import Callable
+
 import pytest
 from aiohttp import web
 from faker import Faker
@@ -53,36 +55,13 @@ def app(app_environment: EnvVarsDict) -> web.Application:
     return app_
 
 
-@pytest.fixture
-def app_rest_entrypoints(app: web.Application) -> set[Entrypoint]:
-    entrypoints: set[Entrypoint] = set()
-
-    # app routes, i.e. "exposed"
-    for resource_name, resource in app.router.named_resources().items():
-        resource_path = resource.canonical
-        for route in resource:
-            assert route.name == resource_name
-            assert route.resource
-            assert route.name is not None
-
-            if route.method == "HEAD":
-                continue
-
-            entrypoints.add(
-                Entrypoint(
-                    method=route.method,
-                    path=resource_path,
-                    name=route.name,
-                )
-            )
-    return entrypoints
-
-
 def test_app_named_resources_against_openapi_specs(
     openapi_specs_entrypoints: set[Entrypoint],
-    app_rest_entrypoints: set[Entrypoint],
+    app: web.Application,
+    create_aiohttp_app_rest_entrypoints: Callable[[web.Application], set[Entrypoint]],
 ):
     # check whether exposed routes implements openapi.json contract
+    app_rest_entrypoints: set[Entrypoint] = create_aiohttp_app_rest_entrypoints(app)
 
     assert app_rest_entrypoints == openapi_specs_entrypoints
 

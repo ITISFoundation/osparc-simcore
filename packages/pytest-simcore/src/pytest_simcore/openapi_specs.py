@@ -6,11 +6,18 @@
 from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, Callable, NamedTuple
 
 import jsonref
 import pytest
 import yaml
+
+try:
+    from aiohttp import web
+
+    has_aiohttp = True
+except ImportError:
+    has_aiohttp = False
 
 
 class Entrypoint(NamedTuple):
@@ -64,3 +71,35 @@ def openapi_specs_entrypoints(
                 )
             )
     return entrypoints
+
+
+if has_aiohttp:
+
+    @pytest.fixture
+    def create_aiohttp_app_rest_entrypoints() -> Callable[
+        [web.Application], set[Entrypoint]
+    ]:
+        def _(app: web.Application):
+            entrypoints: set[Entrypoint] = set()
+
+            # app routes, i.e. "exposed"
+            for resource_name, resource in app.router.named_resources().items():
+                resource_path = resource.canonical
+                for route in resource:
+                    assert route.name == resource_name
+                    assert route.resource
+                    assert route.name is not None
+
+                    if route.method == "HEAD":
+                        continue
+
+                    entrypoints.add(
+                        Entrypoint(
+                            method=route.method,
+                            path=resource_path,
+                            name=route.name,
+                        )
+                    )
+            return entrypoints
+
+        return _
