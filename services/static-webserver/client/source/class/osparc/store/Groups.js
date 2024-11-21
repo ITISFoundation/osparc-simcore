@@ -139,7 +139,7 @@ qx.Class.define("osparc.store.Groups", {
       return Object.keys(this.getOrganizations());
     },
 
-    __getAllGroups: function() {
+    getGroup: function(groupId) {
       const groups = [];
 
       const groupMe = this.getGroupMe();
@@ -163,15 +163,9 @@ qx.Class.define("osparc.store.Groups", {
       const groupEveryone = this.getEveryoneGroup();
       groupEveryone["collabType"] = 0;
       groups.push(groupEveryone);
-
-      return groups;
-    },
-
-    getOrganizationOrUser: function(groupId) {
-      const orgs = this.__getAllGroups();
-      const idx = orgs.findIndex(org => org.getGroupId() === parseInt(groupId));
+      const idx = groups.findIndex(group => group.getGroupId() === parseInt(groupId));
       if (idx > -1) {
-        return orgs[idx];
+        return groups[idx];
       }
       return null;
     },

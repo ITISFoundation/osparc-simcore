@@ -475,21 +475,21 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           if (groupContainer === null) {
             groupContainer = this.__createGroupContainer(orgId, "loading-label");
             const groupsStore = osparc.store.Groups.getInstance();
-            const org = groupsStore.getOrganizationOrUser(orgId);
-            if (org) {
+            const group = groupsStore.getGroup(orgId);
+            if (group) {
               let icon = "";
-              if (org.getThumbnail()) {
-                icon = org.getThumbnail();
-              } else if (org["collabType"] === 0) {
+              if (group.getThumbnail()) {
+                icon = group.getThumbnail();
+              } else if (group["collabType"] === 0) {
                 icon = "@FontAwesome5Solid/globe/24";
-              } else if (org["collabType"] === 1) {
+              } else if (group["collabType"] === 1) {
                 icon = "@FontAwesome5Solid/users/24";
-              } else if (org["collabType"] === 2) {
+              } else if (group["collabType"] === 2) {
                 icon = "@FontAwesome5Solid/user/24";
               }
               groupContainer.set({
                 headerIcon: icon,
-                headerLabel: org.getLabel(),
+                headerLabel: group.getLabel(),
               });
             } else {
               groupContainer.exclude();
