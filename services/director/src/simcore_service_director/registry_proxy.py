@@ -1,3 +1,4 @@
+import asyncio
 import enum
 import json
 import logging
@@ -5,13 +6,14 @@ import re
 from collections.abc import Mapping
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any, cast
+from typing import Any, AsyncGenerator, Final, cast
 
 from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
 from aiohttp import BasicAuth, ClientSession, client_exceptions
 from aiohttp.client import ClientTimeout
 from fastapi import FastAPI
-from servicelib.utils import limited_gather
+from servicelib.logging_utils import log_catch, log_context
+from servicelib.utils import limited_as_completed
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -271,20 +273,44 @@ def setup(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-async def _list_repositories(app: FastAPI) -> list[str]:
-    logger.debug("listing repositories")
-    # if there are more repos, the Link will be available in the response headers until none available
-    path = f"/v2/_catalog?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
-    repos_list: list = []
-    while True:
-        result, headers = await registry_request(app, path)
-        if result["repositories"]:
-            repos_list.extend(result["repositories"])
-        if "Link" not in headers:
-            break
-        path = str(headers["Link"]).split(";")[0].strip("<>")
-    logger.debug("listed %s repositories", len(repos_list))
-    return repos_list
+def _get_prefix(service_type: ServiceType) -> str:
+    return f"{DIRECTOR_SIMCORE_SERVICES_PREFIX}/{service_type.value}/"
+
+
+_SERVICE_TYPE_FILTER_MAP: Final[dict[ServiceType, tuple[str, ...]]] = {
+    ServiceType.DYNAMIC: (_get_prefix(ServiceType.DYNAMIC),),
+    ServiceType.COMPUTATIONAL: (_get_prefix(ServiceType.COMPUTATIONAL),),
+    ServiceType.ALL: (
+        _get_prefix(ServiceType.DYNAMIC),
+        _get_prefix(ServiceType.COMPUTATIONAL),
+    ),
+}
+
+
+async def _list_repositories_gen(
+    app: FastAPI, service_type: ServiceType
+) -> AsyncGenerator[list[str], None]:
+    with log_context(logger, logging.DEBUG, msg="listing repositories"):
+        path = f"/v2/_catalog?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
+        result, headers = await registry_request(app, path)  # initial call
+
+        while True:
+            if "Link" in headers:
+                next_path = str(headers["Link"]).split(";")[0].strip("<>")
+                prefetch_task = asyncio.create_task(registry_request(app, next_path))
+            else:
+                prefetch_task = None
+
+            yield list(
+                filter(
+                    lambda x: str(x).startswith(_SERVICE_TYPE_FILTER_MAP[service_type]),
+                    result["repositories"],
+                )
+            )
+            if prefetch_task:
+                result, headers = await prefetch_task
+            else:
+                return
 
 
 async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
@@ -375,48 +401,36 @@ async def get_image_details(
 
 
 async def get_repo_details(app: FastAPI, image_key: str) -> list[dict[str, Any]]:
-
     image_tags = await list_image_tags(app, image_key)
-
-    results = await limited_gather(
-        *[get_image_details(app, image_key, tag) for tag in image_tags],
-        reraise=False,
-        log=logger,
+    repo_details = []
+    async for image_details_future in limited_as_completed(
+        (get_image_details(app, image_key, tag) for tag in image_tags),
         limit=get_application_settings(
             app
         ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
-    )
-    return [result for result in results if not isinstance(result, BaseException)]
+    ):
+        with log_catch(logger, reraise=False):
+            if image_details := await image_details_future:
+                repo_details.append(image_details)
+    return repo_details
 
 
 async def list_services(app: FastAPI, service_type: ServiceType) -> list[dict]:
-    logger.debug("getting list of services")
-    repos = await _list_repositories(app)
-    # get the services repos
-    prefixes = []
-    if service_type in [ServiceType.DYNAMIC, ServiceType.ALL]:
-        prefixes.append(_get_prefix(ServiceType.DYNAMIC))
-    if service_type in [ServiceType.COMPUTATIONAL, ServiceType.ALL]:
-        prefixes.append(_get_prefix(ServiceType.COMPUTATIONAL))
-    repos = [x for x in repos if str(x).startswith(tuple(prefixes))]
-    logger.debug("retrieved list of repos : %s", repos)
+    with log_context(logger, logging.DEBUG, msg="listing services"):
+        services = []
+        async for repos in _list_repositories_gen(app, service_type):
+            # only list as service if it actually contains the necessary labels
+            async for repo_details_future in limited_as_completed(
+                (get_repo_details(app, repo) for repo in repos),
+                limit=get_application_settings(
+                    app
+                ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
+            ):
+                with log_catch(logger, reraise=False):
+                    if repo_details := await repo_details_future:
+                        services.extend(repo_details)
 
-    # only list as service if it actually contains the necessary labels
-    results = await limited_gather(
-        *[get_repo_details(app, repo) for repo in repos],
-        reraise=False,
-        log=logger,
-        limit=get_application_settings(
-            app
-        ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
-    )
-
-    return [
-        service
-        for repo_details in results
-        if isinstance(repo_details, list)
-        for service in repo_details
-    ]
+        return services
 
 
 async def list_interactive_service_dependencies(
@@ -439,10 +453,6 @@ async def list_interactive_service_dependencies(
             )
 
     return dependency_keys
-
-
-def _get_prefix(service_type: ServiceType) -> str:
-    return f"{DIRECTOR_SIMCORE_SERVICES_PREFIX}/{service_type.value}/"
 
 
 def get_service_first_name(image_key: str) -> str:
