@@ -288,19 +288,30 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     postMember: function(orgId, newMemberEmail) {
+      const gid = parseInt(orgId);
       const params = {
         url: {
-          "gid": parseInt(orgId)
+          "gid": gid
         },
         data: {
           "email": newMemberEmail
         }
       };
       return osparc.data.Resources.fetch("organizationMembers", "post", params)
-        .then(newMember => {
-          const user = new osparc.data.model.User(newMember);
-          this.__addToUsersCache(parseInt(user), parseInt(orgId));
-          return user;
+        .then(() => {
+          // the backend doesn't return the user back,
+          // so fetch them all again and return the user
+          return this.__fetchGroupMembers(gid);
+        })
+        .then(() => {
+          const org = this.getOrganization(gid);
+          if (org) {
+            const groupMember = Object.values(org.getGroupMembers()).find(user => user.getLogin() === newMemberEmail);
+            if (groupMember) {
+              return groupMember;
+            }
+          }
+          return null;
         });
     },
 
