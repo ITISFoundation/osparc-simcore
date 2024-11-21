@@ -33,7 +33,7 @@ class RedisSettings(BaseCustomSettings):
     def build_redis_dsn(self, db_index: RedisDatabase) -> str:
         return str(
             RedisDsn.build(  # pylint: disable=no-member
-                scheme="redis",
+                scheme="rediss" if self.REDIS_SECURE else "redis",
                 username=self.REDIS_USER or None,
                 password=(
                     self.REDIS_PASSWORD.get_secret_value()
