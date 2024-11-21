@@ -14,7 +14,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
-from tenacity.retry import retry_if_exception_type, retry_if_result
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed, wait_random_exponential
 from yarl import URL
@@ -68,10 +68,12 @@ async def _basic_auth_registry_request(
         else None
     )
 
+    request_url = URL(f"{app_settings.DIRECTOR_REGISTRY.registry_url}").with_path(path)
+
     session = get_client_session(app)
     response = await session.request(
         method.lower(),
-        f"{app_settings.DIRECTOR_REGISTRY.registry_url}",
+        f"{request_url}",
         auth=auth,
         **session_kwargs,
     )
@@ -80,7 +82,7 @@ async def _basic_auth_registry_request(
         # basic mode failed, test with other auth mode
         resp_data, resp_headers = await _auth_registry_request(
             app_settings,
-            URL(f"{app_settings.DIRECTOR_REGISTRY.registry_url}"),
+            request_url,
             method,
             response.headers,
             session,
@@ -213,29 +215,22 @@ async def registry_request(
     return response, response_headers
 
 
-async def _is_registry_responsive(app: FastAPI) -> bool:
-    path = "/v2/"
-    try:
-        await _basic_auth_registry_request(app, path=path, method="GET", timeout=1.0)
-        return True
-    except (httpx.RequestError, DirectorRuntimeError):
-        return False
+async def _is_registry_responsive(app: FastAPI) -> None:
+    await _basic_auth_registry_request(app, path="/v2/", method="GET", timeout=1.0)
 
 
 async def _setup_registry(app: FastAPI) -> None:
-    _logger.debug("pinging registry...")
-
     @retry(
         wait=wait_fixed(1),
         before_sleep=before_sleep_log(_logger, logging.WARNING),
-        retry=retry_if_result(lambda result: result is False),
+        retry=retry_if_exception_type((httpx.RequestError, DirectorRuntimeError)),
         reraise=True,
     )
-    async def _wait_until_registry_responsive(app: FastAPI) -> bool:
-        return await _is_registry_responsive(app)
+    async def _wait_until_registry_responsive(app: FastAPI) -> None:
+        await _is_registry_responsive(app)
 
-    await _wait_until_registry_responsive(app)
-    _logger.info("Connected to docker registry")
+    with log_context(_logger, logging.INFO, msg="Connecting to docker registry"):
+        await _wait_until_registry_responsive(app)
 
 
 def setup(app: FastAPI) -> None:
