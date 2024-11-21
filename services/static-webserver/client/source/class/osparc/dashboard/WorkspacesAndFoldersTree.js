@@ -228,6 +228,9 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
       const sharedWorkspaceModel = this.__getModel(-1, null);
       sharedWorkspaceModel.getChildren().append(workspaceModel);
+      sharedWorkspaceModel.getChildren().sort(((a, b) => {
+        return a.getLabel().localeCompare(b.getLabel());
+      }));
 
       // load next level too
       this.__populateFolder(workspaceModel, workspace.getWorkspaceId(), null);
