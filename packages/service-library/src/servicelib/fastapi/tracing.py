@@ -138,7 +138,7 @@ def setup_httpx_client_tracing(client: AsyncClient | Client):
     HTTPXClientInstrumentor.instrument_client(client)
 
 
-def _create_opentelemetry_function_span(func: Callable):
+def _opentelemetry_function_span(func: Callable):
     """Decorator that wraps a function call in an OpenTelemetry span."""
     tracer = trace.get_tracer(__name__)
 
@@ -158,6 +158,15 @@ def _create_opentelemetry_function_span(func: Callable):
         return wrapper
 
 
+def _opentelemetry_method_span(cls):
+    for name, value in cls.__dict__.items():
+        if callable(value) and not name.startswith("_"):
+            setattr(
+                cls, name, _opentelemetry_function_span(value)
+            )  # Apply the decorator
+    return cls
+
+
 class _AddTracingSpansLoader(Loader):
     def __init__(self, loader: Loader):
         self.loader = loader
@@ -167,7 +176,10 @@ class _AddTracingSpansLoader(Loader):
         self.loader.exec_module(module)
         for name, func in inspect.getmembers(module, inspect.isfunction):
             if name in module.__dict__:
-                setattr(module, name, _create_opentelemetry_function_span(func))
+                setattr(module, name, _opentelemetry_function_span(func))
+        for name, cls in inspect.getmembers(module, inspect.isclass):
+            if name in module.__dict__ and cls.__module__ == module.__name__:
+                setattr(module, name, _opentelemetry_method_span(cls))
 
 
 class _AddTracingSpansFinder(MetaPathFinder):
