@@ -161,9 +161,7 @@ def _opentelemetry_function_span(func: Callable):
 def _opentelemetry_method_span(cls):
     for name, value in cls.__dict__.items():
         if callable(value) and not name.startswith("_"):
-            setattr(
-                cls, name, _opentelemetry_function_span(value)
-            )  # Apply the decorator
+            setattr(cls, name, _opentelemetry_function_span(value))
     return cls
 
 
@@ -172,7 +170,6 @@ class _AddTracingSpansLoader(Loader):
         self.loader = loader
 
     def exec_module(self, module: ModuleType):
-        # Execute the module normally
         self.loader.exec_module(module)
         for name, func in inspect.getmembers(module, inspect.isfunction):
             if name in module.__dict__:
@@ -190,13 +187,10 @@ class _AddTracingSpansFinder(MetaPathFinder):
         target: ModuleType | None = None,
     ) -> ModuleSpec | None:
         if fullname.startswith("simcore_service"):
-            # Find the original spec
             spec = importlib.machinery.PathFinder.find_spec(
                 fullname=fullname, path=path
             )
-            # spec = find_spec(fullname, path)
             if spec and spec.loader:
-                # Wrap the loader with our DecoratingLoader
                 spec.loader = _AddTracingSpansLoader(spec.loader)
                 return spec
 
