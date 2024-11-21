@@ -10,6 +10,7 @@ from fastui import components as c
 from fastui.events import PageEvent
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
+from servicelib.logging_utils import log_catch, log_context
 from starlette import status
 
 from ...services.service_tracker import get_all_tracked_services
@@ -88,13 +89,19 @@ class ServicesStatusRetriever(SingletonInAppStateMixin):
         self._task: Task | None = None
 
     async def _task_service_state_retrieval(self) -> None:
-        all_tracked_services = await get_all_tracked_services(self.app)
+        with log_context(
+            _logger, logging.DEBUG, "update SSE services renderers"
+        ), log_catch(_logger, reraise=False):
+            all_tracked_services = await get_all_tracked_services(self.app)
 
-        items = sorted(all_tracked_services.items(), reverse=True)
-        _logger.error(f"PROPAGATING: {items=}")
-        await update_renderer_items(
-            self.app, renderer_type=ServicesSSERenderer, items=items
-        )
+            serializable_items = [
+                (f"{t1}", t2.model_dump(mode="json"))
+                for t1, t2 in sorted(all_tracked_services.items(), reverse=True)
+            ]
+
+            await update_renderer_items(
+                self.app, renderer_type=ServicesSSERenderer, items=serializable_items
+            )
 
     def startup(self) -> None:
         self._task = start_periodic_task(
