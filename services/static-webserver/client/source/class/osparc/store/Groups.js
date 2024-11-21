@@ -230,24 +230,6 @@ qx.Class.define("osparc.store.Groups", {
       return null;
     },
 
-    fetchGroup: function(gid) {
-      return new Promise(resolve => {
-        if (gid) {
-          this.getPotentialCollaborators()
-            .then(potentialCollaborators => {
-              let group = null;
-              if (gid in potentialCollaborators) {
-                group = potentialCollaborators[gid];
-              }
-              resolve(group);
-            })
-            .catch(() => resolve(null));
-        } else {
-          resolve(null);
-        }
-      });
-    },
-
     postGroup: function(name, parentGroupId = null, workspaceId = null) {
       const newGroupData = {
         name,
