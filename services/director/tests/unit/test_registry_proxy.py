@@ -236,7 +236,7 @@ async def test_registry_caching(
     push_services,
 ):
     images = await push_services(
-        number_of_computational_services=21, number_of_interactive_services=21
+        number_of_computational_services=201, number_of_interactive_services=201
     )
     assert app_settings.DIRECTOR_REGISTRY_CACHING is True
 
