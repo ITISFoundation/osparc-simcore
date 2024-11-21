@@ -157,7 +157,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
               .catch(() => this.setEnabled(false));
           }
           if (userFromId) {
-            const user = osparc.store.Groups.getInstance().getUser(userFromId);
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
             if (user) {
               descriptionLabel.setValue("was shared by " + user.getLabel());
             }
@@ -177,7 +177,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
             }
           }
           if (userFromId) {
-            const user = osparc.store.Groups.getInstance().getUser(userFromId);
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
             if (user) {
               descriptionLabel.setValue("was shared by " + user.getLabel());
             }
@@ -196,7 +196,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
               .catch(() => this.setEnabled(false));
           }
           if (userFromId) {
-            const user = osparc.store.Groups.getInstance().getUser(userFromId);
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
             if (user) {
               descriptionLabel.setValue("was added by " + user.getLabel());
             }

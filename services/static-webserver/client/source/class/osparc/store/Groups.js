@@ -213,8 +213,28 @@ qx.Class.define("osparc.store.Groups", {
       return potentialCollaborators;
     },
 
-    getGroup: function(groupId = null) {
-      return this.groupsCached.find(f => f.getGroupId() === groupId);
+    getOrganization: function(groupId) {
+      if (groupId) {
+        const visibleMembers = this.getOrganizations();
+        return Object.values(visibleMembers).find(member => member.getGroupId() === groupId);
+      }
+      return null;
+    },
+
+    getUserByUserId: function(userId) {
+      if (userId) {
+        const visibleMembers = this.getReachableMembers();
+        return Object.values(visibleMembers).find(member => member.getUserId() === userId);
+      }
+      return null;
+    },
+
+    getUserByGroupId: function(groupId) {
+      if (groupId) {
+        const visibleMembers = this.getReachableMembers();
+        return Object.values(visibleMembers).find(member => member.getGroupId() === groupId);
+      }
+      return null;
     },
 
     fetchGroup: function(gid) {
@@ -233,14 +253,6 @@ qx.Class.define("osparc.store.Groups", {
           resolve(null);
         }
       });
-    },
-
-    getUser: function(uid) {
-      if (uid) {
-        const visibleMembers = this.getReachableMembers();
-        return Object.values(visibleMembers).find(member => member.id === uid);
-      }
-      return null;
     },
 
     postGroup: function(name, parentGroupId = null, workspaceId = null) {
@@ -268,7 +280,7 @@ qx.Class.define("osparc.store.Groups", {
       };
       return osparc.data.Resources.getInstance().fetch("groups", "delete", params)
         .then(() => {
-          const group = this.getGroup(groupId);
+          const group = this.getOrganization(groupId);
           if (group) {
             this.__deleteFromGroupsCache(groupId, workspaceId);
             this.fireDataEvent("groupRemoved", group);
@@ -278,7 +290,7 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     putGroup: function(groupId, updateData) {
-      const group = this.getGroup(groupId);
+      const group = this.getOrganization(groupId);
       const oldParentGroupId = group.getParentGroupId();
       const params = {
         "url": {
