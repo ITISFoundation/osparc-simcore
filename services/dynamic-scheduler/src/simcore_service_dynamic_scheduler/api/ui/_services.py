@@ -1,4 +1,4 @@
-from typing import Annotated, Final
+from typing import Annotated, Any, Final
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import StreamingResponse
@@ -9,7 +9,7 @@ from starlette import status
 
 from ..dependencies import get_app
 from ._constants import API_ROOT_PATH
-from ._sse_utils import AbstractSSERenderer, render_as_sse_items
+from ._sse_utils import AbstractSSERenderer, render_items_on_change
 
 _PREFIX: Final[str] = "/services"
 
@@ -47,8 +47,8 @@ def api_index() -> list[AnyComponent]:
 
 class ServicesSSERenderer(AbstractSSERenderer):
     @staticmethod
-    def render_item(item: str) -> list[AnyComponent]:
-        return item
+    def render_item(item: Any) -> AnyComponent:
+        return c.Paragraph(text=f"{item}")
 
 
 @router.get(f"{API_ROOT_PATH}{_PREFIX}/sse/")
@@ -56,7 +56,7 @@ async def sse_ai_response(
     app: Annotated[FastAPI, Depends(get_app)]
 ) -> StreamingResponse:
     return StreamingResponse(
-        render_as_sse_items(app, renderer_type=ServicesSSERenderer),
+        render_items_on_change(app, renderer_type=ServicesSSERenderer),
         media_type="text/event-stream",
     )
 

@@ -7,21 +7,36 @@ from weakref import WeakSet
 
 from fastapi import FastAPI
 from fastui import AnyComponent, FastUI
-from pydantic import NonNegativeFloat, TypeAdapter
+from pydantic import NonNegativeFloat
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 UpdateID: TypeAlias = int
 
 
 class AbstractSSERenderer(ABC):
-    def __init__(self) -> None:
+    def __init__(self, app: FastAPI) -> None:
+        self.app = app
         self._items: list[Any] = []
+        self._hash = self._get_items_hash()
+
+    async def __aenter__(self):
+        await RendererManager.get_from_app_state(self.app).register_renderer(self)
+        return self
+
+    async def __aexit__(self, *args):
+        await RendererManager.get_from_app_state(self.app).unregister_renderer(
+            type(self), self
+        )
+
+    def _get_items_hash(self) -> int:
+        return hash(json.dumps(self._items))
 
     def update(self, items: list[Any]) -> None:
         self._items = items
+        self._hash = self._get_items_hash()
 
     def _get_update_id(self) -> UpdateID:
-        return hash(json.dumps(TypeAdapter(list[Any]).validate_python(self._items)))
+        return self._hash
 
     def changes_detected(self, last_update_id: UpdateID) -> bool:
         return last_update_id != self._get_update_id()
@@ -40,48 +55,68 @@ class RendererManager(SingletonInAppStateMixin):
     """Allows to register SSE renderers and distribute data based on type"""
 
     def __init__(self) -> None:
+        self._lock = asyncio.Lock()
         self._renderers: dict[
             type[AbstractSSERenderer], WeakSet[AbstractSSERenderer]
         ] = {}
 
-    def register_renderer(self, renderer: AbstractSSERenderer) -> None:
-        """NOTE: there is no reason to unregister anything due to WeakSet tracking"""
+    async def register_renderer(self, renderer: AbstractSSERenderer) -> None:
         renderer_type = type(renderer)
 
         if renderer_type not in self._renderers:
             self._renderers[renderer_type] = WeakSet()
 
-        self._renderers[renderer_type].add(renderer)
+        async with self._lock:
+            self._renderers[renderer_type].add(renderer)
 
-    def update_renderer(
+    async def unregister_renderer(
+        self, renderer_type: type[AbstractSSERenderer], renderer: AbstractSSERenderer
+    ) -> None:
+        if renderer_type not in self._renderers:
+            pass
+        async with self._lock:
+            self._renderers[renderer_type].remove(renderer)
+
+    async def update_renderers(
         self, renderer_type: type[AbstractSSERenderer], items: list[Any]
     ) -> None:
         """propagate updates to all instances of said type SSERenderer"""
-        for renderer in self._renderers[renderer_type]:
-            renderer.update(items)
+        if renderer_type not in self._renderers:
+            return
+
+        async with self._lock:
+            for renderer in self._renderers[renderer_type]:
+                renderer.update(items)
 
 
-async def render_as_sse_items(
+async def render_items_on_change(
     app: FastAPI,
     *,
     renderer_type: type[AbstractSSERenderer],
-    messages_check_interval: NonNegativeFloat = 3,
+    messages_check_interval: NonNegativeFloat = 1,
 ) -> AsyncIterable[str]:
     """used by the sse endpoint to render the content as it changes"""
 
-    manager = RendererManager.get_from_app_state(app)
-    renderer = renderer_type()
-    manager.register_renderer(renderer)
+    async with renderer_type(app) as renderer:
 
-    update_id, messages = renderer.get_messages()
+        last_update_id, messages = renderer.get_messages()
 
-    # Avoid the browser reconnecting
-    while True:
-        if renderer.changes_detected(last_update_id=update_id):
-            yield f"data: {FastUI(root=messages).model_dump_json(by_alias=True, exclude_none=True)}\n\n"
+        # Avoid the browser reconnecting
+        while True:
+            await asyncio.sleep(messages_check_interval)
 
-        await asyncio.sleep(messages_check_interval)
-        update_id, messages = renderer.get_messages()
+            update_id, messages = renderer.get_messages()
+
+            if renderer.changes_detected(last_update_id=last_update_id):
+                yield f"data: {FastUI(root=messages).model_dump_json(by_alias=True, exclude_none=True)}\n\n"
+
+            last_update_id = update_id
+
+
+async def update_items(
+    app: FastAPI, *, renderer_type: type[AbstractSSERenderer], items: list[Any]
+) -> None:
+    await RendererManager.get_from_app_state(app).update_renderers(renderer_type, items)
 
 
 def setup_sse(app: FastAPI) -> None:
