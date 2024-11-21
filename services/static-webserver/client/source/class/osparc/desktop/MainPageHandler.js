@@ -85,6 +85,8 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
     },
 
     loadStudy: function(studyData) {
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      // check if it's locked
       let locked = false;
       let lockedBy = false;
       if ("state" in studyData && "locked" in studyData["state"]) {
@@ -92,13 +94,20 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
         lockedBy = studyData["state"]["locked"]["owner"];
       }
       if (locked && lockedBy["user_id"] !== osparc.auth.Data.getInstance().getUserId()) {
-        const msg = `${qx.locale.Manager.tr("Study is already open by ")} ${
+        const msg = `${studyAlias} ${qx.locale.Manager.tr("is already open by")} ${
           "first_name" in lockedBy && lockedBy["first_name"] != null ?
             lockedBy["first_name"] :
             qx.locale.Manager.tr("another user.")
         }`;
         throw new Error(msg);
       }
+
+      // check if it's corrupt
+      if (osparc.data.model.Study.isCorrupt(studyData)) {
+        const msg = `${qx.locale.Manager.tr("We encountered an issue with the")} ${studyAlias} <br>${qx.locale.Manager.tr("Please contact support.")}`;
+        throw new Error(msg);
+      }
+
       this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + studyData.name);
       this.showLoadingPage();
       const inaccessibleServices = osparc.study.Utils.getInaccessibleServices(studyData["workbench"])

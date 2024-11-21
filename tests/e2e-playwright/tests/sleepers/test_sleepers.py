@@ -16,7 +16,7 @@ from typing import Any, Final
 
 from packaging.version import Version
 from packaging.version import parse as parse_version
-from playwright.sync_api import Page, WebSocket
+from playwright.sync_api import Page
 from pytest_simcore.helpers.logging_tools import (
     ContextMessages,
     log_context,
@@ -24,6 +24,7 @@ from pytest_simcore.helpers.logging_tools import (
 )
 from pytest_simcore.helpers.playwright import (
     MINUTE,
+    RestartableWebSocket,
     RunningState,
     ServiceType,
     SocketIOEvent,
@@ -78,7 +79,7 @@ def _get_file_names(page: Page) -> list[str]:
 
 def test_sleepers(
     page: Page,
-    log_in_and_out: WebSocket,
+    log_in_and_out: RestartableWebSocket,
     create_project_from_service_dashboard: Callable[
         [ServiceType, str, str | None], dict[str, Any]
     ],

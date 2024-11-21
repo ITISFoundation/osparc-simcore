@@ -130,6 +130,8 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = new qx.ui.form.TextField().set({
             maxWidth: 220
           });
+          control.addListener("changeValue", () => this.__evaluateOpenButton());
+          osparc.utils.Utils.setIdToWidget(control, "studyTitleField");
           this.getChildControl("title-layout").add(control);
           break;
         case "wallet-selector-layout":
@@ -140,6 +142,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = osparc.desktop.credits.Utils.createWalletSelector("read").set({
             allowGrowX: false
           });
+          control.addListener("changeSelection", () => this.__evaluateOpenButton());
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "advanced-layout":
@@ -226,7 +229,8 @@ qx.Class.define("osparc.study.StudyOptions", {
             minWidth: 150,
             maxWidth: 150,
             height: 35,
-            center: true
+            center: true,
+            enabled: false,
           });
           osparc.utils.Utils.setIdToWidget(control, "openWithResources");
           this.getChildControl("buttons-layout").addAt(control, 1);
@@ -275,14 +279,20 @@ qx.Class.define("osparc.study.StudyOptions", {
           }
         });
       }
+    },
 
-      this.getChildControl("open-button").setEnabled(Boolean(wallet));
+    __evaluateOpenButton: function() {
+      const hasTitle = Boolean(this.getChildControl("title-field").getValue());
+      const walletSelected = Boolean(this.getChildControl("wallet-selector").getSelection().length);
+      this.getChildControl("open-button").setEnabled(hasTitle && walletSelected);
     },
 
     __buildLayout: function() {
       this.__buildTopSummaryLayout();
       this.__buildOptionsLayout();
       this.__buildButtons();
+
+      this.__evaluateOpenButton();
     },
 
     __buildTopSummaryLayout: function() {

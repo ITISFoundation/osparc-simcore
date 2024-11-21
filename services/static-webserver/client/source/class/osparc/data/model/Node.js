@@ -312,7 +312,19 @@ qx.Class.define("osparc.data.model.Node", {
         return outputs[outputKey]["value"];
       }
       return null;
-    }
+    },
+
+    getLinkedNodeIds: function(nodeData) {
+      const linkedNodeIds = new Set([]);
+      if ("inputs" in nodeData) {
+        Object.values(nodeData["inputs"]).forEach(link => {
+          if (link && typeof link === "object" && "nodeUuid" in link) {
+            linkedNodeIds.add(link["nodeUuid"]);
+          }
+        });
+      }
+      return Array.from(linkedNodeIds);
+    },
   },
 
   members: {

@@ -2,7 +2,7 @@ import logging
 
 from pydantic import AliasChoices, Field, field_validator
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import BootMode
+from settings_library.basic_types import BootModeEnum
 from settings_library.utils_logging import MixinLoggingSettings
 
 
@@ -14,7 +14,7 @@ def test_mixin_logging(monkeypatch):
 
     class Settings(BaseCustomSettings, MixinLoggingSettings):
         # DOCKER
-        SC_BOOT_MODE: BootMode | None = None
+        SC_BOOT_MODE: BootModeEnum | None = None
 
         # LOGGING
         LOG_LEVEL: str = Field(
