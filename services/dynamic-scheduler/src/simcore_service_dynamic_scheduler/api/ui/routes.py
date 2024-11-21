@@ -11,6 +11,7 @@ _TAGS: Final[list[str | Enum]] = ["FastUI"]
 
 def setup_ui_api(app: FastAPI) -> None:
     _sse_utils.setup_sse(app)
+    _services.setup_services(app)
 
     app.include_router(_services.router, prefix=UI_MOUNT_PREFIX, tags=_TAGS)
 
