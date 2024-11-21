@@ -23,7 +23,9 @@ def test_migration_downgrade_script():
         sa.Column(
             "user_id",
             sa.BigInteger,
-            sa.ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"),
+            sa.ForeignKey(
+                "users.id", onupdate=RefActions.CASCADE, ondelete=RefActions.CASCADE
+            ),
             nullable=False,
         ),
         sa.Column("name", sa.String, nullable=False),

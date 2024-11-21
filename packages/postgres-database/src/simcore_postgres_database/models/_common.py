@@ -5,13 +5,15 @@ import sqlalchemy as sa
 from ..constants import DECIMAL_PLACES
 
 
-class ReferentialAction:
-    # SEE https://docs.sqlalchemy.org/en/20/orm/cascades.html
-    CASCADE = "CASCADE"
-    SET_NULL = "SET NULL"
-    SET_DEFAULT = "SET DEFAULT"
-    RESTRICT = "RESTRICT"
-    NO_ACTION = "NO ACTION"
+class RefActions:
+    """Referential actions for `ON UPDATE`, `ON DELETE`"""
+
+    # SEE https://docs.sqlalchemy.org/en/20/core/constraints.html#on-update-on-delete
+    CASCADE: Final[str] = "CASCADE"
+    SET_NULL: Final[str] = "SET NULL"
+    SET_DEFAULT: Final[str] = "SET DEFAULT"
+    RESTRICT: Final[str] = "RESTRICT"
+    NO_ACTION: Final[str] = "NO ACTION"
 
 
 def column_created_datetime(*, timezone: bool = True) -> sa.Column:
@@ -43,8 +45,8 @@ def column_created_by_user(
         sa.Integer,
         sa.ForeignKey(
             users_table.c.id,
-            onupdate=ReferentialAction.CASCADE,
-            ondelete=ReferentialAction.SET_NULL,
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.SET_NULL,
         ),
         nullable=not required,
         doc="Who created this row at `created`",
@@ -59,8 +61,8 @@ def column_modified_by_user(
         sa.Integer,
         sa.ForeignKey(
             users_table.c.id,
-            onupdate=ReferentialAction.CASCADE,
-            ondelete=ReferentialAction.SET_NULL,
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.SET_NULL,
         ),
         nullable=not required,
         doc="Who modified this row at `modified`",
@@ -83,8 +85,8 @@ def column_trashed_by_user(resource_name: str, users_table: sa.Table) -> sa.Colu
         sa.BigInteger,
         sa.ForeignKey(
             users_table.c.id,
-            onupdate=ReferentialAction.CASCADE,
-            ondelete=ReferentialAction.SET_NULL,
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.SET_NULL,
             name=f"fk_{resource_name}_trashed_by_user_id",
         ),
         nullable=True,

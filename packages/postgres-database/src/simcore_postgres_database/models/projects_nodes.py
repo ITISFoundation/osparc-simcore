@@ -8,6 +8,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
 from ._common import (
+    RefActions,
     column_created_datetime,
     column_modified_datetime,
     register_modified_datetime_auto_update_trigger,
@@ -31,8 +32,8 @@ projects_nodes = sa.Table(
         sa.String,
         sa.ForeignKey(
             projects.c.uuid,
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_projects_to_projects_nodes_to_projects_uuid",
         ),
         nullable=False,

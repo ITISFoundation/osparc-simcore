@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 
 from ._common import (
+    RefActions,
     column_created_datetime,
     column_modified_datetime,
     column_trashed_by_user,
@@ -34,8 +35,8 @@ workspaces = sa.Table(
         sa.ForeignKey(
             "groups.gid",
             name="fk_workspaces_gid_groups",
-            onupdate="CASCADE",
-            ondelete="RESTRICT",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.RESTRICT,
         ),
         nullable=False,
         doc="Identifier of the group that owns this workspace (Should be just PRIMARY GROUP)",
@@ -45,8 +46,8 @@ workspaces = sa.Table(
         sa.String,
         sa.ForeignKey(
             "products.name",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_workspaces_product_name",
         ),
         nullable=False,

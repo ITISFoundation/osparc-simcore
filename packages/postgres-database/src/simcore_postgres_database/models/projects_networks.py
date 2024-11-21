@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
+from ._common import RefActions
 from .base import metadata
 from .projects import projects
 
@@ -13,8 +14,8 @@ projects_networks = sa.Table(
         sa.ForeignKey(
             projects.c.uuid,
             name="fk_projects_networks_project_uuid_projects",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         primary_key=True,
         doc="project reference and primary key for this table",

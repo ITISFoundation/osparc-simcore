@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 from .folders_v2 import folders_v2
 
@@ -13,8 +13,8 @@ projects_to_folders = sa.Table(
         sa.ForeignKey(
             "projects.uuid",
             name="fk_projects_to_folders_to_projects_uuid",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
     ),
     sa.Column(
@@ -23,8 +23,8 @@ projects_to_folders = sa.Table(
         sa.ForeignKey(
             folders_v2.c.folder_id,
             name="fk_projects_to_folders_to_folders_id",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
     ),
     sa.Column(
@@ -32,8 +32,8 @@ projects_to_folders = sa.Table(
         sa.BigInteger,
         sa.ForeignKey(
             "users.id",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_projects_to_folders_to_user_id",
         ),
         nullable=True,
