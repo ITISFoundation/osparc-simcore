@@ -1,19 +1,21 @@
+import json
 import logging
 from asyncio import Task
 from datetime import timedelta
-from typing import Annotated, Any, Final
+from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import StreamingResponse
 from fastui import AnyComponent, FastUI
 from fastui import components as c
 from fastui.events import PageEvent
+from models_library.projects_nodes_io import NodeID
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_catch, log_context
 from starlette import status
 
-from ...services.service_tracker import get_all_tracked_services
+from ...services.service_tracker import TrackedServiceModel, get_all_tracked_services
 from ..dependencies import get_app
 from ._constants import API_ROOT_PATH
 from ._sse_utils import (
@@ -60,8 +62,15 @@ def api_index() -> list[AnyComponent]:
 
 class ServicesSSERenderer(AbstractSSERenderer):
     @staticmethod
-    def get_component(item: Any) -> AnyComponent:
-        return c.Paragraph(text=f"{item}")
+    def get_component(item: tuple[NodeID, TrackedServiceModel]) -> AnyComponent:
+        node_id, service_model = item
+        mode_data = service_model.model_dump(mode="json")
+        return c.Div(
+            components=[
+                c.Text(text=f"NodeID: {node_id}"),
+                c.Code(text=json.dumps(mode_data, indent=2), language="json"),
+            ]
+        )
 
 
 @router.get(f"{API_ROOT_PATH}{_PREFIX}/sse/")
@@ -93,14 +102,10 @@ class ServicesStatusRetriever(SingletonInAppStateMixin):
             _logger, logging.DEBUG, "update SSE services renderers"
         ), log_catch(_logger, reraise=False):
             all_tracked_services = await get_all_tracked_services(self.app)
-
-            serializable_items = [
-                (f"{t1}", t2.model_dump(mode="json"))
-                for t1, t2 in sorted(all_tracked_services.items(), reverse=True)
-            ]
+            items = list(sorted(all_tracked_services.items()))  # noqa: C413
 
             await update_renderer_items(
-                self.app, renderer_type=ServicesSSERenderer, items=serializable_items
+                self.app, renderer_type=ServicesSSERenderer, items=items
             )
 
     def startup(self) -> None:

@@ -1,5 +1,4 @@
 import asyncio
-import json
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterable
 from typing import Any, TypeAlias
@@ -7,10 +6,26 @@ from weakref import WeakSet
 
 from fastapi import FastAPI
 from fastui import AnyComponent, FastUI
-from pydantic import NonNegativeFloat
+from pydantic import BaseModel, NonNegativeFloat
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 UpdateID: TypeAlias = int
+
+
+def _make_hashable(item: Any) -> Any:
+    """Compute the hashable form of an object using tuples"""
+    if isinstance(item, list | tuple):
+        return tuple(_make_hashable(i) for i in item)
+    if isinstance(item, set):
+        return tuple(_make_hashable(i) for i in sorted(item))
+    if isinstance(item, BaseModel):
+        return item.model_dump_json()
+    if isinstance(item, dict):
+        return tuple(
+            (_make_hashable(k), _make_hashable(v)) for k, v in sorted(item.items())
+        )
+
+    return item  # base case primitives are already hashable
 
 
 class AbstractSSERenderer(ABC):
@@ -29,7 +44,7 @@ class AbstractSSERenderer(ABC):
         )
 
     def _get_items_hash(self) -> int:
-        return hash(json.dumps(self._items))
+        return hash(_make_hashable(self._items))
 
     def update(self, items: list[Any]) -> None:
         self._items = items
