@@ -43,11 +43,11 @@ class AbstractSSERenderer(ABC):
 
     @staticmethod
     @abstractmethod
-    def render_item(item: Any) -> AnyComponent:
+    def get_component(item: Any) -> AnyComponent:
         """returns a `fastui.component` to which renders the content of the item"""
 
-    def get_messages(self) -> tuple[UpdateID, list[AnyComponent]]:
-        return self._get_update_id(), [self.render_item(x) for x in self._items]
+    def get_components(self) -> tuple[UpdateID, list[AnyComponent]]:
+        return self._get_update_id(), [self.get_component(x) for x in self._items]
 
 
 class RendererManager(SingletonInAppStateMixin):
@@ -106,19 +106,19 @@ async def render_items_on_change(
     """
 
     async with renderer_type(app) as renderer:
-        last_update_id, messages = renderer.get_messages()
+        last_update_id, components = renderer.get_components()
 
         # render current state
-        yield f"data: {FastUI(root=messages).model_dump_json(by_alias=True, exclude_none=True)}\n\n"
+        yield f"data: {FastUI(root=components).model_dump_json(by_alias=True, exclude_none=True)}\n\n"
 
         # Avoid the browser reconnecting
         while True:
             await asyncio.sleep(check_interval)
 
-            update_id, messages = renderer.get_messages()
+            update_id, components = renderer.get_components()
 
             if renderer.changes_detected(last_update_id=last_update_id):
-                yield f"data: {FastUI(root=messages).model_dump_json(by_alias=True, exclude_none=True)}\n\n"
+                yield f"data: {FastUI(root=components).model_dump_json(by_alias=True, exclude_none=True)}\n\n"
 
             last_update_id = update_id
 
