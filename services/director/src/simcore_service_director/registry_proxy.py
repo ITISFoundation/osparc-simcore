@@ -56,14 +56,6 @@ async def _basic_auth_registry_request(
     app: FastAPI, path: str, method: str, **session_kwargs
 ) -> tuple[dict, Mapping]:
     app_settings = get_application_settings(app)
-    if not app_settings.DIRECTOR_REGISTRY.REGISTRY_URL:
-        msg = "URL to registry is not defined"
-        raise DirectorRuntimeError(msg=msg)
-
-    url = URL(
-        f"{'https' if app_settings.DIRECTOR_REGISTRY.REGISTRY_SSL else 'http'}://{app_settings.DIRECTOR_REGISTRY.REGISTRY_URL}{path}"
-    )
-    _logger.debug("Requesting registry using %s", url)
     # try the registry with basic authentication first, spare 1 call
     resp_data: dict = {}
     resp_headers: Mapping = {}
@@ -73,23 +65,22 @@ async def _basic_auth_registry_request(
             password=app_settings.DIRECTOR_REGISTRY.REGISTRY_PW.get_secret_value(),
         )
         if app_settings.DIRECTOR_REGISTRY.REGISTRY_AUTH
-        and app_settings.DIRECTOR_REGISTRY.REGISTRY_USER
-        and app_settings.DIRECTOR_REGISTRY.REGISTRY_PW
         else None
     )
 
     session = get_client_session(app)
-
     response = await session.request(
-        method.lower(), f"{url}", auth=auth, **session_kwargs
+        method.lower(),
+        f"{app_settings.DIRECTOR_REGISTRY.registry_url}",
+        auth=auth,
+        **session_kwargs,
     )
 
     if response.status_code == status.HTTP_401_UNAUTHORIZED:
-        _logger.debug("Registry unauthorized request: %s", response.text)
         # basic mode failed, test with other auth mode
         resp_data, resp_headers = await _auth_registry_request(
             app_settings,
-            url,
+            URL(f"{app_settings.DIRECTOR_REGISTRY.registry_url}"),
             method,
             response.headers,
             session,
@@ -100,7 +91,6 @@ async def _basic_auth_registry_request(
         raise ServiceNotAvailableError(service_name=path)
 
     elif response.status_code >= status.HTTP_400_BAD_REQUEST:
-        _logger.exception("Unknown error while accessing registry: %s", str(response))
         raise RegistryConnectionError(msg=str(response))
 
     else:
@@ -119,13 +109,6 @@ async def _auth_registry_request(  # noqa: C901
     session: httpx.AsyncClient,
     **kwargs,
 ) -> tuple[dict, Mapping]:
-    if (
-        not app_settings.DIRECTOR_REGISTRY.REGISTRY_AUTH
-        or not app_settings.DIRECTOR_REGISTRY.REGISTRY_USER
-        or not app_settings.DIRECTOR_REGISTRY.REGISTRY_PW
-    ):
-        msg = "Wrong configuration: Authentication to registry is needed!"
-        raise RegistryConnectionError(msg=msg)
     # auth issue let's try some authentication get the auth type
     auth_type = None
     auth_details: dict[str, str] = {}
@@ -163,13 +146,8 @@ async def _auth_registry_request(  # noqa: C901
         )
         assert isinstance(resp_wtoken, httpx.Response)  # nosec
         if resp_wtoken.status_code == status.HTTP_404_NOT_FOUND:
-            _logger.exception("path to registry not found: %s", url)
             raise ServiceNotAvailableError(service_name=f"{url}")
         if resp_wtoken.status_code >= status.HTTP_400_BAD_REQUEST:
-            _logger.exception(
-                "Unknown error while accessing with token authorized registry: %s",
-                str(resp_wtoken),
-            )
             raise RegistryConnectionError(msg=f"{resp_wtoken}")
         resp_data = await resp_wtoken.json(content_type=None)
         resp_headers = resp_wtoken.headers
@@ -178,15 +156,9 @@ async def _auth_registry_request(  # noqa: C901
         # basic authentication should not be since we tried already...
         resp_wbasic = await getattr(session, method.lower())(url, auth=auth, **kwargs)
         assert isinstance(resp_wbasic, httpx.Response)  # nosec
-
         if resp_wbasic.status_code == status.HTTP_404_NOT_FOUND:
-            _logger.exception("path to registry not found: %s", url)
             raise ServiceNotAvailableError(service_name=f"{url}")
         if resp_wbasic.status_code >= status.HTTP_400_BAD_REQUEST:
-            _logger.exception(
-                "Unknown error while accessing with token authorized registry: %s",
-                str(resp_wbasic),
-            )
             raise RegistryConnectionError(msg=f"{resp_wbasic}")
         resp_data = await resp_wbasic.json(content_type=None)
         resp_headers = resp_wbasic.headers
@@ -246,8 +218,7 @@ async def _is_registry_responsive(app: FastAPI) -> bool:
     try:
         await _basic_auth_registry_request(app, path=path, method="GET", timeout=1.0)
         return True
-    except (httpx.RequestError, DirectorRuntimeError) as exc:
-        _logger.debug("Registry not responsive: %s", exc)
+    except (httpx.RequestError, DirectorRuntimeError):
         return False
 
 
@@ -447,13 +418,14 @@ async def get_repo_details(app: FastAPI, image_key: str) -> list[dict[str, Any]]
 async def list_services(app: FastAPI, service_type: ServiceType) -> list[dict]:
     with log_context(_logger, logging.DEBUG, msg="listing services"):
         services = []
+        concurrency_limit = get_application_settings(
+            app
+        ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS
         async for repos in _list_repositories_gen(app, service_type):
             # only list as service if it actually contains the necessary labels
             async for repo_details_future in limited_as_completed(
                 (get_repo_details(app, repo) for repo in repos),
-                limit=get_application_settings(
-                    app
-                ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
+                limit=concurrency_limit,
             ):
                 with log_catch(_logger, reraise=False):
                     if repo_details := await repo_details_future:
