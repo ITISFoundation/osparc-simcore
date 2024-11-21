@@ -1,5 +1,7 @@
 # Extra reqs, besides webserver's
 
+--constraint ../../../requirements/constraints.txt
+
 fastapi
 jsonref
 pydantic
