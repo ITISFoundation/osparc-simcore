@@ -11,7 +11,11 @@ from starlette import status
 
 from ..dependencies import get_app
 from ._constants import API_ROOT_PATH
-from ._sse_utils import AbstractSSERenderer, render_items_on_change, update_items
+from ._sse_utils import (
+    AbstractSSERenderer,
+    render_items_on_change,
+    update_renderer_items,
+)
 
 _PREFIX: Final[str] = "/services"
 
@@ -81,7 +85,7 @@ class MockMessagesProvider(SingletonInAppStateMixin):
             await asyncio.sleep(3)
 
             messages.append({"name": "a", "surname": "b"})
-            await update_items(
+            await update_renderer_items(
                 self.app, renderer_type=ServicesSSERenderer, items=messages
             )
 

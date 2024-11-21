@@ -123,9 +123,10 @@ async def render_items_on_change(
             last_update_id = update_id
 
 
-async def update_items(
+async def update_renderer_items(
     app: FastAPI, *, renderer_type: type[AbstractSSERenderer], items: list[Any]
 ) -> None:
+    """Propagates new changes for each type of registered renderer"""
     await RendererManager.get_from_app_state(app).update_renderers(renderer_type, items)
 
 
