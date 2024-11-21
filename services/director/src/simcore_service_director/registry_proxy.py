@@ -9,7 +9,7 @@ from typing import Any, Final, cast
 
 import httpx
 from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed
 from tenacity import retry
@@ -84,7 +84,7 @@ async def _basic_auth_registry_request(
         method.lower(), f"{url}", auth=auth, **session_kwargs
     )
 
-    if response.status_code == httpx.codes.UNAUTHORIZED:
+    if response.status_code == status.HTTP_401_UNAUTHORIZED:
         _logger.debug("Registry unauthorized request: %s", response.text)
         # basic mode failed, test with other auth mode
         resp_data, resp_headers = await _auth_registry_request(
@@ -96,10 +96,10 @@ async def _basic_auth_registry_request(
             **session_kwargs,
         )
 
-    elif response.status_code == httpx.codes.NOT_FOUND:
+    elif response.status_code == status.HTTP_404_NOT_FOUND:
         raise ServiceNotAvailableError(service_name=path)
 
-    elif response.status_code > 399:
+    elif response.status_code >= status.HTTP_400_BAD_REQUEST:
         _logger.exception("Unknown error while accessing registry: %s", str(response))
         raise RegistryConnectionError(msg=str(response))
 
@@ -152,7 +152,7 @@ async def _auth_registry_request(
             service=auth_details["service"], scope=auth_details["scope"]
         )
         token_resp = await session.get(f"{token_url}", auth=auth, **kwargs)
-        if token_resp.status_code != httpx.codes.OK:
+        if token_resp.status_code != status.HTTP_200_OK:
             msg = f"Unknown error while authentifying with registry: {token_resp!s}"
             raise RegistryConnectionError(msg=msg)
 
@@ -162,10 +162,10 @@ async def _auth_registry_request(
             url, headers=headers, **kwargs
         )
         assert isinstance(resp_wtoken, httpx.Response)  # nosec
-        if resp_wtoken.status_code == httpx.codes.NOT_FOUND:
+        if resp_wtoken.status_code == status.HTTP_404_NOT_FOUND:
             _logger.exception("path to registry not found: %s", url)
             raise ServiceNotAvailableError(service_name=f"{url}")
-        if resp_wtoken.status_code > 399:
+        if resp_wtoken.status_code >= status.HTTP_400_BAD_REQUEST:
             _logger.exception(
                 "Unknown error while accessing with token authorized registry: %s",
                 str(resp_wtoken),
@@ -179,10 +179,10 @@ async def _auth_registry_request(
         resp_wbasic = await getattr(session, method.lower())(url, auth=auth, **kwargs)
         assert isinstance(resp_wbasic, httpx.Response)  # nosec
 
-        if resp_wbasic.status_code == httpx.codes.NOT_FOUND:
+        if resp_wbasic.status_code == status.HTTP_404_NOT_FOUND:
             _logger.exception("path to registry not found: %s", url)
             raise ServiceNotAvailableError(service_name=f"{url}")
-        if resp_wbasic.status_code > 399:
+        if resp_wbasic.status_code >= status.HTTP_400_BAD_REQUEST:
             _logger.exception(
                 "Unknown error while accessing with token authorized registry: %s",
                 str(resp_wbasic),
