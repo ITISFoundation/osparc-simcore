@@ -2,21 +2,27 @@ import json
 import logging
 from asyncio import Task
 from datetime import timedelta
-from typing import Annotated, Final
+from typing import Annotated, Any, Final
 
+import arrow
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import StreamingResponse
 from fastui import AnyComponent, FastUI
 from fastui import components as c
-from fastui.events import PageEvent
+from fastui.events import GoToEvent, PageEvent
 from models_library.projects_nodes_io import NodeID
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_catch, log_context
 from starlette import status
 
-from ...services.service_tracker import TrackedServiceModel, get_all_tracked_services
+from ...services.service_tracker import (
+    TrackedServiceModel,
+    get_all_tracked_services,
+    get_tracked_service,
+)
 from ..dependencies import get_app
+from . import _custom_components as cu
 from ._constants import API_ROOT_PATH
 from ._sse_utils import (
     AbstractSSERenderer,
@@ -31,20 +37,27 @@ _PREFIX: Final[str] = "/services"
 router = APIRouter()
 
 
+def _page_base(
+    *components: AnyComponent, page_title: str | None = None
+) -> list[AnyComponent]:
+    display_title = (
+        f"Dynamic Scheduler — {page_title}" if page_title else "Dynamic Scheduler"
+    )
+    return [
+        c.PageTitle(text=display_title),
+        c.Navbar(title="Dynamic Scheduler", title_event=GoToEvent(url="/")),
+        c.Page(components=[*components]),
+        c.Footer(extra_text="z43 <3 inside", links=[]),
+    ]
+
+
 @router.get(
     f"{API_ROOT_PATH}/", response_model=FastUI, response_model_exclude_none=True
 )
 def api_index() -> list[AnyComponent]:
-    return [
-        c.PageTitle(text="Dynamic Services status"),
-        c.Page(
-            components=[
-                c.Heading(text="Dynamic services"),
-                c.Paragraph(
-                    text="List of all services currently tracked by the scheduler"
-                ),
-            ]
-        ),
+    return _page_base(
+        c.Heading(text="Dynamic services status", level=4),
+        c.Paragraph(text="List of all services currently tracked by the scheduler"),
         c.Div(
             components=[
                 c.ServerLoad(
@@ -55,22 +68,70 @@ def api_index() -> list[AnyComponent]:
                 )
             ]
         ),
-        c.Footer(extra_text="z43 <3 inside", links=[]),
         c.FireEvent(event=PageEvent(name="page-loaded")),
-    ]
+    )
+
+
+@router.get(
+    f"{API_ROOT_PATH}{_PREFIX}/details/",
+    response_model=FastUI,
+    response_model_exclude_none=True,
+)
+async def service_details(
+    node_id: NodeID, app: Annotated[FastAPI, Depends(get_app)]
+) -> list[AnyComponent]:
+    service_model = await get_tracked_service(app, node_id)
+
+    service_inspect: AnyComponent = c.Text(
+        text=f"Could not find service for provided node_id={node_id}"
+    )
+    if service_model:
+        code = service_model.model_dump(mode="json")
+        service_inspect = c.Code(text=json.dumps(code, indent=2), language="json")
+
+    return _page_base(
+        c.Heading(text=f"Details for {node_id}", level=4),
+        service_inspect,
+        page_title=f"details for {node_id}",
+    )
 
 
 class ServicesSSERenderer(AbstractSSERenderer):
     @staticmethod
     def get_component(item: tuple[NodeID, TrackedServiceModel]) -> AnyComponent:
         node_id, service_model = item
-        mode_data = service_model.model_dump(mode="json")
-        return c.Div(
-            components=[
-                c.Text(text=f"NodeID: {node_id}"),
-                c.Code(text=json.dumps(mode_data, indent=2), language="json"),
-            ]
-        )
+
+        list_display: list[tuple[Any, Any]] = [
+            ("NodeID", node_id),
+            ("Service state", service_model.current_state),
+            (
+                "Last state change",
+                arrow.get(service_model.last_state_change).isoformat(),
+            ),
+            ("Requested", service_model.requested_state),
+            ("ProjectID", service_model.project_id),
+            ("UserID", service_model.user_id),
+        ]
+
+        if service_model.dynamic_service_start:
+            list_display.extend(
+                [
+                    ("Service Key", service_model.dynamic_service_start.key),
+                    ("Service Version", service_model.dynamic_service_start.version),
+                    ("Product", service_model.dynamic_service_start.product_name),
+                ]
+            )
+        components = [
+            cu.markdown_list_display(list_display),
+            c.Link(
+                components=[c.Text(text="Details")],
+                on_click=GoToEvent(
+                    url=f"{_PREFIX}/details/?node_id={node_id}",
+                ),
+            ),
+        ]
+
+        return c.Div(components=components, class_name="border border-blue-500 px-4")
 
 
 @router.get(f"{API_ROOT_PATH}{_PREFIX}/sse/")
