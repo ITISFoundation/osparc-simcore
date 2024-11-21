@@ -1,7 +1,7 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, ClassVar, TypeAlias, Union
+from typing import Annotated, Any, TypeAlias
 
 from models_library.basic_regex import MIME_TYPE_RE
 from models_library.generics import DictModel
@@ -9,7 +9,7 @@ from models_library.services_types import ServicePortKey
 from pydantic import (
     AnyUrl,
     BaseModel,
-    Extra,
+    ConfigDict,
     Field,
     StrictBool,
     StrictFloat,
@@ -23,9 +23,9 @@ TaskCancelEventName = "cancel_event_{}"
 class PortSchema(BaseModel):
     required: bool
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {
                     "required": True,
@@ -34,15 +34,16 @@ class PortSchema(BaseModel):
                     "required": False,
                 },
             ]
-        }
+        },
+    )
 
 
 class FilePortSchema(PortSchema):
     mapping: str | None = None
     url: AnyUrl
 
-    class Config(PortSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "mapping": "some_filename.txt",
@@ -55,6 +56,7 @@ class FilePortSchema(PortSchema):
                 },
             ]
         }
+    )
 
 
 class FileUrl(BaseModel):
@@ -64,12 +66,12 @@ class FileUrl(BaseModel):
         description="Local file relpath name (if given), otherwise it takes the url filename",
     )
     file_mime_type: str | None = Field(
-        default=None, description="the file MIME type", regex=MIME_TYPE_RE
+        default=None, description="the file MIME type", pattern=MIME_TYPE_RE
     )
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {"url": "https://some_file_url", "file_mime_type": "application/json"},
                 {
@@ -78,24 +80,26 @@ class FileUrl(BaseModel):
                     "file_mime_type": "application/json",
                 },
             ]
-        }
+        },
+    )
 
 
-PortValue: TypeAlias = Union[
-    StrictBool,
-    StrictInt,
-    StrictFloat,
-    StrictStr,
-    FileUrl,
-    list[Any],
-    dict[str, Any],
-    None,
+PortValue: TypeAlias = Annotated[
+    StrictBool
+    | StrictInt
+    | StrictFloat
+    | StrictStr
+    | FileUrl
+    | list[Any]
+    | dict[str, Any]
+    | None,
+    Field(union_mode="left_to_right"),
 ]
 
 
 class TaskInputData(DictModel[ServicePortKey, PortValue]):
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "boolean_input": False,
@@ -106,9 +110,12 @@ class TaskInputData(DictModel[ServicePortKey, PortValue]):
                 },
             ]
         }
+    )
 
 
-PortSchemaValue: TypeAlias = Union[PortSchema, FilePortSchema]
+PortSchemaValue: TypeAlias = Annotated[
+    PortSchema | FilePortSchema, Field(union_mode="left_to_right")
+]
 
 
 class TaskOutputDataSchema(DictModel[ServicePortKey, PortSchemaValue]):
@@ -118,8 +125,8 @@ class TaskOutputDataSchema(DictModel[ServicePortKey, PortSchemaValue]):
     # does not work well in that case. For that reason, the schema is
     # sent as a json-schema instead of with a dynamically-created model class
     #
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "boolean_output": {"required": False},
@@ -138,6 +145,7 @@ class TaskOutputDataSchema(DictModel[ServicePortKey, PortSchemaValue]):
                 },
             ]
         }
+    )
 
 
 class TaskOutputData(DictModel[ServicePortKey, PortValue]):
@@ -170,10 +178,10 @@ class TaskOutputData(DictModel[ServicePortKey, PortValue]):
                 msg = f"Could not locate '{output_key}' in {output_data_file}"
                 raise ValueError(msg)
 
-        return cls.parse_obj(data)
+        return cls.model_validate(data)
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "boolean_output": False,
@@ -184,3 +192,4 @@ class TaskOutputData(DictModel[ServicePortKey, PortValue]):
                 },
             ]
         }
+    )

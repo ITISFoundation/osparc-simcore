@@ -46,7 +46,7 @@ async def connect_to_db(app: web.Application, settings: PostgresSettings) -> Non
     - sets an engine in app state (use `get_async_engine(app)` to retrieve)
     """
     if settings.POSTGRES_CLIENT_NAME:
-        settings = settings.copy(
+        settings = settings.model_copy(
             update={"POSTGRES_CLIENT_NAME": settings.POSTGRES_CLIENT_NAME + "-asyncpg"}
         )
 

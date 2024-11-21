@@ -106,9 +106,9 @@ def external_registry_settings(
     if external_envfile_dict:
         config = {
             field: external_envfile_dict.get(field, None)
-            for field in RegistrySettings.__fields__
+            for field in RegistrySettings.model_fields
         }
-        return RegistrySettings.parse_obj(config)
+        return RegistrySettings.model_validate(config)
     return None
 
 
@@ -261,7 +261,7 @@ def jupyter_service(docker_registry: str, node_meta_schema: dict) -> dict[str, A
     )
 
 
-@pytest.fixture(scope="session", params=["2.0.4"])
+@pytest.fixture(scope="session", params=["2.0.7"])
 def dy_static_file_server_version(request: pytest.FixtureRequest):
     return request.param
 

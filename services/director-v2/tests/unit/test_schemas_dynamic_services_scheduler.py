@@ -40,11 +40,11 @@ def assert_copy_has_changes(original: SchedulerData) -> Iterator[SchedulerData]:
 
 
 async def test_parse_saved_fake_scheduler_data(fake_scheduler_data: str) -> None:
-    assert SchedulerData.parse_raw(fake_scheduler_data)
+    assert SchedulerData.model_validate_json(fake_scheduler_data)
 
 
 def test_nested_compare(fake_scheduler_data: str) -> None:
-    scheduler_data = SchedulerData.parse_raw(fake_scheduler_data)
+    scheduler_data = SchedulerData.model_validate_json(fake_scheduler_data)
 
     with assert_copy_has_changes(scheduler_data) as to_change:
         to_change.paths_mapping.inputs_path = Path("/tmp")

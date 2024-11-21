@@ -6,11 +6,11 @@ from contextlib import suppress
 from datetime import timedelta
 from functools import partial
 
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.basic_types import IDStr
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
-from pydantic.errors import PydanticErrorMixin
 from servicelib import progress_bar
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context
@@ -22,18 +22,17 @@ from ...modules.notifications._notifications_ports import PortNotifier
 from ..nodeports import upload_outputs
 from ._context import OutputsContext
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -> None:
     task.cancel()
-    with suppress(CancelledError):
-        with log_catch(logger, reraise=False):
-            await wait((task,), timeout=task_cancellation_timeout_s)
+    with suppress(CancelledError), log_catch(_logger, reraise=False):
+        await wait((task,), timeout=task_cancellation_timeout_s)
 
 
-class UploadPortsFailed(PydanticErrorMixin, RuntimeError):
-    code: str = "dynamic_sidecar.outputs_manager.failed_while_uploading"
+class UploadPortsFailedError(OsparcErrorMixin, RuntimeError):
+    code: str = "dynamic_sidecar.outputs_manager.failed_while_uploading"  # type: ignore[assignment]
     msg_template: str = "Failed while uploading: failures={failures}"
 
 
@@ -130,7 +129,9 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         assert len(port_keys) > 0  # nosec
 
         async def _upload_ports() -> None:
-            with log_context(logger, logging.INFO, f"Uploading port keys: {port_keys}"):
+            with log_context(
+                _logger, logging.INFO, f"Uploading port keys: {port_keys}"
+            ):
                 async with progress_bar.ProgressBarData(
                     num_steps=1,
                     progress_report_cb=self.task_progress_cb,
@@ -155,7 +156,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                     if future._exception.__traceback__
                     else ""
                 )
-                logger.warning(
+                _logger.warning(
                     "%s ended with exception: %s%s",
                     task_name,
                     future._exception,
@@ -200,7 +201,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         )
 
     async def shutdown(self) -> None:
-        with log_context(logger, logging.INFO, f"{OutputsManager.__name__} shutdown"):
+        with log_context(_logger, logging.INFO, f"{OutputsManager.__name__} shutdown"):
             await self._uploading_task_cancel()
             if self._task_scheduler_worker is not None:
                 await stop_periodic_task(
@@ -222,7 +223,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         # always scheduling non file based ports for upload
         # there is no auto detection when these change
         for non_file_port_key in self.outputs_context.non_file_type_port_keys:
-            logger.info("Adding non file port key %s", non_file_port_key)
+            _logger.info("Adding non file port key %s", non_file_port_key)
             await self.port_key_content_changed(non_file_port_key)
 
         # NOTE: the file system watchdog was found unhealthy and to make
@@ -232,7 +233,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         # is missed.
         if self._schedule_all_ports_for_upload:
             self._schedule_all_ports_for_upload = False
-            logger.warning(
+            _logger.warning(
                 "Scheduled %s for upload. The watchdog was rebooted. "
                 "This is a safety measure to make sure no data is lost. ",
                 self.outputs_context.outputs_path,
@@ -240,10 +241,10 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             for file_port_key in self.outputs_context.file_type_port_keys:
                 await self.port_key_content_changed(file_port_key)
 
-        logger.info("Port status before waiting %s", f"{self._port_key_tracker}")
+        _logger.info("Port status before waiting %s", f"{self._port_key_tracker}")
         while not await self._port_key_tracker.no_tracked_ports():
             await asyncio.sleep(self.task_monitor_interval_s)
-        logger.info("Port status after waiting %s", f"{self._port_key_tracker}")
+        _logger.info("Port status after waiting %s", f"{self._port_key_tracker}")
 
         # NOTE: checking if there were any errors during the last port upload,
         # for each port. If any error is detected this will raise.
@@ -251,7 +252,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             True for v in self._last_upload_error_tracker.values() if v is not None
         )
         if any_failed_upload:
-            raise UploadPortsFailed(failures=self._last_upload_error_tracker)
+            raise UploadPortsFailedError(failures=self._last_upload_error_tracker)
 
 
 def setup_outputs_manager(app: FastAPI) -> None:
@@ -264,7 +265,7 @@ def setup_outputs_manager(app: FastAPI) -> None:
         io_log_redirect_cb: LogRedirectCB | None = None
         if settings.RABBIT_SETTINGS:
             io_log_redirect_cb = partial(post_log_message, app, log_level=logging.INFO)
-        logger.debug(
+        _logger.debug(
             "setting up outputs manager %s",
             "with redirection of logs..." if io_log_redirect_cb else "...",
         )

@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import Any, ClassVar
+from typing import Annotated
 
-from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Extra, Field, validator
+from common_library.json_serialization import json_dumps
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator
 
 from .basic_types import IDStr
 from .rest_base import RequestParameters
@@ -62,19 +62,22 @@ def create_ordering_query_model_classes(
     msg_direction_options = "|".join(sorted(OrderDirection))
 
     class _OrderBy(OrderBy):
-        class Config:
-            schema_extra: ClassVar[dict[str, Any]] = {
-                "example": {
-                    "field": next(iter(ordering_fields)),
-                    "direction": OrderDirection.DESC.value,
-                }
-            }
-            extra = Extra.forbid
+        model_config = ConfigDict(
+            extra="forbid",
+            json_schema_extra={
+                "examples": [
+                    {
+                        "field": next(iter(ordering_fields)),
+                        "direction": OrderDirection.DESC.value,
+                    }
+                ]
+            },
             # Necessary to run _check_ordering_field_and_map in defaults and assignments
-            validate_all = True
-            validate_assignment = True
+            validate_assignment=True,
+            validate_default=True,
+        )
 
-        @validator("field", allow_reuse=True, always=True)
+        @field_validator("field", mode="before")
         @classmethod
         def _check_ordering_field_and_map(cls, v):
             if v not in ordering_fields:
@@ -87,28 +90,31 @@ def create_ordering_query_model_classes(
             # API field name -> DB column_name conversion
             return _ordering_fields_api_to_column_map.get(v) or v
 
-    order_by_example: dict[str, Any] = _OrderBy.Config.schema_extra["example"]
+    assert "json_schema_extra" in _OrderBy.model_config  # nosec
+    assert isinstance(_OrderBy.model_config["json_schema_extra"], dict)  # nosec
+    assert isinstance(  # nosec
+        _OrderBy.model_config["json_schema_extra"]["examples"], list
+    )
+    order_by_example = _OrderBy.model_config["json_schema_extra"]["examples"][0]
     order_by_example_json = json_dumps(order_by_example)
-    assert _OrderBy.parse_obj(order_by_example), "Example is invalid"  # nosec
+    assert _OrderBy.model_validate(order_by_example), "Example is invalid"  # nosec
 
-    converted_default = _OrderBy.parse_obj(
+    converted_default = _OrderBy.model_validate(
         # NOTE: enforces ordering_fields_api_to_column_map
-        default.dict()
+        default.model_dump()
     )
 
     class _OrderQueryParams(_BaseOrderQueryParams):
-        order_by: _OrderBy = Field(
+        order_by: Annotated[
+            _OrderBy, BeforeValidator(parse_json_pre_validator)
+        ] = Field(
             default=converted_default,
             description=(
                 f"Order by field (`{msg_field_options}`) and direction (`{msg_direction_options}`). "
                 f"The default sorting order is `{json_dumps(default)}`."
             ),
-            example=order_by_example,
-            example_json=order_by_example_json,
-        )
-
-        _pre_parse_string = validator("order_by", allow_reuse=True, pre=True)(
-            parse_json_pre_validator
+            examples=[order_by_example],
+            json_schema_extra={"example_json": order_by_example_json},
         )
 
     return _OrderQueryParams

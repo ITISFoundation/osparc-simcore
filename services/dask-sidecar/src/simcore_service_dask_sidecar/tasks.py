@@ -68,7 +68,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
     )
 
     logger.info("Setting up worker...")
-    logger.info("Settings: %s", pformat(settings.dict()))
+    logger.info("Settings: %s", pformat(settings.model_dump()))
 
     print_dask_sidecar_banner()
 
@@ -95,7 +95,7 @@ async def _run_computational_sidecar_async(
 
     _logger.info(
         "run_computational_sidecar %s",
-        f"{task_parameters.dict()=}, {docker_auth=}, {log_file_url=}, {s3_settings=}",
+        f"{task_parameters.model_dump()=}, {docker_auth=}, {log_file_url=}, {s3_settings=}",
     )
     current_task = asyncio.current_task()
     assert current_task  # nosec

@@ -5,9 +5,10 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import json
 import logging
-import time
 from collections.abc import Callable, Coroutine
+import time
 
 import pytest
 import simcore_service_webserver
@@ -88,11 +89,13 @@ def mock_environment(
         {
             **mock_env_devel_environment,
             "AIODEBUG_SLOW_DURATION_SECS": f"{SLOW_HANDLER_DELAY_SECS / 10}",
-            "DIAGNOSTICS_MAX_TASK_DELAY": f"{SLOW_HANDLER_DELAY_SECS}",
-            "DIAGNOSTICS_MAX_AVG_LATENCY": f"{2.0}",
-            "DIAGNOSTICS_START_SENSING_DELAY": f"{0}",
+            "WEBSERVER_DIAGNOSTICS": json.dumps({
+                "DIAGNOSTICS_MAX_AVG_LATENCY": "2.0",
+                "DIAGNOSTICS_MAX_TASK_DELAY": f"{SLOW_HANDLER_DELAY_SECS}",
+                "DIAGNOSTICS_START_SENSING_DELAY": f"{0}",
+                "DIAGNOSTICS_HEALTHCHECK_ENABLED": "1",
+            }),
             "SC_HEALTHCHECK_TIMEOUT": "2m",
-            "DIAGNOSTICS_HEALTHCHECK_ENABLED": "1",
         },
     )
 

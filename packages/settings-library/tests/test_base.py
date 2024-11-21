@@ -10,15 +10,18 @@ from typing import Any
 
 import pytest
 import settings_library.base
-from pydantic import BaseModel, BaseSettings, ValidationError
+from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import (
-    _DEFAULTS_TO_NONE_MSG,
+    _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING,
     BaseCustomSettings,
     DefaultFromEnvFactoryError,
 )
+from settings_library.email import SMTPSettings
 
 S2 = json.dumps({"S_VALUE": 2})
 S3 = json.dumps({"S_VALUE": 3})
@@ -38,17 +41,17 @@ def _get_attrs_tree(obj: Any) -> dict[str, Any]:
 
 
 def _print_defaults(model_cls: type[BaseModel]):
-    for field in model_cls.__fields__.values():
-        print(field.name, ":", end="")
+    for name, field in model_cls.model_fields.items():
+        print(name, ":", end="")
         try:
-            default = field.get_default()
+            default = field.get_default(call_default_factory=True)  # new in Pydatic v2
             print(default, type(default))
         except ValidationError as err:
             print(err)
 
 
 def _dumps_model_class(model_cls: type[BaseModel]):
-    d = {field.name: _get_attrs_tree(field) for field in model_cls.__fields__.values()}
+    d = {name: _get_attrs_tree(field) for name, field in model_cls.model_fields.items()}
     return json.dumps(d, indent=1)
 
 
@@ -61,16 +64,19 @@ def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
         class M1(BaseCustomSettings):
             VALUE: S
             VALUE_DEFAULT: S = S(S_VALUE=42)
-            VALUE_CONFUSING: S = None  # type: ignore
+            # VALUE_CONFUSING: S = None  # type: ignore
 
             VALUE_NULLABLE_REQUIRED: S | None = ...  # type: ignore
-            VALUE_NULLABLE_OPTIONAL: S | None
 
             VALUE_NULLABLE_DEFAULT_VALUE: S | None = S(S_VALUE=42)
             VALUE_NULLABLE_DEFAULT_NULL: S | None = None
 
-            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(auto_default_from_env=True)
-            VALUE_DEFAULT_ENV: S = Field(auto_default_from_env=True)
+            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(
+                json_schema_extra={"auto_default_from_env": True}
+            )
+            VALUE_DEFAULT_ENV: S = Field(
+                json_schema_extra={"auto_default_from_env": True}
+            )
 
         class M2(BaseCustomSettings):
             #
@@ -82,10 +88,14 @@ def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
             VALUE_NULLABLE_DEFAULT_NULL: S | None = None
 
             # defaults enabled but if not exists, it disables
-            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(auto_default_from_env=True)
+            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(
+                json_schema_extra={"auto_default_from_env": True}
+            )
 
             # cannot be disabled
-            VALUE_DEFAULT_ENV: S = Field(auto_default_from_env=True)
+            VALUE_DEFAULT_ENV: S = Field(
+                json_schema_extra={"auto_default_from_env": True}
+            )
 
         # Changed in version 3.7: Dictionary order is guaranteed to be insertion order
         _classes = {"M1": M1, "M2": M2, "S": S}
@@ -101,14 +111,14 @@ def test_create_settings_class(
 
     # DEV: Path("M1.ignore.json").write_text(dumps_model_class(M))
 
-    assert M.__fields__["VALUE_NULLABLE_DEFAULT_ENV"].default_factory
+    assert M.model_fields["VALUE_NULLABLE_DEFAULT_ENV"].default_factory
 
-    assert M.__fields__["VALUE_NULLABLE_DEFAULT_ENV"].get_default() is None
+    assert M.model_fields["VALUE_NULLABLE_DEFAULT_ENV"].get_default() is None
 
-    assert M.__fields__["VALUE_DEFAULT_ENV"].default_factory
+    assert M.model_fields["VALUE_DEFAULT_ENV"].default_factory
 
     with pytest.raises(DefaultFromEnvFactoryError):
-        M.__fields__["VALUE_DEFAULT_ENV"].get_default()
+        M.model_fields["VALUE_DEFAULT_ENV"].get_default(call_default_factory=True)
 
 
 def test_create_settings_class_with_environment(
@@ -136,20 +146,19 @@ def test_create_settings_class_with_environment(
 
         instance = SettingsClass()
 
-        print(instance.json(indent=2))
+        print(instance.model_dump_json(indent=2))
 
         # checks
-        assert instance.dict(exclude_unset=True) == {
+        assert instance.model_dump(exclude_unset=True) == {
             "VALUE": {"S_VALUE": 2},
             "VALUE_NULLABLE_REQUIRED": {"S_VALUE": 3},
         }
 
-        assert instance.dict() == {
+        assert instance.model_dump() == {
             "VALUE": {"S_VALUE": 2},
             "VALUE_DEFAULT": {"S_VALUE": 42},
-            "VALUE_CONFUSING": None,
+            # "VALUE_CONFUSING": None,
             "VALUE_NULLABLE_REQUIRED": {"S_VALUE": 3},
-            "VALUE_NULLABLE_OPTIONAL": None,
             "VALUE_NULLABLE_DEFAULT_VALUE": {"S_VALUE": 42},
             "VALUE_NULLABLE_DEFAULT_NULL": None,
             "VALUE_NULLABLE_DEFAULT_ENV": {"S_VALUE": 1},
@@ -163,13 +172,15 @@ def test_create_settings_class_without_environ_fails(
     # now defining S_VALUE
     M2_outside_context = create_settings_class("M2")
 
-    with pytest.raises(ValidationError) as err_info:
+    with pytest.raises(DefaultFromEnvFactoryError) as err_info:
         M2_outside_context.create_from_envs()
 
-    assert err_info.value.errors()[0] == {
-        "loc": ("VALUE_DEFAULT_ENV", "S_VALUE"),
-        "msg": "field required",
-        "type": "value_error.missing",
+    assert err_info.value.errors[0] == {
+        "input": {},
+        "loc": ("S_VALUE",),
+        "msg": "Field required",
+        "type": "missing",
+        "url": "https://errors.pydantic.dev/2.9/v/missing",
     }
 
 
@@ -202,7 +213,9 @@ def test_auto_default_to_none_logs_a_warning(
 
     class SettingsClass(BaseCustomSettings):
         VALUE_NULLABLE_DEFAULT_NULL: S | None = None
-        VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(auto_default_from_env=True)
+        VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(
+            json_schema_extra={"auto_default_from_env": True},
+        )
 
     instance = SettingsClass.create_from_envs()
     assert instance.VALUE_NULLABLE_DEFAULT_NULL is None
@@ -210,7 +223,12 @@ def test_auto_default_to_none_logs_a_warning(
 
     # Defaulting to None also logs a warning
     assert logger_warn.call_count == 1
-    assert _DEFAULTS_TO_NONE_MSG in logger_warn.call_args[0][0]
+    assert (
+        _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+            field_name="VALUE_NULLABLE_DEFAULT_ENV"
+        )
+        in logger_warn.call_args[0][0]
+    )
 
 
 def test_auto_default_to_not_none(
@@ -224,7 +242,9 @@ def test_auto_default_to_not_none(
 
         class SettingsClass(BaseCustomSettings):
             VALUE_NULLABLE_DEFAULT_NULL: S | None = None
-            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(auto_default_from_env=True)
+            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(
+                json_schema_extra={"auto_default_from_env": True},
+            )
 
         instance = SettingsClass.create_from_envs()
         assert instance.VALUE_NULLABLE_DEFAULT_NULL is None
@@ -286,9 +306,11 @@ def test_how_settings_parse_null_environs(monkeypatch: pytest.MonkeyPatch):
 
     error = err_info.value.errors()[0]
     assert error == {
+        "input": "",
         "loc": ("INT_VALUE_TO_NOTHING",),
-        "msg": "value is not a valid integer",
-        "type": "type_error.integer",
+        "msg": "Input should be a valid integer, unable to parse string as an integer",
+        "type": "int_parsing",
+        "url": "https://errors.pydantic.dev/2.9/v/int_parsing",
     }
 
 
@@ -321,3 +343,17 @@ def test_issubclass_type_error_with_pydantic_models():
 
     SettingsClassThatFailed(FOO={})
     assert SettingsClassThatFailed(FOO=None) == SettingsClassThatFailed()
+
+
+def test_upgrade_failure_to_pydantic_settings_2_6(
+    mock_env_devel_environment: EnvVarsDict,
+):
+    class ProblematicSettings(BaseCustomSettings):
+        WEBSERVER_EMAIL: SMTPSettings | None = Field(
+            json_schema_extra={"auto_default_from_env": True}
+        )
+
+        model_config = SettingsConfigDict(nested_model_default_partial_update=True)
+
+    settings = ProblematicSettings()
+    assert settings.WEBSERVER_EMAIL is not None

@@ -9,7 +9,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ValidationError, field_validator
 from pydantic.fields import Field
 from pydantic.networks import HttpUrl
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -33,7 +33,7 @@ class ParametersModel(PageQueryParameters):
     project_uuid: ProjectID
     ref_id: CommitID
 
-    @validator("ref_id", pre=True)
+    @field_validator("ref_id", mode="before")
     @classmethod
     def tags_as_refid_not_implemented(cls, v):
         try:
@@ -292,7 +292,7 @@ async def list_project_iterations(request: web.Request) -> web.Response:
         for item in iterations_range.items
     ]
 
-    page = Page[ProjectIterationItem].parse_obj(
+    page = Page[ProjectIterationItem].model_validate(
         paginate_data(
             chunk=page_items,
             request_url=request.url,
@@ -302,7 +302,7 @@ async def list_project_iterations(request: web.Request) -> web.Response:
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 
@@ -395,7 +395,7 @@ async def list_project_iterations_results(
         for item in iterations_range.items
     ]
 
-    page = Page[ProjectIterationResultItem].parse_obj(
+    page = Page[ProjectIterationResultItem].model_validate(
         paginate_data(
             chunk=page_items,
             request_url=request.url,
@@ -405,6 +405,6 @@ async def list_project_iterations_results(
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )

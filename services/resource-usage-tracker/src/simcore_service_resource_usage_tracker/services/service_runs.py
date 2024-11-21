@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import shortuuid
 from aws_library.s3 import SimcoreS3API
@@ -18,7 +18,7 @@ from models_library.resource_tracker import (
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyUrl, PositiveInt
+from pydantic import AnyUrl, PositiveInt, TypeAdapter
 
 from ..models.service_runs import ServiceRunWithCreditsDB
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
@@ -113,7 +113,7 @@ async def list_service_runs(
     service_runs_api_model: list[ServiceRunGet] = []
     for service in service_runs_db_model:
         service_runs_api_model.append(
-            ServiceRunGet.construct(
+            ServiceRunGet.model_construct(
                 service_run_id=service.service_run_id,
                 wallet_id=service.wallet_id,
                 wallet_name=service.wallet_name,
@@ -142,6 +142,7 @@ async def list_service_runs(
 
 async def export_service_runs(
     s3_client: SimcoreS3API,
+    *,
     bucket_name: str,
     s3_region: str,
     user_id: UserID,
@@ -156,10 +157,12 @@ async def export_service_runs(
     started_until = filters.started_at.until if filters else None
 
     # Create S3 key name
-    s3_bucket_name = S3BucketName(bucket_name)
+    s3_bucket_name = TypeAdapter(S3BucketName).validate_python(bucket_name)
     # NOTE: su stands for "service usage"
     file_name = f"su_{shortuuid.uuid()}.csv"
-    s3_object_key = f"resource-usage-tracker-service-runs/{datetime.now(tz=timezone.utc).date()}/{file_name}"
+    s3_object_key = (
+        f"resource-usage-tracker-service-runs/{datetime.now(tz=UTC).date()}/{file_name}"
+    )
 
     # Export CSV to S3
     await resource_tracker_repo.export_service_runs_table_to_s3(
@@ -175,12 +178,11 @@ async def export_service_runs(
     )
 
     # Create presigned S3 link
-    generated_url: AnyUrl = await s3_client.create_single_presigned_download_link(
+    return await s3_client.create_single_presigned_download_link(
         bucket=s3_bucket_name,
         object_key=s3_object_key,
         expiration_secs=_PRESIGNED_LINK_EXPIRATION_SEC,
     )
-    return generated_url
 
 
 async def get_osparc_credits_aggregated_usages_page(
@@ -194,7 +196,7 @@ async def get_osparc_credits_aggregated_usages_page(
     limit: int = 20,
     offset: int = 0,
 ) -> OsparcCreditsAggregatedUsagesPage:
-    current_datetime = datetime.now(tz=timezone.utc)
+    current_datetime = datetime.now(tz=UTC)
     started_from = current_datetime - timedelta(days=time_period.value)
 
     assert aggregated_by == ServicesAggregatedUsagesType.services  # nosec
@@ -214,7 +216,7 @@ async def get_osparc_credits_aggregated_usages_page(
     output_api_model: list[OsparcCreditsAggregatedByServiceGet] = []
     for item in output_list_db:
         output_api_model.append(
-            OsparcCreditsAggregatedByServiceGet.construct(
+            OsparcCreditsAggregatedByServiceGet.model_construct(
                 osparc_credits=item.osparc_credits,
                 service_key=item.service_key,
                 running_time_in_hours=item.running_time_in_hours,

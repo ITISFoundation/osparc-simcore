@@ -4,7 +4,7 @@ import pytest
 from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID, StorageFileID
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
@@ -15,7 +15,7 @@ from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 )
 def test_file_id_raises_error(file_id: str):
     with pytest.raises(ValidationError):
-        parse_obj_as(StorageFileID, file_id)
+        TypeAdapter(StorageFileID).validate_python(file_id)
 
 
 @pytest.mark.parametrize(
@@ -38,17 +38,17 @@ def test_file_id_raises_error(file_id: str):
     ],
 )
 def test_file_id(file_id: str):
-    parsed_file_id = parse_obj_as(StorageFileID, file_id)
+    parsed_file_id = TypeAdapter(StorageFileID).validate_python(file_id)
     assert parsed_file_id
     assert parsed_file_id == file_id
 
 
-def test_fmd_build():
-    file_id = parse_obj_as(SimcoreS3FileID, f"api/{uuid.uuid4()}/xx.dat")
+def test_fmd_build_api():
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{uuid.uuid4()}/xx.dat")
     fmd = FileMetaData.from_simcore_node(
         user_id=12,
         file_id=file_id,
-        bucket=S3BucketName("test-bucket"),
+        bucket=TypeAdapter(S3BucketName).validate_python("test-bucket"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
         sha256_checksum=None,
@@ -64,11 +64,15 @@ def test_fmd_build():
     assert fmd.location_id == SimcoreS3DataManager.get_location_id()
     assert fmd.bucket_name == "test-bucket"
 
-    file_id = parse_obj_as(SimcoreS3FileID, f"{uuid.uuid4()}/{uuid.uuid4()}/xx.dat")
+
+def test_fmd_build_webapi():
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(
+        f"{uuid.uuid4()}/{uuid.uuid4()}/xx.dat"
+    )
     fmd = FileMetaData.from_simcore_node(
         user_id=12,
         file_id=file_id,
-        bucket=S3BucketName("test-bucket"),
+        bucket=TypeAdapter(S3BucketName).validate_python("test-bucket"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
         sha256_checksum=None,

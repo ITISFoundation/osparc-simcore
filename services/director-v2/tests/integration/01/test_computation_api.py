@@ -67,7 +67,7 @@ def mock_env(
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "1",
             "COMPUTATIONAL_BACKEND_ENABLED": "1",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
-            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": dask_scheduler_auth.json(),
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": dask_scheduler_auth.model_dump_json(),
             "DYNAMIC_SIDECAR_IMAGE": dynamic_sidecar_docker_image_name,
             "SIMCORE_SERVICES_NETWORK_NAME": "test_swarm_network_name",
             "SWARM_STACK_NAME": "test_mocked_stack_name",
@@ -109,7 +109,7 @@ def fake_workbench_computational_pipeline_details(
 ) -> PipelineDetails:
     adjacency_list = json.loads(fake_workbench_computational_adjacency_file.read_text())
     node_states = json.loads(fake_workbench_node_states_file.read_text())
-    return PipelineDetails.parse_obj(
+    return PipelineDetails.model_validate(
         {"adjacency_list": adjacency_list, "node_states": node_states, "progress": 0}
     )
 
@@ -720,7 +720,7 @@ async def test_abort_computation(
     assert (
         response.status_code == status.HTTP_202_ACCEPTED
     ), f"response code is {response.status_code}, error: {response.text}"
-    task_out = ComputationGet.parse_obj(response.json())
+    task_out = ComputationGet.model_validate(response.json())
     assert task_out.url.path == f"/v2/computations/{sleepers_project.uuid}:stop"
     assert task_out.stop_url is None
 
@@ -848,7 +848,7 @@ async def test_update_and_delete_computation(
 
     # try to delete the pipeline, is expected to be forbidden if force parameter is false (default)
     response = await async_client.request(
-        "DELETE", task_out.url, json={"user_id": user["id"]}
+        "DELETE", f"{task_out.url}", json={"user_id": user["id"]}
     )
     assert (
         response.status_code == status.HTTP_403_FORBIDDEN
@@ -856,7 +856,7 @@ async def test_update_and_delete_computation(
 
     # try again with force=True this should abort and delete the pipeline
     response = await async_client.request(
-        "DELETE", task_out.url, json={"user_id": user["id"], "force": True}
+        "DELETE", f"{task_out.url}", json={"user_id": user["id"], "force": True}
     )
     assert (
         response.status_code == status.HTTP_204_NO_CONTENT

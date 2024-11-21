@@ -26,7 +26,7 @@ from dask_task_models_library.container_tasks.protocol import (
 from models_library.services_resources import BootMode
 from models_library.utils.labels_annotations import OSPARC_LABEL_PREFIXES, from_labels
 from packaging import version
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from servicelib.logging_utils import (
     LogLevelInt,
     LogMessageStr,
@@ -95,7 +95,7 @@ async def create_container_config(
             NanoCPUs=nano_cpus_limit,
         ),
     )
-    logger.debug("Container configuration: \n%s", pformat(config.dict()))
+    logger.debug("Container configuration: \n%s", pformat(config.model_dump()))
     return config
 
 
@@ -109,7 +109,7 @@ async def managed_container(
             logger, logging.DEBUG, msg=f"managing container {name} for {config.image}"
         ):
             container = await docker_client.containers.create(
-                config.dict(by_alias=True), name=name
+                config.model_dump(by_alias=True), name=name
             )
             yield container
     except asyncio.CancelledError:
@@ -443,7 +443,7 @@ async def get_image_labels(
         data = from_labels(
             image_labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
-        return parse_obj_as(ImageLabels, data)
+        return TypeAdapter(ImageLabels).validate_python(data)
     return ImageLabels()
 
 

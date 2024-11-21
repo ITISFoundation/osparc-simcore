@@ -1,18 +1,20 @@
 import contextlib
 import re
-from typing import Any, ClassVar, Final
+from typing import Annotated, Any, Final, TypeAlias
 
 from pydantic import (
     BaseModel,
     ByteSize,
-    ConstrainedStr,
+    ConfigDict,
     Field,
+    StringConstraints,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
-    root_validator,
+    model_validator,
 )
 
 from .basic_regex import DOCKER_GENERIC_TAG_KEY_RE, DOCKER_LABEL_KEY_REGEX
+from .basic_types import ConstrainedStr
 from .generated_models.docker_rest_api import Task
 from .products import ProductName
 from .projects import ProjectID
@@ -23,24 +25,19 @@ from .users import UserID
 class DockerLabelKey(ConstrainedStr):
     # NOTE: https://docs.docker.com/config/labels-custom-metadata/#key-format-recommendations
     # good practice: use reverse DNS notation
-    regex: re.Pattern[str] | None = DOCKER_LABEL_KEY_REGEX
+    pattern = DOCKER_LABEL_KEY_REGEX
 
     @classmethod
     def from_key(cls, key: str) -> "DockerLabelKey":
         return cls(key.lower().replace("_", "-"))
 
 
-class DockerGenericTag(ConstrainedStr):
-    # NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description
-    regex: re.Pattern[str] | None = DOCKER_GENERIC_TAG_KEY_RE
+# NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description
+DockerGenericTag: TypeAlias = Annotated[
+    str, StringConstraints(pattern=DOCKER_GENERIC_TAG_KEY_RE)
+]
 
-
-class DockerPlacementConstraint(ConstrainedStr):
-    strip_whitespace = True
-    regex = re.compile(
-        r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
-    )
-
+DockerPlacementConstraint: TypeAlias = Annotated[str, StringConstraints(strip_whitespace = True, pattern = re.compile(r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"))]
 
 _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX: Final[str] = "io.simcore.runtime."
 _BACKWARDS_COMPATIBILITY_SIMCORE_RUNTIME_DOCKER_LABELS_MAP: Final[dict[str, str]] = {
@@ -60,7 +57,7 @@ _UNDEFINED_LABEL_VALUE_INT: Final[str] = "0"
 
 DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: Final[
     DockerLabelKey
-] = parse_obj_as(DockerLabelKey, "ec2-instance-type")
+] = TypeAdapter(DockerLabelKey).validate_python("ec2-instance-type")
 
 
 def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
@@ -72,7 +69,7 @@ def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
 class StandardSimcoreDockerLabels(BaseModel):
     """
     Represents the standard label on oSparc created containers (not yet services)
-    In order to create this object in code, please use construct() method!
+    In order to create this object in code, please use model_construct() method!
     """
 
     user_id: UserID = Field(..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}user-id")  # type: ignore[literal-required]
@@ -99,7 +96,7 @@ class StandardSimcoreDockerLabels(BaseModel):
         ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit"
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def _backwards_compatibility(cls, values: dict[str, Any]) -> dict[str, Any]:
         # NOTE: this is necessary for dy-sidecar and legacy service until they are adjusted
@@ -122,7 +119,7 @@ class StandardSimcoreDockerLabels(BaseModel):
 
             def _convert_nano_cpus_to_cpus(nano_cpu: str) -> str:
                 with contextlib.suppress(ValidationError):
-                    return f"{parse_obj_as(float, nano_cpu) / (1.0*10**9):.2f}"
+                    return f"{TypeAdapter(float).validate_python(nano_cpu) / (1.0*10**9):.2f}"
                 return _UNDEFINED_LABEL_VALUE_INT
 
             mapped_values.setdefault(
@@ -138,19 +135,19 @@ class StandardSimcoreDockerLabels(BaseModel):
         """returns a dictionary of strings as required by docker"""
         return {
             to_simcore_runtime_docker_label_key(k): f"{v}"
-            for k, v in sorted(self.dict().items())
+            for k, v in sorted(self.model_dump().items())
         }
 
     @classmethod
     def from_docker_task(cls, docker_task: Task) -> "StandardSimcoreDockerLabels":
-        assert docker_task.Spec  # nosec
-        assert docker_task.Spec.ContainerSpec  # nosec
-        task_labels = docker_task.Spec.ContainerSpec.Labels or {}
-        return cls.parse_obj(task_labels)
+        assert docker_task.spec  # nosec
+        assert docker_task.spec.container_spec  # nosec
+        task_labels = docker_task.spec.container_spec.labels or {}
+        return cls.model_validate(task_labels)
 
-    class Config:
-        allow_population_by_field_name = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
             "examples": [
                 # legacy service labels
                 {
@@ -219,4 +216,5 @@ class StandardSimcoreDockerLabels(BaseModel):
                     "io.simcore.runtime.user-id": "5",
                 },
             ]
-        }
+        },
+    )

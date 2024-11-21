@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Protocol, TypeAlias
+from typing import Any, Protocol, TypeAlias
 
 from models_library.basic_types import EnvVarKey
 from models_library.docker import DockerLabelKey
@@ -6,7 +6,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import BootMode
 from models_library.users import UserID
-from pydantic import AnyUrl, BaseModel, root_validator
+from pydantic import AnyUrl, BaseModel, ConfigDict, model_validator
 from settings_library.s3 import S3Settings
 
 from .docker import DockerBasicAuth
@@ -32,7 +32,7 @@ class TaskOwner(BaseModel):
     def has_parent(self) -> bool:
         return bool(self.parent_node_id and self.parent_project_id)
 
-    @root_validator
+    @model_validator(mode="before")
     @classmethod
     def check_parent_valid(cls, values: dict[str, Any]) -> dict[str, Any]:
         parent_project_id = values.get("parent_project_id")
@@ -44,8 +44,8 @@ class TaskOwner(BaseModel):
             raise ValueError(msg)
         return values
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "user_id": 32,
@@ -63,6 +63,7 @@ class TaskOwner(BaseModel):
                 },
             ]
         }
+    )
 
 
 class ContainerTaskParameters(BaseModel):
@@ -76,24 +77,23 @@ class ContainerTaskParameters(BaseModel):
     boot_mode: BootMode
     task_owner: TaskOwner
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "image": "ubuntu",
                     "tag": "latest",
-                    "input_data": TaskInputData.Config.schema_extra["examples"][0],
-                    "output_data_keys": TaskOutputDataSchema.Config.schema_extra[
-                        "examples"
-                    ][0],
+                    "input_data": TaskInputData.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index]
+                    "output_data_keys": TaskOutputDataSchema.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index]
                     "command": ["sleep 10", "echo hello"],
                     "envs": {"MYENV": "is an env"},
                     "labels": {"io.simcore.thelabel": "is amazing"},
                     "boot_mode": BootMode.CPU.value,
-                    "task_owner": TaskOwner.Config.schema_extra["examples"][0],
+                    "task_owner": TaskOwner.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index]
                 },
             ]
         }
+    )
 
 
 class ContainerRemoteFct(Protocol):

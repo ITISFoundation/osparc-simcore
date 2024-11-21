@@ -40,8 +40,8 @@ class Example(BaseModel):
         attach: list[Any],
     ) -> "Example":
         return cls(
-            existing_networks_with_aliases=NetworksWithAliases.parse_obj(existing),
-            new_networks_with_aliases=NetworksWithAliases.parse_obj(new),
+            existing_networks_with_aliases=NetworksWithAliases.model_validate(existing),
+            new_networks_with_aliases=NetworksWithAliases.model_validate(new),
             expected_calls=MockedCalls(detach=detach, attach=attach),
         )
 
@@ -184,7 +184,7 @@ def dy_workbench_with_networkable_labels(mocks_dir: Path) -> NodesDict:
 
     for node_uuid, node_data in dy_workbench.items():
         node_data["label"] = f"label_{uuid4()}"
-        parsed_workbench[node_uuid] = Node.parse_obj(node_data)
+        parsed_workbench[node_uuid] = Node.model_validate(node_data)
 
     return parsed_workbench
 

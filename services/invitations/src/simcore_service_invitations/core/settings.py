@@ -1,7 +1,14 @@
 from functools import cached_property
 
 from models_library.products import ProductName
-from pydantic import Field, HttpUrl, PositiveInt, SecretStr, validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    HttpUrl,
+    PositiveInt,
+    SecretStr,
+    field_validator,
+)
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
@@ -40,19 +47,22 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # RUNTIME  -----------------------------------------------------------
 
     INVITATIONS_LOGLEVEL: LogLevel = Field(
-        default=LogLevel.INFO, env=["INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        default=LogLevel.INFO,
+        validation_alias=AliasChoices("INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
     )
     INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=AliasChoices(
             "INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     INVITATIONS_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
-        env=["INVITATIONS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        validation_alias=AliasChoices(
+            "INVITATIONS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
@@ -60,7 +70,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self):
         return self.INVITATIONS_LOGLEVEL
 
-    @validator("INVITATIONS_LOGLEVEL", pre=True)
+    @field_validator("INVITATIONS_LOGLEVEL", mode="before")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
@@ -110,5 +120,6 @@ class ApplicationSettings(MinimalApplicationSettings):
     )
     INVITATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     INVITATIONS_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for opentelemetry tracing",
     )

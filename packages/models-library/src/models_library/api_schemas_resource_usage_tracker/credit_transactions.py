@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Annotated
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, BeforeValidator, PlainSerializer
 
 from ..products import ProductName
 from ..resource_tracker import CreditTransactionId
@@ -11,12 +12,11 @@ from ..wallets import WalletID
 
 class WalletTotalCredits(BaseModel):
     wallet_id: WalletID
-    available_osparc_credits: Decimal
-
-    @validator("available_osparc_credits", always=True)
-    @classmethod
-    def ensure_rounded(cls, v):
-        return round(v, 2)
+    available_osparc_credits: Annotated[
+        Decimal,
+        BeforeValidator(lambda x: round(x, 2)),
+        PlainSerializer(float, return_type=float, when_used="json"),
+    ]
 
 
 class CreditTransactionCreateBody(BaseModel):

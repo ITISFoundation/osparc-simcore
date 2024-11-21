@@ -36,7 +36,7 @@ def _assert_services(
     ]
 
     for data in got:
-        service = ServiceDataGet.parse_obj(data)
+        service = ServiceDataGet.model_validate(data)
         assert (
             expected_key_version_tuples.count((f"{service.key}", f"{service.version}"))
             == 1

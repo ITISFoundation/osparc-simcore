@@ -3,21 +3,22 @@
 """
 
 from copy import deepcopy
-from typing import Any, ClassVar, TypeAlias, Union
+from typing import Annotated, Any, TypeAlias, Union
 
 from pydantic import (
     BaseModel,
-    ConstrainedStr,
-    Extra,
+    ConfigDict,
     Field,
+    HttpUrl,
     Json,
     StrictBool,
     StrictFloat,
     StrictInt,
-    validator,
+    StringConstraints,
+    field_validator,
 )
 
-from .basic_types import EnvVarKey, HttpUrlWithCustomMinLength, KeyIDStr
+from .basic_types import EnvVarKey, KeyIDStr
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
@@ -58,12 +59,15 @@ OutputTypes = Union[
 InputID: TypeAlias = KeyIDStr
 OutputID: TypeAlias = KeyIDStr
 
-InputsDict: TypeAlias = dict[InputID, InputTypes]
-OutputsDict: TypeAlias = dict[OutputID, OutputTypes]
+# union_mode="smart" by default for Pydantic>=2: https://docs.pydantic.dev/latest/concepts/unions/#union-modes
+InputsDict: TypeAlias = dict[
+    InputID, Annotated[InputTypes, Field(union_mode="left_to_right")]
+]
+OutputsDict: TypeAlias = dict[
+    OutputID, Annotated[OutputTypes, Field(union_mode="left_to_right")]
+]
 
-
-class UnitStr(ConstrainedStr):
-    strip_whitespace = True
+UnitStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
 class NodeState(BaseModel):
@@ -85,10 +89,9 @@ class NodeState(BaseModel):
         le=1.0,
         description="current progress of the task if available (None if not started or not a computational task)",
     )
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {
                     "modified": True,
@@ -106,7 +109,18 @@ class NodeState(BaseModel):
                     "currentStatus": "SUCCESS",
                 },
             ]
-        }
+        },
+    )
+
+
+def _patch_json_schema_extra(schema: dict) -> None:
+    # NOTE: exporting without this trick does not make runHash as nullable.
+    # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
+    for prop_name in ["parent", "runHash"]:
+        if prop_name in schema.get("properties", {}):
+            prop = deepcopy(schema["properties"][prop_name])
+            prop["nullable"] = True
+            schema["properties"][prop_name] = prop
 
 
 class Node(BaseModel):
@@ -134,7 +148,7 @@ class Node(BaseModel):
         description="the node progress value (deprecated in DB, still used for API only)",
         deprecated=True,
     )
-    thumbnail: HttpUrlWithCustomMinLength | None = Field(
+    thumbnail: Annotated[str, HttpUrl] | None = Field(
         default=None,
         description="url of the latest screenshot of the node",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
@@ -208,7 +222,7 @@ class Node(BaseModel):
         ),
     )
 
-    @validator("thumbnail", pre=True)
+    @field_validator("thumbnail", mode="before")
     @classmethod
     def convert_empty_str_to_none(cls, v):
         if isinstance(v, str) and v == "":
@@ -221,7 +235,7 @@ class Node(BaseModel):
             return RunningState.FAILED
         return RunningState(v)
 
-    @validator("state", pre=True)
+    @field_validator("state", mode="before")
     @classmethod
     def convert_from_enum(cls, v):
         if isinstance(v, str):
@@ -230,16 +244,7 @@ class Node(BaseModel):
             return NodeState(currentStatus=running_state_value)
         return v
 
-    class Config:
-        extra = Extra.forbid
-
-        # NOTE: exporting without this trick does not make runHash as nullable.
-        # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
-        @staticmethod
-        def schema_extra(schema, _model: "Node"):
-            # SEE https://swagger.io/docs/specification/data-models/data-types/#Null
-            for prop_name in ["parent", "runHash"]:
-                if prop_name in schema.get("properties", {}):
-                    prop = deepcopy(schema["properties"][prop_name])
-                    prop["nullable"] = True
-                    schema["properties"][prop_name] = prop
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra=_patch_json_schema_extra,
+    )

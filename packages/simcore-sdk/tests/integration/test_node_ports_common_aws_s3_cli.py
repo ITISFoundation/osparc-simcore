@@ -14,8 +14,9 @@ import aioboto3
 import aiofiles
 import pytest
 from faker import Faker
+from models_library.basic_types import IDStr
 from models_library.progress_bar import ProgressReport
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
@@ -49,7 +50,9 @@ async def cleanup_bucket_after_test(
 
     yield
 
-    async with session.client("s3", endpoint_url=aws_s3_cli_settings.AWS_S3_CLI_S3.S3_ENDPOINT) as s3_client:  # type: ignore
+    async with session.client(
+        "s3", endpoint_url=f"{aws_s3_cli_settings.AWS_S3_CLI_S3.S3_ENDPOINT}"
+    ) as s3_client:
         # List all object versions
         paginator = s3_client.get_paginator("list_object_versions")
         async for page in paginator.paginate(
@@ -74,8 +77,7 @@ async def cleanup_bucket_after_test(
 
 # put to shared config
 def _fake_s3_link(aws_s3_cli_settings: AwsS3CliSettings, s3_object: str) -> AnyUrl:
-    return parse_obj_as(
-        AnyUrl,
+    return TypeAdapter(AnyUrl).validate_python(
         f"s3://{aws_s3_cli_settings.AWS_S3_CLI_S3.S3_BUCKET_NAME}/{urllib.parse.quote(s3_object)}",
     )
 
@@ -85,7 +87,7 @@ async def _create_random_binary_file(
     file_path: Path,
     file_size: ByteSize,
     # NOTE: bigger files get created faster with bigger chunk_size
-    chunk_size: int = parse_obj_as(ByteSize, "1mib"),
+    chunk_size: int = TypeAdapter(ByteSize).validate_python("1mib"),
 ):
     async with aiofiles.open(file_path, mode="wb") as file:
         bytes_written = 0
@@ -148,7 +150,7 @@ async def _upload_local_dir_to_s3(
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=_report_progress_upload,
-        description=faker.pystr(),
+        description=IDStr(faker.pystr()),
     ) as progress_bar:
         await aws_s3_cli.sync_local_to_s3(
             aws_s3_cli_settings,
@@ -175,7 +177,7 @@ async def _download_from_s3_to_local_dir(
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=_report_progress_download,
-        description=faker.pystr(),
+        description=IDStr(faker.pystr()),
     ) as progress_bar:
         await aws_s3_cli.sync_s3_to_local(
             aws_s3_cli_settings,
@@ -246,15 +248,21 @@ async def dir_downloaded_files_2(tmp_path: Path, faker: Faker) -> AsyncIterator[
 @pytest.mark.parametrize(
     "file_count, file_size, check_progress",
     [
-        (0, parse_obj_as(ByteSize, "0"), False),
-        (1, parse_obj_as(ByteSize, "1mib"), False),
-        (2, parse_obj_as(ByteSize, "1mib"), False),
-        (1, parse_obj_as(ByteSize, "1Gib"), True),
+        (0, TypeAdapter(ByteSize).validate_python("0"), False),
+        (1, TypeAdapter(ByteSize).validate_python("1mib"), False),
+        (2, TypeAdapter(ByteSize).validate_python("1mib"), False),
+        (1, TypeAdapter(ByteSize).validate_python("1Gib"), True),
         pytest.param(
-            4, parse_obj_as(ByteSize, "500Mib"), True, marks=pytest.mark.heavy_load
+            4,
+            TypeAdapter(ByteSize).validate_python("500Mib"),
+            True,
+            marks=pytest.mark.heavy_load,
         ),
         pytest.param(
-            100, parse_obj_as(ByteSize, "20mib"), True, marks=pytest.mark.heavy_load
+            100,
+            TypeAdapter(ByteSize).validate_python("20mib"),
+            True,
+            marks=pytest.mark.heavy_load,
         ),
     ],
 )
@@ -372,7 +380,7 @@ async def test_overwrite_an_existing_file_and_sync_again(
     generated_file_names: set[str] = await _create_files_in_dir(
         dir_locally_created_files,
         3,
-        parse_obj_as(ByteSize, "1kib"),
+        TypeAdapter(ByteSize).validate_python("1kib"),
     )
     assert len(generated_file_names) > 0
 

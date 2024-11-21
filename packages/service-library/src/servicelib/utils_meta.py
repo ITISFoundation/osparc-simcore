@@ -6,7 +6,7 @@ from importlib.metadata import distribution
 
 from models_library.basic_types import VersionStr
 from packaging.version import Version
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 
 class PackageInfo:
@@ -40,7 +40,7 @@ class PackageInfo:
 
     @property
     def __version__(self) -> VersionStr:
-        return parse_obj_as(VersionStr, self._distribution.version)
+        return TypeAdapter(VersionStr).validate_python(self._distribution.version)
 
     @property
     def api_prefix_path_tag(self) -> str:

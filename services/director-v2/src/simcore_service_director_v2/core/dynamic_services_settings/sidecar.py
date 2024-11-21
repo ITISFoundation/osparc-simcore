@@ -2,6 +2,7 @@ import logging
 import warnings
 from enum import Enum
 from pathlib import Path
+from typing import Annotated
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.docker import DockerPlacementConstraint
@@ -9,7 +10,7 @@ from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
 )
-from pydantic import Field, PositiveInt, validator
+from pydantic import AliasChoices, Field, PositiveInt, ValidationInfo, field_validator
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
@@ -45,10 +46,10 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
         description="VFS operation mode, defines how and when the disk cache is synced",
     )
 
-    @validator("R_CLONE_POLL_INTERVAL_SECONDS")
+    @field_validator("R_CLONE_POLL_INTERVAL_SECONDS")
     @classmethod
-    def enforce_r_clone_requirement(cls, v: int, values) -> PositiveInt:
-        dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
+    def enforce_r_clone_requirement(cls, v: int, info: ValidationInfo) -> PositiveInt:
+        dir_cache_time = info.data["R_CLONE_DIR_CACHE_TIME_SECONDS"]
         if v >= dir_cache_time:
             msg = f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
             raise ValueError(msg)
@@ -60,7 +61,7 @@ class PlacementSettings(BaseCustomSettings):
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.
     DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[DockerPlacementConstraint] = Field(
         default_factory=list,
-        example='["node.labels.region==east", "one!=yes"]',
+        examples=['["node.labels.region==east", "one!=yes"]'],
     )
 
     DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[
@@ -72,20 +73,18 @@ class PlacementSettings(BaseCustomSettings):
             "see https://github.com/ITISFoundation/osparc-simcore/issues/5250 "
             "When `None` (default), uses generic resources"
         ),
-        example='{"AIRAM": "node.labels.custom==true"}',
+        examples=['{"AIRAM": "node.labels.custom==true"}'],
     )
 
-    _unique_custom_constraints = validator(
+    _unique_custom_constraints = field_validator(
         "DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS",
-        allow_reuse=True,
     )(ensure_unique_list_values_validator)
 
-    _unique_resource_placement_constraints_substitutions = validator(
+    _unique_resource_placement_constraints_substitutions = field_validator(
         "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS",
-        allow_reuse=True,
     )(ensure_unique_dict_values_validator)
 
-    @validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
+    @field_validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod
     def warn_if_any_values_provided(cls, value: dict) -> dict:
         if len(value) > 0:
@@ -101,40 +100,51 @@ class PlacementSettings(BaseCustomSettings):
 class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED: bool = Field(  # doc: https://docs.docker.com/engine/swarm/networking/#configure-service-discovery
         default=False,
-        env=["DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED"],
+        validation_alias=AliasChoices(
+            "DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED"
+        ),
         description="dynamic-sidecar's service 'endpoint_spec' with {'Mode': 'dnsrr'}",
     )
-    DYNAMIC_SIDECAR_SC_BOOT_MODE: BootModeEnum = Field(
-        ...,
-        description="Boot mode used for the dynamic-sidecar services"
-        "By defaults, it uses the same boot mode set for the director-v2",
-        env=["DYNAMIC_SIDECAR_SC_BOOT_MODE", "SC_BOOT_MODE"],
-    )
+    DYNAMIC_SIDECAR_SC_BOOT_MODE: Annotated[
+        BootModeEnum,
+        Field(
+            ...,
+            description="Boot mode used for the dynamic-sidecar services"
+            "By defaults, it uses the same boot mode set for the director-v2",
+            validation_alias=AliasChoices(
+                "DYNAMIC_SIDECAR_SC_BOOT_MODE", "SC_BOOT_MODE"
+            ),
+        ),
+    ]
 
     DYNAMIC_SIDECAR_LOG_LEVEL: str = Field(
         "WARNING",
         description="log level of the dynamic sidecar"
         "If defined, it captures global env vars LOG_LEVEL and LOGLEVEL from the director-v2 service",
-        env=["DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        validation_alias=AliasChoices(
+            "DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"
+        ),
     )
 
     DYNAMIC_SIDECAR_IMAGE: str = Field(
         ...,
-        regex=DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
+        pattern=DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
-    DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+    DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS: AwsS3CliSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
     DYNAMIC_SIDECAR_EFS_SETTINGS: AwsEfsSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: PlacementSettings = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     #
@@ -144,7 +154,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Path | None = Field(
         None,
         description="Host path to the dynamic-sidecar project. Used as source path to mount to the dynamic-sidecar [DEVELOPMENT ONLY]",
-        example="osparc-simcore/services/dynamic-sidecar",
+        examples=["osparc-simcore/services/dynamic-sidecar"],
     )
 
     DYNAMIC_SIDECAR_PORT: PortInt = Field(
@@ -157,12 +167,16 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
         "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
         "where 30023 is the host published port",
+        validate_default=True,
     )
 
-    @validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", pre=True)
+    @field_validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", mode="before")
     @classmethod
-    def auto_disable_if_production(cls, v, values):
-        if v and values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE") == BootModeEnum.PRODUCTION:
+    def auto_disable_if_production(cls, v, info: ValidationInfo):
+        if (
+            v
+            and info.data.get("DYNAMIC_SIDECAR_SC_BOOT_MODE") == BootModeEnum.PRODUCTION
+        ):
             _logger.warning(
                 "In production DYNAMIC_SIDECAR_MOUNT_PATH_DEV cannot be set to %s, enforcing None",
                 v,
@@ -170,22 +184,22 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
             return None
         return v
 
-    @validator("DYNAMIC_SIDECAR_EXPOSE_PORT", pre=True, always=True)
+    @field_validator("DYNAMIC_SIDECAR_EXPOSE_PORT", mode="before")
     @classmethod
-    def auto_enable_if_development(cls, v, values):
+    def auto_enable_if_development(cls, v, info: ValidationInfo):
         if (
-            boot_mode := values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE")
+            boot_mode := info.data.get("DYNAMIC_SIDECAR_SC_BOOT_MODE")
         ) and boot_mode.is_devel_mode():
             # Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc
             return True
         return v
 
-    @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
+    @field_validator("DYNAMIC_SIDECAR_IMAGE", mode="before")
     @classmethod
     def strip_leading_slashes(cls, v: str) -> str:
         return v.lstrip("/")
 
-    @validator("DYNAMIC_SIDECAR_LOG_LEVEL")
+    @field_validator("DYNAMIC_SIDECAR_LOG_LEVEL")
     @classmethod
     def _validate_log_level(cls, value) -> str:
         log_level: str = cls.validate_log_level(value)

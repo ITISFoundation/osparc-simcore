@@ -4,12 +4,12 @@
 
 
 import json
-from collections.abc import Mapping
 from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
 import respx
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -25,7 +25,6 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import RunID, ServiceKeyVersion
-from models_library.utils.json_serialization import json_dumps
 from models_library.wallets import WalletInfo
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -49,7 +48,9 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 @pytest.fixture
 def mock_s3_settings() -> S3Settings:
-    return S3Settings.parse_obj(S3Settings.Config.schema_extra["examples"][0])
+    return S3Settings.model_validate(
+        S3Settings.model_config["json_schema_extra"]["examples"][0]
+    )
 
 
 @pytest.fixture
@@ -115,14 +116,16 @@ def swarm_network_id() -> str:
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
     # overwrites global fixture
-    return SimcoreServiceLabels.parse_obj(
-        SimcoreServiceLabels.Config.schema_extra["examples"][2]
+    return SimcoreServiceLabels.model_validate(
+        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
     )
 
 
 @pytest.fixture
 def hardware_info() -> HardwareInfo:
-    return HardwareInfo.parse_obj(HardwareInfo.Config.schema_extra["examples"][0])
+    return HardwareInfo.model_validate(
+        HardwareInfo.model_config["json_schema_extra"]["examples"][0]
+    )
 
 
 @pytest.fixture
@@ -137,7 +140,7 @@ def expected_dynamic_sidecar_spec(
     return {
         "endpoint_spec": {},
         "labels": {
-            "io.simcore.scheduler-data": SchedulerData.parse_obj(
+            "io.simcore.scheduler-data": SchedulerData.model_validate(
                 {
                     "compose_spec": '{"version": "2.3", "services": {"rt-web": {"image": '
                     '"${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}", '
@@ -180,9 +183,9 @@ def expected_dynamic_sidecar_spec(
                         "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108
                         "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108
                     },
-                    "callbacks_mapping": CallbacksMapping.Config.schema_extra[
-                        "examples"
-                    ][3],
+                    "callbacks_mapping": CallbacksMapping.model_config[
+                        "json_schema_extra"
+                    ]["examples"][3],
                     "product_name": osparc_product_name,
                     "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                     "proxy_service_name": "dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
@@ -190,8 +193,12 @@ def expected_dynamic_sidecar_spec(
                     "request_scheme": "http",
                     "request_simcore_user_agent": request_simcore_user_agent,
                     "restart_policy": "on-inputs-downloaded",
-                    "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
-                    "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
+                    "wallet_info": WalletInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
+                    "pricing_info": PricingInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
                     "hardware_info": hardware_info,
                     "service_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "service_port": 65534,
@@ -245,19 +252,19 @@ def expected_dynamic_sidecar_spec(
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
                     "DYNAMIC_SIDECAR_TRACING": "null",
                     "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
-                        '{"REGISTRY_AUTH": false, "REGISTRY_PATH": null, '
-                        '"REGISTRY_URL": "foo.bar.com", "REGISTRY_USER": '
-                        '"test", "REGISTRY_PW": "test", "REGISTRY_SSL": false}'
+                        '{"REGISTRY_AUTH":false,"REGISTRY_PATH":null,'
+                        '"REGISTRY_URL":"foo.bar.com","REGISTRY_USER":'
+                        '"test","REGISTRY_PW":"test","REGISTRY_SSL":false}'
                     ),
                     "DY_DOCKER_HUB_REGISTRY_SETTINGS": "null",
                     "DY_SIDECAR_AWS_S3_CLI_SETTINGS": (
-                        '{"AWS_S3_CLI_S3": {"S3_ACCESS_KEY": "12345678", "S3_BUCKET_NAME": "simcore", '
-                        '"S3_ENDPOINT": "http://172.17.0.1:9001", "S3_REGION": "us-east-1", "S3_SECRET_KEY": "12345678"}}'
+                        '{"AWS_S3_CLI_S3":{"S3_ACCESS_KEY":"12345678","S3_BUCKET_NAME":"simcore",'
+                        '"S3_ENDPOINT":"http://172.17.0.1:9001/","S3_REGION":"us-east-1","S3_SECRET_KEY":"12345678"}}'
                     ),
                     "DY_SIDECAR_CALLBACKS_MAPPING": (
-                        '{"metrics": {"service": "rt-web", "command": "ls", "timeout": 1.0}, "before_shutdown"'
-                        ': [{"service": "rt-web", "command": "ls", "timeout": 1.0}, {"service": "s4l-core", '
-                        '"command": ["ls", "-lah"], "timeout": 1.0}], "inactivity": null}'
+                        '{"metrics":{"service":"rt-web","command":"ls","timeout":1.0},"before_shutdown"'
+                        ':[{"service":"rt-web","command":"ls","timeout":1.0},{"service":"s4l-core",'
+                        '"command":["ls","-lah"],"timeout":1.0}],"inactivity":null}'
                     ),
                     "DY_SIDECAR_SERVICE_KEY": "simcore/services/dynamic/3dviewer",
                     "DY_SIDECAR_SERVICE_VERSION": "2.4.5",
@@ -436,12 +443,12 @@ async def test_get_dynamic_proxy_spec(
         == minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     )
 
-    expected_dynamic_sidecar_spec_model = AioDockerServiceSpec.parse_obj(
+    expected_dynamic_sidecar_spec_model = AioDockerServiceSpec.model_validate(
         expected_dynamic_sidecar_spec
     )
-    assert expected_dynamic_sidecar_spec_model.TaskTemplate
-    assert expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec
-    assert expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env
+    assert expected_dynamic_sidecar_spec_model.task_template
+    assert expected_dynamic_sidecar_spec_model.task_template.container_spec
+    assert expected_dynamic_sidecar_spec_model.task_template.container_spec.env
 
     for count in range(1, 11):  # loop to check it does not repeat copies
         print(f"{count:*^50}")
@@ -464,7 +471,7 @@ async def test_get_dynamic_proxy_spec(
             rpc_client=Mock(),
         )
 
-        exclude_keys: Mapping[int | str, Any] = {
+        exclude_keys = {
             "Labels": True,
             "TaskTemplate": {"ContainerSpec": {"Env": True}},
         }
@@ -472,62 +479,64 @@ async def test_get_dynamic_proxy_spec(
         # NOTE: some flakiness here
         # state_exclude is a set and does not preserve order
         # when dumping to json it gets converted to a list
-        assert dynamic_sidecar_spec.TaskTemplate
-        assert dynamic_sidecar_spec.TaskTemplate.ContainerSpec
-        assert dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env
-        assert dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+        assert dynamic_sidecar_spec.task_template
+        assert dynamic_sidecar_spec.task_template.container_spec
+        assert dynamic_sidecar_spec.task_template.container_spec.env
+        assert dynamic_sidecar_spec.task_template.container_spec.env[
             "DY_SIDECAR_STATE_EXCLUDE"
         ]
 
-        dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+        dynamic_sidecar_spec.task_template.container_spec.env[
             "DY_SIDECAR_STATE_EXCLUDE"
         ] = json.dumps(
             sorted(
                 json.loads(
-                    dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+                    dynamic_sidecar_spec.task_template.container_spec.env[
                         "DY_SIDECAR_STATE_EXCLUDE"
                     ]
                 )
             )
         )
-        assert expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+        assert expected_dynamic_sidecar_spec_model.task_template.container_spec.env[
             "DY_SIDECAR_STATE_EXCLUDE"
         ]
-        expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+        expected_dynamic_sidecar_spec_model.task_template.container_spec.env[
             "DY_SIDECAR_STATE_EXCLUDE"
         ] = json.dumps(
             sorted(
                 json.loads(
-                    expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+                    expected_dynamic_sidecar_spec_model.task_template.container_spec.env[
                         "DY_SIDECAR_STATE_EXCLUDE"
                     ]
                 )
             )
         )
 
-        assert dynamic_sidecar_spec.dict(
-            exclude=exclude_keys
-        ) == expected_dynamic_sidecar_spec_model.dict(exclude=exclude_keys)
-        assert dynamic_sidecar_spec.Labels
-        assert expected_dynamic_sidecar_spec_model.Labels
-        assert sorted(dynamic_sidecar_spec.Labels.keys()) == sorted(
-            expected_dynamic_sidecar_spec_model.Labels.keys()
+        assert dynamic_sidecar_spec.model_dump(
+            exclude=exclude_keys  # type: ignore[arg-type]
+        ) == expected_dynamic_sidecar_spec_model.model_dump(
+            exclude=exclude_keys  # type: ignore[arg-type]
+        )
+        assert dynamic_sidecar_spec.labels
+        assert expected_dynamic_sidecar_spec_model.labels
+        assert sorted(dynamic_sidecar_spec.labels.keys()) == sorted(
+            expected_dynamic_sidecar_spec_model.labels.keys()
         )
 
         assert (
-            dynamic_sidecar_spec.Labels["io.simcore.scheduler-data"]
-            == expected_dynamic_sidecar_spec_model.Labels["io.simcore.scheduler-data"]
+            dynamic_sidecar_spec.labels["io.simcore.scheduler-data"]
+            == expected_dynamic_sidecar_spec_model.labels["io.simcore.scheduler-data"]
         )
 
-        assert dynamic_sidecar_spec.Labels == expected_dynamic_sidecar_spec_model.Labels
+        assert dynamic_sidecar_spec.labels == expected_dynamic_sidecar_spec_model.labels
 
         dynamic_sidecar_spec_accumulated = dynamic_sidecar_spec
 
     # check reference after multiple runs
     assert dynamic_sidecar_spec_accumulated is not None
     assert (
-        dynamic_sidecar_spec_accumulated.dict()
-        == expected_dynamic_sidecar_spec_model.dict()
+        dynamic_sidecar_spec_accumulated.model_dump()
+        == expected_dynamic_sidecar_spec_model.model_dump()
     )
 
 
@@ -562,22 +571,22 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         rpc_client=Mock(),
     )
     assert dynamic_sidecar_spec
-    dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()
-    expected_dynamic_sidecar_spec_dict = AioDockerServiceSpec.parse_obj(
+    dynamic_sidecar_spec_dict = dynamic_sidecar_spec.model_dump()
+    expected_dynamic_sidecar_spec_dict = AioDockerServiceSpec.model_validate(
         expected_dynamic_sidecar_spec
-    ).dict()
+    ).model_dump()
     # ensure some entries are sorted the same to prevent flakyness
     for sorted_dict in [dynamic_sidecar_spec_dict, expected_dynamic_sidecar_spec_dict]:
         for key in ["DY_SIDECAR_STATE_EXCLUDE", "DY_SIDECAR_STATE_PATHS"]:
             # this is a json of a list
             assert isinstance(
-                sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key], str
+                sorted_dict["task_template"]["container_spec"]["env"][key], str
             )
             unsorted_list = json.loads(
-                sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key]
+                sorted_dict["task_template"]["container_spec"]["env"][key]
             )
             assert isinstance(unsorted_list, list)
-            sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key] = json.dumps(
+            sorted_dict["task_template"]["container_spec"]["env"][key] = json.dumps(
                 unsorted_list.sort()
             )
     assert dynamic_sidecar_spec_dict == expected_dynamic_sidecar_spec_dict
@@ -592,13 +601,15 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     )
     assert user_service_specs
     assert "sidecar" in user_service_specs
-    user_aiodocker_service_spec = AioDockerServiceSpec.parse_obj(
+    user_aiodocker_service_spec = AioDockerServiceSpec.model_validate(
         user_service_specs["sidecar"]
     )
     assert user_aiodocker_service_spec
 
-    orig_dict = dynamic_sidecar_spec.dict(by_alias=True, exclude_unset=True)
-    user_dict = user_aiodocker_service_spec.dict(by_alias=True, exclude_unset=True)
+    orig_dict = dynamic_sidecar_spec.model_dump(by_alias=True, exclude_unset=True)
+    user_dict = user_aiodocker_service_spec.model_dump(
+        by_alias=True, exclude_unset=True
+    )
 
     another_merged_dict = nested_update(
         orig_dict,

@@ -6,7 +6,7 @@ from typing import Any, Final
 from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 from servicelib.aiohttp.client_session import get_client_session
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before import before_log
@@ -64,7 +64,7 @@ async def create_cached_indexes(app: web.Application) -> None:
     session: ClientSession = get_client_session(app)
 
     for frontend_name in FRONTEND_APPS_AVAILABLE:
-        url = URL(settings.STATIC_WEBSERVER_URL) / frontend_name
+        url = URL(f"{settings.STATIC_WEBSERVER_URL}") / frontend_name
         _logger.info("Fetching index from %s", url)
         try:
             body = ""

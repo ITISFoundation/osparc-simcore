@@ -95,7 +95,7 @@ async def test_folders_full_search(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert FolderGet.parse_obj(data)
+    assert FolderGet.model_validate(data)
 
     # list full folder search
     url = client.app.router["list_folders_full_search"].url_for()

@@ -79,7 +79,7 @@ class ApiKeyRepo:
 
             result: ResultProxy = await conn.execute(stmt)
             row: RowProxy | None = await result.fetchone()
-            return ApiKeyInDB.from_orm(row) if row else None
+            return ApiKeyInDB.model_validate(row) if row else None
 
     async def get_or_create(
         self,
@@ -116,7 +116,7 @@ class ApiKeyRepo:
             result = await conn.execute(insert_stmt)
             row = await result.fetchone()
             assert row  # nosec
-            return ApiKeyInDB.from_orm(row)
+            return ApiKeyInDB.model_validate(row)
 
     async def delete_by_name(
         self, *, display_name: str, user_id: UserID, product_name: ProductName
@@ -145,7 +145,7 @@ class ApiKeyRepo:
             stmt = (
                 api_keys.delete()
                 .where(
-                    (api_keys.c.expires_at != None)  # noqa: E711
+                    (api_keys.c.expires_at.is_not(None))
                     & (api_keys.c.expires_at < sa.func.now())
                 )
                 .returning(api_keys.c.display_name)

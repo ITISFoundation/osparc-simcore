@@ -30,7 +30,7 @@ from simcore_service_webserver.session.settings import get_plugin_settings
 
 def test_login_plugin_setup_succeeded(client: TestClient):
     assert client.app
-    print(client.app[APP_SETTINGS_KEY].json(indent=1, sort_keys=True))
+    print(client.app[APP_SETTINGS_KEY].model_dump_json(indent=1))
 
     # this should raise AssertionError if not succeedd
     settings = get_plugin_settings(client.app)

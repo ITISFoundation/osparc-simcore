@@ -8,7 +8,6 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
-from pydantic import parse_obj_as
 from simcore_service_catalog.utils.versioning import as_version
 
 from ..db.repositories.services import ServicesRepository
@@ -79,12 +78,12 @@ async def _evaluate_custom_compatibility(
             return Compatibility(
                 can_update_to=CompatibleService(
                     key=other_service_key,
-                    version=parse_obj_as(ServiceVersion, f"{latest_version}"),
+                    version=f"{latest_version}",
                 )
             )
         return Compatibility(
             can_update_to=CompatibleService(
-                version=parse_obj_as(ServiceVersion, f"{latest_version}"),
+                version=f"{latest_version}",
             )
         )
 
@@ -116,9 +115,7 @@ async def evaluate_service_compatibility_map(
             released_versions,
         ):
             compatibility = Compatibility(
-                can_update_to=CompatibleService(
-                    version=parse_obj_as(ServiceVersion, f"{latest_version}")
-                )
+                can_update_to=CompatibleService(version=f"{latest_version}")
             )
         result[release.version] = compatibility
 

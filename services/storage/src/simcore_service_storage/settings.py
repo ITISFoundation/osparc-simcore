@@ -1,6 +1,13 @@
-from typing import Any
+from typing import Self
 
-from pydantic import Field, PositiveInt, root_validator, validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    PositiveInt,
+    TypeAdapter,
+    field_validator,
+    model_validator,
+)
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
@@ -15,10 +22,11 @@ from .datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):
     STORAGE_HOST: str = "0.0.0.0"  # nosec
-    STORAGE_PORT: PortInt = PortInt(8080)
+    STORAGE_PORT: PortInt = TypeAdapter(PortInt).validate_python(8080)
 
     LOG_LEVEL: LogLevel = Field(
-        "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        "INFO",
+        validation_alias=AliasChoices("STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
     )
 
     STORAGE_MAX_WORKERS: PositiveInt = Field(
@@ -36,15 +44,23 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         None, description="Pennsieve API secret ONLY for testing purposes"
     )
 
-    STORAGE_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
+    STORAGE_POSTGRES: PostgresSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    STORAGE_REDIS: RedisSettings | None = Field(auto_default_from_env=True)
+    STORAGE_REDIS: RedisSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    STORAGE_S3: S3Settings = Field(auto_default_from_env=True)
+    STORAGE_S3: S3Settings = Field(json_schema_extra={"auto_default_from_env": True})
 
-    STORAGE_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
+    STORAGE_TRACING: TracingSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    DATCORE_ADAPTER: DatcoreAdapterSettings = Field(auto_default_from_env=True)
+    DATCORE_ADAPTER: DatcoreAdapterSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     STORAGE_SYNC_METADATA_TIMEOUT: PositiveInt = Field(
         180, description="Timeout (seconds) for metadata sync task"
@@ -65,27 +81,33 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
-        env=["STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        default=False,
+        validation_alias=AliasChoices(
+            "STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     STORAGE_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
-        env=["STORAGE_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        validation_alias=AliasChoices(
+            "STORAGE_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
-    @validator("LOG_LEVEL")
+    @field_validator("LOG_LEVEL", mode="before")
     @classmethod
-    def _validate_loglevel(cls, value) -> str:
+    def _validate_loglevel(cls, value: str) -> str:
         log_level: str = cls.validate_log_level(value)
         return log_level
 
-    @root_validator()
-    @classmethod
-    def ensure_settings_consistency(cls, values: dict[str, Any]):
-        if values.get("STORAGE_CLEANER_INTERVAL_S") and not values.get("STORAGE_REDIS"):
-            raise ValueError(
-                "STORAGE_CLEANER_INTERVAL_S cleaner cannot be set without STORAGE_REDIS! Please correct settings."
+    @model_validator(mode="after")
+    def ensure_settings_consistency(self) -> Self:
+        if self.STORAGE_CLEANER_INTERVAL_S is not None and not self.STORAGE_REDIS:
+            msg = (
+                "STORAGE_CLEANER_INTERVAL_S cleaner cannot be set without STORAGE_REDIS! "
+                "Please correct settings."
             )
-        return values
+            raise ValueError(msg)
+        return self

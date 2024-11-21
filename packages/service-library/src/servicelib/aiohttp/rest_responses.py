@@ -1,6 +1,7 @@
 """ Utils to check, convert and compose server responses for the RESTApi
 
 """
+
 import inspect
 import json
 from collections.abc import Mapping
@@ -9,7 +10,7 @@ from typing import Any
 
 from aiohttp import web, web_exceptions
 from aiohttp.web_exceptions import HTTPError, HTTPException
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 from servicelib.aiohttp.status import HTTP_200_OK
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON

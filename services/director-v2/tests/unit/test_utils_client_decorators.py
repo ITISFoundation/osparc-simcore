@@ -35,10 +35,10 @@ async def test_handle_errors(httpx_async_client: AsyncClient):
             await a_request(
                 "POST",
                 url=url,
-                params=dict(kettle="boiling"),
-                data=dict(kettle_number="royal_01"),
+                params={"kettle": "boiling"},
+                data={"kettle_number": "royal_01"},
             )
-        assert status.HTTP_503_SERVICE_UNAVAILABLE == exec_info.value.status_code
+        assert exec_info.value.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 
         # ERROR    test_utils_client_decorators:client_decorators.py:76 AService service error:
         # |Request|

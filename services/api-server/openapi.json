@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.2",
+  "openapi": "3.1.0",
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
@@ -316,26 +316,38 @@
         "summary": "Upload File",
         "description": "Uploads a single file to the system",
         "operationId": "upload_file",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "content-length",
+            "in": "header",
             "required": false,
             "schema": {
-              "type": "string",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Content-Length"
-            },
-            "name": "content-length",
-            "in": "header"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_upload_file_v0_files_content_put"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -418,12 +430,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -432,15 +439,20 @@
         "summary": "Get Upload Links",
         "description": "Get upload links for uploading a file to storage",
         "operationId": "get_upload_links",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ClientFile"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -523,12 +535,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/files/{file_id}": {
@@ -539,16 +546,21 @@
         "summary": "Get File",
         "description": "Gets metadata for a given file resource",
         "operationId": "get_file",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "file_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "File Id"
-            },
-            "name": "file_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -632,12 +644,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       },
       "delete": {
         "tags": [
@@ -645,16 +652,21 @@
         ],
         "summary": "Delete File",
         "operationId": "delete_file",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "file_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "File Id"
-            },
-            "name": "file_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -736,12 +748,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/files:search": {
@@ -752,49 +759,68 @@
         "summary": "Search Files Page",
         "description": "Search files",
         "operationId": "search_files_page",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "pattern": "^[a-fA-F0-9]{64}$",
-              "title": "Sha256 Checksum"
-            },
             "name": "sha256_checksum",
-            "in": "query"
-          },
-          {
+            "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "File Id"
-            },
-            "name": "file_id",
-            "in": "query"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-fA-F0-9]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sha256 Checksum"
+            }
           },
           {
+            "name": "file_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "File Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
               "maximum": 100,
               "minimum": 1,
-              "title": "Limit",
-              "default": 50
-            },
-            "name": "limit",
-            "in": "query"
+              "default": 50,
+              "title": "Limit"
+            }
           },
           {
+            "name": "offset",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
               "minimum": 0,
-              "title": "Offset",
-              "default": 0
-            },
-            "name": "offset",
-            "in": "query"
+              "default": 0,
+              "title": "Offset"
+            }
           }
         ],
         "responses": {
@@ -878,12 +904,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/files/{file_id}:abort": {
@@ -893,27 +914,32 @@
         ],
         "summary": "Abort Multipart Upload",
         "operationId": "abort_multipart_upload",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "file_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "File Id"
-            },
-            "name": "file_id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Body_abort_multipart_upload_v0_files__file_id__abort_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -984,12 +1010,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/files/{file_id}:complete": {
@@ -999,27 +1020,32 @@
         ],
         "summary": "Complete Multipart Upload",
         "operationId": "complete_multipart_upload",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "file_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "File Id"
-            },
-            "name": "file_id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Body_complete_multipart_upload_v0_files__file_id__complete_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -1102,12 +1128,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/files/{file_id}/content": {
@@ -1117,16 +1138,21 @@
         ],
         "summary": "Download File",
         "operationId": "download_file",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "file_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "File Id"
-            },
-            "name": "file_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1194,7 +1220,6 @@
             }
           },
           "200": {
-            "description": "Returns a arbitrary binary data",
             "content": {
               "application/octet-stream": {
                 "schema": {
@@ -1207,7 +1232,8 @@
                   "type": "string"
                 }
               }
-            }
+            },
+            "description": "Returns a arbitrary binary data"
           },
           "422": {
             "description": "Validation Error",
@@ -1219,12 +1245,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers": {
@@ -1417,16 +1438,21 @@
         "summary": "Get Latest Release of a Solver",
         "description": "Gets latest release of a solver",
         "operationId": "get_solver",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1510,12 +1536,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases": {
@@ -1526,16 +1547,21 @@
         "summary": "List Solver Releases",
         "description": "Lists all releases of a given (one) solver\n\nSEE get_solver_releases_page for a paginated version of this function",
         "operationId": "list_solver_releases",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1544,10 +1570,10 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Solver"
                   },
-                  "type": "array",
                   "title": "Response List Solver Releases V0 Solvers  Solver Key  Releases Get"
                 }
               }
@@ -1623,12 +1649,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}": {
@@ -1639,26 +1660,31 @@
         "summary": "Get Solver Release",
         "description": "Gets a specific release of a solver",
         "operationId": "get_solver_release",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1742,12 +1768,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/ports": {
@@ -1758,26 +1779,31 @@
         "summary": "List Solver Ports",
         "description": "Lists inputs and outputs of a given solver\n\nNew in *version 0.5.0*",
         "operationId": "list_solver_ports",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1861,12 +1887,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/pricing_plan": {
@@ -1877,26 +1898,31 @@
         "summary": "Get Solver Pricing Plan",
         "description": "Gets solver pricing plan\n\nNew in *version 0.7*",
         "operationId": "get_solver_pricing_plan",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1980,146 +2006,10 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs": {
-      "get": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "List Jobs",
-        "description": "List of jobs in a specific released solver (limited to 20 jobs)\n\n- DEPRECATION: This implementation and returned values are deprecated and the will be replaced by that of get_jobs_page\n- SEE `get_jobs_page` for paginated version of this function",
-        "operationId": "list_jobs",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-              "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Job"
-                  },
-                  "type": "array",
-                  "title": "Response List Jobs V0 Solvers  Solver Key  Releases  Version  Jobs Get"
-                }
-              }
-            }
-          },
-          "402": {
-            "description": "Payment required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Job/wallet/pricing details not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too many requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Unexpected error when communicating with backend service",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Service unavailable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "504": {
-            "description": "Request to a backend service timed out.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
-      },
       "post": {
         "tags": [
           "solvers"
@@ -2127,67 +2017,86 @@
         "summary": "Create Job",
         "description": "Creates a job in a specific release with given inputs.\n\nNOTE: This operation does **not** start the job",
         "operationId": "create_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "hidden",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "boolean",
-              "title": "Hidden",
-              "default": true
-            },
-            "name": "hidden",
-            "in": "query"
+              "default": true,
+              "title": "Hidden"
+            }
           },
           {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "X-Simcore-Parent-Project-Uuid"
-            },
             "name": "x-simcore-parent-project-uuid",
-            "in": "header"
-          },
-          {
+            "in": "header",
             "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "X-Simcore-Parent-Node-Id"
-            },
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Simcore-Parent-Project-Uuid"
+            }
+          },
+          {
             "name": "x-simcore-parent-node-id",
-            "in": "header"
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Simcore-Parent-Node-Id"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/JobInputs"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -2280,15 +2189,271 @@
               }
             }
           }
-        },
+        }
+      },
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List Jobs",
+        "description": "List of jobs in a specific released solver (limited to 20 jobs)\n\n- DEPRECATION: This implementation and returned values are deprecated and the will be replaced by that of get_jobs_page\n- SEE `get_jobs_page` for paginated version of this function",
+        "operationId": "list_jobs",
         "security": [
           {
             "HTTPBasic": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "solver_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Job"
+                  },
+                  "title": "Response List Jobs V0 Solvers  Solver Key  Releases  Version  Jobs Get"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job/wallet/pricing details not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}": {
+      "delete": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Delete Job",
+        "description": "Deletes an existing solver job\n\nNew in *version 0.7*",
+        "operationId": "delete_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "solver_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job/wallet/pricing details not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "get": {
         "tags": [
           "solvers"
@@ -2296,36 +2461,41 @@
         "summary": "Get Job",
         "description": "Gets job of a given solver",
         "operationId": "get_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -2419,142 +2589,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "Delete Job",
-        "description": "Deletes an existing solver job\n\nNew in *version 0.7*",
-        "operationId": "delete_job",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-              "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "402": {
-            "description": "Payment required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Job/wallet/pricing details not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too many requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Unexpected error when communicating with backend service",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Service unavailable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "504": {
-            "description": "Request to a backend service timed out.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:start": {
@@ -2565,46 +2600,58 @@
         "summary": "Start Job",
         "description": "Starts job job_id created with the solver solver_key:version\n\nAdded in *version 0.4.3*: query parameter `cluster_id`\nAdded in *version 0.6*: responds with a 202 when successfully starting a computation",
         "operationId": "start_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           },
           {
+            "name": "cluster_id",
+            "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 0,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Cluster Id"
-            },
-            "name": "cluster_id",
-            "in": "query"
+            }
           }
         ],
         "responses": {
@@ -2718,12 +2765,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:stop": {
@@ -2733,36 +2775,41 @@
         ],
         "summary": "Stop Job",
         "operationId": "stop_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -2856,12 +2903,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:inspect": {
@@ -2871,36 +2913,41 @@
         ],
         "summary": "Inspect Job",
         "operationId": "inspect_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -2994,142 +3041,10 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/metadata": {
-      "get": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "Get Job Custom Metadata",
-        "description": "Gets custom metadata from a job\n\nNew in *version 0.7*",
-        "operationId": "get_job_custom_metadata",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-              "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobMetadata"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Metadata not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too many requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Unexpected error when communicating with backend service",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Service unavailable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "504": {
-            "description": "Request to a backend service timed out.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
-      },
       "patch": {
         "tags": [
           "solvers"
@@ -3137,47 +3052,52 @@
         "summary": "Replace Job Custom Metadata",
         "description": "Updates custom metadata from a job\n\nNew in *version 0.7*",
         "operationId": "replace_job_custom_metadata",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/JobMetadataUpdate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -3260,12 +3180,134 @@
               }
             }
           }
-        },
+        }
+      },
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Job Custom Metadata",
+        "description": "Gets custom metadata from a job\n\nNew in *version 0.7*",
+        "operationId": "get_job_custom_metadata",
         "security": [
           {
             "HTTPBasic": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "solver_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobMetadata"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metadata not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/page": {
@@ -3276,49 +3318,54 @@
         "summary": "Get Jobs Page",
         "description": "List of jobs on a specific released solver (includes pagination)\n\nNew in *version 0.7*",
         "operationId": "get_jobs_page",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "limit",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
               "maximum": 100,
               "minimum": 1,
-              "title": "Limit",
-              "default": 50
-            },
-            "name": "limit",
-            "in": "query"
+              "default": 50,
+              "title": "Limit"
+            }
           },
           {
+            "name": "offset",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
               "minimum": 0,
-              "title": "Offset",
-              "default": 0
-            },
-            "name": "offset",
-            "in": "query"
+              "default": 0,
+              "title": "Offset"
+            }
           }
         ],
         "responses": {
@@ -3412,12 +3459,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs": {
@@ -3427,36 +3469,41 @@
         ],
         "summary": "Get Job Outputs",
         "operationId": "get_job_outputs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -3550,12 +3597,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile": {
@@ -3566,36 +3608,41 @@
         "summary": "Get Job Output Logfile",
         "description": "Special extra output with persistent logs file for the solver run.\n\n**NOTE**: this is not a log stream but a predefined output that is only\navailable after the job is done.\n\nNew in *version 0.4.0*",
         "operationId": "get_job_output_logfile",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -3603,7 +3650,6 @@
             "description": "Successful Response"
           },
           "200": {
-            "description": "Returns a log file",
             "content": {
               "application/octet-stream": {
                 "schema": {
@@ -3622,7 +3668,8 @@
                   "type": "string"
                 }
               }
-            }
+            },
+            "description": "Returns a log file"
           },
           "404": {
             "description": "Log not found"
@@ -3687,12 +3734,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/wallet": {
@@ -3703,36 +3745,41 @@
         "summary": "Get Job Wallet",
         "description": "Get job wallet\n\nNew in *version 0.7*",
         "operationId": "get_job_wallet",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -3826,12 +3873,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/pricing_unit": {
@@ -3842,36 +3884,41 @@
         "summary": "Get Job Pricing Unit",
         "description": "Get job pricing unit\n\nNew in *version 0.7*",
         "operationId": "get_job_pricing_unit",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -3955,12 +4002,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/logstream": {
@@ -3970,36 +4012,41 @@
         ],
         "summary": "Get Log Stream",
         "operationId": "get_log_stream",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "solver_key",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "title": "Solver Key"
-            },
-            "name": "solver_key",
-            "in": "path"
+            }
           },
           {
+            "name": "version",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
               "title": "Version"
-            },
-            "name": "version",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -4008,6 +4055,7 @@
             "content": {
               "application/x-ndjson": {
                 "schema": {
+                  "type": "string",
                   "anyOf": [
                     {
                       "$ref": "#/components/schemas/JobLog"
@@ -4016,7 +4064,6 @@
                       "$ref": "#/components/schemas/ErrorGet"
                     }
                   ],
-                  "type": "string",
                   "title": "Response 200 Get Log Stream V0 Solvers  Solver Key  Releases  Version  Jobs  Job Id  Logstream Get"
                 }
               }
@@ -4092,12 +4139,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies": {
@@ -4108,29 +4150,34 @@
         "summary": "List Studies",
         "description": "New in *version 0.5.0*",
         "operationId": "list_studies",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "limit",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
               "maximum": 100,
               "minimum": 1,
-              "title": "Limit",
-              "default": 50
-            },
-            "name": "limit",
-            "in": "query"
+              "default": 50,
+              "title": "Limit"
+            }
           },
           {
+            "name": "offset",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
               "minimum": 0,
-              "title": "Offset",
-              "default": 0
-            },
-            "name": "offset",
-            "in": "query"
+              "default": 0,
+              "title": "Offset"
+            }
           }
         ],
         "responses": {
@@ -4154,12 +4201,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies/{study_id}": {
@@ -4170,16 +4212,21 @@
         "summary": "Get Study",
         "description": "New in *version 0.5.0*",
         "operationId": "get_study",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -4213,12 +4260,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies/{study_id}:clone": {
@@ -4228,36 +4270,55 @@
         ],
         "summary": "Clone Study",
         "operationId": "clone_study",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           },
           {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "X-Simcore-Parent-Project-Uuid"
-            },
             "name": "x-simcore-parent-project-uuid",
-            "in": "header"
-          },
-          {
+            "in": "header",
             "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "X-Simcore-Parent-Node-Id"
-            },
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Simcore-Parent-Project-Uuid"
+            }
+          },
+          {
             "name": "x-simcore-parent-node-id",
-            "in": "header"
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Simcore-Parent-Node-Id"
+            }
           }
         ],
         "responses": {
@@ -4291,12 +4352,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies/{study_id}/ports": {
@@ -4307,16 +4363,21 @@
         "summary": "List Study Ports",
         "description": "Lists metadata on ports of a given study\n\nNew in *version 0.5.0*",
         "operationId": "list_study_ports",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -4350,12 +4411,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies/{study_id}/jobs": {
@@ -4366,57 +4422,76 @@
         "summary": "Create Study Job",
         "description": "hidden -- if True (default) hides project from UI",
         "operationId": "create_study_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           },
           {
+            "name": "hidden",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "boolean",
-              "title": "Hidden",
-              "default": true
-            },
-            "name": "hidden",
-            "in": "query"
+              "default": true,
+              "title": "Hidden"
+            }
           },
           {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "X-Simcore-Parent-Project-Uuid"
-            },
             "name": "x-simcore-parent-project-uuid",
-            "in": "header"
-          },
-          {
+            "in": "header",
             "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "X-Simcore-Parent-Node-Id"
-            },
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Simcore-Parent-Project-Uuid"
+            }
+          },
+          {
             "name": "x-simcore-parent-node-id",
-            "in": "header"
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Simcore-Parent-Node-Id"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/JobInputs"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -4439,12 +4514,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies/{study_id}/jobs/{job_id}": {
@@ -4455,26 +4525,31 @@
         "summary": "Delete Study Job",
         "description": "Deletes an existing study job",
         "operationId": "delete_study_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -4482,14 +4557,14 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorGet"
                 }
               }
-            }
+            },
+            "description": "Not Found"
           },
           "422": {
             "description": "Validation Error",
@@ -4501,12 +4576,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies/{study_id}/jobs/{job_id}:start": {
@@ -4517,36 +4587,48 @@
         "summary": "Start Study Job",
         "description": "Changed in *version 0.6.0*: Now responds with a 202 when successfully starting a computation",
         "operationId": "start_study_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           },
           {
+            "name": "cluster_id",
+            "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 0,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Cluster Id"
-            },
-            "name": "cluster_id",
-            "in": "query"
+            }
           }
         ],
         "responses": {
@@ -4660,12 +4742,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies/{study_id}/jobs/{job_id}:stop": {
@@ -4675,26 +4752,31 @@
         ],
         "summary": "Stop Study Job",
         "operationId": "stop_study_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -4718,12 +4800,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies/{study_id}/jobs/{job_id}:inspect": {
@@ -4733,26 +4810,31 @@
         ],
         "summary": "Inspect Study Job",
         "operationId": "inspect_study_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -4776,12 +4858,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies/{study_id}/jobs/{job_id}/outputs": {
@@ -4791,26 +4868,31 @@
         ],
         "summary": "Get Study Job Outputs",
         "operationId": "get_study_job_outputs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -4834,12 +4916,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies/{study_id}/jobs/{job_id}/outputs/log-links": {
@@ -4849,26 +4926,31 @@
         ],
         "summary": "Get download links for study job log files",
         "operationId": "get_study_job_output_logfile",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -4892,12 +4974,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/studies/{study_id}/jobs/{job_id}/metadata": {
@@ -4908,26 +4985,31 @@
         "summary": "Get Study Job Custom Metadata",
         "description": "Get custom metadata from a study's job\n\nNew in *version 0.7*",
         "operationId": "get_study_job_custom_metadata",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -4951,12 +5033,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       },
       "put": {
         "tags": [
@@ -4965,37 +5042,42 @@
         "summary": "Replace Study Job Custom Metadata",
         "description": "Changes custom metadata of a study's job\n\nNew in *version 0.7*",
         "operationId": "replace_study_job_custom_metadata",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "study_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Study Id"
-            },
-            "name": "study_id",
-            "in": "path"
+            }
           },
           {
+            "name": "job_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
-            },
-            "name": "job_id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/JobMetadataUpdate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -5018,12 +5100,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/wallets/default": {
@@ -5131,15 +5208,20 @@
         "summary": "Get Wallet",
         "description": "Get wallet\n\nNew in *version 0.7*",
         "operationId": "get_wallet",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
+            "name": "wallet_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "integer",
               "title": "Wallet Id"
-            },
-            "name": "wallet_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -5233,12 +5315,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ]
+        }
       }
     },
     "/v0/credits/price": {
@@ -5322,6 +5399,7 @@
           },
           "filesize": {
             "type": "integer",
+            "minimum": 0,
             "title": "Filesize",
             "description": "File size in bytes"
           },
@@ -5350,12 +5428,7 @@
             "description": "The file resource id"
           },
           "upload_schema": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/FileUploadData"
-              }
-            ],
-            "title": "Upload Schema",
+            "$ref": "#/components/schemas/FileUploadData",
             "description": "Schema for uploading file"
           }
         },
@@ -5400,18 +5473,39 @@
             "description": "Name of the file with extension"
           },
           "content_type": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Content Type",
             "description": "Guess of type content [EXPERIMENTAL]"
           },
           "checksum": {
-            "type": "string",
-            "pattern": "^[a-fA-F0-9]{64}$",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Checksum",
             "description": "SHA256 hash of the file's content"
           },
           "e_tag": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "E Tag",
             "description": "S3 entity tag"
           }
@@ -5444,6 +5538,7 @@
         "properties": {
           "chunk_size": {
             "type": "integer",
+            "minimum": 0,
             "title": "Chunk Size"
           },
           "urls": {
@@ -5475,14 +5570,28 @@
             "title": "Productname"
           },
           "usdPerCredit": {
-            "type": "number",
-            "minimum": 0.0,
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Usdpercredit",
             "description": "Price of a credit in USD. If None, then this product's price is UNDEFINED"
           },
           "minPaymentAmountUsd": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Minpaymentamountusd",
             "description": "Minimum amount (included) in USD that can be paid for this productCan be None if this product's price is UNDEFINED"
           }
@@ -5501,10 +5610,17 @@
             "$ref": "#/components/schemas/UsersGroup"
           },
           "organizations": {
-            "items": {
-              "$ref": "#/components/schemas/UsersGroup"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/UsersGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Organizations",
             "default": []
           },
@@ -5562,26 +5678,47 @@
             "description": "Runner that executes job"
           },
           "url": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Url",
             "description": "Link to get this resource (self)"
           },
           "runner_url": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Runner Url",
             "description": "Link to the solver's job (parent collection)"
           },
           "outputs_url": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Outputs Url",
             "description": "Link to the job outputs (sub-collection)"
           }
@@ -5599,14 +5736,14 @@
         ],
         "title": "Job",
         "example": {
-          "id": "f622946d-fd29-35b9-a193-abdd1095167c",
-          "name": "solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
-          "runner_name": "solvers/isolve/releases/1.3.4",
-          "inputs_checksum": "12345",
           "created_at": "2021-01-22T23:59:52.322176",
-          "url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
+          "id": "f622946d-fd29-35b9-a193-abdd1095167c",
+          "inputs_checksum": "12345",
+          "name": "solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
+          "outputs_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs",
+          "runner_name": "solvers/isolve/releases/1.3.4",
           "runner_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4",
-          "outputs_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs"
+          "url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c"
         }
       },
       "JobInputs": {
@@ -5632,6 +5769,9 @@
                 {
                   "items": {},
                   "type": "array"
+                },
+                {
+                  "type": "null"
                 }
               ]
             },
@@ -5646,14 +5786,14 @@
         "title": "JobInputs",
         "example": {
           "values": {
-            "x": 4.33,
-            "n": 55,
-            "title": "Temperature",
             "enabled": true,
             "input_file": {
               "filename": "input.txt",
               "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
-            }
+            },
+            "n": 55,
+            "title": "Temperature",
+            "x": 4.33
           }
         }
       },
@@ -5665,8 +5805,15 @@
             "title": "Job Id"
           },
           "node_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Node Id"
           },
           "log_level": {
@@ -5690,11 +5837,11 @@
         "title": "JobLog",
         "example": {
           "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
-          "node_id": "3742215e-6756-48d2-8b73-4d043065309f",
           "log_level": 10,
           "messages": [
             "PROGRESS: 5/10"
-          ]
+          ],
+          "node_id": "3742215e-6756-48d2-8b73-4d043065309f"
         }
       },
       "JobLogsMap": {
@@ -5744,10 +5891,17 @@
             "description": "Custom key-value map"
           },
           "url": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Url",
             "description": "Link to get this resource (self)"
           }
@@ -5758,7 +5912,17 @@
           "metadata",
           "url"
         ],
-        "title": "JobMetadata"
+        "title": "JobMetadata",
+        "example": {
+          "job_id": "3497e4de-0e69-41fb-b08f-7f3875a1ac4b",
+          "metadata": {
+            "bool": "true",
+            "float": "3.14",
+            "int": "42",
+            "str": "hej med dig"
+          },
+          "url": "https://f02b2452-1dd8-4882-b673-af06373b41b3.fake"
+        }
       },
       "JobMetadataUpdate": {
         "properties": {
@@ -5785,7 +5949,15 @@
           }
         },
         "type": "object",
-        "title": "JobMetadataUpdate"
+        "title": "JobMetadataUpdate",
+        "example": {
+          "metadata": {
+            "bool": "true",
+            "float": "3.14",
+            "int": "42",
+            "str": "hej med dig"
+          }
+        }
       },
       "JobOutputs": {
         "properties": {
@@ -5816,6 +5988,9 @@
                 {
                   "items": {},
                   "type": "array"
+                },
+                {
+                  "type": "null"
                 }
               ]
             },
@@ -5832,14 +6007,14 @@
         "example": {
           "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
           "results": {
+            "enabled": false,
             "maxSAR": 4.33,
             "n": 55,
-            "title": "Specific Absorption Rate",
-            "enabled": false,
             "output_file": {
               "filename": "sar_matrix.txt",
               "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
-            }
+            },
+            "title": "Specific Absorption Rate"
           }
         }
       },
@@ -5867,14 +6042,28 @@
             "description": "Last modification timestamp of the solver job"
           },
           "started_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Started At",
             "description": "Timestamp that indicate the moment the solver starts execution or None if the event did not occur"
           },
           "stopped_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Stopped At",
             "description": "Timestamp at which the solver finished or killed execution or None if the event did not occur"
           }
@@ -5888,41 +6077,78 @@
         "title": "JobStatus",
         "example": {
           "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
-          "state": "STARTED",
           "progress": 3,
-          "submitted_at": "2021-04-01 07:15:54.631007",
-          "started_at": "2021-04-01 07:16:43.670610"
+          "started_at": "2021-04-01 07:16:43.670610",
+          "state": "STARTED",
+          "submitted_at": "2021-04-01 07:15:54.631007"
         }
       },
       "Links": {
         "properties": {
           "first": {
-            "type": "string",
-            "title": "First",
-            "example": "/api/v1/users?limit=1&offset1"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First"
           },
           "last": {
-            "type": "string",
-            "title": "Last",
-            "example": "/api/v1/users?limit=1&offset1"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last"
           },
           "self": {
-            "type": "string",
-            "title": "Self",
-            "example": "/api/v1/users?limit=1&offset1"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self"
           },
           "next": {
-            "type": "string",
-            "title": "Next",
-            "example": "/api/v1/users?limit=1&offset1"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next"
           },
           "prev": {
-            "type": "string",
-            "title": "Prev",
-            "example": "/api/v1/users?limit=1&offset1"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prev"
           }
         },
         "type": "object",
+        "required": [
+          "first",
+          "last",
+          "self",
+          "next",
+          "prev"
+        ],
         "title": "Links"
       },
       "LogLink": {
@@ -5958,11 +6184,18 @@
             "title": "Version"
           },
           "released": {
-            "additionalProperties": {
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
-            },
-            "type": "object",
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Released",
             "description": "Maps every route's path tag with a released version"
           },
@@ -5990,14 +6223,14 @@
         ],
         "title": "Meta",
         "example": {
+          "docs_dev_url": "https://api.osparc.io/dev/doc",
+          "docs_url": "https://api.osparc.io/dev/doc",
           "name": "simcore_service_foo",
-          "version": "2.4.45",
           "released": {
             "v1": "1.3.4",
             "v2": "2.4.45"
           },
-          "docs_url": "https://api.osparc.io/dev/doc",
-          "docs_dev_url": "https://api.osparc.io/dev/doc"
+          "version": "2.4.45"
         }
       },
       "OnePage_SolverPort_": {
@@ -6010,8 +6243,15 @@
             "title": "Items"
           },
           "total": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Total"
           }
         },
@@ -6019,8 +6259,7 @@
         "required": [
           "items"
         ],
-        "title": "OnePage[SolverPort]",
-        "description": "A single page is used to envelope a small sequence that does not require\npagination\n\nIf total >  MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE, we should consider extending this\nentrypoint to proper pagination"
+        "title": "OnePage[SolverPort]"
       },
       "OnePage_StudyPort_": {
         "properties": {
@@ -6032,8 +6271,15 @@
             "title": "Items"
           },
           "total": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Total"
           }
         },
@@ -6041,8 +6287,7 @@
         "required": [
           "items"
         ],
-        "title": "OnePage[StudyPort]",
-        "description": "A single page is used to envelope a small sequence that does not require\npagination\n\nIf total >  MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE, we should consider extending this\nentrypoint to proper pagination"
+        "title": "OnePage[StudyPort]"
       },
       "Page_File_": {
         "properties": {
@@ -6054,18 +6299,39 @@
             "title": "Items"
           },
           "total": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Total"
           },
           "limit": {
-            "type": "integer",
-            "minimum": 1,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Limit"
           },
           "offset": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Offset"
           },
           "links": {
@@ -6075,6 +6341,9 @@
         "type": "object",
         "required": [
           "items",
+          "total",
+          "limit",
+          "offset",
           "links"
         ],
         "title": "Page[File]"
@@ -6089,18 +6358,39 @@
             "title": "Items"
           },
           "total": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Total"
           },
           "limit": {
-            "type": "integer",
-            "minimum": 1,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Limit"
           },
           "offset": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Offset"
           },
           "links": {
@@ -6110,6 +6400,9 @@
         "type": "object",
         "required": [
           "items",
+          "total",
+          "limit",
+          "offset",
           "links"
         ],
         "title": "Page[Job]"
@@ -6124,18 +6417,39 @@
             "title": "Items"
           },
           "total": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Total"
           },
           "limit": {
-            "type": "integer",
-            "minimum": 1,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Limit"
           },
           "offset": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Offset"
           },
           "links": {
@@ -6145,6 +6459,9 @@
         "type": "object",
         "required": [
           "items",
+          "total",
+          "limit",
+          "offset",
           "links"
         ],
         "title": "Page[Study]"
@@ -6154,8 +6471,8 @@
         "enum": [
           "TIER"
         ],
-        "title": "PricingPlanClassification",
-        "description": "An enumeration."
+        "const": "TIER",
+        "title": "PricingPlanClassification"
       },
       "PricingUnitGet": {
         "properties": {
@@ -6170,8 +6487,7 @@
             "title": "Unitname"
           },
           "unitExtraInfo": {
-            "type": "object",
-            "title": "Unitextrainfo"
+            "$ref": "#/components/schemas/UnitExtraInfo"
           },
           "currentCostPerUnit": {
             "type": "number",
@@ -6195,16 +6511,28 @@
       "Profile": {
         "properties": {
           "first_name": {
-            "type": "string",
-            "maxLength": 255,
-            "title": "First Name",
-            "example": "James"
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
           },
           "last_name": {
-            "type": "string",
-            "maxLength": 255,
-            "title": "Last Name",
-            "example": "Maxwell"
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
           },
           "id": {
             "type": "integer",
@@ -6221,11 +6549,25 @@
             "$ref": "#/components/schemas/UserRoleEnum"
           },
           "groups": {
-            "$ref": "#/components/schemas/Groups"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Groups"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "gravatar_id": {
-            "type": "string",
-            "maxLength": 40,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Gravatar Id",
             "description": "md5 hash value of email to retrieve an avatar image from https://www.gravatar.com"
           }
@@ -6238,40 +6580,52 @@
         ],
         "title": "Profile",
         "example": {
-          "id": "20",
           "first_name": "James",
+          "gravatar_id": "9a8930a5b20d7048e37740bac5c1ca4f",
+          "groups": {
+            "all": {
+              "description": "all users",
+              "gid": "1",
+              "label": "Everyone"
+            },
+            "me": {
+              "description": "primary group",
+              "gid": "123",
+              "label": "maxy"
+            },
+            "organizations": []
+          },
+          "id": "20",
           "last_name": "Maxwell",
           "login": "james-maxwell@itis.swiss",
-          "role": "USER",
-          "groups": {
-            "me": {
-              "gid": "123",
-              "label": "maxy",
-              "description": "primary group"
-            },
-            "organizations": [],
-            "all": {
-              "gid": "1",
-              "label": "Everyone",
-              "description": "all users"
-            }
-          },
-          "gravatar_id": "9a8930a5b20d7048e37740bac5c1ca4f"
+          "role": "USER"
         }
       },
       "ProfileUpdate": {
         "properties": {
           "first_name": {
-            "type": "string",
-            "maxLength": 255,
-            "title": "First Name",
-            "example": "James"
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
           },
           "last_name": {
-            "type": "string",
-            "maxLength": 255,
-            "title": "Last Name",
-            "example": "Maxwell"
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
           }
         },
         "type": "object",
@@ -6362,7 +6716,14 @@
             "description": "Human readable name"
           },
           "description": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description"
           },
           "maintainer": {
@@ -6370,10 +6731,17 @@
             "title": "Maintainer"
           },
           "url": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Url",
             "description": "Link to get this resource"
           }
@@ -6389,12 +6757,12 @@
         "title": "Solver",
         "description": "A released solver with a specific version",
         "example": {
-          "id": "simcore/services/comp/isolve",
-          "version": "2.1.1",
-          "title": "iSolve",
           "description": "EM solver",
+          "id": "simcore/services/comp/isolve",
           "maintainer": "info@itis.swiss",
-          "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.1"
+          "title": "iSolve",
+          "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.1",
+          "version": "2.1.1"
         }
       },
       "SolverPort": {
@@ -6414,7 +6782,14 @@
             "title": "Kind"
           },
           "content_schema": {
-            "type": "object",
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Content Schema",
             "description": "jsonschema for the port's value. SEE https://json-schema.org"
           }
@@ -6426,15 +6801,15 @@
         ],
         "title": "SolverPort",
         "example": {
-          "key": "input_2",
-          "kind": "input",
           "content_schema": {
+            "maximum": 5,
+            "minimum": 0,
             "title": "Sleep interval",
             "type": "integer",
-            "x_unit": "second",
-            "minimum": 0,
-            "maximum": 5
-          }
+            "x_unit": "second"
+          },
+          "key": "input_2",
+          "kind": "input"
         }
       },
       "Study": {
@@ -6445,11 +6820,25 @@
             "title": "Uid"
           },
           "title": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Title"
           },
           "description": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description"
           }
         },
@@ -6476,7 +6865,14 @@
             "title": "Kind"
           },
           "content_schema": {
-            "type": "object",
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Content Schema",
             "description": "jsonschema for the port's value. SEE https://json-schema.org"
           }
@@ -6488,16 +6884,44 @@
         ],
         "title": "StudyPort",
         "example": {
-          "key": "input_2",
-          "kind": "input",
           "content_schema": {
+            "maximum": 5,
+            "minimum": 0,
             "title": "Sleep interval",
             "type": "integer",
-            "x_unit": "second",
-            "minimum": 0,
-            "maximum": 5
-          }
+            "x_unit": "second"
+          },
+          "key": "input_2",
+          "kind": "input"
         }
+      },
+      "UnitExtraInfo": {
+        "properties": {
+          "CPU": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Cpu"
+          },
+          "RAM": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Ram"
+          },
+          "VRAM": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Vram"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "CPU",
+          "RAM",
+          "VRAM"
+        ],
+        "title": "UnitExtraInfo",
+        "description": "Custom information that is propagated to the frontend. Defined fields are mandatory."
       },
       "UploadLinks": {
         "properties": {
@@ -6547,8 +6971,7 @@
           "PRODUCT_OWNER",
           "ADMIN"
         ],
-        "title": "UserRoleEnum",
-        "description": "An enumeration."
+        "title": "UserRoleEnum"
       },
       "UsersGroup": {
         "properties": {
@@ -6561,7 +6984,14 @@
             "title": "Label"
           },
           "description": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description"
           }
         },
@@ -6620,7 +7050,14 @@
             "title": "Name"
           },
           "description": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description"
           },
           "owner": {
@@ -6630,7 +7067,14 @@
             "minimum": 0
           },
           "thumbnail": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Thumbnail"
           },
           "status": {
@@ -6669,8 +7113,7 @@
           "ACTIVE",
           "INACTIVE"
         ],
-        "title": "WalletStatus",
-        "description": "An enumeration."
+        "title": "WalletStatus"
       }
     },
     "securitySchemes": {

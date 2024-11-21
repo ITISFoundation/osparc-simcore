@@ -6,7 +6,7 @@
 # pylint: disable=unused-variable
 # pylint:disable=too-many-positional-arguments
 
-import datetime
+import datetime as dt
 import json
 import re
 import urllib.parse
@@ -23,6 +23,7 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI, status
+from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationCreate,
@@ -33,7 +34,6 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
     PricingUnitGet,
 )
-from models_library.basic_types import VersionStr
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
@@ -49,7 +49,7 @@ from models_library.services_resources import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
-from pydantic import AnyHttpUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
+from pydantic import AnyHttpUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
@@ -111,23 +111,24 @@ def fake_service_details(mocks_dir: Path) -> ServiceMetaDataPublished:
 
 @pytest.fixture
 def fake_service_extras() -> ServiceExtras:
-    extra_example = ServiceExtras.Config.schema_extra["examples"][2]
-    random_extras = ServiceExtras(**extra_example)
+    extra_example = ServiceExtras.model_config["json_schema_extra"]["examples"][2]  # type: ignore
+    random_extras = ServiceExtras(**extra_example)  # type: ignore
     assert random_extras is not None
     return random_extras
 
 
 @pytest.fixture
 def fake_service_resources() -> ServiceResourcesDict:
-    return parse_obj_as(
-        ServiceResourcesDict,
-        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
+    return TypeAdapter(ServiceResourcesDict).validate_python(
+        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore
     )
 
 
 @pytest.fixture
 def fake_service_labels() -> dict[str, Any]:
-    return choice(SimcoreServiceLabels.Config.schema_extra["examples"])  # noqa: S311
+    return choice(  # noqa: S311
+        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"]  # type: ignore
+    )
 
 
 @pytest.fixture
@@ -143,13 +144,14 @@ def mocked_director_service_fcts(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        assert VersionStr.regex
         respx_mock.get(
             re.compile(
                 r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+$"
             ),
             name="get_service",
-        ).respond(json={"data": [fake_service_details.dict(by_alias=True)]})
+        ).respond(
+            json={"data": [fake_service_details.model_dump(mode="json", by_alias=True)]}
+        )
         respx_mock.get(
             re.compile(
                 r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/labels"
@@ -162,7 +164,9 @@ def mocked_director_service_fcts(
                 r"/service_extras/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
             ),
             name="get_service_extras",
-        ).respond(json={"data": fake_service_extras.dict(by_alias=True)})
+        ).respond(
+            json={"data": fake_service_extras.model_dump(mode="json", by_alias=True)}
+        )
 
         yield respx_mock
 
@@ -175,7 +179,7 @@ def mocked_catalog_service_fcts(
 ) -> Iterator[respx.MockRouter]:
     def _mocked_service_resources(request) -> httpx.Response:
         return httpx.Response(
-            200, json=jsonable_encoder(fake_service_resources, by_alias=True)
+            httpx.codes.OK, json=jsonable_encoder(fake_service_resources, by_alias=True)
         )
 
     def _mocked_services_details(
@@ -184,7 +188,7 @@ def mocked_catalog_service_fcts(
         return httpx.Response(
             200,
             json=jsonable_encoder(
-                fake_service_details.copy(
+                fake_service_details.model_copy(
                     update={
                         "key": urllib.parse.unquote(service_key),
                         "version": service_version,
@@ -225,19 +229,30 @@ def mocked_catalog_service_fcts_deprecated(
     def _mocked_services_details(
         request, service_key: str, service_version: str
     ) -> httpx.Response:
+        data_published = fake_service_details.model_copy(
+            update={
+                "key": urllib.parse.unquote(service_key),
+                "version": service_version,
+                "deprecated": (
+                    dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)
+                ).isoformat(),
+            }
+        ).model_dump(by_alias=True)
+
+        deprecated = {
+            "deprecated": (
+                dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)
+            ).isoformat()
+        }
+
+        data = {**ServiceGet.model_config["json_schema_extra"]["examples"][0], **data_published, **deprecated}  # type: ignore
+
+        payload = ServiceGet.model_validate(data)
+
         return httpx.Response(
-            200,
+            httpx.codes.OK,
             json=jsonable_encoder(
-                fake_service_details.copy(
-                    update={
-                        "key": urllib.parse.unquote(service_key),
-                        "version": service_version,
-                        "deprecated": (
-                            datetime.datetime.now(tz=datetime.timezone.utc)
-                            - datetime.timedelta(days=1)
-                        ).isoformat(),
-                    }
-                ),
+                payload,
                 by_alias=True,
             ),
         )
@@ -259,7 +274,7 @@ def mocked_catalog_service_fcts_deprecated(
 
 
 @pytest.fixture(
-    params=PricingPlanGet.Config.schema_extra["examples"],
+    params=PricingPlanGet.model_config["json_schema_extra"]["examples"],
     ids=["with ec2 restriction", "without"],
 )
 def default_pricing_plan(request: pytest.FixtureRequest) -> PricingPlanGet:
@@ -303,7 +318,7 @@ def mocked_resource_usage_tracker_service_fcts(
                 (
                     default_pricing_plan.pricing_units[0]
                     if default_pricing_plan.pricing_units
-                    else PricingUnitGet.Config.schema_extra["examples"][0]
+                    else PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
                 ),
                 by_alias=True,
             ),
@@ -422,7 +437,7 @@ def fake_ec2_cpus() -> PositiveInt:
 
 @pytest.fixture
 def fake_ec2_ram() -> ByteSize:
-    return parse_obj_as(ByteSize, "4GiB")
+    return TypeAdapter(ByteSize).validate_python("4GiB")
 
 
 @pytest.fixture
@@ -463,7 +478,9 @@ def mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name(
     )
 
 
-@pytest.fixture(params=ServiceResourcesDictHelpers.Config.schema_extra["examples"])
+@pytest.fixture(
+    params=ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"]
+)
 def project_nodes_overrides(request: pytest.FixtureRequest) -> dict[str, Any]:
     return request.param
 
@@ -572,7 +589,11 @@ async def test_create_computation_with_wallet(
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [PricingPlanGet.construct(**PricingPlanGet.Config.schema_extra["examples"][0])],
+    [
+        PricingPlanGet.model_construct(
+            **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]
+        )
+    ],
 )
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_422(
     minimal_configuration: None,
@@ -610,7 +631,11 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [PricingPlanGet.construct(**PricingPlanGet.Config.schema_extra["examples"][0])],
+    [
+        PricingPlanGet.model_construct(
+            **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]  # type: ignore
+        )
+    ],
 )
 async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503(
     minimal_configuration: None,
@@ -711,9 +736,9 @@ async def test_start_computation_with_project_node_resources_defined(
     proj = await project(
         user,
         project_nodes_overrides={
-            "required_resources": ServiceResourcesDictHelpers.Config.schema_extra[
-                "examples"
-            ][0]
+            "required_resources": ServiceResourcesDictHelpers.model_config[
+                "json_schema_extra"
+            ]["examples"][0]
         },
         workbench=fake_workbench_without_outputs,
     )
@@ -864,7 +889,7 @@ async def test_get_computation_from_empty_project(
     )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationGet.parse_obj(response.json())
+    returned_computation = ComputationGet.model_validate(response.json())
     assert returned_computation
     expected_computation = ComputationGet(
         id=proj.uuid,
@@ -872,8 +897,8 @@ async def test_get_computation_from_empty_project(
         pipeline_details=PipelineDetails(
             adjacency_list={}, node_states={}, progress=None
         ),
-        url=parse_obj_as(
-            AnyHttpUrl, f"{async_client.base_url.join(get_computation_url)}"
+        url=TypeAdapter(AnyHttpUrl).validate_python(
+            f"{async_client.base_url.join(get_computation_url)}"
         ),
         stop_url=None,
         result=None,
@@ -883,7 +908,7 @@ async def test_get_computation_from_empty_project(
         stopped=None,
         submitted=None,
     )
-    assert returned_computation.dict() == expected_computation.dict()
+    assert returned_computation.model_dump() == expected_computation.model_dump()
 
 
 async def test_get_computation_from_not_started_computation_task(
@@ -913,14 +938,14 @@ async def test_get_computation_from_not_started_computation_task(
     comp_tasks = tasks(user=user, project=proj)
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationGet.parse_obj(response.json())
+    returned_computation = ComputationGet.model_validate(response.json())
     assert returned_computation
     expected_computation = ComputationGet(
         id=proj.uuid,
         state=RunningState.NOT_STARTED,
         pipeline_details=PipelineDetails(
-            adjacency_list=parse_obj_as(
-                dict[NodeID, list[NodeID]], fake_workbench_adjacency
+            adjacency_list=TypeAdapter(dict[NodeID, list[NodeID]]).validate_python(
+                fake_workbench_adjacency
             ),
             progress=0,
             node_states={
@@ -938,8 +963,8 @@ async def test_get_computation_from_not_started_computation_task(
                 if t.node_class == NodeClass.COMPUTATIONAL
             },
         ),
-        url=parse_obj_as(
-            AnyHttpUrl, f"{async_client.base_url.join(get_computation_url)}"
+        url=TypeAdapter(AnyHttpUrl).validate_python(
+            f"{async_client.base_url.join(get_computation_url)}"
         ),
         stop_url=None,
         result=None,
@@ -950,12 +975,12 @@ async def test_get_computation_from_not_started_computation_task(
         submitted=None,
     )
     _CHANGED_FIELDS = {"submitted"}
-    assert returned_computation.dict(
+    assert returned_computation.model_dump(
         exclude=_CHANGED_FIELDS
-    ) == expected_computation.dict(exclude=_CHANGED_FIELDS)
-    assert returned_computation.dict(
+    ) == expected_computation.model_dump(exclude=_CHANGED_FIELDS)
+    assert returned_computation.model_dump(
         include=_CHANGED_FIELDS
-    ) != expected_computation.dict(include=_CHANGED_FIELDS)
+    ) != expected_computation.model_dump(include=_CHANGED_FIELDS)
 
 
 async def test_get_computation_from_published_computation_task(
@@ -983,7 +1008,7 @@ async def test_get_computation_from_published_computation_task(
     )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationGet.parse_obj(response.json())
+    returned_computation = ComputationGet.model_validate(response.json())
     assert returned_computation
     expected_stop_url = async_client.base_url.join(
         f"/v2/computations/{proj.uuid}:stop?user_id={user['id']}"
@@ -992,8 +1017,8 @@ async def test_get_computation_from_published_computation_task(
         id=proj.uuid,
         state=RunningState.PUBLISHED,
         pipeline_details=PipelineDetails(
-            adjacency_list=parse_obj_as(
-                dict[NodeID, list[NodeID]], fake_workbench_adjacency
+            adjacency_list=TypeAdapter(dict[NodeID, list[NodeID]]).validate_python(
+                fake_workbench_adjacency
             ),
             node_states={
                 t.node_id: NodeState(
@@ -1011,10 +1036,10 @@ async def test_get_computation_from_published_computation_task(
             },
             progress=0,
         ),
-        url=parse_obj_as(
-            AnyHttpUrl, f"{async_client.base_url.join(get_computation_url)}"
+        url=TypeAdapter(AnyHttpUrl).validate_python(
+            f"{async_client.base_url.join(get_computation_url)}"
         ),
-        stop_url=parse_obj_as(AnyHttpUrl, f"{expected_stop_url}"),
+        stop_url=TypeAdapter(AnyHttpUrl).validate_python(f"{expected_stop_url}"),
         result=None,
         iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
@@ -1024,9 +1049,9 @@ async def test_get_computation_from_published_computation_task(
     )
 
     _CHANGED_FIELDS = {"submitted"}
-    assert returned_computation.dict(
+    assert returned_computation.model_dump(
         exclude=_CHANGED_FIELDS
-    ) == expected_computation.dict(exclude=_CHANGED_FIELDS)
-    assert returned_computation.dict(
+    ) == expected_computation.model_dump(exclude=_CHANGED_FIELDS)
+    assert returned_computation.model_dump(
         include=_CHANGED_FIELDS
-    ) != expected_computation.dict(include=_CHANGED_FIELDS)
+    ) != expected_computation.model_dump(include=_CHANGED_FIELDS)

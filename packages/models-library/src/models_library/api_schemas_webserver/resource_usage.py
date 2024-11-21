@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Annotated
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
@@ -48,8 +49,10 @@ class ServiceRunGet(
 class PricingUnitGet(OutputSchema):
     pricing_unit_id: PricingUnitId
     unit_name: str
-    unit_extra_info: dict
-    current_cost_per_unit: Decimal
+    unit_extra_info: UnitExtraInfo
+    current_cost_per_unit: Annotated[
+        Decimal, PlainSerializer(float, return_type=float, when_used="json")
+    ]
     default: bool
 
 
@@ -95,9 +98,10 @@ class CreatePricingPlanBodyParams(InputSchema):
     classification: PricingPlanClassification
     pricing_plan_key: str
 
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_max_length=200,
+    )
 
 
 class UpdatePricingPlanBodyParams(InputSchema):
@@ -105,9 +109,10 @@ class UpdatePricingPlanBodyParams(InputSchema):
     description: str
     is_active: bool
 
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_max_length=200,
+    )
 
 
 class CreatePricingUnitBodyParams(InputSchema):
@@ -118,9 +123,10 @@ class CreatePricingUnitBodyParams(InputSchema):
     cost_per_unit: Decimal
     comment: str
 
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_max_length=200,
+    )
 
 
 class UpdatePricingUnitBodyParams(InputSchema):
@@ -128,17 +134,19 @@ class UpdatePricingUnitBodyParams(InputSchema):
     unit_extra_info: UnitExtraInfo
     default: bool
     specific_info: SpecificInfo
-    pricing_unit_cost_update: PricingUnitCostUpdate | None
+    pricing_unit_cost_update: PricingUnitCostUpdate | None = Field(default=None)
 
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_max_length=200,
+    )
 
 
 class ConnectServiceToPricingPlanBodyParams(InputSchema):
     service_key: ServiceKey
     service_version: ServiceVersion
 
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_max_length=200,
+    )

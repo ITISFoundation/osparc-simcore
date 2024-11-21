@@ -1,6 +1,7 @@
 import datetime
 from typing import cast
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -8,7 +9,6 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
-from models_library.utils.json_serialization import json_dumps
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,

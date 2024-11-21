@@ -7,12 +7,10 @@
 SEE test_error_codes for some use cases
 """
 
-
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
-from pydantic.tools import parse_obj_as
-from pydantic.types import constr
+from pydantic import StringConstraints, TypeAdapter
 
 _LABEL = "OEC:{}"
 _PATTERN = r"OEC:\d+"
@@ -20,11 +18,13 @@ _PATTERN = r"OEC:\d+"
 if TYPE_CHECKING:
     ErrorCodeStr = str
 else:
-    ErrorCodeStr = constr(strip_whitespace=True, regex=_PATTERN)
+    ErrorCodeStr = Annotated[
+        str, StringConstraints(strip_whitespace=True, pattern=_PATTERN)
+    ]
 
 
 def create_error_code(exception: BaseException) -> ErrorCodeStr:
-    return parse_obj_as(ErrorCodeStr, _LABEL.format(id(exception)))
+    return TypeAdapter(ErrorCodeStr).validate_python(_LABEL.format(id(exception)))
 
 
 def parse_error_code(obj) -> set[ErrorCodeStr]:

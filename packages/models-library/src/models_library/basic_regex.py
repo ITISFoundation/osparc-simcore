@@ -46,10 +46,12 @@ MIME_TYPE_RE = (
 
 # Storage basic file ID
 SIMCORE_S3_FILE_ID_RE = rf"^(api|({UUID_RE_BASE}))\/({UUID_RE_BASE})\/(.+)$"
-SIMCORE_S3_DIRECTORY_ID_RE = rf"^({UUID_RE_BASE})\/({UUID_RE_BASE})\/(.+)/$"
+SIMCORE_S3_DIRECTORY_ID_RE = rf"^({UUID_RE_BASE})\/({UUID_RE_BASE})\/(.+)\/$"
 
 # S3 - AWS bucket names [https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html]
-S3_BUCKET_NAME_RE = r"(?!(^xn--|-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+S3_BUCKET_NAME_RE = re.compile(
+    r"^(?!xn--)[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$(?<!-s3alias)"
+)
 
 # Datcore file ID
 DATCORE_FILE_ID_RE = rf"^N:package:{UUID_RE_BASE}$"

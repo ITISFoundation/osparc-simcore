@@ -380,7 +380,7 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _task_progress_change_handler(self, event: str) -> None:
         with log_catch(_logger, reraise=False):
-            task_progress_event = TaskProgressEvent.parse_raw(event)
+            task_progress_event = TaskProgressEvent.model_validate_json(event)
             _logger.debug("received task progress update: %s", task_progress_event)
             user_id = task_progress_event.task_owner.user_id
             project_id = task_progress_event.task_owner.project_id
@@ -411,7 +411,7 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _task_log_change_handler(self, event: str) -> None:
         with log_catch(_logger, reraise=False):
-            task_log_event = TaskLogEvent.parse_raw(event)
+            task_log_event = TaskLogEvent.model_validate_json(event)
             _logger.debug("received task log update: %s", task_log_event)
             await publish_service_log(
                 self.rabbitmq_client,

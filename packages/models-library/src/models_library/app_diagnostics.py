@@ -7,12 +7,15 @@ class AppStatusCheck(BaseModel):
     app_name: str = Field(..., description="Application name")
     version: str = Field(..., description="Application's version")
     services: dict[str, Any] = Field(
-        default={}, description="Other backend services connected from this service"
+        default_factory=dict,
+        description="Other backend services connected from this service",
+        json_schema_extra={"default": {}},
     )
 
     sessions: dict[str, Any] | None = Field(
-        default={},
+        default_factory=dict,
         description="Client sessions info. If single session per app, then is denoted as main",
+        json_schema_extra={"default": {}},
     )
 
     url: AnyUrl | None = Field(

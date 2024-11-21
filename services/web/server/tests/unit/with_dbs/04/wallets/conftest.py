@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 import sqlalchemy as sa
 from aioresponses import aioresponses
+from faker import Faker
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -23,6 +24,7 @@ def app_environment(
     app_environment: EnvVarsDict,
     env_devel_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ):
     new_envs = setenvs_from_dict(
         monkeypatch,

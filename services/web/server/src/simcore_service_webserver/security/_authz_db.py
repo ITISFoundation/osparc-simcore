@@ -7,7 +7,7 @@ from aiopg.sa.result import ResultProxy
 from models_library.basic_types import IdInt
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole
@@ -35,8 +35,12 @@ async def get_active_user_or_none(engine: Engine, email: str) -> AuthInfoDict | 
             )
         )
         row = await result.fetchone()
-        assert row is None or parse_obj_as(IdInt, row.id) is not None  # nosec
-        assert row is None or parse_obj_as(UserRole, row.role) is not None  # nosec
+        assert (
+            row is None or TypeAdapter(IdInt).validate_python(row.id) is not None   # nosec
+        )
+        assert (
+            row is None or TypeAdapter(UserRole).validate_python(row.role) is not None  # nosec
+        )
 
         return AuthInfoDict(id=row.id, role=row.role) if row else None
 

@@ -13,9 +13,10 @@ from uuid import uuid4
 import pytest
 from aiohttp import ClientSession
 from faker import Faker
+from models_library.api_schemas_storage import UNDEFINED_SIZE_TYPE
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import ByteSize, HttpUrl, parse_obj_as
+from pydantic import ByteSize, HttpUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import DEFAULT_FAKER
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import ETag, FileMetaData, S3BucketName, UploadID
@@ -60,7 +61,7 @@ async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
             DEFAULT_FAKER.random_int(1, 1000000),
             "some_valid_entity_tag",
             None,
-            datetime.datetime.utcnow(),
+            datetime.datetime.now(datetime.UTC),
             False,
         ),
         (
@@ -85,12 +86,14 @@ def test_file_entry_valid(
     fmd = FileMetaData.from_simcore_node(
         user_id=faker.pyint(min_value=1),
         file_id=file_id,
-        bucket=S3BucketName("pytest-bucket"),
+        bucket=TypeAdapter(S3BucketName).validate_python("pytest-bucket"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
         sha256_checksum=None,
     )
-    fmd.file_size = parse_obj_as(ByteSize, file_size)
+    fmd.file_size = TypeAdapter(UNDEFINED_SIZE_TYPE | ByteSize).validate_python(
+        file_size
+    )
     fmd.entity_tag = entity_tag
     fmd.upload_id = upload_id
     fmd.upload_expires_at = upload_expires_at

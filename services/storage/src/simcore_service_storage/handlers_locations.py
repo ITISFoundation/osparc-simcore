@@ -4,9 +4,9 @@ from typing import cast
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_storage import FileLocation
 from models_library.projects_nodes_io import StorageFileID
-from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.application_keys import (
     APP_CONFIG_KEY,
     APP_FIRE_AND_FORGET_TASKS_KEY,

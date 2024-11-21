@@ -63,8 +63,8 @@ _logger = logging.getLogger(__name__)
 
 
 def _node_not_ready(node: Node) -> bool:
-    assert node.Status  # nosec
-    return bool(node.Status.State != NodeState.ready)
+    assert node.status  # nosec
+    return bool(node.status.state != NodeState.ready)
 
 
 async def _analyze_current_cluster(
@@ -177,9 +177,9 @@ async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster
     removeable_nodes = [
         node
         for node in cluster.disconnected_nodes
-        if node.UpdatedAt
+        if node.updated_at
         and (
-            (utc_now - arrow.get(node.UpdatedAt).datetime).total_seconds()
+            (utc_now - arrow.get(node.updated_at).datetime).total_seconds()
             > _DELAY_FOR_REMOVING_DISCONNECTED_NODES_S
         )
     ]
@@ -886,7 +886,7 @@ async def _find_drainable_nodes(
     if drainable_nodes:
         _logger.info(
             "the following nodes were found to be drainable: '%s'",
-            f"{[instance.node.Description.Hostname for instance in drainable_nodes if instance.node.Description]}",
+            f"{[instance.node.description.hostname for instance in drainable_nodes if instance.node.description]}",
         )
     return drainable_nodes
 
@@ -914,7 +914,7 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     if updated_nodes:
         _logger.info(
             "following nodes were set to drain: '%s'",
-            f"{[node.Description.Hostname for node in updated_nodes if node.Description]}",
+            f"{[node.description.hostname for node in updated_nodes if node.description]}",
         )
     newly_drained_instances = [
         AssociatedInstance(node=node, ec2_instance=instance.ec2_instance)
@@ -964,7 +964,7 @@ async def _find_terminateable_instances(
     if terminateable_nodes:
         _logger.info(
             "the following nodes were found to be terminateable: '%s'",
-            f"{[instance.node.Description.Hostname for instance in terminateable_nodes if instance.node.Description]}",
+            f"{[instance.node.description.hostname for instance in terminateable_nodes if instance.node.description]}",
         )
     return terminateable_nodes
 
@@ -975,11 +975,11 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     # instances found to be terminateable will now start the termination process.
     new_terminating_instances = []
     for instance in await _find_terminateable_instances(app, cluster):
-        assert instance.node.Description is not None  # nosec
+        assert instance.node.description is not None  # nosec
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"termination process for {instance.node.Description.Hostname}:{instance.ec2_instance.id}",
+            msg=f"termination process for {instance.node.description.hostname}:{instance.ec2_instance.id}",
         ), log_catch(_logger, reraise=False):
             await utils_docker.set_node_begin_termination_process(
                 get_docker_client(app), instance.node
@@ -999,7 +999,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"definitely terminate '{[i.node.Description.Hostname for i in instances_to_terminate if i.node.Description]}'",
+            msg=f"definitely terminate '{[i.node.description.hostname for i in instances_to_terminate if i.node.description]}'",
         ):
             await get_ec2_client(app).terminate_instances(
                 [i.ec2_instance for i in instances_to_terminate]
@@ -1103,7 +1103,7 @@ async def _drain_retired_nodes(
     if updated_nodes:
         _logger.info(
             "following nodes were set to drain: '%s'",
-            f"{[node.Description.Hostname for node in updated_nodes if node.Description]}",
+            f"{[node.description.hostname for node in updated_nodes if node.description]}",
         )
     newly_drained_instances = [
         AssociatedInstance(node=node, ec2_instance=instance.ec2_instance)

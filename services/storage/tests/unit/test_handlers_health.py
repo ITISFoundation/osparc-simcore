@@ -26,7 +26,7 @@ async def test_health_check(client: TestClient):
     assert data
     assert not error
 
-    app_health = HealthCheck.parse_obj(data)
+    app_health = HealthCheck.model_validate(data)
     assert app_health.name == simcore_service_storage._meta.PROJECT_NAME  # noqa: SLF001
     assert app_health.version == str(
         simcore_service_storage._meta.VERSION
@@ -41,7 +41,7 @@ async def test_health_status(client: TestClient):
     assert data
     assert not error
 
-    app_status_check = AppStatusCheck.parse_obj(data)
+    app_status_check = AppStatusCheck.model_validate(data)
     assert (
         app_status_check.app_name == simcore_service_storage._meta.PROJECT_NAME
     )  # noqa: SLF001
@@ -68,7 +68,7 @@ async def test_bad_health_status_if_bucket_missing(
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
-    app_status_check = AppStatusCheck.parse_obj(data)
+    app_status_check = AppStatusCheck.model_validate(data)
     assert app_status_check.services["s3"]["healthy"] == "connected"
     # now delete the bucket
     await s3_client.delete_bucket(Bucket=storage_s3_bucket)
@@ -77,7 +77,7 @@ async def test_bad_health_status_if_bucket_missing(
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
-    app_status_check = AppStatusCheck.parse_obj(data)
+    app_status_check = AppStatusCheck.model_validate(data)
     assert app_status_check.services["s3"]["healthy"] == "no access to S3 bucket"
 
 
@@ -90,7 +90,7 @@ async def test_bad_health_status_if_s3_server_missing(
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
-    app_status_check = AppStatusCheck.parse_obj(data)
+    app_status_check = AppStatusCheck.model_validate(data)
     assert app_status_check.services["s3"]["healthy"] == "connected"
     # now disable the s3 server
     mocked_aws_server.stop()
@@ -99,7 +99,7 @@ async def test_bad_health_status_if_s3_server_missing(
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
-    app_status_check = AppStatusCheck.parse_obj(data)
+    app_status_check = AppStatusCheck.model_validate(data)
     assert app_status_check.services["s3"]["healthy"] == "failed"
     # start the server again
     mocked_aws_server.start()
@@ -108,5 +108,5 @@ async def test_bad_health_status_if_s3_server_missing(
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
-    app_status_check = AppStatusCheck.parse_obj(data)
+    app_status_check = AppStatusCheck.model_validate(data)
     assert app_status_check.services["s3"]["healthy"] == "connected"

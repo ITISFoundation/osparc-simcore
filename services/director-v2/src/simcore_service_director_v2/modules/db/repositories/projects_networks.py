@@ -22,18 +22,18 @@ class ProjectsNetworksRepository(BaseRepository):
                 )
             ).first()
         if not row:
-            raise ProjectNetworkNotFoundError(project_id)
-        return ProjectsNetworks.from_orm(row)
+            raise ProjectNetworkNotFoundError(project_id=project_id)
+        return ProjectsNetworks.model_validate(row)
 
     async def upsert_projects_networks(
         self, project_id: ProjectID, networks_with_aliases: NetworksWithAliases
     ) -> None:
-        projects_networks_to_insert = ProjectsNetworks.parse_obj(
+        projects_networks_to_insert = ProjectsNetworks.model_validate(
             {"project_uuid": project_id, "networks_with_aliases": networks_with_aliases}
         )
 
         async with self.db_engine.acquire() as conn:
-            row_data = json.loads(projects_networks_to_insert.json())
+            row_data = json.loads(projects_networks_to_insert.model_dump_json())
             insert_stmt = pg_insert(projects_networks).values(**row_data)
             upsert_snapshot = insert_stmt.on_conflict_do_update(
                 constraint=projects_networks.primary_key, set_=row_data

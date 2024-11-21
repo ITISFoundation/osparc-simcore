@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -32,7 +31,7 @@ class SourceConfig(BaseModel):
     db: DBConfig
     s3: S3Config
     project_uuid: UUID = Field(..., description="project to be moved from the source")
-    hidden_projects_for_user: Optional[int] = Field(
+    hidden_projects_for_user: int | None = Field(
         None,
         description="by default nothing is moved, must provide an user ID for which to move the hidden projects",
     )
@@ -57,7 +56,7 @@ class Settings(BaseModel):
 
     @classmethod
     def load_from_file(cls, path: Path) -> "Settings":
-        return Settings.parse_obj(json.loads(path.read_text()))
+        return Settings.model_validate(json.loads(path.read_text()))
 
     class Config:
         schema_extra = {
@@ -92,4 +91,6 @@ class Settings(BaseModel):
 
 if __name__ == "__main__":
     # produces an empty configuration to be saved as starting point
-    print(Settings.parse_obj(Settings.Config.schema_extra["example"]).json(indent=2))
+    print(
+        Settings.model_validate(Settings.Config.schema_extra["example"]).json(indent=2)
+    )

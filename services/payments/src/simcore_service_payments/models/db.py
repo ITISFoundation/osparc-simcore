@@ -1,6 +1,6 @@
 import datetime
 from decimal import Decimal
-from typing import Any, ClassVar
+from typing import Any
 
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.emails import LowerCaseEmailStr
@@ -8,13 +8,13 @@ from models_library.payments import StripeInvoiceID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, ConfigDict, HttpUrl
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 
-_EXAMPLE_AFTER_INIT = {
+_EXAMPLE_AFTER_INIT: dict[str, Any] = {
     "payment_id": "12345",
     "price_dollars": 10.99,
     "osparc_credits": 5.0,
@@ -28,6 +28,8 @@ _EXAMPLE_AFTER_INIT = {
     "invoice_pdf_url": None,
     "initiated_at": "2023-09-27T10:00:00",
     "state": PaymentTransactionState.PENDING,
+    "completed_at": None,
+    "state_message": None,
 }
 
 
@@ -47,10 +49,9 @@ class PaymentsTransactionsDB(BaseModel):
     completed_at: datetime.datetime | None
     state: PaymentTransactionState
     state_message: str | None
-
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "examples": [
                 _EXAMPLE_AFTER_INIT,
                 # successful completion
@@ -64,7 +65,8 @@ class PaymentsTransactionsDB(BaseModel):
                     "state_message": "Payment completed successfully",
                 },
             ]
-        }
+        },
+    )
 
 
 _EXAMPLE_AFTER_INIT_PAYMENT_METHOD = {
@@ -74,6 +76,8 @@ _EXAMPLE_AFTER_INIT_PAYMENT_METHOD = {
     "wallet_id": _EXAMPLE_AFTER_INIT["wallet_id"],
     "initiated_at": _EXAMPLE_AFTER_INIT["initiated_at"],
     "state": InitPromptAckFlowState.PENDING,
+    "completed_at": None,
+    "state_message": None,
 }
 
 
@@ -86,10 +90,9 @@ class PaymentsMethodsDB(BaseModel):
     completed_at: datetime.datetime | None
     state: InitPromptAckFlowState
     state_message: str | None
-
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "examples": [
                 _EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
                 # successful completion
@@ -100,4 +103,5 @@ class PaymentsMethodsDB(BaseModel):
                     "state_message": "Payment method completed successfully",
                 },
             ]
-        }
+        },
+    )

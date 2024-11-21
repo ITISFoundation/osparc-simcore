@@ -2,9 +2,9 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
@@ -69,6 +69,6 @@ async def get_files_metadata_dataset(request: web.Request) -> web.Response:
         expand_dirs=query_params.expand_dirs,
     )
     return web.json_response(
-        {"data": [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]},
+        {"data": [jsonable_encoder(FileMetaDataGet(**d.model_dump())) for d in data]},
         dumps=json_dumps,
     )

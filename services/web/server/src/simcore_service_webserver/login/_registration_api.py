@@ -5,11 +5,11 @@ from typing import Any
 
 from aiohttp import web
 from captcha.image import ImageCaptcha
+from common_library.json_serialization import json_dumps
 from models_library.emails import LowerCaseEmailStr
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
 from PIL.Image import Image
-from pydantic import EmailStr, PositiveInt, ValidationError, parse_obj_as
+from pydantic import EmailStr, PositiveInt, TypeAdapter, ValidationError
 from servicelib.utils_secrets import generate_passcode
 
 from ..email.utils import send_email_from_template
@@ -66,7 +66,9 @@ async def send_account_request_email_to_support(
     support_email = product.support_email
     email_template_path = await get_product_template_path(request, template_name)
     try:
-        user_email = parse_obj_as(LowerCaseEmailStr, request_form.get("email", None))
+        user_email = TypeAdapter(LowerCaseEmailStr).validate_python(
+            request_form.get("email", None)
+        )
     except ValidationError:
         user_email = None
 
@@ -80,7 +82,7 @@ async def send_account_request_email_to_support(
             context={
                 "host": request.host,
                 "name": "support-team",
-                "product": product.dict(
+                "product": product.model_dump(
                     include={
                         "name",
                         "display_name",

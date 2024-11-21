@@ -14,7 +14,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.projects_nodes_io import LocationID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, BaseModel, ByteSize, parse_obj_as
+from pydantic import AnyUrl, BaseModel, ByteSize, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -74,7 +74,7 @@ def _from_storage_url(request: web.Request, storage_url: AnyUrl) -> AnyUrl:
         f"/v0/storage{storage_url.path.removeprefix(prefix)}", encoded=True
     ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
 
-    webserver_url: AnyUrl = parse_obj_as(AnyUrl, f"{converted_url}")
+    webserver_url: AnyUrl = TypeAdapter(AnyUrl).validate_python(f"{converted_url}")
     return webserver_url
 
 
@@ -229,7 +229,7 @@ async def upload_file(request: web.Request) -> web.Response:
     parse_request_path_parameters_as(_PathParams, request)
 
     class _QueryParams(BaseModel):
-        file_size: ByteSize | None
+        file_size: ByteSize | None = None
         link_type: LinkType = LinkType.PRESIGNED
         is_directory: bool = False
 
@@ -237,7 +237,7 @@ async def upload_file(request: web.Request) -> web.Response:
 
     payload, status = await _forward_request_to_storage(request, "PUT", body=None)
     data, _ = unwrap_envelope(payload)
-    file_upload_schema = FileUploadSchema.parse_obj(data)
+    file_upload_schema = FileUploadSchema.model_validate(data)
     file_upload_schema.links.complete_upload = _from_storage_url(
         request, file_upload_schema.links.complete_upload
     )
@@ -262,10 +262,10 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     body_item = await parse_request_body_as(FileUploadCompletionBody, request)
 
     payload, status = await _forward_request_to_storage(
-        request, "POST", body=body_item.dict()
+        request, "POST", body=body_item.model_dump()
     )
     data, _ = unwrap_envelope(payload)
-    file_upload_complete = FileUploadCompleteResponse.parse_obj(data)
+    file_upload_complete = FileUploadCompleteResponse.model_validate(data)
     file_upload_complete.links.state = _from_storage_url(
         request, file_upload_complete.links.state
     )

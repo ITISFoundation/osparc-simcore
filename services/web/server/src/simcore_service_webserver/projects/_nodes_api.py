@@ -20,8 +20,7 @@ from pydantic import (
     NonNegativeFloat,
     NonNegativeInt,
     ValidationError,
-    parse_obj_as,
-    root_validator,
+    model_validator,
 )
 from servicelib.utils import logged_gather
 
@@ -96,10 +95,10 @@ class NodeScreenshot(BaseModel):
     mimetype: str | None = Field(
         default=None,
         description="File's media type or None if unknown. SEE https://www.iana.org/assignments/media-types/media-types.xhtml",
-        example="image/jpeg",
+        examples=["image/jpeg"],
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def guess_mimetype_if_undefined(cls, values):
         mimetype = values.get("mimetype")
@@ -173,7 +172,7 @@ async def __get_link(
     return __get_search_key(file_meta_data), await get_download_link(
         app,
         user_id,
-        parse_obj_as(SimCoreFileLink, {"store": "0", "path": file_meta_data.file_id}),
+        SimCoreFileLink.model_validate({"store": "0", "path": file_meta_data.file_id}),
     )
 
 
@@ -228,7 +227,7 @@ async def get_node_screenshots(
 
             assert node.outputs is not None  # nosec
 
-            filelink = parse_obj_as(SimCoreFileLink, node.outputs[KeyIDStr("outFile")])
+            filelink = SimCoreFileLink.model_validate(node.outputs[KeyIDStr("outFile")])
 
             file_url = await get_download_link(app, user_id, filelink)
             screenshots.append(
@@ -240,7 +239,7 @@ async def get_node_screenshots(
         except (KeyError, ValidationError, ClientError) as err:
             _logger.warning(
                 "Skipping fake node. Unable to create link from file-picker %s: %s",
-                node.json(indent=1),
+                node.model_dump_json(indent=1),
                 err,
             )
 

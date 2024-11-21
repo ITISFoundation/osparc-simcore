@@ -2,10 +2,13 @@
     Models Front-end UI
 """
 
-from typing import Any, ClassVar, Literal, TypedDict
+from typing import Literal
 
-from pydantic import BaseModel, Extra, Field, validator
-from pydantic.color import Color
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_extra_types.color import Color
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from .projects_nodes_io import NodeID, NodeIDStr
 from .projects_nodes_ui import Marker, Position
@@ -15,9 +18,7 @@ from .utils.common_validators import empty_str_to_none_pre_validator
 class WorkbenchUI(BaseModel):
     position: Position = Field(..., description="The node position in the workbench")
     marker: Marker | None = None
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class _SlideshowRequired(TypedDict):
@@ -32,10 +33,9 @@ class Annotation(BaseModel):
     type: Literal["note", "rect", "text"] = Field(...)
     color: Color = Field(...)
     attributes: dict = Field(..., description="svg attributes")
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {
                     "type": "note",
@@ -60,7 +60,8 @@ class Annotation(BaseModel):
                     "attributes": {"x": 415, "y": 100, "text": "Hey!"},
                 },
             ]
-        }
+        },
+    )
 
 
 class StudyUI(BaseModel):
@@ -69,9 +70,8 @@ class StudyUI(BaseModel):
     current_node_id: NodeID | None = Field(default=None, alias="currentNodeId")
     annotations: dict[NodeIDStr, Annotation] | None = None
 
-    class Config:
-        extra = Extra.allow
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
-    _empty_is_none = validator("*", allow_reuse=True, pre=True)(
+    _empty_is_none = field_validator("*", mode="before")(
         empty_str_to_none_pre_validator
     )

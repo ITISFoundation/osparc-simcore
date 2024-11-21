@@ -4,7 +4,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -46,7 +46,7 @@ class _CheckpointsPathParam(BaseModel):
     project_uuid: ProjectID
     ref_id: RefID
 
-    @validator("ref_id", pre=True)
+    @field_validator("ref_id", mode="before")
     @classmethod
     def _normalize_refid(cls, v):
         if v and v == "HEAD":
@@ -81,7 +81,7 @@ async def _list_repos_handler(request: web.Request):
 
     # parse and validate
     repos_list = [
-        RepoApiModel.parse_obj(
+        RepoApiModel.model_validate(
             {
                 "url": url_for("list_repos"),
                 **dict(row.items()),
@@ -90,7 +90,7 @@ async def _list_repos_handler(request: web.Request):
         for row in repos_rows
     ]
 
-    page = Page[RepoApiModel].parse_obj(
+    page = Page[RepoApiModel].model_validate(
         paginate_data(
             chunk=repos_list,
             request_url=request.url,
@@ -100,7 +100,7 @@ async def _list_repos_handler(request: web.Request):
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 
@@ -116,22 +116,22 @@ async def _create_checkpoint_handler(request: web.Request):
     vc_repo = VersionControlRepository.create_from_request(request)
 
     path_params = parse_request_path_parameters_as(_ProjectPathParam, request)
-    _body = CheckpointNew.parse_obj(await request.json())
+    _body = CheckpointNew.model_validate(await request.json())
 
     checkpoint: Checkpoint = await create_checkpoint(
         vc_repo,
         project_uuid=path_params.project_uuid,
-        **_body.dict(include={"tag", "message"}),
+        **_body.model_dump(include={"tag", "message"}),
     )
 
-    data = CheckpointApiModel.parse_obj(
+    data = CheckpointApiModel.model_validate(
         {
             "url": url_for(
                 "get_checkpoint",
                 project_uuid=path_params.project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **checkpoint.dict(),
+            **checkpoint.model_dump(),
         }
     )
     return envelope_json_response(data, status_cls=web.HTTPCreated)
@@ -163,20 +163,20 @@ async def _list_checkpoints_handler(request: web.Request):
 
     # parse and validate
     checkpoints_list = [
-        CheckpointApiModel.parse_obj(
+        CheckpointApiModel.model_validate(
             {
                 "url": url_for(
                     "get_checkpoint",
                     project_uuid=path_params.project_uuid,
                     ref_id=checkpoint.id,
                 ),
-                **checkpoint.dict(),
+                **checkpoint.model_dump(),
             }
         )
         for checkpoint in checkpoints
     ]
 
-    page = Page[CheckpointApiModel].parse_obj(
+    page = Page[CheckpointApiModel].model_validate(
         paginate_data(
             chunk=checkpoints_list,
             request_url=request.url,
@@ -186,7 +186,7 @@ async def _list_checkpoints_handler(request: web.Request):
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 
@@ -211,14 +211,14 @@ async def _get_checkpoint_handler(request: web.Request):
         ref_id=path_params.ref_id,
     )
 
-    data = CheckpointApiModel.parse_obj(
+    data = CheckpointApiModel.model_validate(
         {
             "url": url_for(
                 "get_checkpoint",
                 project_uuid=path_params.project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **checkpoint.dict(**RESPONSE_MODEL_POLICY),
+            **checkpoint.model_dump(**RESPONSE_MODEL_POLICY),
         }
     )
     return envelope_json_response(data)
@@ -238,21 +238,23 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
     path_params = parse_request_path_parameters_as(_CheckpointsPathParam, request)
     update = await parse_request_body_as(CheckpointAnnotations, request)
 
+    assert isinstance(path_params.ref_id, int)
+
     checkpoint: Checkpoint = await update_checkpoint(
         vc_repo,
         project_uuid=path_params.project_uuid,
         ref_id=path_params.ref_id,
-        **update.dict(include={"tag", "message"}, exclude_none=True),
+        **update.model_dump(include={"tag", "message"}, exclude_none=True),
     )
 
-    data = CheckpointApiModel.parse_obj(
+    data = CheckpointApiModel.model_validate(
         {
             "url": url_for(
                 "get_checkpoint",
                 project_uuid=path_params.project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **checkpoint.dict(**RESPONSE_MODEL_POLICY),
+            **checkpoint.model_dump(**RESPONSE_MODEL_POLICY),
         }
     )
     return envelope_json_response(data)
@@ -277,14 +279,14 @@ async def _checkout_handler(request: web.Request):
         ref_id=path_params.ref_id,
     )
 
-    data = CheckpointApiModel.parse_obj(
+    data = CheckpointApiModel.model_validate(
         {
             "url": url_for(
                 "get_checkpoint",
                 project_uuid=path_params.project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **checkpoint.dict(**RESPONSE_MODEL_POLICY),
+            **checkpoint.model_dump(**RESPONSE_MODEL_POLICY),
         }
     )
     return envelope_json_response(data)
@@ -315,7 +317,7 @@ async def _view_project_workbench_handler(request: web.Request):
         ref_id=checkpoint.id,
     )
 
-    data = WorkbenchViewApiModel.parse_obj(
+    data = WorkbenchViewApiModel.model_validate(
         {
             # = request.url??
             "url": url_for(
@@ -328,7 +330,7 @@ async def _view_project_workbench_handler(request: web.Request):
                 project_uuid=path_params.project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **view.dict(**RESPONSE_MODEL_POLICY),
+            **view.model_dump(**RESPONSE_MODEL_POLICY),
         }
     )
 

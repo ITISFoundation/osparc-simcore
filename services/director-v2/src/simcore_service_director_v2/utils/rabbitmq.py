@@ -31,7 +31,7 @@ async def publish_service_started_metrics(
     simcore_user_agent: str,
     task: CompTaskAtDB,
 ) -> None:
-    message = InstrumentationRabbitMessage.construct(
+    message = InstrumentationRabbitMessage.model_construct(
         metrics="service_started",
         user_id=user_id,
         project_id=task.project_id,
@@ -53,7 +53,7 @@ async def publish_service_stopped_metrics(
     task: CompTaskAtDB,
     task_final_state: RunningState,
 ) -> None:
-    message = InstrumentationRabbitMessage.construct(
+    message = InstrumentationRabbitMessage.model_construct(
         metrics="service_stopped",
         user_id=user_id,
         project_id=task.project_id,
@@ -153,7 +153,7 @@ async def publish_service_log(
     log: str,
     log_level: LogLevelInt,
 ) -> None:
-    message = LoggerRabbitMessage.construct(
+    message = LoggerRabbitMessage.model_construct(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
@@ -172,7 +172,7 @@ async def publish_service_progress(
     node_id: NodeID,
     progress: NonNegativeFloat,
 ) -> None:
-    message = ProgressRabbitMessageNode.construct(
+    message = ProgressRabbitMessageNode.model_construct(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
@@ -188,7 +188,7 @@ async def publish_project_log(
     log: str,
     log_level: LogLevelInt,
 ) -> None:
-    message = LoggerRabbitMessage.construct(
+    message = LoggerRabbitMessage.model_construct(
         user_id=user_id,
         project_id=project_id,
         node_id=None,

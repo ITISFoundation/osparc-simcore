@@ -1,7 +1,6 @@
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field, Json
-from pydantic.generics import GenericModel
 
 
 class Filters(BaseModel):
@@ -15,7 +14,7 @@ class Filters(BaseModel):
 FilterT = TypeVar("FilterT", bound=Filters)
 
 
-class FiltersQueryParameters(GenericModel, Generic[FilterT]):
+class FiltersQueryParameters(BaseModel, Generic[FilterT]):
     filters: Json[FilterT] | None = Field(  # pylint: disable=unsubscriptable-object
         default=None,
         description="Custom filter query parameter encoded as JSON",
