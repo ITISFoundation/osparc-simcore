@@ -39,7 +39,7 @@ def generate_markdown_table(
 ) -> str:
     title = ("Name", "Files", "  ")
     num_cols = len(title)
-    lines = ["-" * 10] * len(title)
+    lines = ["-" * 10] * num_cols
 
     def _to_row_data(values: Iterable) -> list[str]:
         row = list(map(str, values))
@@ -93,7 +93,7 @@ def generate_markdown_table(
                     )
                 )
             )
-    rows.append(_to_row_data(["" * 10] * len(title)))
+    rows.append(_to_row_data(["" * 10] * num_cols))
 
     # converts to markdown table
     return "\n".join(f"| {'|'.join(r)} |" for r in rows)
