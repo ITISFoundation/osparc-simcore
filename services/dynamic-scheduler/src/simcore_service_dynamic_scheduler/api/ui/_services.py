@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated, Any, Final
 
 from fastapi import APIRouter, Depends, FastAPI
@@ -5,11 +6,12 @@ from fastapi.responses import StreamingResponse
 from fastui import AnyComponent, FastUI
 from fastui import components as c
 from fastui.events import PageEvent
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from starlette import status
 
 from ..dependencies import get_app
 from ._constants import API_ROOT_PATH
-from ._sse_utils import AbstractSSERenderer, render_items_on_change
+from ._sse_utils import AbstractSSERenderer, render_items_on_change, update_items
 
 _PREFIX: Final[str] = "/services"
 
@@ -47,7 +49,7 @@ def api_index() -> list[AnyComponent]:
 
 class ServicesSSERenderer(AbstractSSERenderer):
     @staticmethod
-    def render_item(item: Any) -> AnyComponent:
+    def get_component(item: Any) -> AnyComponent:
         return c.Paragraph(text=f"{item}")
 
 
@@ -64,3 +66,40 @@ async def sse_ai_response(
 @router.get("/{path:path}", status_code=status.HTTP_404_NOT_FOUND)
 async def not_found():
     return {"message": "Not Found"}
+
+
+class MockMessagesProvider(SingletonInAppStateMixin):
+    app_state_name: str = "mock_messages_provider"
+
+    def __init__(self, app: FastAPI) -> None:
+        self.app = app
+        self._task: asyncio.Task | None = None
+
+    async def _publish_mock_data(self) -> None:
+        messages: list[Any] = []
+        while True:
+            await asyncio.sleep(3)
+
+            messages.append({"name": "a", "surname": "b"})
+            await update_items(
+                self.app, renderer_type=ServicesSSERenderer, items=messages
+            )
+
+    def startup(self) -> None:
+        self._task = asyncio.create_task(self._publish_mock_data())
+
+    async def shutdown(self) -> None:
+        if self._task:
+            self._task.cancel()
+            await self._task
+
+
+def setup_services(app: FastAPI) -> None:
+    async def on_startup() -> None:
+        MockMessagesProvider.get_from_app_state(app).startup()
+
+    async def on_shutdown() -> None:
+        await MockMessagesProvider.get_from_app_state(app).shutdown()
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
