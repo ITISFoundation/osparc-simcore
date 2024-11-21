@@ -7,9 +7,6 @@ from pathlib import Path
 import pytest
 import yaml
 from utils import list_files_in_api_specs
-from yarl import URL
-
-
 
 # Conventions
 _REQUIRED_FIELDS = [
