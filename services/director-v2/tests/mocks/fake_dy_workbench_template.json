@@ -17,7 +17,7 @@
   },
   "80103e12-6b01-40f2-94b8-556bd6c3dd98": {
     "key": "simcore/services/dynamic/dy-static-file-server-dynamic-sidecar",
-    "version": "2.0.4",
+    "version": "2.0.7",
     "label": "dy-static-file-server-dynamic-sidecar",
     "inputs": {
       "string_input": "not the default value",
@@ -41,7 +41,7 @@
   },
   "78f06db4-5feb-4ea3-ad1b-176310ac71a7": {
     "key": "simcore/services/dynamic/dy-static-file-server-dynamic-sidecar-compose-spec",
-    "version": "2.0.4",
+    "version": "2.0.7",
     "label": "dy-static-file-server-dynamic-sidecar-compose-spec",
     "inputs": {
       "string_input": {

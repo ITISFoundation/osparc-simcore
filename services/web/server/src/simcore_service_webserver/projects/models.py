@@ -4,7 +4,6 @@ from typing import Any, TypeAlias
 
 from aiopg.sa.result import RowProxy
 from models_library.api_schemas_webserver.projects import ProjectPatch
-from models_library.basic_types import HttpUrlWithCustomMinLength
 from models_library.folders import FolderID
 from models_library.projects import ClassifierID, ProjectID
 from models_library.projects_ui import StudyUI
@@ -14,7 +13,7 @@ from models_library.utils.common_validators import (
     none_to_empty_str_pre_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, Extra, validator
+from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
 from simcore_postgres_database.models.projects import ProjectType, projects
 
 ProjectDict: TypeAlias = dict[str, Any]
@@ -41,7 +40,7 @@ class ProjectDB(BaseModel):
     uuid: ProjectID
     name: str
     description: str
-    thumbnail: HttpUrlWithCustomMinLength | None
+    thumbnail: HttpUrl | None
     prj_owner: UserID
     creation_date: datetime
     last_change_date: datetime
@@ -55,14 +54,13 @@ class ProjectDB(BaseModel):
     trashed_at: datetime | None
     trashed_explicitly: bool = False
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
     # validators
-    _empty_thumbnail_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+    _empty_thumbnail_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
-    _none_description_is_empty = validator("description", allow_reuse=True, pre=True)(
+    _none_description_is_empty = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
     )
 
@@ -70,11 +68,10 @@ class ProjectDB(BaseModel):
 class UserSpecificProjectDataDB(ProjectDB):
     folder_id: FolderID | None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
-assert set(ProjectDB.__fields__.keys()).issubset(  # nosec
+assert set(ProjectDB.model_fields.keys()).issubset(  # nosec
     {c.name for c in projects.columns if c.name not in ["access_rights"]}
 )
 
@@ -84,9 +81,7 @@ class UserProjectAccessRightsDB(BaseModel):
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserProjectAccessRightsWithWorkspace(BaseModel):
@@ -95,9 +90,7 @@ class UserProjectAccessRightsWithWorkspace(BaseModel):
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProjectPatchExtended(ProjectPatch):
@@ -105,9 +98,7 @@ class ProjectPatchExtended(ProjectPatch):
     trashed_at: datetime | None
     trashed_explicitly: bool
 
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
 __all__: tuple[str, ...] = (

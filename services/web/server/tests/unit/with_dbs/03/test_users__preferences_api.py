@@ -11,12 +11,13 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from common_library.pydantic_fields_extension import get_type
 from models_library.api_schemas_webserver.users_preferences import Preference
 from models_library.products import ProductName
 from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
 from pydantic import BaseModel
-from pydantic.fields import ModelField
+from pydantic.fields import FieldInfo
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import NewUser
 from simcore_postgres_database.models.groups_extra_properties import (
@@ -64,8 +65,8 @@ def product_name() -> ProductName:
     return "osparc"
 
 
-def _get_model_field(model_class: type[BaseModel], field_name: str) -> ModelField:
-    return model_class.__dict__["__fields__"][field_name]
+def _get_model_field(model_class: type[BaseModel], field_name: str) -> FieldInfo:
+    return model_class.model_fields[field_name]
 
 
 def _get_default_field_value(model_class: type[BaseModel]) -> Any:
@@ -83,7 +84,7 @@ def _get_non_default_value(
     """given a default value transforms into something that is different"""
 
     model_field = _get_model_field(model_class, "value")
-    value_type = model_field.type_
+    value_type = get_type(model_field)
     value = _get_default_field_value(model_class)
 
     if isinstance(value, bool):

@@ -138,7 +138,7 @@ def test_running_service_details_make_status(
     print(running_service_details)
     assert running_service_details
 
-    running_service_details_dict = running_service_details.dict(
+    running_service_details_dict = running_service_details.model_dump(
         exclude_unset=True, by_alias=True
     )
 
@@ -219,7 +219,7 @@ def test_regression_legacy_service_compatibility() -> None:
         "user_id": "1",
         "project_id": "b1ec5c8e-f5bb-11eb-b1d5-02420a000006",
     }
-    service_details = RunningDynamicServiceDetails.parse_obj(api_response)
+    service_details = RunningDynamicServiceDetails.model_validate(api_response)
 
     assert service_details
 

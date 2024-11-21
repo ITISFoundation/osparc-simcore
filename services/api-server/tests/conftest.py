@@ -5,11 +5,11 @@
 import sys
 from pathlib import Path
 
+from pydantic import TypeAdapter
 import pytest
 import simcore_service_api_server
 from dotenv import dotenv_values
 from models_library.projects import ProjectID
-from pydantic import parse_obj_as
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_api_server.models.schemas.jobs import JobID
 
@@ -106,4 +106,4 @@ def tests_utils_dir(project_tests_dir: Path) -> Path:
 
 @pytest.fixture
 def job_id(project_id: ProjectID) -> JobID:
-    return parse_obj_as(JobID, project_id)
+    return TypeAdapter(JobID).validate_python(project_id)

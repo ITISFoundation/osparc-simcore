@@ -192,8 +192,8 @@ _assert_target_defined:
 
 
 # specification of the used openapi-generator-cli (see also https://github.com/ITISFoundation/openapi-generator)
-OPENAPI_GENERATOR_NAME := itisfoundation/openapi-generator-cli-openapi-generator-v4.2.3
-OPENAPI_GENERATOR_TAG := v0
+OPENAPI_GENERATOR_NAME := openapitools/openapi-generator-cli
+OPENAPI_GENERATOR_TAG := latest
 OPENAPI_GENERATOR_IMAGE := $(OPENAPI_GENERATOR_NAME):$(OPENAPI_GENERATOR_TAG)
 
 define validate_openapi_specs

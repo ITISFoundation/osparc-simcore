@@ -71,7 +71,7 @@ class ComputationalSidecar:
             if isinstance(input_params, FileUrl):
                 file_name = (
                     input_params.file_mapping
-                    or Path(URL(input_params.url).path.strip("/")).name
+                    or Path(URL(f"{input_params.url}").path.strip("/")).name
                 )
 
                 destination_path = task_volumes.inputs_folder / file_name
@@ -114,7 +114,7 @@ class ComputationalSidecar:
             )
             _logger.debug(
                 "following outputs will be searched for:\n%s",
-                self.task_parameters.output_data_keys.json(indent=1),
+                self.task_parameters.output_data_keys.model_dump_json(indent=1),
             )
 
             output_data = TaskOutputData.from_task_output(
@@ -132,7 +132,7 @@ class ComputationalSidecar:
                 if isinstance(output_params, FileUrl):
                     assert (  # nosec
                         output_params.file_mapping
-                    ), f"{output_params.json(indent=1)} expected resolved in TaskOutputData.from_task_output"
+                    ), f"{output_params.model_dump_json(indent=1)} expected resolved in TaskOutputData.from_task_output"
 
                     src_path = task_volumes.outputs_folder / output_params.file_mapping
                     upload_tasks.append(
@@ -146,7 +146,9 @@ class ComputationalSidecar:
             await asyncio.gather(*upload_tasks)
 
             await self._publish_sidecar_log("All the output data were uploaded.")
-            _logger.info("retrieved outputs data:\n%s", output_data.json(indent=1))
+            _logger.info(
+                "retrieved outputs data:\n%s", output_data.model_dump_json(indent=1)
+            )
             return output_data
 
         except (ValueError, ValidationError) as exc:

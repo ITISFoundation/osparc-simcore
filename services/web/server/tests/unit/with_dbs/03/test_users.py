@@ -82,12 +82,16 @@ async def test_get_profile(
     data, error = await assert_status(resp, expected)
 
     # check enveloped
-    e = Envelope[ProfileGet].parse_obj(await resp.json())
+    e = Envelope[ProfileGet].model_validate(await resp.json())
     assert e.error == error
-    assert e.data.dict(**RESPONSE_MODEL_POLICY) == data if e.data else e.data == data
+    assert (
+        e.data.model_dump(**RESPONSE_MODEL_POLICY, mode="json") == data
+        if e.data
+        else e.data == data
+    )
 
     if not error:
-        profile = ProfileGet.parse_obj(data)
+        profile = ProfileGet.model_validate(data)
 
         product_group = {
             "accessRights": {"delete": False, "read": False, "write": False},
@@ -105,7 +109,9 @@ async def test_get_profile(
         assert profile.role == user_role.name
         assert profile.groups
 
-        got_profile_groups = profile.groups.dict(**RESPONSE_MODEL_POLICY)
+        got_profile_groups = profile.groups.model_dump(
+            **RESPONSE_MODEL_POLICY, mode="json"
+        )
         assert got_profile_groups["me"] == primary_group
         assert got_profile_groups["all"] == all_group
 
@@ -147,7 +153,7 @@ async def test_update_profile(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
 
         # This is a PUT! i.e. full replace of profile variable fields!
-        assert data["first_name"] == ProfileUpdate.__fields__["first_name"].default
+        assert data["first_name"] == ProfileUpdate.model_fields["first_name"].default
         assert data["last_name"] == "Foo"
         assert data["role"] == user_role.name
 
@@ -250,7 +256,9 @@ def account_request_form(faker: Faker) -> dict[str, Any]:
     }
 
     # keeps in sync fields from example and this fixture
-    assert set(form) == set(AccountRequestInfo.Config.schema_extra["example"]["form"])
+    assert set(form) == set(
+        AccountRequestInfo.model_config["json_schema_extra"]["example"]["form"]
+    )
     return form
 
 
@@ -276,7 +284,15 @@ async def test_search_and_pre_registration(
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserProfile(**found[0])
+    got = UserProfile(
+        **found[0],
+        institution=None,
+        address=None,
+        city=None,
+        state=None,
+        postal_code=None,
+        country=None,
+    )
     expected = {
         "first_name": logged_user.get("first_name"),
         "last_name": logged_user.get("last_name"),
@@ -292,7 +308,7 @@ async def test_search_and_pre_registration(
         "registered": True,
         "status": UserStatus.ACTIVE,
     }
-    assert got.dict(include=set(expected)) == expected
+    assert got.model_dump(include=set(expected)) == expected
 
     # NOT in `users` and ONLY `users_pre_registration_details`
 
@@ -305,9 +321,9 @@ async def test_search_and_pre_registration(
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserProfile(**found[0])
+    got = UserProfile(**found[0], state=None, status=None)
 
-    assert got.dict(include={"registered", "status"}) == {
+    assert got.model_dump(include={"registered", "status"}) == {
         "registered": False,
         "status": None,
     }
@@ -328,8 +344,8 @@ async def test_search_and_pre_registration(
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserProfile(**found[0])
-    assert got.dict(include={"registered", "status"}) == {
+    got = UserProfile(**found[0], state=None)
+    assert got.model_dump(include={"registered", "status"}) == {
         "registered": True,
         "status": new_user["status"].name,
     }
@@ -356,7 +372,7 @@ def test_preuserprofile_parse_model_from_request_form_data(
     # pre-processors
     pre_user_profile = PreUserProfile(**data)
 
-    print(pre_user_profile.json(indent=1))
+    print(pre_user_profile.model_dump_json(indent=1))
 
     # institution aliases
     assert pre_user_profile.institution == account_request_form["company"]
@@ -377,7 +393,9 @@ def test_preuserprofile_parse_model_without_extras(
     account_request_form: dict[str, Any]
 ):
     required = {
-        f.alias or f.name for f in PreUserProfile.__fields__.values() if f.required
+        f.alias or f_name
+        for f_name, f in PreUserProfile.model_fields.items()
+        if f.is_required()
     }
     data = {k: account_request_form[k] for k in required}
     assert not PreUserProfile(**data).extras
@@ -401,6 +419,6 @@ def test_preuserprofile_pre_given_names(
     account_request_form["lastName"] = given_name
 
     pre_user_profile = PreUserProfile(**account_request_form)
-    print(pre_user_profile.json(indent=1))
+    print(pre_user_profile.model_dump_json(indent=1))
     assert pre_user_profile.first_name in ["Pedro-Luis", "Pedro Luis"]
     assert pre_user_profile.first_name == pre_user_profile.last_name

@@ -422,13 +422,13 @@ def pipeline_test_params(
 
     # resolve the comp_tasks
     resolved_list_comp_tasks = [
-        c.copy(update={"node_id": node_name_to_uuid_map[c.node_id]})
+        c.model_copy(update={"node_id": node_name_to_uuid_map[c.node_id]})
         for c in list_comp_tasks
     ]
 
     # resolved the expected output
 
-    resolved_expected_pipeline_details = expected_pipeline_details_output.copy(
+    resolved_expected_pipeline_details = expected_pipeline_details_output.model_copy(
         update={
             "adjacency_list": {
                 NodeID(node_name_to_uuid_map[node_a]): [
@@ -476,7 +476,7 @@ _MANY_NODES: Final[int] = 60
                 for x in range(_MANY_NODES)
             },
             [
-                CompTaskAtDB.construct(
+                CompTaskAtDB.model_construct(
                     project_id=uuid4(),
                     node_id=f"node_{x}",
                     schema=NodeSchema(inputs={}, outputs={}),
@@ -493,7 +493,7 @@ _MANY_NODES: Final[int] = 60
                 )
                 for x in range(_MANY_NODES)
             ],
-            PipelineDetails.construct(
+            PipelineDetails.model_construct(
                 adjacency_list={f"node_{x}": [] for x in range(_MANY_NODES)},
                 progress=1.0,
                 node_states={
@@ -527,7 +527,7 @@ _MANY_NODES: Final[int] = 60
             },
             [
                 # NOTE: we use construct here to be able to use non uuid names to simplify test setup
-                CompTaskAtDB.construct(
+                CompTaskAtDB.model_construct(
                     project_id=uuid4(),
                     node_id="node_1",
                     schema=NodeSchema(inputs={}, outputs={}),
@@ -541,7 +541,7 @@ _MANY_NODES: Final[int] = 60
                     modified=datetime.datetime.now(tz=datetime.timezone.utc),
                     last_heartbeat=None,
                 ),
-                CompTaskAtDB.construct(
+                CompTaskAtDB.model_construct(
                     project_id=uuid4(),
                     node_id="node_2",
                     schema=NodeSchema(inputs={}, outputs={}),
@@ -555,7 +555,7 @@ _MANY_NODES: Final[int] = 60
                     modified=datetime.datetime.now(tz=datetime.timezone.utc),
                     last_heartbeat=None,
                 ),
-                CompTaskAtDB.construct(
+                CompTaskAtDB.model_construct(
                     project_id=uuid4(),
                     node_id="node_3",
                     schema=NodeSchema(inputs={}, outputs={}),
@@ -571,7 +571,7 @@ _MANY_NODES: Final[int] = 60
                     progress=1.00,
                 ),
             ],
-            PipelineDetails.construct(
+            PipelineDetails.model_construct(
                 adjacency_list={
                     "node_1": ["node_2", "node_3"],
                     "node_2": ["node_3"],
@@ -597,5 +597,6 @@ async def test_compute_pipeline_details(
         pipeline_test_params.comp_tasks,
     )
     assert (
-        received_details.dict() == pipeline_test_params.expected_pipeline_details.dict()
+        received_details.model_dump()
+        == pipeline_test_params.expected_pipeline_details.model_dump()
     )

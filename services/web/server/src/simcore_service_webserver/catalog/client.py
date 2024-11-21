@@ -19,7 +19,7 @@ from models_library.api_schemas_catalog.service_access_rights import (
 )
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
@@ -146,7 +146,7 @@ async def get_service_resources(
         async with session.get(url) as resp:
             resp.raise_for_status()
             dict_response = await resp.json()
-            return parse_obj_as(ServiceResourcesDict, dict_response)
+            return TypeAdapter(ServiceResourcesDict).validate_python(dict_response)
 
 
 async def get_service_access_rights(
@@ -168,7 +168,7 @@ async def get_service_access_rights(
         ) as resp:
             resp.raise_for_status()
             body = await resp.json()
-            return ServiceAccessRightsGet.parse_obj(body)
+            return ServiceAccessRightsGet.model_validate(body)
 
 
 async def update_service(

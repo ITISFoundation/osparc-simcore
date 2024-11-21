@@ -44,7 +44,7 @@ class CompTasksRepository(BaseRepository):
             row = await result.fetchone()
             if not row:
                 raise ComputationalTaskNotFoundError(node_id=node_id)
-            return CompTaskAtDB.from_orm(row)
+            return CompTaskAtDB.model_validate(row)
 
     async def list_tasks(
         self,
@@ -55,7 +55,7 @@ class CompTasksRepository(BaseRepository):
             async for row in conn.execute(
                 sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")
             ):
-                task_db = CompTaskAtDB.from_orm(row)
+                task_db = CompTaskAtDB.model_validate(row)
                 tasks.append(task_db)
 
         return tasks
@@ -72,7 +72,7 @@ class CompTasksRepository(BaseRepository):
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                 )
             ):
-                task_db = CompTaskAtDB.from_orm(row)
+                task_db = CompTaskAtDB.model_validate(row)
                 tasks.append(task_db)
         return tasks
 
@@ -166,7 +166,7 @@ class CompTasksRepository(BaseRepository):
                 result = await conn.execute(on_update_stmt)
                 row = await result.fetchone()
                 assert row  # nosec
-                inserted_comp_tasks_db.append(CompTaskAtDB.from_orm(row))
+                inserted_comp_tasks_db.append(CompTaskAtDB.model_validate(row))
                 _logger.debug(
                     "inserted the following tasks in comp_tasks: %s",
                     f"{inserted_comp_tasks_db=}",
@@ -193,7 +193,7 @@ class CompTasksRepository(BaseRepository):
                 )
                 row = await result.fetchone()
                 assert row  # nosec
-                return CompTaskAtDB.from_orm(row)
+                return CompTaskAtDB.model_validate(row)
 
     async def mark_project_published_waiting_for_cluster_tasks_as_aborted(
         self, project_id: ProjectID

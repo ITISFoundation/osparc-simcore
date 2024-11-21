@@ -10,8 +10,16 @@ from models_library.api_schemas_storage import LinkType
 from models_library.basic_types import IDStr
 from models_library.services_io import BaseServiceIOModel
 from models_library.services_types import ServicePortKey
-from pydantic import AnyUrl, Field, PrivateAttr, ValidationError, validator
-from pydantic.tools import parse_obj_as
+from pydantic import (
+    AnyUrl,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    TypeAdapter,
+    ValidationError,
+    ValidationInfo,
+    field_validator,
+)
 from servicelib.progress_bar import ProgressBarData
 
 from ..node_ports_common.exceptions import (
@@ -56,7 +64,7 @@ def _check_if_symlink_is_valid(symlink: Path) -> None:
 def can_parse_as(v, *types) -> bool:
     try:
         for type_ in types:
-            parse_obj_as(type_, v)
+            TypeAdapter(type_).validate_python(v)
         return True
     except ValidationError:
         return False
@@ -70,17 +78,23 @@ class SetKWargs:
 class Port(BaseServiceIOModel):
     key: ServicePortKey
     widget: dict[str, Any] | None = None
-    default_value: DataItemValue | None = Field(None, alias="defaultValue")
+    default_value: DataItemValue | None = Field(
+        None, alias="defaultValue", union_mode="left_to_right"
+    )
 
-    value: DataItemValue | None = None
+    value: DataItemValue | None = Field(
+        None, validate_default=True, union_mode="left_to_right"
+    )
 
     # Different states of "value"
     #   - e.g. typically after resolving a port's link, a download link, ...
     #   - lazy evaluation using get_* members
     #   - used to run validation & conversion of resolved PortContentTypes values
     #   - excluded from all model export
-    value_item: ItemValue | None = Field(None, exclude=True)
-    value_concrete: ItemConcreteValue | None = Field(None, exclude=True)
+    value_item: ItemValue | None = Field(None, exclude=True, union_mode="left_to_right")
+    value_concrete: ItemConcreteValue | None = Field(
+        None, exclude=True, union_mode="left_to_right"
+    )
 
     # Function to convert from ItemValue -> ItemConcreteValue
     _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
@@ -90,15 +104,14 @@ class Port(BaseServiceIOModel):
     # flags
     _used_default_value: bool = PrivateAttr(False)
 
-    class Config(BaseServiceIOModel.Config):
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)
 
-    @validator("value", always=True)
+    @field_validator("value")
     @classmethod
-    def check_value(cls, v: DataItemValue, values: dict[str, Any]) -> DataItemValue:
+    def check_value(cls, v: DataItemValue, info: ValidationInfo) -> DataItemValue:
         if (
             v is not None
-            and (property_type := values.get("property_type"))
+            and (property_type := info.data.get("property_type"))
             and not isinstance(v, PortLink)
         ):
             if port_utils.is_file_type(property_type):
@@ -108,10 +121,10 @@ class Port(BaseServiceIOModel):
                     )
             elif property_type == "ref_contentSchema":
                 v, _ = validate_port_content(
-                    port_key=values.get("key"),
+                    port_key=info.data.get("key"),
                     value=v,
                     unit=None,
-                    content_schema=values.get("content_schema", {}),
+                    content_schema=info.data.get("content_schema", {}),
                 )
             elif isinstance(v, (list, dict)):
                 raise TypeError(
@@ -119,21 +132,21 @@ class Port(BaseServiceIOModel):
                 )
         return v
 
-    @validator("value_item", "value_concrete", pre=True)
+    @field_validator("value_item", "value_concrete", mode="before")
     @classmethod
-    def check_item_or_concrete_value(cls, v, values):
+    def check_item_or_concrete_value(cls, v, info: ValidationInfo):
         if (
             v
-            and v != values["value"]
-            and (property_type := values.get("property_type"))
+            and v != info.data["value"]
+            and (property_type := info.data.get("property_type"))
             and property_type == "ref_contentSchema"
             and not can_parse_as(v, Path, AnyUrl)
         ):
             v, _ = validate_port_content(
-                port_key=values.get("key"),
+                port_key=info.data.get("key"),
                 value=v,
                 unit=None,
-                content_schema=values.get("content_schema", {}),
+                content_schema=info.data.get("content_schema", {}),
             )
 
         return v
@@ -209,7 +222,9 @@ class Port(BaseServiceIOModel):
 
             if isinstance(self.value, DownloadLink):
                 # generic download link for a file
-                url: AnyUrl = self.value.download_link
+                url: AnyUrl = TypeAdapter(AnyUrl).validate_python(
+                    self.value.download_link
+                )
                 return url
 
             # otherwise, this is a BasicValueTypes

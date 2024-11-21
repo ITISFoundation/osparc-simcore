@@ -14,7 +14,7 @@ from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
 from models_library.products import ProductName
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from respx.router import MockRouter
 from starlette.testclient import TestClient
 from yarl import URL
@@ -66,7 +66,7 @@ async def test_get_service_access_rights(
         headers={"x-simcore-products-name": target_product},
     )
     assert response.status_code == 200
-    data = parse_obj_as(ServiceAccessRightsGet, response.json())
+    data = TypeAdapter(ServiceAccessRightsGet).validate_python(response.json())
     assert data.service_key == service_to_check["key"]
     assert data.service_version == service_to_check["version"]
     assert data.gids_with_access_rights == {
@@ -108,7 +108,7 @@ async def test_get_service_access_rights_with_more_gids(
         headers={"x-simcore-products-name": other_product},
     )
     assert response.status_code == 200
-    data = parse_obj_as(ServiceAccessRightsGet, response.json())
+    data = TypeAdapter(ServiceAccessRightsGet).validate_python(response.json())
     assert data.service_key == service_to_check["key"]
     assert data.service_version == service_to_check["version"]
     assert data.gids_with_access_rights == {

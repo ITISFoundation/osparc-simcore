@@ -9,7 +9,6 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
-from pydantic import parse_obj_as
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.wallet_to_groups import wallet_to_groups
 from simcore_postgres_database.models.wallets import wallets
@@ -47,7 +46,7 @@ async def create_wallet(
             .returning(literal_column("*"))
         )
         row = await result.first()
-        return parse_obj_as(WalletDB, row)
+        return WalletDB.model_validate(row)
 
 
 _SELECTION_ARGS = (
@@ -98,7 +97,7 @@ async def list_wallets_for_user(
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         rows = await result.fetchall() or []
-        output: list[UserWalletDB] = [parse_obj_as(UserWalletDB, row) for row in rows]
+        output: list[UserWalletDB] = [UserWalletDB.model_validate(row) for row in rows]
         return output
 
 
@@ -160,7 +159,7 @@ async def get_wallet_for_user(
                 wallet_id=wallet_id,
                 product_name=product_name,
             )
-        return parse_obj_as(UserWalletDB, row)
+        return UserWalletDB.model_validate(row)
 
 
 async def get_wallet(
@@ -188,7 +187,7 @@ async def get_wallet(
         row = await result.first()
         if row is None:
             raise WalletNotFoundError(reason=f"Wallet {wallet_id} not found.")
-        return parse_obj_as(WalletDB, row)
+        return WalletDB.model_validate(row)
 
 
 async def update_wallet(
@@ -219,7 +218,7 @@ async def update_wallet(
         row = await result.first()
         if row is None:
             raise WalletNotFoundError(reason=f"Wallet {wallet_id} not found.")
-        return parse_obj_as(WalletDB, row)
+        return WalletDB.model_validate(row)
 
 
 async def delete_wallet(

@@ -9,6 +9,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any, Literal
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputGet,
     ProjectInputUpdate,
@@ -20,9 +21,8 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
 from models_library.utils.services_io import JsonSchemaDict
-from pydantic import BaseModel, Field, parse_obj_as
+from pydantic import BaseModel, Field, TypeAdapter
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -88,7 +88,7 @@ async def _get_validated_workbench_model(
         include_state=False,
     )
 
-    return parse_obj_as(dict[NodeID, Node], project["workbench"])
+    return TypeAdapter(dict[NodeID, Node]).validate_python(project["workbench"])
 
 
 routes = web.RouteTableDef()
@@ -103,7 +103,7 @@ routes = web.RouteTableDef()
 @permission_required("project.read")
 @_handle_project_exceptions
 async def get_project_inputs(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     assert request.app  # nosec
@@ -129,7 +129,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
 @_handle_project_exceptions
 async def update_project_inputs(request: web.Request) -> web.Response:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     inputs_updates = await parse_request_body_as(list[ProjectInputUpdate], request)
 
@@ -148,7 +148,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
             raise web.HTTPBadRequest(reason=f"Invalid input key [{node_id}]")
 
         workbench[node_id].outputs = {KeyIDStr("out_1"): input_update.value}
-        partial_workbench_data[node_id] = workbench[node_id].dict(
+        partial_workbench_data[node_id] = workbench[node_id].model_dump(
             include={"outputs"}, exclude_unset=True
         )
 
@@ -169,7 +169,9 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         partial_workbench_data=jsonable_encoder(partial_workbench_data),
     )
 
-    workbench = parse_obj_as(dict[NodeID, Node], updated_project["workbench"])
+    workbench = TypeAdapter(dict[NodeID, Node]).validate_python(
+        updated_project["workbench"]
+    )
     inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
 
     return _web_json_response_enveloped(
@@ -192,7 +194,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @_handle_project_exceptions
 async def get_project_outputs(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     assert request.app  # nosec
@@ -239,7 +241,7 @@ class ProjectMetadataPortGet(BaseModel):
 @permission_required("project.read")
 @_handle_project_exceptions
 async def list_project_metadata_ports(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     assert request.app  # nosec

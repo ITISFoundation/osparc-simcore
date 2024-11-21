@@ -11,7 +11,7 @@ import jinja2
 import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
-from pydantic import parse_file_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from servicelib.common_headers import (
@@ -42,7 +42,7 @@ def mocked_backend_services_apis_for_delete_non_existing_project(
     template = environment.get_template(mock_name)
 
     def _response(request: httpx.Request, project_id: str):
-        capture = HttpApiCallCaptureModel.parse_raw(
+        capture = HttpApiCallCaptureModel.model_validate_json(
             template.render(project_id=project_id)
         )
         return httpx.Response(
@@ -91,9 +91,8 @@ def mocked_backend_services_apis_for_create_and_delete_solver_job(
     mock_name = "on_create_job.json"
 
     # fixture
-    captures = parse_file_as(
-        list[HttpApiCallCaptureModel],
-        project_tests_dir / "mocks" / mock_name,
+    captures = TypeAdapter(list[HttpApiCallCaptureModel]).validate_json(
+        Path(project_tests_dir / "mocks" / mock_name).read_text()
     )
 
     capture = captures[0]
@@ -137,10 +136,10 @@ async def test_create_and_delete_solver_job(
                 "x": 3.14,
                 "n": 42,
             }
-        ).dict(),
+        ).model_dump(),
     )
     assert resp.status_code == status.HTTP_201_CREATED
-    job = Job.parse_obj(resp.json())
+    job = Job.model_validate(resp.json())
 
     # Delete Job after creation
     resp = await client.delete(
@@ -224,7 +223,7 @@ async def test_create_job(
                 "x": 3.14,
                 "n": 42,
             }
-        ).dict(),
+        ).model_dump(),
     )
     assert resp.status_code == status.HTTP_201_CREATED
-    job = Job.parse_obj(resp.json())
+    job = Job.model_validate(resp.json())

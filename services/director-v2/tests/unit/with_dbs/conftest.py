@@ -6,7 +6,6 @@
 
 
 import datetime
-import json
 from collections.abc import Awaitable, Callable, Iterator
 from typing import Any, cast
 from uuid import uuid4
@@ -60,7 +59,7 @@ def pipeline(
             )
             assert result
 
-            new_pipeline = CompPipelineAtDB.from_orm(result.first())
+            new_pipeline = CompPipelineAtDB.model_validate(result.first())
             created_pipeline_ids.append(f"{new_pipeline.project_id}")
             return new_pipeline
 
@@ -93,7 +92,9 @@ def tasks(
                 "inputs": (
                     {
                         key: (
-                            json.loads(value.json(by_alias=True, exclude_unset=True))
+                            value.model_dump(
+                                mode="json", by_alias=True, exclude_unset=True
+                            )
                             if isinstance(value, BaseModel)
                             else value
                         )
@@ -105,7 +106,9 @@ def tasks(
                 "outputs": (
                     {
                         key: (
-                            json.loads(value.json(by_alias=True, exclude_unset=True))
+                            value.model_dump(
+                                mode="json", by_alias=True, exclude_unset=True
+                            )
                             if isinstance(value, BaseModel)
                             else value
                         )
@@ -114,9 +117,9 @@ def tasks(
                     if node_data.outputs
                     else {}
                 ),
-                "image": Image(name=node_data.key, tag=node_data.version).dict(  # type: ignore
+                "image": Image(name=node_data.key, tag=node_data.version).model_dump(
                     by_alias=True, exclude_unset=True
-                ),  # type: ignore
+                ),
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
                 "submit": datetime.datetime.now(tz=datetime.UTC),
@@ -135,7 +138,7 @@ def tasks(
                     .values(**task_config)
                     .returning(sa.literal_column("*"))
                 )
-                new_task = CompTaskAtDB.from_orm(result.first())
+                new_task = CompTaskAtDB.model_validate(result.first())
                 created_tasks.append(new_task)
             created_task_ids.extend([t.task_id for t in created_tasks if t.task_id])
         return created_tasks
@@ -206,7 +209,7 @@ def runs(
                 .values(**jsonable_encoder(run_config))
                 .returning(sa.literal_column("*"))
             )
-            new_run = CompRunsAtDB.from_orm(result.first())
+            new_run = CompRunsAtDB.model_validate(result.first())
             created_run_ids.append(new_run.run_id)
             return new_run
 
@@ -224,10 +227,10 @@ def cluster(
     created_cluster_ids: list[str] = []
 
     def creator(user: dict[str, Any], **cluster_kwargs) -> Cluster:
-        cluster_config = Cluster.Config.schema_extra["examples"][1]
+        cluster_config = Cluster.model_config["json_schema_extra"]["examples"][1]
         cluster_config["owner"] = user["primary_gid"]
         cluster_config.update(**cluster_kwargs)
-        new_cluster = Cluster.parse_obj(cluster_config)
+        new_cluster = Cluster.model_validate(cluster_config)
         assert new_cluster
 
         with postgres_db.connect() as conn:
@@ -242,9 +245,14 @@ def cluster(
                 for gid, rights in cluster_kwargs["access_rights"].items():
                     conn.execute(
                         pg_insert(cluster_to_groups)
-                        .values(cluster_id=created_cluster.id, gid=gid, **rights.dict())
+                        .values(
+                            cluster_id=created_cluster.id,
+                            gid=gid,
+                            **rights.model_dump(),
+                        )
                         .on_conflict_do_update(
-                            index_elements=["gid", "cluster_id"], set_=rights.dict()
+                            index_elements=["gid", "cluster_id"],
+                            set_=rights.model_dump(),
                         )
                     )
             access_rights_in_db = {}

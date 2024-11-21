@@ -38,7 +38,7 @@ import httpx
 import pytest
 import respx
 import yaml
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.docker import get_service_published_port
 from pytest_simcore.helpers.host import get_localhost_ip
@@ -213,9 +213,9 @@ def create_respx_mock_from_capture(
         assert capture_path.suffix == ".json"
 
         if services_mocks_enabled:
-            captures: list[HttpApiCallCaptureModel] = parse_obj_as(
-                list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
-            )
+            captures: list[HttpApiCallCaptureModel] = TypeAdapter(
+                list[HttpApiCallCaptureModel]
+            ).validate_python(json.loads(capture_path.read_text()))
 
             if len(side_effects_callbacks) > 0:
                 assert len(side_effects_callbacks) == len(captures)

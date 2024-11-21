@@ -36,7 +36,7 @@ class _ProductsRequestContext(RequestParameters):
 @login_required
 @permission_required("product.invitations.create")
 async def generate_invitation(request: web.Request):
-    req_ctx = _ProductsRequestContext.parse_obj(request)
+    req_ctx = _ProductsRequestContext.model_validate(request)
     body = await parse_request_body_as(GenerateInvitation, request)
 
     _, user_email = await get_user_name_and_email(request.app, user_id=req_ctx.user_id)
@@ -56,16 +56,16 @@ async def generate_invitation(request: web.Request):
     assert generated.product == req_ctx.product_name  # nosec
     assert generated.guest == body.guest  # nosec
 
-    url = URL(generated.invitation_url)
+    url = URL(f"{generated.invitation_url}")
     invitation_link = request.url.with_path(url.path).with_fragment(url.raw_fragment)
 
     invitation = InvitationGenerated(
         product_name=generated.product,
         issuer=generated.issuer,
-        guest=generated.guest,  # type: ignore[arg-type]
+        guest=generated.guest,
         trial_account_days=generated.trial_account_days,
         extra_credits_in_usd=generated.extra_credits_in_usd,
         created=generated.created,
         invitation_link=f"{invitation_link}",  # type: ignore[arg-type]
     )
-    return envelope_json_response(invitation.dict(exclude_none=True))
+    return envelope_json_response(invitation.model_dump(exclude_none=True))

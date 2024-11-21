@@ -2,7 +2,14 @@ from datetime import datetime
 from enum import auto
 from typing import TypeAlias
 
-from pydantic import BaseModel, Field, PositiveInt, validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    ValidationInfo,
+    field_validator,
+)
 
 from .access_rights import AccessRights
 from .users import GroupID
@@ -21,18 +28,16 @@ class WorkspaceQuery(BaseModel):
     workspace_scope: WorkspaceScope
     workspace_id: PositiveInt | None = None
 
-    @validator("workspace_id", pre=True, always=True)
+    @field_validator("workspace_id", mode="before")
     @classmethod
-    def validate_workspace_id(cls, value, values):
-        scope = values.get("workspace_scope")
+    def validate_workspace_id(cls, value, info: ValidationInfo):
+        scope = info.data.get("workspace_scope")
         if scope == WorkspaceScope.SHARED and value is None:
-            raise ValueError(
-                "workspace_id must be provided when workspace_scope is SHARED."
-            )
+            msg = "workspace_id must be provided when workspace_scope is SHARED."
+            raise ValueError(msg)
         if scope != WorkspaceScope.SHARED and value is not None:
-            raise ValueError(
-                "workspace_id should be None when workspace_scope is not SHARED."
-            )
+            msg = "workspace_id should be None when workspace_scope is not SHARED."
+            raise ValueError(msg)
         return value
 
 
@@ -59,13 +64,11 @@ class WorkspaceDB(BaseModel):
         description="Timestamp of last modification",
     )
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserWorkspaceAccessRightsDB(WorkspaceDB):
     my_access_rights: AccessRights
     access_rights: dict[GroupID, AccessRights]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

@@ -1,0 +1,8 @@
+#
+# Specifies third-party dependencies for 'common-library'
+#
+--constraint ../../../requirements/constraints.txt
+
+orjson
+pydantic
+pydantic-extra-types

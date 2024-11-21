@@ -161,7 +161,7 @@ async def test_rpc_catalog_client(
             "description": "bar",
             "version_display": "this is a nice version",
             "description_ui": True,  # owner activates wiki view
-        },
+        },  # type: ignore
     )
 
     assert updated.key == got.key
@@ -392,7 +392,7 @@ async def test_rpc_get_service_access_rights(
         service_key=service_key,
         service_version=service_version,
     )
-    assert updated_service.dict(include={"name", "description"}) == {
+    assert updated_service.model_dump(include={"name", "description"}) == {
         "name": "foo",
         "description": "bar",
     }

@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections.abc import Callable
 from math import ceil
@@ -9,7 +8,7 @@ from aiohttp import web
 from aiohttp.client import ClientSession
 from models_library.api_schemas_storage import DatCoreDatasetName
 from models_library.users import UserID
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
@@ -73,7 +72,7 @@ async def _request(
     except aiohttp.ClientResponseError as exc:
         raise _DatcoreAdapterResponseError(status=exc.status, reason=f"{exc}") from exc
 
-    except asyncio.TimeoutError as exc:
+    except TimeoutError as exc:
         msg = f"datcore-adapter server timed-out: {exc}"
         raise DatcoreAdapterTimeoutError(msg) from exc
 
@@ -122,7 +121,7 @@ async def check_service_health(app: web.Application) -> bool:
     session: ClientSession = get_client_session(app)
     try:
         await session.get(url, raise_for_status=True)
-    except (asyncio.TimeoutError, aiohttp.ClientError):
+    except (TimeoutError, aiohttp.ClientError):
         return False
     return True
 
@@ -187,7 +186,7 @@ async def list_all_files_metadatas_in_dataset(
         ),
     )
     return [
-        FileMetaData.construct(
+        FileMetaData.model_construct(
             file_uuid=d["path"],
             location_id=DATCORE_ID,
             location=DATCORE_STR,
@@ -229,7 +228,7 @@ async def get_file_download_presigned_link(
         dict[str, Any],
         await _request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
     )
-    url: AnyUrl = parse_obj_as(AnyUrl, file_download_data["link"])
+    url: AnyUrl = TypeAdapter(AnyUrl).validate_python(file_download_data["link"])
     return url
 
 

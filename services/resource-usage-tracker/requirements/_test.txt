@@ -2,6 +2,10 @@ alembic==1.13.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+annotated-types==0.7.0
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
 anyio==4.3.0
@@ -182,11 +186,15 @@ py-partiql-parser==0.5.6
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==1.10.14
+pydantic==2.9.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
+pydantic-core==2.23.4
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 pyparsing==3.1.2
     # via
     #   -c requirements/_base.txt
@@ -308,8 +316,9 @@ typing-extensions==4.10.0
     #   cfn-lint
     #   mypy
     #   pydantic
+    #   pydantic-core
     #   sqlalchemy2-stubs
-urllib3==2.0.7
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

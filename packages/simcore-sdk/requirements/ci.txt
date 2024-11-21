@@ -16,6 +16,7 @@
 # installs this repo's packages
 simcore-postgres-database @ ../postgres-database
 pytest-simcore @ ../pytest-simcore
+simcore-common-library @ ../common-library
 simcore-models-library @ ../models-library
 simcore-settings-library @ ../settings-library/
 simcore-service-library @ ../service-library/

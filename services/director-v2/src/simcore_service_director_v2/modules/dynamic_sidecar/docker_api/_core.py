@@ -1,10 +1,12 @@
 import json
 import logging
+import re
 from collections.abc import Mapping
 from typing import Any, Final
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
+from common_library.json_serialization import json_dumps
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.docker import to_simcore_runtime_docker_label_key
@@ -12,7 +14,6 @@ from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkName
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
-from models_library.utils.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from starlette import status
 from tenacity import TryAgain, retry
@@ -58,7 +59,7 @@ async def get_swarm_network(simcore_services_network_name: DockerNetworkName) ->
             f"Swarm network name (searching for '*{simcore_services_network_name}*') "
             f"is not configured.Found following networks: {networks}"
         )
-        raise DynamicSidecarError(msg)
+        raise DynamicSidecarError(msg=msg)
     return networks[0]
 
 
@@ -88,7 +89,12 @@ async def create_network(network_config: dict[str, Any]) -> NetworkId:
             # finally raise an error if a network cannot be spawned
             # pylint: disable=raise-missing-from
             msg = f"Could not create or recover a network ID for {network_config}"
-            raise DynamicSidecarError(msg) from e
+            raise DynamicSidecarError(msg=msg) from e
+
+
+def _to_snake_case(string: str) -> str:
+    # Convert camelCase or PascalCase to snake_case
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", string).lower()
 
 
 async def create_service_and_get_id(
@@ -100,6 +106,8 @@ async def create_service_and_get_id(
         kwargs = jsonable_encoder(
             create_service_data, by_alias=True, exclude_unset=True
         )
+        kwargs = {_to_snake_case(k): v for k, v in kwargs.items()}
+
         logging.debug("Creating service with\n%s", json.dumps(kwargs, indent=1))
         service_start_result = await client.services.create(**kwargs)
 
@@ -111,7 +119,7 @@ async def create_service_and_get_id(
 
     if "ID" not in service_start_result:
         msg = f"Error while starting service: {service_start_result!s}"
-        raise DynamicSidecarError(msg)
+        raise DynamicSidecarError(msg=msg)
     service_id: ServiceId = service_start_result["ID"]
     return service_id
 
@@ -151,7 +159,10 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
             last_task: Mapping[str, Any] = sorted_tasks[-1]
             return last_task
     except GenericDockerError as err:
-        if err.original_exception.status == status.HTTP_404_NOT_FOUND:
+        if (
+            err.error_context()["original_exception"].status
+            == status.HTTP_404_NOT_FOUND
+        ):
             raise DockerServiceNotFoundError(service_id=service_id) from err
         raise
 
@@ -197,7 +208,7 @@ async def get_dynamic_sidecar_placement(
     docker_node_id: None | str = task.get("NodeID", None)
     if not docker_node_id:
         msg = f"Could not find an assigned NodeID for service_id={service_id}. Last task inspect result: {task}"
-        raise DynamicSidecarError(msg)
+        raise DynamicSidecarError(msg=msg)
 
     return docker_node_id
 

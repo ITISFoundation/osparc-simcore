@@ -86,7 +86,7 @@ class ServiceInputGetFactory:
 
         if ureg and (unit_html := get_html_formatted_unit(port, ureg)):
             # we know data is ok since it was validated above
-            return ServiceInputGet.construct(
+            return ServiceInputGet.model_construct(
                 key_id=input_key,
                 unit_long=unit_html.long,
                 unit_short=unit_html.short,
@@ -123,7 +123,7 @@ class ServiceOutputGetFactory:
         unit_html: UnitHtmlFormat | None
         if ureg and (unit_html := get_html_formatted_unit(port, ureg)):
             # we know data is ok since it was validated above
-            return ServiceOutputGet.construct(
+            return ServiceOutputGet.model_construct(
                 key_id=output_key,
                 unit_long=unit_html.long,
                 unit_short=unit_html.short,

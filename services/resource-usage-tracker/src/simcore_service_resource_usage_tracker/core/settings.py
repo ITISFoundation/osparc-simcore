@@ -2,7 +2,7 @@ import datetime
 from functools import cached_property
 
 from models_library.basic_types import BootModeEnum
-from pydantic import Field, PositiveInt, validator
+from pydantic import AliasChoices, Field, PositiveInt, field_validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
@@ -46,25 +46,32 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     RESOURCE_USAGE_TRACKER_DEBUG: bool = Field(
         default=False,
         description="Debug mode",
-        env=["RESOURCE_USAGE_TRACKER_DEBUG", "DEBUG"],
+        validation_alias=AliasChoices(
+            "RESOURCE_USAGE_TRACKER_DEBUG",
+            "DEBUG",
+        ),
     )
     RESOURCE_USAGE_TRACKER_LOGLEVEL: LogLevel = Field(
         default=LogLevel.INFO,
-        env=["RESOURCE_USAGE_TRACKER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        validation_alias=AliasChoices(
+            "RESOURCE_USAGE_TRACKER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+        ),
     )
     RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=AliasChoices(
             "RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING: dict[
         LoggerName, list[MessageSubstring]
     ] = Field(
         default_factory=dict,
-        env=["RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        validation_alias=AliasChoices(
+            "RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
@@ -72,7 +79,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
         return self.RESOURCE_USAGE_TRACKER_LOGLEVEL
 
-    @validator("RESOURCE_USAGE_TRACKER_LOGLEVEL", pre=True)
+    @field_validator("RESOURCE_USAGE_TRACKER_LOGLEVEL", mode="before")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
@@ -86,16 +93,18 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
     """
 
     RESOURCE_USAGE_TRACKER_PROMETHEUS: PrometheusSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     RESOURCE_USAGE_TRACKER_POSTGRES: PostgresSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True},
     )
 
-    RESOURCE_USAGE_TRACKER_REDIS: RedisSettings = Field(auto_default_from_env=True)
+    RESOURCE_USAGE_TRACKER_REDIS: RedisSettings = Field(
+        json_schema_extra={"auto_default_from_env": True},
+    )
     RESOURCE_USAGE_TRACKER_RABBITMQ: RabbitSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True},
     )
 
 
@@ -118,7 +127,19 @@ class ApplicationSettings(MinimalApplicationSettings):
         description="Heartbeat couter limit when RUT considers service as unhealthy.",
     )
     RESOURCE_USAGE_TRACKER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
-    RESOURCE_USAGE_TRACKER_S3: S3Settings | None = Field(auto_default_from_env=True)
-    RESOURCE_USAGE_TRACKER_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+    RESOURCE_USAGE_TRACKER_S3: S3Settings | None = Field(
+        json_schema_extra={"auto_default_from_env": True},
     )
+    RESOURCE_USAGE_TRACKER_TRACING: TracingSettings | None = Field(
+        description="settings for opentelemetry tracing",
+        json_schema_extra={"auto_default_from_env": True},
+    )
+
+    @field_validator(
+        "RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC", mode="before"
+    )
+    @classmethod
+    def _validate_interval(cls, v):
+        if isinstance(v, str) and v.isnumeric():
+            return int(v)
+        return v

@@ -1,5 +1,5 @@
 from copy import deepcopy
-from datetime import datetime
+from datetime import UTC, datetime
 from pprint import pformat
 from typing import Any
 
@@ -26,12 +26,12 @@ def test_user_models_examples(
         assert model_instance, f"Failed with {name}"
 
         model_enveloped = Envelope[model_cls].from_data(
-            model_instance.dict(by_alias=True)
+            model_instance.model_dump(by_alias=True)
         )
         model_array_enveloped = Envelope[list[model_cls]].from_data(
             [
-                model_instance.dict(by_alias=True),
-                model_instance.dict(by_alias=True),
+                model_instance.model_dump(by_alias=True),
+                model_instance.model_dump(by_alias=True),
             ]
         )
 
@@ -40,19 +40,19 @@ def test_user_models_examples(
 
 
 def test_profile_get_expiration_date(faker: Faker):
-    fake_expiration = datetime.utcnow()
+    fake_expiration = datetime.now(UTC)
 
     profile = ProfileGet(
         id=1,
         login=faker.email(),
         role=UserRole.ADMIN,
-        expiration_date=fake_expiration,
+        expiration_date=fake_expiration.date(),
         preferences={},
     )
 
     assert fake_expiration.date() == profile.expiration_date
 
-    body = jsonable_encoder(profile.dict(exclude_unset=True, by_alias=True))
+    body = jsonable_encoder(profile.model_dump(exclude_unset=True, by_alias=True))
     assert body["expirationDate"] == fake_expiration.date().isoformat()
 
 
@@ -68,7 +68,7 @@ def test_auto_compute_gravatar(faker: Faker):
     )
 
     envelope = Envelope[Any](data=profile)
-    data = envelope.dict(**RESPONSE_MODEL_POLICY)["data"]
+    data = envelope.model_dump(**RESPONSE_MODEL_POLICY)["data"]
 
     assert data["gravatar_id"]
     assert data["id"] == profile.id
@@ -81,7 +81,7 @@ def test_auto_compute_gravatar(faker: Faker):
 
 @pytest.mark.parametrize("user_role", [u.name for u in UserRole])
 def test_profile_get_role(user_role: str):
-    for example in ProfileGet.Config.schema_extra["examples"]:
+    for example in ProfileGet.model_config["json_schema_extra"]["examples"]:
         data = deepcopy(example)
         data["role"] = user_role
         m1 = ProfileGet(**data)
@@ -134,5 +134,5 @@ def test_parsing_output_of_get_user_profile():
         },
     }
 
-    profile = ProfileGet.parse_obj(result_from_db_query_and_composition)
-    assert "password" not in profile.dict(exclude_unset=True)
+    profile = ProfileGet.model_validate(result_from_db_query_and_composition)
+    assert "password" not in profile.model_dump(exclude_unset=True)

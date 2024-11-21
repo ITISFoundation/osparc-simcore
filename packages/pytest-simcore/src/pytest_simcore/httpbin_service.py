@@ -14,7 +14,7 @@ import pytest
 import requests
 import requests.exceptions
 from docker.errors import APIError
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.retry import retry_if_exception_type
@@ -56,7 +56,7 @@ def httpbin_base_url() -> Iterable[HttpUrl]:
 
         _wait_until_httpbin_is_responsive()
 
-        yield parse_obj_as(HttpUrl, base_url)
+        yield TypeAdapter(HttpUrl).validate_python(base_url)
 
     finally:
         with suppress(APIError):

@@ -1,4 +1,5 @@
-from pydantic import BaseModel, BaseSettings, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Registry(BaseModel):
@@ -26,9 +27,9 @@ class AppSettings(BaseSettings):
     COMPOSE_VERSION: str = Field(
         "3.7", description="version of the docker-compose spec"
     )
-
-    class Config:
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(
+        env_file_encoding="utf-8",
+    )
 
     # TODO: load from ~/.osparc/service-integration.json or env file
     # TODO: add access to secrets

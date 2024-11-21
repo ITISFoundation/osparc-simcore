@@ -36,6 +36,9 @@
     "thumbnail": "https://via.placeholder.com/170x120.png",
     "creationDate": "2023-10-10T20:15:22.096Z",
     "lastChangeDate": "2023-10-10T20:15:22.096Z",
+    "workspaceId": 3,
+    "folderId": 31,
+    "trashedAt": null,
     "workbench": {
      "4b03863d-107a-5c77-a3ca-c5ba1d7048c0": {
       "key": "simcore/services/comp/isolve",

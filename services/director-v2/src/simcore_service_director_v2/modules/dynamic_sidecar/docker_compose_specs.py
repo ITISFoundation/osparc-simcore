@@ -2,6 +2,7 @@ import logging
 from copy import deepcopy
 from typing import Any, Final, TypeAlias, TypedDict
 
+from common_library.json_serialization import json_dumps
 from fastapi.applications import FastAPI
 from models_library.docker import DockerGenericTag, StandardSimcoreDockerLabels
 from models_library.products import ProductName
@@ -21,7 +22,6 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
-from models_library.utils.json_serialization import json_dumps
 from pydantic import ByteSize
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
@@ -239,7 +239,7 @@ def _update_container_labels(
             spec_service_key, default_limits
         )
 
-        label_keys = StandardSimcoreDockerLabels.construct(
+        label_keys = StandardSimcoreDockerLabels.model_construct(
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,

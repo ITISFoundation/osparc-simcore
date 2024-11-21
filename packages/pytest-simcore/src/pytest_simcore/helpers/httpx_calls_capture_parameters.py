@@ -1,28 +1,26 @@
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .httpx_calls_capture_errors import OpenApiSpecError
 
 
 class CapturedParameterSchema(BaseModel):
-    title: str | None
-    type_: Literal["str", "int", "float", "bool"] | None = Field(
-        None, alias="type", optional=True
-    )
-    pattern: str | None
-    format_: Literal["uuid"] | None = Field(None, alias="format", optional=True)
-    exclusiveMinimum: bool | None
-    minimum: int | None
-    anyOf: list["CapturedParameterSchema"] | None
-    allOf: list["CapturedParameterSchema"] | None
-    oneOf: list["CapturedParameterSchema"] | None
+    title: str | None = None
+    type_: Literal["str", "int", "float", "bool"] | None = Field(None, alias="type")
+    pattern: str | None = None
+    format_: Literal["uuid"] | None = Field(None, alias="format")
+    exclusiveMinimum: bool | None = None
+    minimum: int | float | None = None
+    anyOf: list["CapturedParameterSchema"] | None = None
+    allOf: list["CapturedParameterSchema"] | None = None
+    oneOf: list["CapturedParameterSchema"] | None = None
 
     class Config:
         validate_always = True
         allow_population_by_field_name = True
 
-    @validator("type_", pre=True)
+    @field_validator("type_", mode="before")
     @classmethod
     def preprocess_type_(cls, val):
         if val == "string":
@@ -33,18 +31,18 @@ class CapturedParameterSchema(BaseModel):
             val = "bool"
         return val
 
-    @root_validator(pre=False)
+    @model_validator(mode="after")
     @classmethod
     def check_compatibility(cls, values):
-        type_ = values.get("type_")
-        pattern = values.get("pattern")
-        format_ = values.get("format_")
-        anyOf = values.get("anyOf")
-        allOf = values.get("allOf")
-        oneOf = values.get("oneOf")
+        type_ = values.type_
+        pattern = values.pattern
+        format_ = values.format_
+        anyOf = values.anyOf
+        allOf = values.allOf
+        oneOf = values.oneOf
         if not any([type_, oneOf, anyOf, allOf]):
             type_ = "str"  # this default is introduced because we have started using json query params in the webserver
-            values["type_"] = type_
+            values.type_ = type_
         if type_ != "str" and any([pattern, format_]):
             msg = f"For {type_=} both {pattern=} and {format_=} must be None"
             raise ValueError(msg)
@@ -68,10 +66,20 @@ class CapturedParameterSchema(BaseModel):
         if self.oneOf:
             msg = "Current version cannot compute regex patterns in case of oneOf. Please go ahead and implement it yourself."
             raise NotImplementedError(msg)
-        if self.anyOf:
-            return "|".join([elm.regex_pattern for elm in self.anyOf])
-        if self.allOf:
-            return "&".join([elm.regex_pattern for elm in self.allOf])
+        if self.anyOf is not None:
+            return "|".join(
+                [
+                    elm.regex_pattern
+                    for elm in self.anyOf  # pylint:disable=not-an-iterable
+                ]
+            )
+        if self.allOf is not None:
+            return "&".join(
+                [
+                    elm.regex_pattern
+                    for elm in self.allOf  # pylint:disable=not-an-iterable
+                ]
+            )
 
         # now deal with non-recursive cases
         pattern: str | None = None
@@ -96,14 +104,11 @@ class CapturedParameter(BaseModel):
     in_: Literal["path", "header", "query"] = Field(..., alias="in")
     name: str
     required: bool
-    schema_: CapturedParameterSchema = Field(..., alias="schema")
+    schema_: Annotated[CapturedParameterSchema, Field(..., alias="schema")]
     response_value: str | None = (
         None  # attribute for storing the params value in a concrete response
     )
-
-    class Config:
-        validate_always = True
-        allow_population_by_field_name = True
+    model_config = ConfigDict(validate_default=True, populate_by_name=True)
 
     def __hash__(self):
         return hash(

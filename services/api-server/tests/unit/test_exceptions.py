@@ -67,7 +67,7 @@ async def test_raised_http_exception(client: httpx.AsyncClient):
 
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 
-    got = ErrorGet.parse_raw(response.text)
+    got = ErrorGet.model_validate_json(response.text)
     assert got.errors == ["fail message"]
 
 
@@ -78,7 +78,7 @@ async def test_fastapi_http_exception_respond_with_error_model(
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    got = ErrorGet.parse_raw(response.text)
+    got = ErrorGet.model_validate_json(response.text)
     assert got.errors == [HTTPStatus(response.status_code).phrase]
 
 
@@ -87,7 +87,7 @@ async def test_custom_error_handlers(client: httpx.AsyncClient):
 
     assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY
 
-    got = ErrorGet.parse_raw(response.text)
+    got = ErrorGet.model_validate_json(response.text)
     assert got.errors == [f"{MissingWalletError(job_id=123)}"]
 
 

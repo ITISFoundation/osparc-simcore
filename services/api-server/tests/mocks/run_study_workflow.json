@@ -301,6 +301,9 @@
     "thumbnail": "",
     "creationDate": "2024-04-15T15:50:28.196Z",
     "lastChangeDate": "2024-04-15T15:50:28.196Z",
+    "workspaceId": 3,
+    "folderId": 3,
+    "trashedAt": null,
     "workbench": {
      "ab014072-a95f-5775-bb34-5582a13245a6": {
       "key": "simcore/services/frontend/iterator-consumer/probe/file",

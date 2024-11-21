@@ -103,7 +103,7 @@ _WALLET_STATUS_MAP = {
 
 def _get_lrt_urls(lrt_response: httpx.Response):
     # WARNING: this function is patched in patch_lrt_response_urls fixture
-    data = Envelope[TaskGet].parse_raw(lrt_response.text).data
+    data = Envelope[TaskGet].model_validate_json(lrt_response.text).data
     assert data is not None  # nosec
 
     return data.status_href, data.result_href
@@ -208,7 +208,7 @@ class AuthSession:
             )
             resp.raise_for_status()
 
-            return Page[ProjectGet].parse_raw(resp.text)
+            return Page[ProjectGet].model_validate_json(resp.text)
 
     async def _wait_for_long_running_task_results(self, lrt_response: httpx.Response):
         status_url, result_url = _get_lrt_urls(lrt_response)
@@ -225,7 +225,9 @@ class AuthSession:
                     url=status_url, cookies=self.session_cookies
                 )
                 get_response.raise_for_status()
-                task_status = Envelope[TaskStatus].parse_raw(get_response.text).data
+                task_status = (
+                    Envelope[TaskStatus].model_validate_json(get_response.text).data
+                )
                 assert task_status is not None  # nosec
                 if not task_status.done:
                     msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
@@ -235,7 +237,7 @@ class AuthSession:
             f"{result_url}", cookies=self.session_cookies
         )
         result_response.raise_for_status()
-        return Envelope.parse_raw(result_response.text).data
+        return Envelope.model_validate_json(result_response.text).data
 
     # PROFILE --------------------------------------------------
 
@@ -243,7 +245,9 @@ class AuthSession:
     async def get_me(self) -> Profile:
         response = await self.client.get("/me", cookies=self.session_cookies)
         response.raise_for_status()
-        profile: Profile | None = Envelope[Profile].parse_raw(response.text).data
+        profile: Profile | None = (
+            Envelope[Profile].model_validate_json(response.text).data
+        )
         assert profile is not None  # nosec
         return profile
 
@@ -251,7 +255,7 @@ class AuthSession:
     async def update_me(self, *, profile_update: ProfileUpdate) -> Profile:
         response = await self.client.put(
             "/me",
-            json=profile_update.dict(exclude_none=True),
+            json=profile_update.model_dump(exclude_none=True),
             cookies=self.session_cookies,
         )
         response.raise_for_status()
@@ -283,7 +287,7 @@ class AuthSession:
         )
         response.raise_for_status()
         result = await self._wait_for_long_running_task_results(response)
-        return ProjectGet.parse_obj(result)
+        return ProjectGet.model_validate(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
     async def clone_project(
@@ -308,7 +312,7 @@ class AuthSession:
         )
         response.raise_for_status()
         result = await self._wait_for_long_running_task_results(response)
-        return ProjectGet.parse_obj(result)
+        return ProjectGet.model_validate(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
     async def get_project(self, *, project_id: UUID) -> ProjectGet:
@@ -317,7 +321,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[ProjectGet].parse_raw(response.text).data
+        data = Envelope[ProjectGet].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -361,7 +365,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[list[StudyPort]].parse_raw(response.text).data
+        data = Envelope[list[StudyPort]].model_validate_json(response.text).data
         assert data is not None  # nosec
         assert isinstance(data, list)  # nosec
         return data
@@ -375,7 +379,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
+        data = Envelope[ProjectMetadataGet].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -398,21 +402,21 @@ class AuthSession:
             json=jsonable_encoder(ProjectMetadataUpdate(custom=metadata)),
         )
         response.raise_for_status()
-        data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
+        data = Envelope[ProjectMetadataGet].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
     async def get_project_node_pricing_unit(
         self, *, project_id: UUID, node_id: UUID
-    ) -> PricingUnitGet | None:
+    ) -> PricingUnitGet:
         response = await self.client.get(
             f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
             cookies=self.session_cookies,
         )
 
         response.raise_for_status()
-        data = Envelope[PricingUnitGet].parse_raw(response.text).data
+        data = Envelope[PricingUnitGet].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -467,7 +471,9 @@ class AuthSession:
         )
         response.raise_for_status()
         data: dict[NodeID, ProjectInputGet] | None = (
-            Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
+            Envelope[dict[NodeID, ProjectInputGet]]
+            .model_validate_json(response.text)
+            .data
         )
         assert data is not None  # nosec
         return data
@@ -484,7 +490,9 @@ class AuthSession:
         response.raise_for_status()
 
         data: dict[NodeID, ProjectInputGet] | None = (
-            Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
+            Envelope[dict[NodeID, ProjectInputGet]]
+            .model_validate_json(response.text)
+            .data
         )
         assert data is not None  # nosec
         return data
@@ -501,7 +509,9 @@ class AuthSession:
         response.raise_for_status()
 
         data: dict[NodeID, dict[str, Any]] | None = (
-            Envelope[dict[NodeID, dict[str, Any]]].parse_raw(response.text).data
+            Envelope[dict[NodeID, dict[str, Any]]]
+            .model_validate_json(response.text)
+            .data
         )
         assert data is not None  # nosec
         return data
@@ -526,7 +536,11 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
+        data = (
+            Envelope[WalletGetWithAvailableCredits]
+            .model_validate_json(response.text)
+            .data
+        )
         assert data is not None  # nosec
         return data
 
@@ -537,18 +551,22 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
+        data = (
+            Envelope[WalletGetWithAvailableCredits]
+            .model_validate_json(response.text)
+            .data
+        )
         assert data is not None  # nosec
         return data
 
     @_exception_mapper(_WALLET_STATUS_MAP)
-    async def get_project_wallet(self, *, project_id: ProjectID) -> WalletGet | None:
+    async def get_project_wallet(self, *, project_id: ProjectID) -> WalletGet:
         response = await self.client.get(
             f"/projects/{project_id}/wallet",
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[WalletGet].parse_raw(response.text).data
+        data = Envelope[WalletGet].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -561,7 +579,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[GetCreditPrice].parse_raw(response.text).data
+        data = Envelope[GetCreditPrice].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -578,10 +596,12 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        pricing_plan_get = Envelope[PricingPlanGet].parse_raw(response.text).data
+        pricing_plan_get = (
+            Envelope[PricingPlanGet].model_validate_json(response.text).data
+        )
         if pricing_plan_get:
-            return ServicePricingPlanGet.construct(
-                **pricing_plan_get.dict(exclude={"is_active"})
+            return ServicePricingPlanGet.model_construct(
+                **pricing_plan_get.model_dump(exclude={"is_active"})
             )
         return None
 

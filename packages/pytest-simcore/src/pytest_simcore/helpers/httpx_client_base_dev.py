@@ -6,12 +6,17 @@ import httpx
 from fastapi.encoders import jsonable_encoder
 from httpx._types import URLTypes
 from jsonschema import ValidationError
-from pydantic import parse_file_as
+from pydantic import TypeAdapter
 
 from .httpx_calls_capture_errors import CaptureProcessingError
 from .httpx_calls_capture_models import HttpApiCallCaptureModel, get_captured_model
 
 _logger = logging.getLogger(__name__)
+
+
+_HTTP_API_CALL_CAPTURE_MODEL_ADAPTER: TypeAdapter[
+    list[HttpApiCallCaptureModel]
+] = TypeAdapter(list[HttpApiCallCaptureModel])
 
 
 class AsyncClientCaptureWrapper(httpx.AsyncClient):
@@ -41,8 +46,11 @@ class AsyncClientCaptureWrapper(httpx.AsyncClient):
                 or self._capture_file.read_text().strip() == ""
             ):
                 self._capture_file.write_text("[]")
-            serialized_captures: list[HttpApiCallCaptureModel] = parse_file_as(
-                list[HttpApiCallCaptureModel], self._capture_file
+
+            serialized_captures: list[
+                HttpApiCallCaptureModel
+            ] = _HTTP_API_CALL_CAPTURE_MODEL_ADAPTER.validate_json(
+                self._capture_file.read_text()
             )
             serialized_captures.append(capture)
             self._capture_file.write_text(

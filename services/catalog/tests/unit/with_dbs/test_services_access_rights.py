@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from models_library.groups import GroupAtDB
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceVersion
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import ServiceAccessRightsAtDB
 from simcore_service_catalog.services.access_rights import (
@@ -27,7 +27,7 @@ pytest_simcore_ops_services_selection = [
 
 
 def test_reduce_access_rights():
-    sample = ServiceAccessRightsAtDB.parse_obj(
+    sample = ServiceAccessRightsAtDB.model_validate(
         {
             "key": "simcore/services/dynamic/sim4life",
             "version": "1.0.9",
@@ -41,20 +41,20 @@ def test_reduce_access_rights():
     # fixture with overrides and with other products
     reduced = reduce_access_rights(
         [
-            sample.copy(deep=True),
-            sample.copy(deep=True),
-            sample.copy(update={"execute_access": False}, deep=True),
-            sample.copy(update={"product_name": "s4l"}, deep=True),
+            sample.model_copy(deep=True),
+            sample.model_copy(deep=True),
+            sample.model_copy(update={"execute_access": False}, deep=True),
+            sample.model_copy(update={"product_name": "s4l"}, deep=True),
         ]
     )
 
     # two products with the same flags
     assert len(reduced) == 2
-    assert reduced[0].dict(include={"execute_access", "write_access"}) == {
+    assert reduced[0].model_dump(include={"execute_access", "write_access"}) == {
         "execute_access": True,
         "write_access": True,
     }
-    assert reduced[1].dict(include={"execute_access", "write_access"}) == {
+    assert reduced[1].model_dump(include={"execute_access", "write_access"}) == {
         "execute_access": True,
         "write_access": True,
     }
@@ -62,8 +62,8 @@ def test_reduce_access_rights():
     # two gids with the different falgs
     reduced = reduce_access_rights(
         [
-            sample.copy(deep=True),
-            sample.copy(
+            sample.model_copy(deep=True),
+            sample.model_copy(
                 update={"gid": 1, "execute_access": True, "write_access": False},
                 deep=True,
             ),
@@ -71,11 +71,11 @@ def test_reduce_access_rights():
     )
 
     assert len(reduced) == 2
-    assert reduced[0].dict(include={"execute_access", "write_access"}) == {
+    assert reduced[0].model_dump(include={"execute_access", "write_access"}) == {
         "execute_access": True,
         "write_access": True,
     }
-    assert reduced[1].dict(include={"execute_access", "write_access"}) == {
+    assert reduced[1].model_dump(include={"execute_access", "write_access"}) == {
         "execute_access": True,
         "write_access": False,
     }
@@ -98,11 +98,11 @@ async def test_auto_upgrade_policy(
         return_value=False,
     )
     # Avoids creating a users + user_to_group table
-    data = GroupAtDB.Config.schema_extra["example"]
+    data = GroupAtDB.model_config["json_schema_extra"]["example"]
     data["gid"] = everyone_gid
     mocker.patch(
         "simcore_service_catalog.services.access_rights.GroupsRepository.get_everyone_group",
-        return_value=GroupAtDB.parse_obj(data),
+        return_value=GroupAtDB.model_validate(data),
     )
     mocker.patch(
         "simcore_service_catalog.services.access_rights.GroupsRepository.get_user_gid_from_email",
@@ -111,10 +111,12 @@ async def test_auto_upgrade_policy(
 
     # SETUP ---
     MOST_UPDATED_EXAMPLE = -1
-    new_service_metadata = ServiceMetaDataPublished.parse_obj(
-        ServiceMetaDataPublished.Config.schema_extra["examples"][MOST_UPDATED_EXAMPLE]
+    new_service_metadata = ServiceMetaDataPublished.model_validate(
+        ServiceMetaDataPublished.model_config["json_schema_extra"]["examples"][
+            MOST_UPDATED_EXAMPLE
+        ]
     )
-    new_service_metadata.version = parse_obj_as(ServiceVersion, "1.0.11")
+    new_service_metadata.version = TypeAdapter(ServiceVersion).validate_python("1.0.11")
 
     # we have three versions of the service in the database for which the sorting matters: (1.0.11 should inherit from 1.0.10 not 1.0.9)
     await services_db_tables_injector(
@@ -167,7 +169,7 @@ async def test_auto_upgrade_policy(
     assert owner_gid == user_gid
     assert len(service_access_rights) == 1
     assert {a.gid for a in service_access_rights} == {owner_gid}
-    assert service_access_rights[0].dict() == {
+    assert service_access_rights[0].model_dump() == {
         "key": new_service_metadata.key,
         "version": new_service_metadata.version,
         "gid": user_gid,

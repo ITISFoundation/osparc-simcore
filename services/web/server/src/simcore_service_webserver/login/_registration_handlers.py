@@ -98,7 +98,7 @@ class _AuthenticatedContext(BaseModel):
 @login_required
 @permission_required("user.profile.delete")
 async def unregister_account(request: web.Request):
-    req_ctx = _AuthenticatedContext.parse_obj(request)
+    req_ctx = _AuthenticatedContext.model_validate(request)
     body = await parse_request_body_as(UnregisterCheck, request)
 
     product: Product = get_current_product(request)

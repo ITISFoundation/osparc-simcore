@@ -334,7 +334,7 @@ async def get_job_output_logfile(
             f"{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile",
             presigned_download_link,
         )
-        return RedirectResponse(presigned_download_link)
+        return RedirectResponse(f"{presigned_download_link}")
 
     # No log found !
     raise HTTPException(
@@ -376,7 +376,7 @@ async def get_job_custom_metadata(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
-    response_model=WalletGetWithAvailableCredits | None,
+    response_model=WalletGetWithAvailableCredits,
     responses=WALLET_STATUS_CODES,
     description=("Get job wallet\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")),
 )
@@ -385,18 +385,18 @@ async def get_job_wallet(
     version: VersionStr,
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-) -> WalletGetWithAvailableCredits | None:
+) -> WalletGetWithAvailableCredits:
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Getting wallet for job '%s'", job_name)
 
     if project_wallet := await webserver_api.get_project_wallet(project_id=job_id):
         return await webserver_api.get_wallet(wallet_id=project_wallet.wallet_id)
-    return None
+    raise MissingWalletError(job_id=job_id)
 
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/pricing_unit",
-    response_model=PricingUnitGet | None,
+    response_model=PricingUnitGet,
     responses=_PRICING_UNITS_STATUS_CODES,
     description=(
         "Get job pricing unit\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")

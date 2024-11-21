@@ -1,12 +1,9 @@
 # pylint: disable=too-many-ancestors
-from typing import Any
-
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
 class EC2BaseError(OsparcErrorMixin, Exception):
-    def __init__(self, **ctx: Any) -> None:
-        super().__init__(**ctx)
+    pass
 
 
 class EC2RuntimeError(EC2BaseError, RuntimeError):

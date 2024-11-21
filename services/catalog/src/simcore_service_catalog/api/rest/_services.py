@@ -43,7 +43,7 @@ def _compose_service_details(
     # compose service from registry and DB
     service = service_in_registry
     service.update(
-        service_in_db.dict(exclude_unset=True, exclude={"owner"}),
+        service_in_db.model_dump(exclude_unset=True, exclude={"owner"}),
         access_rights={rights.gid: rights for rights in service_access_rights_in_db},
         owner=service_owner if service_owner else None,
     )
@@ -121,7 +121,7 @@ async def list_services(
         # NOTE: here validation is not necessary since key,version were already validated
         # in terms of time, this takes the most
         return [
-            ServiceGet.construct(
+            ServiceGet.model_construct(
                 key=key,
                 version=version,
                 name="nodetails",
@@ -132,6 +132,8 @@ async def list_services(
                 inputs={},
                 outputs={},
                 deprecated=services_in_db[(key, version)].deprecated,
+                classifiers=[],
+                owner=None,
             )
             for key, version in services_in_db
         ]
@@ -201,7 +203,7 @@ async def get_service(
     ],
     x_simcore_products_name: str = Header(None),
 ):
-    service_data: dict[str, Any] = {}
+    service_data: dict[str, Any] = {"owner": None}
 
     # get the user groups
     user_groups = await groups_repository.list_user_groups(user_id)
@@ -254,10 +256,10 @@ async def get_service(
         )
 
     # access is allowed, override some of the values with what is in the db
-    service_in_manifest = service_in_manifest.copy(
-        update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
+    service_data.update(
+        service_in_manifest.model_dump(exclude_unset=True, by_alias=True)
+        | service_in_db.model_dump(exclude_unset=True, exclude={"owner"})
     )
-    service_data.update(service_in_manifest.dict(exclude_unset=True, by_alias=True))
     return service_data
 
 
@@ -322,7 +324,7 @@ async def update_service(
         ServiceMetaDataAtDB(
             key=service_key,
             version=service_version,
-            **updated_service.dict(exclude_unset=True),
+            **updated_service.model_dump(exclude_unset=True),
         )
     )
     # let's modify the service access rights (they can be added/removed/modified)

@@ -23,7 +23,7 @@ from simcore_service_invitations.services.invitations import (
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
-@given(invitation_input=st.builds(InvitationInputs))
+@given(invitation_input=st.builds(InvitationInputs, guest=st.emails()))
 def test_create_invitation(
     invitation_input: InvitationInputs,
     client: TestClient,
@@ -31,7 +31,7 @@ def test_create_invitation(
 ):
     response = client.post(
         f"/{API_VTAG}/invitations",
-        json=invitation_input.dict(exclude_none=True),
+        json=invitation_input.model_dump(exclude_none=True),
         auth=basic_auth,
     )
     assert response.status_code == status.HTTP_200_OK, f"{response.json()=}"
@@ -64,20 +64,20 @@ def test_check_invitation(
 
     # up ot here, identifcal to above.
     # Let's use invitation link
-    invitation_url = ApiInvitationContentAndLink.parse_obj(
+    invitation_url = ApiInvitationContentAndLink.model_validate(
         response.json()
     ).invitation_url
 
     # check invitation_url
     response = client.post(
         f"/{API_VTAG}/invitations:extract",
-        json={"invitation_url": invitation_url},
+        json={"invitation_url": f"{invitation_url}"},
         auth=basic_auth,
     )
     assert response.status_code == 200, f"{response.json()=}"
 
     # decrypted invitation should be identical to request above
-    invitation = InvitationContent.parse_obj(response.json())
+    invitation = InvitationContent.model_validate(response.json())
     assert invitation.issuer == invitation_data.issuer
     assert invitation.guest == invitation_data.guest
     assert invitation.trial_account_days == invitation_data.trial_account_days
@@ -100,13 +100,13 @@ def test_check_valid_invitation(
     # check invitation_url
     response = client.post(
         f"/{API_VTAG}/invitations:extract",
-        json={"invitation_url": invitation_url},
+        json={"invitation_url": f"{invitation_url}"},
         auth=basic_auth,
     )
     assert response.status_code == 200, f"{response.json()=}"
 
     # decrypted invitation should be identical to request above
-    invitation = InvitationContent.parse_obj(response.json())
+    invitation = InvitationContent.model_validate(response.json())
 
     assert invitation.issuer == invitation_data.issuer
     assert invitation.guest == invitation_data.guest
@@ -130,7 +130,7 @@ def test_check_invalid_invitation_with_different_secret(
     # check invitation_url
     response = client.post(
         f"/{API_VTAG}/invitations:extract",
-        json={"invitation_url": invitation_url},
+        json={"invitation_url": f"{invitation_url}"},
         auth=basic_auth,
     )
     assert (
@@ -173,7 +173,7 @@ def test_check_invalid_invitation_with_wrong_code(
         default_product=default_product,
     )
 
-    invitation_url_with_invalid_code = invitation_url[:-3]
+    invitation_url_with_invalid_code = f"{invitation_url}"[:-3]
 
     # check invitation_url
     response = client.post(

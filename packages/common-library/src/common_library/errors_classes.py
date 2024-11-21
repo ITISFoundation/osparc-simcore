@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic.errors import PydanticErrorMixin
 
 from .error_codes import create_error_code
@@ -9,12 +11,22 @@ class _DefaultDict(dict):
 
 
 class OsparcErrorMixin(PydanticErrorMixin):
-    def __new__(cls, *args, **kwargs):
+    code: str  # type: ignore[assignment]
+    msg_template: str
+
+    def __new__(cls, *_args, **_kwargs):
         if not hasattr(cls, "code"):
             cls.code = cls._get_full_class_name()
-        return super().__new__(cls, *args, **kwargs)
+        return super().__new__(cls)
+
+    def __init__(self, **ctx: Any) -> None:
+        self.__dict__ = ctx
+        super().__init__(message=self._build_message(), code=self.code)  # type: ignore[arg-type]
 
     def __str__(self) -> str:
+        return self._build_message()
+
+    def _build_message(self) -> str:
         # NOTE: safe. Does not raise KeyError
         return self.msg_template.format_map(_DefaultDict(**self.__dict__))
 
@@ -33,7 +45,7 @@ class OsparcErrorMixin(PydanticErrorMixin):
         ]
         return ".".join(reversed(relevant_classes))
 
-    def error_context(self):
+    def error_context(self) -> dict[str, Any]:
         """Returns context in which error occurred and stored within the exception"""
         return dict(**self.__dict__)
 

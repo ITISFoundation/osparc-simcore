@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable
 
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -6,7 +6,8 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 
-async def http_error_handler(_: Request, exc: HTTPException) -> JSONResponse:
+async def http_error_handler(_: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, HTTPException)  # nosec
     return JSONResponse(
         content=jsonable_encoder({"errors": [exc.detail]}), status_code=exc.status_code
     )
@@ -16,7 +17,7 @@ def make_http_error_handler_for_exception(
     status_code: int,
     exception_cls: type[BaseException],
     *,
-    override_detail_message: Optional[str] = None,
+    override_detail_message: str | None = None,
 ) -> Callable:
     """
     Produces a handler for BaseException-type exceptions which converts them

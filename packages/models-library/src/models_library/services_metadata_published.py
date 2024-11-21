@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Any, ClassVar, Final, TypeAlias
+from typing import Final, TypeAlias
 
-from pydantic import Extra, Field, NonNegativeInt
+from pydantic import ConfigDict, Field, NonNegativeInt
 
 from .basic_types import SemanticVersionStr
 from .boot_options import BootOption, BootOptions
@@ -76,12 +76,8 @@ _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER = {
         }
     },
     "boot-options": {
-        "example_service_defined_boot_mode": BootOption.Config.schema_extra["examples"][
-            0
-        ],
-        "example_service_defined_theme_selection": BootOption.Config.schema_extra[
-            "examples"
-        ][1],
+        "example_service_defined_boot_mode": BootOption.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+        "example_service_defined_theme_selection": BootOption.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index]
     },
     "min-visible-inputs": 2,
 }
@@ -120,7 +116,7 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBaseDisplay):
 
     badges: list[Badge] | None = Field(None, deprecated=True)
 
-    authors: list[Author] = Field(..., min_items=1)
+    authors: list[Author] = Field(..., min_length=1)
     contact: LowerCaseEmailStr = Field(
         ...,
         description="email to correspond to the authors about the node",
@@ -160,22 +156,21 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBaseDisplay):
         description="Image manifest digest. Note that this is NOT injected as an image label",
     )
 
-    class Config:
-        description = "Description of a simcore node 'class' with input and output"
-        extra = Extra.forbid
-        frozen = False  # overrides config from ServiceKeyVersion.
-        allow_population_by_field_name = True
-
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=False,
+        populate_by_name=True,
+        json_schema_extra={
             "examples": [
-                _EXAMPLE,
-                _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,
+                _EXAMPLE,  # type: ignore[list-item]
+                _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,  # type: ignore[list-item]
                 # latest
                 {
-                    **_EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,
+                    **_EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,  # type: ignore[dict-item]
                     "version_display": "Matterhorn Release",
                     "description_ui": True,
                     "release_date": "2024-05-31T13:45:30",
                 },
             ]
-        }
+        },
+    )

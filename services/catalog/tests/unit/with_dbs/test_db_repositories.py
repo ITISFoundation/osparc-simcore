@@ -10,7 +10,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from packaging import version
 from packaging.version import Version
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr, TypeAdapter
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
@@ -109,16 +109,18 @@ async def test_create_services(
     )
 
     # validation
-    service = ServiceMetaDataAtDB.parse_obj(fake_service)
+    service = ServiceMetaDataAtDB.model_validate(fake_service)
     service_access_rights = [
-        ServiceAccessRightsAtDB.parse_obj(a) for a in fake_access_rights
+        ServiceAccessRightsAtDB.model_validate(a) for a in fake_access_rights
     ]
 
     new_service = await services_repo.create_or_update_service(
         service, service_access_rights
     )
 
-    assert new_service.dict(include=set(fake_service.keys())) == service.dict()
+    assert (
+        new_service.model_dump(include=set(fake_service.keys())) == service.model_dump()
+    )
 
 
 async def test_read_services(
@@ -177,7 +179,7 @@ async def test_read_services(
     assert service
 
     access_rights = await services_repo.get_service_access_rights(
-        product_name=target_product, **service.dict(include={"key", "version"})
+        product_name=target_product, **service.model_dump(include={"key", "version"})
     )
     assert {
         user_gid,
@@ -190,7 +192,7 @@ async def test_read_services(
     assert service
 
     access_rights = await services_repo.get_service_access_rights(
-        product_name=target_product, **service.dict(include={"key", "version"})
+        product_name=target_product, **service.model_dump(include={"key", "version"})
     )
     assert {user_gid, team_gid} == {a.gid for a in access_rights}
 
@@ -347,7 +349,9 @@ async def test_list_all_services_and_history_with_pagination(
     for service in services_items:
         assert len(service.history) == num_versions_per_service
 
-        assert parse_obj_as(EmailStr, service.owner_email), "resolved own'es email"
+        assert TypeAdapter(EmailStr).validate_python(
+            service.owner_email
+        ), "resolved own'es email"
 
         expected_latest_version = service.history[0].version  # latest service is first
         assert service.version == expected_latest_version
@@ -382,13 +386,13 @@ async def test_get_and_update_service_meta_data(
     assert got.version == service_version
 
     await services_repo.update_service(
-        ServiceMetaDataAtDB.construct(
+        ServiceMetaDataAtDB.model_construct(
             key=service_key, version=service_version, name="foo"
         ),
     )
     updated = await services_repo.get_service(service_key, service_version)
 
-    assert got.copy(update={"name": "foo"}) == updated
+    assert got.model_copy(update={"name": "foo"}) == updated
 
     assert await services_repo.get_service(service_key, service_version) == updated
 

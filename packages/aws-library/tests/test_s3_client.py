@@ -32,7 +32,7 @@ from faker import Faker
 from models_library.api_schemas_storage import S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from moto.server import ThreadedMotoServer
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_benchmark.plugin import BenchmarkFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import (
@@ -67,7 +67,9 @@ async def simcore_s3_api(
 @pytest.fixture
 def bucket_name(faker: Faker) -> S3BucketName:
     # NOTE: no faker here as we need some specific namings
-    return parse_obj_as(S3BucketName, faker.pystr().replace("_", "-").lower())
+    return TypeAdapter(S3BucketName).validate_python(
+        faker.pystr().replace("_", "-").lower()
+    )
 
 
 @pytest.fixture
@@ -89,7 +91,9 @@ async def with_s3_bucket(
 
 @pytest.fixture
 def non_existing_s3_bucket(faker: Faker) -> S3BucketName:
-    return parse_obj_as(S3BucketName, faker.pystr().replace("_", "-").lower())
+    return TypeAdapter(S3BucketName).validate_python(
+        faker.pystr().replace("_", "-").lower()
+    )
 
 
 @pytest.fixture
@@ -107,7 +111,7 @@ async def upload_to_presigned_link(
             file,
             MultiPartUploadLinks(
                 upload_id="fake",
-                chunk_size=parse_obj_as(ByteSize, file.stat().st_size),
+                chunk_size=TypeAdapter(ByteSize).validate_python(file.stat().st_size),
                 urls=[presigned_url],
             ),
         )
@@ -131,7 +135,7 @@ async def with_uploaded_file_on_s3(
     s3_client: S3Client,
     with_s3_bucket: S3BucketName,
 ) -> AsyncIterator[UploadedFile]:
-    test_file = create_file_of_size(parse_obj_as(ByteSize, "10Kib"))
+    test_file = create_file_of_size(TypeAdapter(ByteSize).validate_python("10Kib"))
     await s3_client.upload_file(
         Filename=f"{test_file}",
         Bucket=with_s3_bucket,
@@ -200,7 +204,7 @@ async def upload_file_to_multipart_presigned_link_without_completing(
             object_key=object_key,
             file_size=ByteSize(file.stat().st_size),
             expiration_secs=default_expiration_time_seconds,
-            sha256_checksum=parse_obj_as(SHA256Str, faker.sha256()),
+            sha256_checksum=TypeAdapter(SHA256Str).validate_python(faker.sha256()),
         )
         assert upload_links
 
@@ -586,7 +590,7 @@ async def test_undelete_file(
     assert file_metadata.size == with_uploaded_file_on_s3.local_path.stat().st_size
 
     # upload another file on top of the existing one
-    new_file = create_file_of_size(parse_obj_as(ByteSize, "5Kib"))
+    new_file = create_file_of_size(TypeAdapter(ByteSize).validate_python("5Kib"))
     await s3_client.upload_file(
         Filename=f"{new_file}",
         Bucket=with_s3_bucket,
@@ -688,11 +692,11 @@ async def test_create_single_presigned_download_link(
         object_key=with_uploaded_file_on_s3.s3_key,
         expiration_secs=default_expiration_time_seconds,
     )
-    assert isinstance(download_url, AnyUrl)
+    assert download_url
 
     dest_file = tmp_path / faker.file_name()
     async with ClientSession() as session:
-        response = await session.get(download_url)
+        response = await session.get(f"{download_url}")
         response.raise_for_status()
         with dest_file.open("wb") as fp:
             fp.write(await response.read())
@@ -741,7 +745,7 @@ async def test_create_single_presigned_upload_link(
         [Path, AnyUrl, S3BucketName, S3ObjectKey], Awaitable[None]
     ],
 ):
-    file = create_file_of_size(parse_obj_as(ByteSize, "1Mib"))
+    file = create_file_of_size(TypeAdapter(ByteSize).validate_python("1Mib"))
     s3_object_key = file.name
     presigned_url = await simcore_s3_api.create_single_presigned_upload_link(
         bucket=with_s3_bucket,
@@ -769,7 +773,7 @@ async def test_create_single_presigned_upload_link_with_non_existing_bucket_rais
     create_file_of_size: Callable[[ByteSize], Path],
     default_expiration_time_seconds: int,
 ):
-    file = create_file_of_size(parse_obj_as(ByteSize, "1Mib"))
+    file = create_file_of_size(TypeAdapter(ByteSize).validate_python("1Mib"))
     s3_object_key = file.name
     with pytest.raises(S3BucketInvalidError):
         await simcore_s3_api.create_single_presigned_upload_link(
@@ -863,7 +867,7 @@ async def test_create_multipart_presigned_upload_link_invalid_raises(
             object_key=faker.pystr(),
             file_size=ByteSize(file.stat().st_size),
             expiration_secs=default_expiration_time_seconds,
-            sha256_checksum=parse_obj_as(SHA256Str, faker.sha256()),
+            sha256_checksum=TypeAdapter(SHA256Str).validate_python(faker.sha256()),
         )
 
     # completing with invalid bucket
@@ -1076,7 +1080,7 @@ async def test_copy_file_invalid_raises(
     create_file_of_size: Callable[[ByteSize], Path],
     faker: Faker,
 ):
-    file = create_file_of_size(parse_obj_as(ByteSize, "1MiB"))
+    file = create_file_of_size(TypeAdapter(ByteSize).validate_python("1MiB"))
     uploaded_file = await upload_file(file)
     dst_object_key = faker.file_name()
     # NOTE: since aioboto3 13.1.0 this raises S3KeyNotFoundError instead of S3BucketInvalidError
@@ -1101,9 +1105,9 @@ async def test_copy_file_invalid_raises(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            parse_obj_as(ByteSize, "1Mib"),
-            parse_obj_as(ByteSize, "1B"),
-            parse_obj_as(ByteSize, "10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         )
     ],
     ids=byte_size_ids,
@@ -1127,9 +1131,9 @@ async def test_get_directory_metadata(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            parse_obj_as(ByteSize, "1Mib"),
-            parse_obj_as(ByteSize, "1B"),
-            parse_obj_as(ByteSize, "10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         )
     ],
     ids=byte_size_ids,
@@ -1159,9 +1163,9 @@ async def test_get_directory_metadata_raises(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            parse_obj_as(ByteSize, "1Mib"),
-            parse_obj_as(ByteSize, "1B"),
-            parse_obj_as(ByteSize, "10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         )
     ],
     ids=byte_size_ids,
@@ -1195,9 +1199,9 @@ async def test_delete_file_recursively(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            parse_obj_as(ByteSize, "1Mib"),
-            parse_obj_as(ByteSize, "1B"),
-            parse_obj_as(ByteSize, "10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         )
     ],
     ids=byte_size_ids,
@@ -1233,9 +1237,9 @@ async def test_delete_file_recursively_raises(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            parse_obj_as(ByteSize, "1Mib"),
-            parse_obj_as(ByteSize, "1B"),
-            parse_obj_as(ByteSize, "10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         )
     ],
     ids=byte_size_ids,
@@ -1285,12 +1289,16 @@ def test_is_multipart(file_size: ByteSize, expected_multipart: bool):
         (
             "some-bucket",
             "an/object/separate/by/slashes",
-            "s3://some-bucket/an/object/separate/by/slashes",
+            TypeAdapter(AnyUrl).validate_python(
+                "s3://some-bucket/an/object/separate/by/slashes"
+            ),
         ),
         (
             "some-bucket",
             "an/object/separate/by/slashes-?/3#$",
-            r"s3://some-bucket/an/object/separate/by/slashes-%3F/3%23%24",
+            TypeAdapter(AnyUrl).validate_python(
+                r"s3://some-bucket/an/object/separate/by/slashes-%3F/3%23%24"
+            ),
         ),
     ],
 )
@@ -1333,14 +1341,14 @@ def test_upload_file_performance(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            parse_obj_as(ByteSize, "1Mib"),
-            parse_obj_as(ByteSize, "1B"),
-            parse_obj_as(ByteSize, "10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         ),
         (
-            parse_obj_as(ByteSize, "500Mib"),
-            parse_obj_as(ByteSize, "10Mib"),
-            parse_obj_as(ByteSize, "50Mib"),
+            TypeAdapter(ByteSize).validate_python("500Mib"),
+            TypeAdapter(ByteSize).validate_python("10Mib"),
+            TypeAdapter(ByteSize).validate_python("50Mib"),
         ),
     ],
     ids=byte_size_ids,

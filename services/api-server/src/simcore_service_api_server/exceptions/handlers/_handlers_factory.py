@@ -1,8 +1,8 @@
 import logging
 
+from common_library.error_codes import create_error_code
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
-from models_library.error_codes import create_error_code
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from ._utils import ExceptionHandler, create_error_json_response

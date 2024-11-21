@@ -3,7 +3,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-branches
-# pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -23,7 +22,7 @@ from models_library.api_schemas_storage import LinkType
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import SimcoreS3DirectoryID, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage import db_file_meta_data
@@ -47,14 +46,18 @@ def disabled_dsm_cleaner_task(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture
 def simcore_directory_id(simcore_file_id: SimcoreS3FileID) -> SimcoreS3FileID:
-    return SimcoreS3FileID(
-        Path(SimcoreS3DirectoryID.from_simcore_s3_object(simcore_file_id))
+    return TypeAdapter(SimcoreS3FileID).validate_python(
+        SimcoreS3DirectoryID.from_simcore_s3_object(simcore_file_id)
     )
 
 
 @pytest.mark.parametrize(
     "file_size",
-    [ByteSize(0), parse_obj_as(ByteSize, "10Mib"), parse_obj_as(ByteSize, "100Mib")],
+    [
+        TypeAdapter(ByteSize).validate_python("0"),
+        TypeAdapter(ByteSize).validate_python("10Mib"),
+        TypeAdapter(ByteSize).validate_python("100Mib"),
+    ],
     ids=byte_size_ids,
 )
 @pytest.mark.parametrize(
@@ -67,7 +70,7 @@ def simcore_directory_id(simcore_file_id: SimcoreS3FileID) -> SimcoreS3FileID:
     ],
 )
 @pytest.mark.parametrize("checksum", [None, _faker.sha256()])
-async def test_regression_collaborator_creates_file_upload_links(
+async def test_regression_collaborator_creates_file_upload_links(  # pylint:disable=too-many-positional-arguments
     disabled_dsm_cleaner_task,
     aiopg_engine: Engine,
     simcore_s3_dsm: SimcoreS3DataManager,
@@ -120,7 +123,11 @@ async def test_regression_collaborator_creates_file_upload_links(
 
 @pytest.mark.parametrize(
     "file_size",
-    [ByteSize(0), parse_obj_as(ByteSize, "10Mib"), parse_obj_as(ByteSize, "100Mib")],
+    [
+        ByteSize(0),
+        TypeAdapter(ByteSize).validate_python("10Mib"),
+        TypeAdapter(ByteSize).validate_python("100Mib"),
+    ],
     ids=byte_size_ids,
 )
 @pytest.mark.parametrize(
@@ -207,7 +214,10 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
 
 @pytest.mark.parametrize(
     "file_size",
-    [parse_obj_as(ByteSize, "10Mib"), parse_obj_as(ByteSize, "100Mib")],
+    [
+        TypeAdapter(ByteSize).validate_python("10Mib"),
+        TypeAdapter(ByteSize).validate_python("100Mib"),
+    ],
     ids=byte_size_ids,
 )
 @pytest.mark.parametrize("link_type", [LinkType.S3, LinkType.PRESIGNED])
@@ -287,7 +297,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     # check the entries were reverted
     async with aiopg_engine.acquire() as conn:
         reverted_fmd = await db_file_meta_data.get(conn, file_id)
-    assert original_fmd.dict(exclude={"created_at"}) == reverted_fmd.dict(
+    assert original_fmd.model_dump(exclude={"created_at"}) == reverted_fmd.model_dump(
         exclude={"created_at"}
     )
     # check the S3 content is the old file
@@ -303,7 +313,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
 
 @pytest.mark.parametrize(
     "file_size",
-    [parse_obj_as(ByteSize, "100Mib")],
+    [TypeAdapter(ByteSize).validate_python("100Mib")],
     ids=byte_size_ids,
 )
 @pytest.mark.parametrize("is_directory", [True, False])
@@ -353,7 +363,9 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
 
     file_ids_to_upload: set[SimcoreS3FileID] = (
         {
-            SimcoreS3FileID(f"{file_or_directory_id}/file{x}")
+            TypeAdapter(SimcoreS3FileID).validate_python(
+                f"{file_or_directory_id}/file{x}"
+            )
             for x in range(FILES_IN_DIR)
         }
         if is_directory
@@ -366,7 +378,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
             object_key=file_id,
             file_size=file_size,
             expiration_secs=3600,
-            sha256_checksum=parse_obj_as(SHA256Str, _faker.sha256()),
+            sha256_checksum=TypeAdapter(SHA256Str).validate_python(_faker.sha256()),
         )
         for file_id in file_ids_to_upload
     ]

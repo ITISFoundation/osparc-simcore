@@ -24,7 +24,7 @@ from models_library.payments import StripeInvoiceID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, HttpUrl, parse_obj_as
+from pydantic import EmailStr, HttpUrl, TypeAdapter
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -34,27 +34,27 @@ from .helpers.faker_factories import random_payment_transaction
 
 @pytest.fixture
 def wallet_id(faker: Faker) -> WalletID:
-    return parse_obj_as(WalletID, faker.pyint())
+    return TypeAdapter(WalletID).validate_python(faker.pyint())
 
 
 @pytest.fixture
 def wallet_name(faker: Faker) -> IDStr:
-    return parse_obj_as(IDStr, f"wallet-{faker.word()}")
+    return TypeAdapter(IDStr).validate_python(f"wallet-{faker.word()}")
 
 
 @pytest.fixture
-def invoice_url(faker: Faker) -> HttpUrl:
-    return parse_obj_as(HttpUrl, faker.image_url())
+def invoice_url(faker: Faker) -> str:
+    return faker.image_url()
 
 
 @pytest.fixture
-def invoice_pdf_url(faker: Faker) -> HttpUrl:
-    return parse_obj_as(HttpUrl, faker.image_url())
+def invoice_pdf_url(faker: Faker) -> str:
+    return faker.image_url()
 
 
 @pytest.fixture
 def stripe_invoice_id(faker: Faker) -> StripeInvoiceID:
-    return parse_obj_as(StripeInvoiceID, f"in_{faker.word()}")
+    return TypeAdapter(StripeInvoiceID).validate_python(f"in_{faker.word()}")
 
 
 @pytest.fixture

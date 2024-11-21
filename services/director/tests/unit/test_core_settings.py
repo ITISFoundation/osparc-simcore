@@ -30,7 +30,7 @@ def test_valid_web_application_settings(app_environment: EnvVarsDict):
         str(
             app_environment.get(
                 "DIRECTOR_DEFAULT_MAX_MEMORY",
-                ApplicationSettings.__fields__["DIRECTOR_DEFAULT_MAX_MEMORY"].default,
+                ApplicationSettings.model_fields["DIRECTOR_DEFAULT_MAX_MEMORY"].default,
             )
         )
         == f"{settings.DIRECTOR_DEFAULT_MAX_MEMORY}"
@@ -45,7 +45,7 @@ def test_docker_container_env_sample(monkeypatch: pytest.MonkeyPatch):
         """
         DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS={}
         DIRECTOR_REGISTRY_CACHING=True
-        DIRECTOR_REGISTRY_CACHING_TTL=900
+        DIRECTOR_REGISTRY_CACHING_TTL=00:15:00
         DIRECTOR_SELF_SIGNED_SSL_FILENAME=
         DIRECTOR_SELF_SIGNED_SSL_SECRET_ID=
         DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME=
@@ -119,7 +119,7 @@ def test_docker_compose_environment_sample(
             "DEFAULT_MAX_NANO_CPUS": "0",
             "DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS": '{"VRAM": "node.labels.gpu==true"}',
             "DIRECTOR_REGISTRY_CACHING": "True",
-            "DIRECTOR_REGISTRY_CACHING_TTL": "900",
+            "DIRECTOR_REGISTRY_CACHING_TTL": "00:15:00",
             "DIRECTOR_SELF_SIGNED_SSL_FILENAME": "",
             "DIRECTOR_SELF_SIGNED_SSL_SECRET_ID": "",
             "DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME": "",
@@ -150,4 +150,4 @@ def test_docker_compose_environment_sample(
         },
     )
 
-    settings = ApplicationSettings.create_from_envs()
+    ApplicationSettings.create_from_envs()

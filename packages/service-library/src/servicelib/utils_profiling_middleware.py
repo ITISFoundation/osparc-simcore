@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Final
 
-from models_library.utils.json_serialization import json_dumps, json_loads
+from common_library.json_serialization import json_dumps, json_loads
 from pyinstrument import Profiler
 
 from .mimetype_constants import MIMETYPE_APPLICATION_JSON, MIMETYPE_APPLICATION_ND_JSON

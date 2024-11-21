@@ -13,7 +13,7 @@ from models_library.api_schemas_storage import S3BucketName
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize
+from pydantic import ByteSize, TypeAdapter
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -34,7 +34,7 @@ async def output_file(
     file = FileMetaData.from_simcore_node(
         user_id=user_id,
         file_id=SimcoreS3FileID(f"{project_id}/{node_id}/filename.txt"),
-        bucket=S3BucketName("master-simcore"),
+        bucket=TypeAdapter(S3BucketName).validate_python("master-simcore"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
         sha256_checksum=faker.sha256(),
@@ -46,7 +46,7 @@ async def output_file(
     async with aiopg_engine.acquire() as conn:
         stmt = (
             file_meta_data.insert()
-            .values(jsonable_encoder(FileMetaDataAtDB.from_orm(file)))
+            .values(jsonable_encoder(FileMetaDataAtDB.model_validate(file)))
             .returning(literal_column("*"))
         )
         result = await conn.execute(stmt)

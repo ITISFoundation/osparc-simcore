@@ -1,8 +1,15 @@
 from functools import cached_property
-from typing import Any, ClassVar
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
-from pydantic import Field, PostgresDsn, SecretStr, validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    PostgresDsn,
+    SecretStr,
+    ValidationInfo,
+    field_validator,
+)
+from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt
@@ -11,7 +18,7 @@ from .basic_types import PortInt
 class PostgresSettings(BaseCustomSettings):
     # entrypoint
     POSTGRES_HOST: str
-    POSTGRES_PORT: PortInt = PortInt(5432)
+    POSTGRES_PORT: PortInt = 5432
 
     # auth
     POSTGRES_USER: str
@@ -31,45 +38,45 @@ class PostgresSettings(BaseCustomSettings):
     POSTGRES_CLIENT_NAME: str | None = Field(
         default=None,
         description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
-        env=[
+        validation_alias=AliasChoices(
             "POSTGRES_CLIENT_NAME",
             # This is useful when running inside a docker container, then the hostname is set each client gets a different name
             "HOST",
             "HOSTNAME",
-        ],
+        ),
     )
 
-    @validator("POSTGRES_MAXSIZE")
+    @field_validator("POSTGRES_MAXSIZE")
     @classmethod
-    def _check_size(cls, v, values):
-        if not (values["POSTGRES_MINSIZE"] <= v):
-            msg = f"assert POSTGRES_MINSIZE={values['POSTGRES_MINSIZE']} <= POSTGRES_MAXSIZE={v}"
+    def _check_size(cls, v, info: ValidationInfo):
+        if info.data["POSTGRES_MINSIZE"] > v:
+            msg = f"assert POSTGRES_MINSIZE={info.data['POSTGRES_MINSIZE']} <= POSTGRES_MAXSIZE={v}"
             raise ValueError(msg)
         return v
 
     @cached_property
     def dsn(self) -> str:
-        dsn: str = PostgresDsn.build(
+        url = PostgresDsn.build(  # pylint: disable=no-member
             scheme="postgresql",
-            user=self.POSTGRES_USER,
+            username=self.POSTGRES_USER,
             password=self.POSTGRES_PASSWORD.get_secret_value(),
             host=self.POSTGRES_HOST,
-            port=f"{self.POSTGRES_PORT}",
-            path=f"/{self.POSTGRES_DB}",
+            port=self.POSTGRES_PORT,
+            path=f"{self.POSTGRES_DB}",
         )
-        return dsn
+        return f"{url}"
 
     @cached_property
     def dsn_with_async_sqlalchemy(self) -> str:
-        dsn: str = PostgresDsn.build(
+        url = PostgresDsn.build(  # pylint: disable=no-member
             scheme="postgresql+asyncpg",
-            user=self.POSTGRES_USER,
+            username=self.POSTGRES_USER,
             password=self.POSTGRES_PASSWORD.get_secret_value(),
             host=self.POSTGRES_HOST,
-            port=f"{self.POSTGRES_PORT}",
-            path=f"/{self.POSTGRES_DB}",
+            port=self.POSTGRES_PORT,
+            path=f"{self.POSTGRES_DB}",
         )
-        return dsn
+        return f"{url}"
 
     @cached_property
     def dsn_with_query(self) -> str:
@@ -93,8 +100,8 @@ class PostgresSettings(BaseCustomSettings):
             return urlunparse(parsed_uri._replace(query=updated_query))
         return uri
 
-    class Config(BaseCustomSettings.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+    model_config = SettingsConfigDict(
+        json_schema_extra={
             "examples": [
                 # minimal required
                 {
@@ -106,3 +113,4 @@ class PostgresSettings(BaseCustomSettings):
                 }
             ],
         }
+    )

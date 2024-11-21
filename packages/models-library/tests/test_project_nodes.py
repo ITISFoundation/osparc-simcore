@@ -1,6 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
+# pylint:disable=no-member
 # pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 from typing import Any
 
@@ -31,7 +32,7 @@ def test_create_minimal_node(minimal_node_data_sample: dict[str, Any]):
     assert node.parent is None
     assert node.progress is None
 
-    assert node.dict(exclude_unset=True) == minimal_node_data_sample
+    assert node.model_dump(exclude_unset=True) == minimal_node_data_sample
 
 
 def test_create_minimal_node_with_new_data_type(
@@ -69,4 +70,4 @@ def test_backwards_compatibility_node_data(minimal_node_data_sample: dict[str, A
     assert node.state.modified is True
     assert node.state.dependencies == set()
 
-    assert node.dict(exclude_unset=True) != old_node_data
+    assert node.model_dump(exclude_unset=True) != old_node_data

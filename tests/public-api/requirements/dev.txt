@@ -20,5 +20,6 @@
 --requirement _test.txt
 --requirement _tools.txt
 
+--editable ../../packages/common-library/
 --editable ../../packages/settings-library/
 --editable ../../packages/pytest-simcore/

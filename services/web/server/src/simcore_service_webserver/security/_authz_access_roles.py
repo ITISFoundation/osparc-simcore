@@ -5,9 +5,10 @@
 """
 
 
-from typing import TypedDict
-
 from simcore_postgres_database.models.users import UserRole
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 
 class PermissionDict(TypedDict, total=False):

@@ -15,7 +15,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from yarl import URL
@@ -56,7 +56,7 @@ def _to_api_model(
 ) -> PaymentMethodGet:
     assert entry.completed_at  # nosec
 
-    return PaymentMethodGet.parse_obj(
+    return PaymentMethodGet.model_validate(
         {
             **payment_method_details_from_gateway,
             "idr": entry.payment_method_id,
@@ -79,7 +79,7 @@ async def _fake_init_creation_of_wallet_payment_method(
     await asyncio.sleep(1)
     payment_method_id = PaymentMethodID(f"{_FAKE_PAYMENT_METHOD_ID_PREFIX}_{uuid4()}")
     form_link = (
-        URL(settings.PAYMENTS_FAKE_GATEWAY_URL)
+        URL(f"{settings.PAYMENTS_FAKE_GATEWAY_URL}")
         .with_path("/payment-methods/form")
         .with_query(id=payment_method_id)
     )
@@ -97,7 +97,7 @@ async def _fake_init_creation_of_wallet_payment_method(
     return PaymentMethodInitiated(
         wallet_id=wallet_id,
         payment_method_id=payment_method_id,
-        payment_method_form_url=parse_obj_as(HttpUrl, f"{form_link}"),
+        payment_method_form_url=TypeAdapter(HttpUrl).validate_python(f"{form_link}"),
     )
 
 

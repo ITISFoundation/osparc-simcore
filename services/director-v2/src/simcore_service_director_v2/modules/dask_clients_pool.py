@@ -50,7 +50,7 @@ class DaskClientsPool:
     def instance(app: FastAPI) -> "DaskClientsPool":
         if not hasattr(app.state, "dask_clients_pool"):
             msg = "Dask clients pool is not available. Please check the configuration."
-            raise ConfigurationError(msg)
+            raise ConfigurationError(msg=msg)
         dask_clients_pool: DaskClientsPool = app.state.dask_clients_pool
         return dask_clients_pool
 

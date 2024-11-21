@@ -12,7 +12,7 @@ def create_metadata(
 ) -> ServiceMetaDataPublished:
     prefix = prefix or type_name
     LABEL = f"{type_name.capitalize()} iterator"
-    return ServiceMetaDataPublished.parse_obj(
+    return ServiceMetaDataPublished.model_validate(
         {
             "integration-version": LATEST_INTEGRATION_VERSION,
             "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/{prefix}-range",

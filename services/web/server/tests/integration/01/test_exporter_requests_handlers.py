@@ -43,7 +43,12 @@ from simcore_service_webserver.exporter._formatter.archive import get_sds_archiv
 from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
 
-pytest_simcore_core_services_selection = ["migration", "postgres", "redis", "rabbit"]
+pytest_simcore_core_services_selection = [
+    "migration",
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 _logger = logging.getLogger(__name__)
 

@@ -185,7 +185,7 @@ typing-extensions==4.10.0
     #   alembic
     #   mypy
     #   sqlalchemy2-stubs
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

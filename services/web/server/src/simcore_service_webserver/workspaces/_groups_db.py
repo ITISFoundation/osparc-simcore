@@ -3,13 +3,14 @@
     - Adds a layer to the postgres API with a focus on the projects comments
 
 """
+
 import logging
 from datetime import datetime
 
 from aiohttp import web
 from models_library.users import GroupID
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
 )
@@ -36,9 +37,7 @@ class WorkspaceGroupGetDB(BaseModel):
     delete: bool
     created: datetime
     modified: datetime
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 ## DB API
@@ -69,7 +68,7 @@ async def create_workspace_group(
             .returning(literal_column("*"))
         )
         row = await result.first()
-        return WorkspaceGroupGetDB.from_orm(row)
+        return WorkspaceGroupGetDB.model_validate(row)
 
 
 async def list_workspace_groups(
@@ -93,7 +92,7 @@ async def list_workspace_groups(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(stmt)
-        return [WorkspaceGroupGetDB.from_orm(row) async for row in result]
+        return [WorkspaceGroupGetDB.model_validate(row) async for row in result]
 
 
 async def get_workspace_group(
@@ -126,7 +125,7 @@ async def get_workspace_group(
             raise WorkspaceGroupNotFoundError(
                 workspace_id=workspace_id, group_id=group_id
             )
-        return WorkspaceGroupGetDB.from_orm(row)
+        return WorkspaceGroupGetDB.model_validate(row)
 
 
 async def update_workspace_group(
@@ -158,7 +157,7 @@ async def update_workspace_group(
             raise WorkspaceGroupNotFoundError(
                 workspace_id=workspace_id, group_id=group_id
             )
-        return WorkspaceGroupGetDB.from_orm(row)
+        return WorkspaceGroupGetDB.model_validate(row)
 
 
 async def delete_workspace_group(

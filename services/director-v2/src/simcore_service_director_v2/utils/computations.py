@@ -1,12 +1,12 @@
-import datetime
+import datetime as dt
 import logging
 from typing import Any
 
+import arrow
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.services_regex import SERVICE_KEY_RE
 from models_library.users import UserID
-from pydantic import parse_obj_as
 from servicelib.utils import logged_gather
 
 from ..models.comp_tasks import CompTaskAtDB
@@ -123,18 +123,18 @@ async def find_deprecated_tasks(
         )
     )
     service_key_version_to_details = {
-        ServiceKeyVersion.construct(
+        ServiceKeyVersion.model_construct(
             key=details["key"], version=details["version"]
         ): details
         for details in services_details
     }
-    today = datetime.datetime.now(tz=datetime.timezone.utc)
+    today = dt.datetime.now(tz=dt.UTC)
 
     def _is_service_deprecated(service: dict[str, Any]) -> bool:
         if deprecation_date := service.get("deprecated"):
-            deprecation_date = parse_obj_as(
-                datetime.datetime, deprecation_date
-            ).replace(tzinfo=datetime.timezone.utc)
+            deprecation_date = arrow.get(deprecation_date).datetime.replace(
+                tzinfo=dt.UTC
+            )
             is_deprecated: bool = today > deprecation_date
             return is_deprecated
         return False

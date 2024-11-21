@@ -2,13 +2,16 @@
 
     Typically dumped in statics.json
 """
-from typing import Any, TypedDict
+from typing import Any
 
 import pycountry
 from aiohttp import web
 from models_library.utils.change_case import snake_to_camel
-from pydantic import AnyHttpUrl, Field, parse_obj_as
+from pydantic import AliasChoices, AnyHttpUrl, Field, TypeAdapter
 from settings_library.base import BaseCustomSettings
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from .._constants import APP_SETTINGS_KEY
 
@@ -93,7 +96,7 @@ class FrontEndAppSettings(BaseCustomSettings):
     # NOTE: for the moment, None but left here for future use
 
     def to_statics(self) -> dict[str, Any]:
-        data = self.dict(
+        data = self.model_dump(
             exclude_none=True,
             by_alias=True,
         )
@@ -121,12 +124,12 @@ class FrontEndAppSettings(BaseCustomSettings):
 
 class StaticWebserverModuleSettings(BaseCustomSettings):
     STATIC_WEBSERVER_URL: AnyHttpUrl = Field(
-        default=parse_obj_as(AnyHttpUrl, "http://static-webserver:8000"),
+        default=TypeAdapter(AnyHttpUrl).validate_python("http://static-webserver:8000"),
         description="url fort static content",
-        env=[
+        validation_alias=AliasChoices(
             "STATIC_WEBSERVER_URL",
             "WEBSERVER_STATIC_MODULE_STATIC_WEB_SERVER_URL",  # legacy
-        ],
+        ),
     )
 
 

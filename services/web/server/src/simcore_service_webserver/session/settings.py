@@ -1,8 +1,7 @@
-from typing import Final
+from typing import Annotated, Final
 
 from aiohttp import web
-from pydantic import PositiveInt
-from pydantic.class_validators import validator
+from pydantic import AliasChoices, PositiveInt, field_validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
@@ -11,19 +10,22 @@ from settings_library.utils_session import MixinSessionSettings
 from .._constants import APP_SETTINGS_KEY
 
 _MINUTE: Final[int] = 60  # secs
-_HOUR: Final[int] = 60 * _MINUTE
-_DAY: Final[int] = 24 * _HOUR
 
 
 class SessionSettings(BaseCustomSettings, MixinSessionSettings):
 
-    SESSION_SECRET_KEY: SecretStr = Field(
-        ...,
-        description="Secret key to encrypt cookies. "
-        'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
-        min_length=44,
-        env=["SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"],
-    )
+    SESSION_SECRET_KEY: Annotated[
+        SecretStr,
+        Field(
+            ...,
+            description="Secret key to encrypt cookies. "
+            'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
+            min_length=44,
+            validation_alias=AliasChoices(
+                "SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"
+            ),
+        ),
+    ]
 
     SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS: int = Field(
         30 * _MINUTE,
@@ -35,10 +37,13 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
     # - Defaults taken from https://github.com/aio-libs/aiohttp-session/blob/master/aiohttp_session/cookie_storage.py#L20-L26
     #
 
-    SESSION_COOKIE_MAX_AGE: PositiveInt | None = Field(
-        default=None,
-        description="Max-Age attribute. Maximum age for session data, int seconds or None for “session cookie” which last until you close your browser.",
-    )
+    SESSION_COOKIE_MAX_AGE: Annotated[
+        PositiveInt | None,
+        Field(
+            default=None,
+            description="Max-Age attribute. Maximum age for session data, int seconds or None for “session cookie” which last until you close your browser.",
+        ),
+    ]
     SESSION_COOKIE_SAMESITE: str | None = Field(
         default=None,
         description="SameSite attribute lets servers specify whether/when cookies are sent with cross-site requests",
@@ -53,12 +58,12 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         description="This prevents JavaScript from accessing the session cookie",
     )
 
-    @validator("SESSION_SECRET_KEY")
+    @field_validator("SESSION_SECRET_KEY")
     @classmethod
     def check_valid_fernet_key(cls, v):
         return cls.do_check_valid_fernet_key(v)
 
-    @validator("SESSION_COOKIE_SAMESITE")
+    @field_validator("SESSION_COOKIE_SAMESITE")
     @classmethod
     def check_valid_samesite_attribute(cls, v):
         # NOTE: Replacement to `Literal["Strict", "Lax"] | None` due to bug in settings_library/base.py:93: in prepare_field

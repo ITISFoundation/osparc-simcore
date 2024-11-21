@@ -31,7 +31,7 @@ async def test_check_subsystem_health(async_client: httpx.AsyncClient):
 
         assert pennsieve_health_route.called
         assert response.status_code == status.HTTP_200_OK
-        app_status = AppStatusCheck.parse_obj(response.json())
+        app_status = AppStatusCheck.model_validate(response.json())
         assert app_status
         assert app_status.app_name == "simcore-service-datcore-adapter"
         assert app_status.services == {"pennsieve": True}
@@ -43,7 +43,7 @@ async def test_check_subsystem_health(async_client: httpx.AsyncClient):
 
         assert pennsieve_health_route.called
         assert response.status_code == status.HTTP_200_OK
-        app_status = AppStatusCheck.parse_obj(response.json())
+        app_status = AppStatusCheck.model_validate(response.json())
         assert app_status
         assert app_status.app_name == "simcore-service-datcore-adapter"
         assert app_status.services == {"pennsieve": False}

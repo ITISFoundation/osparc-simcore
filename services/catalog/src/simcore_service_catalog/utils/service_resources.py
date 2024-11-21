@@ -42,12 +42,15 @@ def merge_service_resources_with_user_specs(
     service_resources: ResourcesDict, user_specific_spec: ServiceSpec
 ) -> ResourcesDict:
     if (
-        not user_specific_spec.TaskTemplate
-        or not user_specific_spec.TaskTemplate.Resources
+        not user_specific_spec.task_template
+        or not user_specific_spec.task_template.resources
     ):
         return service_resources
-    user_specific_resources = user_specific_spec.dict(
-        include={"TaskTemplate": {"Resources"}}
+
+    assert "task_template" in user_specific_spec.model_fields  # nosec
+
+    user_specific_resources = user_specific_spec.model_dump(
+        include={"task_template": {"resources"}}, by_alias=True
     )["TaskTemplate"]["Resources"]
 
     merged_resources = deepcopy(service_resources)
@@ -58,25 +61,29 @@ def merge_service_resources_with_user_specs(
             # res_name: NanoCPUs, MemoryBytes, Pids, GenericResources
             if res_value is None:
                 continue
+
             if res_name == "GenericResources":
                 # special case here
                 merged_resources |= parse_generic_resource(res_value)
                 continue
+
             if res_name not in _DOCKER_TO_OSPARC_RESOURCE_MAP:
                 continue
-            if _DOCKER_TO_OSPARC_RESOURCE_MAP[res_name] in merged_resources:
-                # upgrade
-                merged_resources[_DOCKER_TO_OSPARC_RESOURCE_MAP[res_name]].__setattr__(
-                    osparc_res_attr,
-                    res_value * _DOCKER_TO_OSPARC_RESOURCE_CONVERTER[res_name],
-                )
+
+            scale = _DOCKER_TO_OSPARC_RESOURCE_CONVERTER[res_name]
+            key = _DOCKER_TO_OSPARC_RESOURCE_MAP[res_name]
+            if key in merged_resources:
+                # updates.
+                # NOTE: do not use assignment!
+                # SEE test_reservation_is_cap_by_limit_on_assigment_pydantic_2_bug
+                data = merged_resources[key].model_dump()
+                data[osparc_res_attr] = res_value * scale
+                merged_resources[key] = ResourceValue(**data)
             else:
-                merged_resources[
-                    _DOCKER_TO_OSPARC_RESOURCE_MAP[res_name]
-                ] = ResourceValue(
-                    limit=res_value * _DOCKER_TO_OSPARC_RESOURCE_CONVERTER[res_name],
-                    reservation=res_value
-                    * _DOCKER_TO_OSPARC_RESOURCE_CONVERTER[res_name],
+                # constructs
+                merged_resources[key] = ResourceValue(
+                    limit=res_value * scale,
+                    reservation=res_value * scale,
                 )
 
     return merged_resources

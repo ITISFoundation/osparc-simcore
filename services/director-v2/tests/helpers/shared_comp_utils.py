@@ -43,8 +43,8 @@ async def assert_computation_task_out_obj(
     assert task_out.iteration == iteration
     assert task_out.cluster_id == cluster_id
     # check pipeline details contents
-    received_task_out_pipeline = task_out.pipeline_details.dict()
-    expected_task_out_pipeline = exp_pipeline_details.dict()
+    received_task_out_pipeline = task_out.pipeline_details.model_dump()
+    expected_task_out_pipeline = exp_pipeline_details.model_dump()
     assert received_task_out_pipeline == expected_task_out_pipeline
 
 
@@ -64,11 +64,11 @@ async def assert_and_wait_for_pipeline_status(
     MAX_TIMEOUT_S = 5 * MINUTE
 
     async def check_pipeline_state() -> ComputationGet:
-        response = await client.get(url, params={"user_id": user_id})
+        response = await client.get(f"{url}", params={"user_id": user_id})
         assert (
             response.status_code == status.HTTP_200_OK
         ), f"response code is {response.status_code}, error: {response.text}"
-        task_out = ComputationGet.parse_obj(response.json())
+        task_out = ComputationGet.model_validate(response.json())
         assert task_out.id == project_uuid
         assert task_out.url.path == f"/v2/computations/{project_uuid}"
         print(
@@ -100,4 +100,5 @@ async def assert_and_wait_for_pipeline_status(
             return task_out
 
     # this is only to satisfy pylance
-    raise AssertionError("No computation task generated!")
+    msg = "No computation task generated!"
+    raise AssertionError(msg)

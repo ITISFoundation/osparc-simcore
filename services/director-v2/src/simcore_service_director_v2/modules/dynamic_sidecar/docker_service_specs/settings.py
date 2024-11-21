@@ -267,7 +267,7 @@ async def _extract_osparc_involved_service_labels(
             f"docker_image_name_by_services={docker_image_name_by_services}"
         )
         log.error(message)
-        raise DynamicSidecarError(message)
+        raise DynamicSidecarError(msg=message)
 
     return remap_to_compose_spec_key()
 
@@ -304,7 +304,7 @@ def _merge_resources_in_settings(
 
     # merge all resources
     empty_resource_entry: SimcoreServiceSettingLabelEntry = (
-        SimcoreServiceSettingLabelEntry.parse_obj(
+        SimcoreServiceSettingLabelEntry.model_validate(
             {
                 "name": "Resources",
                 "type": "Resources",
@@ -399,14 +399,14 @@ def _patch_target_service_into_env_vars(
 def _get_boot_options(
     service_labels: SimcoreServiceLabels,
 ) -> dict[EnvVarKey, BootOption] | None:
-    as_dict = service_labels.dict()
+    as_dict = service_labels.model_dump()
     boot_options_encoded = as_dict.get("io.simcore.boot-options", None)
     if boot_options_encoded is None:
         return None
 
     boot_options = json.loads(boot_options_encoded)["boot-options"]
     log.debug("got boot_options=%s", boot_options)
-    return {k: BootOption.parse_obj(v) for k, v in boot_options.items()}
+    return {k: BootOption.model_validate(v) for k, v in boot_options.items()}
 
 
 def _assemble_env_vars_for_boot_options(
@@ -423,7 +423,7 @@ def _assemble_env_vars_for_boot_options(
         env_vars.append(f"{env_var_name}={value}")
 
     return SimcoreServiceSettingsLabel(
-        __root__=[
+        root=[
             SimcoreServiceSettingLabelEntry(
                 name="env", type="string", value=list(env_vars)
             )
@@ -511,7 +511,7 @@ async def merge_settings_before_use(
     )
     settings = _patch_target_service_into_env_vars(settings)
 
-    return SimcoreServiceSettingsLabel.parse_obj(settings)
+    return SimcoreServiceSettingsLabel.model_validate(settings)
 
 
 __all__ = ["merge_settings_before_use", "update_service_params_from_settings"]

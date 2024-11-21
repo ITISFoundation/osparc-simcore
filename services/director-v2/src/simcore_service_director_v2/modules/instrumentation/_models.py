@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Final
 
 from prometheus_client import CollectorRegistry, Histogram
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from servicelib.instrumentation import MetricsBase, get_metrics_namespace
 
 from ..._meta import PROJECT_NAME
@@ -31,7 +31,7 @@ _BUCKETS_TIME_S: Final[tuple[float, ...]] = (
 
 
 _RATE_BPS_BUCKETS: Final[tuple[float, ...]] = tuple(
-    parse_obj_as(ByteSize, f"{m}MiB")
+    TypeAdapter(ByteSize).validate_python(f"{m}MiB")
     for m in (
         1,
         30,

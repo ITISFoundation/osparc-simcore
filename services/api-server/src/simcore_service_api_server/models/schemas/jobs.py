@@ -1,7 +1,7 @@
 import datetime
 import hashlib
 import logging
-from typing import Any, ClassVar, TypeAlias
+from typing import Annotated, TypeAlias
 from uuid import UUID, uuid4
 
 from models_library.projects import ProjectID
@@ -9,24 +9,23 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import (
     BaseModel,
-    ConstrainedInt,
-    Extra,
+    ConfigDict,
     Field,
     HttpUrl,
     PositiveInt,
     StrictBool,
     StrictFloat,
     StrictInt,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
-    validator,
+    ValidationInfo,
+    field_validator,
 )
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from starlette.datastructures import Headers
 
 from ...models.schemas.files import File
 from ...models.schemas.solvers import Solver
-from .._utils_pydantic import BaseConfig
 from ..api_resources import (
     RelativeResourceName,
     compose_resource_name,
@@ -34,7 +33,6 @@ from ..api_resources import (
 )
 
 JobID: TypeAlias = UUID
-assert JobID == ProjectID
 
 # ArgumentTypes are types used in the job inputs (see ResultsTypes)
 ArgumentTypes: TypeAlias = (
@@ -49,7 +47,7 @@ def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
     for key in sorted(kwargs.keys()):
         value = kwargs[key]
         if isinstance(value, File):
-            value = _compute_keyword_arguments_checksum(value.dict())
+            value = _compute_keyword_arguments_checksum(value.model_dump())
         else:
             value = str(value)
         _dump_str += f"{key}:{value}"
@@ -70,10 +68,9 @@ class JobInputs(BaseModel):
 
     # TODO: gibt es platz fuer metadata?
 
-    class Config(BaseConfig):
-        frozen = True
-        allow_mutation = False
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        frozen=True,
+        json_schema_extra={
             "example": {
                 "values": {
                     "x": 4.33,
@@ -86,7 +83,8 @@ class JobInputs(BaseModel):
                     },
                 }
             }
-        }
+        },
+    )
 
     def compute_checksum(self):
         return _compute_keyword_arguments_checksum(self.values)
@@ -103,10 +101,9 @@ class JobOutputs(BaseModel):
     # TODO: an error might have occurred at the level of the job, i.e. affects all outputs, or only
     # on one specific output.
 
-    class Config(BaseConfig):
-        frozen = True
-        allow_mutation = False
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        frozen=True,
+        json_schema_extra={
             "example": {
                 "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
                 "results": {
@@ -120,7 +117,8 @@ class JobOutputs(BaseModel):
                     },
                 },
             }
-        }
+        },
+    )
 
     def compute_results_checksum(self):
         return _compute_keyword_arguments_checksum(self.results)
@@ -135,6 +133,19 @@ class JobMetadataUpdate(BaseModel):
         default_factory=dict, description="Custom key-value map"
     )
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "metadata": {
+                    "bool": "true",
+                    "int": "42",
+                    "float": "3.14",
+                    "str": "hej med dig",
+                }
+            }
+        }
+    )
+
 
 class JobMetadata(BaseModel):
     job_id: JobID = Field(..., description="Parent Job")
@@ -142,6 +153,21 @@ class JobMetadata(BaseModel):
 
     # Links
     url: HttpUrl | None = Field(..., description="Link to get this resource (self)")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "job_id": "3497e4de-0e69-41fb-b08f-7f3875a1ac4b",
+                "metadata": {
+                    "bool": "true",
+                    "int": "42",
+                    "float": "3.14",
+                    "str": "hej med dig",
+                },
+                "url": "https://f02b2452-1dd8-4882-b673-af06373b41b3.fake",
+            }
+        }
+    )
 
 
 # JOBS ----------
@@ -180,8 +206,8 @@ class Job(BaseModel):
         ..., description="Link to the job outputs (sub-collection)"
     )
 
-    class Config(BaseConfig):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "f622946d-fd29-35b9-a193-abdd1095167c",
                 "name": "solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
@@ -193,11 +219,12 @@ class Job(BaseModel):
                 "outputs_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs",
             }
         }
+    )
 
-    @validator("name", pre=True)
+    @field_validator("name", mode="before")
     @classmethod
-    def check_name(cls, v, values):
-        _id = str(values["id"])
+    def check_name(cls, v, info: ValidationInfo):
+        _id = str(info.data["id"])
         if not v.endswith(f"/{_id}"):
             msg = f"Resource name [{v}] and id [{_id}] do not match"
             raise ValueError(msg)
@@ -225,7 +252,7 @@ class Job(BaseModel):
     @classmethod
     def create_solver_job(cls, *, solver: Solver, inputs: JobInputs):
         return Job.create_now(
-            parent_name=solver.name,  # type: ignore
+            parent_name=solver.name,
             inputs_checksum=inputs.compute_checksum(),
         )
 
@@ -248,9 +275,7 @@ class Job(BaseModel):
         return self.name
 
 
-class PercentageInt(ConstrainedInt):
-    ge = 0
-    le = 100
+PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]
 
 
 class JobStatus(BaseModel):
@@ -260,7 +285,7 @@ class JobStatus(BaseModel):
 
     job_id: JobID
     state: RunningState
-    progress: PercentageInt = Field(default=PercentageInt(0))
+    progress: PercentageInt = Field(default=0)
 
     # Timestamps on states
     submitted_at: datetime.datetime = Field(
@@ -275,8 +300,8 @@ class JobStatus(BaseModel):
         description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
     )
 
-    class Config(BaseConfig):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
                 "state": RunningState.STARTED,
@@ -286,31 +311,31 @@ class JobStatus(BaseModel):
                 "stopped_at": None,
             }
         }
+    )
 
 
 class JobPricingSpecification(BaseModel):
     pricing_plan: PositiveInt = Field(..., alias="x-pricing-plan")
     pricing_unit: PositiveInt = Field(..., alias="x-pricing-unit")
 
-    class Config:
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     @classmethod
     def create_from_headers(cls, headers: Headers) -> "JobPricingSpecification | None":
         try:
-            return parse_obj_as(JobPricingSpecification, headers)
+            return TypeAdapter(cls).validate_python(headers)
         except ValidationError:
             return None
 
 
 class JobLog(BaseModel):
     job_id: ProjectID
-    node_id: NodeID | None
+    node_id: NodeID | None = None
     log_level: LogLevelInt
     messages: list[LogMessageStr]
 
-    class Config(BaseConfig):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
                 "node_id": "3742215e-6756-48d2-8b73-4d043065309f",
@@ -318,3 +343,4 @@ class JobLog(BaseModel):
                 "messages": ["PROGRESS: 5/10"],
             }
         }
+    )

@@ -12,7 +12,7 @@ from typing import TypedDict
 import httpx
 import pytest
 from fastapi.encoders import jsonable_encoder
-from pydantic import parse_file_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.httpx_calls_capture_parameters import PathDescription
 from respx import MockRouter
@@ -38,9 +38,12 @@ def mocked_backend(
     # load
     captures = {
         c.name: c
-        for c in parse_file_as(
-            list[HttpApiCallCaptureModel],
-            project_tests_dir / "mocks" / "test_get_and_update_study_job_metadata.json",
+        for c in TypeAdapter(list[HttpApiCallCaptureModel]).validate_json(
+            Path(
+                project_tests_dir
+                / "mocks"
+                / "test_get_and_update_study_job_metadata.json"
+            ).read_text(),
         )
     }
 

@@ -6,7 +6,7 @@
 from typing import Any
 
 import pytest
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 from pydantic import BaseModel
 from simcore_service_webserver.products._db import Product
 
@@ -34,13 +34,17 @@ def test_product_examples(
 
 def test_product_to_static():
 
-    product = Product.parse_obj(Product.Config.schema_extra["examples"][0])
+    product = Product.model_validate(
+        Product.model_config["json_schema_extra"]["examples"][0]
+    )
     assert product.to_statics() == {
         "displayName": "o²S²PARC",
         "supportEmail": "support@osparc.io",
     }
 
-    product = Product.parse_obj(Product.Config.schema_extra["examples"][2])
+    product = Product.model_validate(
+        Product.model_config["json_schema_extra"]["examples"][2]
+    )
 
     assert product.to_statics() == {
         "displayName": "o²S²PARC FOO",
@@ -78,7 +82,7 @@ def test_product_to_static():
 
 
 def test_product_host_regex_with_spaces():
-    data = Product.Config.schema_extra["examples"][2]
+    data = Product.model_config["json_schema_extra"]["examples"][2]
 
     # with leading and trailing spaces and uppercase (tests anystr_strip_whitespace )
     data["support_email"] = "  fOO@BaR.COM    "
@@ -88,7 +92,7 @@ def test_product_host_regex_with_spaces():
     data["host_regex"] = expected + "   "
 
     # parsing should strip all whitespaces and normalize email
-    product = Product.parse_obj(data)
+    product = Product.model_validate(data)
 
     assert product.host_regex.pattern == expected
     assert product.host_regex.search("osparc.bar.com")

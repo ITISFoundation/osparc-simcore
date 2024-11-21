@@ -22,7 +22,7 @@ async def list_valid_projects_in(
         )
     ):
         with suppress(ValidationError):
-            yield ProjectAtDB.from_orm(row)
+            yield ProjectAtDB.model_validate(row)
 
 
 async def project_exists(

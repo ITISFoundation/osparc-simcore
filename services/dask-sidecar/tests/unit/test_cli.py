@@ -28,6 +28,5 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
     result = cli_runner.invoke(main, ["settings", "--show-secrets", "--as-json"])
     assert result.exit_code == os.EX_OK, result.output
 
-    print(result.output)
-    settings = Settings.parse_raw(result.output)
-    assert settings == Settings.create_from_envs()
+    settings = Settings(result.output)
+    assert settings.model_dump() == Settings.create_from_envs().model_dump()

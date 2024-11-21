@@ -7,7 +7,7 @@ Usage:
 """
 
 from collections.abc import Sequence
-from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
+from typing import Generic, TypeAlias, TypeVar
 
 from fastapi import Query
 from fastapi_pagination.customization import CustomizedPage, UseName, UseParamsFields
@@ -17,9 +17,14 @@ from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
 )
-from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import NonNegativeInt, validator
-from pydantic.generics import GenericModel
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    NonNegativeInt,
+    ValidationInfo,
+    field_validator,
+)
 
 T = TypeVar("T")
 
@@ -41,7 +46,7 @@ Page = CustomizedPage[
 PaginationParams: TypeAlias = _LimitOffsetParams
 
 
-class OnePage(GenericModel, Generic[T]):
+class OnePage(BaseModel, Generic[T]):
     """
     A single page is used to envelope a small sequence that does not require
     pagination
@@ -51,12 +56,12 @@ class OnePage(GenericModel, Generic[T]):
     """
 
     items: Sequence[T]
-    total: NonNegativeInt = FieldNotRequired()
+    total: NonNegativeInt | None = Field(default=None, validate_default=True)
 
-    @validator("total", pre=True)
+    @field_validator("total", mode="before")
     @classmethod
-    def check_total(cls, v, values):
-        items = values["items"]
+    def _check_total(cls, v, info: ValidationInfo):
+        items = info.data.get("items", [])
         if v is None:
             return len(items)
 
@@ -66,9 +71,9 @@ class OnePage(GenericModel, Generic[T]):
 
         return v
 
-    class Config:
-        frozen = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        frozen=True,
+        json_schema_extra={
             "examples": [
                 {
                     "total": 1,
@@ -78,7 +83,8 @@ class OnePage(GenericModel, Generic[T]):
                     "items": ["one"],
                 },
             ],
-        }
+        },
+    )
 
 
 __all__: tuple[str, ...] = (
