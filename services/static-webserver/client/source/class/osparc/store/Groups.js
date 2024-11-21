@@ -23,7 +23,6 @@ qx.Class.define("osparc.store.Groups", {
     this.base(arguments);
 
     this.groupsCached = [];
-    this.usersCached = [];
   },
 
   properties: {
@@ -71,7 +70,6 @@ qx.Class.define("osparc.store.Groups", {
 
   members: {
     groupsCached: null,
-    usersCached: null,
 
     __fetchGroups: function() {
       if (osparc.auth.Data.getInstance().isGuest()) {
@@ -248,41 +246,37 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     // CRUD GROUP
-    postGroup: function(name, parentGroupId = null, workspaceId = null) {
+    postOrganization: function(name, description, thumbnail) {
       const newGroupData = {
-        name,
-        parentGroupId,
-        workspaceId,
+        "label": name,
+        "description": description,
+        "thumbnail": thumbnail || null
       };
       const params = {
         data: newGroupData
       };
       return osparc.data.Resources.getInstance().fetch("groups", "post", params)
         .then(groupData => {
-          const group = this.__addToGroupsCache(groupData);
-          this.fireDataEvent("groupAdded", group);
+          const group = this.__addToGroupsCache(groupData, "organization");
+          this.getOrganizations()[group.getGroupId()] = group;
           return group;
         });
     },
 
-    deleteGroup: function(groupId, workspaceId) {
+    deleteOrganization: function(groupId) {
       const params = {
-        "url": {
-          groupId
+        url: {
+          "gid": groupId
         }
       };
       return osparc.data.Resources.getInstance().fetch("groups", "delete", params)
         .then(() => {
-          const group = this.getOrganization(groupId);
-          if (group) {
-            this.__deleteFromGroupsCache(groupId, workspaceId);
-            this.fireDataEvent("groupRemoved", group);
-          }
-        })
-        .catch(console.error);
+          this.__deleteFromGroupsCache(groupId);
+          delete this.getOrganizations()[groupId];
+        });
     },
 
-    patchGroup: function(groupId, name, description, thumbnail) {
+    patchOrganization: function(groupId, name, description, thumbnail) {
       const params = {
         url: {
           "gid": groupId
@@ -372,16 +366,7 @@ qx.Class.define("osparc.store.Groups", {
 
     __addToGroupsCache: function(groupData, groupType) {
       let group = this.groupsCached.find(f => f.getGroupId() === groupData["gid"]);
-      if (group) {
-        const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Group));
-        // put
-        Object.keys(groupData).forEach(key => {
-          if (props.includes(key)) {
-            group.set(key, groupData[key]);
-          }
-        });
-      } else {
-        // get and post
+      if (!group) {
         group = new osparc.data.model.Group(groupData).set({
           groupType
         });
@@ -390,13 +375,8 @@ qx.Class.define("osparc.store.Groups", {
       return group;
     },
 
-    __deleteFromGroupsCache: function(groupId, workspaceId) {
-      const idx = this.groupsCached.findIndex(f => f.getGroupId() === groupId);
-      if (idx > -1) {
-        this.groupsCached.splice(idx, 1);
-        return true;
-      }
-      return false;
+    __deleteFromGroupsCache: function(groupId) {
+      delete this.getOrganizations()[groupId];
     },
 
     __addToUsersCache: function(user, orgId = null) {

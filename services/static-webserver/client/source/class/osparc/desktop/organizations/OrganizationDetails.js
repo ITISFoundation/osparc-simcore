@@ -113,7 +113,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
       const thumbnail = orgEditor.getThumbnail();
-      osparc.store.Groups.getInstance().patchGroup(groupId, name, description, thumbnail)
+      osparc.store.Groups.getInstance().patchOrganization(groupId, name, description, thumbnail)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);

@@ -224,19 +224,10 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       win.open();
       win.addListener("close", () => {
         if (win.getConfirmed()) {
-          const params = {
-            url: {
-              "gid": orgKey
-            }
-          };
-          osparc.data.Resources.fetch("organizations", "delete", params)
+          const groupsStore = osparc.store.Groups.getInstance(orgKey);
+          groupsStore.deleteOrganization(orgKey)
             .then(() => {
-              osparc.store.Store.getInstance().reset("organizations");
-              // reload "profile", "organizations" are part of the information in this endpoint
-              osparc.data.Resources.getOne("profile", {}, null, false)
-                .then(() => {
-                  this.reloadOrganizations();
-                });
+              this.reloadOrganizations();
             })
             .catch(err => {
               osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong deleting ") + name, "ERROR");
@@ -250,31 +241,16 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     },
 
     __createOrganization: function(win, button, orgEditor) {
-      const groupId = orgEditor.getGroupId();
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
       const thumbnail = orgEditor.getThumbnail();
-      const params = {
-        url: {
-          "gid": groupId
-        },
-        data: {
-          "label": name,
-          "description": description,
-          "thumbnail": thumbnail || null
-        }
-      };
-      osparc.data.Resources.fetch("organizations", "post", params)
+      const groupsStore = osparc.store.Groups.getInstance();
+      groupsStore.postOrganization(name, description, thumbnail)
         .then(org => {
           osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
           button.setFetching(false);
-          osparc.store.Store.getInstance().reset("organizations");
-          // reload "profile", "organizations" are part of the information in this endpoint
-          osparc.data.Resources.getOne("profile", {}, null, false)
-            .then(() => {
-              // open it
-              this.reloadOrganizations(org["gid"]);
-            });
+          // open it
+          this.reloadOrganizations(org.getGroupId());
         })
         .catch(err => {
           const errorMessage = err["message"] || this.tr("Something went wrong creating ") + name;
@@ -292,7 +268,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
       const thumbnail = orgEditor.getThumbnail();
-      osparc.store.Groups.getInstance().patchGroup(groupId, name, description, thumbnail)
+      osparc.store.Groups.getInstance().patchOrganization(groupId, name, description, thumbnail)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);
