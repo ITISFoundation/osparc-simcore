@@ -190,14 +190,9 @@ qx.Class.define("osparc.store.Groups", {
         potentialCollaborators[gid] = members[gid];
       }
       if (includeMe) {
-        const myData = osparc.auth.Data.getInstance();
-        const myGid = myData.getGroupId();
-        potentialCollaborators[myGid] = {
-          "login": myData.getEmail(),
-          "first_name": myData.getFirstName(),
-          "last_name": myData.getLastName(),
-          "collabType": 2
-        };
+        const myGroup = this.getGroupMe();
+        myGroup["collabType"] = 2;
+        potentialCollaborators[myGroup.getGroupId()] = myGroup;
       }
       if (includeProductEveryone && productEveryone) {
         productEveryone["collabType"] = 0;
