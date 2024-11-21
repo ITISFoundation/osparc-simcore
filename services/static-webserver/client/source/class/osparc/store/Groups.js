@@ -231,6 +231,22 @@ qx.Class.define("osparc.store.Groups", {
       return null;
     },
 
+    getGroupMemberByUserId: function(orgId, userId) {
+      const org = this.getGroup(orgId);
+      if (org) {
+        return Object.values(org.getGroupMembers()).find(user => user.getUserId() === userId);
+      }
+      return null;
+    },
+
+    getGroupMemberByLogin: function(orgId, userEmail) {
+      const org = this.getGroup(orgId);
+      if (org) {
+        return Object.values(org.getGroupMembers()).find(user => user.getLogin() === userEmail);
+      }
+      return null;
+    },
+
     postGroup: function(name, parentGroupId = null, workspaceId = null) {
       const newGroupData = {
         name,
@@ -304,12 +320,32 @@ qx.Class.define("osparc.store.Groups", {
           return this.__fetchGroupMembers(gid);
         })
         .then(() => {
-          const org = this.getOrganization(gid);
-          if (org) {
-            const groupMember = Object.values(org.getGroupMembers()).find(user => user.getLogin() === newMemberEmail);
-            if (groupMember) {
-              return groupMember;
-            }
+          const groupMember = this.getGroupMemberByLogin(gid, newMemberEmail);
+          if (groupMember) {
+            return groupMember;
+          }
+          return null;
+        });
+    },
+
+    patchAccessRights: function(orgId, userId, newAccessRights) {
+      const gid = parseInt(orgId);
+      const uid = parseInt(userId);
+      const params = {
+        url: {
+          gid,
+          uid,
+        },
+        data: {
+          "accessRights": newAccessRights
+        }
+      };
+      return osparc.data.Resources.fetch("organizationMembers", "patch", params)
+        .then(() => {
+          const groupMember = this.getGroupMemberByUserId(gid, uid);
+          if (groupMember) {
+            groupMember.setAccessRights(newAccessRights);
+            return groupMember;
           }
           return null;
         });
@@ -370,11 +406,9 @@ qx.Class.define("osparc.store.Groups", {
     __removeUserFromCache: function(userId, orgId) {
       if (orgId) {
         const organization = this.getOrganization(orgId);
-        if (organization) {
-          const groupMember = Object.values(organization.getGroupMembers()).find(user => user.getUserId() === userId);
-          if (groupMember) {
-            delete organization.getGroupMembers()[groupMember.getGroupId()]
-          }
+        const groupMember = this.getGroupMemberByUserId(orgId, userId)
+        if (organization && groupMember) {
+          delete organization.getGroupMembers()[groupMember.getGroupId()]
         }
       }
     },
