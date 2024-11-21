@@ -8,12 +8,10 @@
 import json
 import sys
 from collections.abc import Callable, Iterable
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
-import jsonref
 import pytest
 import yaml
 from pytest_simcore.helpers.dict_tools import ConfigDict
@@ -81,23 +79,7 @@ def disable_gc_manual_guest_users(mocker):
     )
 
 
-@lru_cache  # ANE: required to boost tests speed, gains 3.5s per test
-def _load_openapi_specs(spec_path: Path | None = None) -> dict:
-    if spec_path is None:
-        spec_path = get_openapi_specs_path()
-
-    with spec_path.open() as fh:
-        spec_dict = yaml.safe_load(fh)
-
-    # SEE https://jsonref.readthedocs.io/en/latest/#lazy-load-and-load-on-repr
-    openapi: dict = jsonref.replace_refs(
-        spec_dict, base_uri=spec_path.as_uri(), lazy_load=True, merge_props=False
-    )
-    return openapi
-
-
 @pytest.fixture
-def openapi_specs(api_version_prefix) -> dict:
-
-    spec_path = get_openapi_specs_path(api_version_prefix)
-    return _load_openapi_specs(spec_path)
+def openapi_specs_path(api_version_prefix: str) -> Path:
+    # overrides pytest_simcore.openapi_specs.app_openapi_specs_path fixture
+    return get_openapi_specs_path(api_version_prefix)

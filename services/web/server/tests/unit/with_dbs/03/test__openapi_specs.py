@@ -3,21 +3,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import NamedTuple
 
 import pytest
 from aiohttp import web
 from faker import Faker
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.openapi_specs import Entrypoint
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings import get_application_settings
-
-
-class Entrypoint(NamedTuple):
-    name: str
-    method: str
-    path: str
 
 
 @pytest.fixture
@@ -60,24 +54,7 @@ def app(app_environment: EnvVarsDict) -> web.Application:
 
 
 @pytest.fixture
-def expected_openapi_entrypoints(openapi_specs: dict) -> set[Entrypoint]:
-    entrypoints: set[Entrypoint] = set()
-
-    # openapi-specifications, i.e. "contract"
-    for path, path_obj in openapi_specs["paths"].items():
-        for operation, operation_obj in path_obj.items():
-            entrypoints.add(
-                Entrypoint(
-                    method=operation.upper(),
-                    path=path,
-                    name=operation_obj["operationId"],
-                )
-            )
-    return entrypoints
-
-
-@pytest.fixture
-def app_entrypoints(app: web.Application) -> set[Entrypoint]:
+def app_rest_entrypoints(app: web.Application) -> set[Entrypoint]:
     entrypoints: set[Entrypoint] = set()
 
     # app routes, i.e. "exposed"
@@ -102,12 +79,12 @@ def app_entrypoints(app: web.Application) -> set[Entrypoint]:
 
 
 def test_app_named_resources_against_openapi_specs(
-    expected_openapi_entrypoints: set[Entrypoint],
-    app_entrypoints: set[Entrypoint],
+    openapi_specs_entrypoints: set[Entrypoint],
+    app_rest_entrypoints: set[Entrypoint],
 ):
     # check whether exposed routes implements openapi.json contract
 
-    assert app_entrypoints == expected_openapi_entrypoints
+    assert app_rest_entrypoints == openapi_specs_entrypoints
 
     # NOTE: missing here is:
     # - input schemas (path, query and body)

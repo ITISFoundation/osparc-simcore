@@ -75,6 +75,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_service_library_fixtures",
     "pytest_simcore.simcore_services",
     "pytest_simcore.socketio_client",
+    "pytest_simcore.openapi_specs",
 ]
 
 
