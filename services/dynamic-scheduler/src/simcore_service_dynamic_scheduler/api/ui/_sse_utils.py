@@ -106,8 +106,10 @@ async def render_items_on_change(
     """
 
     async with renderer_type(app) as renderer:
-
         last_update_id, messages = renderer.get_messages()
+
+        # render current state
+        yield f"data: {FastUI(root=messages).model_dump_json(by_alias=True, exclude_none=True)}\n\n"
 
         # Avoid the browser reconnecting
         while True:
