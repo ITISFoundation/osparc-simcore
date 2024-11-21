@@ -24,7 +24,14 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       init: true,
       nullable: false,
       event: "changeShowDeleteButton"
-    }
+    },
+
+    groupMembers: {
+      check: "Object",
+      nullable: true,
+      init: null,
+      event: "changeGroupMembers",
+    },
   },
 
   events: {
@@ -37,6 +44,11 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
     _setRole: function() {
       // Role field was already filled up with the nMembers
       return;
+    },
+
+    updateNMembers: function() {
+      const roleText = this.getGroupMembers() ? Object.keys(this.getGroupMembers()).length + this.tr(" members") : "-";
+      this.setRole(roleText);
     },
 
     // overridden
@@ -89,6 +101,6 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
           thumbnail.setSource(osparc.utils.Icons.everyone(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
         }
       }
-    }
+    },
   }
 });

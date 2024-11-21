@@ -41,27 +41,30 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
     __templatesList: null,
     __servicesList: null,
 
-    setCurrentOrg: function(orgModel) {
-      if (orgModel === null) {
+    setCurrentOrg: function(organization) {
+      if (organization === null) {
         return;
       }
-      this.__orgModel = orgModel;
+      this.__orgModel = organization;
 
       const organizationListItem = this.__addOrganizationListItem();
-      orgModel.bind("groupId", organizationListItem, "key");
-      orgModel.bind("groupId", organizationListItem, "model");
-      orgModel.bind("thumbnail", organizationListItem, "thumbnail");
-      orgModel.bind("label", organizationListItem, "title");
-      orgModel.bind("description", organizationListItem, "subtitle");
-      orgModel.bind("groupMembers", organizationListItem, "role", {
-        converter: groupMembers => groupMembers ? Object.keys(groupMembers).length + this.tr(" members") : "-"
-      });
-      orgModel.bind("accessRights", organizationListItem, "accessRights");
+      organization.bind("groupId", organizationListItem, "key");
+      organization.bind("groupId", organizationListItem, "model");
+      organization.bind("thumbnail", organizationListItem, "thumbnail");
+      organization.bind("label", organizationListItem, "title");
+      organization.bind("description", organizationListItem, "subtitle");
+      organization.bind("groupMembers", organizationListItem, "groupMembers");
+      organization.bind("accessRights", organizationListItem, "accessRights");
+      organizationListItem.updateNMembers();
+      [
+        "memberAdded",
+        "memberRemoved",
+      ].forEach(ev => organization.addListener(ev, () => organizationListItem.updateNMembers()));
 
       // set orgModel to the tab views
-      this.__membersList.setCurrentOrg(orgModel);
-      this.__templatesList.setCurrentOrg(orgModel);
-      this.__servicesList.setCurrentOrg(orgModel);
+      this.__membersList.setCurrentOrg(organization);
+      this.__templatesList.setCurrentOrg(organization);
+      this.__servicesList.setCurrentOrg(organization);
     },
 
     __getTitleLayout: function() {

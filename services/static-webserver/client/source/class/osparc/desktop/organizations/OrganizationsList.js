@@ -135,9 +135,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("label", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
-          ctrl.bindProperty("groupMembers", "role", {
-            converter: groupMembers => groupMembers ? Object.keys(groupMembers).length + this.tr(" members") : "-"
-          }, item, id);
+          ctrl.bindProperty("groupMembers", "groupMembers", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
         },
         configureItem: item => {
