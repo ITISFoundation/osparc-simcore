@@ -182,7 +182,7 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
-    reachableMembers: {
+    reachableUsers: {
       check: "Object",
       init: {}
     },

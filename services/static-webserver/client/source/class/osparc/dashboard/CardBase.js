@@ -217,7 +217,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
     populateShareIcon: function(shareIcon, accessRights) {
       const groupsStore = osparc.store.Groups.getInstance();
-      const orgMembs = Object.values(groupsStore.getReachableMembers());
+      const orgMembs = Object.values(groupsStore.getReachableUsers());
       const orgs = Object.values(groupsStore.getOrganizations());
       const productEveryone = [groupsStore.getEveryoneProductGroup()];
       const everyone = [groupsStore.getEveryoneGroup()];

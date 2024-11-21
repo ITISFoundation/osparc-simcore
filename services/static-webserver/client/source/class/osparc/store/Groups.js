@@ -47,7 +47,7 @@ qx.Class.define("osparc.store.Groups", {
       init: {}
     },
 
-    reachableMembers: {
+    reachableUsers: {
       check: "Object",
       init: {}
     },
@@ -112,7 +112,7 @@ qx.Class.define("osparc.store.Groups", {
             orgMembers.forEach(orgMember => {
               const user = new osparc.data.model.User(orgMember);
               group.getGroupMembers()[orgMember["gid"]] = user;
-              this.getReachableMembers()[orgMember["gid"]] = user;
+              this.getReachableUsers()[orgMember["gid"]] = user;
             });
           }
         });
@@ -122,7 +122,7 @@ qx.Class.define("osparc.store.Groups", {
       return new Promise(resolve => {
         this.__fetchGroups()
           .then(orgs => {
-            this.resetReachableMembers();
+            this.resetReachableUsers();
             const promises = Object.keys(orgs).map(orgId => this.__fetchGroupMembers(orgId));
             Promise.all(promises)
               .then(() => resolve())
@@ -146,7 +146,7 @@ qx.Class.define("osparc.store.Groups", {
       groupMe["collabType"] = 2;
       groups.push(groupMe);
 
-      Object.values(this.getReachableMembers()).forEach(member => {
+      Object.values(this.getReachableUsers()).forEach(member => {
         member["collabType"] = 2;
         groups.push(member);
       });
@@ -191,7 +191,7 @@ qx.Class.define("osparc.store.Groups", {
           potentialCollaborators[org.getGroupId()] = org;
         }
       });
-      const members = this.getReachableMembers();
+      const members = this.getReachableUsers();
       for (const gid of Object.keys(members)) {
         members[gid]["collabType"] = 2;
         potentialCollaborators[gid] = members[gid];
@@ -223,7 +223,7 @@ qx.Class.define("osparc.store.Groups", {
 
     getUserByUserId: function(userId) {
       if (userId) {
-        const visibleMembers = this.getReachableMembers();
+        const visibleMembers = this.getReachableUsers();
         return Object.values(visibleMembers).find(member => member.getUserId() === userId);
       }
       return null;
@@ -231,7 +231,7 @@ qx.Class.define("osparc.store.Groups", {
 
     getUserByGroupId: function(groupId) {
       if (groupId) {
-        const visibleMembers = this.getReachableMembers();
+        const visibleMembers = this.getReachableUsers();
         return Object.values(visibleMembers).find(member => member.getGroupId() === groupId);
       }
       return null;
