@@ -349,22 +349,16 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
-      const params = {
-        url: {
-          "gid": this.__currentOrg.getGroupId(),
-          "uid": "id" in listedMember ? listedMember["id"] : listedMember["key"]
-        },
-        data: {
-          "accessRights": this.self().getNoReadAccess()
-        }
-      };
-      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+      const orgId = this.__currentOrg.getGroupId();
+      const userId = "id" in listedMember ? listedMember["id"] : listedMember["key"]
+      const newAccessRights = this.self().getNoReadAccess();
+      const groupsStore = osparc.store.Groups.getInstance();
+      groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
           if (msg === undefined) {
             msg = this.tr(`Successfully demoted to ${osparc.data.Roles.ORG[0].label}`);
           }
           osparc.FlashMessenger.getInstance().logAs(msg);
-          osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })
         .catch(err => {
@@ -378,19 +372,13 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
-      const params = {
-        url: {
-          "gid": this.__currentOrg.getGroupId(),
-          "uid": listedMember["id"]
-        },
-        data: {
-          "accessRights": this.self().getWriteAccess()
-        }
-      };
-      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+      const orgId = this.__currentOrg.getGroupId();
+      const userId = listedMember["id"];
+      const newAccessRights = this.self().getWriteAccess();
+      const groupsStore = osparc.store.Groups.getInstance();
+      groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully promoted to ${osparc.data.Roles.ORG[2].label}`));
-          osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })
         .catch(err => {
@@ -404,19 +392,13 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
-      const params = {
-        url: {
-          "gid": this.__currentOrg.getGroupId(),
-          "uid": listedMember["id"]
-        },
-        data: {
-          "accessRights": this.self().getDeleteAccess()
-        }
-      };
-      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+      const orgId = this.__currentOrg.getGroupId();
+      const userId = listedMember["id"];
+      const newAccessRights = this.self().getDeleteAccess();
+      const groupsStore = osparc.store.Groups.getInstance();
+      groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully promoted to ${osparc.data.Roles.ORG[3].label}`));
-          osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })
         .catch(err => {
@@ -430,19 +412,13 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
-      const params = {
-        url: {
-          "gid": this.__currentOrg.getGroupId(),
-          "uid": listedMember["id"]
-        },
-        data: {
-          "accessRights": this.self().getReadAccess()
-        }
-      };
-      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+      const orgId = this.__currentOrg.getGroupId();
+      const userId = listedMember["id"];
+      const newAccessRights = this.self().getReadAccess();
+      const groupsStore = osparc.store.Groups.getInstance();
+      groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully demoted to ${osparc.data.Roles.ORG[1].label}`));
-          osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })
         .catch(err => {
@@ -456,19 +432,13 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
-      const params = {
-        url: {
-          "gid": this.__currentOrg.getGroupId(),
-          "uid": listedMember["id"]
-        },
-        data: {
-          "accessRights": this.self().getWriteAccess()
-        }
-      };
-      osparc.data.Resources.fetch("organizationMembers", "patch", params)
+      const orgId = this.__currentOrg.getGroupId();
+      const userId = listedMember["id"];
+      const newAccessRights = this.self().getWriteAccess();
+      const groupsStore = osparc.store.Groups.getInstance();
+      groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(this.tr(`Successfully demoted to ${osparc.data.Roles.ORG[3].label}`));
-          osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })
         .catch(err => {
