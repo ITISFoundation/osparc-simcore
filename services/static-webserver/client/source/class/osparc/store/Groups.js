@@ -234,7 +234,7 @@ qx.Class.define("osparc.store.Groups", {
     getGroupMemberByUserId: function(orgId, userId) {
       const org = this.getGroup(orgId);
       if (org) {
-        return Object.values(org.getGroupMembers()).find(user => user.getUserId() === userId);
+        return org.getGroupMemberByUserId(userId);
       }
       return null;
     },
@@ -242,7 +242,7 @@ qx.Class.define("osparc.store.Groups", {
     getGroupMemberByLogin: function(orgId, userEmail) {
       const org = this.getGroup(orgId);
       if (org) {
-        return Object.values(org.getGroupMembers()).find(user => user.getLogin() === userEmail);
+        return org.getGroupMemberByLogin(userEmail);
       }
       return null;
     },
@@ -397,7 +397,7 @@ qx.Class.define("osparc.store.Groups", {
       if (orgId) {
         const organization = this.getOrganization(orgId);
         if (organization) {
-          organization.getGroupMembers()[user.getGroupId()] = user;
+          organization.addGroupMember(user);
         }
       }
       this.getReachableUsers()[user.getGroupId()] = user;
@@ -406,9 +406,8 @@ qx.Class.define("osparc.store.Groups", {
     __removeUserFromCache: function(userId, orgId) {
       if (orgId) {
         const organization = this.getOrganization(orgId);
-        const groupMember = this.getGroupMemberByUserId(orgId, userId)
-        if (organization && groupMember) {
-          delete organization.getGroupMembers()[groupMember.getGroupId()]
+        if (organization) {
+          organization.removeGroupMember(userId)
         }
       }
     },

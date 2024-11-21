@@ -87,6 +87,11 @@ qx.Class.define("osparc.data.model.Group", {
     },
   },
 
+  events: {
+    "memberAdded": "qx.event.type.Event",
+    "memberRemoved": "qx.event.type.Event",
+  },
+
   statics: {
     getProperties: function() {
       return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Group));
@@ -94,6 +99,27 @@ qx.Class.define("osparc.data.model.Group", {
   },
 
   members: {
+    getGroupMemberByUserId: function(userId) {
+      return Object.values(this.getGroupMembers()).find(user => user.getUserId() === userId);
+    },
+
+    getGroupMemberByLogin: function(userEmail) {
+      return Object.values(this.getGroupMembers()).find(user => user.getLogin() === userEmail);
+    },
+
+    addGroupMember: function(user) {
+      this.getGroupMembers()[user.getGroupId()] = user;
+      this.fireEvent("memberAdded");
+    },
+
+    removeGroupMember: function(userId) {
+      const groupMember = this.getGroupMemberByUserId(userId);
+      if (groupMember) {
+        delete this.getGroupMembers()[groupMember.getGroupId()];
+        this.fireEvent("memberRemoved");
+      }
+    },
+
     serialize: function() {
       const jsonObject = {};
       const propertyKeys = this.self().getProperties();
