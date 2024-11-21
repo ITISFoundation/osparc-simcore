@@ -308,19 +308,11 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       }
 
       const orgId = this.__currentOrg.getGroupId();
-      const params = {
-        url: {
-          "gid": orgId
-        },
-        data: {
-          "email": orgMemberEmail
-        }
-      };
-      osparc.data.Resources.fetch("organizationMembers", "post", params)
+      const groupsStore = osparc.store.Groups.getInstance();
+      groupsStore.postMember(orgId, orgMemberEmail)
         .then(newMember => {
           const text = orgMemberEmail + this.tr(" successfully added");
           osparc.FlashMessenger.getInstance().logAs(text);
-          osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
 
           // push 'NEW_ORGANIZATION' notification

@@ -108,11 +108,11 @@ qx.Class.define("osparc.store.Groups", {
         .then(orgMembers => {
           const group = this.getOrganization(groupId);
           if (group) {
+            // reset group's group members
             group.setGroupMembers({});
             orgMembers.forEach(orgMember => {
               const user = new osparc.data.model.User(orgMember);
-              group.getGroupMembers()[orgMember["gid"]] = user;
-              this.getReachableUsers()[orgMember["gid"]] = user;
+              this.__addToUsersCache(user, groupId);
             });
           }
         });
@@ -122,6 +122,7 @@ qx.Class.define("osparc.store.Groups", {
       return new Promise(resolve => {
         this.__fetchGroups()
           .then(orgs => {
+            // reset Reachable Users
             this.resetReachableUsers();
             const promises = Object.keys(orgs).map(orgId => this.__fetchGroupMembers(orgId));
             Promise.all(promises)
@@ -286,6 +287,28 @@ qx.Class.define("osparc.store.Groups", {
         .catch(console.error);
     },
 
+    postMember: function(orgId, newMemberEmail) {
+      const params = {
+        url: {
+          "gid": orgId
+        },
+        data: {
+          "email": newMemberEmail
+        }
+      };
+      osparc.data.Resources.fetch("organizationMembers", "post", params)
+        .then(newMember => {
+          const user = new osparc.data.model.User(newMember);
+          this.__addToUsersCache(user, orgId);
+          return user;
+        })
+        .catch(err => {
+          const errorMessage = err["message"] || this.tr("Something went wrong adding the user");
+          osparc.FlashMessenger.getInstance().logAs(errorMessage, "ERROR");
+          console.error(err);
+        });
+    },
+
     __addToGroupsCache: function(groupData, groupType) {
       let group = this.groupsCached.find(f => f.getGroupId() === groupData["gid"]);
       if (group) {
@@ -313,6 +336,16 @@ qx.Class.define("osparc.store.Groups", {
         return true;
       }
       return false;
+    },
+
+    __addToUsersCache: function(user, orgId = null) {
+      if (orgId) {
+        const organization = this.getOrganization(orgId);
+        if (organization) {
+          organization.getGroupMembers()[user.getGroupId()] = user;
+        }
+      }
+      this.getReachableUsers()[user.getGroupId()] = user;
     }
   }
 });
