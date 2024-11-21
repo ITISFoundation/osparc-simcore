@@ -47,8 +47,6 @@ def openapi_specs_path() -> Path:
 @pytest.fixture
 def openapi_specs(openapi_specs_path: Path) -> dict[str, Any]:
     assert openapi_specs_path.is_file()
-    # TODO: If openapi_specs_path is a url, download in tmp_dir and get path
-
     openapi: dict[str, Any] = _load(
         openapi_specs_path, base_uri=openapi_specs_path.as_uri()
     )
