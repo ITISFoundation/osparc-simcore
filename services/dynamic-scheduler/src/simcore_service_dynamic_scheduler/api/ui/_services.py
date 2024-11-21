@@ -1,5 +1,3 @@
-import asyncio
-from collections.abc import AsyncIterable
 from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, FastAPI
@@ -11,13 +9,13 @@ from starlette import status
 
 from ..dependencies import get_app
 from ._constants import API_ROOT_PATH
+from ._sse_utils import AbstractSSERenderer, render_as_sse_items
 
 _PREFIX: Final[str] = "/services"
 
 router = APIRouter()
 
 
-# root entrypoint for the application
 @router.get(
     f"{API_ROOT_PATH}/", response_model=FastUI, response_model_exclude_none=True
 )
@@ -47,24 +45,20 @@ def api_index() -> list[AnyComponent]:
     ]
 
 
-# SSE endpoint
+class ServicesSSERenderer(AbstractSSERenderer):
+    @staticmethod
+    def render_item(item: str) -> list[AnyComponent]:
+        return item
+
+
 @router.get(f"{API_ROOT_PATH}{_PREFIX}/sse/")
 async def sse_ai_response(
     app: Annotated[FastAPI, Depends(get_app)]
 ) -> StreamingResponse:
-    return StreamingResponse(_render_messages(app), media_type="text/event-stream")
-
-
-async def _render_messages(app: FastAPI) -> AsyncIterable[str]:
-    _ = app  # TODO: fetch storage and render content from here
-    messages: list[AnyComponent] = []
-    # Avoid the browser reconnecting
-    while True:
-        # TODO: yield only if content changed, store a hash of the messages
-        messages.append(c.Markdown(text="# LOL \n this is it!"))
-        await asyncio.sleep(3)
-        message = FastUI(root=messages)
-        yield f"data: {message.model_dump_json(by_alias=True, exclude_none=True)}\n\n"
+    return StreamingResponse(
+        render_as_sse_items(app, renderer_type=ServicesSSERenderer),
+        media_type="text/event-stream",
+    )
 
 
 @router.get("/{path:path}", status_code=status.HTTP_404_NOT_FOUND)
