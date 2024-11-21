@@ -68,7 +68,9 @@ async def _basic_auth_registry_request(
         else None
     )
 
-    request_url = URL(f"{app_settings.DIRECTOR_REGISTRY.registry_url}").with_path(path)
+    request_url = URL(f"{app_settings.DIRECTOR_REGISTRY.registry_url}").with_path(
+        path, encoded=True
+    )
 
     session = get_client_session(app)
     response = await session.request(
