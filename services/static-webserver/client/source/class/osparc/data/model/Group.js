@@ -34,6 +34,7 @@ qx.Class.define("osparc.data.model.Group", {
       description: groupData.description,
       accessRights: groupData.accessRights,
       thumbnail: groupData.thumbnail,
+      groupMembers: {},
     });
   },
 

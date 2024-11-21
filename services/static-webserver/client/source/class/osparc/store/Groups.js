@@ -255,10 +255,14 @@ qx.Class.define("osparc.store.Groups", {
       const params = {
         data: newGroupData
       };
-      return osparc.data.Resources.getInstance().fetch("groups", "post", params)
+      let group = null;
+      return osparc.data.Resources.fetch("organizations", "post", params)
         .then(groupData => {
-          const group = this.__addToGroupsCache(groupData, "organization");
+          group = this.__addToGroupsCache(groupData, "organization");
           this.getOrganizations()[group.getGroupId()] = group;
+          return this.__fetchGroupMembers(group.getGroupId());
+        })
+        .then(() => {
           return group;
         });
     },
@@ -269,7 +273,7 @@ qx.Class.define("osparc.store.Groups", {
           "gid": groupId
         }
       };
-      return osparc.data.Resources.getInstance().fetch("groups", "delete", params)
+      return osparc.data.Resources.fetch("organizations", "delete", params)
         .then(() => {
           this.__deleteFromGroupsCache(groupId);
           delete this.getOrganizations()[groupId];
