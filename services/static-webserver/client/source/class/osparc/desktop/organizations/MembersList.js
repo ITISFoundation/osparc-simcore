@@ -151,8 +151,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       membersCtrl.setDelegate({
         createItem: () => new osparc.ui.list.MemberListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("id", "model", null, item, id);
-          ctrl.bindProperty("id", "key", null, item, id);
+          ctrl.bindProperty("groupId", "model", null, item, id);
+          ctrl.bindProperty("groupId", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
@@ -225,83 +225,81 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         enabled: canIWrite
       });
 
-      const params = {
-        url: {
-          "gid": organization.getGroupId()
+      const membersList = [];
+      const groupMembers = organization.getGroupMembers();
+      Object.values(groupMembers).forEach(groupMember => {
+        const member = {};
+        member["groupId"] = groupMember.getGroupId();
+        member["thumbnail"] = groupMember.getThumbnail();
+        member["name"] = groupMember.getLabel();
+        member["login"] = groupMember.getLogin();
+        member["accessRights"] = groupMember.getAccessRights();
+        let options = [];
+        if (canIDelete) {
+          // admin...
+          if (groupMember.getAccessRights()["delete"]) {
+            // ...on admin
+            options = [];
+          } else if (groupMember.getAccessRights()["write"]) {
+            // ...on manager
+            options = [
+              "promoteToAdministrator",
+              "demoteToMember",
+              "removeMember"
+            ];
+          } else if (groupMember.getAccessRights()["read"]) {
+            // ...on member
+            options = [
+              "promoteToManager",
+              "demoteToUser",
+              "removeMember"
+            ];
+          } else if (!groupMember.getAccessRights()["read"]) {
+            // ...on user
+            options = [
+              "promoteToMember",
+              "removeMember"
+            ];
+          }
+        } else if (canIWrite) {
+          // manager...
+          if (groupMember.getAccessRights()["delete"]) {
+            // ...on admin
+            options = [];
+          } else if (groupMember.getAccessRights()["write"]) {
+            // ...on manager
+            options = [];
+          } else if (groupMember.getAccessRights()["read"]) {
+            // ...on member
+            options = [
+              "promoteToManager",
+              "demoteToUser",
+              "removeMember"
+            ];
+          } else if (!groupMember.getAccessRights()["read"]) {
+            // ...on user
+            options = [
+              "promoteToMember",
+              "removeMember"
+            ];
+          }
         }
-      };
-      osparc.data.Resources.get("organizationMembers", params)
-        .then(members => {
-          const membersList = [];
-          members.forEach(member => {
-            member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
-            member["name"] = osparc.utils.Utils.firstsUp(member["first_name"] || member["login"], member["last_name"] || "");
-            let options = [];
-            if (canIDelete) {
-              // admin...
-              if (member["accessRights"]["delete"]) {
-                // ...on admin
-                options = [];
-              } else if (member["accessRights"]["write"]) {
-                // ...on manager
-                options = [
-                  "promoteToAdministrator",
-                  "demoteToMember",
-                  "removeMember"
-                ];
-              } else if (member["accessRights"]["read"]) {
-                // ...on member
-                options = [
-                  "promoteToManager",
-                  "demoteToUser",
-                  "removeMember"
-                ];
-              } else if (!member["accessRights"]["read"]) {
-                // ...on user
-                options = [
-                  "promoteToMember",
-                  "removeMember"
-                ];
-              }
-            } else if (canIWrite) {
-              // manager...
-              if (member["accessRights"]["delete"]) {
-                // ...on admin
-                options = [];
-              } else if (member["accessRights"]["write"]) {
-                // ...on manager
-                options = [];
-              } else if (member["accessRights"]["read"]) {
-                // ...on member
-                options = [
-                  "promoteToManager",
-                  "demoteToUser",
-                  "removeMember"
-                ];
-              } else if (!member["accessRights"]["read"]) {
-                // ...on user
-                options = [
-                  "promoteToMember",
-                  "removeMember"
-                ];
-              }
-            }
-            // Let me go?
-            const openStudy = osparc.store.Store.getInstance().getCurrentStudy();
-            if (
-              openStudy === null &&
-              canIWrite &&
-              members.length > 1 && member["gid"] === osparc.auth.Data.getInstance().getGroupId()
-            ) {
-              options.push("leave");
-            }
-            member["options"] = options;
-            member["showOptions"] = Boolean(options.length);
-            membersList.push(member);
-          });
-          membersList.sort(this.self().sortOrgMembers);
-          membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
-        });
+        // Let me go?
+        const openStudy = osparc.store.Store.getInstance().getCurrentStudy();
+        const myGroupId = osparc.store.Groups.getInstance().getMyGroupId();
+        if (
+          openStudy === null &&
+          canIWrite &&
+          groupMembers.length > 1 && groupMember.getGroupId() === myGroupId
+        ) {
+          options.push("leave");
+        }
+        member["options"] = options;
+        member["showOptions"] = Boolean(options.length);
+        membersList.push(member);
+      });
+      membersList.sort(this.self().sortOrgMembers);
+      membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
     },
 
     __addMember: async function(orgMemberEmail) {
