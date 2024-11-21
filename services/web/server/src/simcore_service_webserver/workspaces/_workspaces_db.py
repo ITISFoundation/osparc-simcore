@@ -51,8 +51,8 @@ _SELECTION_ARGS = (
     workspaces.c.trashed_by,
 )
 
-assert set(WorkspaceDB.__fields__) == {c.name for c in _SELECTION_ARGS}  # nosec
-assert set(WorkspaceUpdateDB.__fields__).issubset(  # nosec
+assert set(WorkspaceDB.model_fields) == {c.name for c in _SELECTION_ARGS}  # nosec
+assert set(WorkspaceUpdateDB.model_fields).issubset(  # nosec
     c.name for c in workspaces.columns
 )
 
