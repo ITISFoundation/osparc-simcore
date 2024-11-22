@@ -81,8 +81,7 @@ def setup_tracing(
         f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}"
     )
 
-    opentelemetry_collector_path = "/v1/traces"
-    tracing_destination: str = f"{URL(opentelemetry_collector_endpoint).with_port(tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT).with_path(opentelemetry_collector_path)}"
+    tracing_destination: str = f"{URL(opentelemetry_collector_endpoint).with_port(tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT).with_path('/v1/traces')}"
 
     _logger.info(
         "Trying to connect service %s to opentelemetry tracing collector at %s.",
