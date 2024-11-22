@@ -471,7 +471,7 @@ def create_new_project_and_delete(
                     if template_id is not None:
                         if is_product_billable:
                             open_button.click()
-                            open_button = _open_with_resources(page, False)
+                            open_button = _open_with_resources(page, click_it=False)
                         # it returns a Long Running Task
                         with page.expect_response(
                             re.compile(rf"/projects\?from_study\={template_id}")
