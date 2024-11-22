@@ -68,7 +68,9 @@ async def _basic_auth_registry_request(
         else None
     )
 
-    request_url = URL(f"{app_settings.DIRECTOR_REGISTRY.api_url}") / path
+    request_url = URL(f"{app_settings.DIRECTOR_REGISTRY.api_url}").joinpath(
+        path, encoded=True
+    )
 
     session = get_client_session(app)
     response = await session.request(
