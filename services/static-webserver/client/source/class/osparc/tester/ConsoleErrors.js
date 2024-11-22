@@ -72,7 +72,9 @@ qx.Class.define("osparc.tester.ConsoleErrors", {
         }
         case "error-viewer":
           control = new qx.ui.form.TextArea();
-          this._add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
       }
       return control || this.base(arguments, id);

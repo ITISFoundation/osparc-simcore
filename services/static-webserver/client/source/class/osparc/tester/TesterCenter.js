@@ -40,8 +40,8 @@ qx.Class.define("osparc.tester.TesterCenter", {
     },
 
     __addConsoleErrorsPage: function() {
-      const title = this.tr("Socket Messages");
-      const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
+      const title = this.tr("Console errors");
+      const iconSrc = "@FontAwesome5Solid/circle-xmark/22";
       const consoleErrors = new osparc.tester.ConsoleErrors();
       this.addTab(title, iconSrc, consoleErrors);
     },
