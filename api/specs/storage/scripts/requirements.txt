@@ -1,3 +1,0 @@
-# Extra reqs, besides webserver's
-
-fastapi<0.100

@@ -34,7 +34,6 @@ botocore==1.35.50
 certifi==2024.8.30
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   httpcore
@@ -42,7 +41,6 @@ certifi==2024.8.30
     #   requests
 charset-normalizer==3.3.2
     # via
-    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   requests
 coverage==7.6.1
@@ -102,9 +100,7 @@ jsonschema==4.23.0
     #   openapi-schema-validator
     #   openapi-spec-validator
 jsonschema-path==0.3.3
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   openapi-spec-validator
+    # via openapi-spec-validator
 jsonschema-specifications==2023.7.1
     # via
     #   -c requirements/_aiohttp.txt
@@ -112,9 +108,7 @@ jsonschema-specifications==2023.7.1
     #   jsonschema
     #   openapi-schema-validator
 lazy-object-proxy==1.10.0
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   openapi-spec-validator
+    # via openapi-spec-validator
 multidict==6.1.0
     # via
     #   -c requirements/_aiohttp.txt
@@ -128,21 +122,15 @@ mypy-extensions==1.0.0
 numpy==2.1.1
     # via -r requirements/_test.in
 openapi-schema-validator==0.6.2
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   openapi-spec-validator
+    # via openapi-spec-validator
 openapi-spec-validator==0.7.1
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   -r requirements/_test.in
+    # via -r requirements/_test.in
 packaging==24.1
     # via
     #   pytest
     #   pytest-sugar
 pathable==0.4.3
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   jsonschema-path
+    # via jsonschema-path
 pillow==10.4.0
     # via -r requirements/_test.in
 pip==24.3.1
@@ -203,7 +191,6 @@ python-dotenv==1.0.1
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   jsonschema-path
 referencing==0.29.3
@@ -215,16 +202,13 @@ referencing==0.29.3
     #   jsonschema-specifications
 requests==2.32.3
     # via
-    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
 respx==0.21.1
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   openapi-schema-validator
+    # via openapi-schema-validator
 rpds-py==0.20.0
     # via
     #   -c requirements/_aiohttp.txt
@@ -233,7 +217,6 @@ rpds-py==0.20.0
     #   referencing
 six==1.16.0
     # via
-    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   python-dateutil
     #   rfc3339-validator
@@ -270,7 +253,6 @@ typing-extensions==4.12.2
 urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   botocore
     #   docker
