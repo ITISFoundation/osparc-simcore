@@ -214,9 +214,9 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(true);
       const canIWrite = wallet.getMyAccessRights()["write"];
       wallet.getAccessRights().forEach(accessRights => {
-        const gid = accessRights["gid"];
-        if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
-          const collab = potentialCollaborators[parseInt(gid)];
+        const gid = parseInt(accessRights["gid"]);
+        if (Object.prototype.hasOwnProperty.call(potentialCollaborators, gid)) {
+          const collab = potentialCollaborators[gid];
           const collaborator = {};
           collaborator["groupId"] = collab.getGroupId();
           collaborator["thumbnail"] = collab.getThumbnail();
