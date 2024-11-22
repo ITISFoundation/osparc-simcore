@@ -66,7 +66,7 @@ def _create_exception_handler_mapper(
 
 
 def add_exception_mapper(
-    scope: MutableMapping[str, Any],
+    scope: MutableMapping,
     exc_class: type[Exception],
     http_exc_class: type[web.HTTPException],
 ):
