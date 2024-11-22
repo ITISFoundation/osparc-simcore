@@ -228,6 +228,9 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
       const sharedWorkspaceModel = this.__getModel(-1, null);
       sharedWorkspaceModel.getChildren().append(workspaceModel);
+      sharedWorkspaceModel.getChildren().sort(((a, b) => {
+        return a.getLabel().localeCompare(b.getLabel());
+      }));
 
       // load next level too
       this.__populateFolder(workspaceModel, workspace.getWorkspaceId(), null);
@@ -262,7 +265,10 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const folderModel = qx.data.marshal.Json.createModel(folderData, true);
       this.__models.push(folderModel);
       folder.bind("name", folderModel, "label");
-      parentModel.getChildren().push(folderModel);
+      parentModel.getChildren().append(folderModel);
+      parentModel.getChildren().sort(((a, b) => {
+        return a.getLabel().localeCompare(b.getLabel());
+      }));
       return folderModel;
     },
 
