@@ -86,6 +86,6 @@ install-ci:
 
 
 .PHONY: config
-config:
+config: ## Create config for your locust tests
 	@$(call check_defined, input, please define inputs when calling $@ - e.g. ```make $@ input="--help"```)
 	@uv run locust_settings.py $(input) | tee "${ENV_FILE}"

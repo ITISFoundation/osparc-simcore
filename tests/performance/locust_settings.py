@@ -1,9 +1,11 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
+#     "locust",
 #     "parse",
 #     "pydantic",
 #     "pydantic-settings",
+#     "tenacity"
 # ]
 # ///
 # pylint: disable=unused-argument
@@ -13,6 +15,7 @@
 import importlib.util
 import inspect
 import json
+import sys
 from datetime import timedelta
 from pathlib import Path
 from types import ModuleType
@@ -37,8 +40,9 @@ assert _TEST_DIR.is_dir()
 assert _LOCUST_FILES_DIR.is_dir()
 
 
-def _check_load_and_instantiate_settings_classes(file_path: str):
-    module_name = Path(file_path).stem
+def _get_settings_classes(file_path: Path) -> list[type[BaseSettings]]:
+    assert file_path.is_file()
+    module_name = file_path.stem
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     if spec is None or spec.loader is None:
         msg = f"Invalid {file_path=}"
@@ -60,16 +64,14 @@ def _check_load_and_instantiate_settings_classes(file_path: str):
         if issubclass(obj, BaseSettings) and obj is not BaseSettings
     ]
 
-    for settings_class in settings_classes:
-        try:
-            settings_class()
-        except Exception as e:
-            msg = f"Missing env vars for {settings_class.__name__} in {file_path=}: {e}"
-            raise ValueError(msg) from e
+    s = settings_classes[0]
+    s.model_construct
+
+    return settings_classes
 
 
 class LocustSettings(BaseSettings):
-    model_config = SettingsConfigDict(cli_parse_args=True)
+    model_config = SettingsConfigDict(cli_parse_args=True, cli_ignore_unknown_args=True)
 
     LOCUST_CHECK_AVG_RESPONSE_TIME: PositiveInt = Field(default=200)
     LOCUST_CHECK_FAIL_RATIO: PositiveFloat = Field(default=0.01, ge=0.0, le=1.0)
@@ -150,8 +152,19 @@ class LocustSettings(BaseSettings):
 
 
 if __name__ == "__main__":
-    settings = LocustSettings()
-    env_vars = [
-        f"{key}={val}" for key, val in json.loads(settings.model_dump_json()).items()
-    ]
+    locust_settings = LocustSettings()
+
+    arguments = dict(
+        arg.removeprefix("--").split("=") for arg in sys.argv if arg.startswith("--")
+    )
+
+    settings_objects = [locust_settings]
+    for sclass in _get_settings_classes(locust_settings.LOCUST_LOCUSTFILE):
+        settings_objects.append(sclass(**arguments))
+
+    env_vars = []
+    for obj in settings_objects:
+        env_vars += [
+            f"{key}={val}" for key, val in json.loads(obj.model_dump_json()).items()
+        ]
     print("\n".join(env_vars))
