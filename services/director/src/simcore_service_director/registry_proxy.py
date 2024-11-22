@@ -68,7 +68,7 @@ async def _basic_auth_registry_request(
         else None
     )
 
-    request_url = URL(app_settings.DIRECTOR_REGISTRY.resolved_registry_url).with_path(
+    request_url = URL(app_settings.DIRECTOR_REGISTRY.REGISTRY_URL).with_path(
         path, encoded=True
     )
 
