@@ -71,7 +71,9 @@ qx.Class.define("osparc.tester.ConsoleErrors", {
           break;
         }
         case "error-viewer":
-          control = new qx.ui.form.TextArea();
+          control = new qx.ui.form.TextArea().set({
+            autoSize: true,
+          });
           this._add(control, {
             flex: 1
           });
