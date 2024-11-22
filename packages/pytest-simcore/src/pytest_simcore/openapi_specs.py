@@ -27,7 +27,7 @@ class Entrypoint(NamedTuple):
     path: str
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def openapi_specs_path() -> Path:
     # NOTE: cannot be defined as a session scope because it is designed to be overriden
     pytest.fail(reason="Must be overriden in caller test suite")
@@ -53,7 +53,7 @@ def _load(file: Path, base_uri: str = "") -> dict:
     return data
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def openapi_specs(openapi_specs_path: Path) -> dict[str, Any]:
     assert openapi_specs_path.is_file()
     openapi: dict[str, Any] = _load(
@@ -62,7 +62,7 @@ def openapi_specs(openapi_specs_path: Path) -> dict[str, Any]:
     return deepcopy(openapi)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def openapi_specs_entrypoints(
     openapi_specs: dict,
 ) -> set[Entrypoint]:

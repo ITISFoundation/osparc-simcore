@@ -58,7 +58,7 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
             "title": field_info.title,
             "description": field_info.description,
             "metadata": field_info.metadata,
-            "json_schema_extra": field_info.json_schema_extra or {},
+            "json_schema_extra": field_info.json_schema_extra,
         }
 
         annotation = _replace_basemodel_in_annotation(

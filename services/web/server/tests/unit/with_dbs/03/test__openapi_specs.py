@@ -18,7 +18,7 @@ from simcore_service_webserver.application_settings import get_application_setti
 from simcore_service_webserver.rest._utils import get_openapi_specs_path
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def openapi_specs_path(api_version_prefix: str) -> Path:
     # overrides pytest_simcore.openapi_specs.app_openapi_specs_path fixture
     return get_openapi_specs_path(api_version_prefix)
