@@ -516,7 +516,7 @@ def create_new_project_and_delete(
                     else:
                         open_button.click()
                         if is_product_billable:
-                            _open_with_resources(page, True)
+                            _open_with_resources(page, click_it=True)
                             open_with_resources_clicked = True
                 if is_product_billable and not open_with_resources_clicked:
                     _open_with_resources(page, click_it=True)
