@@ -30,3 +30,4 @@ repro-zipfile
 tenacity
 toolz
 tqdm
+yarl
