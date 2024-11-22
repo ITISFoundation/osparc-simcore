@@ -186,6 +186,7 @@ def mock_env(
             "REGISTRY_PW": "test",
             "REGISTRY_SSL": "false",
             "REGISTRY_USER": "test",
+            "REGISTRY_URL": faker.url(),
             "SC_BOOT_MODE": "production",
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
             "SWARM_STACK_NAME": "pytest-simcore",

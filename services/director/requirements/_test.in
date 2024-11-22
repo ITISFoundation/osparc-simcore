@@ -16,6 +16,7 @@ faker
 jsonref
 pytest
 pytest-asyncio
+pytest-benchmark
 pytest-cov
 pytest-docker
 pytest-instafail

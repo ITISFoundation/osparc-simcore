@@ -197,6 +197,7 @@ def base_mock_envs(
                 "REGISTRY_USER": "test",
                 "REGISTRY_PW": "test",
                 "REGISTRY_SSL": "false",
+                "REGISTRY_URL": "registry.pytest.com",
             }
         ),
         "DYNAMIC_SIDECAR_TRACING": "null",
@@ -267,6 +268,7 @@ def mock_environment(
                     "REGISTRY_USER": "test",
                     "REGISTRY_PW": "test",
                     "REGISTRY_SSL": "false",
+                    "REGISTRY_URL": "registry.pytest.com",
                 }
             ),
         },

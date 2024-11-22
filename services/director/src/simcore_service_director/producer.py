@@ -5,32 +5,22 @@ import logging
 import re
 from datetime import timedelta
 from enum import Enum
-from http import HTTPStatus
 from pprint import pformat
 from typing import Any, Final, cast
 
 import aiodocker
 import aiodocker.networks
-import aiohttp
 import arrow
+import httpx
 import tenacity
-from aiohttp import (
-    ClientConnectionError,
-    ClientError,
-    ClientResponse,
-    ClientResponseError,
-    ClientSession,
-    ClientTimeout,
-)
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.docker_utils import to_datetime
 from settings_library.docker_registry import RegistrySettings
-from tenacity import retry
+from tenacity import retry, wait_random_exponential
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_fixed
 
 from . import docker_utils, registry_proxy
 from .client_session import get_client_session
@@ -547,7 +537,7 @@ async def _pass_port_to_service(
     service_name: str,
     port: str,
     service_boot_parameters_labels: list[Any],
-    session: ClientSession,
+    session: httpx.AsyncClient,
     app_settings: ApplicationSettings,
 ) -> None:
     for param in service_boot_parameters_labels:
@@ -566,8 +556,8 @@ async def _pass_port_to_service(
                 "port": str(port),
             }
             _logger.debug("creating request %s and query %s", service_url, query_string)
-            async with session.post(service_url, data=query_string) as response:
-                _logger.debug("query response: %s", await response.text())
+            response = await session.post(service_url, data=query_string)
+            _logger.debug("query response: %s", response.text)
             return
     _logger.debug("service %s does not need to know its external port", service_name)
 
@@ -1149,50 +1139,48 @@ async def get_service_details(app: FastAPI, node_uuid: str) -> dict:
 
 
 @retry(
-    wait=wait_fixed(2),
+    wait=wait_random_exponential(min=1, max=5),
     stop=stop_after_attempt(3),
     reraise=True,
-    retry=retry_if_exception_type(ClientConnectionError),
+    retry=retry_if_exception_type(httpx.RequestError),
 )
 async def _save_service_state(
-    service_host_name: str, session: aiohttp.ClientSession
+    service_host_name: str, session: httpx.AsyncClient
 ) -> None:
-    response: ClientResponse
-    async with session.post(
-        url=f"http://{service_host_name}/state",  # NOSONAR
-        timeout=ClientTimeout(
-            ServicesCommonSettings().director_dynamic_service_save_timeout
-        ),
-    ) as response:
-        try:
-            response.raise_for_status()
+    try:
+        response = await session.post(
+            url=f"http://{service_host_name}/state",  # NOSONAR
+            timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
+        )
+        response.raise_for_status()
 
-        except ClientResponseError as err:
-            if err.status in (
-                HTTPStatus.METHOD_NOT_ALLOWED,
-                HTTPStatus.NOT_FOUND,
-                HTTPStatus.NOT_IMPLEMENTED,
-            ):
-                # NOTE: Legacy Override. Some old services do not have a state entrypoint defined
-                # therefore we assume there is nothing to be saved and do not raise exception
-                # Responses found so far:
-                #   METHOD NOT ALLOWED https://httpstatuses.com/405
-                #   NOT FOUND https://httpstatuses.com/404
-                #
-                _logger.warning(
-                    "Service '%s' does not seem to implement save state functionality: %s. Skipping save",
-                    service_host_name,
-                    err,
-                )
-            else:
-                # upss ... could service had troubles saving, reraise
-                raise
-        else:
-            _logger.info(
-                "Service '%s' successfully saved its state: %s",
+    except httpx.HTTPStatusError as err:
+
+        if err.response.status_code in (
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+            status.HTTP_404_NOT_FOUND,
+            status.HTTP_501_NOT_IMPLEMENTED,
+        ):
+            # NOTE: Legacy Override. Some old services do not have a state entrypoint defined
+            # therefore we assume there is nothing to be saved and do not raise exception
+            # Responses found so far:
+            #   METHOD NOT ALLOWED https://httpstatuses.com/405
+            #   NOT FOUND https://httpstatuses.com/404
+            #
+            _logger.warning(
+                "Service '%s' does not seem to implement save state functionality: %s. Skipping save",
                 service_host_name,
-                f"{response}",
+                err,
             )
+        else:
+            # upss ... could service had troubles saving, reraise
+            raise
+    else:
+        _logger.info(
+            "Service '%s' successfully saved its state: %s",
+            service_host_name,
+            f"{response}",
+        )
 
 
 @run_sequentially_in_context(target_args=["node_uuid"])
@@ -1246,20 +1234,21 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
                 await _save_service_state(
                     service_host_name, session=get_client_session(app)
                 )
-            except ClientResponseError as err:
+            except httpx.HTTPStatusError as err:
+
                 raise ServiceStateSaveError(
                     service_uuid=node_uuid,
                     reason=f"service {service_host_name} rejected to save state, "
-                    f"responded {err.message} (status {err.status})."
+                    f"responded {err.response.text} (status {err.response.status_code})."
                     "Aborting stop service to prevent data loss.",
                 ) from err
 
-            except ClientError as err:
+            except httpx.RequestError as err:
                 _logger.warning(
                     "Could not save state because %s is unreachable [%s]."
                     "Resuming stop_service.",
                     service_host_name,
-                    err,
+                    err.request,
                 )
 
         # remove the services
