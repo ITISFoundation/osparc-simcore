@@ -411,10 +411,13 @@ qx.Class.define("osparc.share.Collaborators", {
             collaborator["name"] = collab.getLabel();
             collaborator["login"] = collab.getLogin();
           } else {
+            // org/group
             collaborator["label"] = collab.getLabel();
             collaborator["description"] = collab.getDescription();
             if (everyoneGIds.includes(parseInt(gid))) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
+            } else if (!collaborator["thumbnail"]) {
+              collaborator["thumbnail"] = "@FontAwesome5Solid/users/26";
             }
           }
           collaborator["accessRights"] = accessRights[gid];
