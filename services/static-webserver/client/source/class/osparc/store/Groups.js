@@ -92,6 +92,12 @@ qx.Class.define("osparc.store.Groups", {
           this.setEveryoneProductGroup(productEveryoneGroup);
           this.setOrganizations(orgs);
           this.setGroupMe(groupMe);
+          const myAuthData = osparc.auth.Data.getInstance();
+          groupMe.set({
+            label: osparc.data.model.User.namesToLabel(myAuthData.getFirstName(), myAuthData.getLastName()),
+            description: myAuthData.getEmail(),
+            thumbnail: osparc.data.model.User.emailToThumbnail(myAuthData.getEmail()),
+          })
           return orgs;
         });
     },

@@ -28,13 +28,7 @@ qx.Class.define("osparc.data.model.User", {
   construct: function(userData) {
     this.base(arguments);
 
-    let label = userData["login"];
-    if ("first_name" in userData && userData["first_name"]) {
-      label = osparc.utils.Utils.firstsUp(userData["first_name"]);
-      if (userData["last_name"]) {
-        label += " " + osparc.utils.Utils.firstsUp(userData["last_name"]);
-      }
-    }
+    const label = this.self().namesToLabel(userData["first_name"], userData["last_name"]) || userData["login"];
     this.set({
       userId: userData.id,
       groupId: userData.gid,
@@ -90,6 +84,17 @@ qx.Class.define("osparc.data.model.User", {
   },
 
   statics: {
+    namesToLabel: function(firstName, lastName) {
+      let label = "";
+      if (firstName) {
+        label = osparc.utils.Utils.firstsUp(firstName);
+        if (lastName) {
+          label += " " + osparc.utils.Utils.firstsUp(lastName);
+        }
+      }
+      return label;
+    },
+
     emailToThumbnail: function(email) {
       return osparc.utils.Avatar.getUrl(email, 32)
     },

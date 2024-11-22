@@ -221,7 +221,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
           collaborator["groupId"] = collab.getGroupId();
           collaborator["thumbnail"] = collab.getThumbnail();
           collaborator["name"] = collab.getLabel();
-          collaborator["login"] = "getLogin" in collab ? collab.getLogin() : "";
+          collaborator["login"] = "getLogin" in collab ? collab.getLogin() : collab.getDescription();
           collaborator["accessRights"] = {
             read: accessRights["read"],
             write: accessRights["write"],
