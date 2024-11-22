@@ -1617,6 +1617,8 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     mocked_get_or_create_cluster: mock.Mock,
     get_or_create_exception: Exception,
 ):
+    # needs to change: https://github.com/ITISFoundation/osparc-simcore/issues/6817
+
     mocked_get_or_create_cluster.side_effect = get_or_create_exception
     # running the pipeline will trigger a call to the clusters-keeper
     assert published_project.project.prj_owner
