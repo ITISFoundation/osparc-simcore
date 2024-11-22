@@ -1094,9 +1094,6 @@ class RebootState:
     expected_run_state: RunningState
 
 
-@pytest.mark.skip(
-    reason="awaiting refactor in https://github.com/ITISFoundation/osparc-simcore/pull/6736"
-)
 @pytest.mark.parametrize(
     "reboot_state",
     [
