@@ -64,14 +64,14 @@ qx.Class.define("osparc.tester.ConsoleErrors", {
           );
           control.setColumnWidth(0, 80);
 
-          control.setDataRowRenderer(new osparc.ui.table.rowrenderer.ExpandSelection(control));
+          // control.setDataRowRenderer(new osparc.ui.table.rowrenderer.ExpandSelection(control));
           this._add(control, {
             flex: 1
           });
           break;
         }
-        case "json-viewer":
-          control = new osparc.ui.basic.JsonTreeWidget();
+        case "error-viewer":
+          control = new qx.ui.form.TextArea();
           this._add(control);
           break;
       }
@@ -81,7 +81,7 @@ qx.Class.define("osparc.tester.ConsoleErrors", {
     _buildLayout: function() {
       const filterMessage = this.getChildControl("filter-message");
       const table = this.getChildControl("messages-table");
-      const jsonViewer = this.getChildControl("json-viewer");
+      const errorViewer = this.getChildControl("error-viewer");
 
       const model = table.getTableModel();
       filterMessage.addListener("changeValue", e => {
@@ -93,7 +93,7 @@ qx.Class.define("osparc.tester.ConsoleErrors", {
       table.addListener("cellTap", e => {
         const selectedRow = e.getRow();
         const rowData = table.getTableModel().getRowData(selectedRow);
-        jsonViewer.setJson(JSON.parse(rowData[2]));
+        errorViewer.setValue(JSON.stringify(rowData[1]));
       }, this);
 
       this.__populateTable();
@@ -101,25 +101,22 @@ qx.Class.define("osparc.tester.ConsoleErrors", {
 
     __populateTable: function() {
       const consoleErrorTracker = osparc.ConsoleErrorTracker.getInstance();
-      const messagesObj = consoleErrorTracker.getCachedMessages();
-      const messagesArray = [];
-      for (const channel in messagesObj) {
-        messagesObj[channel].forEach(msg => {
-          messagesArray.push({
-            date: msg.date,
-            message: msg.message,
-          });
+      const errors = consoleErrorTracker.getErrors();
+      const errorsArray = [];
+      errors.forEach(msg => {
+        errorsArray.push({
+          date: msg.date,
+          message: msg.error,
         });
-      }
-      messagesArray.sort((a, b) => {
+      });
+      errorsArray.sort((a, b) => {
         return new Date(b.date) - new Date(a.date); // newest first
       });
       const datas = [];
-      messagesArray.forEach(entry => {
+      errorsArray.forEach(entry => {
         const data = [
           new Date(entry.date).toLocaleTimeString(),
-          entry.channel,
-          JSON.stringify(entry.message),
+          entry.message,
         ];
         datas.push(data);
       });
