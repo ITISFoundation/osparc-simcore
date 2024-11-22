@@ -381,9 +381,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def _valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
-    @field_validator(
-        "CLUSTERS_KEEPER_TASK_INTERVAL", "SERVICE_TRACKING_HEARTBEAT", mode="before"
-    )
+    @field_validator("SERVICE_TRACKING_HEARTBEAT", mode="before")
     @classmethod
     def _validate_interval(
         cls, value: str | datetime.timedelta
