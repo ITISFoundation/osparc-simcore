@@ -1,13 +1,10 @@
 import functools
-import logging
 from collections.abc import Awaitable, Callable, MutableMapping
 from http import HTTPStatus
 from typing import Any, TypeAlias, cast
 
 from aiohttp import web
-
-_logger = logging.getLogger(__name__)
-
+from servicelib.aiohttp.typing_extension import Handler
 
 # Defines exception handler as somethign that returns responses, as fastapi, and not new exceptions!
 # in reality this can be reinterpreted in aiohttp since all responses can be represented as exceptions.
@@ -28,25 +25,31 @@ ExceptionHandlerRegistry: TypeAlias = dict[type[Exception], ExceptionHandler]
 # as decorator or context manager?
 
 
-def setup_exception_handlers(scope: MutableMapping[str, Any]):
-    scope["exceptions_handlers"] = {}
-    scope["exceptions_map"] = {}
+_EXCEPTIONS_HANDLERS_KEY = f"{__name__}._EXCEPTIONS_HANDLERS_KEY"
+_EXCEPTIONS_MAP_KEY = f"{__name__}._EXCEPTIONS_MAP_KEY"
+
+
+def setup_exception_handlers(scope: MutableMapping):
+    # init registry in the scope
+    scope[_EXCEPTIONS_HANDLERS_KEY] = {}
+    scope[_EXCEPTIONS_MAP_KEY] = {}
     # but this is very specific because it responds with only status! you migh want to have different
     # type of bodies, etc
 
 
-def _get_exception_handler_registry(
-    scope: MutableMapping[str, Any]
-) -> ExceptionHandlerRegistry:
-    return scope.get("exceptions_handlers", {})
+def _get_exception_handler_registry(scope: MutableMapping) -> ExceptionHandlerRegistry:
+    return scope.get(_EXCEPTIONS_HANDLERS_KEY, {})
 
 
 def add_exception_handler(
-    scope: MutableMapping[str, Any],
+    scope: MutableMapping,
     exc_class: type[Exception],
     handler: ExceptionHandler,
 ):
-    scope["exceptions_handlers"][exc_class] = handler
+    """
+    Registers in the scope an exception type to a handler
+    """
+    scope[_EXCEPTIONS_HANDLERS_KEY][exc_class] = handler
 
 
 def _create_exception_handler_mapper(
@@ -67,8 +70,13 @@ def add_exception_mapper(
     exc_class: type[Exception],
     http_exc_class: type[web.HTTPException],
 ):
+    """
+    Create an exception handlers by mapping a class to an HTTPException
+    and registers it in the scope
+    """
+
     # adds exception handler to scope
-    scope["exceptions_map"][exc_class] = http_exc_class
+    scope[_EXCEPTIONS_MAP_KEY][exc_class] = http_exc_class
     add_exception_handler(
         scope,
         exc_class,
@@ -77,6 +85,7 @@ def add_exception_mapper(
 
 
 async def handle_request_with_exception_handling_in_scope(
+    # Create using contextlib.contextmanager
     handler: Handler,
     request: web.Request,
     scope: MutableMapping[str, Any] | None = None,
@@ -100,6 +109,7 @@ async def handle_request_with_exception_handling_in_scope(
         return resp
 
 
+# decorator
 def handle_registered_exceptions(scope: MutableMapping[str, Any] | None = None):
     def _decorator(handler: Handler):
         @functools.wraps(handler)
@@ -113,9 +123,9 @@ def handle_registered_exceptions(scope: MutableMapping[str, Any] | None = None):
     return _decorator
 
 
-# If I have all the status codes mapped, I can definitively use that info to create `responses`
-# for fastapi to render the OAS preoperly
 def openapi_error_responses(
+    # If I have all the status codes mapped, I can definitively use that info to create `responses`
+    # for fastapi to render the OAS preoperly
     exceptions_map: ExceptionsMap,
 ) -> dict[HTTPStatus, dict[str, Any]]:
     responses = {}

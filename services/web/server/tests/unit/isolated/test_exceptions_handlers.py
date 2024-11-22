@@ -24,7 +24,7 @@ from simcore_service_webserver.exceptions_handlers_base_2 import (
     add_exception_handler,
     add_exception_mapper,
     handle_registered_exceptions,
-    setup_exception_handlers,
+    register_exception_handlers,
 )
 from simcore_service_webserver.exceptions_handlers_http_error_map import (
     _sort_exceptions_by_specificity,
@@ -190,24 +190,23 @@ async def test_create_decorator_from_exception_handler(
 
 
 def test_it():
-    class MyException(Exception):
-        ...
-
-    class OtherException(Exception):
-        ...
 
     app = web.Application()
 
-    async def my_error_handler(request: web.Request, exc: MyException):
+    async def my_error_handler(request: web.Request, exc: OneError):
         return web.HTTPNotFound()
 
-    # define at the app level
-    setup_exception_handlers(app)
-    add_exception_handler(app, MyException, my_error_handler)
-    add_exception_mapper(app, OtherException, web.HTTPNotFound)
+    # create register
+    register_exception_handlers(app)
+
+    # register
+    add_exception_handler(app, OneError, my_error_handler)
+
+    # this is a handler create mapping to status_code and reason
+    add_exception_mapper(app, OtherError, web.HTTPNotFound)
 
     async def foo():
-        raise MyException
+        raise OneError
 
     routes = web.RouteTableDef()
 
