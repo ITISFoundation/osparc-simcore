@@ -39,7 +39,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "NEW_ORGANIZATION",
         "actionable_path": "organization/"+orgId,
-        "resource_id": orgId,
+        "resource_id": orgId.toString(),
         "title": "New organization",
         "text": "You're now member of a new Organization"
       };
