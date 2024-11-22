@@ -13,20 +13,25 @@ from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from servicelib.aiohttp import status
 from simcore_service_webserver.errors import WebServerBaseError
-from simcore_service_webserver.exception_handlers import (
+from simcore_service_webserver.exceptions_handlers import (
+    HttpErrorInfo,
+    create_decorator_from_exception_handler,
+)
+from simcore_service_webserver.exceptions_handlers_base import (
+    _handled_exception_context_manager,
+)
+from simcore_service_webserver.exceptions_handlers_base_2 import (
     add_exception_handler,
     add_exception_mapper,
     handle_registered_exceptions,
     setup_exception_handlers,
 )
-from simcore_service_webserver.exceptions_handlers import (
-    HttpErrorInfo,
+from simcore_service_webserver.exceptions_handlers_http_error_map import (
     _sort_exceptions_by_specificity,
-    _handled_exception_context,
-    _sort_exceptions_by_specificity,
-    create__http_error_map_handler,
-    create_exception_handlers_decorator,
+    create_exception_handler_from_http_error_map,
 )
+
+# Some custom errors in my service
 
 
 class BasePluginError(WebServerBaseError):
@@ -79,9 +84,10 @@ def fake_request() -> web.Request:
     return make_mocked_request("GET", "/foo")
 
 
-def test_http_error_map_handler_factory(fake_request: web.Request):
+def test_create_exception_handler_from_http_error_map(fake_request: web.Request):
 
-    exc_handler = create__http_error_map_handler(
+    # call exception handler factory
+    exc_handler = create_exception_handler_from_http_error_map(
         {
             OneError: HttpErrorInfo(
                 status.HTTP_400_BAD_REQUEST, "Error One mapped to 400"
@@ -100,7 +106,7 @@ def test_http_error_map_handler_factory(fake_request: web.Request):
     assert exc_handler(err, fake_request) is err
 
 
-def test_handled_exception_context(fake_request: web.Request):
+def test__handled_exception_context_manager(fake_request: web.Request):
     def _suppress_handler(exception, request):
         assert request == fake_request
         assert isinstance(
@@ -109,7 +115,7 @@ def test_handled_exception_context(fake_request: web.Request):
         return None  # noqa: RET501, PLR1711
 
     def _fun(raises):
-        with _handled_exception_context(
+        with _handled_exception_context_manager(
             BasePluginError, _suppress_handler, request=fake_request
         ):
             raise raises
@@ -122,19 +128,22 @@ def test_handled_exception_context(fake_request: web.Request):
         _fun(raises=ArithmeticError)
 
 
-
-async def test_exception_handlers_decorator(
+async def test_create_decorator_from_exception_handler(
     caplog: pytest.LogCaptureFixture,
 ):
 
-    _handle_exceptions = create_exception_handlers_decorator(
-        exceptions_catch=BasePluginError,
-        exc_to_status_map={
+    exc_handler = create_exception_handler_from_http_error_map(
+        {
             OneError: HttpErrorInfo(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                msg_template="This is one error for front-end",
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                "Human readable error transmitted to the front-end",
             )
-        },
+        }
+    )
+
+    _handle_exceptions = create_decorator_from_exception_handler(
+        exception_handler=exc_handler,
+        exception_types=BasePluginError,  # <--- FIXME" this is redundant because exception has been already passed in exc_handler!
     )
 
     @_handle_exceptions

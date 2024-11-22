@@ -12,7 +12,8 @@ from ..application_settings_utils import requires_dev_feature_enabled
 from ..exceptions_handlers import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    create_exception_handlers_decorator,
+    create_decorator_from_exception_handler,
+    create_exception_handler_from_http_error_map,
 )
 from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
@@ -45,9 +46,11 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-_handle_exceptions = create_exception_handlers_decorator(
-    exceptions_catch=ProjectTrashError, exc_to_status_map=_TO_HTTP_ERROR_MAP
+_handle_exceptions = create_decorator_from_exception_handler(
+    exception_types=ProjectTrashError,
+    exception_handler=create_exception_handler_from_http_error_map(_TO_HTTP_ERROR_MAP),
 )
+
 
 #
 # ROUTES
