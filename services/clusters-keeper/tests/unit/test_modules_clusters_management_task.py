@@ -13,7 +13,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 
-_FAST_POLL_INTERVAL = 1
+_FAST_POLL_INTERVAL = "00:00:01"
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
-        monkeypatch, {"CLUSTERS_KEEPER_TASK_INTERVAL": f"{_FAST_POLL_INTERVAL}"}
+        monkeypatch, {"CLUSTERS_KEEPER_TASK_INTERVAL": _FAST_POLL_INTERVAL}
     )
 
 
