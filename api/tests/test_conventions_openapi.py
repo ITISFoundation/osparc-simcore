@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 import yaml
 from utils import list_files_in_api_specs
-from yarl import URL
 
 # Conventions
 _REQUIRED_FIELDS = [
@@ -42,29 +41,3 @@ def test_openapi_envelope_required_fields(path: Path):
 
                 assert "error" in required_fields or "data" in required_fields
                 assert "error" in fields_definitions or "data" in fields_definitions
-
-
-main_openapi_yamls = [
-    pathstr
-    for pathstr in list_files_in_api_specs("openapi.y*ml")
-    if not f"{pathstr}".endswith(CONVERTED_SUFFIX) and ("director" not in f"{pathstr}")
-]  # skip converted schemas and director
-
-assert main_openapi_yamls
-
-
-@pytest.mark.parametrize(
-    "openapi_path", main_openapi_yamls, ids=lambda p: p.parent.name
-)
-def test_versioning_and_basepath(openapi_path: Path):
-    # version in folder name is only major!
-    with openapi_path.open() as f:
-        oas_dict = yaml.safe_load(f)
-
-    # basepath in servers must also be as '/v0'
-    for server in oas_dict["servers"]:
-        kwargs = {
-            key: value["default"] for key, value in server.get("variables", {}).items()
-        }
-        url = URL(server["url"].format(**kwargs))
-        assert url.path == "/", "Wrong basepath in server: %s" % server

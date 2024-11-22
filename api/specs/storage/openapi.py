@@ -27,6 +27,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
+from servicelib.fastapi.openapi import create_openapi_specs
 from servicelib.long_running_tasks._models import TaskGet, TaskId, TaskStatus
 from settings_library.s3 import S3Settings
 from simcore_service_storage._meta import API_VTAG
@@ -35,6 +36,7 @@ from simcore_service_storage.models import (
     FileMetaData,
     SearchFilesQueryParams,
 )
+from simcore_service_storage.resources import storage_resources
 
 TAGS_DATASETS: list[str | Enum] = ["datasets"]
 TAGS_FILES: list[str | Enum] = ["files"]
@@ -401,6 +403,7 @@ async def cancel_and_delete_task(task_id: TaskId):
 
 
 if __name__ == "__main__":
-    from _common import CURRENT_DIR, create_openapi_specs
+    openapi = create_openapi_specs(app, drop_fastapi_default_422=True)
 
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi.yaml")
+    oas_path = storage_resources.get_path("api/v0/openapi.yaml").resolve()
+    print(f"Writing {oas_path}...", end=None)
