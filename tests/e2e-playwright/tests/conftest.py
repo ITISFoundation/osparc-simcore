@@ -414,7 +414,7 @@ def log_in_and_out(
         page.wait_for_timeout(500)
 
 
-def open_with_resources(page: Page, click_it: bool):
+def _open_with_resources(page: Page, click_it: bool):
     study_title_field = page.get_by_test_id("studyTitleField")
     # wait until the title is automatically filled up
     expect(study_title_field).not_to_have_value("", timeout=5000)
@@ -471,7 +471,7 @@ def create_new_project_and_delete(
                     if template_id is not None:
                         if is_product_billable:
                             open_button.click()
-                            open_button = open_with_resources(page, False)
+                            open_button = _open_with_resources(page, False)
                         # it returns a Long Running Task
                         with page.expect_response(
                             re.compile(rf"/projects\?from_study\={template_id}")
@@ -516,10 +516,10 @@ def create_new_project_and_delete(
                     else:
                         open_button.click()
                         if is_product_billable:
-                            open_with_resources(page, True)
+                            _open_with_resources(page, True)
                             open_with_resources_clicked = True
                 if is_product_billable and not open_with_resources_clicked:
-                    open_with_resources(page, True)
+                    _open_with_resources(page, True)
             project_data = response_info.value.json()
             assert project_data
             project_uuid = project_data["data"]["uuid"]
