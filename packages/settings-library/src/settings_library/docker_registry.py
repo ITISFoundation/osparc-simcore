@@ -63,7 +63,7 @@ class RegistrySettings(BaseCustomSettings):
         return f"{self.REGISTRY_URL}/v2"
 
     @cached_property
-    def registry_url(self) -> AnyHttpUrl:
+    def registry_url_for_docker_engine(self) -> AnyHttpUrl:
         """returns the full URL to the Docker Registry for use by docker engine"""
         protocol = "https" if self.REGISTRY_SSL else "http"
         return TypeAdapter(AnyHttpUrl).validate_python(
