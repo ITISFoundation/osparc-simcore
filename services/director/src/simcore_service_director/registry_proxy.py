@@ -1,21 +1,22 @@
+import asyncio
 import enum
 import json
 import logging
 import re
-from collections.abc import Mapping
-from http import HTTPStatus
+from collections.abc import AsyncGenerator, Mapping
 from pprint import pformat
-from typing import Any, cast
+from typing import Any, Final, cast
 
+import httpx
 from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
-from aiohttp import BasicAuth, ClientSession, client_exceptions
-from aiohttp.client import ClientTimeout
-from fastapi import FastAPI
-from servicelib.utils import limited_gather
+from fastapi import FastAPI, status
+from servicelib.logging_utils import log_catch, log_context
+from servicelib.utils import limited_as_completed
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
-from tenacity.retry import retry_if_result
-from tenacity.wait import wait_fixed
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed, wait_random_exponential
 from yarl import URL
 
 from .client_session import get_client_session
@@ -37,7 +38,7 @@ VERSION_REG = re.compile(
     r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 #
 # NOTE: if you are refactoring this module,
@@ -55,81 +56,64 @@ async def _basic_auth_registry_request(
     app: FastAPI, path: str, method: str, **session_kwargs
 ) -> tuple[dict, Mapping]:
     app_settings = get_application_settings(app)
-    if not app_settings.DIRECTOR_REGISTRY.REGISTRY_URL:
-        msg = "URL to registry is not defined"
-        raise DirectorRuntimeError(msg=msg)
-
-    url = URL(
-        f"{'https' if app_settings.DIRECTOR_REGISTRY.REGISTRY_SSL else 'http'}://{app_settings.DIRECTOR_REGISTRY.REGISTRY_URL}{path}"
-    )
-    logger.debug("Requesting registry using %s", url)
     # try the registry with basic authentication first, spare 1 call
     resp_data: dict = {}
     resp_headers: Mapping = {}
     auth = (
-        BasicAuth(
-            login=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
+        httpx.BasicAuth(
+            username=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
             password=app_settings.DIRECTOR_REGISTRY.REGISTRY_PW.get_secret_value(),
         )
         if app_settings.DIRECTOR_REGISTRY.REGISTRY_AUTH
-        and app_settings.DIRECTOR_REGISTRY.REGISTRY_USER
-        and app_settings.DIRECTOR_REGISTRY.REGISTRY_PW
         else None
     )
 
+    request_url = URL(f"{app_settings.DIRECTOR_REGISTRY.api_url}").joinpath(
+        path, encoded=True
+    )
+
     session = get_client_session(app)
-    try:
-        async with session.request(
-            method.lower(), url, auth=auth, **session_kwargs
-        ) as response:
-            if response.status == HTTPStatus.UNAUTHORIZED:
-                logger.debug("Registry unauthorized request: %s", await response.text())
-                # basic mode failed, test with other auth mode
-                resp_data, resp_headers = await _auth_registry_request(
-                    app_settings,
-                    url,
-                    method,
-                    response.headers,
-                    session,
-                    **session_kwargs,
-                )
+    response = await session.request(
+        method.lower(),
+        f"{request_url}",
+        auth=auth,
+        **session_kwargs,
+    )
 
-            elif response.status == HTTPStatus.NOT_FOUND:
-                raise ServiceNotAvailableError(service_name=path)
+    if response.status_code == status.HTTP_401_UNAUTHORIZED:
+        # basic mode failed, test with other auth mode
+        resp_data, resp_headers = await _auth_registry_request(
+            app_settings,
+            request_url,
+            method,
+            response.headers,
+            session,
+            **session_kwargs,
+        )
 
-            elif response.status > 399:
-                logger.exception(
-                    "Unknown error while accessing registry: %s", str(response)
-                )
-                raise RegistryConnectionError(msg=str(response))
+    elif response.status_code == status.HTTP_404_NOT_FOUND:
+        raise ServiceNotAvailableError(service_name=path)
 
-            else:
-                # registry that does not need an auth
-                resp_data = await response.json(content_type=None)
-                resp_headers = response.headers
+    elif response.status_code >= status.HTTP_400_BAD_REQUEST:
+        raise RegistryConnectionError(msg=str(response))
 
-            return (resp_data, resp_headers)
-    except client_exceptions.ClientError as exc:
-        logger.exception("Unknown error while accessing registry")
-        msg = f"Unknown error while accessing registry: {exc!s}"
-        raise DirectorRuntimeError(msg=msg) from exc
+    else:
+        # registry that does not need an auth
+        if method.lower() != "head":
+            resp_data = response.json()
+        resp_headers = response.headers
+
+    return (resp_data, resp_headers)
 
 
-async def _auth_registry_request(
+async def _auth_registry_request(  # noqa: C901
     app_settings: ApplicationSettings,
     url: URL,
     method: str,
     auth_headers: Mapping,
-    session: ClientSession,
+    session: httpx.AsyncClient,
     **kwargs,
 ) -> tuple[dict, Mapping]:
-    if (
-        not app_settings.DIRECTOR_REGISTRY.REGISTRY_AUTH
-        or not app_settings.DIRECTOR_REGISTRY.REGISTRY_USER
-        or not app_settings.DIRECTOR_REGISTRY.REGISTRY_PW
-    ):
-        msg = "Wrong configuration: Authentication to registry is needed!"
-        raise RegistryConnectionError(msg=msg)
     # auth issue let's try some authentication get the auth type
     auth_type = None
     auth_details: dict[str, str] = {}
@@ -144,8 +128,8 @@ async def _auth_registry_request(
     if not auth_type:
         msg = "Unknown registry type: cannot deduce authentication method!"
         raise RegistryConnectionError(msg=msg)
-    auth = BasicAuth(
-        login=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
+    auth = httpx.BasicAuth(
+        username=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
         password=app_settings.DIRECTOR_REGISTRY.REGISTRY_PW.get_secret_value(),
     )
 
@@ -155,58 +139,60 @@ async def _auth_registry_request(
         token_url = URL(auth_details["realm"]).with_query(
             service=auth_details["service"], scope=auth_details["scope"]
         )
-        async with session.get(token_url, auth=auth, **kwargs) as token_resp:
-            if token_resp.status != HTTPStatus.OK:
-                msg = f"Unknown error while authentifying with registry: {token_resp!s}"
-                raise RegistryConnectionError(msg=msg)
-            bearer_code = (await token_resp.json())["token"]
-            headers = {"Authorization": f"Bearer {bearer_code}"}
-            async with getattr(session, method.lower())(
-                url, headers=headers, **kwargs
-            ) as resp_wtoken:
-                if resp_wtoken.status == HTTPStatus.NOT_FOUND:
-                    logger.exception("path to registry not found: %s", url)
-                    raise ServiceNotAvailableError(service_name=f"{url}")
-                if resp_wtoken.status > 399:
-                    logger.exception(
-                        "Unknown error while accessing with token authorized registry: %s",
-                        str(resp_wtoken),
-                    )
-                    raise RegistryConnectionError(msg=f"{resp_wtoken}")
-                resp_data = await resp_wtoken.json(content_type=None)
-                resp_headers = resp_wtoken.headers
-                return (resp_data, resp_headers)
-    elif auth_type == "Basic":
+        token_resp = await session.get(f"{token_url}", auth=auth, **kwargs)
+        if token_resp.status_code != status.HTTP_200_OK:
+            msg = f"Unknown error while authentifying with registry: {token_resp!s}"
+            raise RegistryConnectionError(msg=msg)
+
+        bearer_code = (await token_resp.json())["token"]
+        headers = {"Authorization": f"Bearer {bearer_code}"}
+        resp_wtoken = await getattr(session, method.lower())(
+            url, headers=headers, **kwargs
+        )
+        assert isinstance(resp_wtoken, httpx.Response)  # nosec
+        if resp_wtoken.status_code == status.HTTP_404_NOT_FOUND:
+            raise ServiceNotAvailableError(service_name=f"{url}")
+        if resp_wtoken.status_code >= status.HTTP_400_BAD_REQUEST:
+            raise RegistryConnectionError(msg=f"{resp_wtoken}")
+        resp_data = await resp_wtoken.json(content_type=None)
+        resp_headers = resp_wtoken.headers
+        return (resp_data, resp_headers)
+    if auth_type == "Basic":
         # basic authentication should not be since we tried already...
-        async with getattr(session, method.lower())(
-            url, auth=auth, **kwargs
-        ) as resp_wbasic:
-            if resp_wbasic.status == HTTPStatus.NOT_FOUND:
-                logger.exception("path to registry not found: %s", url)
-                raise ServiceNotAvailableError(service_name=f"{url}")
-            if resp_wbasic.status > 399:
-                logger.exception(
-                    "Unknown error while accessing with token authorized registry: %s",
-                    str(resp_wbasic),
-                )
-                raise RegistryConnectionError(msg=f"{resp_wbasic}")
-            resp_data = await resp_wbasic.json(content_type=None)
-            resp_headers = resp_wbasic.headers
-            return (resp_data, resp_headers)
+        resp_wbasic = await getattr(session, method.lower())(url, auth=auth, **kwargs)
+        assert isinstance(resp_wbasic, httpx.Response)  # nosec
+        if resp_wbasic.status_code == status.HTTP_404_NOT_FOUND:
+            raise ServiceNotAvailableError(service_name=f"{url}")
+        if resp_wbasic.status_code >= status.HTTP_400_BAD_REQUEST:
+            raise RegistryConnectionError(msg=f"{resp_wbasic}")
+        resp_data = await resp_wbasic.json(content_type=None)
+        resp_headers = resp_wbasic.headers
+        return (resp_data, resp_headers)
     msg = f"Unknown registry authentification type: {url}"
     raise RegistryConnectionError(msg=msg)
 
 
+@retry(
+    retry=retry_if_exception_type((httpx.RequestError, TimeoutError)),
+    wait=wait_random_exponential(min=1, max=10),
+    stop=stop_after_delay(120),
+    before_sleep=before_sleep_log(_logger, logging.WARNING),
+    reraise=True,
+)
+async def _retried_request(
+    app: FastAPI, path: str, method: str, **session_kwargs
+) -> tuple[dict, Mapping]:
+    return await _basic_auth_registry_request(app, path, method, **session_kwargs)
+
+
 async def registry_request(
     app: FastAPI,
+    *,
     path: str,
     method: str = "GET",
     no_cache: bool = False,
     **session_kwargs,
 ) -> tuple[dict, Mapping]:
-    logger.debug(
-        "Request to registry: path=%s, method=%s. no_cache=%s", path, method, no_cache
-    )
     cache: SimpleMemoryCache = app.state.registry_cache_memory
     cache_key = f"{method}_{path}"
     if not no_cache and (cached_response := await cache.get(cache_key)):
@@ -214,9 +200,13 @@ async def registry_request(
         return cast(tuple[dict, Mapping], cached_response)
 
     app_settings = get_application_settings(app)
-    response, response_headers = await _basic_auth_registry_request(
-        app, path, method, **session_kwargs
-    )
+    try:
+        response, response_headers = await _retried_request(
+            app, path, method, **session_kwargs
+        )
+    except httpx.RequestError as exc:
+        msg = f"Unknown error while accessing registry: {exc!s} via {exc.request}"
+        raise DirectorRuntimeError(msg=msg) from exc
 
     if not no_cache and app_settings.DIRECTOR_REGISTRY_CACHING and method == "GET":
         await cache.set(
@@ -228,32 +218,22 @@ async def registry_request(
     return response, response_headers
 
 
-async def _is_registry_responsive(app: FastAPI) -> bool:
-    path = "/v2/"
-    try:
-        await registry_request(
-            app, path, no_cache=True, timeout=ClientTimeout(total=1.0)
-        )
-        return True
-    except (TimeoutError, DirectorRuntimeError) as exc:
-        logger.debug("Registry not responsive: %s", exc)
-        return False
+async def _is_registry_responsive(app: FastAPI) -> None:
+    await _basic_auth_registry_request(app, path="", method="HEAD", timeout=1.0)
 
 
 async def _setup_registry(app: FastAPI) -> None:
-    logger.debug("pinging registry...")
-
     @retry(
-        wait=wait_fixed(2),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-        retry=retry_if_result(lambda result: result is False),
+        wait=wait_fixed(1),
+        before_sleep=before_sleep_log(_logger, logging.WARNING),
+        retry=retry_if_exception_type((httpx.RequestError, DirectorRuntimeError)),
         reraise=True,
     )
-    async def wait_until_registry_responsive(app: FastAPI) -> bool:
-        return await _is_registry_responsive(app)
+    async def _wait_until_registry_responsive(app: FastAPI) -> None:
+        await _is_registry_responsive(app)
 
-    await wait_until_registry_responsive(app)
-    logger.info("Connected to docker registry")
+    with log_context(_logger, logging.INFO, msg="Connecting to docker registry"):
+        await _wait_until_registry_responsive(app)
 
 
 def setup(app: FastAPI) -> None:
@@ -271,35 +251,83 @@ def setup(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-async def _list_repositories(app: FastAPI) -> list[str]:
-    logger.debug("listing repositories")
-    # if there are more repos, the Link will be available in the response headers until none available
-    path = f"/v2/_catalog?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
-    repos_list: list = []
-    while True:
-        result, headers = await registry_request(app, path)
-        if result["repositories"]:
-            repos_list.extend(result["repositories"])
-        if "Link" not in headers:
-            break
-        path = str(headers["Link"]).split(";")[0].strip("<>")
-    logger.debug("listed %s repositories", len(repos_list))
-    return repos_list
+def _get_prefix(service_type: ServiceType) -> str:
+    return f"{DIRECTOR_SIMCORE_SERVICES_PREFIX}/{service_type.value}/"
+
+
+_SERVICE_TYPE_FILTER_MAP: Final[dict[ServiceType, tuple[str, ...]]] = {
+    ServiceType.DYNAMIC: (_get_prefix(ServiceType.DYNAMIC),),
+    ServiceType.COMPUTATIONAL: (_get_prefix(ServiceType.COMPUTATIONAL),),
+    ServiceType.ALL: (
+        _get_prefix(ServiceType.DYNAMIC),
+        _get_prefix(ServiceType.COMPUTATIONAL),
+    ),
+}
+
+
+async def _list_repositories_gen(
+    app: FastAPI, service_type: ServiceType
+) -> AsyncGenerator[list[str], None]:
+    with log_context(_logger, logging.DEBUG, msg="listing repositories"):
+        path = f"_catalog?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
+        result, headers = await registry_request(app, path=path)  # initial call
+
+        while True:
+            if "Link" in headers:
+                next_path = (
+                    str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                )
+                prefetch_task = asyncio.create_task(
+                    registry_request(app, path=next_path)
+                )
+            else:
+                prefetch_task = None
+
+            yield list(
+                filter(
+                    lambda x: str(x).startswith(_SERVICE_TYPE_FILTER_MAP[service_type]),
+                    result["repositories"],
+                )
+            )
+            if prefetch_task:
+                result, headers = await prefetch_task
+            else:
+                return
+
+
+async def list_image_tags_gen(
+    app: FastAPI, image_key: str
+) -> AsyncGenerator[list[str], None]:
+    with log_context(_logger, logging.DEBUG, msg=f"listing image tags in {image_key}"):
+        path = f"{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
+        tags, headers = await registry_request(app, path=path)  # initial call
+        while True:
+            if "Link" in headers:
+                next_path = (
+                    str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                )
+                prefetch_task = asyncio.create_task(
+                    registry_request(app, path=next_path)
+                )
+            else:
+                prefetch_task = None
+
+            yield list(
+                filter(
+                    VERSION_REG.match,
+                    tags["tags"],
+                )
+            )
+            if prefetch_task:
+                tags, headers = await prefetch_task
+            else:
+                return
 
 
 async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
-    logger.debug("listing image tags in %s", image_key)
-    image_tags: list = []
-    # get list of image tags
-    path = f"/v2/{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
-    while True:
-        tags, headers = await registry_request(app, path)
-        if tags["tags"]:
-            image_tags.extend([tag for tag in tags["tags"] if VERSION_REG.match(tag)])
-        if "Link" not in headers:
-            break
-        path = str(headers["Link"]).split(";")[0].strip("<>")
-    logger.debug("Found %s image tags in %s", len(image_tags), image_key)
+    image_tags = []
+    async for tags in list_image_tags_gen(app, image_key):
+        image_tags.extend(tags)
     return image_tags
 
 
@@ -313,8 +341,8 @@ async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
 
     SEE https://distribution.github.io/distribution/spec/api/#digest-header
     """
-    path = f"/v2/{image}/manifests/{tag}"
-    _, headers = await registry_request(app, path)
+    path = f"{image}/manifests/{tag}"
+    _, headers = await registry_request(app, path=path)
 
     headers = headers or {}
     return headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
@@ -325,9 +353,9 @@ async def get_image_labels(
 ) -> tuple[dict[str, str], str | None]:
     """Returns image labels and the image manifest digest"""
 
-    logger.debug("getting image labels of %s:%s", image, tag)
-    path = f"/v2/{image}/manifests/{tag}"
-    request_result, headers = await registry_request(app, path)
+    _logger.debug("getting image labels of %s:%s", image, tag)
+    path = f"{image}/manifests/{tag}"
+    request_result, headers = await registry_request(app, path=path)
     v1_compatibility_key = json.loads(request_result["history"][0]["v1Compatibility"])
     container_config: dict[str, Any] = v1_compatibility_key.get(
         "container_config", v1_compatibility_key["config"]
@@ -337,7 +365,7 @@ async def get_image_labels(
     headers = headers or {}
     manifest_digest: str | None = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
 
-    logger.debug("retrieved labels of image %s:%s", image, tag)
+    _logger.debug("retrieved labels of image %s:%s", image, tag)
 
     return (labels, manifest_digest)
 
@@ -375,48 +403,37 @@ async def get_image_details(
 
 
 async def get_repo_details(app: FastAPI, image_key: str) -> list[dict[str, Any]]:
-
-    image_tags = await list_image_tags(app, image_key)
-
-    results = await limited_gather(
-        *[get_image_details(app, image_key, tag) for tag in image_tags],
-        reraise=False,
-        log=logger,
-        limit=get_application_settings(
-            app
-        ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
-    )
-    return [result for result in results if not isinstance(result, BaseException)]
+    repo_details = []
+    async for image_tags in list_image_tags_gen(app, image_key):
+        async for image_details_future in limited_as_completed(
+            (get_image_details(app, image_key, tag) for tag in image_tags),
+            limit=get_application_settings(
+                app
+            ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
+        ):
+            with log_catch(_logger, reraise=False):
+                if image_details := await image_details_future:
+                    repo_details.append(image_details)
+    return repo_details
 
 
 async def list_services(app: FastAPI, service_type: ServiceType) -> list[dict]:
-    logger.debug("getting list of services")
-    repos = await _list_repositories(app)
-    # get the services repos
-    prefixes = []
-    if service_type in [ServiceType.DYNAMIC, ServiceType.ALL]:
-        prefixes.append(_get_prefix(ServiceType.DYNAMIC))
-    if service_type in [ServiceType.COMPUTATIONAL, ServiceType.ALL]:
-        prefixes.append(_get_prefix(ServiceType.COMPUTATIONAL))
-    repos = [x for x in repos if str(x).startswith(tuple(prefixes))]
-    logger.debug("retrieved list of repos : %s", repos)
-
-    # only list as service if it actually contains the necessary labels
-    results = await limited_gather(
-        *[get_repo_details(app, repo) for repo in repos],
-        reraise=False,
-        log=logger,
-        limit=get_application_settings(
+    with log_context(_logger, logging.DEBUG, msg="listing services"):
+        services = []
+        concurrency_limit = get_application_settings(
             app
-        ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
-    )
+        ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS
+        async for repos in _list_repositories_gen(app, service_type):
+            # only list as service if it actually contains the necessary labels
+            async for repo_details_future in limited_as_completed(
+                (get_repo_details(app, repo) for repo in repos),
+                limit=concurrency_limit,
+            ):
+                with log_catch(_logger, reraise=False):
+                    if repo_details := await repo_details_future:
+                        services.extend(repo_details)
 
-    return [
-        service
-        for repo_details in results
-        if isinstance(repo_details, list)
-        for service in repo_details
-    ]
+        return services
 
 
 async def list_interactive_service_dependencies(
@@ -441,10 +458,6 @@ async def list_interactive_service_dependencies(
     return dependency_keys
 
 
-def _get_prefix(service_type: ServiceType) -> str:
-    return f"{DIRECTOR_SIMCORE_SERVICES_PREFIX}/{service_type.value}/"
-
-
 def get_service_first_name(image_key: str) -> str:
     if str(image_key).startswith(_get_prefix(ServiceType.DYNAMIC)):
         service_name_suffixes = str(image_key)[len(_get_prefix(ServiceType.DYNAMIC)) :]
@@ -455,7 +468,7 @@ def get_service_first_name(image_key: str) -> str:
     else:
         return "invalid service"
 
-    logger.debug(
+    _logger.debug(
         "retrieved service name from repo %s : %s", image_key, service_name_suffixes
     )
     return service_name_suffixes.split("/")[0]
@@ -471,7 +484,7 @@ def get_service_last_names(image_key: str) -> str:
     else:
         return "invalid service"
     service_last_name = str(service_name_suffixes).replace("/", "_")
-    logger.debug(
+    _logger.debug(
         "retrieved service last name from repo %s : %s", image_key, service_last_name
     )
     return service_last_name
@@ -506,7 +519,7 @@ async def get_service_extras(
     }
 
     labels, _ = await get_image_labels(app, image_key, image_tag)
-    logger.debug("Compiling service extras from labels %s", pformat(labels))
+    _logger.debug("Compiling service extras from labels %s", pformat(labels))
 
     if SERVICE_RUNTIME_SETTINGS in labels:
         service_settings: list[dict[str, Any]] = json.loads(
@@ -557,7 +570,7 @@ async def get_service_extras(
                     invalid_with_msg = f"invalid container_spec [{entry_value}]"
 
             if invalid_with_msg:
-                logger.warning(
+                _logger.warning(
                     "%s entry [%s] encoded in settings labels of service image %s:%s",
                     invalid_with_msg,
                     entry,
@@ -574,6 +587,6 @@ async def get_service_extras(
         }
     )
 
-    logger.debug("Following service extras were compiled: %s", pformat(result))
+    _logger.debug("Following service extras were compiled: %s", pformat(result))
 
     return result

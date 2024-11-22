@@ -11,6 +11,7 @@ MOCKED_BASE_REGISTRY_ENV_VARS: dict[str, str] = {
     "REGISTRY_USER": "usr",
     "REGISTRY_PW": "pwd",
     "REGISTRY_SSL": "False",
+    "REGISTRY_URL": "pytest.registry.com",
 }
 
 
