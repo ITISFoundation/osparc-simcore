@@ -1,14 +1,7 @@
 from functools import cached_property
 from typing import Any, Self
 
-from pydantic import (
-    AnyHttpUrl,
-    Field,
-    SecretStr,
-    TypeAdapter,
-    field_validator,
-    model_validator,
-)
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
@@ -20,13 +13,12 @@ class RegistrySettings(BaseCustomSettings):
         default=None,
         # This is useful in case of a local registry, where the registry url (path) is relative to the host docker engine"
         description="development mode only, in case a local registry is used - "
-        "this is the hostname to the docker registry as seen from inside the container",
+        "this is the hostname to the docker registry as seen from the host running the containers (e.g. 127.0.0.1:5000)",
     )
     # NOTE: name is missleading, http or https protocol are not included
     REGISTRY_URL: str = Field(
         ...,
-        description="hostname of docker registry (without protocol but with port if available) - "
-        "typically used by the host machine docker engine",
+        description="hostname of docker registry (without protocol but with port if available)",
         min_length=1,
     )
 
@@ -61,14 +53,6 @@ class RegistrySettings(BaseCustomSettings):
     @cached_property
     def api_url(self) -> str:
         return f"{self.REGISTRY_URL}/v2"
-
-    @cached_property
-    def registry_url_for_docker_engine(self) -> AnyHttpUrl:
-        """returns the full URL to the Docker Registry for use by docker engine"""
-        protocol = "https" if self.REGISTRY_SSL else "http"
-        return TypeAdapter(AnyHttpUrl).validate_python(
-            f"{protocol}://{self.REGISTRY_URL}"
-        )
 
     model_config = SettingsConfigDict(
         json_schema_extra={

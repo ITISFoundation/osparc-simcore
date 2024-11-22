@@ -68,9 +68,9 @@ async def _basic_auth_registry_request(
         else None
     )
 
-    request_url = URL(
-        f"{app_settings.DIRECTOR_REGISTRY.registry_url_for_docker_engine}"
-    ).with_path(path, encoded=True)
+    request_url = URL(app_settings.DIRECTOR_REGISTRY.resolved_registry_url).with_path(
+        path, encoded=True
+    )
 
     session = get_client_session(app)
     response = await session.request(
