@@ -3,9 +3,9 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import json
 from collections.abc import Callable
 from copy import deepcopy
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -27,21 +27,30 @@ class Entrypoint(NamedTuple):
     path: str
 
 
-@lru_cache  # ANE: required to boost tests speed, gains 3.5s per test
+@pytest.fixture
+def openapi_specs_path() -> Path:
+    # NOTE: cannot be defined as a session scope because it is designed to be overriden
+    pytest.fail(reason="Must be overriden in caller test suite")
+
+
 def _load(file: Path, base_uri: str = "") -> dict:
+    match file.suffix:
+        case ".yaml" | ".yml":
+            loaded = yaml.safe_load(file.read_text())
+        case "json":
+            loaded = json.loads(file.read_text())
+        case _:
+            msg = f"Expect yaml or json, got {file.suffix}"
+            raise ValueError(msg)
+
     # SEE https://jsonref.readthedocs.io/en/latest/#lazy-load-and-load-on-repr
     data: dict = jsonref.replace_refs(  # type: ignore
-        yaml.safe_load(file.read_text()),
+        loaded,
         base_uri=base_uri,
         lazy_load=True,  # this data will be iterated
         merge_props=False,
     )
     return data
-
-
-@pytest.fixture
-def openapi_specs_path() -> Path:
-    pytest.fail(reason="Must be overriden in caller tests package")
 
 
 @pytest.fixture
