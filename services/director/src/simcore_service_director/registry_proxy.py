@@ -68,7 +68,7 @@ async def _basic_auth_registry_request(
         else None
     )
 
-    request_url = URL(app_settings.DIRECTOR_REGISTRY.REGISTRY_URL).with_path(
+    request_url = URL(app_settings.DIRECTOR_REGISTRY.api_url).with_path(
         path, encoded=True
     )
 
@@ -218,7 +218,7 @@ async def registry_request(
 
 
 async def _is_registry_responsive(app: FastAPI) -> None:
-    await _basic_auth_registry_request(app, path="/v2/", method="GET", timeout=1.0)
+    await _basic_auth_registry_request(app, path="/", method="GET", timeout=1.0)
 
 
 async def _setup_registry(app: FastAPI) -> None:
@@ -268,7 +268,7 @@ async def _list_repositories_gen(
     app: FastAPI, service_type: ServiceType
 ) -> AsyncGenerator[list[str], None]:
     with log_context(_logger, logging.DEBUG, msg="listing repositories"):
-        path = f"/v2/_catalog?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
+        path = f"/_catalog?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
         result, headers = await registry_request(app, path=path)  # initial call
 
         while True:
@@ -296,7 +296,7 @@ async def list_image_tags_gen(
     app: FastAPI, image_key: str
 ) -> AsyncGenerator[list[str], None]:
     with log_context(_logger, logging.DEBUG, msg=f"listing image tags in {image_key}"):
-        path = f"/v2/{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
+        path = f"/{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
         tags, headers = await registry_request(app, path=path)  # initial call
         while True:
             if "Link" in headers:
@@ -336,7 +336,7 @@ async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
 
     SEE https://distribution.github.io/distribution/spec/api/#digest-header
     """
-    path = f"/v2/{image}/manifests/{tag}"
+    path = f"/{image}/manifests/{tag}"
     _, headers = await registry_request(app, path=path)
 
     headers = headers or {}
@@ -349,7 +349,7 @@ async def get_image_labels(
     """Returns image labels and the image manifest digest"""
 
     _logger.debug("getting image labels of %s:%s", image, tag)
-    path = f"/v2/{image}/manifests/{tag}"
+    path = f"/{image}/manifests/{tag}"
     request_result, headers = await registry_request(app, path=path)
     v1_compatibility_key = json.loads(request_result["history"][0]["v1Compatibility"])
     container_config: dict[str, Any] = v1_compatibility_key.get(
