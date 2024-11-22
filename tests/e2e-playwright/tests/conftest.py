@@ -519,7 +519,7 @@ def create_new_project_and_delete(
                             _open_with_resources(page, True)
                             open_with_resources_clicked = True
                 if is_product_billable and not open_with_resources_clicked:
-                    _open_with_resources(page, True)
+                    _open_with_resources(page, click_it=True)
             project_data = response_info.value.json()
             assert project_data
             project_uuid = project_data["data"]["uuid"]
