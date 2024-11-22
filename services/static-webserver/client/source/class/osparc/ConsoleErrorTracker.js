@@ -33,11 +33,13 @@ qx.Class.define("osparc.ConsoleErrorTracker", {
 
       // Override console.error
       console.error = (...args) => {
-        // Store the error in the array
-        this.__errors.push({
+        this.__errors.unshift({
           date: new Date(),
           error: args
         });
+        if (this.__errors.length > 20) {
+          this.__errors.length = 20;
+        }
 
         // Call the original console.error so the error still appears in the console
         originalConsoleError.apply(console, args);
