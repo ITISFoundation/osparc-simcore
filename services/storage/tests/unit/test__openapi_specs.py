@@ -18,7 +18,7 @@ from simcore_service_storage.resources import storage_resources
 from simcore_service_storage.settings import Settings
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def openapi_specs_path() -> Path:
     # overrides pytest_simcore.openapi_specs.app_openapi_specs_path fixture
     spec_path: Path = storage_resources.get_path(f"api/{API_VTAG}/openapi.yaml")
