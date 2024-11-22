@@ -12,7 +12,7 @@ from models_library.projects_nodes_io import (
     SimCoreFileLink,
     SimcoreS3DirectoryID,
 )
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 
 
 @pytest.fixture()
@@ -96,9 +96,15 @@ def test_store_discriminator():
         },
     }
 
-    datacore_node = Node.parse_obj(workbench["89f95b67-a2a3-4215-a794-2356684deb61"])
-    rawgraph_node = Node.parse_obj(workbench["88119776-e869-4df2-a529-4aae9d9fa35c"])
-    simcore_node = Node.parse_obj(workbench["75c1707c-ec1c-49ac-a7bf-af6af9088f38"])
+    datacore_node = Node.model_validate(
+        workbench["89f95b67-a2a3-4215-a794-2356684deb61"]
+    )
+    rawgraph_node = Node.model_validate(
+        workbench["88119776-e869-4df2-a529-4aae9d9fa35c"]
+    )
+    simcore_node = Node.model_validate(
+        workbench["75c1707c-ec1c-49ac-a7bf-af6af9088f38"]
+    )
 
     # must cast to the right subclass within project_nodes.py's InputTypes and OutputTypes unions
     assert datacore_node.outputs
@@ -114,11 +120,13 @@ UUID_0: str = "00000000-0000-0000-0000-000000000000"
 
 def test_simcore_s3_directory_id():
     # the only allowed path is the following
-    result = parse_obj_as(SimcoreS3DirectoryID, f"{UUID_0}/{UUID_0}/ok-simcore-dir/")
+    result = TypeAdapter(SimcoreS3DirectoryID).validate_python(
+        f"{UUID_0}/{UUID_0}/ok-simcore-dir/"
+    )
     assert result == f"{UUID_0}/{UUID_0}/ok-simcore-dir/"
 
     # re-parsing must work the same thing works
-    assert parse_obj_as(SimcoreS3DirectoryID, result)
+    assert TypeAdapter(SimcoreS3DirectoryID).validate_python(result)
 
     # all below are not allowed
     for invalid_path in (
@@ -126,10 +134,12 @@ def test_simcore_s3_directory_id():
         f"{UUID_0}/{UUID_0}/a-dir/a-file",
     ):
         with pytest.raises(ValidationError):
-            parse_obj_as(SimcoreS3DirectoryID, invalid_path)
+            TypeAdapter(SimcoreS3DirectoryID).validate_python(invalid_path)
 
     with pytest.raises(ValidationError, match="Not allowed subdirectory found in"):
-        parse_obj_as(SimcoreS3DirectoryID, f"{UUID_0}/{UUID_0}/a-dir/a-subdir/")
+        TypeAdapter(SimcoreS3DirectoryID).validate_python(
+            f"{UUID_0}/{UUID_0}/a-dir/a-subdir/"
+        )
 
 
 @pytest.mark.parametrize(

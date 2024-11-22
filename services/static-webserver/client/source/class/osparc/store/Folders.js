@@ -229,6 +229,7 @@ qx.Class.define("osparc.store.Folders", {
     __addToCache: function(folderData) {
       let folder = this.foldersCached.find(f => f.getFolderId() === folderData["folderId"] && f.getWorkspaceId() === folderData["workspaceId"]);
       if (folder) {
+        const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Folder));
         // put
         Object.keys(folderData).forEach(key => {
           if (key === "createdAt") {
@@ -237,7 +238,7 @@ qx.Class.define("osparc.store.Folders", {
             folder.set("lastModified", new Date(folderData["modifiedAt"]));
           } else if (key === "trashedAt") {
             folder.set("trashedAt", new Date(folderData["trashedAt"]));
-          } else {
+          } else if (props.includes(key)) {
             folder.set(key, folderData[key]);
           }
         });

@@ -345,7 +345,18 @@ qx.Class.define("osparc.data.model.Study", {
         "STARTED",
         "RETRY"
       ].includes(state);
-    }
+    },
+
+    __isAnyLinkedNodeMissing: function(studyData) {
+      const existingNodeIds = Object.keys(studyData["workbench"]);
+      const linkedNodeIds = osparc.data.model.Workbench.getLinkedNodeIds(studyData["workbench"]);
+      const allExist = linkedNodeIds.every(linkedNodeId => existingNodeIds.includes(linkedNodeId));
+      return !allExist;
+    },
+
+    isCorrupt: function(studyData) {
+      return this.__isAnyLinkedNodeMissing(studyData);
+    },
   },
 
   members: {

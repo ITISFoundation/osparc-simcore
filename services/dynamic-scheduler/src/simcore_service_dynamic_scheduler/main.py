@@ -10,7 +10,6 @@ from simcore_service_dynamic_scheduler.core.application import create_app
 from simcore_service_dynamic_scheduler.core.settings import ApplicationSettings
 
 _the_settings = ApplicationSettings.create_from_envs()
-
 logging.basicConfig(level=_the_settings.DYNAMIC_SCHEDULER_LOGLEVEL.value)
 logging.root.setLevel(_the_settings.DYNAMIC_SCHEDULER_LOGLEVEL.value)
 config_all_loggers(

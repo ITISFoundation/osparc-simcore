@@ -85,7 +85,7 @@ async def test_wrong_confirm_pass(client: TestClient, new_password: str):
             "errors": [
                 {
                     "code": "value_error",
-                    "message": MSG_PASSWORD_MISMATCH,
+                    "message": f"Value error, {MSG_PASSWORD_MISMATCH}",
                     "resource": "/v0/auth/change-password",
                     "field": "confirm",
                 }

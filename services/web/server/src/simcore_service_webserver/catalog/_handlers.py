@@ -26,7 +26,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import BaseModel, Extra, Field, parse_obj_as, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -54,12 +54,12 @@ routes = RouteTableDef()
 class ServicePathParams(BaseModel):
     service_key: ServiceKey
     service_version: ServiceVersion
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
 
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
-
-    @validator("service_key", pre=True)
+    @field_validator("service_key", mode="before")
     @classmethod
     def ensure_unquoted(cls, v):
         # NOTE: this is needed as in pytest mode, the aiohttp server does not seem to unquote automatically
@@ -90,7 +90,7 @@ async def list_services_latest(request: Request):
         user_id=request_ctx.user_id,
         product_name=request_ctx.product_name,
         unit_registry=request_ctx.unit_registry,
-        page_params=PageQueryParameters.construct(
+        page_params=PageQueryParameters.model_construct(
             offset=query_params.offset, limit=query_params.limit
         ),
     )
@@ -98,7 +98,7 @@ async def list_services_latest(request: Request):
     assert page_meta.limit == query_params.limit  # nosec
     assert page_meta.offset == query_params.offset  # nosec
 
-    page = Page[CatalogServiceGet].parse_obj(
+    page = Page[CatalogServiceGet].model_validate(
         paginate_data(
             chunk=page_items,
             request_url=request.url,
@@ -133,7 +133,7 @@ async def get_service(request: Request):
         service_version=path_params.service_version,
     )
 
-    return envelope_json_response(CatalogServiceGet.parse_obj(service))
+    return envelope_json_response(CatalogServiceGet.model_validate(service))
 
 
 @routes.patch(
@@ -160,11 +160,11 @@ async def update_service(request: Request):
         product_name=request_ctx.product_name,
         service_key=path_params.service_key,
         service_version=path_params.service_version,
-        update_data=update.dict(exclude_unset=True),
+        update_data=update.model_dump(exclude_unset=True),
         unit_registry=request_ctx.unit_registry,
     )
 
-    return envelope_json_response(CatalogServiceGet.parse_obj(updated))
+    return envelope_json_response(CatalogServiceGet.model_validate(updated))
 
 
 @routes.get(
@@ -182,7 +182,7 @@ async def list_service_inputs(request: Request):
         path_params.service_key, path_params.service_version, ctx
     )
 
-    data = [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]
+    data = [m.model_dump(**RESPONSE_MODEL_POLICY) for m in response_model]
     return await asyncio.get_event_loop().run_in_executor(
         None, envelope_json_response, data
     )
@@ -210,7 +210,7 @@ async def get_service_input(request: Request):
         ctx,
     )
 
-    data = response_model.dict(**RESPONSE_MODEL_POLICY)
+    data = response_model.model_dump(**RESPONSE_MODEL_POLICY)
     return await asyncio.get_event_loop().run_in_executor(
         None, envelope_json_response, data
     )
@@ -265,7 +265,7 @@ async def list_service_outputs(request: Request):
         path_params.service_key, path_params.service_version, ctx
     )
 
-    data = [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]
+    data = [m.model_dump(**RESPONSE_MODEL_POLICY) for m in response_model]
     return await asyncio.get_event_loop().run_in_executor(
         None, envelope_json_response, data
     )
@@ -293,7 +293,7 @@ async def get_service_output(request: Request):
         ctx,
     )
 
-    data = response_model.dict(**RESPONSE_MODEL_POLICY)
+    data = response_model.model_dump(**RESPONSE_MODEL_POLICY)
     return await asyncio.get_event_loop().run_in_executor(
         None, envelope_json_response, data
     )
@@ -387,4 +387,6 @@ async def get_service_pricing_plan(request: Request):
             service_version=f"{path_params.service_version}",
         )
 
-    return envelope_json_response(parse_obj_as(PricingPlanGet, pricing_plan))
+    return envelope_json_response(
+        PricingPlanGet.model_validate(pricing_plan.model_dump())
+    )

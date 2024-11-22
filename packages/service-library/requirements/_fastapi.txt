@@ -1,3 +1,5 @@
+annotated-types==0.7.0
+    # via pydantic
 anyio==4.6.0
     # via
     #   httpx
@@ -6,7 +8,10 @@ asgiref==3.8.1
     # via opentelemetry-instrumentation-asgi
 certifi==2024.8.30
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -17,11 +22,8 @@ deprecated==1.2.14
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
-fastapi==0.99.1
+fastapi==0.115.5
     # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_fastapi.in
     #   prometheus-fastapi-instrumentator
 h11==0.14.0
@@ -32,7 +34,10 @@ httpcore==1.0.5
     # via httpx
 httpx==0.27.2
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_fastapi.in
@@ -47,45 +52,58 @@ opentelemetry-api==1.27.0
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-semantic-conventions
 opentelemetry-instrumentation==0.48b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
 opentelemetry-instrumentation-asgi==0.48b0
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-fastapi==0.48b0
+    # via -r requirements/_fastapi.in
+opentelemetry-instrumentation-httpx==0.48b0
     # via -r requirements/_fastapi.in
 opentelemetry-semantic-conventions==0.48b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
 opentelemetry-util-http==0.48b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-httpx
 prometheus-client==0.21.0
     # via
     #   -r requirements/_fastapi.in
     #   prometheus-fastapi-instrumentator
 prometheus-fastapi-instrumentator==6.1.0
     # via -r requirements/_fastapi.in
-pydantic==1.10.18
+pydantic==2.9.2
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/_base.in
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
+pydantic-core==2.23.4
+    # via pydantic
 setuptools==75.1.0
     # via opentelemetry-instrumentation
 sniffio==1.3.1
     # via
     #   anyio
     #   httpx
-starlette==0.27.0
+starlette==0.41.2
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
@@ -93,6 +111,7 @@ typing-extensions==4.12.2
     # via
     #   fastapi
     #   pydantic
+    #   pydantic-core
 uvicorn==0.30.6
     # via -r requirements/_fastapi.in
 wrapt==1.16.0

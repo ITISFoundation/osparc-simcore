@@ -25,6 +25,7 @@ from servicelib.fastapi.http_client import (
     BaseHTTPApi,
     HealthMixinMixin,
 )
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
 
 from ..core.settings import ApplicationSettings
 
@@ -63,7 +64,7 @@ class ResourceUsageTrackerApi(
                 )
             ),
         )
-        credit_transaction = CreditTransactionCreated.parse_raw(response.text)
+        credit_transaction = CreditTransactionCreated.model_validate_json(response.text)
         return credit_transaction.credit_transaction_id
 
 
@@ -73,5 +74,7 @@ def setup_resource_usage_tracker(app: FastAPI):
     api = ResourceUsageTrackerApi.from_client_kwargs(
         base_url=settings.PAYMENTS_RESOURCE_USAGE_TRACKER.base_url,
     )
+    if settings.PAYMENTS_TRACING:
+        setup_httpx_client_tracing(api.client)
     api.set_to_app_state(app)
     api.attach_lifespan_to(app)

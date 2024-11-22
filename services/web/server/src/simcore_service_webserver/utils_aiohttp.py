@@ -6,10 +6,9 @@ from typing import Any, Generic, Literal, TypeAlias, TypeVar
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from aiohttp.web_routedef import RouteDef, RouteTableDef
+from common_library.json_serialization import json_dumps
 from models_library.generics import Envelope
-from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field
-from pydantic.generics import GenericModel
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -71,7 +70,7 @@ def envelope_json_response(
         enveloped = Envelope[Any](data=obj)
 
     return web.Response(
-        text=json_dumps(enveloped.dict(**RESPONSE_MODEL_POLICY)),
+        text=json_dumps(enveloped.model_dump(**RESPONSE_MODEL_POLICY)),
         content_type=MIMETYPE_APPLICATION_JSON,
         status=status_cls.status_code,
     )
@@ -116,7 +115,7 @@ def create_redirect_to_page_response(
 PageParameters = TypeVar("PageParameters", bound=BaseModel)
 
 
-class NextPage(GenericModel, Generic[PageParameters]):
+class NextPage(BaseModel, Generic[PageParameters]):
     """
     This is the body of a 2XX response to pass the front-end
     what kind of page shall be display next and some information about it

@@ -1,7 +1,7 @@
 # mypy: disable-error-code=truthy-function
-from typing import Any, ClassVar, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
@@ -10,7 +10,6 @@ from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
 from ..services_resources import ServiceResourcesDict
-from ..utils.pydantic_tools_extension import FieldNotRequired
 from ._base import InputSchemaWithoutCamelCase, OutputSchema
 
 assert ServiceResourcesDict  # nosec
@@ -20,26 +19,26 @@ __all__: tuple[str, ...] = ("ServiceResourcesDict",)
 class NodeCreate(InputSchemaWithoutCamelCase):
     service_key: ServiceKey
     service_version: ServiceVersion
-    service_id: str | None
+    service_id: str | None = None
 
 
 BootOptions: TypeAlias = dict
 
 
 class NodePatch(InputSchemaWithoutCamelCase):
-    service_key: ServiceKey = FieldNotRequired(alias="key")
-    service_version: ServiceVersion = FieldNotRequired(alias="version")
-    label: str = FieldNotRequired()
-    inputs: InputsDict = FieldNotRequired()
-    inputs_required: list[InputID] = FieldNotRequired(alias="inputsRequired")
-    input_nodes: list[NodeID] = FieldNotRequired(alias="inputNodes")
-    progress: float | None = FieldNotRequired(
-        ge=0, le=100
+    service_key: ServiceKey | None = Field(default=None, alias="key")
+    service_version: ServiceVersion | None = Field(default=None, alias="version")
+    label: str | None = Field(default=None)
+    inputs: InputsDict = Field(default=None)
+    inputs_required: list[InputID] | None = Field(default=None, alias="inputsRequired")
+    input_nodes: list[NodeID] | None = Field(default=None, alias="inputNodes")
+    progress: float | None = Field(
+        default=None, ge=0, le=100
     )  # NOTE: it is used by frontend for File Picker progress
-    boot_options: BootOptions = FieldNotRequired(alias="bootOptions")
-    outputs: dict[
-        str, Any
-    ] = FieldNotRequired()  # NOTE: it is used by frontend for File Picker
+    boot_options: BootOptions | None = Field(default=None, alias="bootOptions")
+    outputs: dict[str, Any] | None = Field(
+        default=None
+    )  # NOTE: it is used by frontend for File Picker
 
 
 class NodeCreated(OutputSchema):
@@ -62,13 +61,13 @@ class NodeGet(OutputSchema):
     service_key: ServiceKey = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        example=[
+        examples=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
     )
     service_version: ServiceVersion = Field(
-        ..., description="semantic version number", example=["1.0.0", "0.0.1"]
+        ..., description="semantic version number", examples=["1.0.0", "0.0.1"]
     )
     service_host: str = Field(
         ...,
@@ -90,9 +89,8 @@ class NodeGet(OutputSchema):
         description="the service message",
     )
     user_id: str = Field(..., description="the user that started the service")
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 # computational
                 {
@@ -106,7 +104,7 @@ class NodeGet(OutputSchema):
                     "service_basepath": "/x/E1O2E-LAH",
                     "service_state": "pending",
                     "service_message": "no suitable node (insufficient resources on 1 node)",
-                    "user_id": 123,
+                    "user_id": "123",
                 },
                 # dynamic
                 {
@@ -120,10 +118,11 @@ class NodeGet(OutputSchema):
                     "service_basepath": "/x/E1O2E-LAH",
                     "service_state": "pending",
                     "service_message": "no suitable node (insufficient resources on 1 node)",
-                    "user_id": 123,
+                    "user_id": "123",
                 },
             ]
         }
+    )
 
 
 class NodeGetIdle(OutputSchema):
@@ -134,30 +133,32 @@ class NodeGetIdle(OutputSchema):
     def from_node_id(cls, node_id: NodeID) -> "NodeGetIdle":
         return cls(service_state="idle", service_uuid=node_id)
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 "service_state": "idle",
             }
         }
+    )
 
 
 class NodeGetUnknown(OutputSchema):
     service_state: Literal["unknown"]
     service_uuid: NodeID
 
-    @classmethod
-    def from_node_id(cls, node_id: NodeID) -> "NodeGetUnknown":
-        return cls(service_state="unknown", service_uuid=node_id)
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 "service_state": "unknown",
             }
         }
+    )
+
+    @classmethod
+    def from_node_id(cls, node_id: NodeID) -> "NodeGetUnknown":
+        return cls(service_state="unknown", service_uuid=node_id)
 
 
 class NodeOutputs(InputSchemaWithoutCamelCase):
@@ -169,5 +170,4 @@ class NodeRetrieve(InputSchemaWithoutCamelCase):
 
 
 class NodeRetrieved(RetrieveDataOut):
-    class Config(OutputSchema.Config):
-        ...
+    model_config = OutputSchema.model_config

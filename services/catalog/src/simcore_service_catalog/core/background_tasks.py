@@ -89,7 +89,7 @@ async def _create_services_in_database(
 
             # set the service in the DB
             await services_repo.create_or_update_service(
-                ServiceMetaDataAtDB(**service_metadata.dict(), owner=owner_gid),
+                ServiceMetaDataAtDB(**service_metadata.model_dump(), owner=owner_gid),
                 service_access_rights,
             )
 

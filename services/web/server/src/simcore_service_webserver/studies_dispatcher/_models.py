@@ -1,16 +1,20 @@
+from typing import Annotated
+
 from aiopg.sa.result import RowProxy
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field, HttpUrl, PositiveInt, parse_obj_as
+from pydantic import BaseModel, Field, HttpUrl, PositiveInt, TypeAdapter
 
 
 class ServiceInfo(BaseModel):
     key: ServiceKey
     version: ServiceVersion
 
-    label: str = Field(..., description="Display name")
+    label: Annotated[str, Field(..., description="Display name")]
 
     thumbnail: HttpUrl = Field(
-        default=parse_obj_as(HttpUrl, "https://via.placeholder.com/170x120.png")
+        default=TypeAdapter(HttpUrl).validate_python(
+            "https://via.placeholder.com/170x120.png"
+        )
     )
 
     is_guest_allowed: bool = True

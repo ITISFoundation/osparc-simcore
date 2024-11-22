@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import validator
+from pydantic import field_validator
 from pydantic.main import BaseModel
 from pydantic.networks import HttpUrl
 from pytest_simcore.helpers.webserver_fake_services_data import list_fake_file_consumers
@@ -46,11 +46,11 @@ async def test_create_project_with_viewer(view: dict[str, Any]):
     assert list(project.workbench.keys())
 
     # converts into equivalent Dict
-    project_in: dict = json.loads(project.json(exclude_none=True, by_alias=True))
+    project_in: dict = json.loads(project.model_dump_json(exclude_none=True, by_alias=True))
     print(json.dumps(project_in, indent=2))
 
     # This operation is done exactly before adding to the database in projects_handlers.create_projects
-    Project.parse_obj(project_in)
+    Project.model_validate(project_in)
 
 
 def test_url_quoting_and_validation():
@@ -63,7 +63,7 @@ def test_url_quoting_and_validation():
     class M(BaseModel):
         url: HttpUrl
 
-        @validator("url", pre=True)
+        @field_validator("url", mode="before")
         @classmethod
         def unquote_url(cls, v):
             w = urllib.parse.unquote(v)
@@ -71,14 +71,14 @@ def test_url_quoting_and_validation():
                 w = w.replace(SPACE, "%20")
             return w
 
-    M.parse_obj(
+    M.model_validate(
         {
             # encoding %20 as %2520
             "url": "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%2520samples/sample.ipynb"
         }
     )
 
-    obj2 = M.parse_obj(
+    obj2 = M.model_validate(
         {
             # encoding space as %20
             "url": "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%20samples/sample.ipynb"
@@ -86,7 +86,7 @@ def test_url_quoting_and_validation():
     )
 
     url_with_url_in_query = "http://127.0.0.1:9081/view?file_type=IPYNB&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9&file_size=1&download_link=https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%2520samples/sample.ipynb"
-    obj4 = M.parse_obj({"url": URL(url_with_url_in_query).query["download_link"]})
+    obj4 = M.model_validate({"url": URL(url_with_url_in_query).query["download_link"]})
 
     assert obj2.url.path == obj4.url.path
 
@@ -94,7 +94,7 @@ def test_url_quoting_and_validation():
         "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%20samples/sample.ipynb"
     )
     M(url=quoted_url)
-    M.parse_obj({"url": url_with_url_in_query})
+    M.model_validate({"url": url_with_url_in_query})
 
     assert (
         URL(url_with_url_in_query).query["download_link"]

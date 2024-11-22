@@ -98,7 +98,7 @@ async def create_pipeline(
         response.raise_for_status()
         assert response.status_code == status.HTTP_201_CREATED
 
-        computation_task = ComputationGet.parse_obj(response.json())
+        computation_task = ComputationGet.model_validate(response.json())
         created_comp_tasks.append((user_id, computation_task))
         return computation_task
 
@@ -108,7 +108,7 @@ async def create_pipeline(
     responses: list[httpx.Response] = await asyncio.gather(
         *(
             async_client.request(
-                "DELETE", task.url, json={"user_id": user_id, "force": True}
+                "DELETE", f"{task.url}", json={"user_id": user_id, "force": True}
             )
             for user_id, task in created_comp_tasks
         )

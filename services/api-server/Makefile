@@ -4,6 +4,18 @@
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
 
+# Check that given variables are set and all have non-empty values,
+# die with an error otherwise.
+#
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
+guard-%:
+	@ if [ "${${*}}" = "" ]; then \
+		echo "Environment variable $* not set"; \
+		exit 1; \
+	fi
+
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
@@ -14,20 +26,11 @@ reqs: ## compiles pip requirements (.in -> .txt)
 	cp .env-devel $@
 
 
-# specification of the used openapi-generator-cli (see also https://github.com/ITISFoundation/openapi-generator)
-OPENAPI_GENERATOR_NAME := itisfoundation/openapi-generator-cli-openapi-generator-v4.2.3
-OPENAPI_GENERATOR_TAG := v0
-OPENAPI_GENERATOR_IMAGE := $(OPENAPI_GENERATOR_NAME):$(OPENAPI_GENERATOR_TAG)
-
 define _create_and_validate_openapi
 	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
 	@source .env; \
 	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
-
-	# patching version until tools adapted
-	@sed -i 's/"openapi": "3.1.0",/"openapi": "3.0.2",/g' $@
-
 
 	# validates OAS file: $@
 	docker run --rm \
@@ -66,7 +69,8 @@ openapi-client-master.json:
 
 
 define _openapi_diff_inputs
-	$(SCRIPTS_DIR)/openapi-diff.bash $(foreach f,$^,/specs/$f) --fail-on-incompatible --json=/specs/$@
+	$(SCRIPTS_DIR)/openapi-diff.bash diff $(foreach f,$^,/specs/$f) --format json > $@
+	$(SCRIPTS_DIR)/openapi-diff.bash breaking $(foreach f,$^,/specs/$f) --fail-on ERR > /dev/null
 endef
 
 # Examples:
@@ -76,7 +80,9 @@ endef
 openapi-%-diff.json: openapi.json openapi-%.json ## Diffs against newer or older openapi-%.json and checks backwards compatibility
 	$(call _openapi_diff_inputs)
 
-
+openapi-diff.md: guard-OPENAPI_JSON_BASE_URL openapi.json ## Diffs against a remote openapi.json. E.g. OPENAPI_JSON_BASE_URL=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/api-server/openapi.json
+	$(SCRIPTS_DIR)/openapi-diff.bash diff $(OPENAPI_JSON_BASE_URL) /specs/openapi.json --format markup --flatten-allof --exclude-elements title,description > $@
+	$(SCRIPTS_DIR)/openapi-diff.bash breaking $(OPENAPI_JSON_BASE_URL) /specs/openapi.json --flatten-allof --fail-on ERR
 
 # SEE https://schemathesis.readthedocs.io/en/stable/index.html
 APP_URL:=http://$(get_my_ip).nip.io:8006

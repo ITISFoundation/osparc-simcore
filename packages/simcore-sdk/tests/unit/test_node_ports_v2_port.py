@@ -23,8 +23,7 @@ from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.projects_nodes_io import LocationID
-from pydantic import parse_obj_as
-from pydantic.error_wrappers import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from pytest_mock.plugin import MockerFixture
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
@@ -219,8 +218,8 @@ def e_tag_fixture() -> str:
 async def mock_filemanager(mocker: MockerFixture, e_tag: str, faker: Faker) -> None:
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager._get_file_meta_data",
-        return_value=parse_obj_as(
-            FileMetaDataGet, FileMetaDataGet.Config.schema_extra["examples"][0]
+        return_value=TypeAdapter(FileMetaDataGet).validate_python(
+            FileMetaDataGet.model_config["json_schema_extra"]["examples"][0],
         ),
     )
     mocker.patch(

@@ -1,3 +1,17 @@
+aiodocker==0.23.0
+    # via -r requirements/_test.in
+aiohappyeyeballs==2.4.3
+    # via aiohttp
+aiohttp==3.10.10
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiodocker
+aiosignal==1.3.1
+    # via aiohttp
+attrs==24.2.0
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 certifi==2024.8.30
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -12,6 +26,10 @@ docker==7.1.0
     # via -r requirements/_test.in
 faker==29.0.0
     # via -r requirements/_test.in
+frozenlist==1.5.0
+    # via
+    #   aiohttp
+    #   aiosignal
 greenlet==3.1.1
     # via
     #   -c requirements/_base.txt
@@ -22,14 +40,21 @@ idna==3.10
     # via
     #   -c requirements/_base.txt
     #   requests
+    #   yarl
 iniconfig==2.0.0
     # via pytest
+multidict==6.1.0
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   yarl
 mypy==1.12.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-packaging==24.1
+packaging==24.2
     # via
+    #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
 pluggy==1.5.0
@@ -66,7 +91,9 @@ python-dateutil==2.9.0.post0
     #   -c requirements/_base.txt
     #   faker
 python-dotenv==1.0.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -100,3 +127,7 @@ urllib3==2.2.3
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests
+yarl==1.12.1
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp

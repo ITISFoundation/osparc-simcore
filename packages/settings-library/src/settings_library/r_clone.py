@@ -13,7 +13,7 @@ class S3Provider(StrEnum):
 
 
 class RCloneSettings(BaseCustomSettings):
-    R_CLONE_S3: S3Settings = Field(auto_default_from_env=True)
+    R_CLONE_S3: S3Settings = Field(json_schema_extra={"auto_default_from_env": True})
     R_CLONE_PROVIDER: S3Provider
 
     # SEE https://rclone.org/docs/#transfers-n

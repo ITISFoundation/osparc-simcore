@@ -20,7 +20,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
-from pydantic import PositiveInt, parse_obj_as
+from pydantic import PositiveInt, TypeAdapter
 from pytest_simcore.helpers.host import get_localhost_ip
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
@@ -263,7 +263,9 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
             proxy_service_name,
             target_port=dynamic_sidecar_proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
         )
-        assert proxy_published_port is not None, f"{sidecar_settings.json()=}"
+        assert (
+            proxy_published_port is not None
+        ), f"{sidecar_settings.model_dump_json()=}"
 
         async with scheduler.scheduler._lock:  # noqa: SLF001
             localhost_ip = get_localhost_ip()
@@ -276,7 +278,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
             scheduler_data.proxy_service_name = localhost_ip
             scheduler_data.proxy_admin_api_port = proxy_published_port
 
-    endpoint = scheduler_data.endpoint
+    endpoint = f"{scheduler_data.endpoint}".rstrip("/")
     assert endpoint == f"http://{localhost_ip}:{sidecar_published_port}"
     return endpoint
 
@@ -303,7 +305,7 @@ async def _get_service_resources(
     url = f"{catalog_url}/v0/services/{encoded_key}/{service_version}/resources"
     async with httpx.AsyncClient() as client:
         response = await client.get(f"{url}")
-        return parse_obj_as(ServiceResourcesDict, response.json())
+        return TypeAdapter(ServiceResourcesDict).validate_python(response.json())
 
 
 async def _handle_redirection(
@@ -425,7 +427,7 @@ async def assert_all_services_running(
                 )
             )
 
-            assert all(x == "running" for x in service_states)
+            assert all(state == "running" for state in service_states)
             print("--> all services are up and running!")
 
 
@@ -458,7 +460,7 @@ async def assert_retrieve_service(
 
     size_bytes = json_result["data"]["size_bytes"]
     assert size_bytes > 0
-    assert type(size_bytes) == int
+    assert isinstance(size_bytes, int)
 
 
 async def assert_stop_service(

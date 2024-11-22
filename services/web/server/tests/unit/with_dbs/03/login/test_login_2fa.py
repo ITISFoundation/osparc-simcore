@@ -50,7 +50,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
-    print(ApplicationSettings.create_from_envs().json(indent=1))
+    print(ApplicationSettings.create_from_envs().model_dump_json(indent=1))
 
     return {**app_environment, **envs_login}
 
@@ -148,7 +148,7 @@ async def test_workflow_register_and_login_with_2fa(
     url = _get_confirmation_link_from_email()
 
     # 2. confirmation
-    response = await client.get(url)
+    response = await client.get(f"{url}")
     assert response.status == status.HTTP_200_OK
 
     # check email+password registered

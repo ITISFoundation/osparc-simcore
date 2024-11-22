@@ -47,7 +47,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -64,6 +64,7 @@ from servicelib.sequences_utils import pairwise
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.storage import StorageSettings
+from settings_library.tracing import TracingSettings
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects_networks import projects_networks
@@ -340,8 +341,14 @@ async def patch_storage_setup(
 
     original_setup = dv2_modules_storage.setup
 
-    def setup(app: FastAPI, settings: StorageSettings) -> None:
-        original_setup(app, local_settings)
+    def setup(
+        app: FastAPI,
+        storage_settings: StorageSettings,
+        tracing_settings: TracingSettings | None,
+    ) -> None:
+        original_setup(
+            app, storage_settings=local_settings, tracing_settings=tracing_settings
+        )
 
     mocker.patch("simcore_service_director_v2.modules.storage.setup", side_effect=setup)
 
@@ -403,7 +410,7 @@ def mock_env(
             "COMPUTATIONAL_BACKEND_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
-            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": dask_scheduler_auth.json(),
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": dask_scheduler_auth.model_dump_json(),
             "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
         },
     )
@@ -446,13 +453,13 @@ async def projects_networks_db(
     # NOTE: director-v2 does not have access to the webserver which creates this
     # injecting all dynamic-sidecar started services on a default networks
 
-    container_aliases: ContainerAliases = ContainerAliases.parse_obj({})
+    container_aliases: ContainerAliases = ContainerAliases.model_validate({})
 
     for k, (node_uuid, node) in enumerate(current_study.workbench.items()):
         if not is_legacy(node):
             container_aliases[node_uuid] = f"networkable_alias_{k}"
 
-    networks_with_aliases: NetworksWithAliases = NetworksWithAliases.parse_obj({})
+    networks_with_aliases: NetworksWithAliases = NetworksWithAliases.model_validate({})
     default_network_name = f"{PROJECT_NETWORK_PREFIX}_{current_study.uuid}_test"
     networks_with_aliases[default_network_name] = container_aliases
 
@@ -463,7 +470,7 @@ async def projects_networks_db(
     engine: Engine = initialized_app.state.engine
 
     async with engine.acquire() as conn:
-        row_data = projects_networks_to_insert.dict()
+        row_data = projects_networks_to_insert.model_dump()
         insert_stmt = pg_insert(projects_networks).values(**row_data)
         upsert_snapshot = insert_stmt.on_conflict_do_update(
             constraint=projects_networks.primary_key, set_=row_data
@@ -488,7 +495,7 @@ async def _get_mapped_nodeports_values(
         PORTS: Nodeports = await node_ports_v2.ports(
             user_id=user_id,
             project_id=ProjectIDStr(project_id),
-            node_uuid=NodeIDStr(node_uuid),
+            node_uuid=TypeAdapter(NodeIDStr).validate_python(node_uuid),
             db_manager=db_manager,
         )
         result[str(node_uuid)] = InputsOutputs(
@@ -692,7 +699,7 @@ async def _fetch_data_via_aioboto(
     r_clone_settings: RCloneSettings,
     dir_tag: str,
     temp_dir: Path,
-    node_id: NodeID,
+    node_id: NodeIDStr,
     project_id: ProjectID,
 ) -> Path:
     save_to = temp_dir / f"aioboto_{dir_tag}_{uuid4()}"
@@ -833,7 +840,7 @@ async def _assert_push_non_file_outputs(
     logger.debug("Going to poll task %s", task_id)
 
     async def _debug_progress_callback(
-        message: ProgressMessage, percent: ProgressPercent, task_id: TaskId
+        message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId
     ) -> None:
         logger.debug("%s: %.2f %s", task_id, percent, message)
 
@@ -841,7 +848,9 @@ async def _assert_push_non_file_outputs(
         Client(
             app=initialized_app,
             async_client=director_v2_client,
-            base_url=parse_obj_as(AnyHttpUrl, f"{director_v2_client.base_url}"),
+            base_url=TypeAdapter(AnyHttpUrl).validate_python(
+                f"{director_v2_client.base_url}"
+            ),
         ),
         task_id,
         task_timeout=60,
@@ -972,7 +981,7 @@ async def test_nodeports_integration(
         task_out,
         project=current_study,
         exp_task_state=RunningState.SUCCESS,
-        exp_pipeline_details=PipelineDetails.parse_obj(fake_dy_success),
+        exp_pipeline_details=PipelineDetails.model_validate(fake_dy_success),
         iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
     )
@@ -1109,7 +1118,7 @@ async def test_nodeports_integration(
             dir_tag="dy",
             user_id=current_user["id"],
             project_id=current_study.uuid,
-            service_uuid=services_node_uuids.dy,
+            service_uuid=NodeID(services_node_uuids.dy),
             temp_dir=tmp_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             faker=faker,
@@ -1130,7 +1139,7 @@ async def test_nodeports_integration(
             dir_tag="dy_compose_spec",
             user_id=current_user["id"],
             project_id=current_study.uuid,
-            service_uuid=services_node_uuids.dy_compose_spec,
+            service_uuid=NodeID(services_node_uuids.dy_compose_spec),
             temp_dir=tmp_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
             faker=faker,

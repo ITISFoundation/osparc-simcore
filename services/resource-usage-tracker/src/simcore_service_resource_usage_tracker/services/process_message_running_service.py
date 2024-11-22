@@ -20,7 +20,7 @@ from models_library.resource_tracker import (
     ServiceRunStatus,
 )
 from models_library.services import ServiceType
-from pydantic import parse_raw_as
+from pydantic import TypeAdapter
 
 from ..models.credit_transactions import (
     CreditTransactionCreate,
@@ -45,9 +45,9 @@ _logger = logging.getLogger(__name__)
 
 
 async def process_message(app: FastAPI, data: bytes) -> bool:
-    rabbit_message: RabbitResourceTrackingMessages = parse_raw_as(
-        RabbitResourceTrackingMessages, data  # type: ignore[arg-type]
-    )
+    rabbit_message: RabbitResourceTrackingMessages = TypeAdapter(
+        RabbitResourceTrackingMessages
+    ).validate_json(data)
     _logger.info(
         "Process %s msg service_run_id: %s",
         rabbit_message.message_type,

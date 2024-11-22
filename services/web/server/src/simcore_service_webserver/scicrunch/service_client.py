@@ -8,7 +8,7 @@ import asyncio
 import logging
 
 from aiohttp import ClientSession, client_exceptions, web
-from pydantic import HttpUrl, ValidationError, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter, ValidationError
 from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
 
@@ -90,8 +90,8 @@ class SciCrunch:
 
     def get_resolver_web_url(self, rrid: str) -> HttpUrl:
         # example https://scicrunch.org/resolver/RRID:AB_90755
-        output: HttpUrl = parse_obj_as(
-            HttpUrl, f"{self.settings.SCICRUNCH_RESOLVER_BASE_URL}/{rrid}"
+        output: HttpUrl = TypeAdapter(HttpUrl).validate_python(
+            f"{self.settings.SCICRUNCH_RESOLVER_BASE_URL}/{rrid}"
         )
         return output
 
@@ -171,4 +171,4 @@ class SciCrunch:
         # Might be slow and timeout!
         # Might be good to know that scicrunch.org is not reachable and cannot perform search now?
         hits = await autocomplete_by_name(name_as, self.client, self.settings)
-        return hits.__root__
+        return hits.root

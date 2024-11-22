@@ -6,7 +6,7 @@
 
 import pytest
 from aws_library.ec2 import Resources
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from simcore_service_autoscaling.models import DaskTask, DaskTaskResources
 from simcore_service_autoscaling.utils.computational_scaling import (
     _DEFAULT_MAX_CPU,
@@ -21,13 +21,16 @@ from simcore_service_autoscaling.utils.computational_scaling import (
         pytest.param(
             DaskTask(task_id="fake", required_resources=DaskTaskResources()),
             Resources(
-                cpus=_DEFAULT_MAX_CPU, ram=parse_obj_as(ByteSize, _DEFAULT_MAX_RAM)
+                cpus=_DEFAULT_MAX_CPU,
+                ram=TypeAdapter(ByteSize).validate_python(_DEFAULT_MAX_RAM),
             ),
             id="missing resources returns defaults",
         ),
         pytest.param(
             DaskTask(task_id="fake", required_resources={"CPU": 2.5}),
-            Resources(cpus=2.5, ram=parse_obj_as(ByteSize, _DEFAULT_MAX_RAM)),
+            Resources(
+                cpus=2.5, ram=TypeAdapter(ByteSize).validate_python(_DEFAULT_MAX_RAM)
+            ),
             id="only cpus defined",
         ),
         pytest.param(
@@ -35,7 +38,7 @@ from simcore_service_autoscaling.utils.computational_scaling import (
                 task_id="fake",
                 required_resources={"CPU": 2.5, "RAM": 2 * 1024 * 1024 * 1024},
             ),
-            Resources(cpus=2.5, ram=parse_obj_as(ByteSize, "2GiB")),
+            Resources(cpus=2.5, ram=TypeAdapter(ByteSize).validate_python("2GiB")),
             id="cpu and ram defined",
         ),
         pytest.param(
@@ -43,7 +46,9 @@ from simcore_service_autoscaling.utils.computational_scaling import (
                 task_id="fake",
                 required_resources={"CPU": 2.5, "ram": 2 * 1024 * 1024 * 1024},
             ),
-            Resources(cpus=2.5, ram=parse_obj_as(ByteSize, _DEFAULT_MAX_RAM)),
+            Resources(
+                cpus=2.5, ram=TypeAdapter(ByteSize).validate_python(_DEFAULT_MAX_RAM)
+            ),
             id="invalid naming",
         ),
     ],

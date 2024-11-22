@@ -21,7 +21,7 @@ from simcore_service_webserver.studies_dispatcher.settings import (
 def environment(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     envs = setenvs_from_dict(
         monkeypatch,
-        envs=StudiesDispatcherSettings.Config.schema_extra["example"],
+        envs=StudiesDispatcherSettings.model_config["json_schema_extra"]["example"],
     )
     return envs
 
@@ -37,8 +37,9 @@ def test_studies_dispatcher_settings(environment: EnvVarsDict):
     assert not settings.is_login_required()
 
     # 2 days 1h and 10 mins
-    assert settings.STUDIES_GUEST_ACCOUNT_LIFETIME == timedelta(
-        days=2, hours=1, minutes=10
+    assert (
+        timedelta(days=2, hours=1, minutes=10)
+        == settings.STUDIES_GUEST_ACCOUNT_LIFETIME
     )
 
 
@@ -50,10 +51,7 @@ def test_studies_dispatcher_settings_invalid_lifetime(
     with pytest.raises(ValidationError) as exc_info:
         StudiesDispatcherSettings.create_from_envs()
 
-    validation_error: ErrorDict = exc_info.value.errors()[0]
+    validation_error: ErrorDict = next(iter(exc_info.value.errors()))
+    assert validation_error["loc"] == ("STUDIES_GUEST_ACCOUNT_LIFETIME",)
     assert "-2" in validation_error["msg"]
-    assert validation_error == {
-        "loc": ("STUDIES_GUEST_ACCOUNT_LIFETIME",),
-        "type": "value_error",
-        "msg": validation_error["msg"],
-    }
+    assert validation_error["type"] == "value_error"

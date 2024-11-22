@@ -17,12 +17,10 @@ from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
-from simcore_service_webserver.workspaces._workspaces_api import (
-    check_user_workspace_access,
-)
 
 from ..catalog.client import get_services_for_user_in_product
 from ..folders import _folders_db as folders_db
+from ..workspaces._workspaces_api import check_user_workspace_access
 from . import projects_api
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
@@ -49,7 +47,7 @@ async def _append_fields(
     await update_or_pop_permalink_in_project(request, project)
 
     # validate
-    return model_schema_cls.parse_obj(project).data(exclude_unset=True)
+    return model_schema_cls.model_validate(project).data(exclude_unset=True)
 
 
 async def list_projects(  # pylint: disable=too-many-arguments
@@ -137,7 +135,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
                 model_schema_cls=ProjectListItem,
             )
-            for prj, prj_type in zip(db_projects, db_project_types)
+            for prj, prj_type in zip(db_projects, db_project_types, strict=False)
         ),
         reraise=True,
         max_concurrency=100,
@@ -186,7 +184,7 @@ async def list_projects_full_search(
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
                 model_schema_cls=ProjectListItem,
             )
-            for prj, prj_type in zip(db_projects, db_project_types)
+            for prj, prj_type in zip(db_projects, db_project_types, strict=False)
         ),
         reraise=True,
         max_concurrency=100,

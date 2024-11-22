@@ -13,8 +13,8 @@ from typing import Any
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.error_codes import parse_error_code
-from models_library.utils.json_serialization import json_dumps
+from common_library.error_codes import parse_error_code
+from common_library.json_serialization import json_dumps
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import (
     _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC,
@@ -99,7 +99,7 @@ class Handlers:
             case NotImplementedError.__name__:
                 raise NotImplementedError
             case asyncio.TimeoutError.__name__:
-                raise asyncio.TimeoutError
+                raise TimeoutError
             case web.HTTPOk.__name__:
                 raise web.HTTPOk  # 2XX
             case web.HTTPUnauthorized.__name__:

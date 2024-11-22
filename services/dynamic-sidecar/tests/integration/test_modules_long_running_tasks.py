@@ -23,11 +23,12 @@ from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_project
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
+from pytest_simcore.helpers.storage import replace_storage_endpoint
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
@@ -161,24 +162,13 @@ def state_paths_to_legacy_archives(
 async def simcore_storage_service(mocker: MockerFixture, app: FastAPI) -> None:
     storage_host: Final[str] | None = os.environ.get("STORAGE_HOST")
     storage_port: Final[str] | None = os.environ.get("STORAGE_PORT")
-
-    def correct_ip(url: AnyUrl):
-
-        assert storage_host is not None
-        assert storage_port is not None
-
-        return AnyUrl.build(
-            scheme=url.scheme,
-            host=storage_host,
-            port=storage_port,
-            path=url.path,
-            query=url.query,
-        )
+    assert storage_host is not None
+    assert storage_port is not None
 
     # NOTE: Mock to ensure container IP agrees with host IP when testing
     mocker.patch(
         "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
-        correct_ip,
+        replace_storage_endpoint(storage_host, int(storage_port)),
     )
 
 
@@ -199,7 +189,7 @@ async def restore_legacy_state_archives(
                 user_id=user_id,
                 store_id=SIMCORE_LOCATION,
                 store_name=None,
-                s3_object=parse_obj_as(SimcoreS3FileID, s3_path),
+                s3_object=TypeAdapter(SimcoreS3FileID).validate_python(s3_path),
                 path_to_upload=legacy_archive_zip,
                 io_log_redirect_cb=None,
             )
@@ -303,8 +293,7 @@ def s3_settings(app_state: AppState) -> S3Settings:
 
 @pytest.fixture
 def bucket_name(app_state: AppState) -> S3BucketName:
-    return parse_obj_as(
-        S3BucketName,
+    return TypeAdapter(S3BucketName).validate_python(
         app_state.settings.DY_SIDECAR_R_CLONE_SETTINGS.R_CLONE_S3.S3_BUCKET_NAME,
     )
 
@@ -314,7 +303,7 @@ async def s3_client(s3_settings: S3Settings) -> AsyncIterable[S3Client]:
     session = aioboto3.Session()
     session_client = session.client(
         "s3",
-        endpoint_url=s3_settings.S3_ENDPOINT,
+        endpoint_url=f"{s3_settings.S3_ENDPOINT}",
         aws_access_key_id=s3_settings.S3_ACCESS_KEY,
         aws_secret_access_key=s3_settings.S3_SECRET_KEY,
         region_name=s3_settings.S3_REGION,

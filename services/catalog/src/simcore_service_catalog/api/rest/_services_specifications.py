@@ -70,7 +70,7 @@ async def get_service_specifications(
 
     if not service_specs:
         # nothing found, let's return the default then
-        service_specs = default_service_specifications.copy()
+        service_specs = default_service_specifications.model_copy()
 
     _logger.debug("returning %s", f"{service_specs=}")
     return service_specs

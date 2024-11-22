@@ -5,7 +5,7 @@ from typing import Final
 import rich
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
-from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
+from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from rich.progress import (
     BarColumn,
     Progress,
@@ -106,7 +106,7 @@ async def async_close_and_save_service(
         client = Client(
             app=app,
             async_client=thin_dv2_localhost_client.client,
-            base_url=parse_obj_as(AnyHttpUrl, thin_dv2_localhost_client.BASE_ADDRESS),
+            base_url=f"{TypeAdapter(AnyHttpUrl).validate_python(thin_dv2_localhost_client.BASE_ADDRESS)}",
         )
 
         if not skip_container_removal:

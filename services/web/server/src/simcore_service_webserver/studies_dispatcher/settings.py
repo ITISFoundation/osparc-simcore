@@ -1,9 +1,10 @@
 from datetime import timedelta
-from typing import Any, ClassVar
 
 from aiohttp import web
-from pydantic import ByteSize, HttpUrl, parse_obj_as, validator
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
+from pydantic import ByteSize, HttpUrl, TypeAdapter, field_validator
 from pydantic.fields import Field
+from pydantic_settings import SettingsConfigDict
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
 
@@ -21,22 +22,26 @@ class StudiesDispatcherSettings(BaseCustomSettings):
     )
 
     STUDIES_DEFAULT_SERVICE_THUMBNAIL: HttpUrl = Field(
-        default=parse_obj_as(HttpUrl, "https://via.placeholder.com/170x120.png"),
+        default=TypeAdapter(HttpUrl).validate_python(
+            "https://via.placeholder.com/170x120.png"
+        ),
         description="Default thumbnail for services or dispatch project with a service",
     )
 
     STUDIES_DEFAULT_FILE_THUMBNAIL: HttpUrl = Field(
-        default=parse_obj_as(HttpUrl, "https://via.placeholder.com/170x120.png"),
+        default=TypeAdapter(HttpUrl).validate_python(
+            "https://via.placeholder.com/170x120.png"
+        ),
         description="Default thumbnail for dispatch projects with only data (i.e. file-picker)",
     )
 
     STUDIES_MAX_FILE_SIZE_ALLOWED: ByteSize = Field(
-        default=parse_obj_as(ByteSize, "50Mib"),
+        default=TypeAdapter(ByteSize).validate_python("50Mib"),
         description="Limits the size of the files that can be dispatched"
         "Note that the accuracy of the file size is not guaranteed and this limit might be surpassed",
     )
 
-    @validator("STUDIES_GUEST_ACCOUNT_LIFETIME")
+    @field_validator("STUDIES_GUEST_ACCOUNT_LIFETIME")
     @classmethod
     def _is_positive_lifetime(cls, v):
         if v and isinstance(v, timedelta) and v.total_seconds() <= 0:
@@ -50,13 +55,18 @@ class StudiesDispatcherSettings(BaseCustomSettings):
         """
         return not self.STUDIES_ACCESS_ANONYMOUS_ALLOWED
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    _validate_studies_guest_account_lifetime = validate_numeric_string_as_timedelta(
+        "STUDIES_GUEST_ACCOUNT_LIFETIME"
+    )
+
+    model_config = SettingsConfigDict(
+        json_schema_extra={
             "example": {
                 "STUDIES_GUEST_ACCOUNT_LIFETIME": "2 1:10:00",  # 2 days 1h and 10 mins
                 "STUDIES_ACCESS_ANONYMOUS_ALLOWED": "1",
             },
         }
+    )
 
 
 def get_plugin_settings(app: web.Application) -> StudiesDispatcherSettings:

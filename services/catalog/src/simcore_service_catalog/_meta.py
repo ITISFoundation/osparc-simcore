@@ -1,6 +1,3 @@
-""" Application's metadata
-
-"""
 from typing import Final
 
 from models_library.basic_types import VersionStr

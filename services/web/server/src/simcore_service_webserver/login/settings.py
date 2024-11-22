@@ -1,8 +1,8 @@
 from datetime import timedelta
-from typing import Final, Literal
+from typing import Annotated, Final, Literal
 
 from aiohttp import web
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 from pydantic.fields import Field
 from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
@@ -21,11 +21,14 @@ APP_LOGIN_OPTIONS_KEY = f"{__name__}.APP_LOGIN_OPTIONS_KEY"
 
 
 class LoginSettings(BaseCustomSettings):
-    LOGIN_ACCOUNT_DELETION_RETENTION_DAYS: PositiveInt = Field(
-        default=30,
-        description="Retention time (in days) of all the data after a user has requested the deletion of their account"
-        "NOTE: exposed to the front-end as `to_client_statics`",
-    )
+    LOGIN_ACCOUNT_DELETION_RETENTION_DAYS: Annotated[
+        PositiveInt,
+        Field(
+            default=30,
+            description="Retention time (in days) of all the data after a user has requested the deletion of their account"
+            "NOTE: exposed to the front-end as `to_client_statics`",
+        ),
+    ]
 
     LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool = Field(
         default=True,
@@ -36,7 +39,7 @@ class LoginSettings(BaseCustomSettings):
     )
 
     LOGIN_TWILIO: TwilioSettings | None = Field(
-        auto_default_from_env=True,
+        json_schema_extra={"auto_default_from_env": True},
         description="Twilio service settings. Used to send SMS for 2FA",
     )
 
@@ -44,29 +47,32 @@ class LoginSettings(BaseCustomSettings):
         default=120, description="Expiration time for code [sec]"
     )
 
-    LOGIN_2FA_REQUIRED: bool = Field(
-        default=False,
-        description="If true, it enables two-factor authentication (2FA)",
-    )
+    LOGIN_2FA_REQUIRED: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="If true, it enables two-factor authentication (2FA)",
+        ),
+    ]
 
     LOGIN_PASSWORD_MIN_LENGTH: PositiveInt = Field(
         default=12,
         description="Minimum length of password",
     )
 
-    @validator("LOGIN_2FA_REQUIRED")
+    @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod
-    def login_2fa_needs_email_registration(cls, v, values):
+    def _login_2fa_needs_email_registration(cls, v, info: ValidationInfo):
         # NOTE: this constraint ensures that a phone is registered in current workflow
-        if v and not values.get("LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", False):
+        if v and not info.data.get("LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", False):
             msg = "Cannot enable 2FA w/o email confirmation"
             raise ValueError(msg)
         return v
 
-    @validator("LOGIN_2FA_REQUIRED")
+    @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod
-    def login_2fa_needs_sms_service(cls, v, values):
-        if v and values.get("LOGIN_TWILIO") is None:
+    def _login_2fa_needs_sms_service(cls, v, info: ValidationInfo):
+        if v and info.data.get("LOGIN_TWILIO") is None:
             msg = "Cannot enable 2FA w/o twilio settings which is used to send SMS"
             raise ValueError(msg)
         return v
@@ -94,7 +100,10 @@ class LoginSettingsForProduct(LoginSettings):
         """
         For the LoginSettings, product-specific settings override app-specifics settings
         """
-        composed_settings = {**app_login_settings.dict(), **product_login_settings}
+        composed_settings = {
+            **app_login_settings.model_dump(),
+            **product_login_settings,
+        }
 
         if "two_factor_enabled" in composed_settings:
             # legacy safe

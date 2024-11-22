@@ -95,7 +95,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return isLogged;
     },
 
-    startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
+    startStudyById: function(studyId, openCB, cancelCB, showStudyOptions = false) {
       if (!osparc.dashboard.ResourceBrowserBase.checkLoggedIn()) {
         return;
       }
@@ -117,7 +117,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         osparc.data.Resources.fetch("studies", "getWallet", params)
           .then(wallet => {
             if (
-              isStudyCreation ||
+              showStudyOptions ||
               wallet === null ||
               osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null
             ) {
@@ -195,7 +195,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     __centerLayout: null,
     _resourceType: null,
     _resourcesList: null,
-    _topBar: null,
     _toolbar: null,
     _searchBarFilter: null,
     __viewModeLayout: null,

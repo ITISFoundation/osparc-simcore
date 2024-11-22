@@ -12,7 +12,7 @@ from models_library.api_schemas_storage import FileUploadSchema
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from simcore_service_storage import db_file_meta_data
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.s3 import get_s3_client
@@ -24,7 +24,7 @@ pytest_simcore_ops_services_selection = ["adminer"]
 
 @pytest.fixture
 def file_size() -> ByteSize:
-    return parse_obj_as(ByteSize, "1")
+    return TypeAdapter(ByteSize).validate_python("1")
 
 
 @pytest.fixture
@@ -47,7 +47,9 @@ async def test__copy_path_s3_s3(
     aiopg_engine: Engine,
 ):
     def _get_dest_file_id(src: SimcoreS3FileID) -> SimcoreS3FileID:
-        return parse_obj_as(SimcoreS3FileID, f"{Path(src).parent}/the-copy")
+        return TypeAdapter(SimcoreS3FileID).validate_python(
+            f"{Path(src).parent}/the-copy"
+        )
 
     async def _copy_s3_path(s3_file_id_to_copy: SimcoreS3FileID) -> None:
         async with aiopg_engine.acquire() as conn:
@@ -84,7 +86,7 @@ async def test__copy_path_s3_s3(
         assert directory_file_upload.urls[0].path
         s3_object = directory_file_upload.urls[0].path.lstrip("/")
 
-        s3_file_id_dir_src = parse_obj_as(SimcoreS3FileID, s3_object)
+        s3_file_id_dir_src = TypeAdapter(SimcoreS3FileID).validate_python(s3_object)
         s3_file_id_dir_dst = _get_dest_file_id(s3_file_id_dir_src)
 
         await _count_files(s3_file_id_dir_dst, expected_count=0)
@@ -104,7 +106,7 @@ async def test_upload_and_search(
     user_id: UserID,
     faker: Faker,
 ):
-    checksum: SHA256Str = parse_obj_as(SHA256Str, faker.sha256())
+    checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
     _, _ = await upload_file(file_size, "file1", sha256_checksum=checksum)
     _, _ = await upload_file(file_size, "file2", sha256_checksum=checksum)
 

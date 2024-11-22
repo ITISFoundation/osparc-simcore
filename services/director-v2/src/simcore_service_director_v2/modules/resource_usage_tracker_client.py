@@ -23,7 +23,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
 
 from ..core.errors import PricingPlanUnitNotFoundError
 from ..core.settings import AppSettings
@@ -41,6 +41,8 @@ class ResourceUsageTrackerClient:
         client = httpx.AsyncClient(
             base_url=settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER.api_base_url,
         )
+        if settings.DIRECTOR_V2_TRACING:
+            setup_httpx_client_tracing(client=client)
         exit_stack = contextlib.AsyncExitStack()
 
         return cls(client=client, exit_stack=exit_stack)
@@ -89,10 +91,10 @@ class ResourceUsageTrackerClient:
         )
         if response.status_code == status.HTTP_404_NOT_FOUND:
             msg = "No pricing plan defined"
-            raise PricingPlanUnitNotFoundError(msg)
+            raise PricingPlanUnitNotFoundError(msg=msg)
 
         response.raise_for_status()
-        return parse_obj_as(PricingPlanGet, response.json())
+        return PricingPlanGet.model_validate(response.json())
 
     async def get_default_pricing_and_hardware_info(
         self,
@@ -115,7 +117,7 @@ class ResourceUsageTrackerClient:
                     unit.specific_info.aws_ec2_instances,
                 )
         msg = "Default pricing plan and unit does not exist"
-        raise PricingPlanUnitNotFoundError(msg)
+        raise PricingPlanUnitNotFoundError(msg=msg)
 
     async def get_pricing_unit(
         self,
@@ -130,7 +132,7 @@ class ResourceUsageTrackerClient:
             },
         )
         response.raise_for_status()
-        return parse_obj_as(PricingUnitGet, response.json())
+        return PricingUnitGet.model_validate(response.json())
 
     async def get_wallet_credits(
         self,
@@ -142,7 +144,7 @@ class ResourceUsageTrackerClient:
             params={"product_name": product_name, "wallet_id": wallet_id},
         )
         response.raise_for_status()
-        return parse_obj_as(WalletTotalCredits, response.json())
+        return WalletTotalCredits.model_validate(response.json())
 
     #
     # app

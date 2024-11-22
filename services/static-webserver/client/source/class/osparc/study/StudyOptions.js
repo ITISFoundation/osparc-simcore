@@ -22,8 +22,11 @@ qx.Class.define("osparc.study.StudyOptions", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(15));
+    this.__buildLayout();
 
-    this.setStudyId(studyId);
+    if (studyId) {
+      this.setStudyId(studyId);
+    }
   },
 
   properties: {
@@ -40,7 +43,14 @@ qx.Class.define("osparc.study.StudyOptions", {
       nullable: true,
       event: "changeWallet",
       apply: "__applyWallet"
-    }
+    },
+
+    patchStudy: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changePatchStudy",
+    },
   },
 
   events: {
@@ -78,7 +88,31 @@ qx.Class.define("osparc.study.StudyOptions", {
       });
       box.setLayout(new qx.ui.layout.VBox(5));
       return box;
-    }
+    },
+
+    updateName: function(studyData, name) {
+      return osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
+        .catch(err => {
+          console.error(err);
+          const msg = err.message || qx.locale.Manager.tr("Something went wrong Renaming");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
+        });
+    },
+
+    updateWallet: function(studyId, walletId) {
+      const params = {
+        url: {
+          studyId,
+          walletId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "selectWallet", params)
+        .catch(err => {
+          console.error(err);
+          const msg = err.message || qx.locale.Manager.tr("Error selecting Credit Account");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        });
+    },
   },
 
   members: {
@@ -96,6 +130,8 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = new qx.ui.form.TextField().set({
             maxWidth: 220
           });
+          control.addListener("changeValue", () => this.__evaluateOpenButton());
+          osparc.utils.Utils.setIdToWidget(control, "studyTitleField");
           this.getChildControl("title-layout").add(control);
           break;
         case "wallet-selector-layout":
@@ -106,6 +142,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = osparc.desktop.credits.Utils.createWalletSelector("read").set({
             allowGrowX: false
           });
+          control.addListener("changeSelection", () => this.__evaluateOpenButton());
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "advanced-layout":
@@ -147,6 +184,27 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = this.self().createGroupBox(this.tr("Tiers"));
           this.getChildControl("options-layout").add(control);
           break;
+        case "study-pricing-units": {
+          control = new osparc.study.StudyPricingUnits();
+          const loadingImage = this.getChildControl("loading-units-spinner");
+          const unitsBoxesLayout = this.getChildControl("services-resources-layout");
+          const unitsLoading = () => {
+            loadingImage.show();
+            unitsBoxesLayout.exclude();
+          };
+          const unitsReady = () => {
+            loadingImage.exclude();
+            unitsBoxesLayout.show();
+            control.getNodePricingUnits().forEach(nodePricingUnits => {
+              this.bind("patchStudy", nodePricingUnits, "patchNode");
+            });
+          };
+          unitsLoading();
+          control.addListener("loadingUnits", () => unitsLoading());
+          control.addListener("unitsReady", () => unitsReady());
+          unitsBoxesLayout.add(control);
+          break;
+        }
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: "right"
@@ -171,9 +229,9 @@ qx.Class.define("osparc.study.StudyOptions", {
             minWidth: 150,
             maxWidth: 150,
             height: 35,
-            center: true
+            center: true,
+            enabled: false,
           });
-          osparc.utils.Utils.setIdToWidget(control, "openWithResources");
           this.getChildControl("buttons-layout").addAt(control, 1);
           break;
       }
@@ -192,13 +250,23 @@ qx.Class.define("osparc.study.StudyOptions", {
       ])
         .then(values => {
           const studyData = values[0];
-          this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+          this.setStudyData(studyData);
 
           if (values[1] && "walletId" in values[1]) {
             this.__studyWalletId = values[1]["walletId"];
           }
           this.__buildLayout();
         });
+    },
+
+    setStudyData: function(studyData) {
+      this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+
+      const titleField = this.getChildControl("title-field");
+      titleField.setValue(this.__studyData["name"]);
+
+      const studyPricingUnits = this.getChildControl("study-pricing-units");
+      studyPricingUnits.setStudyData(this.__studyData);
     },
 
     __applyWallet: function(wallet) {
@@ -210,23 +278,32 @@ qx.Class.define("osparc.study.StudyOptions", {
           }
         });
       }
+    },
 
-      this.getChildControl("open-button").setEnabled(Boolean(wallet));
+    __evaluateOpenButton: function() {
+      const hasTitle = Boolean(this.getChildControl("title-field").getValue());
+      const walletSelected = Boolean(this.getChildControl("wallet-selector").getSelection().length);
+      const openButton = this.getChildControl("open-button");
+      openButton.setEnabled(hasTitle && walletSelected);
+      if (hasTitle && walletSelected) {
+        osparc.utils.Utils.setIdToWidget(openButton, "openWithResources");
+      } else {
+        osparc.utils.Utils.removeIdAttribute(openButton);
+      }
     },
 
     __buildLayout: function() {
       this.__buildTopSummaryLayout();
       this.__buildOptionsLayout();
       this.__buildButtons();
+
+      this.__evaluateOpenButton();
     },
 
     __buildTopSummaryLayout: function() {
       const store = osparc.store.Store.getInstance();
 
       const titleField = this.getChildControl("title-field");
-      if (this.__studyData) {
-        titleField.setValue(this.__studyData["name"]);
-      }
       titleField.addListener("appear", () => {
         titleField.focus();
         titleField.activate();
@@ -261,21 +338,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __buildOptionsLayout: function() {
-      const loadingImage = this.getChildControl("loading-units-spinner");
-      const unitsBoxesLayout = this.getChildControl("services-resources-layout");
-      const unitsLoading = () => {
-        loadingImage.show();
-        unitsBoxesLayout.exclude();
-      };
-      const unitsReady = () => {
-        loadingImage.exclude();
-        unitsBoxesLayout.show();
-      };
-      unitsLoading();
-      const studyPricingUnits = new osparc.study.StudyPricingUnits(this.__studyData);
-      studyPricingUnits.addListener("loadingUnits", () => unitsLoading());
-      studyPricingUnits.addListener("unitsReady", () => unitsReady());
-      unitsBoxesLayout.add(studyPricingUnits);
+      this.getChildControl("study-pricing-units");
     },
 
     __buildButtons: function() {
@@ -291,48 +354,34 @@ qx.Class.define("osparc.study.StudyOptions", {
       const openButton = this.getChildControl("open-button");
       openButton.setFetching(true);
 
-      // first, update the name if necessary
-      const titleSelection = this.getChildControl("title-field").getValue();
-      if (this.__studyData && this.__studyData["name"] !== titleSelection) {
-        await this.__updateName(this.__studyData, titleSelection);
-      }
+      if (this.isPatchStudy()) {
+        // first, update the name if necessary
+        const titleSelection = this.getChildControl("title-field").getValue();
+        if (this.__studyData["name"] !== titleSelection) {
+          await this.self().updateName(this.__studyData, titleSelection);
+        }
 
-      // second, update the wallet if necessary
-      const store = osparc.store.Store.getInstance();
-      const walletSelection = this.getChildControl("wallet-selector").getSelection();
-      const studyId = this.getStudyId();
-      if (studyId && walletSelection.length && walletSelection[0]["walletId"]) {
-        const params = {
-          url: {
-            studyId,
-            "walletId": walletSelection[0]["walletId"]
-          }
-        };
-        osparc.data.Resources.fetch("studies", "selectWallet", params)
-          .then(() => {
-            store.setActiveWallet(this.getWallet());
-            this.fireEvent("startStudy");
-          })
-          .catch(err => {
-            console.error(err);
-            const msg = err.message || this.tr("Error selecting Credit Account");
-            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-          })
-          .finally(() => openButton.setFetching(false));
+        // second, update the wallet if necessary
+        const store = osparc.store.Store.getInstance();
+        const walletSelection = this.getChildControl("wallet-selector").getSelection();
+        if (walletSelection.length && walletSelection[0]["walletId"]) {
+          const studyId = this.getStudyId();
+          const walletId = walletSelection[0]["walletId"];
+          this.self().updateWallet(studyId, walletId)
+            .then(() => {
+              store.setActiveWallet(this.getWallet());
+              this.fireEvent("startStudy");
+            })
+            .finally(() => openButton.setFetching(false));
+        } else {
+          store.setActiveWallet(this.getWallet());
+          this.fireEvent("startStudy");
+          openButton.setFetching(false);
+        }
       } else {
-        store.setActiveWallet(this.getWallet());
         this.fireEvent("startStudy");
         openButton.setFetching(false);
       }
     },
-
-    __updateName: function(studyData, name) {
-      return osparc.info.StudyUtils.patchStudyData(studyData, "name", name)
-        .catch(err => {
-          console.error(err);
-          const msg = this.tr("Something went wrong Renaming");
-          osparc.FlashMessenger.logAs(msg, "ERROR");
-        });
-    }
   }
 });

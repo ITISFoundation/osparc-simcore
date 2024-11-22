@@ -199,7 +199,7 @@ def mock_env(
 async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
-    print("Application settings\n", settings.json(indent=2))
+    print("Application settings\n", settings.model_dump_json(indent=2))
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
     with TestClient(app, raise_server_exceptions=True) as test_client:
@@ -210,7 +210,7 @@ async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
 async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
-    print("Application settings\n", settings.json(indent=2))
+    print("Application settings\n", settings.model_dump_json(indent=2))
     async with LifespanManager(app):
         yield app
 
@@ -240,7 +240,7 @@ def fake_workbench(fake_workbench_file: Path) -> NodesDict:
     workbench_dict = json.loads(fake_workbench_file.read_text())
     workbench = {}
     for node_id, node_data in workbench_dict.items():
-        workbench[node_id] = Node.parse_obj(node_data)
+        workbench[node_id] = Node.model_validate(node_data)
     return workbench
 
 
@@ -337,7 +337,9 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
 
-    fake_data = ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0])
+    fake_data = ApiKeyGet.model_validate(
+        ApiKeyGet.model_config["json_schema_extra"]["examples"][0]
+    )
 
     async def _create(
         app: FastAPI,

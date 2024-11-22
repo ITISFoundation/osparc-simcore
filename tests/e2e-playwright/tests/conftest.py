@@ -19,7 +19,7 @@ from typing import Any, Final
 import arrow
 import pytest
 from faker import Faker
-from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
+from playwright.sync_api import APIRequestContext, BrowserContext, Page
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
@@ -28,13 +28,13 @@ from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
     AutoRegisteredUser,
+    RestartableWebSocket,
     RunningState,
     ServiceType,
     SocketIOEvent,
     SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
-    web_socket_default_log_handler,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
 
@@ -322,6 +322,11 @@ def register(
     return _do
 
 
+@pytest.fixture(scope="session")
+def store_browser_context() -> bool:
+    return False
+
+
 @pytest.fixture
 def log_in_and_out(
     page: Page,
@@ -330,7 +335,9 @@ def log_in_and_out(
     user_password: Secret4TestsStr,
     auto_register: bool,
     register: Callable[[], AutoRegisteredUser],
-) -> Iterator[WebSocket]:
+    store_browser_context: bool,
+    context: BrowserContext,
+) -> Iterator[RestartableWebSocket]:
     with log_context(
         logging.INFO,
         f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
@@ -373,8 +380,8 @@ def log_in_and_out(
                     page.get_by_test_id("loginSubmitBtn").click()
                 assert response_info.value.ok, f"{response_info.value.json()}"
 
-    ws = ws_info.value
-    assert not ws.is_closed()
+    assert not ws_info.value.is_closed()
+    restartable_wb = RestartableWebSocket.create(page, ws_info.value)
 
     # Welcome to Sim4Life
     page.wait_for_timeout(5000)
@@ -388,8 +395,11 @@ def log_in_and_out(
     if quickStartWindowCloseBtnLocator.is_visible():
         quickStartWindowCloseBtnLocator.click()
 
-    with web_socket_default_log_handler(ws):
-        yield ws
+    if store_browser_context:
+        context.storage_state(path="state.json")
+
+    # with web_socket_default_log_handler(ws):
+    yield restartable_wb
 
     with log_context(
         logging.INFO,
@@ -407,7 +417,7 @@ def log_in_and_out(
 @pytest.fixture
 def create_new_project_and_delete(
     page: Page,
-    log_in_and_out: WebSocket,
+    log_in_and_out: RestartableWebSocket,
     is_product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
@@ -443,15 +453,21 @@ def create_new_project_and_delete(
                     re.compile(r"/projects/[^:]+:open"), timeout=timeout + 5 * SECOND
                 ) as response_info,
             ):
+                open_with_resources_clicked = False
                 # Project detail view pop-ups shows
                 if press_open:
                     open_button = page.get_by_test_id("openResource")
                     if template_id is not None:
+                        if is_product_billable:
+                            open_button.click()
+                            # Open project with default resources
+                            open_button = page.get_by_test_id("openWithResources")
                         # it returns a Long Running Task
                         with page.expect_response(
                             re.compile(rf"/projects\?from_study\={template_id}")
                         ) as lrt:
                             open_button.click()
+                        open_with_resources_clicked = True
                         lrt_data = lrt.value.json()
                         lrt_data = lrt_data["data"]
                         with log_context(
@@ -489,9 +505,15 @@ def create_new_project_and_delete(
                                 ...
                     else:
                         open_button.click()
-                if is_product_billable:
+                        if is_product_billable:
+                            # Open project with default resources
+                            open_button = page.get_by_test_id("openWithResources")
+                            open_button.click()
+                            open_with_resources_clicked = True
+                if is_product_billable and not open_with_resources_clicked:
                     # Open project with default resources
-                    page.get_by_test_id("openWithResources").click()
+                    open_button = page.get_by_test_id("openWithResources")
+                    open_button.click()
             project_data = response_info.value.json()
             assert project_data
             project_uuid = project_data["data"]["uuid"]
@@ -644,7 +666,7 @@ def create_project_from_service_dashboard(
 def start_and_stop_pipeline(
     product_url: AnyUrl,
     page: Page,
-    log_in_and_out: WebSocket,
+    log_in_and_out: RestartableWebSocket,
     api_request_context: APIRequestContext,
 ) -> Iterator[Callable[[], SocketIOEvent]]:
     started_pipeline_ids = []

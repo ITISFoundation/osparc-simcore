@@ -15,7 +15,7 @@ from httpx import (
     TransportError,
     codes,
 )
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from respx import MockRouter
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
@@ -71,17 +71,21 @@ def request_timeout() -> int:
 
 @pytest.fixture
 async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
-    async with FakeThickClient(total_retry_interval=request_timeout) as client:
+    async with FakeThickClient(
+        total_retry_interval=request_timeout, tracing_settings=None
+    ) as client:
         yield client
 
 
 @pytest.fixture
-def test_url() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
+def test_url() -> str:
+    url = TypeAdapter(AnyHttpUrl).validate_python("http://missing-host:1111")
+    return f"{url}"
 
 
 async def test_connection_error(
-    thick_client: FakeThickClient, test_url: AnyHttpUrl
+    thick_client: FakeThickClient,
+    test_url: str,
 ) -> None:
     with pytest.raises(ClientHttpError) as exe_info:
         await thick_client.get_provided_url(test_url)
@@ -92,10 +96,12 @@ async def test_connection_error(
 
 async def test_retry_on_errors(
     request_timeout: int,
-    test_url: AnyHttpUrl,
+    test_url: str,
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
-    client = FakeThickClient(total_retry_interval=request_timeout)
+    client = FakeThickClient(
+        total_retry_interval=request_timeout, tracing_settings=None
+    )
 
     with pytest.raises(ClientHttpError):
         await client.get_provided_url(test_url)
@@ -108,7 +114,7 @@ async def test_retry_on_errors_by_error_type(
     error_class: type[RequestError],
     caplog_info_level: pytest.LogCaptureFixture,
     request_timeout: int,
-    test_url: AnyHttpUrl,
+    test_url: str,
 ) -> None:
     class ATestClient(BaseThinClient):
         # pylint: disable=no-self-use
@@ -119,7 +125,7 @@ async def test_retry_on_errors_by_error_type(
                 request=Request(method="GET", url=test_url),
             )
 
-    client = ATestClient(total_retry_interval=request_timeout)
+    client = ATestClient(total_retry_interval=request_timeout, tracing_settings=None)
 
     with pytest.raises(ClientHttpError):
         await client.raises_request_error()
@@ -145,7 +151,7 @@ async def test_retry_on_errors_raises_client_http_error(
             msg = "mock_http_error"
             raise HTTPError(msg)
 
-    client = ATestClient(total_retry_interval=request_timeout)
+    client = ATestClient(total_retry_interval=request_timeout, tracing_settings=None)
 
     with pytest.raises(ClientHttpError):
         await client.raises_http_error()
@@ -159,30 +165,34 @@ async def test_methods_do_not_return_response(
             """this method will be ok even if no code is used"""
 
     # OK
-    OKTestClient(total_retry_interval=request_timeout)
+    OKTestClient(total_retry_interval=request_timeout, tracing_settings=None)
 
     class FailWrongAnnotationTestClient(BaseThinClient):
         async def public_method_wrong_annotation(self) -> None:
             """this method will raise an error"""
 
     with pytest.raises(AssertionError, match="should return an instance"):
-        FailWrongAnnotationTestClient(total_retry_interval=request_timeout)
+        FailWrongAnnotationTestClient(
+            total_retry_interval=request_timeout, tracing_settings=None
+        )
 
     class FailNoAnnotationTestClient(BaseThinClient):
         async def public_method_no_annotation(self):
             """this method will raise an error"""
 
     with pytest.raises(AssertionError, match="should return an instance"):
-        FailNoAnnotationTestClient(total_retry_interval=request_timeout)
+        FailNoAnnotationTestClient(
+            total_retry_interval=request_timeout, tracing_settings=None
+        )
 
 
 async def test_expect_state_decorator(
-    test_url: AnyHttpUrl,
+    test_url: str,
     respx_mock: MockRouter,
     request_timeout: int,
 ) -> None:
-    url_get_200_ok = f"{test_url}/ok"
-    get_wrong_state = f"{test_url}/wrong-state"
+    url_get_200_ok = f"{test_url}ok"
+    get_wrong_state = f"{test_url}wrong-state"
     error_status = codes.NOT_FOUND
 
     class ATestClient(BaseThinClient):
@@ -197,7 +207,9 @@ async def test_expect_state_decorator(
     respx_mock.get(url_get_200_ok).mock(return_value=Response(codes.OK))
     respx_mock.get(get_wrong_state).mock(return_value=Response(codes.OK))
 
-    test_client = ATestClient(total_retry_interval=request_timeout)
+    test_client = ATestClient(
+        total_retry_interval=request_timeout, tracing_settings=None
+    )
 
     # OK
     response = await test_client.get_200_ok()
@@ -218,7 +230,9 @@ async def test_retry_timeout_overwrite(
     request_timeout: int,
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
-    client = FakeThickClient(total_retry_interval=request_timeout)
+    client = FakeThickClient(
+        total_retry_interval=request_timeout, tracing_settings=None
+    )
 
     caplog_info_level.clear()
     start = arrow.utcnow()

@@ -1,4 +1,5 @@
 import functools
+from uuid import UUID
 
 import sqlalchemy as sa
 from simcore_postgres_database.models.groups import user_to_groups
@@ -60,7 +61,7 @@ def get_tag_stmt(
             # aggregation ensures MOST PERMISSIVE policy of access-rights
             sa.func.bool_or(tags_access_rights.c.read).label("read"),
             sa.func.bool_or(tags_access_rights.c.write).label("write"),
-            sa.func.bool_or(tags_access_rights.c.delete).label("delete")
+            sa.func.bool_or(tags_access_rights.c.delete).label("delete"),
         )
         .select_from(
             _join_user_to_given_tag(
@@ -80,7 +81,7 @@ def list_tags_stmt(*, user_id: int):
             # aggregation ensures MOST PERMISSIVE policy of access-rights
             sa.func.bool_or(tags_access_rights.c.read).label("read"),
             sa.func.bool_or(tags_access_rights.c.write).label("write"),
-            sa.func.bool_or(tags_access_rights.c.delete).label("delete")
+            sa.func.bool_or(tags_access_rights.c.delete).label("delete"),
         )
         .select_from(
             _join_user_to_tags(
@@ -104,7 +105,7 @@ def count_groups_with_given_access_rights_stmt(
     tag_id: int,
     read: bool | None,
     write: bool | None,
-    delete: bool | None
+    delete: bool | None,
 ):
     """
     How many groups (from this user_id) are given EXACTLY these access permissions
@@ -192,12 +193,15 @@ def get_tags_for_project_stmt(*, project_index: int):
     )
 
 
-def add_tag_to_project_stmt(*, project_index: int, tag_id: int):
+def add_tag_to_project_stmt(
+    *, project_index: int, tag_id: int, project_uuid_for_rut: UUID
+):
     return (
         pg_insert(projects_tags)
         .values(
             project_id=project_index,
             tag_id=tag_id,
+            project_uuid_for_rut=f"{project_uuid_for_rut}",
         )
         .on_conflict_do_nothing()
     )

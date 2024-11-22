@@ -116,7 +116,7 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
         log_format_local_dev_enabled=settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
     )
-    _logger.debug(settings.json(indent=2))
+    _logger.debug(settings.model_dump_json(indent=2))
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
@@ -126,13 +126,14 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
     for name in _NOISY_LOGGERS:
         logging.getLogger(name).setLevel(quiet_level)
 
+    assert settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
         debug=settings.SC_BOOT_MODE.is_devel_mode(),
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        **get_common_oas_options(settings.SC_BOOT_MODE.is_devel_mode()),
+        **get_common_oas_options(is_devel_mode=settings.SC_BOOT_MODE.is_devel_mode()),
     )
     override_fastapi_openapi_method(app)
     app.state.settings = settings
@@ -149,19 +150,34 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     substitutions.setup(app)
 
+    if settings.DIRECTOR_V2_TRACING:
+        setup_tracing(app, settings.DIRECTOR_V2_TRACING, APP_NAME)
+
     if settings.DIRECTOR_V0.DIRECTOR_V0_ENABLED:
-        director_v0.setup(app, settings.DIRECTOR_V0)
+        director_v0.setup(
+            app,
+            director_v0_settings=settings.DIRECTOR_V0,
+            tracing_settings=settings.DIRECTOR_V2_TRACING,
+        )
 
     if settings.DIRECTOR_V2_STORAGE:
-        storage.setup(app, settings.DIRECTOR_V2_STORAGE)
+        storage.setup(
+            app,
+            storage_settings=settings.DIRECTOR_V2_STORAGE,
+            tracing_settings=settings.DIRECTOR_V2_TRACING,
+        )
 
     if settings.DIRECTOR_V2_CATALOG:
-        catalog.setup(app, settings.DIRECTOR_V2_CATALOG)
+        catalog.setup(
+            app,
+            catalog_settings=settings.DIRECTOR_V2_CATALOG,
+            tracing_settings=settings.DIRECTOR_V2_TRACING,
+        )
 
     db.setup(app, settings.POSTGRES)
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
-        dynamic_services.setup(app)
+        dynamic_services.setup(app, tracing_settings=settings.DIRECTOR_V2_TRACING)
 
     dynamic_scheduler_enabled = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR and (
         settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
@@ -192,8 +208,6 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
         instrumentation.setup(app)
-    if settings.DIRECTOR_V2_TRACING:
-        setup_tracing(app, app.state.settings.DIRECTOR_V2_TRACING, APP_NAME)
 
     if settings.DIRECTOR_V2_PROFILING:
         app.add_middleware(ProfilerMiddleware)

@@ -1,7 +1,15 @@
 from typing import Any, TypeAlias
 
 from models_library.basic_types import IDStr
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, validator
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+)
 
 from ..clusters import ClusterID
 from ..projects import ProjectID
@@ -17,6 +25,17 @@ class ComputationGet(ComputationTask):
     )
     stop_url: AnyHttpUrl | None = Field(
         None, description="the link where to stop the task"
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                x | {"url": "http://url.local"}  # type:ignore[operator]
+                for x in ComputationTask.model_config[  # type:ignore[index,union-attr]
+                    "json_schema_extra"
+                ]["examples"]
+            ]
+        }
     )
 
 
@@ -43,24 +62,27 @@ class ComputationCreate(BaseModel):
     use_on_demand_clusters: bool = Field(
         default=False,
         description="if True, a cluster will be created as necessary (wallet_id cannot be None, and cluster_id must be None)",
+        validate_default=True,
     )
     wallet_info: WalletInfo | None = Field(
         default=None,
         description="contains information about the wallet used to bill the running service",
     )
 
-    @validator("product_name", always=True)
+    @field_validator("product_name")
     @classmethod
-    def ensure_product_name_defined_if_computation_starts(cls, v, values):
-        if "start_pipeline" in values and values["start_pipeline"] and v is None:
+    def _ensure_product_name_defined_if_computation_starts(
+        cls, v, info: ValidationInfo
+    ):
+        if info.data.get("start_pipeline") and v is None:
             msg = "product_name must be set if computation shall start!"
             raise ValueError(msg)
         return v
 
-    @validator("use_on_demand_clusters", always=True)
+    @field_validator("use_on_demand_clusters")
     @classmethod
-    def ensure_expected_options(cls, v, values):
-        if v is True and ("cluster_id" in values and values["cluster_id"] is not None):
+    def _ensure_expected_options(cls, v, info: ValidationInfo):
+        if v and info.data.get("cluster_id") is not None:
             msg = "cluster_id cannot be set if use_on_demand_clusters is set"
             raise ValueError(msg)
         return v

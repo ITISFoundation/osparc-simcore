@@ -9,12 +9,16 @@ class UsersBaseError(WebServerBaseError):
 
 class UserNotFoundError(UsersBaseError):
     def __init__(self, *, uid: int | None = None, email: str | None = None, **ctx: Any):
-        super().__init__(**ctx)
+        super().__init__(
+            msg_template=(
+                "User id {uid} not found"
+                if uid
+                else f"User with email {email} not found"
+            ),
+            **ctx,
+        )
         self.uid = uid
         self.email = email
-        self.msg_template = (
-            "User id {uid} not found" if uid else f"User with email {email} not found"
-        )
 
 
 class TokenNotFoundError(UsersBaseError):

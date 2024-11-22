@@ -1,7 +1,8 @@
+from collections.abc import Mapping
 from ipaddress import IPv4Address
-from typing import Any, Mapping, Union
+from typing import Any, Union
 
-from pydantic import BaseModel, ByteSize, Field, PositiveFloat, parse_obj_as
+from pydantic import BaseModel, ByteSize, Field, PositiveFloat, TypeAdapter
 
 Hostname = str
 ResourceName = str
@@ -26,8 +27,7 @@ ClusterInformation = dict[Hostname, NodeInformation]
 def cluster_information_from_docker_nodes(
     nodes_list: list[Mapping[str, Any]]
 ) -> ClusterInformation:
-    return parse_obj_as(
-        ClusterInformation,
+    return TypeAdapter(ClusterInformation).validate_python(
         {
             node["Description"]["Hostname"]: {
                 "docker_node_id": node["ID"],
@@ -38,5 +38,5 @@ def cluster_information_from_docker_nodes(
                 },
             }
             for node in nodes_list
-        },
+        }
     )

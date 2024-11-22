@@ -9,7 +9,7 @@ import asyncio
 import time
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from typing import Any
 from unittest import mock
@@ -28,7 +28,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
-from models_library.projects_access import Owner, PositiveIntWithExclusiveMinimumRemoved
+from models_library.projects_access import Owner
 from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
@@ -42,6 +42,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import PositiveInt
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
@@ -227,7 +228,7 @@ async def _assert_project_state_updated(
                 jsonable_encoder(
                     {
                         "project_uuid": shared_project["uuid"],
-                        "data": p_state.dict(by_alias=True, exclude_unset=True),
+                        "data": p_state.model_dump(by_alias=True, exclude_unset=True),
                     }
                 )
             )
@@ -284,8 +285,8 @@ async def test_share_project(
     )
     if new_project:
         assert new_project["accessRights"] == {
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True},
-            str(all_group["gid"]): share_rights,
+            f'{primary_group["gid"]}': {"read": True, "write": True, "delete": True},
+            f'{(all_group["gid"])}': share_rights,
         }
 
         # user 1 can always get to his project
@@ -715,7 +716,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     mock_catalog_api["get_service"].return_value["deprecated"] = (
-        datetime.utcnow() - timedelta(days=1)
+        datetime.now(UTC) - timedelta(days=1)
     ).isoformat()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id_factory())
@@ -994,7 +995,11 @@ async def test_project_node_lifetime(  # noqa: PLR0915
 
     # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
-    body = {"service_key": "simcore/services/dynamic/key", "service_version": "1.3.4"}
+    body = {
+        "service_key": "simcore/services/dynamic/key",
+        "service_version": "1.3.4",
+        "service_id": None,
+    }
     resp = await client.post(url.path, json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
     dynamic_node_id = None
@@ -1015,6 +1020,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     body = {
         "service_key": "simcore/services/comp/key",
         "service_version": "1.3.4",
+        "service_id": None,
     }
     resp = await client.post(f"{url}", json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
@@ -1042,10 +1048,10 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         project_id=user_project["uuid"], node_id=dynamic_node_id
     )
 
-    node_sample = deepcopy(NodeGet.Config.schema_extra["examples"][1])
+    node_sample = deepcopy(NodeGet.model_config["json_schema_extra"]["examples"][1])
     mocked_director_v2_api[
         "dynamic_scheduler.api.get_dynamic_service"
-    ].return_value = NodeGet.parse_obj(
+    ].return_value = NodeGet.model_validate(
         {
             **node_sample,
             "service_state": "running",
@@ -1064,7 +1070,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
     mocked_director_v2_api[
         "dynamic_scheduler.api.get_dynamic_service"
-    ].return_value = NodeGetIdle.parse_obj(
+    ].return_value = NodeGetIdle.model_validate(
         {
             "service_uuid": node_sample["service_uuid"],
             "service_state": "idle",
@@ -1276,7 +1282,7 @@ async def test_open_shared_project_2_users_locked(
         mock_project_state_updated_handler,
         shared_project,
         [
-            expected_project_state_client_1.copy(
+            expected_project_state_client_1.model_copy(
                 update={
                     "locked": ProjectLocked(
                         value=True, status=ProjectStatus.CLOSING, owner=owner1
@@ -1314,7 +1320,7 @@ async def test_open_shared_project_2_users_locked(
         expected_project_state_client_2.locked.value = True
         expected_project_state_client_2.locked.status = ProjectStatus.OPENED
         owner2 = Owner(
-            user_id=PositiveIntWithExclusiveMinimumRemoved(user_2["id"]),
+            user_id=PositiveInt(user_2["id"]),
             first_name=user_2.get("first_name", None),
             last_name=user_2.get("last_name", None),
         )

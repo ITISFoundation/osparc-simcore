@@ -12,5 +12,13 @@
 --requirement _test.txt
 --requirement _tools.txt
 
+
+# installs this repo's packages
+--editable ../../packages/common-library/
+--editable ../../packages/models-library
+--editable ../../packages/pytest-simcore/
+--editable ../../packages/service-library[fastapi]
+--editable ../../packages/settings-library/
+
 # installs current package
 --editable .

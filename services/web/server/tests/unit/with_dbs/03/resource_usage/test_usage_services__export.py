@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.resource_tracker import ServiceResourceUsagesFilters
 from models_library.rest_ordering import OrderBy
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
@@ -29,7 +29,7 @@ def mock_export_usage_services(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
         "simcore_service_webserver.resource_usage._service_runs_api.service_runs.export_service_runs",
         spec=True,
-        return_value=parse_obj_as(AnyUrl, "https://www.google.com/"),
+        return_value=TypeAdapter(AnyUrl).validate_python("https://www.google.com/"),
     )
 
 
@@ -115,5 +115,7 @@ async def test_list_service_usage(
     assert mock_export_usage_services.called
     args = mock_export_usage_services.call_args[1]
 
-    assert args["order_by"] == parse_obj_as(OrderBy, _order_by)
-    assert args["filters"] == parse_obj_as(ServiceResourceUsagesFilters, _filter)
+    assert (
+        args["order_by"].model_dump() == OrderBy.model_validate(_order_by).model_dump()
+    )
+    assert args["filters"] == ServiceResourceUsagesFilters.model_validate(_filter)

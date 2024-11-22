@@ -55,7 +55,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         log_format_local_dev_enabled=settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.API_SERVER_LOG_FILTER_MAPPING,
     )
-    _logger.debug("App settings:\n%s", settings.json(indent=2))
+    _logger.debug("App settings:\n%s", settings.model_dump_json(indent=2))
 
     # Labeling
     title = "osparc.io public API"
@@ -82,19 +82,36 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     setup_rabbitmq(app)
 
+    if settings.API_SERVER_TRACING:
+        setup_tracing(app, settings.API_SERVER_TRACING, APP_NAME)
+
     if settings.API_SERVER_WEBSERVER:
-        webserver.setup(app, settings.API_SERVER_WEBSERVER)
-    if app.state.settings.API_SERVER_TRACING:
-        setup_tracing(app, app.state.settings.API_SERVER_TRACING, APP_NAME)
+        webserver.setup(
+            app,
+            settings.API_SERVER_WEBSERVER,
+            tracing_settings=settings.API_SERVER_TRACING,
+        )
 
     if settings.API_SERVER_CATALOG:
-        catalog.setup(app, settings.API_SERVER_CATALOG)
+        catalog.setup(
+            app,
+            settings.API_SERVER_CATALOG,
+            tracing_settings=settings.API_SERVER_TRACING,
+        )
 
     if settings.API_SERVER_STORAGE:
-        storage.setup(app, settings.API_SERVER_STORAGE)
+        storage.setup(
+            app,
+            settings.API_SERVER_STORAGE,
+            tracing_settings=settings.API_SERVER_TRACING,
+        )
 
     if settings.API_SERVER_DIRECTOR_V2:
-        director_v2.setup(app, settings.API_SERVER_DIRECTOR_V2)
+        director_v2.setup(
+            app,
+            settings.API_SERVER_DIRECTOR_V2,
+            tracing_settings=settings.API_SERVER_TRACING,
+        )
 
     # setup app
     app.add_event_handler("startup", create_start_app_handler(app))

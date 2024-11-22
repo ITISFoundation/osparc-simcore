@@ -14,7 +14,7 @@ assert is_function_service  # nosec
 
 
 def _as_dict(model_instance: ServiceMetaDataPublished) -> dict[str, Any]:
-    return model_instance.dict(by_alias=True, exclude_unset=True)
+    return model_instance.model_dump(by_alias=True, exclude_unset=True)
 
 
 def get_function_service(key, version) -> ServiceMetaDataPublished:

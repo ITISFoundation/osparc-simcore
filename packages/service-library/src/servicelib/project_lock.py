@@ -49,7 +49,7 @@ async def lock_project(
                 value=True,
                 owner=owner,
                 status=status,
-            ).json(),
+            ).model_dump_json(),
         ):
             msg = f"Lock for project {project_uuid!r} owner {owner!r} could not be acquired"
             raise ProjectLockError(msg)

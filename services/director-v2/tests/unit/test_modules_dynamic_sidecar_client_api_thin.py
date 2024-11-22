@@ -11,7 +11,7 @@ from fastapi import FastAPI, status
 from httpx import Response
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes
@@ -63,7 +63,7 @@ async def thin_client(mocked_app: FastAPI) -> AsyncIterable[ThinSidecarsClient]:
 
 @pytest.fixture
 def dynamic_sidecar_endpoint() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
+    return TypeAdapter(AnyHttpUrl).validate_python("http://missing-host:1111")
 
 
 @pytest.fixture
@@ -116,7 +116,7 @@ async def test_get_containers(
     mock_response = Response(status.HTTP_200_OK)
     mock_request(
         "GET",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers?only_status={str(only_status).lower()}",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers?only_status={str(only_status).lower()}",
         mock_response,
         None,
     )
@@ -139,7 +139,7 @@ async def test_post_patch_containers_ports_io(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "PATCH",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/ports/io",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/ports/io",
         mock_response,
         None,
     )
@@ -162,7 +162,7 @@ async def test_post_containers_ports_outputs_dirs(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/ports/outputs/dirs",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/ports/outputs/dirs",
         mock_response,
         None,
     )
@@ -191,7 +191,7 @@ async def test_get_containers_name(
     mock_request(
         "GET",
         (
-            f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}"
+            f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}"
             f"/containers/name?filters={encoded_filters}"
         ),
         mock_response,
@@ -216,7 +216,7 @@ async def test_post_containers_networks_attach(
     container_id = "a_container_id"
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/{container_id}/networks:attach",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/{container_id}/networks:attach",
         mock_response,
         None,
     )
@@ -239,7 +239,7 @@ async def test_post_containers_networks_detach(
     container_id = "a_container_id"
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/{container_id}/networks:detach",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/{container_id}/networks:detach",
         mock_response,
         None,
     )
@@ -262,7 +262,7 @@ async def test_put_volumes(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "PUT",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/volumes/{volume_category}",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/volumes/{volume_category}",
         mock_response,
         None,
     )
@@ -282,9 +282,12 @@ async def test_put_volumes(
             "post_containers_tasks",
             "/containers",
             {
-                "metrics_params": parse_obj_as(
-                    CreateServiceMetricsAdditionalParams,
-                    CreateServiceMetricsAdditionalParams.Config.schema_extra["example"],
+                "metrics_params": TypeAdapter(
+                    CreateServiceMetricsAdditionalParams
+                ).validate_python(
+                    CreateServiceMetricsAdditionalParams.model_config[
+                        "json_schema_extra"
+                    ]["example"],
                 )
             },
             id="post_containers_tasks",
@@ -350,7 +353,7 @@ async def test_post_containers_tasks(
     mock_response = Response(status.HTTP_202_ACCEPTED, json="mocked_task_id")
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}{mock_endpoint}",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}{mock_endpoint}",
         mock_response,
         None,
     )
@@ -368,7 +371,7 @@ async def test_get_containers_inactivity(
     mock_response = Response(status.HTTP_200_OK, json={})
     mock_request(
         "GET",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/activity",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/activity",
         mock_response,
         None,
     )
@@ -385,7 +388,7 @@ async def test_post_disk_reserved_free(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/disk/reserved:free",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/disk/reserved:free",
         mock_response,
         None,
     )
@@ -402,7 +405,7 @@ async def test_post_containers_compose_spec(
     mock_response = Response(status.HTTP_202_ACCEPTED)
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/compose-spec",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/compose-spec",
         mock_response,
         None,
     )

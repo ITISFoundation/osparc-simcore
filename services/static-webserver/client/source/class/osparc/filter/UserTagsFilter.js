@@ -18,11 +18,11 @@ qx.Class.define("osparc.filter.UserTagsFilter", {
   },
   members: {
     __buildMenu: function() {
-      osparc.store.Store.getInstance().getTags()
+      osparc.store.Tags.getInstance().getTags()
         .forEach(tag => {
-          const menuButton = this._addOption(tag.name);
+          const menuButton = this._addOption(tag.getName());
           menuButton.setIcon("@FontAwesome5Solid/square/12");
-          menuButton.getChildControl("icon").setTextColor(tag.color);
+          menuButton.getChildControl("icon").setTextColor(tag.getColor());
         });
     },
     __attachEventListeners: function(filterId, filterGroupId) {

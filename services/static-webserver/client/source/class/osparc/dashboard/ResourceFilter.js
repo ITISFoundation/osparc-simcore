@@ -189,16 +189,15 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       const maxTags = 5;
       this.__tagButtons = [];
       layout.removeAll();
-      osparc.store.Store.getInstance().getTags().forEach((tag, idx) => {
-        const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/18");
+      osparc.store.Tags.getInstance().getTags().forEach((tag, idx) => {
+        const button = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/tag/18");
+        button.id = tag.getTagId();
+        tag.bind("name", button, "label");
+        tag.bind("color", button.getChildControl("icon"), "textColor");
         osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-tagFilterItem");
-        button.id = tag.id;
         button.set({
           appearance: "filter-toggle-button",
-          value: selectedTagIds.includes(tag.id)
-        });
-        button.getChildControl("icon").set({
-          textColor: tag.color
+          value: selectedTagIds.includes(tag.getTagId())
         });
 
         layout.add(button);

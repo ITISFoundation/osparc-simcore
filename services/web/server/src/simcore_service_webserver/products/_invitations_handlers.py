@@ -6,9 +6,10 @@ from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
     InvitationGenerated,
 )
+from models_library.rest_base import RequestParameters
 from models_library.users import UserID
 from pydantic import Field
-from servicelib.aiohttp.requests_validation import RequestParams, parse_request_body_as
+from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
 from yarl import URL
@@ -26,7 +27,7 @@ routes = web.RouteTableDef()
 _logger = logging.getLogger(__name__)
 
 
-class _ProductsRequestContext(RequestParams):
+class _ProductsRequestContext(RequestParameters):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
@@ -35,7 +36,7 @@ class _ProductsRequestContext(RequestParams):
 @login_required
 @permission_required("product.invitations.create")
 async def generate_invitation(request: web.Request):
-    req_ctx = _ProductsRequestContext.parse_obj(request)
+    req_ctx = _ProductsRequestContext.model_validate(request)
     body = await parse_request_body_as(GenerateInvitation, request)
 
     _, user_email = await get_user_name_and_email(request.app, user_id=req_ctx.user_id)
@@ -55,16 +56,16 @@ async def generate_invitation(request: web.Request):
     assert generated.product == req_ctx.product_name  # nosec
     assert generated.guest == body.guest  # nosec
 
-    url = URL(generated.invitation_url)
+    url = URL(f"{generated.invitation_url}")
     invitation_link = request.url.with_path(url.path).with_fragment(url.raw_fragment)
 
     invitation = InvitationGenerated(
         product_name=generated.product,
         issuer=generated.issuer,
-        guest=generated.guest,  # type: ignore[arg-type]
+        guest=generated.guest,
         trial_account_days=generated.trial_account_days,
         extra_credits_in_usd=generated.extra_credits_in_usd,
         created=generated.created,
         invitation_link=f"{invitation_link}",  # type: ignore[arg-type]
     )
-    return envelope_json_response(invitation.dict(exclude_none=True))
+    return envelope_json_response(invitation.model_dump(exclude_none=True))

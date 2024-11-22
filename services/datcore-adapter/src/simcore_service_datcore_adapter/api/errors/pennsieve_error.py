@@ -7,8 +7,11 @@ from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_500_INTERNAL_SERVER_ERR
 
 async def botocore_exceptions_handler(
     _: Request,
-    exc: ClientError,
+    exc: Exception,
 ) -> JSONResponse:
+    assert isinstance(exc, ClientError)  # nosec
+    assert "Error" in exc.response  # nosec
+    assert "Code" in exc.response["Error"]  # nosec
     if exc.response["Error"]["Code"] == "NotAuthorizedException":
         return JSONResponse(
             content=jsonable_encoder({"errors": exc.response["Error"]}),

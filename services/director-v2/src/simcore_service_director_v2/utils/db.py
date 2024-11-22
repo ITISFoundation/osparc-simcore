@@ -1,11 +1,10 @@
-import json
 import logging
 from typing import Any
 
+from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from models_library.clusters import BaseCluster
 from models_library.projects_state import RunningState
-from settings_library.utils_encoders import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ..api.dependencies.database import RepoType, get_base_repository
@@ -30,14 +29,13 @@ _logger = logging.getLogger(__name__)
 
 
 def to_clusters_db(cluster: BaseCluster, *, only_update: bool) -> dict[str, Any]:
-    db_model: dict[str, Any] = json.loads(
-        cluster.json(
-            by_alias=True,
-            exclude={"id", "access_rights"},
-            exclude_unset=only_update,
-            exclude_none=only_update,
-            encoder=create_json_encoder_wo_secrets(BaseCluster),
-        )
+    db_model: dict[str, Any] = model_dump_with_secrets(
+        cluster,
+        show_secrets=True,
+        by_alias=True,
+        exclude={"id", "access_rights"},
+        exclude_unset=only_update,
+        exclude_none=only_update,
     )
     return db_model
 

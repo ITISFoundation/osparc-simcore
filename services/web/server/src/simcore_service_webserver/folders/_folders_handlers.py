@@ -10,7 +10,7 @@ from models_library.api_schemas_webserver.folders_v2 import (
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -28,8 +28,8 @@ from . import _folders_api
 from ._exceptions_handlers import handle_plugin_requests_exceptions
 from ._models import (
     FolderFilters,
-    FolderListFullSearchWithJsonStrQueryParams,
-    FolderListWithJsonStrQueryParams,
+    FolderSearchQueryParams,
+    FoldersListQueryParams,
     FoldersPathParams,
     FoldersRequestContext,
 )
@@ -45,7 +45,7 @@ routes = web.RouteTableDef()
 @permission_required("folder.create")
 @handle_plugin_requests_exceptions
 async def create_folder(request: web.Request):
-    req_ctx = FoldersRequestContext.parse_obj(request)
+    req_ctx = FoldersRequestContext.model_validate(request)
     body_params = await parse_request_body_as(CreateFolderBodyParams, request)
 
     folder = await _folders_api.create_folder(
@@ -65,9 +65,9 @@ async def create_folder(request: web.Request):
 @permission_required("folder.read")
 @handle_plugin_requests_exceptions
 async def list_folders(request: web.Request):
-    req_ctx = FoldersRequestContext.parse_obj(request)
-    query_params: FolderListWithJsonStrQueryParams = parse_request_query_parameters_as(
-        FolderListWithJsonStrQueryParams, request
+    req_ctx = FoldersRequestContext.model_validate(request)
+    query_params: FoldersListQueryParams = parse_request_query_parameters_as(
+        FoldersListQueryParams, request
     )
 
     if not query_params.filters:
@@ -82,10 +82,10 @@ async def list_folders(request: web.Request):
         trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=parse_obj_as(OrderBy, query_params.order_by),
+        order_by=OrderBy.model_validate(query_params.order_by),
     )
 
-    page = Page[FolderGet].parse_obj(
+    page = Page[FolderGet].model_validate(
         paginate_data(
             chunk=folders.items,
             request_url=request.url,
@@ -95,7 +95,7 @@ async def list_folders(request: web.Request):
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
 
@@ -105,11 +105,9 @@ async def list_folders(request: web.Request):
 @permission_required("folder.read")
 @handle_plugin_requests_exceptions
 async def list_folders_full_search(request: web.Request):
-    req_ctx = FoldersRequestContext.parse_obj(request)
-    query_params: FolderListFullSearchWithJsonStrQueryParams = (
-        parse_request_query_parameters_as(
-            FolderListFullSearchWithJsonStrQueryParams, request
-        )
+    req_ctx = FoldersRequestContext.model_validate(request)
+    query_params: FolderSearchQueryParams = parse_request_query_parameters_as(
+        FolderSearchQueryParams, request
     )
 
     if not query_params.filters:
@@ -123,10 +121,10 @@ async def list_folders_full_search(request: web.Request):
         trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=parse_obj_as(OrderBy, query_params.order_by),
+        order_by=TypeAdapter(OrderBy).validate_python(query_params.order_by),
     )
 
-    page = Page[FolderGet].parse_obj(
+    page = Page[FolderGet].model_validate(
         paginate_data(
             chunk=folders.items,
             request_url=request.url,
@@ -136,7 +134,7 @@ async def list_folders_full_search(request: web.Request):
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
 
@@ -146,7 +144,7 @@ async def list_folders_full_search(request: web.Request):
 @permission_required("folder.read")
 @handle_plugin_requests_exceptions
 async def get_folder(request: web.Request):
-    req_ctx = FoldersRequestContext.parse_obj(request)
+    req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
 
     folder: FolderGet = await _folders_api.get_folder(
@@ -167,7 +165,7 @@ async def get_folder(request: web.Request):
 @permission_required("folder.update")
 @handle_plugin_requests_exceptions
 async def replace_folder(request: web.Request):
-    req_ctx = FoldersRequestContext.parse_obj(request)
+    req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
     body_params = await parse_request_body_as(PutFolderBodyParams, request)
 
@@ -190,7 +188,7 @@ async def replace_folder(request: web.Request):
 @permission_required("folder.delete")
 @handle_plugin_requests_exceptions
 async def delete_folder_group(request: web.Request):
-    req_ctx = FoldersRequestContext.parse_obj(request)
+    req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
 
     await _folders_api.delete_folder(

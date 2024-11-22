@@ -32,7 +32,7 @@ from simcore_service_webserver.socketio.models import WebSocketNodeProgress
                 node_id=UUID("6925403d-5464-4d92-9ec9-72c5793ca203"),
                 progress_type=ProgressType.SERVICE_OUTPUTS_PULLING,
                 report=ProgressReport(actual_value=0.4, total=1),
-            ).json(),
+            ).model_dump_json(),
             SocketMessageDict(
                 event_type=WebSocketNodeProgress.get_event_type(),
                 data={
@@ -56,7 +56,7 @@ from simcore_service_webserver.socketio.models import WebSocketNodeProgress
                 user_id=123,
                 progress_type=ProgressType.PROJECT_CLOSING,
                 report=ProgressReport(actual_value=0.4, total=1),
-            ).json(),
+            ).model_dump_json(),
             SocketMessageDict(
                 event_type=WebSocketNodeProgress.get_event_type(),
                 data={

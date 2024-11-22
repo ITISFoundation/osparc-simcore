@@ -13,9 +13,14 @@ projects_tags = sa.Table(
     sa.Column(
         "project_id",
         sa.BigInteger,
-        sa.ForeignKey(projects.c.id, onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
-        doc="NOTE that project.c.id != project.c.uuid",
+        sa.ForeignKey(
+            projects.c.id,
+            onupdate="CASCADE",
+            ondelete="SET NULL",
+            name="project_tags_project_id_fkey",
+        ),
+        nullable=True,  # <-- NULL means that project was deleted
+        doc="NOTE that project.c.id != project.c.uuid. If project is deleted, we do not delete project in this table, we just set this column to NULL. Why? Because the `project_uuid_for_rut` is still used by resource usage tracker",
     ),
     sa.Column(
         "tag_id",
@@ -23,5 +28,12 @@ projects_tags = sa.Table(
         sa.ForeignKey(tags.c.id, onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     ),
-    sa.UniqueConstraint("project_id", "tag_id"),
+    sa.Column(
+        "project_uuid_for_rut",
+        sa.String,
+        nullable=False,
+    ),
+    sa.UniqueConstraint(
+        "project_uuid_for_rut", "tag_id", name="project_tags_project_uuid_unique"
+    ),
 )

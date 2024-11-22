@@ -24,7 +24,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
@@ -79,7 +79,7 @@ def _add_to_dict(dict_data: dict, entries: list[tuple[str, Any]]) -> None:
 
 
 def _get_node_get_with(state: str, node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGet:
-    dict_data = deepcopy(NodeGet.Config.schema_extra["examples"][1])
+    dict_data = deepcopy(NodeGet.model_config["json_schema_extra"]["examples"][1])
     _add_to_dict(
         dict_data,
         [
@@ -87,13 +87,15 @@ def _get_node_get_with(state: str, node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGe
             ("service_uuid", f"{node_id}"),
         ],
     )
-    return NodeGet.parse_obj(dict_data)
+    return TypeAdapter(NodeGet).validate_python(dict_data)
 
 
 def _get_dynamic_service_get_legacy_with(
     state: str, node_id: NodeID = _DEFAULT_NODE_ID
 ) -> DynamicServiceGet:
-    dict_data = deepcopy(DynamicServiceGet.Config.schema_extra["examples"][0])
+    dict_data = deepcopy(
+        DynamicServiceGet.model_config["json_schema_extra"]["examples"][0]
+    )
     _add_to_dict(
         dict_data,
         [
@@ -102,13 +104,15 @@ def _get_dynamic_service_get_legacy_with(
             ("node_uuid", f"{node_id}"),
         ],
     )
-    return DynamicServiceGet.parse_obj(dict_data)
+    return TypeAdapter(DynamicServiceGet).validate_python(dict_data)
 
 
 def _get_dynamic_service_get_new_style_with(
     state: str, node_id: NodeID = _DEFAULT_NODE_ID
 ) -> DynamicServiceGet:
-    dict_data = deepcopy(DynamicServiceGet.Config.schema_extra["examples"][1])
+    dict_data = deepcopy(
+        DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
+    )
     _add_to_dict(
         dict_data,
         [
@@ -117,18 +121,18 @@ def _get_dynamic_service_get_new_style_with(
             ("node_uuid", f"{node_id}"),
         ],
     )
-    return DynamicServiceGet.parse_obj(dict_data)
+    return TypeAdapter(DynamicServiceGet).validate_python(dict_data)
 
 
 def _get_node_get_idle(node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGetIdle:
-    dict_data = NodeGetIdle.Config.schema_extra["example"]
+    dict_data = NodeGetIdle.model_config["json_schema_extra"]["example"]
     _add_to_dict(
         dict_data,
         [
             ("service_uuid", f"{node_id}"),
         ],
     )
-    return NodeGetIdle.parse_obj(dict_data)
+    return TypeAdapter(NodeGetIdle).validate_python(dict_data)
 
 
 class _ResponseTimeline:
@@ -219,10 +223,12 @@ async def mock_director_v2_status(
         if isinstance(service_status, NodeGet):
             return Response(
                 status.HTTP_200_OK,
-                text=json.dumps(jsonable_encoder({"data": service_status.dict()})),
+                text=json.dumps(
+                    jsonable_encoder({"data": service_status.model_dump()})
+                ),
             )
         if isinstance(service_status, DynamicServiceGet):
-            return Response(status.HTTP_200_OK, text=service_status.json())
+            return Response(status.HTTP_200_OK, text=service_status.model_dump_json())
         if isinstance(service_status, NodeGetIdle):
             return Response(status.HTTP_404_NOT_FOUND)
 

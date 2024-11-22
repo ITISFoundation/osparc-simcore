@@ -4,6 +4,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from typing import Callable
 
 import arrow
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -12,7 +13,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
-from models_library.clusters import DEFAULT_CLUSTER_ID, BaseCluster
+from models_library.clusters import DEFAULT_CLUSTER_ID, BaseCluster, ClusterID
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -27,7 +28,7 @@ from ...core.errors import (
     ComputationalBackendOnDemandNotReadyError,
     TaskSchedulingError,
 )
-from ...models.comp_runs import RunMetadataDict
+from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...models.dask_subsystem import DaskClientTaskState
 from ...utils.comp_scheduler import Iteration, get_resource_tracking_run_id
@@ -49,7 +50,7 @@ from ..dask_clients_pool import DaskClientsPool
 from ..db.repositories.clusters import ClustersRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
-from ._base_scheduler import BaseCompScheduler, ScheduledPipelineParams
+from ._base_scheduler import BaseCompScheduler
 
 _logger = logging.getLogger(__name__)
 
@@ -69,19 +70,22 @@ _DASK_CLIENT_TASK_STATE_TO_RUNNING_STATE_MAP: dict[
 @asynccontextmanager
 async def _cluster_dask_client(
     user_id: UserID,
-    pipeline_params: ScheduledPipelineParams,
     scheduler: "DaskScheduler",
+    *,
+    use_on_demand_clusters: bool,
+    cluster_id: ClusterID,
+    run_metadata: RunMetadataDict,
 ) -> AsyncIterator[DaskClient]:
     cluster: BaseCluster = scheduler.settings.default_cluster
-    if pipeline_params.use_on_demand_clusters:
+    if use_on_demand_clusters:
         cluster = await get_or_create_on_demand_cluster(
             scheduler.rabbitmq_rpc_client,
             user_id=user_id,
-            wallet_id=pipeline_params.run_metadata.get("wallet_id"),
+            wallet_id=run_metadata.get("wallet_id"),
         )
-    if pipeline_params.cluster_id != DEFAULT_CLUSTER_ID:
+    if cluster_id != DEFAULT_CLUSTER_ID:
         clusters_repo = ClustersRepository.instance(scheduler.db_engine)
-        cluster = await clusters_repo.get_cluster(user_id, pipeline_params.cluster_id)
+        cluster = await clusters_repo.get_cluster(user_id, cluster_id)
     async with scheduler.dask_clients_pool.acquire(cluster) as client:
         yield client
 
@@ -104,10 +108,21 @@ class DaskScheduler(BaseCompScheduler):
         user_id: UserID,
         project_id: ProjectID,
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
-        pipeline_params: ScheduledPipelineParams,
+        comp_run: CompRunsAtDB,
+        wake_up_callback: Callable[[], None],
     ) -> None:
         # now transfer the pipeline to the dask scheduler
-        async with _cluster_dask_client(user_id, pipeline_params, self) as client:
+        async with _cluster_dask_client(
+            user_id,
+            self,
+            use_on_demand_clusters=comp_run.use_on_demand_clusters,
+            cluster_id=(
+                comp_run.cluster_id
+                if comp_run.cluster_id is not None
+                else DEFAULT_CLUSTER_ID
+            ),
+            run_metadata=comp_run.metadata,
+        ) as client:
             # Change the tasks state to PENDING
             comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
             await comp_tasks_repo.update_project_tasks_state(
@@ -121,11 +136,15 @@ class DaskScheduler(BaseCompScheduler):
                     client.send_computation_tasks(
                         user_id=user_id,
                         project_id=project_id,
-                        cluster_id=pipeline_params.cluster_id,
+                        cluster_id=(
+                            comp_run.cluster_id
+                            if comp_run.cluster_id is not None
+                            else DEFAULT_CLUSTER_ID
+                        ),
                         tasks={node_id: task.image},
                         hardware_info=task.hardware_info,
-                        callback=self._wake_up_scheduler_now,
-                        metadata=pipeline_params.run_metadata,
+                        callback=wake_up_callback,
+                        metadata=comp_run.metadata,
                     )
                     for node_id, task in scheduled_tasks.items()
                 ),
@@ -146,10 +165,20 @@ class DaskScheduler(BaseCompScheduler):
         self,
         user_id: UserID,
         tasks: list[CompTaskAtDB],
-        pipeline_params: ScheduledPipelineParams,
+        comp_run: CompRunsAtDB,
     ) -> list[RunningState]:
         try:
-            async with _cluster_dask_client(user_id, pipeline_params, self) as client:
+            async with _cluster_dask_client(
+                user_id,
+                self,
+                use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                cluster_id=(
+                    comp_run.cluster_id
+                    if comp_run.cluster_id is not None
+                    else DEFAULT_CLUSTER_ID
+                ),
+                run_metadata=comp_run.metadata,
+            ) as client:
                 tasks_statuses = await client.get_tasks_status(
                     [f"{t.job_id}" for t in tasks]
                 )
@@ -177,14 +206,21 @@ class DaskScheduler(BaseCompScheduler):
             return [RunningState.WAITING_FOR_CLUSTER] * len(tasks)
 
     async def _stop_tasks(
-        self,
-        user_id: UserID,
-        tasks: list[CompTaskAtDB],
-        pipeline_params: ScheduledPipelineParams,
+        self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
     ) -> None:
         # NOTE: if this exception raises, it means the backend was anyway not up
         with contextlib.suppress(ComputationalBackendOnDemandNotReadyError):
-            async with _cluster_dask_client(user_id, pipeline_params, self) as client:
+            async with _cluster_dask_client(
+                user_id,
+                self,
+                use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                cluster_id=(
+                    comp_run.cluster_id
+                    if comp_run.cluster_id is not None
+                    else DEFAULT_CLUSTER_ID
+                ),
+                run_metadata=comp_run.metadata,
+            ) as client:
                 await asyncio.gather(
                     *[
                         client.abort_computation_task(t.job_id)
@@ -209,10 +245,20 @@ class DaskScheduler(BaseCompScheduler):
         user_id: UserID,
         tasks: list[CompTaskAtDB],
         iteration: Iteration,
-        pipeline_params: ScheduledPipelineParams,
+        comp_run: CompRunsAtDB,
     ) -> None:
         try:
-            async with _cluster_dask_client(user_id, pipeline_params, self) as client:
+            async with _cluster_dask_client(
+                user_id,
+                self,
+                use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                cluster_id=(
+                    comp_run.cluster_id
+                    if comp_run.cluster_id is not None
+                    else DEFAULT_CLUSTER_ID
+                ),
+                run_metadata=comp_run.metadata,
+            ) as client:
                 tasks_results = await asyncio.gather(
                     *[client.get_task_result(t.job_id or "undefined") for t in tasks],
                     return_exceptions=True,
@@ -220,13 +266,23 @@ class DaskScheduler(BaseCompScheduler):
             await asyncio.gather(
                 *[
                     self._process_task_result(
-                        task, result, pipeline_params.run_metadata, iteration
+                        task, result, comp_run.metadata, iteration
                     )
                     for task, result in zip(tasks, tasks_results, strict=True)
                 ]
             )
         finally:
-            async with _cluster_dask_client(user_id, pipeline_params, self) as client:
+            async with _cluster_dask_client(
+                user_id,
+                self,
+                use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                cluster_id=(
+                    comp_run.cluster_id
+                    if comp_run.cluster_id is not None
+                    else DEFAULT_CLUSTER_ID
+                ),
+                run_metadata=comp_run.metadata,
+            ) as client:
                 await asyncio.gather(
                     *[client.release_task_result(t.job_id) for t in tasks if t.job_id]
                 )
@@ -324,7 +380,7 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _task_progress_change_handler(self, event: str) -> None:
         with log_catch(_logger, reraise=False):
-            task_progress_event = TaskProgressEvent.parse_raw(event)
+            task_progress_event = TaskProgressEvent.model_validate_json(event)
             _logger.debug("received task progress update: %s", task_progress_event)
             user_id = task_progress_event.task_owner.user_id
             project_id = task_progress_event.task_owner.project_id
@@ -355,7 +411,7 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _task_log_change_handler(self, event: str) -> None:
         with log_catch(_logger, reraise=False):
-            task_log_event = TaskLogEvent.parse_raw(event)
+            task_log_event = TaskLogEvent.model_validate_json(event)
             _logger.debug("received task log update: %s", task_log_event)
             await publish_service_log(
                 self.rabbitmq_client,

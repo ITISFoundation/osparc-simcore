@@ -1,3 +1,7 @@
+annotated-types==0.7.0
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
 appdirs==1.4.4
@@ -154,11 +158,15 @@ py-partiql-parser==0.5.6
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==1.10.18
+pydantic==2.9.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
+pydantic-core==2.23.4
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 pyparsing==3.1.4
     # via moto
 pytest==8.3.3
@@ -196,7 +204,9 @@ python-dateutil==2.9.0.post0
     #   faker
     #   moto
 python-dotenv==1.0.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -274,6 +284,7 @@ typing-extensions==4.12.2
     #   flexparser
     #   pint
     #   pydantic
+    #   pydantic-core
     #   types-aioboto3
     #   types-aiobotocore
 urllib3==2.2.3

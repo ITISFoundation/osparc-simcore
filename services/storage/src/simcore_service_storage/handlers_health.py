@@ -8,9 +8,10 @@ import logging
 
 from aiohttp import web
 from aws_library.s3 import S3AccessError
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
-from models_library.utils.json_serialization import json_dumps
+from pydantic import TypeAdapter
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
@@ -30,13 +31,12 @@ async def get_health(request: web.Request) -> web.Response:
     assert request  # nosec
     return web.json_response(
         {
-            "data": HealthCheck.parse_obj(
-                {
-                    "name": PROJECT_NAME,
-                    "version": f"{VERSION}",
-                    "api_version": API_VERSION,
-                }
-            ).dict(**RESPONSE_MODEL_POLICY)
+            "data": HealthCheck(
+                name=PROJECT_NAME,
+                version=f"{VERSION}",
+                api_version=API_VERSION,
+                status=None,
+            ).model_dump(**RESPONSE_MODEL_POLICY)
         },
         dumps=json_dumps,
     )
@@ -53,7 +53,9 @@ async def get_status(request: web.Request) -> web.Response:
             s3_state = (
                 "connected"
                 if await get_s3_client(request.app).bucket_exists(
-                    bucket=S3BucketName(app_settings.STORAGE_S3.S3_BUCKET_NAME)
+                    bucket=TypeAdapter(S3BucketName).validate_python(
+                        app_settings.STORAGE_S3.S3_BUCKET_NAME
+                    )
                 )
                 else "no access to S3 bucket"
             )
@@ -66,7 +68,7 @@ async def get_status(request: web.Request) -> web.Response:
             "connected" if await is_pg_responsive(request.app) else "failed"
         )
 
-    status = AppStatusCheck.parse_obj(
+    status = AppStatusCheck.model_validate(
         {
             "app_name": PROJECT_NAME,
             "version": f"{VERSION}",
@@ -81,5 +83,5 @@ async def get_status(request: web.Request) -> web.Response:
     )
 
     return web.json_response(
-        {"data": status.dict(exclude_unset=True)}, dumps=json_dumps
+        {"data": status.model_dump(exclude_unset=True)}, dumps=json_dumps
     )

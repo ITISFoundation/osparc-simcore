@@ -106,8 +106,10 @@ def node_id(faker: Faker) -> NodeID:
 def mock_get_node_state(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_director_v2.cli._core._get_dy_service_state",
-        return_value=DynamicServiceGet.parse_obj(
-            RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
+        return_value=DynamicServiceGet.model_validate(
+            RunningDynamicServiceDetails.model_config["json_schema_extra"]["examples"][
+                0
+            ]
         ),
     )
 

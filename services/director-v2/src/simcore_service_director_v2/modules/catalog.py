@@ -8,27 +8,38 @@ from fastapi import FastAPI, HTTPException, status
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from settings_library.catalog import CatalogSettings
+from settings_library.tracing import TracingSettings
 
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI, settings: CatalogSettings) -> None:
-    if not settings:
-        settings = CatalogSettings()
+def setup(
+    app: FastAPI,
+    catalog_settings: CatalogSettings | None,
+    tracing_settings: TracingSettings | None,
+) -> None:
+
+    if not catalog_settings:
+        catalog_settings = CatalogSettings()
 
     async def on_startup() -> None:
+        client = httpx.AsyncClient(
+            base_url=f"{catalog_settings.api_base_url}",
+            timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
+        )
+        if tracing_settings:
+            setup_httpx_client_tracing(client=client)
+
         CatalogClient.create(
             app,
-            client=httpx.AsyncClient(
-                base_url=f"{settings.api_base_url}",
-                timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
-            ),
+            client=client,
         )
-        logger.debug("created client for catalog: %s", settings.api_base_url)
+        logger.debug("created client for catalog: %s", catalog_settings.api_base_url)
 
         # Here we currently do not ensure the catalog is up on start
         # This will need to be assessed.
@@ -90,9 +101,9 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            json_response: ServiceResourcesDict = parse_obj_as(
-                ServiceResourcesDict, resp.json()
-            )
+            json_response: ServiceResourcesDict = TypeAdapter(
+                ServiceResourcesDict
+            ).validate_python(resp.json())
             return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 

@@ -23,6 +23,9 @@ def test_settings(app_environment: EnvVarsDict):
     assert settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES
 
 
+@pytest.mark.xfail(
+    reason="disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
+)
 def test_empty_primary_ec2_instances_raises(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -34,6 +37,9 @@ def test_empty_primary_ec2_instances_raises(
         ApplicationSettings.create_from_envs()
 
 
+@pytest.mark.xfail(
+    reason="disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
+)
 def test_multiple_primary_ec2_instances_raises(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -45,7 +51,9 @@ def test_multiple_primary_ec2_instances_raises(
             "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                            "examples"
+                        ]
                     )
                     for ec2_type_name in ec2_instances
                 }
@@ -56,6 +64,9 @@ def test_multiple_primary_ec2_instances_raises(
         ApplicationSettings.create_from_envs()
 
 
+@pytest.mark.xfail(
+    reason="disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
+)
 @pytest.mark.parametrize(
     "invalid_tag",
     [

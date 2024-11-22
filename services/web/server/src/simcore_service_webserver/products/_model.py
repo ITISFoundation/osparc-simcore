@@ -1,9 +1,9 @@
 import logging
+import re
 import string
 from typing import (  # noqa: UP035 # pydantic does not validate with re.Pattern
+    Annotated,
     Any,
-    ClassVar,
-    Pattern,
 )
 
 from models_library.basic_regex import (
@@ -14,7 +14,15 @@ from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, Extra, Field, PositiveInt, validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    field_serializer,
+    field_validator,
+)
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
@@ -40,19 +48,20 @@ class Product(BaseModel):
     SEE descriptions in packages/postgres-database/src/simcore_postgres_database/models/products.py
     """
 
-    name: ProductName = Field(regex=PUBLIC_VARIABLE_NAME_RE)
+    name: ProductName = Field(pattern=PUBLIC_VARIABLE_NAME_RE, validate_default=True)
 
-    display_name: str = Field(..., description="Long display name")
+    display_name: Annotated[str, Field(..., description="Long display name")]
     short_name: str | None = Field(
         None,
-        regex=TWILIO_ALPHANUMERIC_SENDER_ID_RE,
+        pattern=re.compile(TWILIO_ALPHANUMERIC_SENDER_ID_RE),
         min_length=2,
         max_length=11,
         description="Short display name for SMS",
     )
 
-    host_regex: Pattern = Field(..., description="Host regex")
-    # NOTE: typing.Pattern is supported but not re.Pattern (SEE https://github.com/pydantic/pydantic/pull/4366)
+    host_regex: Annotated[re.Pattern, BeforeValidator(str.strip)] = Field(
+        ..., description="Host regex"
+    )
 
     support_email: LowerCaseEmailStr = Field(
         ...,
@@ -82,7 +91,7 @@ class Product(BaseModel):
     )
 
     registration_email_template: str | None = Field(
-        None, x_template_name="registration_email"
+        None, json_schema_extra={"x_template_name": "registration_email"}
     )
 
     max_open_studies_per_user: PositiveInt | None = Field(
@@ -109,7 +118,7 @@ class Product(BaseModel):
         description="Price of the credits in this product given in credit/USD. None for free product.",
     )
 
-    @validator("*", pre=True)
+    @field_validator("*", mode="before")
     @classmethod
     def _parse_empty_string_as_null(cls, v):
         """Safe measure: database entries are sometimes left blank instead of null"""
@@ -117,7 +126,7 @@ class Product(BaseModel):
             return None
         return v
 
-    @validator("name", pre=True, always=True)
+    @field_validator("name", mode="before")
     @classmethod
     def _validate_name(cls, v):
         if v not in FRONTEND_APPS_AVAILABLE:
@@ -125,27 +134,23 @@ class Product(BaseModel):
             raise ValueError(msg)
         return v
 
-    @validator("host_regex", pre=True)
-    @classmethod
-    def _strip_whitespaces(cls, v):
-        if v and isinstance(v, str):
-            # Prevents unintended leading & trailing spaces when added
-            # manually in the database
-            return v.strip()
+    @field_serializer("issues", "vendor")
+    @staticmethod
+    def _preserve_snake_case(v: Any) -> Any:
         return v
 
     @property
     def twilio_alpha_numeric_sender_id(self) -> str:
         return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
 
-    class Config:
-        alias_generator = snake_to_camel  # to export
-        allow_population_by_field_name = True
-        anystr_strip_whitespace = True
-        extra = Extra.ignore
-        frozen = True  # read-only
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        str_strip_whitespace=True,
+        frozen=True,
+        from_attributes=True,
+        extra="ignore",
+        json_schema_extra={
             "examples": [
                 {
                     # fake mandatory
@@ -234,7 +239,8 @@ class Product(BaseModel):
                     "is_payment_enabled": False,
                 },
             ]
-        }
+        },
+    )
 
     #  helpers ----
 
@@ -247,7 +253,7 @@ class Product(BaseModel):
 
         # SECURITY WARNING: do not expose sensitive information here
         # keys will be named as e.g. displayName, supportEmail, ...
-        return self.dict(
+        return self.model_dump(
             include={
                 "display_name": True,
                 "support_email": True,
@@ -266,8 +272,11 @@ class Product(BaseModel):
     def get_template_name_for(self, filename: str) -> str | None:
         """Checks for field marked with 'x_template_name' that fits the argument"""
         template_name = filename.removesuffix(".jinja2")
-        for field in self.__fields__.values():
-            if field.field_info.extra.get("x_template_name") == template_name:
-                template_name_attribute: str = getattr(self, field.name)
+        for name, field in self.model_fields.items():
+            if (
+                field.json_schema_extra
+                and field.json_schema_extra.get("x_template_name") == template_name  # type: ignore[union-attr]
+            ):
+                template_name_attribute: str = getattr(self, name)
                 return template_name_attribute
         return None

@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
-from pydantic import SecretStr, validator
+from pydantic import SecretStr, field_validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
@@ -188,7 +188,7 @@ class ChangePasswordBody(InputSchema):
     new: SecretStr
     confirm: SecretStr
 
-    _password_confirm_match = validator("confirm", allow_reuse=True)(
+    _password_confirm_match = field_validator("confirm")(
         create_password_match_validator(reference_field="new")
     )
 

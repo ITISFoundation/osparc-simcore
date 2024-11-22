@@ -1,7 +1,8 @@
 import logging
 import re
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
+from common_library.errors_classes import OsparcErrorMixin
 from models_library.projects_nodes import UnitStr
 from models_library.utils.json_schema import (
     JsonSchemaValidationError,
@@ -9,9 +10,8 @@ from models_library.utils.json_schema import (
     jsonschema_validate_schema,
 )
 from pint import PintError, UnitRegistry
-from pydantic.errors import PydanticValueError
 
-JsonSchemaDict = Dict[str, Any]
+JsonSchemaDict = dict[str, Any]
 
 log = logging.getLogger(__name__)
 
@@ -22,8 +22,7 @@ log = logging.getLogger(__name__)
 #  - Use 'code' to discriminate port_validation errors
 
 
-class PortValueError(PydanticValueError):
-    code = "port_validation.schema_error"
+class PortValueError(OsparcErrorMixin, ValueError):
     msg_template = "Invalid value in port {port_key!r}: {schema_error_message}"
 
     # pylint: disable=useless-super-delegation
@@ -37,8 +36,7 @@ class PortValueError(PydanticValueError):
         )
 
 
-class PortUnitError(PydanticValueError):
-    code = "port_validation.unit_error"
+class PortUnitError(OsparcErrorMixin, ValueError):
     msg_template = "Invalid unit in port {port_key!r}: {pint_error_msg}"
 
     # pylint: disable=useless-super-delegation
@@ -72,7 +70,7 @@ def _validate_port_value(value, content_schema: JsonSchemaDict):
 
 def _validate_port_unit(
     value, unit, content_schema: JsonSchemaDict, *, ureg: UnitRegistry
-) -> Tuple[Any, Optional[UnitStr]]:
+) -> tuple[Any, UnitStr | None]:
     """
     - Checks valid 'value' against content_schema
     - Converts 'value' with 'unit' to unit expected in content_schema
@@ -101,7 +99,7 @@ def _validate_port_unit(
 def validate_port_content(
     port_key,
     value: Any,
-    unit: Optional[UnitStr],
+    unit: UnitStr | None,
     content_schema: JsonSchemaDict,
 ):
     """A port content is all datasets injected to a given port. Currently only

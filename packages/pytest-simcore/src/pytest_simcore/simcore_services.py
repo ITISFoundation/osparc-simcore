@@ -116,11 +116,11 @@ class ServiceHealthcheckEndpoint:
 def services_endpoint(
     core_services_selection: list[str],
     docker_stack: dict,
-    testing_environ_vars: EnvVarsDict,
+    env_vars_for_docker_compose: EnvVarsDict,
 ) -> dict[str, URL]:
     services_endpoint = {}
 
-    stack_name = testing_environ_vars["SWARM_STACK_NAME"]
+    stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     for service in core_services_selection:
         service = _SERVICE_NAME_REPLACEMENTS.get(service, service)
         assert f"{stack_name}_{service}" in docker_stack["services"]

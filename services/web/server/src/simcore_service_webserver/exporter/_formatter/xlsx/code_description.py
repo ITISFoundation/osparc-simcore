@@ -28,8 +28,8 @@ class RRIDEntry(BaseModel):
 
 class TSREntry(BaseModel):
     references: list[str]
-    target_level: int | None  # max value allowed
-    current_level: int | None  # current selection
+    target_level: int | None = None  # max value allowed
+    current_level: int | None = None  # current selection
 
 
 class CodeDescriptionModel(BaseModel):

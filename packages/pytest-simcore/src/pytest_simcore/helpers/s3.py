@@ -8,14 +8,14 @@ import orjson
 from aiohttp import ClientSession
 from aws_library.s3 import MultiPartUploadLinks
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.utils import limited_as_completed, logged_gather
 from types_aiobotocore_s3 import S3Client
 
 from .logging_tools import log_context
 
-_SENDER_CHUNK_SIZE: Final[int] = parse_obj_as(ByteSize, "16Mib")
+_SENDER_CHUNK_SIZE: Final[int] = TypeAdapter(ByteSize).validate_python("16Mib")
 
 
 async def _file_sender(
@@ -51,7 +51,7 @@ async def upload_file_part(
         f"--> uploading {this_file_chunk_size=} of {file=}, [{part_index+1}/{num_parts}]..."
     )
     response = await session.put(
-        upload_url,
+        str(upload_url),
         data=_file_sender(
             file,
             offset=file_offset,

@@ -6,7 +6,7 @@ from models_library.callbacks_mapping import (
     TIMEOUT_MIN,
     CallbacksMapping,
 )
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 
 
 def _format_with_timeout(timeout: float) -> dict[str, Any]:
@@ -20,8 +20,10 @@ def test_inactivity_time_out_is_max_capped():
         INACTIVITY_TIMEOUT_CAP - 1,
         INACTIVITY_TIMEOUT_CAP,
     ]:
-        parse_obj_as(CallbacksMapping, _format_with_timeout(in_bounds))
+        TypeAdapter(CallbacksMapping).validate_python(_format_with_timeout(in_bounds))
 
     for out_of_bounds in [INACTIVITY_TIMEOUT_CAP + 1, TIMEOUT_MIN - 1]:
         with pytest.raises(ValidationError):
-            parse_obj_as(CallbacksMapping, _format_with_timeout(out_of_bounds))
+            TypeAdapter(CallbacksMapping).validate_python(
+                _format_with_timeout(out_of_bounds)
+            )

@@ -1,9 +1,13 @@
 from hypothesis import provisional
 from hypothesis import strategies as st
-from pydantic import AnyHttpUrl, AnyUrl, HttpUrl
+from hypothesis.strategies import composite
+from pydantic import TypeAdapter
+from pydantic_core import Url
 
-# FIXME: For now it seems the pydantic hypothesis plugin does not provide strategies for these types.
-# therefore we currently provide it
-st.register_type_strategy(AnyUrl, provisional.urls())
-st.register_type_strategy(HttpUrl, provisional.urls())
-st.register_type_strategy(AnyHttpUrl, provisional.urls())
+
+@composite
+def url_strategy(draw):
+    return TypeAdapter(Url).validate_python(draw(provisional.urls()))
+
+
+st.register_type_strategy(Url, url_strategy())

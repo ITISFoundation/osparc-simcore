@@ -3,9 +3,16 @@
 """
 
 from enum import Enum, unique
-from typing import Any, ClassVar
+from typing import Annotated
 
-from pydantic import BaseModel, Extra, Field, root_validator, validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from .projects_access import Owner
 
@@ -59,13 +66,14 @@ class ProjectLocked(BaseModel):
     value: bool = Field(..., description="True if the project is locked")
     status: ProjectStatus = Field(..., description="The status of the project")
     owner: Owner | None = Field(
-        default=None, description="If locked, the user that owns the lock"
+        default=None,
+        description="If locked, the user that owns the lock",
+        validate_default=True,
     )
-
-    class Config:
-        extra = Extra.forbid
-        use_enum_values = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=True,
+        json_schema_extra={
             "examples": [
                 {"value": False, "status": ProjectStatus.CLOSED},
                 {
@@ -78,20 +86,21 @@ class ProjectLocked(BaseModel):
                     },
                 },
             ]
-        }
+        },
+    )
 
-    @validator("status", always=True)
+    @field_validator("status", mode="after")
     @classmethod
-    def check_status_compatible(cls, v, values):
-        if values["value"] is False and v not in ["CLOSED", "OPENED"]:
-            msg = f"status is set to {v} and lock is set to {values['value']}!"
+    def check_status_compatible(cls, v, info: ValidationInfo):
+        if info.data["value"] is False and v not in ["CLOSED", "OPENED"]:
+            msg = f"status is set to {v} and lock is set to {info.data['value']}!"
             raise ValueError(msg)
-        if values["value"] is True and v == "CLOSED":
-            msg = f"status is set to {v} and lock is set to {values['value']}!"
+        if info.data["value"] is True and v == "CLOSED":
+            msg = f"status is set to {v} and lock is set to {info.data['value']}!"
             raise ValueError(msg)
         return v
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def check_owner_compatible(cls, values):
         if (
@@ -114,13 +123,11 @@ class ProjectRunningState(BaseModel):
         ..., description="The running state of the project", examples=["STARTED"]
     )
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class ProjectState(BaseModel):
-    locked: ProjectLocked = Field(..., description="The project lock state")
+    locked: Annotated[ProjectLocked, Field(..., description="The project lock state")]
     state: ProjectRunningState = Field(..., description="The project running state")
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")

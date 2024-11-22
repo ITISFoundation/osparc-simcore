@@ -1,7 +1,6 @@
 import logging
 
 from models_library.api_schemas_catalog.services import ServiceGetV2, ServiceUpdateV2
-from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt
 from models_library.services_access import ServiceGroupAccessRightsV2
@@ -9,7 +8,7 @@ from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import HttpUrl, NonNegativeInt, parse_obj_as
+from pydantic import HttpUrl, NonNegativeInt
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
@@ -41,28 +40,20 @@ def _db_to_api_model(
         key=service_db.key,
         version=service_db.version,
         name=service_db.name,
-        thumbnail=(
-            parse_obj_as(HttpUrl, service_db.thumbnail)
-            if service_db.thumbnail
-            else None
-        ),
+        thumbnail=HttpUrl(service_db.thumbnail) if service_db.thumbnail else None,
         description=service_db.description,
         description_ui=service_db.description_ui,
         version_display=service_db.version_display,
         type=service_manifest.service_type,
         contact=service_manifest.contact,
         authors=service_manifest.authors,
-        owner=(
-            LowerCaseEmailStr(service_db.owner_email)
-            if service_db.owner_email
-            else None
-        ),
+        owner=(service_db.owner_email if service_db.owner_email else None),
         inputs=service_manifest.inputs or {},
         outputs=service_manifest.outputs or {},
         boot_options=service_manifest.boot_options,
         min_visible_inputs=service_manifest.min_visible_inputs,
         access_rights={
-            a.gid: ServiceGroupAccessRightsV2.construct(
+            a.gid: ServiceGroupAccessRightsV2.model_construct(
                 execute=a.execute_access,
                 write=a.write_access,
             )
@@ -71,7 +62,7 @@ def _db_to_api_model(
         classifiers=service_db.classifiers,
         quality=service_db.quality,
         history=[
-            ServiceRelease.construct(
+            ServiceRelease.model_construct(
                 version=h.version,
                 version_display=h.version_display,
                 released=h.created,
@@ -251,7 +242,7 @@ async def update_service(
         ServiceMetaDataAtDB(
             key=service_key,
             version=service_version,
-            **update.dict(exclude_unset=True),
+            **update.model_dump(exclude_unset=True),
         )
     )
 

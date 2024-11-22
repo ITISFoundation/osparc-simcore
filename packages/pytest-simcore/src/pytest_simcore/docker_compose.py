@@ -45,10 +45,13 @@ def temp_folder(
 
 
 @pytest.fixture(scope="session")
-def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
+def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
     """
-    Loads and extends .env-devel returning
-    all environment variables key=value
+    Loads and extends .env-devel returning all environment variables key=value
+
+
+    NOTE: that these are then env-vars used in the services started in the
+    integration tests!
     """
     env_devel = dotenv_values(
         env_devel_file,
@@ -73,16 +76,29 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
 
     env_devel[
         "AIOCACHE_DISABLE"
-    ] = "1"  # ensure that aio-caches are disabled for testing [https://aiocache.readthedocs.io/en/latest/testing.html]
+        # ensure that aio-caches are disabled for testing [https://aiocache.readthedocs.io/en/latest/testing.html]
+    ] = "1"
     env_devel[
         "CATALOG_BACKGROUND_TASK_REST_TIME"
-    ] = "1"  # ensure catalog refreshes services access rights fast
+        # ensure catalog refreshes services access rights fast
+    ] = "1"
 
+    # TRACING
+    #  NOTE: should go away with pydantic v2
+    env_devel["TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT"] = "null"
+    env_devel["TRACING_OPENTELEMETRY_COLLECTOR_PORT"] = "null"
+
+    # DIRECTOR
     env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
+    # NOTE: this will make TracingSettings fail and therefore the default factory of every *_TRACING field will be set to None
+
+    # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
+    env_devel["DIRECTOR_DEFAULT_MAX_MEMORY"] = "268435456"
+    env_devel["DIRECTOR_DEFAULT_MAX_NANO_CPUS"] = "10000000"
+    env_devel["DIRECTOR_LOGLEVEL"] = "DEBUG"
+    env_devel["REGISTRY_PATH"] = "127.0.0.1:5000"
+
     env_devel.setdefault("DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS", "")
-    env_devel.setdefault("DIRECTOR_SELF_SIGNED_SSL_SECRET_ID", "")
-    env_devel.setdefault("DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME", "")
-    env_devel.setdefault("DIRECTOR_SELF_SIGNED_SSL_FILENAME", "")
 
     env_devel["API_SERVER_DEV_FEATURES_ENABLED"] = "1"
 
@@ -94,13 +110,37 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     # ensure we do not use the bucket of simcore or so
     env_devel["S3_BUCKET_NAME"] = "pytestbucket"
 
+    # ensure OpenTelemetry is not enabled
+    env_devel |= {
+        tracing_setting: "null"
+        for tracing_setting in (
+            "AGENT_TRACING",
+            "API_SERVER_TRACING",
+            "AUTOSCALING_TRACING",
+            "CATALOG_TRACING",
+            "CLUSTERS_KEEPER_TRACING",
+            "DATCORE_ADAPTER_TRACING",
+            "DIRECTOR_TRACING",
+            "DIRECTOR_V2_TRACING",
+            "DYNAMIC_SCHEDULER_TRACING",
+            "EFS_GUARDIAN_TRACING",
+            "INVITATIONS_TRACING",
+            "PAYMENTS_TRACING",
+            "RESOURCE_USAGE_TRACKER_TRACING",
+            "STORAGE_TRACING",
+            "WB_DB_EL_TRACING",
+            "WB_GC_TRACING",
+            "WEBSERVER_TRACING",
+        )
+    }
+
     return {key: value for key, value in env_devel.items() if value is not None}
 
 
 @pytest.fixture(scope="module")
-def env_file_for_testing(
+def env_file_for_docker_compose(
     temp_folder: Path,
-    testing_environ_vars: dict[str, str],
+    env_vars_for_docker_compose: EnvVarsDict,
     osparc_simcore_root_dir: Path,
 ) -> Iterator[Path]:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file
@@ -117,7 +157,7 @@ def env_file_for_testing(
             f"# Auto-generated from env_file_for_testing in {__file__}",
             file=fh,
         )
-        for key, value in sorted(testing_environ_vars.items()):
+        for key, value in sorted(env_vars_for_docker_compose.items()):
             # NOTE: python-dotenv parses JSON encoded strings correctly, but
             # writing them back shows an issue. if the original ENV is something like MY_ENV='{"correct": "encodedjson"}'
             # it goes to MY_ENV={"incorrect": "encodedjson"}!
@@ -146,7 +186,7 @@ def env_file_for_testing(
 def simcore_docker_compose(
     osparc_simcore_root_dir: Path,
     osparc_simcore_scripts_dir: Path,
-    env_file_for_testing: Path,
+    env_file_for_docker_compose: Path,
     temp_folder: Path,
 ) -> dict[str, Any]:
     """Resolves docker-compose for simcore stack in local host
@@ -156,7 +196,7 @@ def simcore_docker_compose(
     COMPOSE_FILENAMES = ["docker-compose.yml", "docker-compose.local.yml"]
 
     # ensures .env at git_root_dir
-    assert env_file_for_testing.exists()
+    assert env_file_for_docker_compose.exists()
 
     # target docker compose path
     docker_compose_paths = [
@@ -171,7 +211,7 @@ def simcore_docker_compose(
         project_dir=osparc_simcore_root_dir / "services",
         scripts_dir=osparc_simcore_scripts_dir,
         docker_compose_paths=docker_compose_paths,
-        env_file_path=env_file_for_testing,
+        env_file_path=env_file_for_docker_compose,
         destination_path=temp_folder / "simcore_docker_compose.yml",
     )
 
@@ -180,7 +220,7 @@ def simcore_docker_compose(
 def ops_docker_compose(
     osparc_simcore_root_dir: Path,
     osparc_simcore_scripts_dir: Path,
-    env_file_for_testing: Path,
+    env_file_for_docker_compose: Path,
     temp_folder: Path,
 ) -> dict[str, Any]:
     """Filters only services in docker-compose-ops.yml and returns yaml data
@@ -188,7 +228,7 @@ def ops_docker_compose(
     Produces same as  `make .stack-ops.yml` in a temporary folder
     """
     # ensures .env at git_root_dir, which will be used as current directory
-    assert env_file_for_testing.exists()
+    assert env_file_for_docker_compose.exists()
 
     # target docker compose path
     docker_compose_path = (
@@ -200,7 +240,7 @@ def ops_docker_compose(
         project_dir=osparc_simcore_root_dir / "services",
         scripts_dir=osparc_simcore_scripts_dir,
         docker_compose_paths=docker_compose_path,
-        env_file_path=env_file_for_testing,
+        env_file_path=env_file_for_docker_compose,
         destination_path=temp_folder / "ops_docker_compose.yml",
     )
 

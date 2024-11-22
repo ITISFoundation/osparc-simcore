@@ -58,7 +58,7 @@ async def test_moving_between_workspaces_user_role_permissions(
     base_url = client.app.router["replace_project_workspace"].url_for(
         project_id=fake_project["uuid"], workspace_id="null"
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     await assert_status(resp, expected.no_content)
 
 
@@ -98,7 +98,7 @@ async def test_moving_between_private_and_shared_workspaces(
 
     # Get project in workspace
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["workspaceId"] == added_workspace["workspaceId"]  # <-- Workspace ID
 
@@ -106,12 +106,12 @@ async def test_moving_between_private_and_shared_workspaces(
     base_url = client.app.router["replace_project_workspace"].url_for(
         project_id=project["uuid"], workspace_id="null"
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Get project in workspace
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["workspaceId"] is None  # <-- Workspace ID is None
 
@@ -119,12 +119,12 @@ async def test_moving_between_private_and_shared_workspaces(
     base_url = client.app.router["replace_project_workspace"].url_for(
         project_id=project["uuid"], workspace_id=f"{added_workspace['workspaceId']}"
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Get project in workspace
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["workspaceId"] == added_workspace["workspaceId"]  # <-- Workspace ID
 
@@ -177,7 +177,7 @@ async def test_moving_between_shared_and_shared_workspaces(
 
     # Get project in workspace
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["workspaceId"] == added_workspace["workspaceId"]  # <-- Workspace ID
 
@@ -185,12 +185,12 @@ async def test_moving_between_shared_and_shared_workspaces(
     base_url = client.app.router["replace_project_workspace"].url_for(
         project_id=project["uuid"], workspace_id=f"{second_workspace['workspaceId']}"
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Get project in workspace
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["workspaceId"] == second_workspace["workspaceId"]  # <-- Workspace ID
 
@@ -257,7 +257,7 @@ async def test_moving_between_workspaces_check_removed_from_folder(
 
     # Get project in workspace
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["workspaceId"] == added_workspace["workspaceId"]  # <-- Workspace ID
 
@@ -265,12 +265,12 @@ async def test_moving_between_workspaces_check_removed_from_folder(
     base_url = client.app.router["replace_project_workspace"].url_for(
         project_id=project["uuid"], workspace_id="none"
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Get project in workspace
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["workspaceId"] is None  # <-- Workspace ID is None
 

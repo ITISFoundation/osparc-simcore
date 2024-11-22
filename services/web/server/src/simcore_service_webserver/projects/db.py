@@ -32,7 +32,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
 from models_library.workspaces import WorkspaceQuery, WorkspaceScope
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
@@ -202,6 +202,7 @@ class ProjectDBAPI(BaseProjectDB):
                         await self._upsert_tags_in_project(
                             conn=conn,
                             project_index_id=project_index,
+                            project_uuid=project_uuid,
                             project_tags=project_tag_ids,
                         )
                         selected_values["tags"] = project_tag_ids
@@ -254,7 +255,9 @@ class ProjectDBAPI(BaseProjectDB):
         """
 
         # NOTE: tags are removed in convert_to_db_names so we keep it
-        project_tag_ids = parse_obj_as(list[int], project.get("tags", []).copy())
+        project_tag_ids = TypeAdapter(list[int]).validate_python(
+            project.get("tags", []).copy()
+        )
         insert_values = convert_to_db_names(project)
         insert_values.update(
             {
@@ -403,7 +406,9 @@ class ProjectDBAPI(BaseProjectDB):
                 sa.select(
                     projects_tags.c.project_id,
                     sa.func.array_agg(projects_tags.c.tag_id).label("tags"),
-                ).group_by(projects_tags.c.project_id)
+                )
+                .where(projects_tags.c.project_id.is_not(None))
+                .group_by(projects_tags.c.project_id)
             ).subquery("project_tags_subquery")
 
             ###
@@ -704,7 +709,7 @@ class ProjectDBAPI(BaseProjectDB):
             row = await result.fetchone()
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
-            return ProjectDB.from_orm(row)
+            return ProjectDB.model_validate(row)
 
     async def get_user_specific_project_data_db(
         self, project_uuid: ProjectID, private_workspace_user_id_or_none: UserID | None
@@ -732,7 +737,7 @@ class ProjectDBAPI(BaseProjectDB):
             row = await result.fetchone()
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
-            return UserSpecificProjectDataDB.from_orm(row)
+            return UserSpecificProjectDataDB.model_validate(row)
 
     async def get_pure_project_access_rights_without_workspace(
         self, user_id: UserID, project_uuid: ProjectID
@@ -778,7 +783,7 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectInvalidRightsError(
                     user_id=user_id, project_uuid=project_uuid
                 )
-            return UserProjectAccessRightsDB.from_orm(row)
+            return UserProjectAccessRightsDB.model_validate(row)
 
     async def replace_project(
         self,
@@ -873,7 +878,7 @@ class ProjectDBAPI(BaseProjectDB):
             row = await result.fetchone()
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
-            return ProjectDB.from_orm(row)
+            return ProjectDB.model_validate(row)
 
     async def get_project_product(self, project_uuid: ProjectID) -> ProductName:
         async with self.engine.acquire() as conn:
@@ -1218,6 +1223,7 @@ class ProjectDBAPI(BaseProjectDB):
                     projects_tags.insert().values(
                         project_id=project["id"],
                         tag_id=tag_id,
+                        project_uuid_for_rut=project["uuid"],
                     )
                 )
                 project_tags.append(tag_id)
@@ -1315,7 +1321,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .where(projects_to_wallet.c.project_uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
-            return parse_obj_as(WalletDB, row) if row else None
+            return WalletDB.model_validate(row) if row else None
 
     async def connect_wallet_to_project(
         self,

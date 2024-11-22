@@ -12,7 +12,9 @@ class ThinDV2LocalhostClient(BaseThinClient):
 
     def __init__(self):
         super().__init__(
-            total_retry_interval=10, default_http_client_timeout=Timeout(5)
+            total_retry_interval=10,
+            default_http_client_timeout=Timeout(5),
+            tracing_settings=None,
         )
 
     def _get_url(self, postfix: str) -> str:

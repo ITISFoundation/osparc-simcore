@@ -1,35 +1,48 @@
-# pylint: disable=C0111
-import asyncio
 import enum
 import json
 import logging
 import re
+from collections.abc import Mapping
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any, AsyncIterator, Dict, List, Optional, Tuple
+from typing import Any, cast
 
-from aiohttp import BasicAuth, ClientSession, client_exceptions, web
+from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
+from aiohttp import BasicAuth, ClientSession, client_exceptions
 from aiohttp.client import ClientTimeout
-from simcore_service_director import config, exceptions
-from simcore_service_director.cache_request_decorator import cache_requests
+from fastapi import FastAPI
+from servicelib.utils import limited_gather
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from .config import APP_CLIENT_SESSION_KEY
+from .client_session import get_client_session
+from .constants import (
+    DIRECTOR_SIMCORE_SERVICES_PREFIX,
+    ORG_LABELS_TO_SCHEMA_LABELS,
+    SERVICE_RUNTIME_SETTINGS,
+)
+from .core.errors import (
+    DirectorRuntimeError,
+    RegistryConnectionError,
+    ServiceNotAvailableError,
+)
+from .core.settings import ApplicationSettings, get_application_settings
 
 DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
-
-NUMBER_OF_RETRIEVED_REPOS: int = 50
-NUMBER_OF_RETRIEVED_TAGS: int = 50
 
 VERSION_REG = re.compile(
     r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 )
 
 logger = logging.getLogger(__name__)
+
+#
+# NOTE: if you are refactoring this module,
+# please consider reusing packages/pytest-simcore/src/pytest_simcore/helpers/docker_registry.py
+#
 
 
 class ServiceType(enum.Enum):
@@ -39,25 +52,32 @@ class ServiceType(enum.Enum):
 
 
 async def _basic_auth_registry_request(
-    app: web.Application, path: str, method: str, **session_kwargs
-) -> Tuple[Dict, Dict]:
-    if not config.REGISTRY_URL:
-        raise exceptions.DirectorException("URL to registry is not defined")
+    app: FastAPI, path: str, method: str, **session_kwargs
+) -> tuple[dict, Mapping]:
+    app_settings = get_application_settings(app)
+    if not app_settings.DIRECTOR_REGISTRY.REGISTRY_URL:
+        msg = "URL to registry is not defined"
+        raise DirectorRuntimeError(msg=msg)
 
     url = URL(
-        f"{'https' if config.REGISTRY_SSL else 'http'}://{config.REGISTRY_URL}{path}"
+        f"{'https' if app_settings.DIRECTOR_REGISTRY.REGISTRY_SSL else 'http'}://{app_settings.DIRECTOR_REGISTRY.REGISTRY_URL}{path}"
     )
     logger.debug("Requesting registry using %s", url)
     # try the registry with basic authentication first, spare 1 call
-    resp_data: Dict = {}
-    resp_headers: Dict = {}
+    resp_data: dict = {}
+    resp_headers: Mapping = {}
     auth = (
-        BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
-        if config.REGISTRY_AUTH and config.REGISTRY_USER and config.REGISTRY_PW
+        BasicAuth(
+            login=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
+            password=app_settings.DIRECTOR_REGISTRY.REGISTRY_PW.get_secret_value(),
+        )
+        if app_settings.DIRECTOR_REGISTRY.REGISTRY_AUTH
+        and app_settings.DIRECTOR_REGISTRY.REGISTRY_USER
+        and app_settings.DIRECTOR_REGISTRY.REGISTRY_PW
         else None
     )
 
-    session = app[APP_CLIENT_SESSION_KEY]
+    session = get_client_session(app)
     try:
         async with session.request(
             method.lower(), url, auth=auth, **session_kwargs
@@ -66,18 +86,22 @@ async def _basic_auth_registry_request(
                 logger.debug("Registry unauthorized request: %s", await response.text())
                 # basic mode failed, test with other auth mode
                 resp_data, resp_headers = await _auth_registry_request(
-                    url, method, response.headers, session, **session_kwargs
+                    app_settings,
+                    url,
+                    method,
+                    response.headers,
+                    session,
+                    **session_kwargs,
                 )
 
             elif response.status == HTTPStatus.NOT_FOUND:
-                logger.exception("Path to registry not found: %s", url)
-                raise exceptions.ServiceNotAvailableError(str(path))
+                raise ServiceNotAvailableError(service_name=path)
 
             elif response.status > 399:
                 logger.exception(
                     "Unknown error while accessing registry: %s", str(response)
                 )
-                raise exceptions.RegistryConnectionError(str(response))
+                raise RegistryConnectionError(msg=str(response))
 
             else:
                 # registry that does not need an auth
@@ -86,22 +110,29 @@ async def _basic_auth_registry_request(
 
             return (resp_data, resp_headers)
     except client_exceptions.ClientError as exc:
-        logger.exception("Unknown error while accessing registry: %s", str(exc))
-        raise exceptions.DirectorException(
-            f"Unknown error while accessing registry: {str(exc)}"
-        )
+        logger.exception("Unknown error while accessing registry")
+        msg = f"Unknown error while accessing registry: {exc!s}"
+        raise DirectorRuntimeError(msg=msg) from exc
 
 
 async def _auth_registry_request(
-    url: URL, method: str, auth_headers: Dict, session: ClientSession, **kwargs
-) -> Tuple[Dict, Dict]:
-    if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
-        raise exceptions.RegistryConnectionError(
-            "Wrong configuration: Authentication to registry is needed!"
-        )
+    app_settings: ApplicationSettings,
+    url: URL,
+    method: str,
+    auth_headers: Mapping,
+    session: ClientSession,
+    **kwargs,
+) -> tuple[dict, Mapping]:
+    if (
+        not app_settings.DIRECTOR_REGISTRY.REGISTRY_AUTH
+        or not app_settings.DIRECTOR_REGISTRY.REGISTRY_USER
+        or not app_settings.DIRECTOR_REGISTRY.REGISTRY_PW
+    ):
+        msg = "Wrong configuration: Authentication to registry is needed!"
+        raise RegistryConnectionError(msg=msg)
     # auth issue let's try some authentication get the auth type
     auth_type = None
-    auth_details: Dict[str, str] = {}
+    auth_details: dict[str, str] = {}
     for key in auth_headers:
         if str(key).lower() == "www-authenticate":
             auth_type, auth_value = str(auth_headers[key]).split(" ", 1)
@@ -111,10 +142,12 @@ async def _auth_registry_request(
             }
             break
     if not auth_type:
-        raise exceptions.RegistryConnectionError(
-            "Unknown registry type: cannot deduce authentication method!"
-        )
-    auth = BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
+        msg = "Unknown registry type: cannot deduce authentication method!"
+        raise RegistryConnectionError(msg=msg)
+    auth = BasicAuth(
+        login=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
+        password=app_settings.DIRECTOR_REGISTRY.REGISTRY_PW.get_secret_value(),
+    )
 
     # bearer type, it needs a token with all communications
     if auth_type == "Bearer":
@@ -123,26 +156,23 @@ async def _auth_registry_request(
             service=auth_details["service"], scope=auth_details["scope"]
         )
         async with session.get(token_url, auth=auth, **kwargs) as token_resp:
-            if not token_resp.status == HTTPStatus.OK:
-                raise exceptions.RegistryConnectionError(
-                    "Unknown error while authentifying with registry: {}".format(
-                        str(token_resp)
-                    )
-                )
+            if token_resp.status != HTTPStatus.OK:
+                msg = f"Unknown error while authentifying with registry: {token_resp!s}"
+                raise RegistryConnectionError(msg=msg)
             bearer_code = (await token_resp.json())["token"]
-            headers = {"Authorization": "Bearer {}".format(bearer_code)}
+            headers = {"Authorization": f"Bearer {bearer_code}"}
             async with getattr(session, method.lower())(
                 url, headers=headers, **kwargs
             ) as resp_wtoken:
                 if resp_wtoken.status == HTTPStatus.NOT_FOUND:
                     logger.exception("path to registry not found: %s", url)
-                    raise exceptions.ServiceNotAvailableError(str(url))
+                    raise ServiceNotAvailableError(service_name=f"{url}")
                 if resp_wtoken.status > 399:
                     logger.exception(
                         "Unknown error while accessing with token authorized registry: %s",
                         str(resp_wtoken),
                     )
-                    raise exceptions.RegistryConnectionError(str(resp_wtoken))
+                    raise RegistryConnectionError(msg=f"{resp_wtoken}")
                 resp_data = await resp_wtoken.json(content_type=None)
                 resp_headers = resp_wtoken.headers
                 return (resp_data, resp_headers)
@@ -153,70 +183,99 @@ async def _auth_registry_request(
         ) as resp_wbasic:
             if resp_wbasic.status == HTTPStatus.NOT_FOUND:
                 logger.exception("path to registry not found: %s", url)
-                raise exceptions.ServiceNotAvailableError(str(url))
+                raise ServiceNotAvailableError(service_name=f"{url}")
             if resp_wbasic.status > 399:
                 logger.exception(
                     "Unknown error while accessing with token authorized registry: %s",
                     str(resp_wbasic),
                 )
-                raise exceptions.RegistryConnectionError(str(resp_wbasic))
+                raise RegistryConnectionError(msg=f"{resp_wbasic}")
             resp_data = await resp_wbasic.json(content_type=None)
             resp_headers = resp_wbasic.headers
             return (resp_data, resp_headers)
-    raise exceptions.RegistryConnectionError(
-        f"Unknown registry authentification type: {url}"
-    )
+    msg = f"Unknown registry authentification type: {url}"
+    raise RegistryConnectionError(msg=msg)
 
 
 async def registry_request(
-    app: web.Application,
+    app: FastAPI,
     path: str,
     method: str = "GET",
     no_cache: bool = False,
     **session_kwargs,
-) -> Tuple[Dict, Dict]:
+) -> tuple[dict, Mapping]:
     logger.debug(
         "Request to registry: path=%s, method=%s. no_cache=%s", path, method, no_cache
     )
-    return await cache_requests(_basic_auth_registry_request, no_cache)(
+    cache: SimpleMemoryCache = app.state.registry_cache_memory
+    cache_key = f"{method}_{path}"
+    if not no_cache and (cached_response := await cache.get(cache_key)):
+        assert isinstance(cached_response, tuple)  # nosec
+        return cast(tuple[dict, Mapping], cached_response)
+
+    app_settings = get_application_settings(app)
+    response, response_headers = await _basic_auth_registry_request(
         app, path, method, **session_kwargs
     )
 
+    if not no_cache and app_settings.DIRECTOR_REGISTRY_CACHING and method == "GET":
+        await cache.set(
+            cache_key,
+            (response, response_headers),
+            ttl=app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds(),
+        )
 
-async def is_registry_responsive(app: web.Application) -> bool:
+    return response, response_headers
+
+
+async def _is_registry_responsive(app: FastAPI) -> bool:
     path = "/v2/"
     try:
         await registry_request(
             app, path, no_cache=True, timeout=ClientTimeout(total=1.0)
         )
         return True
-    except (exceptions.DirectorException, asyncio.TimeoutError) as exc:
+    except (TimeoutError, DirectorRuntimeError) as exc:
         logger.debug("Registry not responsive: %s", exc)
         return False
 
 
-async def setup_registry(app: web.Application) -> AsyncIterator[None]:
+async def _setup_registry(app: FastAPI) -> None:
     logger.debug("pinging registry...")
 
     @retry(
         wait=wait_fixed(2),
         before_sleep=before_sleep_log(logger, logging.WARNING),
-        retry=retry_if_result(lambda result: result == False),
+        retry=retry_if_result(lambda result: result is False),
         reraise=True,
     )
-    async def wait_until_registry_responsive(app: web.Application) -> bool:
-        return await is_registry_responsive(app)
+    async def wait_until_registry_responsive(app: FastAPI) -> bool:
+        return await _is_registry_responsive(app)
 
     await wait_until_registry_responsive(app)
     logger.info("Connected to docker registry")
-    yield
 
 
-async def _list_repositories(app: web.Application) -> List[str]:
+def setup(app: FastAPI) -> None:
+    async def on_startup() -> None:
+        cache = Cache(Cache.MEMORY)
+        assert isinstance(cache, SimpleMemoryCache)  # nosec
+        app.state.registry_cache_memory = cache
+        await _setup_registry(app)
+
+    async def on_shutdown() -> None:
+        # nothing to do here
+        ...
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
+
+
+async def _list_repositories(app: FastAPI) -> list[str]:
     logger.debug("listing repositories")
     # if there are more repos, the Link will be available in the response headers until none available
-    path = f"/v2/_catalog?n={NUMBER_OF_RETRIEVED_REPOS}"
-    repos_list: List = []
+    path = f"/v2/_catalog?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
+    repos_list: list = []
     while True:
         result, headers = await registry_request(app, path)
         if result["repositories"]:
@@ -228,11 +287,11 @@ async def _list_repositories(app: web.Application) -> List[str]:
     return repos_list
 
 
-async def list_image_tags(app: web.Application, image_key: str) -> List[str]:
+async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
     logger.debug("listing image tags in %s", image_key)
-    image_tags: List = []
+    image_tags: list = []
     # get list of image tags
-    path = f"/v2/{image_key}/tags/list?n={NUMBER_OF_RETRIEVED_TAGS}"
+    path = f"/v2/{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
     while True:
         tags, headers = await registry_request(app, path)
         if tags["tags"]:
@@ -243,10 +302,12 @@ async def list_image_tags(app: web.Application, image_key: str) -> List[str]:
     logger.debug("Found %s image tags in %s", len(image_tags), image_key)
     return image_tags
 
+
 _DOCKER_CONTENT_DIGEST_HEADER = "Docker-Content-Digest"
 
-async def get_image_digest(app: web.Application, image: str, tag: str) -> Optional[str]:
-    """ Returns image manifest digest number or None if fails to obtain it
+
+async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
+    """Returns image manifest digest number or None if fails to obtain it
 
     The manifest digest is essentially a SHA256 hash of the image manifest
 
@@ -259,20 +320,22 @@ async def get_image_digest(app: web.Application, image: str, tag: str) -> Option
     return headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
 
 
-async def get_image_labels(app: web.Application, image: str, tag: str) -> Tuple[Dict, Optional[str]]:
-    """ Returns image labels and the image manifest digest """
+async def get_image_labels(
+    app: FastAPI, image: str, tag: str
+) -> tuple[dict[str, str], str | None]:
+    """Returns image labels and the image manifest digest"""
 
     logger.debug("getting image labels of %s:%s", image, tag)
     path = f"/v2/{image}/manifests/{tag}"
     request_result, headers = await registry_request(app, path)
     v1_compatibility_key = json.loads(request_result["history"][0]["v1Compatibility"])
-    container_config = v1_compatibility_key.get(
+    container_config: dict[str, Any] = v1_compatibility_key.get(
         "container_config", v1_compatibility_key["config"]
     )
-    labels = container_config["Labels"]
+    labels: dict[str, str] = container_config["Labels"]
 
     headers = headers or {}
-    manifest_digest =  headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
+    manifest_digest: str | None = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
 
     logger.debug("retrieved labels of image %s:%s", image, tag)
 
@@ -280,15 +343,15 @@ async def get_image_labels(app: web.Application, image: str, tag: str) -> Tuple[
 
 
 async def get_image_details(
-    app: web.Application, image_key: str, image_tag: str
-) -> Dict:
-    image_details: Dict = {}
+    app: FastAPI, image_key: str, image_tag: str
+) -> dict[str, Any]:
+    image_details: dict = {}
     labels, image_manifest_digest = await get_image_labels(app, image_key, image_tag)
 
     if image_manifest_digest:
         # Adds manifest as extra key in the response similar to org.opencontainers.image.base.digest
         # SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
-        image_details.update({"image_digest":image_manifest_digest})
+        image_details.update({"image_digest": image_manifest_digest})
 
     if not labels:
         return image_details
@@ -297,7 +360,7 @@ async def get_image_details(
             continue
         try:
             label_data = json.loads(labels[key])
-            for label_key in label_data.keys():
+            for label_key in label_data:
                 image_details[label_key] = label_data[label_key]
         except json.decoder.JSONDecodeError:
             logging.exception(
@@ -311,18 +374,22 @@ async def get_image_details(
     return image_details
 
 
-async def get_repo_details(app: web.Application, image_key: str) -> List[Dict]:
-    repo_details = []
+async def get_repo_details(app: FastAPI, image_key: str) -> list[dict[str, Any]]:
+
     image_tags = await list_image_tags(app, image_key)
-    tasks = [get_image_details(app, image_key, tag) for tag in image_tags]
-    results = await asyncio.gather(*tasks)
-    for image_details in results:
-        if image_details:
-            repo_details.append(image_details)
-    return repo_details
+
+    results = await limited_gather(
+        *[get_image_details(app, image_key, tag) for tag in image_tags],
+        reraise=False,
+        log=logger,
+        limit=get_application_settings(
+            app
+        ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
+    )
+    return [result for result in results if not isinstance(result, BaseException)]
 
 
-async def list_services(app: web.Application, service_type: ServiceType) -> List[Dict]:
+async def list_services(app: FastAPI, service_type: ServiceType) -> list[dict]:
     logger.debug("getting list of services")
     repos = await _list_repositories(app)
     # get the services repos
@@ -335,29 +402,36 @@ async def list_services(app: web.Application, service_type: ServiceType) -> List
     logger.debug("retrieved list of repos : %s", repos)
 
     # only list as service if it actually contains the necessary labels
-    tasks = [get_repo_details(app, repo) for repo in repos]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    services = []
-    for repo_details in results:
-        if repo_details and isinstance(repo_details, list):
-            services.extend(repo_details)
-        elif isinstance(repo_details, Exception):
-            logger.error("Exception occured while listing services %s", repo_details)
-    return services
+    results = await limited_gather(
+        *[get_repo_details(app, repo) for repo in repos],
+        reraise=False,
+        log=logger,
+        limit=get_application_settings(
+            app
+        ).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
+    )
+
+    return [
+        service
+        for repo_details in results
+        if isinstance(repo_details, list)
+        for service in repo_details
+    ]
 
 
 async def list_interactive_service_dependencies(
-    app: web.Application, service_key: str, service_tag: str
-) -> List[Dict]:
+    app: FastAPI, service_key: str, service_tag: str
+) -> list[dict]:
     image_labels, _ = await get_image_labels(app, service_key, service_tag)
     dependency_keys = []
     if DEPENDENCIES_LABEL_KEY in image_labels:
         try:
             dependencies = json.loads(image_labels[DEPENDENCIES_LABEL_KEY])
-            for dependency in dependencies:
-                dependency_keys.append(
-                    {"key": dependency["key"], "tag": dependency["tag"]}
-                )
+            dependency_keys = [
+                {"key": dependency["key"], "tag": dependency["tag"]}
+                for dependency in dependencies
+            ]
+
         except json.decoder.JSONDecodeError:
             logging.exception(
                 "Incorrect json formatting in %s, skipping...",
@@ -368,7 +442,7 @@ async def list_interactive_service_dependencies(
 
 
 def _get_prefix(service_type: ServiceType) -> str:
-    return "{}/{}/".format(config.SIMCORE_SERVICES_PREFIX, service_type.value)
+    return f"{DIRECTOR_SIMCORE_SERVICES_PREFIX}/{service_type.value}/"
 
 
 def get_service_first_name(image_key: str) -> str:
@@ -407,7 +481,7 @@ CONTAINER_SPEC_ENTRY_NAME = "ContainerSpec".lower()
 RESOURCES_ENTRY_NAME = "Resources".lower()
 
 
-def _validate_kind(entry_to_validate: Dict[str, Any], kind_name: str):
+def _validate_kind(entry_to_validate: dict[str, Any], kind_name: str):
     for element in (
         entry_to_validate.get("value", {})
         .get("Reservations", {})
@@ -419,22 +493,25 @@ def _validate_kind(entry_to_validate: Dict[str, Any], kind_name: str):
 
 
 async def get_service_extras(
-    app: web.Application, image_key: str, image_tag: str
-) -> Dict[str, Any]:
+    app: FastAPI, image_key: str, image_tag: str
+) -> dict[str, Any]:
     # check physical node requirements
     # all nodes require "CPU"
-    result = {
+    app_settings = get_application_settings(app)
+    result: dict[str, Any] = {
         "node_requirements": {
-            "CPU": config.DEFAULT_MAX_NANO_CPUS / 1.0e09,
-            "RAM": config.DEFAULT_MAX_MEMORY,
+            "CPU": app_settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS / 1.0e09,
+            "RAM": app_settings.DIRECTOR_DEFAULT_MAX_MEMORY,
         }
     }
 
     labels, _ = await get_image_labels(app, image_key, image_tag)
     logger.debug("Compiling service extras from labels %s", pformat(labels))
 
-    if config.SERVICE_RUNTIME_SETTINGS in labels:
-        service_settings = json.loads(labels[config.SERVICE_RUNTIME_SETTINGS])
+    if SERVICE_RUNTIME_SETTINGS in labels:
+        service_settings: list[dict[str, Any]] = json.loads(
+            labels[SERVICE_RUNTIME_SETTINGS]
+        )
         for entry in service_settings:
             entry_name = entry.get("name", "").lower()
             entry_value = entry.get("value")
@@ -448,19 +525,18 @@ async def get_service_extras(
                     result["node_requirements"]["CPU"] = (
                         float(res_limit.get("NanoCPUs", 0))
                         or float(res_reservation.get("NanoCPUs", 0))
-                        or config.DEFAULT_MAX_NANO_CPUS
+                        or app_settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS
                     ) / 1.0e09
                     # RAM
                     result["node_requirements"]["RAM"] = (
                         res_limit.get("MemoryBytes", 0)
                         or res_reservation.get("MemoryBytes", 0)
-                        or config.DEFAULT_MAX_MEMORY
+                        or app_settings.DIRECTOR_DEFAULT_MAX_MEMORY
                     )
                 else:
                     invalid_with_msg = f"invalid type for resource [{entry_value}]"
 
                 # discrete resources (custom made ones) ---
-                # TODO: this could be adjusted to separate between GPU and/or VRAM
                 # check if the service requires GPU support
                 if not invalid_with_msg and _validate_kind(entry, "VRAM"):
 
@@ -493,7 +569,7 @@ async def get_service_extras(
     result.update(
         {
             sl: labels[dl]
-            for dl, sl in config.ORG_LABELS_TO_SCHEMA_LABELS.items()
+            for dl, sl in ORG_LABELS_TO_SCHEMA_LABELS.items()
             if dl in labels
         }
     )

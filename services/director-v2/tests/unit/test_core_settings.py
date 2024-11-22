@@ -5,9 +5,10 @@
 from typing import Any
 
 import pytest
-from models_library.basic_types import LogLevel
+from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import ValidationError
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.base import DefaultFromEnvFactoryError
 from settings_library.r_clone import S3Provider
 from simcore_service_director_v2.core.dynamic_services_settings.egress_proxy import (
     EnvoyLogLevel,
@@ -17,7 +18,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     PlacementSettings,
     RCloneSettings,
 )
-from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
+from simcore_service_director_v2.core.settings import AppSettings
 
 
 def _get_backend_type_options() -> set[str]:
@@ -43,7 +44,7 @@ def test_enforce_r_clone_requirement(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_settings_with_project_env_devel(project_env_devel_environment: dict[str, Any]):
     # loads from environ
     settings = AppSettings.create_from_envs()
-    print("captured settings: \n", settings.json(indent=2))
+    print("captured settings: \n", settings.model_dump_json(indent=2))
 
     assert settings.SC_BOOT_MODE == BootModeEnum.DEBUG
     assert settings.LOG_LEVEL == LogLevel.DEBUG
@@ -60,7 +61,7 @@ def test_settings_with_repository_env_devel(
     )  # defined in docker-compose
 
     settings = AppSettings.create_from_envs()
-    print("captured settings: \n", settings.json(indent=2))
+    print("captured settings: \n", settings.model_dump_json(indent=2))
     assert settings
 
 
@@ -185,7 +186,7 @@ def test_services_custom_constraint_failures(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
-    with pytest.raises(Exception):
+    with pytest.raises(DefaultFromEnvFactoryError):
         AppSettings.create_from_envs()
 
 

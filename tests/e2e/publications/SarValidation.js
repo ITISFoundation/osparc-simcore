@@ -40,7 +40,7 @@ async function runTutorial () {
     await tutorial.testSARValidation(sarNodeId);
   }
   catch(err) {
-    await tutorial.setTutorialFailed(true, false);
+    await tutorial.setTutorialFailed();
     console.log('Tutorial error: ' + err);
   }
   finally {

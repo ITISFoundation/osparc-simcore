@@ -27,9 +27,10 @@ async def dask_scheduler_service(
     )
     # override the port
     monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{dask_scheduler_api_port}")
-    return AnyUrl.build(
-        scheme="tls", host=get_localhost_ip(), port=dask_scheduler_api_port
+    url = AnyUrl.build(
+        scheme="tls", host=get_localhost_ip(), port=int(dask_scheduler_api_port)
     )
+    return f"{url}"
 
 
 @pytest.fixture

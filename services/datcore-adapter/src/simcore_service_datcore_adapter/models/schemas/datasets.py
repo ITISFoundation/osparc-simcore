@@ -45,14 +45,16 @@ class FileMetaData(BaseModel):
         return cls(
             dataset_id=package["content"]["datasetNodeId"],
             package_id=package["content"]["nodeId"],
-            id=package["content"]["id"],
+            id=f"{package['content']['id']}",
             name=pck_name,
             path=base_path / pck_name,
             type=package["content"]["packageType"],
             size=file_size,
             created_at=package["content"]["createdAt"],
             last_modified_at=package["content"]["updatedAt"],
-            data_type=DataType.FOLDER
-            if package["content"]["packageType"] == "Collection"
-            else DataType.FILE,
+            data_type=(
+                DataType.FOLDER
+                if package["content"]["packageType"] == "Collection"
+                else DataType.FILE
+            ),
         )

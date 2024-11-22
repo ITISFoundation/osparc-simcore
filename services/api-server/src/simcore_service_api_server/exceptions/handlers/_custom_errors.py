@@ -8,8 +8,9 @@ from ..custom_errors import (
 from ._utils import create_error_json_response
 
 
-async def custom_error_handler(request: Request, exc: CustomBaseError):
+async def custom_error_handler(request: Request, exc: Exception):
     assert request  # nosec
+    assert isinstance(exc, CustomBaseError)
 
     error_msg = f"{exc}"
     if isinstance(exc, InsufficientCreditsError):

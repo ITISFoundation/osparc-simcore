@@ -19,6 +19,7 @@ from yarl import URL
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
+from .helpers.typing_env import EnvVarsDict
 
 log = logging.getLogger(__name__)
 
@@ -26,21 +27,21 @@ log = logging.getLogger(__name__)
 @pytest.fixture
 async def redis_settings(
     docker_stack: dict,  # stack is up
-    testing_environ_vars: dict,
+    env_vars_for_docker_compose: EnvVarsDict,
 ) -> RedisSettings:
     """Returns the settings of a redis service that is up and responsive"""
 
-    prefix = testing_environ_vars["SWARM_STACK_NAME"]
+    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_redis" in docker_stack["services"]
 
     port = get_service_published_port(
-        "simcore_redis", testing_environ_vars["REDIS_PORT"]
+        "simcore_redis", int(env_vars_for_docker_compose["REDIS_PORT"])
     )
     # test runner is running on the host computer
     settings = RedisSettings(
         REDIS_HOST=get_localhost_ip(),
         REDIS_PORT=PortInt(port),
-        REDIS_PASSWORD=testing_environ_vars["REDIS_PASSWORD"],
+        REDIS_PASSWORD=env_vars_for_docker_compose["REDIS_PASSWORD"],
     )
     await wait_till_redis_responsive(settings.build_redis_dsn(RedisDatabase.RESOURCES))
 

@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceType
 from models_library.services_enums import ServiceBootType, ServiceState
-from pydantic import AnyHttpUrl, BaseModel, PositiveInt, parse_obj_as
+from pydantic import AnyHttpUrl, BaseModel, PositiveInt, TypeAdapter
 from rich.live import Live
 from rich.table import Table
 from servicelib.services_utils import get_service_from_key
@@ -36,13 +36,16 @@ from ._client import ThinDV2LocalhostClient
 async def _initialized_app(only_db: bool = False) -> AsyncIterator[FastAPI]:
     app = create_base_app()
     settings: AppSettings = app.state.settings
-
     # Initialize minimal required components for the application
     db.setup(app, settings.POSTGRES)
 
     if not only_db:
         dynamic_sidecar.setup(app)
-        director_v0.setup(app, settings.DIRECTOR_V0)
+        director_v0.setup(
+            app,
+            director_v0_settings=settings.DIRECTOR_V0,
+            tracing_settings=settings.DIRECTOR_V2_TRACING,
+        )
 
     await app.router.startup()
     yield app
@@ -58,7 +61,9 @@ def _get_dynamic_sidecar_endpoint(
     dynamic_sidecar_names = DynamicSidecarNamesHelper.make(NodeID(node_id))
     hostname = dynamic_sidecar_names.service_name_dynamic_sidecar
     port = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT
-    url: AnyHttpUrl = parse_obj_as(AnyHttpUrl, f"http://{hostname}:{port}")  # NOSONAR
+    url: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(
+        f"http://{hostname}:{port}"
+    )
     return url
 
 

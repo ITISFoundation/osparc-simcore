@@ -10,8 +10,8 @@ from uuid import uuid4
 
 import redis.asyncio as aioredis
 import redis.exceptions
+from common_library.errors_classes import OsparcErrorMixin
 from pydantic import NonNegativeFloat, NonNegativeInt
-from pydantic.errors import PydanticErrorMixin
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
@@ -36,7 +36,7 @@ _SHUTDOWN_TIMEOUT_S: Final[NonNegativeInt] = 5
 _logger = logging.getLogger(__name__)
 
 
-class BaseRedisError(PydanticErrorMixin, RuntimeError):
+class BaseRedisError(OsparcErrorMixin, RuntimeError):
     ...
 
 

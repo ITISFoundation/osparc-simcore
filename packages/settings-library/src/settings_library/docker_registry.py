@@ -1,7 +1,8 @@
 from functools import cached_property
-from typing import Any, ClassVar
+from typing import Any
 
-from pydantic import Field, SecretStr, validator
+from pydantic import Field, SecretStr, field_validator
+from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 
@@ -10,6 +11,7 @@ class RegistrySettings(BaseCustomSettings):
     REGISTRY_AUTH: bool = Field(..., description="do registry authentication")
     REGISTRY_PATH: str | None = Field(
         default=None,
+        # This is useful in case of a local registry, where the registry url (path) is relative to the host docker engine"
         description="development mode only, in case a local registry is used",
     )
     # NOTE: name is missleading, http or https protocol are not included
@@ -23,7 +25,7 @@ class RegistrySettings(BaseCustomSettings):
     )
     REGISTRY_SSL: bool = Field(..., description="access to registry through ssl")
 
-    @validator("REGISTRY_PATH", pre=True)
+    @field_validator("REGISTRY_PATH", mode="before")
     @classmethod
     def _escape_none_string(cls, v) -> Any | None:
         return None if v == "None" else v
@@ -36,8 +38,8 @@ class RegistrySettings(BaseCustomSettings):
     def api_url(self) -> str:
         return f"{self.REGISTRY_URL}/v2"
 
-    class Config(BaseCustomSettings.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+    model_config = SettingsConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "REGISTRY_AUTH": "True",
@@ -48,3 +50,4 @@ class RegistrySettings(BaseCustomSettings):
                 }
             ],
         }
+    )

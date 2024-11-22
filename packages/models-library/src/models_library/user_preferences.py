@@ -1,14 +1,12 @@
 from enum import auto
-from typing import Annotated, Any, ClassVar, TypeAlias
+from typing import Annotated, Any, ClassVar, Literal, TypeAlias
 
+from common_library.pydantic_fields_extension import get_type
 from pydantic import BaseModel, Field
-from pydantic.main import ModelMetaclass
+from pydantic._internal._model_construction import ModelMetaclass
 
 from .services import ServiceKey, ServiceVersion
 from .utils.enums import StrAutoEnum
-
-# NOTE: for pydantic-2 from pydantic._internal.import _model_construction
-# use _model_construction.ModelMetaclass instead!
 
 
 class _AutoRegisterMeta(ModelMetaclass):
@@ -77,14 +75,14 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
     @classmethod
     def get_default_value(cls) -> Any:
         return (
-            cls.__fields__["value"].default_factory()
-            if cls.__fields__["value"].default_factory
-            else cls.__fields__["value"].default
+            cls.model_fields["value"].default_factory()
+            if cls.model_fields["value"].default_factory
+            else cls.model_fields["value"].default
         )
 
 
 class FrontendUserPreference(_BaseUserPreferenceModel):
-    preference_type: PreferenceType = Field(default=PreferenceType.FRONTEND, const=True)
+    preference_type: Literal[PreferenceType.FRONTEND] = PreferenceType.FRONTEND
 
     preference_identifier: PreferenceIdentifier = Field(
         ..., description="used by the frontend"
@@ -93,11 +91,11 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
     value: Any
 
     def to_db(self) -> dict:
-        return self.dict(exclude={"preference_identifier", "preference_type"})
+        return self.model_dump(exclude={"preference_identifier", "preference_type"})
 
     @classmethod
     def update_preference_default_value(cls, new_default: Any) -> None:
-        expected_type = cls.__fields__["value"].type_
+        expected_type = get_type(cls.model_fields["value"])
         detected_type = type(new_default)
         if expected_type != detected_type:
             msg = (
@@ -105,14 +103,17 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
             )
             raise TypeError(msg)
 
-        if cls.__fields__["value"].default is None:
-            cls.__fields__["value"].default_factory = lambda: new_default
+        if cls.model_fields["value"].default is None:
+            cls.model_fields["value"].default_factory = lambda: new_default
         else:
-            cls.__fields__["value"].default = new_default
+            cls.model_fields["value"].default = new_default
+            cls.model_fields["value"].default_factory = None
+
+        cls.model_rebuild(force=True)
 
 
 class UserServiceUserPreference(_BaseUserPreferenceModel):
-    preference_type: PreferenceType = Field(PreferenceType.USER_SERVICE, const=True)
+    preference_type: Literal[PreferenceType.USER_SERVICE] = PreferenceType.USER_SERVICE
 
     service_key: ServiceKey = Field(
         ..., description="the service which manages the preferences"
@@ -122,7 +123,7 @@ class UserServiceUserPreference(_BaseUserPreferenceModel):
     )
 
     def to_db(self) -> dict:
-        return self.dict(exclude={"preference_type"})
+        return self.model_dump(exclude={"preference_type"})
 
 
 AnyUserPreference: TypeAlias = Annotated[

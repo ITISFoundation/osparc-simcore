@@ -18,7 +18,7 @@ def client(app_environment: EnvVarsDict) -> Iterator[TestClient]:
     print(f"app_environment={json.dumps(app_environment)}")
 
     app = create_app()
-    print("settings:\n", app.state.settings.json(indent=1))
+    print("settings:\n", app.state.settings.model_dump_json(indent=1))
     with TestClient(app, base_url="http://testserver.test") as client:
         yield client
 

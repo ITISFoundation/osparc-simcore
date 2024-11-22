@@ -5,9 +5,11 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from common_library.errors_classes import OsparcErrorMixin
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
-from pydantic.errors import PydanticErrorMixin
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
+from settings_library.tracing import TracingSettings
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -30,7 +32,7 @@ Exception hierarchy:
 """
 
 
-class BaseClientError(PydanticErrorMixin, Exception):
+class BaseClientError(OsparcErrorMixin, Exception):
     """Used as based for all the raised errors"""
 
     msg_template: str = "{message}"
@@ -201,6 +203,7 @@ class BaseThinClient(BaseHTTPApi):
         base_url: URLTypes | None = None,
         default_http_client_timeout: TimeoutTypes | None = None,
         extra_allowed_method_names: set[str] | None = None,
+        tracing_settings: TracingSettings | None,
     ) -> None:
         _assert_public_interface(self, extra_allowed_method_names)
 
@@ -220,7 +223,10 @@ class BaseThinClient(BaseHTTPApi):
         if default_http_client_timeout:
             client_args["timeout"] = default_http_client_timeout
 
-        super().__init__(client=AsyncClient(**client_args))
+        client = AsyncClient(**client_args)
+        if tracing_settings:
+            setup_httpx_client_tracing(client)
+        super().__init__(client=client)
 
     async def __aenter__(self):
         await self.setup_client()

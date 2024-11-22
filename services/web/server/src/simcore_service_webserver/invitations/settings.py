@@ -8,7 +8,7 @@ from functools import cached_property
 from typing import Final
 
 from aiohttp import web
-from pydantic import Field, SecretStr, parse_obj_as
+from pydantic import Field, SecretStr, TypeAdapter
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (
@@ -19,7 +19,7 @@ from settings_library.utils_service import (
 
 from .._constants import APP_SETTINGS_KEY
 
-_INVITATION_VTAG_V1: Final[VersionTag] = parse_obj_as(VersionTag, "v1")
+_INVITATION_VTAG_V1: Final[VersionTag] = TypeAdapter(VersionTag).validate_python("v1")
 
 
 class InvitationsSettings(BaseCustomSettings, MixinServiceSettings):

@@ -1,26 +1,32 @@
 from datetime import timedelta
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import AnyHttpUrl, Field, validator
+from pydantic import AliasChoices, AnyHttpUrl, Field, field_validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.rabbit import RabbitSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     LOGLEVEL: LogLevel = Field(
-        LogLevel.WARNING.value, env=["AGENT_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        LogLevel.WARNING.value,
+        validation_alias=AliasChoices(
+            "AGENT_LOGLEVEL",
+            "LOG_LEVEL",
+            "LOGLEVEL",
+        ),
     )
     SC_BOOT_MODE: BootModeEnum | None
 
     AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=AliasChoices(
             "AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description=(
             "Enables local development log format. WARNING: make sure it is "
             "disabled if you want to have structured logs!"
@@ -28,7 +34,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     AGENT_VOLUMES_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
-        env=["AGENT_VOLUMES_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        validation_alias=AliasChoices(
+            "AGENT_VOLUMES_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
@@ -74,10 +82,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AGENT_DOCKER_NODE_ID: str = Field(..., description="used by the rabbitmq module")
 
     AGENT_RABBITMQ: RabbitSettings = Field(
-        auto_default_from_env=True, description="settings for service/rabbitmq"
+        description="settings for service/rabbitmq",
+        json_schema_extra={"auto_default_from_env": True},
     )
 
-    @validator("LOGLEVEL")
+    AGENT_TRACING: TracingSettings | None = Field(
+        description="settings for opentelemetry tracing",
+        json_schema_extra={"auto_default_from_env": True},
+    )
+
+    @field_validator("LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value) -> LogLevel:
         return LogLevel(cls.validate_log_level(value))

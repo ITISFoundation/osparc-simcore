@@ -4,17 +4,25 @@ from functools import lru_cache
 from pathlib import Path
 from typing import cast
 
-from models_library.basic_types import BootModeEnum, PortInt
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
+from models_library.basic_types import PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import DynamicServiceKey, RunID, ServiceVersion
 from models_library.users import UserID
-from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
+from pydantic import (
+    AliasChoices,
+    ByteSize,
+    Field,
+    PositiveInt,
+    TypeAdapter,
+    field_validator,
+)
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
+from settings_library.application import BaseApplicationSettings
 from settings_library.aws_s3_cli import AwsS3CliSettings
-from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.node_ports import StorageAuthSettings
 from settings_library.postgres import PostgresSettings
@@ -23,27 +31,28 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.resource_usage_tracker import (
     DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
 )
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
-class ResourceTrackingSettings(BaseCustomSettings):
+class ResourceTrackingSettings(BaseApplicationSettings):
     RESOURCE_TRACKING_HEARTBEAT_INTERVAL: timedelta = Field(
         default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
         description="each time the status of the service is propagated",
     )
 
+    _validate_resource_tracking_heartbeat_interval = (
+        validate_numeric_string_as_timedelta("RESOURCE_TRACKING_HEARTBEAT_INTERVAL")
+    )
 
-class SystemMonitorSettings(BaseCustomSettings):
+
+class SystemMonitorSettings(BaseApplicationSettings):
     DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE: bool = Field(
         default=False, description="enabled/disabled disk usage monitoring"
     )
 
 
-class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
-    SC_BOOT_MODE: BootModeEnum = Field(
-        ...,
-        description="boot mode helps determine if in development mode or normal operation",
-    )
+class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR: Path = Field(
         ...,
@@ -62,7 +71,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # LOGGING
     LOG_LEVEL: str = Field(
-        default="WARNING", env=["DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        default="WARNING",
+        validation_alias=AliasChoices(
+            "DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"
+        ),
     )
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
@@ -101,7 +113,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DYNAMIC_SIDECAR_RESERVED_SPACE_SIZE: ByteSize = Field(
-        parse_obj_as(ByteSize, "10Mib"),
+        TypeAdapter(ByteSize).validate_python("10Mib"),
         description=(
             "Disk space reserve when the dy-sidecar is started. Can be freed at "
             "any time via an API call. Main reason to free this disk space is "
@@ -131,12 +143,17 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=["DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        validation_alias=AliasChoices(
+            "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DY_SIDECAR_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
-        env=["DY_SIDECAR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        validation_alias=AliasChoices(
+            "DY_SIDECAR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
     DY_SIDECAR_USER_ID: UserID
@@ -150,31 +167,54 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_PRODUCT_NAME: ProductName | None = None
 
     NODE_PORTS_STORAGE_AUTH: StorageAuthSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
-    DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+    DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
     DY_SIDECAR_AWS_S3_CLI_SETTINGS: AwsS3CliSettings | None = Field(
         None,
         description="AWS S3 settings are used for the AWS S3 CLI. If these settings are filled, the AWS S3 CLI is used instead of RClone.",
     )
-    POSTGRES_SETTINGS: PostgresSettings = Field(auto_default_from_env=True)
-    RABBIT_SETTINGS: RabbitSettings = Field(auto_default_from_env=True)
+    POSTGRES_SETTINGS: PostgresSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+    RABBIT_SETTINGS: RabbitSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     DY_DEPLOYMENT_REGISTRY_SETTINGS: RegistrySettings = Field()
-    DY_DOCKER_HUB_REGISTRY_SETTINGS: RegistrySettings | None = Field()
+    DY_DOCKER_HUB_REGISTRY_SETTINGS: RegistrySettings | None = Field(default=None)
 
-    RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
+    RESOURCE_TRACKING: ResourceTrackingSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(auto_default_from_env=True)
+    SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+
+    DYNAMIC_SIDECAR_TRACING: TracingSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for opentelemetry tracing",
+    )
 
     @property
     def are_prometheus_metrics_enabled(self) -> bool:
-        return self.DY_SIDECAR_CALLBACKS_MAPPING.metrics is not None
+        return (  # pylint: disable=no-member
+            self.DY_SIDECAR_CALLBACKS_MAPPING.metrics is not None
+        )
 
-    @validator("LOG_LEVEL", pre=True)
+    @field_validator("LOG_LEVEL", mode="before")
     @classmethod
     def _check_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
+
+    _validate_dynamic_sidecar_telemetry_disk_usage_monitor_interval = (
+        validate_numeric_string_as_timedelta(
+            "DYNAMIC_SIDECAR_TELEMETRY_DISK_USAGE_MONITOR_INTERVAL"
+        )
+    )
 
 
 @lru_cache

@@ -1,12 +1,14 @@
 import logging
-from typing import TypedDict
 
 import sqlalchemy as sa
 from aiohttp import web
 from models_library.projects import ProjectID, ProjectIDStr
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import ProjectType, projects
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from ..db.plugin import get_database_engine
 from ..projects.api import ProjectPermalink, register_permalink_factory
@@ -58,8 +60,7 @@ def create_permalink_for_study(
 
     # create
     url_for = create_url_for_function(request)
-    permalink = parse_obj_as(
-        HttpUrl,
+    permalink = TypeAdapter(HttpUrl).validate_python(
         url_for(route_name="get_redirection_to_study_page", id=f"{project_uuid}"),
     )
 

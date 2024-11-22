@@ -22,7 +22,7 @@ async def test_capture_http_call(
 ):
     # CAPTURE
     async with httpx.AsyncClient() as client:
-        response: httpx.Response = await client.get(f"{httpbin_base_url}/json")
+        response: httpx.Response = await client.get(f"{httpbin_base_url}json")
         print(response)
 
         _request: httpx.Request = response.request
@@ -32,7 +32,7 @@ async def test_capture_http_call(
             response, name="get_json", enhance_from_openapi_specs=False
         )
 
-        print(captured.json(indent=1))
+        print(captured.model_dump_json(indent=1))
 
         # MOCK
         with respx.mock(
@@ -64,7 +64,7 @@ async def test_capture_http_dynamic_call(
         sample_uid = faker.uuid4()  # used during test sampling
 
         response: httpx.Response = await client.post(
-            f"{httpbin_base_url}/anything/{sample_uid}",
+            f"{httpbin_base_url}anything/{sample_uid}",
             params={"n": 42},
             json={
                 "resource_id": sample_uid,
@@ -89,7 +89,7 @@ async def test_capture_http_dynamic_call(
         assert found.groupdict() == {"resouce_uid": sample_uid}
 
         # subs_json = re.sub(f"{resource_uid}", pattern, captured.json())
-        # new_capture = HttpApiCallCaptureModel.parse_raw(subs_json)
+        # new_capture = HttpApiCallCaptureModel.model_validate_json(subs_json)
 
         # MOCK
         with respx.mock(
@@ -110,7 +110,7 @@ async def test_capture_http_dynamic_call(
 
             other_uid = faker.uuid4()
 
-            response: httpx.Response = await client.post(
+            response = await client.post(
                 f"http://test.it/anything/{other_uid}",
                 params={"n": 42},
                 json={
@@ -140,6 +140,6 @@ def test_template_capture(project_tests_dir: Path, faker: Faker):
 
     # loads parametrized capture
     # replace in response and solve
-    capture = HttpApiCallCaptureModel.parse_raw(template.render(context))
-    print(capture.json(indent=1))
+    capture = HttpApiCallCaptureModel.model_validate_json(template.render(context))
+    print(capture.model_dump_json(indent=1))
     assert capture.path == url_path

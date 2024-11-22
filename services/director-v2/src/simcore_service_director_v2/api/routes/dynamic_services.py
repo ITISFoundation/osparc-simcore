@@ -3,6 +3,7 @@ import logging
 from typing import Annotated, Final
 
 import httpx
+from common_library.json_serialization import json_dumps
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from models_library.api_schemas_directorv2.dynamic_services import (
@@ -18,7 +19,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
-from models_library.utils.json_serialization import json_dumps
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_decorator
@@ -273,7 +273,7 @@ async def service_retrieve_data_on_ports(
             dynamic_services_settings.DYNAMIC_SCHEDULER
         )
         timeout = httpx.Timeout(
-            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT.total_seconds(),
             connect=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
 
@@ -281,12 +281,12 @@ async def service_retrieve_data_on_ports(
         response = await services_client.request(
             "POST",
             f"{service_base_url}/retrieve",
-            content=retrieve_settings.json(by_alias=True),
+            content=retrieve_settings.model_dump_json(by_alias=True),
             timeout=timeout,
         )
 
         # validate and return
-        return RetrieveDataOutEnveloped.parse_obj(response.json())
+        return RetrieveDataOutEnveloped.model_validate(response.json())
 
 
 @router.post(

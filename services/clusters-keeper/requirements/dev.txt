@@ -13,6 +13,7 @@
 
 # installs this repo's packages
 --editable ../../packages/aws-library
+--editable ../../packages/common-library
 --editable ../../packages/models-library
 --editable ../../packages/pytest-simcore
 --editable ../../packages/service-library[fastapi]

@@ -6,22 +6,21 @@
     IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
 """
 
-import re
 from datetime import datetime
 from enum import Enum
-from re import Pattern
-from typing import Any, ClassVar, TypeAlias
+from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
 from pydantic import (
     BaseModel,
     ByteSize,
-    ConstrainedStr,
-    Extra,
+    ConfigDict,
     Field,
     PositiveInt,
-    root_validator,
-    validator,
+    RootModel,
+    StringConstraints,
+    field_validator,
+    model_validator,
 )
 from pydantic.networks import AnyUrl
 
@@ -38,13 +37,11 @@ from .projects_nodes_io import (
 
 ETag: TypeAlias = str
 
+S3BucketName: TypeAlias = Annotated[str, StringConstraints(pattern=S3_BUCKET_NAME_RE)]
 
-class S3BucketName(ConstrainedStr):
-    regex: Pattern[str] | None = re.compile(S3_BUCKET_NAME_RE)
-
-
-class DatCoreDatasetName(ConstrainedStr):
-    regex: Pattern[str] | None = re.compile(DATCORE_DATASET_NAME_RE)
+DatCoreDatasetName: TypeAlias = Annotated[
+    str, StringConstraints(pattern=DATCORE_DATASET_NAME_RE)
+]
 
 
 # /
@@ -60,14 +57,15 @@ class FileLocation(BaseModel):
     name: LocationName
     id: LocationID
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {"name": "simcore.s3", "id": 0},
                 {"name": "datcore", "id": 1},
             ]
-        }
+        },
+    )
 
 
 FileLocationArray: TypeAlias = ListModel[FileLocation]
@@ -77,11 +75,10 @@ FileLocationArray: TypeAlias = ListModel[FileLocation]
 class DatasetMetaDataGet(BaseModel):
     dataset_id: UUID | DatCoreDatasetName
     display_name: str
-
-    class Config:
-        extra = Extra.forbid
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        from_attributes=True,
+        json_schema_extra={
             "examples": [
                 # simcore dataset
                 {
@@ -106,7 +103,12 @@ class DatasetMetaDataGet(BaseModel):
                     "display_name": "YetAnotherTest",
                 },
             ]
-        }
+        },
+    )
+
+
+UNDEFINED_SIZE_TYPE: TypeAlias = Literal[-1]
+UNDEFINED_SIZE: UNDEFINED_SIZE_TYPE = -1
 
 
 # /locations/{location_id}/files/metadata:
@@ -132,8 +134,8 @@ class FileMetaDataGet(BaseModel):
     )
     created_at: datetime
     last_modified: datetime
-    file_size: ByteSize | int = Field(
-        default=-1, description="File size in bytes (-1 means invalid)"
+    file_size: UNDEFINED_SIZE_TYPE | ByteSize = Field(
+        default=UNDEFINED_SIZE, description="File size in bytes (-1 means invalid)"
     )
     entity_tag: ETag | None = Field(
         default=None,
@@ -150,17 +152,10 @@ class FileMetaDataGet(BaseModel):
         description="SHA256 message digest of the file content. Main purpose: cheap lookup.",
     )
 
-    @validator("location_id", pre=True)
-    @classmethod
-    def ensure_location_is_integer(cls, v):
-        if v is not None:
-            return int(v)
-        return v
-
-    class Config:
-        extra = Extra.forbid
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="ignore",
+        from_attributes=True,
+        json_schema_extra={
             "examples": [
                 # typical S3 entry
                 {
@@ -234,11 +229,19 @@ class FileMetaDataGet(BaseModel):
                     "project_name": None,
                 },
             ]
-        }
+        },
+    )
+
+    @field_validator("location_id", mode="before")
+    @classmethod
+    def ensure_location_is_integer(cls, v):
+        if v is not None:
+            return int(v)
+        return v
 
 
-class FileMetaDataArray(BaseModel):
-    __root__: list[FileMetaDataGet] = []
+class FileMetaDataArray(RootModel[list[FileMetaDataGet]]):
+    root: list[FileMetaDataGet] = Field(default_factory=list)
 
 
 # /locations/{location_id}/files/{file_id}
@@ -279,7 +282,7 @@ class UploadedPart(BaseModel):
 class FileUploadCompletionBody(BaseModel):
     parts: list[UploadedPart]
 
-    @validator("parts")
+    @field_validator("parts")
     @classmethod
     def ensure_sorted(cls, value: list[UploadedPart]) -> list[UploadedPart]:
         return sorted(value, key=lambda uploaded_part: uploaded_part.number)
@@ -308,24 +311,23 @@ class FileUploadCompleteFutureResponse(BaseModel):
 
 
 class FoldersBody(BaseModel):
-    source: dict[str, Any] = Field(default_factory=dict)
-    destination: dict[str, Any] = Field(default_factory=dict)
-    nodes_map: dict[NodeID, NodeID] = Field(default_factory=dict)
+    source: Annotated[dict[str, Any], Field(default_factory=dict)]
+    destination: Annotated[dict[str, Any], Field(default_factory=dict)]
+    nodes_map: Annotated[dict[NodeID, NodeID], Field(default_factory=dict)]
 
-    @root_validator()
-    @classmethod
-    def ensure_consistent_entries(cls, values):
-        source_node_keys = (NodeID(n) for n in values["source"].get("workbench", {}))
-        if set(source_node_keys) != set(values["nodes_map"].keys()):
+    @model_validator(mode="after")
+    def ensure_consistent_entries(self: Self) -> Self:
+        source_node_keys = (NodeID(n) for n in self.source.get("workbench", {}))
+        if set(source_node_keys) != set(self.nodes_map.keys()):
             msg = "source project nodes do not fit with nodes_map entries"
             raise ValueError(msg)
         destination_node_keys = (
-            NodeID(n) for n in values["destination"].get("workbench", {})
+            NodeID(n) for n in self.destination.get("workbench", {})
         )
-        if set(destination_node_keys) != set(values["nodes_map"].values()):
+        if set(destination_node_keys) != set(self.nodes_map.values()):
             msg = "destination project nodes do not fit with nodes_map values"
             raise ValueError(msg)
-        return values
+        return self
 
 
 class SoftCopyBody(BaseModel):

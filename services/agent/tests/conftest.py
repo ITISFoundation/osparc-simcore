@@ -6,7 +6,7 @@ import pytest
 from faker import Faker
 from models_library.basic_types import BootModeEnum
 from moto.server import ThreadedMotoServer
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.r_clone import S3Provider
 
@@ -48,7 +48,7 @@ def mock_environment(
             "LOGLEVEL": "DEBUG",
             "SC_BOOT_MODE": BootModeEnum.DEBUG,
             "AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME": swarm_stack_name,
-            "AGENT_VOLUMES_CLEANUP_S3_ENDPOINT": mocked_s3_server_url,
+            "AGENT_VOLUMES_CLEANUP_S3_ENDPOINT": f"{mocked_s3_server_url}",
             "AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY": "xxx",
             "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY": "xxx",
             "AGENT_VOLUMES_CLEANUP_S3_BUCKET": bucket,
@@ -58,6 +58,7 @@ def mock_environment(
             "RABBIT_SECURE": "false",
             "RABBIT_USER": "test",
             "AGENT_DOCKER_NODE_ID": docker_node_id,
+            "AGENT_TRACING": "null",
         },
     )
 
@@ -65,7 +66,6 @@ def mock_environment(
 @pytest.fixture(scope="module")
 def mocked_s3_server_url(mocked_aws_server: ThreadedMotoServer) -> HttpUrl:
     # pylint: disable=protected-access
-    return parse_obj_as(
-        HttpUrl,
+    return TypeAdapter(HttpUrl).validate_python(
         f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # noqa: SLF001
     )

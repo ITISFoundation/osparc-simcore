@@ -18,7 +18,7 @@ from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.utils import logged_gather
@@ -111,7 +111,7 @@ def _get_on_no_more_credits_event(
     # emulates front-end receiving message
 
     async def on_no_more_credits(data):
-        assert parse_obj_as(ServiceNoMoreCredits, data) is not None
+        assert ServiceNoMoreCredits.model_validate(data) is not None
 
     on_event_spy = AsyncMock(wraps=on_no_more_credits)
     socketio_client.on(SOCKET_IO_SERVICE_NO_MORE_CREDITS_EVENT, on_event_spy)

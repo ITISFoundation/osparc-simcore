@@ -4,20 +4,21 @@
 
 from collections import deque
 from pprint import pprint
-from typing import Any, Dict, List, Type, Union
+from typing import Any
 
 import pytest
 from models_library.services import ServiceInput
-from pydantic import ValidationError, confloat, schema_of
+from pydantic import Field, ValidationError, schema_of
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
+from typing_extensions import Annotated
 from utils_port_v2 import create_valid_port_config
 
 
 @pytest.mark.parametrize("port_class", [InputsList, OutputsList])
-def test_empty_ports_mapping(port_class: Type[Union[InputsList, OutputsList]]):
-    port_mapping = port_class(__root__={})
+def test_empty_ports_mapping(port_class: type[InputsList | OutputsList]):
+    port_mapping = port_class(root={})
     assert not port_mapping.items()
     assert not port_mapping.values()
     assert not port_mapping.keys()
@@ -28,17 +29,17 @@ def test_empty_ports_mapping(port_class: Type[Union[InputsList, OutputsList]]):
 
 
 @pytest.mark.parametrize("port_class", [InputsList, OutputsList])
-def test_filled_ports_mapping(port_class: Type[Union[InputsList, OutputsList]]):
-    port_cfgs: Dict[str, Any] = {}
+def test_filled_ports_mapping(port_class: type[InputsList | OutputsList]):
+    port_cfgs: dict[str, Any] = {}
     for t in ["integer", "number", "boolean", "string"]:
         port = create_valid_port_config(t)
         port_cfgs[port["key"]] = port
     port_cfgs["some_file"] = create_valid_port_config("data:*/*", key="some_file")
 
-    port_mapping = port_class(__root__=port_cfgs)
+    port_mapping = port_class(root=port_cfgs)
 
     # two ways to construct instances of __root__
-    assert port_class.parse_obj(port_cfgs) == port_mapping
+    assert port_class.model_validate(port_cfgs) == port_mapping
 
     assert len(port_mapping) == len(port_cfgs)
     for port_key, port_value in port_mapping.items():
@@ -60,8 +61,8 @@ def test_filled_ports_mapping(port_class: Type[Union[InputsList, OutputsList]]):
 def test_io_ports_are_not_aliases():
     # prevents creating alises as InputsList = PortsMappings
 
-    inputs = InputsList(__root__={})
-    outputs = OutputsList(__root__={})
+    inputs = InputsList(root={})
+    outputs = OutputsList(root={})
 
     assert isinstance(inputs, InputsList)
     assert not isinstance(inputs, OutputsList)
@@ -71,10 +72,10 @@ def test_io_ports_are_not_aliases():
 
 
 @pytest.fixture
-def fake_port_meta() -> Dict[str, Any]:
+def fake_port_meta() -> dict[str, Any]:
     """Service port metadata: defines a list of non-negative numbers"""
     schema = schema_of(
-        List[confloat(ge=0)],
+        list[Annotated[float, Field(ge=0)]],
         title="list[non-negative number]",
     )
     schema.update(
@@ -83,10 +84,10 @@ def fake_port_meta() -> Dict[str, Any]:
     )
 
     port_model = ServiceInput.from_json_schema(port_schema=schema)
-    return port_model.dict(exclude_unset=True, by_alias=True)
+    return port_model.model_dump(exclude_unset=True, by_alias=True)
 
 
-def test_validate_port_value_against_schema(fake_port_meta: Dict[str, Any]):
+def test_validate_port_value_against_schema(fake_port_meta: dict[str, Any]):
     # A simcore-sdk Port instance is a combination of both
     #  - the port's metadata
     #  - the port's value
@@ -109,19 +110,19 @@ def test_validate_port_value_against_schema(fake_port_meta: Dict[str, Any]):
 
     assert error["loc"] == ("value",)
     assert "-2 is less than the minimum of 0" in error["msg"]
-    assert error["type"] == "value_error.port_validation.schema_error"
+    assert error["type"] == "value_error"
 
     assert "ctx" in error
-    assert error["ctx"]["port_key"] == "port_1"
+    assert error["ctx"]["error"].port_key == "port_1"
 
-    schema_error_message = error["ctx"]["schema_error_message"]
-    schema_error_path = error["ctx"]["schema_error_path"]
+    schema_error_message = error["ctx"]["error"].schema_error_message
+    schema_error_path = error["ctx"]["error"].schema_error_path
 
     assert schema_error_message in error["msg"]
     assert schema_error_path == deque([1])
 
 
-def test_validate_iolist_against_schema(fake_port_meta: Dict[str, Any]):
+def test_validate_iolist_against_schema(fake_port_meta: dict[str, Any]):
     # Check how errors propagate from a single Port to InputsList
 
     # reference port
@@ -151,7 +152,7 @@ def test_validate_iolist_against_schema(fake_port_meta: Dict[str, Any]):
     # ----
 
     with pytest.raises(ValidationError) as err_info:
-        InputsList.parse_obj({p["key"]: p for p in ports})
+        InputsList.model_validate({p["key"]: p for p in ports})
 
     # ---
     assert isinstance(err_info.value, ValidationError)
@@ -161,14 +162,13 @@ def test_validate_iolist_against_schema(fake_port_meta: Dict[str, Any]):
     for error in err_info.value.errors():
         error_loc = error["loc"]
         assert "ctx" in error
-        port_key = error["ctx"].get("port_key")
+        port_key = error["ctx"]["error"].port_key
 
         # path hierachy
-        assert error_loc[0] == "__root__", f"{error_loc=}"
-        assert error_loc[1] == port_key, f"{error_loc=}"
-        assert error_loc[-1] == "value", f"{error_loc=}"
+        assert error_loc[0] == port_key, f"{error_loc=}"
+        assert error_loc[1] == "value", f"{error_loc=}"
 
-        assert error["type"] == "value_error.port_validation.schema_error"
+        assert error["type"] == "value_error"
         port_with_errors.append(port_key)
         pprint(error)
 

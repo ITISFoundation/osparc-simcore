@@ -13,7 +13,7 @@ from models_library.api_schemas_webserver.projects_ports import (
 from models_library.projects import DateTimeStr
 from models_library.projects_nodes import InputID
 from models_library.projects_nodes_io import LinkToFileTypes, NodeID, SimcoreS3FileID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from ..models.domain.projects import InputTypes, SimCoreFileLink
 from ..models.schemas.files import File
@@ -107,7 +107,7 @@ async def create_job_outputs_from_project_outputs(
             and {"store", "path"}.issubset(value.keys())
         ):
             assert (  # nosec
-                parse_obj_as(LinkToFileTypes, value) is not None  # type: ignore[arg-type]
+                TypeAdapter(LinkToFileTypes).validate_python(value) is not None
             )
 
             path = value["path"]

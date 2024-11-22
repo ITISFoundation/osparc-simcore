@@ -18,8 +18,8 @@ define _up_simcore
 # set some parameters to allow for e2e to run
 echo LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
 echo LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
-echo DEFAULT_MAX_NANO_CPUS=1000000000 >> $(SIMCORE_DOT_ENV)
-echo DEFAULT_MAX_MEMORY=134217728 >> $(SIMCORE_DOT_ENV)
+echo DIRECTOR_DEFAULT_MAX_NANO_CPUS=1000000000 >> $(SIMCORE_DOT_ENV)
+echo DIRECTOR_DEFAULT_MAX_MEMORY=134217728 >> $(SIMCORE_DOT_ENV)
 echo SIDECAR_FORCE_CPU_NODE=1 >> $(SIMCORE_DOT_ENV)
 $(MAKE_C) $(REPO_BASE_DIR) up-prod ops_ci=1
 endef
@@ -64,7 +64,8 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 RETRY_DURATION_SECONDS := 30
 RETRY_INTERVAL_SECONDS := 1
 
-install-ci-up-simcore: install-ci
+.PHONY: install-ci-up-simcore
+install-ci-up-simcore: install-ci  ## run registry and simcore stack locally (push sleepers image and modifies DB)
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_transfer-images-to-registry)
 	@$(_up_simcore)
@@ -105,6 +106,28 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 		--headed \
 		--autoregister \
 		$(CURDIR)/tests/sleepers/test_sleepers.py
+
+.PHONY: test-platform
+test-platform: _check_venv_active ## runs platform test on local deploy
+	@pytest \
+		-sxvv \
+		--color=yes \
+		--product-url=http://$(get_my_ip):9081 \
+		--autoregister \
+		--tracing=on \
+		$(CURDIR)/tests/platform_CI_tests/test_platform.py
+
+.PHONY: test-platform-dev
+test-platform-dev: _check_venv_active  ## runs platform test on local deploy (with PWDEBUG=1)
+	@PWDEBUG=1 pytest \
+		-sxvv \
+		--color=yes \
+		--pdb \
+		--product-url=http://$(get_my_ip):9081 \
+		--headed \
+		--autoregister \
+		--tracing=on \
+		$(CURDIR)/tests/platform_CI_tests/test_platform.py
 
 
 # Define the files where user input will be saved

@@ -32,11 +32,7 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 # Breaking changes -----------------------------------------------------------------------------------------
 #
 
-
-# SEE https://github.com/ITISFoundation/osparc-simcore/issues/4481
-fastapi<0.100.0
-pydantic<2.0
-
+# with new released version 1.0.0 (https://github.com/aio-libs/aiozipkin/releases).
 # TODO: includes async features https://docs.sqlalchemy.org/en/14/changelog/migration_20.html
 sqlalchemy<2.0
 

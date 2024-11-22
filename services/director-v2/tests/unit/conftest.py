@@ -27,7 +27,8 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.services_enums import ServiceState
-from pydantic import parse_obj_as
+from models_library.utils._original_fastapi_encoders import jsonable_encoder
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
@@ -52,17 +53,17 @@ def simcore_services_network_name() -> str:
 
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
-    simcore_service_labels = SimcoreServiceLabels.parse_obj(
-        SimcoreServiceLabels.Config.schema_extra["examples"][1]
+    simcore_service_labels = SimcoreServiceLabels.model_validate(
+        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][1]
     )
-    simcore_service_labels.callbacks_mapping = parse_obj_as(CallbacksMapping, {})
+    simcore_service_labels.callbacks_mapping = CallbacksMapping.model_validate({})
     return simcore_service_labels
 
 
 @pytest.fixture
 def dynamic_service_create() -> DynamicServiceCreate:
-    return DynamicServiceCreate.parse_obj(
-        DynamicServiceCreate.Config.schema_extra["example"]
+    return DynamicServiceCreate.model_validate(
+        DynamicServiceCreate.model_config["json_schema_extra"]["example"]
     )
 
 
@@ -123,7 +124,7 @@ def scheduler_data_from_http_request(
 def mock_service_inspect(
     scheduler_data_from_http_request: ServiceDetails,
 ) -> Mapping[str, Any]:
-    service_details = json.loads(scheduler_data_from_http_request.json())
+    service_details = json.loads(scheduler_data_from_http_request.model_dump_json())
     service_details["compose_spec"] = json.dumps(service_details["compose_spec"])
     return {
         "Spec": {
@@ -200,7 +201,7 @@ def mocked_storage_service_api(
         respx_mock.post(
             "/simcore-s3:access",
             name="get_or_create_temporary_s3_access",
-        ).respond(json={"data": fake_s3_settings.dict(by_alias=True)})
+        ).respond(json=jsonable_encoder({"data": fake_s3_settings}, by_alias=True))
 
         yield respx_mock
 
@@ -211,8 +212,10 @@ def mocked_storage_service_api(
 @pytest.fixture
 def mock_service_key_version() -> ServiceKeyVersion:
     return ServiceKeyVersion(
-        key=parse_obj_as(ServiceKey, "simcore/services/dynamic/myservice"),
-        version=parse_obj_as(ServiceVersion, "1.4.5"),
+        key=TypeAdapter(ServiceKey).validate_python(
+            "simcore/services/dynamic/myservice"
+        ),
+        version=TypeAdapter(ServiceVersion).validate_python("1.4.5"),
     )
 
 
@@ -221,7 +224,7 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
     # the service specifications follow the Docker service creation available
     # https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     return {
-        "sidecar": DockerServiceSpec.parse_obj(
+        "sidecar": DockerServiceSpec.model_validate(
             {
                 "Labels": {"label_one": faker.pystr(), "label_two": faker.pystr()},
                 "TaskTemplate": {
@@ -264,7 +267,7 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
                     },
                 },
             }
-        ).dict(by_alias=True, exclude_unset=True)
+        ).model_dump(by_alias=True, exclude_unset=True)
     }
 
 

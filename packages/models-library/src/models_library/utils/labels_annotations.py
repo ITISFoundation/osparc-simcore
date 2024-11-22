@@ -8,7 +8,7 @@ import json
 from json.decoder import JSONDecodeError
 from typing import Any, TypeAlias
 
-from .json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 
 LabelsAnnotationsDict: TypeAlias = dict[str, str]
 

@@ -14,7 +14,7 @@ import pytest
 from faker import Faker
 from models_library.basic_types import IDStr
 from models_library.users import UserID
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr, TypeAdapter
 
 from .helpers.faker_factories import DEFAULT_TEST_PASSWORD, random_user
 
@@ -61,8 +61,7 @@ def pytest_addoption(parser: pytest.Parser):
 
 @pytest.fixture
 def user_id(faker: Faker, request: pytest.FixtureRequest) -> UserID:
-    return parse_obj_as(
-        UserID,
+    return TypeAdapter(UserID).validate_python(
         request.config.getoption("--faker-user-id", default=None) or faker.pyint(),
     )
 
@@ -74,8 +73,7 @@ def is_external_user_email(request: pytest.FixtureRequest) -> bool:
 
 @pytest.fixture
 def user_email(faker: Faker, request: pytest.FixtureRequest) -> EmailStr:
-    return parse_obj_as(
-        EmailStr,
+    return TypeAdapter(EmailStr).validate_python(
         request.config.getoption(_FAKE_USER_EMAIL_OPTION, default=None)
         or faker.email(),
     )
@@ -93,7 +91,7 @@ def user_last_name(faker: Faker) -> str:
 
 @pytest.fixture
 def user_name(user_email: str) -> IDStr:
-    return parse_obj_as(IDStr, user_email.split("@")[0])
+    return TypeAdapter(IDStr).validate_python(user_email.split("@")[0])
 
 
 @pytest.fixture
