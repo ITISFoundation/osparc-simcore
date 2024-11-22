@@ -631,6 +631,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       // check the entries in currentParams are the same as the reqParams
       let sameContext = true;
       Object.entries(currentParams).forEach(([key, value]) => {
+        // loose equality: will do a Number to String conversion if necessary
         sameContext &= key in reqParams && reqParams[key] == value;
       });
       return !sameContext;
