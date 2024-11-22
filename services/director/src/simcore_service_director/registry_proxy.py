@@ -68,7 +68,7 @@ async def _basic_auth_registry_request(
         else None
     )
 
-    request_url = URL(app_settings.DIRECTOR_REGISTRY.api_url).with_path(
+    request_url = URL(f"{app_settings.DIRECTOR_REGISTRY.api_url}").with_path(
         path, encoded=True
     )
 

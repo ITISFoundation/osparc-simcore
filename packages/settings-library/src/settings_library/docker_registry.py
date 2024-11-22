@@ -1,7 +1,14 @@
 from functools import cached_property
 from typing import Any, Self
 
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import (
+    AnyHttpUrl,
+    Field,
+    SecretStr,
+    TypeAdapter,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
@@ -51,8 +58,10 @@ class RegistrySettings(BaseCustomSettings):
         return self.REGISTRY_PATH or self.REGISTRY_URL
 
     @cached_property
-    def api_url(self) -> str:
-        return f"{self.REGISTRY_URL}/v2"
+    def api_url(self) -> AnyHttpUrl:
+        return TypeAdapter(AnyHttpUrl).validate_python(
+            f"http{'s' if self.REGISTRY_SSL else ''}://{self.REGISTRY_URL}/v2"
+        )
 
     model_config = SettingsConfigDict(
         json_schema_extra={
