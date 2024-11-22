@@ -274,7 +274,9 @@ async def _list_repositories_gen(
 
         while True:
             if "Link" in headers:
-                next_path = str(headers["Link"]).split(";")[0].strip("<>")
+                next_path = (
+                    str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                )
                 prefetch_task = asyncio.create_task(
                     registry_request(app, path=next_path)
                 )
@@ -301,7 +303,9 @@ async def list_image_tags_gen(
         tags, headers = await registry_request(app, path=path)  # initial call
         while True:
             if "Link" in headers:
-                next_path = str(headers["Link"]).split(";")[0].strip("<>")
+                next_path = (
+                    str(headers["Link"]).split(";")[0].strip("<>").removeprefix("/v2/")
+                )
                 prefetch_task = asyncio.create_task(
                     registry_request(app, path=next_path)
                 )
