@@ -1161,7 +1161,7 @@ class RebootState:
         ),
     ],
 )
-async def test_handling_scheduling_after_reboot(
+async def test_handling_scheduled_tasks_after_director_reboots(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
     mocked_dask_client: mock.MagicMock,
