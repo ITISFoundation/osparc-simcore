@@ -37,8 +37,9 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
 
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
-      initCollabs.push(this.self().getEveryoneProductObj(this._resourceType === "study"));
-      initCollabs.push(this.self().getEveryoneObj(this._resourceType === "study"));
+      const groupsStore = osparc.store.Groups.getInstance();
+      const everyoneProductGroup = groupsStore.getEveryoneProductGroup();
+      initCollabs.push(everyoneProductGroup);
     }
 
     this.base(arguments, studyDataCopy, initCollabs);
@@ -105,22 +106,6 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       }
       return true;
     },
-
-    getEveryoneProductObj: function(isStudy) {
-      const groupsStore = osparc.store.Groups.getInstance();
-      const everyoneProductGroup = groupsStore.getEveryoneProductGroup();
-      const everyone = osparc.utils.Utils.deepCloneObject(everyoneProductGroup);
-      everyone["accessRights"] = isStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
-      return everyone;
-    },
-
-    getEveryoneObj: function(isStudy) {
-      const groupsStore = osparc.store.Groups.getInstance();
-      const everyoneGroup = groupsStore.getEveryoneGroup();
-      const everyone = osparc.utils.Utils.deepCloneObject(everyoneGroup);
-      everyone["accessRights"] = isStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
-      return everyone;
-    }
   },
 
   members: {

@@ -136,6 +136,29 @@ qx.Class.define("osparc.store.Groups", {
       })
     },
 
+    getAllGroupsAndUsers: function() {
+      const allGroupsAndUsers = {};
+
+      const groupEveryone = this.getEveryoneGroup();
+      allGroupsAndUsers[groupEveryone.getGroupId()] = groupEveryone;
+
+      const groupProductEveryone = this.getEveryoneProductGroup();
+      allGroupsAndUsers[groupProductEveryone.getGroupId()] = groupProductEveryone;
+
+      const groupMe = this.getGroupMe();
+      allGroupsAndUsers[groupMe.getGroupId()] = groupMe;
+
+      Object.values(this.getOrganizations()).forEach(organization => {
+        allGroupsAndUsers[organization.getGroupId()] = organization;
+      });
+
+      Object.values(this.getReachableUsers()).forEach(reachableUser => {
+        allGroupsAndUsers[reachableUser.getGroupId()] = reachableUser;
+      });
+
+      return allGroupsAndUsers;
+    },
+
     getMyGroupId: function() {
       return this.getGroupMe().getGroupId();
     },

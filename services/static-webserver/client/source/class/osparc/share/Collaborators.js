@@ -37,7 +37,7 @@ qx.Class.define("osparc.share.Collaborators", {
 
     this.__collaborators = {};
     initCollabs.forEach(initCollab => {
-      this.__collaborators[initCollab["gid"]] = initCollab;
+      this.__collaborators[initCollab.getGroupId()] = initCollab;
     });
     this.__getCollaborators();
   },
@@ -402,15 +402,16 @@ qx.Class.define("osparc.share.Collaborators", {
 
       const groupsStore = osparc.store.Groups.getInstance();
       const everyoneGIds = [
-        groupsStore.getEveryoneProductGroup()["gid"],
-        groupsStore.getEveryoneGroup()["gid"]
+        groupsStore.getEveryoneProductGroup().getGroupId(),
+        groupsStore.getEveryoneGroup().getGroupId()
       ];
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
       const showOptions = this.__canIChangePermissions();
+      const allGroupsAndUsers = groupsStore.getAllGroupsAndUsers();
       Object.keys(accessRights).forEach(gid => {
-        if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
-          const collab = this.__collaborators[gid];
+        if (gid in allGroupsAndUsers) {
+          const collab = allGroupsAndUsers[gid];
           // Do not override collaborator object
           const collaborator = {
             "gid": collab.getGroupId(),
