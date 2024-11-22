@@ -35,9 +35,9 @@ qx.Class.define("osparc.share.Collaborators", {
 
     this.__buildLayout();
 
-    this.__collaborators = {};
+    this.__potentialCollaborators = {};
     initCollabs.forEach(initCollab => {
-      this.__collaborators[initCollab.getGroupId()] = initCollab;
+      this.__potentialCollaborators[initCollab.getGroupId()] = initCollab;
     });
     this.__getCollaborators();
   },
@@ -158,7 +158,7 @@ qx.Class.define("osparc.share.Collaborators", {
     _resourceType: null,
     __addCollaborators: null,
     __collaboratorsModel: null,
-    __collaborators: null,
+    __potentialCollaborators: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -341,8 +341,8 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __getCollaborators: function() {
-      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
-      this.__collaborators = Object.assign(this.__collaborators, potentialCollaborators);
+      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
+      this.__potentialCollaborators = Object.assign(this.__potentialCollaborators, potentialCollaborators);
       this._reloadCollaboratorsList();
     },
 
