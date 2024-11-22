@@ -414,7 +414,7 @@ def log_in_and_out(
         page.wait_for_timeout(500)
 
 
-def _open_with_resources(page: Page, click_it: bool):
+def _open_with_resources(page: Page, *, click_it: bool):
     study_title_field = page.get_by_test_id("studyTitleField")
     # wait until the title is automatically filled up
     expect(study_title_field).not_to_have_value("", timeout=5000)
