@@ -90,8 +90,8 @@ qx.Class.define("osparc.store.Groups", {
           });
           this.setEveryoneGroup(everyoneGroup);
           this.setEveryoneProductGroup(productEveryoneGroup);
-          this.setGroupMe(groupMe);
           this.setOrganizations(orgs);
+          this.setGroupMe(groupMe);
           return orgs;
         });
     },

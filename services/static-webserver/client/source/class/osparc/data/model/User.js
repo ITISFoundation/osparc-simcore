@@ -40,7 +40,7 @@ qx.Class.define("osparc.data.model.User", {
       groupId: userData.gid,
       label: label,
       login: userData.login,
-      thumbnail: osparc.utils.Avatar.getUrl(userData.login, 32),
+      thumbnail: this.self().emailToThumbnail(userData.login),
       accessRights: userData.accessRights,
     });
   },
@@ -86,6 +86,12 @@ qx.Class.define("osparc.data.model.User", {
       nullable: true,
       init: "",
       event: "changeThumbnail",
+    },
+  },
+
+  statics: {
+    emailToThumbnail: function(email) {
+      return osparc.utils.Avatar.getUrl(email, 32)
     },
   }
 });

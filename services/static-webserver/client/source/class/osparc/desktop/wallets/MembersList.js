@@ -217,18 +217,16 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         const gid = accessRights["gid"];
         if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
           const collab = potentialCollaborators[parseInt(gid)];
-          // Do not override collaborator object
-          const collaborator = osparc.utils.Utils.deepCloneObject(collab);
-          if ("first_name" in collaborator) {
-            collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
-            collaborator["name"] = osparc.utils.Utils.firstsUp(
-              `${"first_name" in collaborator && collaborator["first_name"] != null ?
-                collaborator["first_name"] : collaborator["login"]}`,
-              `${"last_name" in collaborator && collaborator["last_name"] != null ?
-                collaborator["last_name"] : ""}`
-            );
-          }
-          collaborator["accessRights"] = accessRights;
+          const collaborator = {};
+          collaborator["groupId"] = collab.getGroupId();
+          collaborator["thumbnail"] = collab.getThumbnail();
+          collaborator["name"] = collab.getLabel();
+          collaborator["login"] = "getLogin" in collab ? collab.getLogin() : "";
+          collaborator["accessRights"] = {
+            read: accessRights["read"],
+            write: accessRights["write"],
+            delete: accessRights["delete"],
+          };
           let options = [];
           if (canIWrite) {
             // accountant...
