@@ -15,6 +15,7 @@
 aiocache
 aiodocker
 fastapi[all]
-httpx
+httpx[http2]
 prometheus-client
 pydantic
+tenacity
