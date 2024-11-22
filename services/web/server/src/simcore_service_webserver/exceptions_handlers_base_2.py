@@ -29,16 +29,18 @@ _EXCEPTIONS_HANDLERS_KEY = f"{__name__}._EXCEPTIONS_HANDLERS_KEY"
 _EXCEPTIONS_MAP_KEY = f"{__name__}._EXCEPTIONS_MAP_KEY"
 
 
-def setup_exception_handlers(scope: MutableMapping):
+def setup_exception_handlers(registry: MutableMapping):
     # init registry in the scope
-    scope[_EXCEPTIONS_HANDLERS_KEY] = {}
-    scope[_EXCEPTIONS_MAP_KEY] = {}
+    registry[_EXCEPTIONS_HANDLERS_KEY] = {}
+    registry[_EXCEPTIONS_MAP_KEY] = {}
     # but this is very specific because it responds with only status! you migh want to have different
     # type of bodies, etc
 
 
-def _get_exception_handler_registry(scope: MutableMapping) -> ExceptionHandlerRegistry:
-    return scope.get(_EXCEPTIONS_HANDLERS_KEY, {})
+def _get_exception_handler_registry(
+    registry: MutableMapping,
+) -> ExceptionHandlerRegistry:
+    return registry.get(_EXCEPTIONS_HANDLERS_KEY, {})
 
 
 def add_exception_handler(
@@ -66,7 +68,7 @@ def _create_exception_handler_mapper(
 
 
 def add_exception_mapper(
-    scope: MutableMapping,
+    registry: MutableMapping,
     exc_class: type[Exception],
     http_exc_class: type[web.HTTPException],
 ):
@@ -76,9 +78,9 @@ def add_exception_mapper(
     """
 
     # adds exception handler to scope
-    scope[_EXCEPTIONS_MAP_KEY][exc_class] = http_exc_class
+    registry[_EXCEPTIONS_MAP_KEY][exc_class] = http_exc_class
     add_exception_handler(
-        scope,
+        registry,
         exc_class,
         handler=_create_exception_handler_mapper(exc_class, http_exc_class),
     )
@@ -86,6 +88,7 @@ def add_exception_mapper(
 
 async def handle_request_with_exception_handling_in_scope(
     # Create using contextlib.contextmanager
+    # FIXME: !!!
     handler: Handler,
     request: web.Request,
     scope: MutableMapping[str, Any] | None = None,
@@ -110,12 +113,12 @@ async def handle_request_with_exception_handling_in_scope(
 
 
 # decorator
-def handle_registered_exceptions(scope: MutableMapping[str, Any] | None = None):
+def handle_registered_exceptions(registry: MutableMapping[str, Any] | None = None):
     def _decorator(handler: Handler):
         @functools.wraps(handler)
         async def _wrapper(request: web.Request) -> web.Response:
             return await handle_request_with_exception_handling_in_scope(
-                handler, request, scope
+                handler, request, registry
             )
 
         return _wrapper
