@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
@@ -68,7 +68,7 @@ async def assert_comp_runs(
         if where_statement is not None:
             query = query.where(where_statement)
         list_of_comp_runs = [
-            CompRunsAtDB.from_orm(row) for row in await conn.execute(query)
+            CompRunsAtDB.model_validate(row) for row in await conn.execute(query)
         ]
     assert len(list_of_comp_runs) == expected_total
     if list_of_comp_runs and expected_state:
@@ -98,7 +98,7 @@ async def assert_comp_tasks(
                 & (comp_tasks.c.node_id.in_([f"{n}" for n in task_ids]))
             )  # there is only one entry
         )
-        tasks = parse_obj_as(list[CompTaskAtDB], result.fetchall())
+        tasks = TypeAdapter(list[CompTaskAtDB]).validate_python(result.fetchall())
     assert all(
         t.state == expected_state for t in tasks
     ), f"expected state: {expected_state}, found: {[t.state for t in tasks]}"
