@@ -105,7 +105,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "WALLET_SHARED",
         "actionable_path": "wallet/"+walletId,
-        "resource_id": walletId,
+        "resource_id": walletId.toString(),
         "title": "Credits shared",
         "text": "A Credit Account was shared with you"
       };
@@ -143,9 +143,9 @@ qx.Class.define("osparc.notification.Notifications", {
       return osparc.data.Resources.fetch("notifications", "post", params);
     },
 
-    postNewWallet: function(userId, studyId) {
+    postNewWallet: function(userId, walletId) {
       const params = {
-        data: this.__newWalletObj(userId, studyId)
+        data: this.__newWalletObj(userId, walletId)
       };
       return osparc.data.Resources.fetch("notifications", "post", params);
     },
