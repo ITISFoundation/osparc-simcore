@@ -34,12 +34,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     this._resourceType = "service";
     const serviceDataCopy = osparc.utils.Utils.deepCloneObject(serviceData);
 
-    const initCollabs = [];
-    const groupsStore = osparc.store.Groups.getInstance();
-    const everyoneProductGroup = groupsStore.getEveryoneProductGroup();
-    initCollabs.push(everyoneProductGroup);
-
-    this.base(arguments, serviceDataCopy, initCollabs);
+    this.base(arguments, serviceDataCopy);
   },
 
   statics: {
