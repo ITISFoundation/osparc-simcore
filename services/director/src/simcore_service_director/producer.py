@@ -178,7 +178,8 @@ async def _create_docker_service_params(
     service_name = registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
     _logger.debug("Converting labels to docker runtime parameters")
     service_default_envs = {
-        "POSTGRES_ENDPOINT": app_settings.DIRECTOR_POSTGRES.dsn,
+        # old services expect POSTGRES_ENDPOINT as hostname:port
+        "POSTGRES_ENDPOINT": f"{app_settings.DIRECTOR_POSTGRES.POSTGRES_HOST}:{app_settings.DIRECTOR_POSTGRES.POSTGRES_PORT}",
         "POSTGRES_USER": app_settings.DIRECTOR_POSTGRES.POSTGRES_USER,
         "POSTGRES_PASSWORD": app_settings.DIRECTOR_POSTGRES.POSTGRES_PASSWORD.get_secret_value(),
         "POSTGRES_DB": app_settings.DIRECTOR_POSTGRES.POSTGRES_DB,

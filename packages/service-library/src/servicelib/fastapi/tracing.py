@@ -17,6 +17,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
+from yarl import URL
 
 _logger = logging.getLogger(__name__)
 
@@ -75,7 +76,13 @@ def setup_tracing(
     trace.set_tracer_provider(TracerProvider(resource=resource))
     global_tracer_provider = trace.get_tracer_provider()
     assert isinstance(global_tracer_provider, TracerProvider)  # nosec
-    tracing_destination: str = f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}:{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}/v1/traces"
+
+    opentelemetry_collector_endpoint: str = (
+        f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}"
+    )
+
+    tracing_destination: str = f"{URL(opentelemetry_collector_endpoint).with_port(tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT).with_path('/v1/traces')}"
+
     _logger.info(
         "Trying to connect service %s to opentelemetry tracing collector at %s.",
         service_name,
