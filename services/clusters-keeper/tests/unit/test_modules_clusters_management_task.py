@@ -13,8 +13,6 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 
-_FAST_POLL_INTERVAL = 1
-
 
 @pytest.fixture
 def app_environment(
@@ -22,7 +20,7 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
-        monkeypatch, {"CLUSTERS_KEEPER_TASK_INTERVAL": f"{_FAST_POLL_INTERVAL}"}
+        monkeypatch, {"CLUSTERS_KEEPER_TASK_INTERVAL": "00:00:01"}
     )
 
 
@@ -43,10 +41,7 @@ async def test_clusters_management_task_created_and_deleted(
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,
 ):
-    assert (
-        app_settings.CLUSTERS_KEEPER_TASK_INTERVAL.total_seconds()
-        == _FAST_POLL_INTERVAL
-    )
+    assert app_settings.CLUSTERS_KEEPER_TASK_INTERVAL.total_seconds() == 1
     assert hasattr(initialized_app.state, "clusters_cleaning_task")
-    await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
+    await asyncio.sleep(5)
     mock_background_task.assert_called()
