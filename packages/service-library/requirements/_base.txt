@@ -274,6 +274,7 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-redis
 yarl==1.12.1
     # via
+    #   -r requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq
