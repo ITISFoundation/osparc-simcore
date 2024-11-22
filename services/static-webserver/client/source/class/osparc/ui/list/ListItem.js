@@ -58,6 +58,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
 
     this.set({
       padding: 5,
+      minHeight: 48,
       alignY: "middle",
     });
 
