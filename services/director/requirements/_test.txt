@@ -87,10 +87,13 @@ propcache==0.2.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
+py-cpuinfo==9.0.0
+    # via pytest-benchmark
 pytest==8.3.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
+    #   pytest-benchmark
     #   pytest-cov
     #   pytest-docker
     #   pytest-instafail
@@ -100,6 +103,8 @@ pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
+pytest-benchmark==5.1.0
+    # via -r requirements/_test.in
 pytest-cov==6.0.0
     # via -r requirements/_test.in
 pytest-docker==3.1.1

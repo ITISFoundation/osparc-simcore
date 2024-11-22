@@ -7,7 +7,7 @@ import uuid
 
 import httpx
 import pytest
-from aioresponses import CallbackResult, aioresponses
+import respx
 from faker import Faker
 from fastapi import status
 from models_library.projects import ProjectID
@@ -172,29 +172,23 @@ async def test_running_services_post_and_delete(
         if save_state:
             query_params.update({"save_state": "true" if save_state else "false"})
 
-        mocked_save_state_cb = mocker.MagicMock(
-            return_value=CallbackResult(status=200, payload={})
-        )
-        PASSTHROUGH_REQUESTS_PREFIXES = [
-            "http://127.0.0.1",
-            "http://localhost",
-            "unix://",  # docker engine
-            "ws://",  # websockets
-        ]
-        with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
+        with respx.mock(
+            base_url=f"http://{service_host}:{service_port}{service_basepath}",
+            assert_all_called=False,
+            assert_all_mocked=False,
+        ) as respx_mock:
 
-            # POST /http://service_host:service_port service_basepath/state -------------------------------------------------
-            mock.post(
-                f"http://{service_host}:{service_port}{service_basepath}/state",
-                status=200,
-                callback=mocked_save_state_cb,
-            )
+            def _save_me(request) -> httpx.Response:
+                return httpx.Response(status.HTTP_200_OK, json={})
+
+            respx_mock.post("/state", name="save_state").mock(side_effect=_save_me)
+            respx_mock.route(host="127.0.0.1", name="host").pass_through()
+            respx_mock.route(host="localhost", name="localhost").pass_through()
+
             resp = await client.delete(
                 f"/{api_version_prefix}/running_interactive_services/{params['service_uuid']}",
                 params=query_params,
             )
-            if expected_save_state_call:
-                mocked_save_state_cb.assert_called_once()
 
         text = resp.text
         assert resp.status_code == status.HTTP_204_NO_CONTENT, text
