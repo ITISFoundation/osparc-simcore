@@ -2605,7 +2605,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateFolderBodyParams'
+              $ref: '#/components/schemas/FolderCreateBodyParams'
       responses:
         '201':
           description: Successful Response
@@ -2775,7 +2775,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PutFolderBodyParams'
+              $ref: '#/components/schemas/FolderReplaceBodyParams'
       responses:
         '200':
           description: Successful Response
@@ -5535,21 +5535,21 @@ paths:
       summary: Trash Workspace
       operationId: trash_workspace
       parameters:
-      - required: true
-        schema:
-          title: Workspace Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: workspace_id
+      - name: workspace_id
         in: path
-      - required: false
+        required: true
         schema:
-          title: Force
+          type: integer
+          exclusiveMinimum: true
+          title: Workspace Id
+          minimum: 0
+      - name: force
+        in: query
+        required: false
+        schema:
           type: boolean
           default: false
-        name: force
-        in: query
+          title: Force
       responses:
         '204':
           description: Successful Response
@@ -5568,14 +5568,14 @@ paths:
       summary: Untrash Workspace
       operationId: untrash_workspace
       parameters:
-      - required: true
-        schema:
-          title: Workspace Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: workspace_id
+      - name: workspace_id
         in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Workspace Id
+          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -5803,65 +5803,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
   /v0/workspaces:
-    get:
-      tags:
-      - workspaces
-      summary: List Workspaces
-      operationId: list_workspaces
-      parameters:
-      - required: false
-        schema:
-          title: Order By
-          type: string
-          description: Order by field (`modified_at|name`) and direction (`asc|desc`).
-            The default sorting order is `{"field":"modified_at","direction":"desc"}`.
-          default: '{"field":"modified","direction":"desc"}'
-          example: '{"field":"name","direction":"desc"}'
-        name: order_by
-        in: query
-      - required: false
-        schema:
-          title: Filters
-          type: string
-          description: Custom filter query parameter encoded as JSON
-        name: filters
-        in: query
-      - required: false
-        schema:
-          title: Limit
-          exclusiveMaximum: true
-          minimum: 1
-          type: integer
-          default: 20
-          maximum: 50
-        name: limit
-        in: query
-      - required: false
-        schema:
-          title: Offset
-          minimum: 0
-          type: integer
-          default: 0
-        name: offset
-        in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_WorkspaceGet__'
     post:
       tags:
       - workspaces
       summary: Create Workspace
       operationId: create_workspace
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/WorkspaceCreateBodyParams'
-        required: true
       responses:
         '201':
           description: Successful Response
@@ -5869,6 +5821,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+    get:
+      tags:
+      - workspaces
+      summary: List Workspaces
+      operationId: list_workspaces
+      parameters:
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"modified","direction":"desc"}'
+          title: Order By
+      - name: filters
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            contentMediaType: application/json
+            contentSchema: {}
+          - type: 'null'
+          title: Filters
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_WorkspaceGet__'
   /v0/workspaces/{workspace_id}:
     get:
       tags:
@@ -5910,7 +5908,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PutWorkspaceBodyParams'
+              $ref: '#/components/schemas/WorkspaceReplaceBodyParams'
       responses:
         '200':
           description: Successful Response
@@ -5964,7 +5962,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
+              $ref: '#/components/schemas/WorkspacesGroupsBodyParams'
       responses:
         '201':
           description: Successful Response
@@ -6000,7 +5998,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
+              $ref: '#/components/schemas/WorkspacesGroupsBodyParams'
       responses:
         '200':
           description: Successful Response
@@ -7201,32 +7199,6 @@ components:
       - name
       - alpha2
       title: CountryInfoDict
-    CreateFolderBodyParams:
-      properties:
-        name:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Name
-        parentFolderId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Parentfolderid
-        workspaceId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Workspaceid
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      title: CreateFolderBodyParams
     CreatePricingPlanBodyParams:
       properties:
         displayName:
@@ -7316,26 +7288,6 @@ components:
       required:
       - priceDollars
       title: CreateWalletPayment
-    CreateWorkspaceBodyParams:
-      properties:
-        name:
-          type: string
-          title: Name
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Description
-        thumbnail:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Thumbnail
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      title: CreateWorkspaceBodyParams
     DatCoreFileLink:
       properties:
         store:
@@ -9288,6 +9240,32 @@ components:
       - urls
       - links
       title: FileUploadSchema
+    FolderCreateBodyParams:
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Name
+        parentFolderId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Parentfolderid
+        workspaceId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Workspaceid
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      title: FolderCreateBodyParams
     FolderGet:
       properties:
         folderId:
@@ -9344,6 +9322,25 @@ components:
       - workspaceId
       - myAccessRights
       title: FolderGet
+    FolderReplaceBodyParams:
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Name
+        parentFolderId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Parentfolderid
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      title: FolderReplaceBodyParams
     GenerateInvitation:
       properties:
         guest:
@@ -12140,25 +12137,6 @@ components:
       - created
       - modified
       title: ProjectsCommentsAPI
-    PutFolderBodyParams:
-      properties:
-        name:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Name
-        parentFolderId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Parentfolderid
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      title: PutFolderBodyParams
     PutWalletBodyParams:
       properties:
         name:
@@ -12183,28 +12161,6 @@ components:
       - thumbnail
       - status
       title: PutWalletBodyParams
-    PutWorkspaceBodyParams:
-      properties:
-        name:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Name
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Description
-        thumbnail:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Thumbnail
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      title: PutWorkspaceBodyParams
     RegisterBody:
       properties:
         email:
@@ -14375,6 +14331,26 @@ components:
       - num_fds
       - task_counts
       title: WorkerMetrics
+    WorkspaceCreateBodyParams:
+      properties:
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        thumbnail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Thumbnail
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      title: WorkspaceCreateBodyParams
     WorkspaceGet:
       properties:
         workspaceId:
@@ -14403,6 +14379,19 @@ components:
           type: string
           format: date-time
           title: Modifiedat
+        trashedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
         myAccessRights:
           $ref: '#/components/schemas/AccessRights'
         accessRights:
@@ -14418,6 +14407,8 @@ components:
       - thumbnail
       - createdAt
       - modifiedAt
+      - trashedAt
+      - trashedBy
       - myAccessRights
       - accessRights
       title: WorkspaceGet
@@ -14454,6 +14445,46 @@ components:
       - created
       - modified
       title: WorkspaceGroupGet
+    WorkspaceReplaceBodyParams:
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        thumbnail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Thumbnail
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      title: WorkspaceReplaceBodyParams
+    WorkspacesGroupsBodyParams:
+      properties:
+        read:
+          type: boolean
+          title: Read
+        write:
+          type: boolean
+          title: Write
+        delete:
+          type: boolean
+          title: Delete
+      additionalProperties: false
+      type: object
+      required:
+      - read
+      - write
+      - delete
+      title: WorkspacesGroupsBodyParams
     _ComputationStarted:
       properties:
         pipeline_id:
@@ -14570,21 +14601,3 @@ components:
       - write
       - delete
       title: _WalletsGroupsBodyParams
-    _WorkspacesGroupsBodyParams:
-      properties:
-        read:
-          type: boolean
-          title: Read
-        write:
-          type: boolean
-          title: Write
-        delete:
-          type: boolean
-          title: Delete
-      additionalProperties: false
-      type: object
-      required:
-      - read
-      - write
-      - delete
-      title: _WorkspacesGroupsBodyParams
