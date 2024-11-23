@@ -13,6 +13,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.docker_registry import RegistrySettings
 from simcore_service_director.core.application import create_app
 from simcore_service_director.core.settings import ApplicationSettings
 
@@ -29,12 +30,6 @@ pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",
 ]
-
-
-def pytest_addoption(parser):
-    parser.addoption("--registry_url", action="store", default="default url")
-    parser.addoption("--registry_user", action="store", default="default user")
-    parser.addoption("--registry_pw", action="store", default="default pw")
 
 
 @pytest.fixture(scope="session")
@@ -82,6 +77,23 @@ def configure_registry_access(
             "REGISTRY_URL": docker_registry,
             "REGISTRY_PATH": docker_registry,
             "REGISTRY_SSL": False,
+            "DIRECTOR_REGISTRY_CACHING": False,
+        },
+    )
+
+
+@pytest.fixture
+def configure_external_registry_access(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    external_registry_settings: RegistrySettings | None,
+) -> EnvVarsDict:
+    assert external_registry_settings
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        envs={
+            **external_registry_settings.model_dump(by_alias=True, exclude_none=True),
+            "REGISTRY_PW": external_registry_settings.REGISTRY_PW.get_secret_value(),
             "DIRECTOR_REGISTRY_CACHING": False,
         },
     )

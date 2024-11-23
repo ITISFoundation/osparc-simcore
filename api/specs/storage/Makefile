@@ -1,3 +1,4 @@
+.DEFAULT_GOAL := all
 
 .PHONY: _check_venv_active
 _check_venv_active:
@@ -6,13 +7,12 @@ _check_venv_active:
 
 
 .PHONY: install
-install: _check_venv_active
-	@cd ./../../../../services/storage && make install-dev && cd -
+install-dev install: _check_venv_active
+	# installing storage and requirements.txt
+	@cd ./../../../services/storage && make install-dev && cd -
 	@uv pip install -r requirements.txt
 
 
 .PHONY: all
-all: _check_venv_active
-	@for file in *.py; do \
-		python $$file; \
-	done
+all: _check_venv_active install
+	python openapi.py

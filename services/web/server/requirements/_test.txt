@@ -107,13 +107,9 @@ mypy==1.12.0
 mypy-extensions==1.0.0
     # via mypy
 openapi-schema-validator==0.2.3
-    # via
-    #   -c requirements/_base.txt
-    #   openapi-spec-validator
+    # via openapi-spec-validator
 openapi-spec-validator==0.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
+    # via -r requirements/_test.in
 packaging==24.1
     # via
     #   -c requirements/_base.txt

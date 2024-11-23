@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import (
     AnyHttpUrl,
@@ -92,11 +92,23 @@ class ClusterDetails(BaseModel):
 
 
 class ClusterGet(Cluster):
-    access_rights: dict[GroupID, ClusterAccessRights] = Field(
-        alias="accessRights", default_factory=dict
-    )
+    access_rights: Annotated[
+        dict[GroupID, ClusterAccessRights],
+        Field(
+            alias="accessRights",
+            default_factory=dict,
+            json_schema_extra={"default": {}},
+        ),
+    ]
 
-    model_config = ConfigDict(extra="allow", populate_by_name=True)
+    model_config = ConfigDict(
+        extra="allow",
+        populate_by_name=True,
+        json_schema_extra={
+            # NOTE: make openapi-specs fails because
+            # Cluster.model_config.json_schema_extra is raises `TypeError: unhashable type: 'ClusterAccessRights'`
+        },
+    )
 
     @model_validator(mode="before")
     @classmethod
