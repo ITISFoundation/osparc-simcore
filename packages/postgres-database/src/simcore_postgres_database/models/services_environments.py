@@ -3,7 +3,7 @@ from typing import Final
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 # Intentionally includes the term "SECRET" to avoid leaking this value on a public domain
@@ -36,8 +36,8 @@ services_vendor_secrets = sa.Table(
         sa.ForeignKey(
             "products.name",
             name="fk_services_name_products",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         # NOTE: since this is part of the primary key this is required
         # NOTE: an alternative would be to not use this as a primary key
@@ -59,8 +59,8 @@ services_vendor_secrets = sa.Table(
     sa.ForeignKeyConstraint(
         ["service_key", "service_base_version"],
         ["services_meta_data.key", "services_meta_data.version"],
-        onupdate="CASCADE",
-        ondelete="CASCADE",
+        onupdate=RefActions.CASCADE,
+        ondelete=RefActions.CASCADE,
         # NOTE: this might be a problem: if a version in the metadata is deleted,
         # all versions above will take the secret_map for the previous one.
     ),

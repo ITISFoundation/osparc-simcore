@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 from sqlalchemy.sql import expression
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 from .groups import groups
 from .workspaces import workspaces
@@ -15,8 +15,8 @@ workspaces_access_rights = sa.Table(
         sa.ForeignKey(
             workspaces.c.workspace_id,
             name="fk_workspaces_access_rights_id_workspaces",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         doc="Workspace unique ID",
     ),
@@ -26,8 +26,8 @@ workspaces_access_rights = sa.Table(
         sa.ForeignKey(
             groups.c.gid,
             name="fk_workspaces_access_rights_gid_groups",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         doc="Group unique IDentifier",
     ),

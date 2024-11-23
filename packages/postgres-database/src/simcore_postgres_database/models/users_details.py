@@ -2,6 +2,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 from ._common import (
+    RefActions,
     column_created_datetime,
     column_modified_datetime,
     register_modified_datetime_auto_update_trigger,
@@ -22,8 +23,8 @@ users_pre_registration_details = sa.Table(
         sa.Integer,
         sa.ForeignKey(
             users.c.id,
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         nullable=True,
         doc="None if row was added during pre-registration or join column with `users` after registration",
@@ -71,8 +72,8 @@ users_pre_registration_details = sa.Table(
         sa.Integer,
         sa.ForeignKey(
             users.c.id,
-            onupdate="CASCADE",
-            ondelete="SET NULL",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.SET_NULL,
         ),
         nullable=True,
         doc="PO user that issued this pre-registration",

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.45.0
+  version: 0.46.0
 servers:
 - url: ''
   description: webserver
@@ -2605,7 +2605,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateFolderBodyParams'
+              $ref: '#/components/schemas/FolderCreateBodyParams'
       responses:
         '201':
           description: Successful Response
@@ -2775,7 +2775,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PutFolderBodyParams'
+              $ref: '#/components/schemas/FolderReplaceBodyParams'
       responses:
         '200':
           description: Successful Response
@@ -5504,7 +5504,8 @@ paths:
         '404':
           description: Not such a folder
         '409':
-          description: One or more projects is in use and cannot be trashed
+          description: One or more projects in the folder are in use and cannot be
+            trashed
         '503':
           description: Trash service error
   /v0/folders/{folder_id}:untrash:
@@ -5522,6 +5523,58 @@ paths:
           type: integer
           exclusiveMinimum: true
           title: Folder Id
+          minimum: 0
+      responses:
+        '204':
+          description: Successful Response
+  /v0/workspaces/{workspace_id}:trash:
+    post:
+      tags:
+      - trash
+      - workspaces
+      summary: Trash Workspace
+      operationId: trash_workspace
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Workspace Id
+          minimum: 0
+      - name: force
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Force
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          description: Not such a workspace
+        '409':
+          description: One or more projects in the workspace are in use and cannot
+            be trashed
+        '503':
+          description: Trash service error
+  /v0/workspaces/{workspace_id}:untrash:
+    post:
+      tags:
+      - trash
+      - workspaces
+      summary: Untrash Workspace
+      operationId: untrash_workspace
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Workspace Id
           minimum: 0
       responses:
         '204':
@@ -5750,29 +5803,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
   /v0/workspaces:
-    get:
-      tags:
-      - workspaces
-      summary: List Workspaces
-      operationId: list_workspaces
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_WorkspaceGet__'
     post:
       tags:
       - workspaces
       summary: Create Workspace
       operationId: create_workspace
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateWorkspaceBodyParams'
-        required: true
+              $ref: '#/components/schemas/WorkspaceCreateBodyParams'
       responses:
         '201':
           description: Successful Response
@@ -5780,6 +5821,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+    get:
+      tags:
+      - workspaces
+      summary: List Workspaces
+      operationId: list_workspaces
+      parameters:
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"modified","direction":"desc"}'
+          title: Order By
+      - name: filters
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            contentMediaType: application/json
+            contentSchema: {}
+          - type: 'null'
+          title: Filters
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_WorkspaceGet__'
   /v0/workspaces/{workspace_id}:
     get:
       tags:
@@ -5821,7 +5908,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PutWorkspaceBodyParams'
+              $ref: '#/components/schemas/WorkspaceReplaceBodyParams'
       responses:
         '200':
           description: Successful Response
@@ -5875,7 +5962,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
+              $ref: '#/components/schemas/WorkspacesGroupsBodyParams'
       responses:
         '201':
           description: Successful Response
@@ -5911,7 +5998,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
+              $ref: '#/components/schemas/WorkspacesGroupsBodyParams'
       responses:
         '200':
           description: Successful Response
@@ -7112,32 +7199,6 @@ components:
       - name
       - alpha2
       title: CountryInfoDict
-    CreateFolderBodyParams:
-      properties:
-        name:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Name
-        parentFolderId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Parentfolderid
-        workspaceId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Workspaceid
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      title: CreateFolderBodyParams
     CreatePricingPlanBodyParams:
       properties:
         displayName:
@@ -7227,26 +7288,6 @@ components:
       required:
       - priceDollars
       title: CreateWalletPayment
-    CreateWorkspaceBodyParams:
-      properties:
-        name:
-          type: string
-          title: Name
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Description
-        thumbnail:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Thumbnail
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      title: CreateWorkspaceBodyParams
     DatCoreFileLink:
       properties:
         store:
@@ -9199,6 +9240,32 @@ components:
       - urls
       - links
       title: FileUploadSchema
+    FolderCreateBodyParams:
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Name
+        parentFolderId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Parentfolderid
+        workspaceId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Workspaceid
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      title: FolderCreateBodyParams
     FolderGet:
       properties:
         folderId:
@@ -9255,6 +9322,25 @@ components:
       - workspaceId
       - myAccessRights
       title: FolderGet
+    FolderReplaceBodyParams:
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Name
+        parentFolderId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Parentfolderid
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      title: FolderReplaceBodyParams
     GenerateInvitation:
       properties:
         guest:
@@ -12051,25 +12137,6 @@ components:
       - created
       - modified
       title: ProjectsCommentsAPI
-    PutFolderBodyParams:
-      properties:
-        name:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Name
-        parentFolderId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Parentfolderid
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      title: PutFolderBodyParams
     PutWalletBodyParams:
       properties:
         name:
@@ -12094,28 +12161,6 @@ components:
       - thumbnail
       - status
       title: PutWalletBodyParams
-    PutWorkspaceBodyParams:
-      properties:
-        name:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Name
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Description
-        thumbnail:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Thumbnail
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      title: PutWorkspaceBodyParams
     RegisterBody:
       properties:
         email:
@@ -14286,6 +14331,26 @@ components:
       - num_fds
       - task_counts
       title: WorkerMetrics
+    WorkspaceCreateBodyParams:
+      properties:
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        thumbnail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Thumbnail
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      title: WorkspaceCreateBodyParams
     WorkspaceGet:
       properties:
         workspaceId:
@@ -14314,6 +14379,19 @@ components:
           type: string
           format: date-time
           title: Modifiedat
+        trashedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
         myAccessRights:
           $ref: '#/components/schemas/AccessRights'
         accessRights:
@@ -14329,6 +14407,8 @@ components:
       - thumbnail
       - createdAt
       - modifiedAt
+      - trashedAt
+      - trashedBy
       - myAccessRights
       - accessRights
       title: WorkspaceGet
@@ -14365,6 +14445,46 @@ components:
       - created
       - modified
       title: WorkspaceGroupGet
+    WorkspaceReplaceBodyParams:
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        thumbnail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Thumbnail
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      title: WorkspaceReplaceBodyParams
+    WorkspacesGroupsBodyParams:
+      properties:
+        read:
+          type: boolean
+          title: Read
+        write:
+          type: boolean
+          title: Write
+        delete:
+          type: boolean
+          title: Delete
+      additionalProperties: false
+      type: object
+      required:
+      - read
+      - write
+      - delete
+      title: WorkspacesGroupsBodyParams
     _ComputationStarted:
       properties:
         pipeline_id:
@@ -14481,21 +14601,3 @@ components:
       - write
       - delete
       title: _WalletsGroupsBodyParams
-    _WorkspacesGroupsBodyParams:
-      properties:
-        read:
-          type: boolean
-          title: Read
-        write:
-          type: boolean
-          title: Write
-        delete:
-          type: boolean
-          title: Delete
-      additionalProperties: false
-      type: object
-      required:
-      - read
-      - write
-      - delete
-      title: _WorkspacesGroupsBodyParams

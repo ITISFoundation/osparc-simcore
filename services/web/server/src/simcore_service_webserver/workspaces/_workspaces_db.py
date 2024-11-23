@@ -15,6 +15,7 @@ from models_library.workspaces import (
     UserWorkspaceAccessRightsDB,
     WorkspaceDB,
     WorkspaceID,
+    WorkspaceUpdateDB,
 )
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.workspaces import workspaces
@@ -46,6 +47,13 @@ _SELECTION_ARGS = (
     workspaces.c.thumbnail,
     workspaces.c.created,
     workspaces.c.modified,
+    workspaces.c.trashed,
+    workspaces.c.trashed_by,
+)
+
+assert set(WorkspaceDB.model_fields) == {c.name for c in _SELECTION_ARGS}  # nosec
+assert set(WorkspaceUpdateDB.model_fields).issubset(  # nosec
+    c.name for c in workspaces.columns
 )
 
 
@@ -105,6 +113,7 @@ async def list_workspaces_for_user(
     *,
     user_id: UserID,
     product_name: ProductName,
+    filter_trashed: bool | None,
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
@@ -124,6 +133,13 @@ async def list_workspaces_for_user(
         )
         .where(workspaces.c.product_name == product_name)
     )
+
+    if filter_trashed is not None:
+        base_query = base_query.where(
+            workspaces.c.trashed.is_not(None)
+            if filter_trashed
+            else workspaces.c.trashed.is_(None)
+        )
 
     # Select total count from base_query
     subquery = base_query.subquery()
@@ -188,21 +204,20 @@ async def update_workspace(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    workspace_id: WorkspaceID,
-    name: str,
-    description: str | None,
-    thumbnail: str | None,
     product_name: ProductName,
+    workspace_id: WorkspaceID,
+    updates: WorkspaceUpdateDB,
 ) -> WorkspaceDB:
+    # NOTE: at least 'touch' if updated_values is empty
+    _updates = {
+        **updates.dict(exclude_unset=True),
+        "modified": func.now(),
+    }
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             workspaces.update()
-            .values(
-                name=name,
-                description=description,
-                thumbnail=thumbnail,
-                modified=func.now(),
-            )
+            .values(**_updates)
             .where(
                 (workspaces.c.workspace_id == workspace_id)
                 & (workspaces.c.product_name == product_name)
