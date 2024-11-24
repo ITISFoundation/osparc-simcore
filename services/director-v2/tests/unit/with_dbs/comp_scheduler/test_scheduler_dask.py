@@ -413,6 +413,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     run_metadata: RunMetadataDict,
 ):
+    with_disabled_auto_scheduling.assert_called_once()
     _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
 
     #
@@ -427,7 +428,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     with_disabled_scheduler_publisher.assert_called()
 
     # -------------------------------------------------------------------------------
-    # 1. first run will move comp_tasks to PENDING so the worker can take them
+    # 1. first run will move comp_tasks to PENDING so the dask-worker can take them
     expected_pending_tasks = await _assert_schedule_pipeline_PENDING(
         sqlalchemy_async_engine,
         published_project,
@@ -437,7 +438,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     )
 
     # -------------------------------------------------------------------------------
-    # 2.1. the worker might be taking the task, until we get a progress we do not know
+    # 2.1. the dask-worker might be taking the task, until we get a progress we do not know
     #      whether it effectively started or it is still queued in the worker process
     exp_started_task = expected_pending_tasks[0]
     expected_pending_tasks.remove(exp_started_task)
@@ -470,14 +471,8 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     await assert_comp_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
-        task_ids=[exp_started_task.node_id],
-        expected_state=RunningState.PENDING,
-        expected_progress=None,
-    )
-    await assert_comp_tasks(
-        sqlalchemy_async_engine,
-        project_uuid=published_project.project.uuid,
-        task_ids=[p.node_id for p in expected_pending_tasks],
+        task_ids=[exp_started_task.node_id]
+        + [p.node_id for p in expected_pending_tasks],
         expected_state=RunningState.PENDING,
         expected_progress=None,
     )
@@ -496,8 +491,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_dask_client.get_task_result.assert_not_called()
 
     # -------------------------------------------------------------------------------
-    # 3. the "worker" starts processing a task
-    # here we trigger a progress from the worker
+    # 3. the dask-worker starts processing a task here we simulate a progress event
     assert exp_started_task.job_id
     assert exp_started_task.project_id
     assert exp_started_task.node_id
@@ -552,6 +546,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     )
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
+    # check the metrics are properly published
     messages = await _assert_message_received(
         instrumentation_rabbit_client_parser,
         1,
@@ -560,9 +555,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     assert messages[0].metrics == "service_started"
     assert messages[0].service_uuid == exp_started_task.node_id
 
-    def _parser(x) -> RabbitResourceTrackingMessages:
-        return TypeAdapter(RabbitResourceTrackingMessages).validate_json(x)
-
+    # check the RUT messages are properly published
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
@@ -571,7 +564,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     assert messages[0].node_id == exp_started_task.node_id
 
     # -------------------------------------------------------------------------------
-    # 4. the "worker" completed the task successfully
+    # 4. the dask-worker completed the task successfully
     async def _return_1st_task_success(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
             (
@@ -609,6 +602,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         expected_state=RunningState.SUCCESS,
         expected_progress=1,
     )
+    # check metrics are published
     messages = await _assert_message_received(
         instrumentation_rabbit_client_parser,
         1,
@@ -616,6 +610,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     )
     assert messages[0].metrics == "service_stopped"
     assert messages[0].service_uuid == exp_started_task.node_id
+    # check RUT messages are published
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
@@ -674,7 +669,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_parse_output_data_fct.reset_mock()
 
     # -------------------------------------------------------------------------------
-    # 6. the "worker" starts processing a task
+    # 6. the dask-worker starts processing a task
     exp_started_task = next_pending_task
 
     async def _return_2nd_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
@@ -850,7 +845,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         2,
         InstrumentationRabbitMessage.model_validate_json,
     )
+
     # NOTE: the service was fast and went directly to success
+    def _parser(x) -> RabbitResourceTrackingMessages:
+        return TypeAdapter(RabbitResourceTrackingMessages).validate_json(x)
+
     assert messages[0].metrics == "service_started"
     assert messages[0].service_uuid == exp_started_task.node_id
     assert messages[1].metrics == "service_stopped"
