@@ -11,6 +11,7 @@
 import asyncio
 import datetime
 from collections.abc import AsyncIterator, Awaitable, Callable
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, cast
@@ -245,6 +246,7 @@ async def _assert_schedule_pipeline_PENDING(  # noqa: N802
     )
     # tasks were send to the backend
     assert published_project.project.prj_owner is not None
+    assert isinstance(mocked_dask_client.send_computation_tasks, mock.Mock)
     mocked_dask_client.send_computation_tasks.assert_has_calls(
         calls=[
             mock.call(
@@ -353,9 +355,9 @@ async def _assert_message_received(
     return parsed_messages
 
 
-def _mock_send_computation_tasks(
+def _with_mock_send_computation_tasks(
     tasks: list[CompTaskAtDB], mocked_dask_client: mock.MagicMock
-) -> None:
+) -> mock.Mock:
     node_id_to_job_id_map = {task.node_id: task.job_id for task in tasks}
 
     async def _send_computation_tasks(
@@ -372,6 +374,7 @@ def _mock_send_computation_tasks(
         ]  # type: ignore
 
     mocked_dask_client.send_computation_tasks.side_effect = _send_computation_tasks
+    return mocked_dask_client.send_computation_tasks
 
 
 async def _trigger_progress_event(
@@ -414,7 +417,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     run_metadata: RunMetadataDict,
 ):
     with_disabled_auto_scheduling.assert_called_once()
-    _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
+    _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
 
     #
     # Initiate new pipeline run
@@ -863,6 +866,198 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     assert isinstance(messages[1], RabbitResourceTrackingStoppedMessage)
 
 
+@pytest.fixture
+async def with_started_project(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    initialized_app: FastAPI,
+    sqlalchemy_async_engine: AsyncEngine,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    mocked_dask_client: mock.Mock,
+    run_metadata: RunMetadataDict,
+    scheduler_api: BaseCompScheduler,
+    instrumentation_rabbit_client_parser: mock.AsyncMock,
+    resource_tracking_rabbit_client_parser: mock.AsyncMock,
+) -> RunningProject:
+    with_disabled_auto_scheduling.assert_called_once()
+    published_project = await publish_project()
+    #
+    # 1. Initiate new pipeline run
+    #
+    run_in_db, expected_published_tasks = await _assert_start_pipeline(
+        initialized_app,
+        sqlalchemy_async_engine=sqlalchemy_async_engine,
+        published_project=published_project,
+        run_metadata=run_metadata,
+    )
+    with_disabled_scheduler_publisher.assert_called_once()
+
+    #
+    # 2. This runs the scheduler until the project is started scheduled in the back-end
+    #
+    expected_pending_tasks = await _assert_schedule_pipeline_PENDING(
+        sqlalchemy_async_engine,
+        published_project,
+        expected_published_tasks,
+        mocked_dask_client,
+        scheduler_api,
+    )
+
+    #
+    # The dask-worker can take a job when it is PENDING, but the dask scheduler makes
+    # no difference between PENDING and STARTED
+    #
+    exp_started_task = expected_pending_tasks[0]
+    expected_pending_tasks.remove(exp_started_task)
+
+    async def _return_1st_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
+        return [
+            (
+                DaskClientTaskState.PENDING_OR_STARTED
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
+            for job_id in job_ids
+        ]
+
+    mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_running
+    await scheduler_api.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.PENDING,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[exp_started_task.node_id]
+        + [p.node_id for p in expected_pending_tasks],
+        expected_state=RunningState.PENDING,
+        expected_progress=None,
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_published_tasks],
+        expected_state=RunningState.PUBLISHED,
+        expected_progress=None,  # since we bypass the API entrypoint this is correct
+    )
+    mocked_dask_client.send_computation_tasks.assert_not_called()
+    mocked_dask_client.get_tasks_status.assert_called_once_with(
+        [p.job_id for p in (exp_started_task, *expected_pending_tasks)],
+    )
+    mocked_dask_client.get_tasks_status.reset_mock()
+    mocked_dask_client.get_task_result.assert_not_called()
+
+    # -------------------------------------------------------------------------------
+    # 4. the dask-worker starts processing a task here we simulate a progress event
+    assert exp_started_task.job_id
+    assert exp_started_task.project_id
+    assert exp_started_task.node_id
+    assert published_project.project.prj_owner
+    await _trigger_progress_event(
+        scheduler_api,
+        job_id=exp_started_task.job_id,
+        user_id=published_project.project.prj_owner,
+        project_id=exp_started_task.project_id,
+        node_id=exp_started_task.node_id,
+    )
+
+    await scheduler_api.schedule_pipeline(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    # comp_run, the comp_task switch to STARTED
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.STARTED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[exp_started_task.node_id],
+        expected_state=RunningState.STARTED,
+        expected_progress=0,
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_pending_tasks],
+        expected_state=RunningState.PENDING,
+        expected_progress=None,
+    )
+    await assert_comp_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[p.node_id for p in expected_published_tasks],
+        expected_state=RunningState.PUBLISHED,
+        expected_progress=None,
+    )
+    mocked_dask_client.send_computation_tasks.assert_not_called()
+    mocked_dask_client.get_tasks_status.assert_called_once_with(
+        [p.job_id for p in (exp_started_task, *expected_pending_tasks)],
+    )
+    mocked_dask_client.get_tasks_status.reset_mock()
+    mocked_dask_client.get_task_result.assert_not_called()
+    # check the metrics are properly published
+    messages = await _assert_message_received(
+        instrumentation_rabbit_client_parser,
+        1,
+        InstrumentationRabbitMessage.model_validate_json,
+    )
+    assert messages[0].metrics == "service_started"
+    assert messages[0].service_uuid == exp_started_task.node_id
+
+    # check the RUT messages are properly published
+    messages = await _assert_message_received(
+        resource_tracking_rabbit_client_parser,
+        1,
+        RabbitResourceTrackingStartedMessage.model_validate_json,
+    )
+    assert messages[0].node_id == exp_started_task.node_id
+
+    return RunningProject(
+        published_project.project,
+        published_project.pipeline,
+        published_project.tasks,
+        runs=run_in_db,
+    )
+
+
+async def test_completed_task_triggers_new_scheduling_task(
+    with_disabled_scheduler_publisher: mock.Mock,
+    with_started_project: RunningProject,
+    initialized_app: FastAPI,
+    mocked_dask_client: mock.MagicMock,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    mocker: MockerFixture,
+):
+    """When a pipeline job completes, the Dask backend provides a callback
+    that runs in a separate thread. We use that callback to ask the
+    director-v2 computational scheduler manager to ask for a new schedule
+    After fiddling in distributed source code, here is a similar way to trigger that callback
+    """
+    with ThreadPoolExecutor(
+        max_workers=1, thread_name_prefix="pytest-callback-thread"
+    ) as executor:
+        ...
+
+
 async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
@@ -938,7 +1133,7 @@ async def test_task_progress_triggers(
     mocked_clean_task_output_and_log_files_if_invalid: mock.Mock,
     run_metadata: RunMetadataDict,
 ):
-    _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
+    _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
     _run_in_db, expected_published_tasks = await _assert_start_pipeline(
         initialized_app,
         sqlalchemy_async_engine=sqlalchemy_async_engine,
@@ -946,7 +1141,7 @@ async def test_task_progress_triggers(
         run_metadata=run_metadata,
     )
     # -------------------------------------------------------------------------------
-    # 1. first run will move comp_tasks to PENDING so the worker can take them
+    # 1. first run will move comp_tasks to PENDING so the dask-worker can take them
     expected_pending_tasks = await _assert_schedule_pipeline_PENDING(
         sqlalchemy_async_engine,
         published_project,
@@ -1400,7 +1595,7 @@ async def test_running_pipeline_triggers_heartbeat(
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     run_metadata: RunMetadataDict,
 ):
-    _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
+    _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
     run_in_db, expected_published_tasks = await _assert_start_pipeline(
         initialized_app,
         sqlalchemy_async_engine=sqlalchemy_async_engine,
@@ -1408,7 +1603,7 @@ async def test_running_pipeline_triggers_heartbeat(
         run_metadata=run_metadata,
     )
     # -------------------------------------------------------------------------------
-    # 1. first run will move comp_tasks to PENDING so the worker can take them
+    # 1. first run will move comp_tasks to PENDING so the dask-worker can take them
     expected_pending_tasks = await _assert_schedule_pipeline_PENDING(
         sqlalchemy_async_engine,
         published_project,
