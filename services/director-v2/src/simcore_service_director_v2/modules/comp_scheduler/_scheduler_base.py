@@ -39,7 +39,6 @@ from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
     ComputationalSchedulerChangedError,
-    ComputationalSchedulerError,
     DaskClientAcquisisitonError,
     InvalidPipelineError,
     PipelineNotFoundError,
@@ -80,7 +79,8 @@ _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
 def _temporary_empty_wake_up_callack(
     user_id: UserID, project_id: ProjectID, iteration: Iteration
 ) -> Callable[[], None]:
-    def _cb() -> None: ...
+    def _cb() -> None:
+        ...
 
     # async def _async_cb():
     #     db_engine = get_db_engine(app)
@@ -688,9 +688,9 @@ class BaseCompScheduler(ABC):
                 RunningState.WAITING_FOR_CLUSTER,
             )
             for task in tasks_ready_to_start:
-                comp_tasks[NodeIDStr(f"{task}")].state = (
-                    RunningState.WAITING_FOR_CLUSTER
-                )
+                comp_tasks[
+                    NodeIDStr(f"{task}")
+                ].state = RunningState.WAITING_FOR_CLUSTER
 
         except ComputationalBackendOnDemandNotReadyError as exc:
             _logger.info(
@@ -712,9 +712,9 @@ class BaseCompScheduler(ABC):
                 RunningState.WAITING_FOR_CLUSTER,
             )
             for task in tasks_ready_to_start:
-                comp_tasks[NodeIDStr(f"{task}")].state = (
-                    RunningState.WAITING_FOR_CLUSTER
-                )
+                comp_tasks[
+                    NodeIDStr(f"{task}")
+                ].state = RunningState.WAITING_FOR_CLUSTER
         except ClustersKeeperNotAvailableError:
             _logger.exception("Unexpected error while starting tasks:")
             await publish_project_log(

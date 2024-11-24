@@ -9,7 +9,8 @@ from ._models import SchedulePipelineRabbitMessage
 async def request_pipeline_scheduling(
     run: CompRunsAtDB, rabbitmq_client: RabbitMQClient, db_engine: Engine
 ) -> None:
-    # TODO: we should use the transaction and the asyncpg engine here to ensure 100% consistency
+    # NOTE: we should use the transaction and the asyncpg engine here to ensure 100% consistency
+    # https://github.com/ITISFoundation/osparc-simcore/issues/6818
     # async with transaction_context(get_asyncpg_engine(app)) as connection:
     await rabbitmq_client.publish(
         SchedulePipelineRabbitMessage.get_channel_name(),
