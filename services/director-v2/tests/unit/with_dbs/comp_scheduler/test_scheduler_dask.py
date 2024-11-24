@@ -398,7 +398,7 @@ async def _trigger_progress_event(
     )
 
 
-@pytest.mark.acceptance_test
+@pytest.mark.acceptance_test()
 async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
