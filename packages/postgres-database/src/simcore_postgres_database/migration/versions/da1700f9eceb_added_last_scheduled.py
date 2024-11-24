@@ -1,16 +1,16 @@
-"""add last scheduled time
+"""added_last_scheduled
 
-Revision ID: 4885182f6206
-Revises: 8e1f83486be7
-Create Date: 2024-11-22 15:50:17.798131+00:00
+Revision ID: da1700f9eceb
+Revises: c9db8bf5091e
+Create Date: 2024-11-24 17:11:30.519365+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "4885182f6206"
-down_revision = "8e1f83486be7"
+revision = "da1700f9eceb"
+down_revision = "c9db8bf5091e"
 branch_labels = None
 depends_on = None
 

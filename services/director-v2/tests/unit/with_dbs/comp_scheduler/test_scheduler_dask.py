@@ -424,6 +424,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         published_project=published_project,
         run_metadata=run_metadata,
     )
+    with_disabled_scheduler_publisher.assert_called()
 
     # -------------------------------------------------------------------------------
     # 1. first run will move comp_tasks to PENDING so the worker can take them

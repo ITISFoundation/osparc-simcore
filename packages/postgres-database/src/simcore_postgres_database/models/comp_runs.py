@@ -111,7 +111,7 @@ comp_runs = sa.Table(
         "last_scheduled",
         sa.DateTime(timezone=True),
         nullable=True,
-        doc="last time the pipeline was scheduled",
+        doc="last time the pipeline was scheduled to be processed",
     ),
     sa.Column("metadata", JSONB, nullable=True, doc="the run optional metadata"),
     sa.Column(
