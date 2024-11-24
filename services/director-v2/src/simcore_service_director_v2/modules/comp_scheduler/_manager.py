@@ -134,7 +134,13 @@ async def schedule_pipelines(app: FastAPI) -> None:
         rabbitmq_client = get_rabbitmq_client(app)
         await limited_gather(
             *(
-                request_pipeline_scheduling(run, rabbitmq_client, db_engine)
+                request_pipeline_scheduling(
+                    rabbitmq_client,
+                    db_engine,
+                    user_id=run.user_id,
+                    project_id=run.project_uuid,
+                    iteration=run.iteration,
+                )
                 for run in runs_to_schedule
             ),
             limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,

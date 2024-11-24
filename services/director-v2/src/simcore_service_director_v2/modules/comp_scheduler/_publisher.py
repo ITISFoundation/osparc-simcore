@@ -1,13 +1,20 @@
 from aiopg.sa import Engine
+from models_library.projects import ProjectID
+from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQClient
 
-from ...models.comp_runs import CompRunsAtDB
+from ...models.comp_runs import Iteration
 from ..db.repositories.comp_runs import CompRunsRepository
 from ._models import SchedulePipelineRabbitMessage
 
 
 async def request_pipeline_scheduling(
-    run: CompRunsAtDB, rabbitmq_client: RabbitMQClient, db_engine: Engine
+    rabbitmq_client: RabbitMQClient,
+    db_engine: Engine,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    iteration: Iteration
 ) -> None:
     # NOTE: we should use the transaction and the asyncpg engine here to ensure 100% consistency
     # https://github.com/ITISFoundation/osparc-simcore/issues/6818
@@ -15,11 +22,11 @@ async def request_pipeline_scheduling(
     await rabbitmq_client.publish(
         SchedulePipelineRabbitMessage.get_channel_name(),
         SchedulePipelineRabbitMessage(
-            user_id=run.user_id,
-            project_id=run.project_uuid,
-            iteration=run.iteration,
+            user_id=user_id,
+            project_id=project_id,
+            iteration=iteration,
         ),
     )
     await CompRunsRepository.instance(db_engine).mark_as_scheduled(
-        user_id=run.user_id, project_id=run.project_uuid, iteration=run.iteration
+        user_id=user_id, project_id=project_id, iteration=iteration
     )
