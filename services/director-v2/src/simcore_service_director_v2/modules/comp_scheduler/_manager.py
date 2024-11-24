@@ -62,7 +62,13 @@ async def run_new_pipeline(
     )
 
     rabbitmq_client = get_rabbitmq_client(app)
-    await request_pipeline_scheduling(new_run, rabbitmq_client, db_engine)
+    await request_pipeline_scheduling(
+        rabbitmq_client,
+        db_engine,
+        user_id=new_run.user_id,
+        project_id=new_run.project_uuid,
+        iteration=new_run.iteration,
+    )
     await publish_project_log(
         rabbitmq_client,
         user_id,
