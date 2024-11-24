@@ -29,7 +29,7 @@ from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.users import UserID
 from networkx.classes.reportviews import InDegreeView
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 
@@ -58,6 +58,7 @@ from ...utils.rabbitmq import (
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
+from ._publisher import request_pipeline_scheduling
 from ._utils import (
     COMPLETED_STATES,
     PROCESSING_STATES,
@@ -76,19 +77,30 @@ _Current = CompTaskAtDB
 _MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
 
 
-def _temporary_empty_wake_up_callack(
-    user_id: UserID, project_id: ProjectID, iteration: Iteration
+def _auto_schedule_callback(
+    db_engine: Engine,
+    rabbit_mq_client: RabbitMQClient,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    iteration: Iteration,
 ) -> Callable[[], None]:
     def _cb() -> None:
-        ...
+        async def _async_cb():
+            await request_pipeline_scheduling(
+                rabbit_mq_client,
+                db_engine,
+                user_id=user_id,
+                project_id=project_id,
+                iteration=iteration,
+            )
 
-    # async def _async_cb():
-    #     db_engine = get_db_engine(app)
-    #     rabbit_mq_client = get_rabbitmq_client(app)
-    #     comp_run = await CompRunsRepository.instance(db_engine).get(
-    #         user_id=user_id, project_id=project_id, iteration=iteration
-    #     )
-    #     await request_pipeline_scheduling(comp_run, rabbit_mq_client, db_engine)
+        future = asyncio.run_coroutine_threadsafe(
+            _async_cb(), asyncio.get_running_loop()
+        )
+        with log_catch(_logger, reraise=False):
+            future.result(timeout=10)
+
     return _cb
 
 
@@ -550,8 +562,12 @@ class BaseCompScheduler(ABC):
                         comp_tasks=comp_tasks,
                         dag=dag,
                         comp_run=comp_run,
-                        wake_up_callback=_temporary_empty_wake_up_callack(
-                            user_id, project_id, iteration
+                        wake_up_callback=_auto_schedule_callback(
+                            self.db_engine,
+                            self.rabbitmq_client,
+                            user_id=user_id,
+                            project_id=project_id,
+                            iteration=iteration,
                         ),
                     )
                 # 4. timeout if waiting for cluster has been there for more than X minutes
