@@ -408,7 +408,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
     mocked_parse_output_data_fct: mock.Mock,
-    mocked_clean_task_output_and_log_files_if_invalid: None,
+    mocked_clean_task_output_and_log_files_if_invalid: mock.Mock,
     instrumentation_rabbit_client_parser: mock.AsyncMock,
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     run_metadata: RunMetadataDict,
@@ -758,6 +758,9 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
     )
+    mocked_clean_task_output_and_log_files_if_invalid.assert_called_once()
+    mocked_clean_task_output_and_log_files_if_invalid.reset_mock()
+
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
@@ -819,6 +822,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
     )
+    mocked_clean_task_output_and_log_files_if_invalid.assert_not_called()
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
@@ -931,8 +935,8 @@ async def test_task_progress_triggers(
     scheduler_api: BaseCompScheduler,
     sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
-    mocked_parse_output_data_fct: None,
-    mocked_clean_task_output_and_log_files_if_invalid: None,
+    mocked_parse_output_data_fct: mock.Mock,
+    mocked_clean_task_output_and_log_files_if_invalid: mock.Mock,
     run_metadata: RunMetadataDict,
 ):
     _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
@@ -1169,8 +1173,8 @@ async def test_handling_scheduled_tasks_after_director_reboots(
     sqlalchemy_async_engine: AsyncEngine,
     running_project: RunningProject,
     scheduler_api: BaseCompScheduler,
-    mocked_parse_output_data_fct: mock.MagicMock,
-    mocked_clean_task_output_fct: mock.MagicMock,
+    mocked_parse_output_data_fct: mock.Mock,
+    mocked_clean_task_output_fct: mock.Mock,
     reboot_state: RebootState,
 ):
     """After the dask client is rebooted, or that the director-v2 reboots the dv-2 internal scheduler
@@ -1262,8 +1266,8 @@ async def test_handling_cancellation_of_jobs_after_reboot(
     sqlalchemy_async_engine: AsyncEngine,
     running_project_mark_for_cancellation: RunningProject,
     scheduler_api: BaseCompScheduler,
-    mocked_parse_output_data_fct: mock.MagicMock,
-    mocked_clean_task_output_fct: mock.MagicMock,
+    mocked_parse_output_data_fct: mock.Mock,
+    mocked_clean_task_output_fct: mock.Mock,
 ):
     """A running pipeline was cancelled by a user and the DV-2 was restarted BEFORE
     It could actually cancel the task. On reboot the DV-2 shall recover
