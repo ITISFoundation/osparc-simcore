@@ -1061,23 +1061,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._resourcesContainer.setResourcesToList([]);
 
         this._toolbar.show();
-        if (context === "search") {
-          this.__reloadWorkspaces();
-          this.__reloadFolders();
-          this.__reloadStudies();
-        } else if (context === "trash") {
-          this._searchBarFilter.resetFilters();
-          this.__reloadWorkspaces();
-          this.__reloadFolders();
-          this.__reloadStudies();
-        } else if (context === "workspaces") {
-          this._toolbar.hide();
-          this._searchBarFilter.resetFilters();
-          this.__reloadWorkspaces();
-        } else if (context === "studiesAndFolders") {
-          this._searchBarFilter.resetFilters();
-          this.__reloadFolders();
-          this.__reloadStudies();
+        switch (this.getCurrentContext()) {
+          case "studiesAndFolders":
+            this._searchBarFilter.resetFilters();
+            this.__reloadFolders();
+            this.__reloadStudies();
+            break;
+          case "workspaces":
+            this._toolbar.hide();
+            this._searchBarFilter.resetFilters();
+            this.__reloadWorkspaces();
+            break;
+          case "search":
+            this.__reloadWorkspaces();
+            this.__reloadFolders();
+            this.__reloadStudies();
+            break;
+          case "trash":
+            this._searchBarFilter.resetFilters();
+            this.__reloadWorkspaces();
+            this.__reloadFolders();
+            this.__reloadStudies();
+            break;
         }
 
         // notify header
