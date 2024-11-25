@@ -120,7 +120,7 @@ async def list_folders_full_search(request: web.Request):
         trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=OrderBy(**query_params.order_by.model_dump()),
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
     page = Page[FolderGet].model_validate(

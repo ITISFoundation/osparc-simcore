@@ -241,7 +241,7 @@ async def list_projects_full_search(request: web.Request):
         limit=query_params.limit,
         offset=query_params.offset,
         text=query_params.text,
-        order_by=OrderBy(**query_params.order_by.model_dump()),
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
         tag_ids_list=tag_ids_list,
     )
 

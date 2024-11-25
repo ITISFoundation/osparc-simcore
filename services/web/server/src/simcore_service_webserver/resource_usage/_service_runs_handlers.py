@@ -216,7 +216,7 @@ async def export_resource_usage_services(request: web.Request):
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         wallet_id=query_params.wallet_id,
-        order_by=OrderBy(**query_params.order_by.model_dump()),
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
         filters=TypeAdapter(ServiceResourceUsagesFilters | None).validate_python(
             query_params.filters
         ),
