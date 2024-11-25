@@ -11,13 +11,14 @@ from models_library.rest_ordering import (
     create_ordering_query_model_classes,
 )
 from models_library.rest_pagination import PageQueryParameters
+from models_library.trash import RemoveQueryParams
 from models_library.users import UserID
 from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
     null_or_none_str_to_none_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
+from pydantic import BeforeValidator, ConfigDict, Field
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -85,7 +86,5 @@ class FolderSearchQueryParams(
     model_config = ConfigDict(extra="forbid")
 
 
-class RemoveQueryParams(BaseModel):
-    force: bool = Field(
-        default=False, description="Force removal (even if resource is active)"
-    )
+class FolderTrashQueryParams(RemoveQueryParams):
+    ...

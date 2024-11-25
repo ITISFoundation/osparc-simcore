@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
+from ._common import RefActions
 from .base import metadata
 from .projects import projects
 
@@ -32,8 +33,8 @@ projects_vc_repos = sa.Table(
         sa.ForeignKey(
             projects.c.uuid,
             name="fk_projects_vc_repos_project_uuid",
-            ondelete="CASCADE",  # if project is deleted, all references in project_vc_* tables are deleted except for projects_vc_snapshots.
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,  # if project is deleted, all references in project_vc_* tables are deleted except for projects_vc_snapshots.
+            onupdate=RefActions.CASCADE,
         ),
         nullable=False,
         unique=True,
@@ -113,8 +114,8 @@ projects_vc_commits = sa.Table(
         sa.ForeignKey(
             projects_vc_repos.c.id,
             name="fk_projects_vc_commits_repo_id",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=False,
         doc="Repository to which this commit belongs",
@@ -125,7 +126,7 @@ projects_vc_commits = sa.Table(
         sa.ForeignKey(
             "projects_vc_commits.id",
             name="fk_projects_vc_commits_parent_commit_id",
-            onupdate="CASCADE",
+            onupdate=RefActions.CASCADE,
         ),
         nullable=True,
         doc="Preceding commit",
@@ -136,8 +137,8 @@ projects_vc_commits = sa.Table(
         sa.ForeignKey(
             projects_vc_snapshots.c.checksum,
             name="fk_projects_vc_commits_snapshot_checksum",
-            ondelete="RESTRICT",
-            onupdate="CASCADE",
+            ondelete=RefActions.RESTRICT,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=False,
         doc="SHA-1 checksum of snapshot."
@@ -175,8 +176,8 @@ projects_vc_tags = sa.Table(
         sa.ForeignKey(
             projects_vc_repos.c.id,
             name="fk_projects_vc_tags_repo_id",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=False,
         doc="Repository to which this commit belongs",
@@ -187,8 +188,8 @@ projects_vc_tags = sa.Table(
         sa.ForeignKey(
             projects_vc_commits.c.id,
             name="fk_projects_vc_tags_commit_id",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=False,
         doc="Points to the tagged commit",
@@ -243,8 +244,8 @@ projects_vc_branches = sa.Table(
         sa.ForeignKey(
             projects_vc_repos.c.id,
             name="projects_vc_branches_repo_id",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=False,
         doc="Repository to which this branch belongs",
@@ -255,8 +256,8 @@ projects_vc_branches = sa.Table(
         sa.ForeignKey(
             projects_vc_commits.c.id,
             name="fk_projects_vc_branches_head_commit_id",
-            ondelete="RESTRICT",
-            onupdate="CASCADE",
+            ondelete=RefActions.RESTRICT,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=True,
         doc="Points to the head commit of this branchNull heads are detached",
@@ -299,8 +300,8 @@ projects_vc_heads = sa.Table(
         sa.ForeignKey(
             projects_vc_repos.c.id,
             name="projects_vc_branches_repo_id",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         primary_key=True,
         nullable=False,
@@ -312,8 +313,8 @@ projects_vc_heads = sa.Table(
         sa.ForeignKey(
             projects_vc_branches.c.id,
             name="fk_projects_vc_heads_head_branch_id",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         unique=True,
         nullable=True,

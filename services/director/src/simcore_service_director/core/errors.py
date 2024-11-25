@@ -1,12 +1,7 @@
-from typing import Any
-
 from common_library.errors_classes import OsparcErrorMixin
 
 
 class DirectorRuntimeError(OsparcErrorMixin, RuntimeError):
-    def __init__(self, **ctx: Any) -> None:
-        super().__init__(**ctx)
-
     msg_template: str = "Director-v0 unexpected error: {msg}"
 
 

@@ -601,8 +601,8 @@ auto-doc: .stack-simcore-version.yml ## Auto generates diagrams for README.md
 	# Updating docs/img
 	@mv --verbose $<.png docs/img/
 
-.PHONY: services.md
-services.md: ## Auto generates service.md
+.PHONY: services.ignore.md
+services.ignore.md: ## Auto generates service.md
 	# Making $@
 	scripts/echo_services_markdown.py > $@
 
