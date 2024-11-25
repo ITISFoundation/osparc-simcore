@@ -198,7 +198,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__setWorkspacesToList(workspaces);
         })
         .catch(console.error)
-        .finally(() => this.__loadingWorkspaces = null);
+        .finally(() => {
+          this.__addNewWorkspaceButton();
+          this.__loadingWorkspaces = null;
+        });
     },
 
     __reloadFolders: function() {
@@ -237,7 +240,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__setFoldersToList(folders);
         })
         .catch(console.error)
-        .finally(() => this.__loadingFolders = null);
+        .finally(() => {
+          this.__addNewFolderButton();
+          this.__loadingFolders = null;
+        });
     },
 
     __reloadStudies: function() {
@@ -425,8 +431,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadWorkspaceCards: function() {
       this._resourcesContainer.setWorkspacesToList(this.__workspacesList);
       this._resourcesContainer.reloadWorkspaces();
-
-      this.__addNewWorkspaceButton();
     },
 
     __addNewWorkspaceButton: function() {
@@ -481,8 +485,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadFolderCards: function() {
       this._resourcesContainer.setFoldersToList(this.__foldersList);
       this._resourcesContainer.reloadFolders();
-
-      this.__addNewFolderButton();
     },
 
     __addNewFolderButton: function() {
