@@ -453,7 +453,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _workspaceUpdated: function() {
-      this.__reloadWorkspaceCards();
+      this.__reloadWorkspaces();
     },
 
     _trashWorkspaceRequested: function(workspaceId) {
@@ -1081,15 +1081,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // reset lists
         this.__setWorkspacesToList([]);
         this.__setFoldersToList([]);
-        this._loadingResourcesBtn.setFetching(false);
-        this.invalidateStudies();
-        this._resourcesContainer.setResourcesToList([]);
+        this._resourcesList = [];
+        this._resourcesContainer.setResourcesToList(this._resourcesList);
+        this._resourcesContainer.reloadCards("studies");
 
         this._toolbar.show();
         switch (this.getCurrentContext()) {
           case "studiesAndFolders":
             this._searchBarFilter.resetFilters();
             this.__reloadFolders();
+            this._loadingResourcesBtn.setFetching(false);
+            this.invalidateStudies();
             this.__reloadStudies();
             break;
           case "workspaces":
@@ -1100,12 +1102,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           case "search":
             this.__reloadWorkspaces();
             this.__reloadFolders();
+            this._loadingResourcesBtn.setFetching(false);
+            this.invalidateStudies();
             this.__reloadStudies();
             break;
           case "trash":
             this._searchBarFilter.resetFilters();
             this.__reloadWorkspaces();
             this.__reloadFolders();
+            this._loadingResourcesBtn.setFetching(false);
+            this.invalidateStudies();
             this.__reloadStudies();
             break;
         }
