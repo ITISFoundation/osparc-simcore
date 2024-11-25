@@ -86,6 +86,10 @@ def _auto_schedule_callback(
     project_id: ProjectID,
     iteration: Iteration,
 ) -> Callable[[], None]:
+    """this function is called via Dask-backend from a separate thread.
+    Therefore the need to use run_coroutine_threadsafe to request a new
+    pipeline scheduling"""
+
     def _cb() -> None:
         async def _async_cb() -> None:
             await request_pipeline_scheduling(
