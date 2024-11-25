@@ -50,7 +50,7 @@ async def _exclusively_schedule_pipeline(
 async def _handle_distributed_pipeline(app: FastAPI, data: bytes) -> bool:
 
     with log_context(_logger, logging.DEBUG, msg="handling scheduling"):
-        to_schedule_pipeline = SchedulePipelineRabbitMessage.model_validate(data)
+        to_schedule_pipeline = SchedulePipelineRabbitMessage.model_validate_json(data)
         with contextlib.suppress(CouldNotAcquireLockError):
             await _exclusively_schedule_pipeline(
                 app,
