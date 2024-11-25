@@ -27,6 +27,7 @@ qx.Class.define("osparc.tester.TesterCenter", {
     this.addWidgetOnTopOfTheTabs(miniProfile);
 
     this.__addSocketMessagesPage();
+    this.__addConsoleErrorsPage();
     this.__addStaticsPage();
   },
 
@@ -34,8 +35,15 @@ qx.Class.define("osparc.tester.TesterCenter", {
     __addSocketMessagesPage: function() {
       const title = this.tr("Socket Messages");
       const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
-      const maintenance = new osparc.tester.WebSocketMessages();
-      this.addTab(title, iconSrc, maintenance);
+      const webSocketMessages = new osparc.tester.WebSocketMessages();
+      this.addTab(title, iconSrc, webSocketMessages);
+    },
+
+    __addConsoleErrorsPage: function() {
+      const title = this.tr("Console Errors");
+      const iconSrc = "@FontAwesome5Solid/times/22";
+      const consoleErrors = new osparc.tester.ConsoleErrors();
+      this.addTab(title, iconSrc, consoleErrors);
     },
 
     __addStaticsPage: function() {

@@ -70,6 +70,7 @@ qx.Class.define("osparc.Application", {
       // trackers
       osparc.announcement.Tracker.getInstance().startTracker();
       osparc.WindowSizeTracker.getInstance().startTracker();
+      osparc.ConsoleErrorTracker.getInstance().startTracker();
 
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => osparc.WatchDog.getInstance().setOnline(true));
