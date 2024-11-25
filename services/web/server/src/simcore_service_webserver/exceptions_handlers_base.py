@@ -1,6 +1,6 @@
 import functools
 import logging
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from typing import Protocol
 
 from aiohttp import web
@@ -16,8 +16,10 @@ _logger = logging.getLogger(__name__)
 class WebApiExceptionHandler(Protocol):
     __name__: str
 
-    def __call__(
-        self, exception: BaseException, request: web.Request
+    async def __call__(
+        self,
+        request: web.Request,
+        exception: BaseException,
     ) -> web.HTTPException | BaseException | None:
         """
         Callback to process an exception raised during a web request, allowing custom handling.
@@ -26,8 +28,8 @@ class WebApiExceptionHandler(Protocol):
         into an `web.HTTPException` (i.e. exceptions defined at the web-api)
 
         Arguments:
-            exception -- exception raised in web handler during this request
             request -- current request
+            exception -- exception raised in web handler during this request
 
         Returns:
             - None: to suppress `exception`
@@ -36,17 +38,20 @@ class WebApiExceptionHandler(Protocol):
         """
 
 
-@contextmanager
-def _handled_exception_context_manager(
+@asynccontextmanager
+async def _handled_exception_context_manager(
     exception_catch: type[BaseException] | tuple[type[BaseException], ...],
     exception_handler: WebApiExceptionHandler,
     **forward_ctx,
 ):
     """Calls `exception_handler` on exceptions raised in this context and caught in `exception_catch`"""
     try:
+
         yield
+
     except exception_catch as e:
-        if exc := exception_handler(e, **forward_ctx):
+        exc = await exception_handler(exception=e, **forward_ctx)
+        if exc:
             assert isinstance(exc, BaseException)
             raise exc from e
 
@@ -68,7 +73,7 @@ def create_decorator_from_exception_handler(
         @functools.wraps(handler)
         async def _wrapper(request: web.Request) -> web.StreamResponse:
 
-            with _handled_exception_context_manager(
+            async with _handled_exception_context_manager(
                 exception_types,
                 exception_handler,
                 request=request,

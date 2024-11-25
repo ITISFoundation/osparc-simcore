@@ -36,7 +36,7 @@ def create_exception_handler_from_http_error(
     exception_cls: type[BaseException],
     *,
     status_code: int,
-    user_msg_template: str,
+    msg_template: str,
 ) -> WebApiExceptionHandler:
     """
     Custom Exception-Handler factory
@@ -51,20 +51,20 @@ def create_exception_handler_from_http_error(
     Arguments:
         exception_cls: exception raise during the request
         status_code: the http status code to associate at the web-api interface to this error
-        user_msg_template: a template string to pass to the HttpError
+        msg_template: a template string to pass to the HttpError
 
     Returns:
         A web api exception handler
     """
 
-    def _exception_handler(
-        exception: BaseException,
+    async def _exception_handler(
         request: web.Request,
+        exception: BaseException,
     ) -> web.HTTPException | BaseException | None:
         assert isinstance(exception, exception_cls)  # nosec
 
         # safe formatting, i.e. does not raise
-        user_msg = user_msg_template.format_map(
+        user_msg = msg_template.format_map(
             _DefaultDict(getattr(exception, "__dict__", {}))
         )
 
@@ -114,7 +114,7 @@ def create_exception_handler_from_http_error_map(
         exc_cls: create_exception_handler_from_http_error(
             exception_cls=exc_cls,
             status_code=http_error_info.status_code,
-            user_msg_template=http_error_info.msg_template,
+            msg_template=http_error_info.msg_template,
         )
         for exc_cls, http_error_info in exc_to_http_error_map.items()
     }
@@ -123,14 +123,16 @@ def create_exception_handler_from_http_error_map(
         list(_exception_handlers.keys())
     )
 
-    def _exception_handler(
-        exception: BaseException,
+    async def _exception_handler(
         request: web.Request,
+        exception: BaseException,
     ) -> web.HTTPError | BaseException | None:
         if exc_cls := next(
             (_ for _ in _catch_exceptions if isinstance(exception, _)), None
         ):
-            return _exception_handlers[exc_cls](request=request, exception=exception)
+            return await _exception_handlers[exc_cls](
+                request=request, exception=exception
+            )
         # NOTE: not in my list, return so it gets reraised
         return exception
 

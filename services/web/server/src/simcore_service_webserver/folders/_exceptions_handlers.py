@@ -74,3 +74,4 @@ handle_plugin_requests_exceptions = create_decorator_from_exception_handler(
     exception_types=(BaseProjectError, FoldersValueError, WorkspacesValueError),
     exception_handler=create_exception_handler_from_http_error_map(_TO_HTTP_ERROR_MAP),
 )
+# this is one decorator with a single exception handler

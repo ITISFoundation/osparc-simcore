@@ -22,6 +22,7 @@ from simcore_service_webserver.exceptions_handlers_base import (
 )
 from simcore_service_webserver.exceptions_handlers_http_error_map import (
     _sort_exceptions_by_specificity,
+    create_exception_handler_from_http_error,
     create_exception_handler_from_http_error_map,
 )
 
@@ -78,7 +79,25 @@ def fake_request() -> web.Request:
     return make_mocked_request("GET", "/foo")
 
 
-def test_create_exception_handler_from_http_error_map(fake_request: web.Request):
+async def test_factory__create_exception_handler_from_http_error(
+    fake_request: web.Request,
+):
+
+    one_error_to_404 = create_exception_handler_from_http_error(
+        OneError,
+        status_code=status.HTTP_404_NOT_FOUND,
+        msg_template="one error message for the user: {code} {value}",
+    )
+
+    # calling exception handler
+    caught = OneError()
+    response = await one_error_to_404(fake_request, caught)
+    assert response
+    assert response.status == status.HTTP_404_NOT_FOUND
+    assert "one error" in response.text
+
+
+async def test_create_exception_handler_from_http_error_map(fake_request: web.Request):
 
     # call exception handler factory
     exc_handler = create_exception_handler_from_http_error_map(
@@ -90,36 +109,36 @@ def test_create_exception_handler_from_http_error_map(fake_request: web.Request)
     )
 
     # Converts exception in map
-    got_exc = exc_handler(OneError(), fake_request)
+    got_exc = await exc_handler(fake_request, OneError())
 
     assert isinstance(got_exc, web.HTTPBadRequest)
     assert got_exc.reason == "Error One mapped to 400"
 
     # By-passes exceptions not listed
     err = RuntimeError()
-    assert exc_handler(err, fake_request) is err
+    assert await exc_handler(fake_request, err) is err
 
 
-def test__handled_exception_context_manager(fake_request: web.Request):
-    def _suppress_handler(exception, request):
+async def test__handled_exception_context_manager(fake_request: web.Request):
+    async def _suppress_handler(request, exception):
         assert request == fake_request
         assert isinstance(
             exception, BasePluginError
         ), "only BasePluginError exceptions should call this handler"
         return None  # noqa: RET501, PLR1711
 
-    def _fun(raises):
-        with _handled_exception_context_manager(
+    async def _fun(raises):
+        async with _handled_exception_context_manager(
             BasePluginError, _suppress_handler, request=fake_request
         ):
             raise raises
 
     # checks
-    _fun(raises=OneError)
-    _fun(raises=OtherError)
+    await _fun(raises=OneError)
+    await _fun(raises=OtherError)
 
     with pytest.raises(ArithmeticError):
-        _fun(raises=ArithmeticError)
+        await _fun(raises=ArithmeticError)
 
 
 async def test_create_decorator_from_exception_handler(
