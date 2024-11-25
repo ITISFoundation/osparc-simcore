@@ -27,8 +27,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       paddingBottom: 60
     });
 
-    this.__foldersList = [];
     this.__workspacesList = [];
+    this.__foldersList = [];
     this.__resourcesList = [];
     this.__groupedContainersList = [];
 
