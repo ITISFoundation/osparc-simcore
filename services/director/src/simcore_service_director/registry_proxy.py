@@ -318,6 +318,7 @@ async def list_image_tags_gen(
         tags, headers = await registry_request(
             app, path=path, method="GET", use_cache=not update_cache
         )  # initial call
+        assert "tags" in tags  # nosec
         while True:
             if "Link" in headers:
                 next_path = (
@@ -331,11 +332,15 @@ async def list_image_tags_gen(
             else:
                 prefetch_task = None
 
-            yield list(
-                filter(
-                    VERSION_REG.match,
-                    tags["tags"],
+            yield (
+                list(
+                    filter(
+                        VERSION_REG.match,
+                        tags["tags"],
+                    )
                 )
+                if tags["tags"] is not None
+                else []
             )
             if prefetch_task:
                 tags, headers = await prefetch_task

@@ -4,10 +4,12 @@
 import asyncio
 import json
 import time
+from unittest import mock
 
 import pytest
 from fastapi import FastAPI
 from pytest_benchmark.plugin import BenchmarkFixture
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.docker_registry import RegistrySettings
@@ -228,9 +230,17 @@ def configure_registry_caching(
     )
 
 
+@pytest.fixture
+def with_disabled_auto_caching(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_director.registry_proxy._list_all_services_task", autospec=True
+    )
+
+
 async def test_registry_caching(
     configure_registry_access: EnvVarsDict,
     configure_registry_caching: EnvVarsDict,
+    with_disabled_auto_caching: mock.Mock,
     app_settings: ApplicationSettings,
     app: FastAPI,
     push_services,
