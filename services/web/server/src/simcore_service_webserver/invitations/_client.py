@@ -84,7 +84,7 @@ class InvitationsServiceApi:
     ) -> ApiInvitationContent:
         response = await self.client.post(
             url=self._url_vtag("/invitations:extract"),
-            json={"invitation_url": invitation_url},
+            json={"invitation_url": f"{invitation_url}"},
         )
         return ApiInvitationContent.model_validate(await response.json())
 

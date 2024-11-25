@@ -58,13 +58,32 @@ _logger = logging.getLogger(__name__)
 
 _DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
     ["labels"],
-    ["task_template", "Resources", "Limits"],
-    ["task_template", "Resources", "Reservation", "MemoryBytes"],
-    ["task_template", "Resources", "Reservation", "NanoCPUs"],
-    ["task_template", "Placement", "Constraints"],
-    ["task_template", "ContainerSpec", "Env"],
-    ["task_template", "Resources", "Reservation", "GenericResources"],
+    ["task_template", "container_spec", "env"],
+    ["task_template", "placement", "constraints"],
+    ["task_template", "resources", "reservation", "generic_resources"],
+    ["task_template", "resources", "limits"],
+    ["task_template", "resources", "reservation", "memory_bytes"],
+    ["task_template", "resources", "reservation", "nano_cp_us"],
 )
+
+
+def _merge_service_base_and_user_specs(
+    dynamic_sidecar_service_spec_base: AioDockerServiceSpec,
+    user_specific_service_spec: AioDockerServiceSpec,
+) -> AioDockerServiceSpec:
+    # NOTE: since user_specific_service_spec follows Docker Service Spec and not Aio
+    # we do not use aliases when exporting dynamic_sidecar_service_spec_base
+    return AioDockerServiceSpec.model_validate(
+        nested_update(
+            jsonable_encoder(
+                dynamic_sidecar_service_spec_base, exclude_unset=True, by_alias=False
+            ),
+            jsonable_encoder(
+                user_specific_service_spec, exclude_unset=True, by_alias=False
+            ),
+            include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
+        )
+    )
 
 
 async def _create_proxy_service(
@@ -245,14 +264,8 @@ class CreateSidecars(DynamicSchedulerEvent):
         user_specific_service_spec = AioDockerServiceSpec.model_validate(
             user_specific_service_spec
         )
-        # NOTE: since user_specific_service_spec follows Docker Service Spec and not Aio
-        # we do not use aliases when exporting dynamic_sidecar_service_spec_base
-        dynamic_sidecar_service_final_spec = AioDockerServiceSpec.model_validate(
-            nested_update(
-                jsonable_encoder(dynamic_sidecar_service_spec_base, exclude_unset=True),
-                jsonable_encoder(user_specific_service_spec, exclude_unset=True),
-                include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
-            )
+        dynamic_sidecar_service_final_spec = _merge_service_base_and_user_specs(
+            dynamic_sidecar_service_spec_base, user_specific_service_spec
         )
         rabbit_message = ProgressRabbitMessageNode.model_construct(
             user_id=scheduler_data.user_id,
