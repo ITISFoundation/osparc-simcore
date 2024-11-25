@@ -376,4 +376,5 @@ def test_parse_request_query_parameters_as_with_order_by_query_models():
     request = make_mocked_request("GET", path=f"{url}")
 
     query_params = parse_request_query_parameters_as(OrderQueryModel, request)
-    assert query_params.order_by.model_dump() == expected.model_dump()
+
+    assert OrderBy.model_construct(**query_params.order_by.model_dump()) == expected
