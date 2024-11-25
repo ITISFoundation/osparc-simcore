@@ -25,7 +25,7 @@ from aiopg.sa.engine import Engine
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
-from models_library.services import ServiceKey, ServiceType, ServiceVersion
+from models_library.services import ServiceType
 from models_library.users import UserID
 from networkx.classes.reportviews import InDegreeView
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -179,7 +179,7 @@ class BaseCompScheduler(ABC):
     ) -> dict[NodeIDStr, CompTaskAtDB]:
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         pipeline_comp_tasks: dict[NodeIDStr, CompTaskAtDB] = {
-            NodeIDStr(f"{t.node_id}"): t
+            f"{t.node_id}": t
             for t in await comp_tasks_repo.list_computational_tasks(project_id)
             if (f"{t.node_id}" in list(pipeline_dag.nodes()))
         }
@@ -237,9 +237,9 @@ class BaseCompScheduler(ABC):
         for task in tasks.values():
             if task.state == RunningState.FAILED:
                 node_ids_to_set_as_aborted.update(nx.bfs_tree(dag, f"{task.node_id}"))
-                node_ids_to_set_as_aborted.remove(NodeIDStr(f"{task.node_id}"))
+                node_ids_to_set_as_aborted.remove(f"{task.node_id}")
         for node_id in node_ids_to_set_as_aborted:
-            tasks[NodeIDStr(f"{node_id}")].state = RunningState.ABORTED
+            tasks[f"{node_id}"].state = RunningState.ABORTED
         if node_ids_to_set_as_aborted:
             # update the current states back in DB
             comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
@@ -387,8 +387,8 @@ class BaseCompScheduler(ABC):
                     root_parent_node_id=run_metadata.get("project_metadata", {}).get(
                         "root_parent_node_id"
                     ),
-                    service_key=ServiceKey(t.image.name),
-                    service_version=ServiceVersion(t.image.tag),
+                    service_key=t.image.name,
+                    service_version=t.image.tag,
                     service_type=ServiceType.COMPUTATIONAL,
                     service_resources=create_service_resources_from_task(t),
                     service_additional_metadata={},
@@ -675,9 +675,9 @@ class BaseCompScheduler(ABC):
 
         # get the tasks to start
         tasks_ready_to_start: dict[NodeID, CompTaskAtDB] = {
-            node_id: comp_tasks[NodeIDStr(f"{node_id}")]
+            node_id: comp_tasks[f"{node_id}"]
             for node_id in next_task_node_ids
-            if comp_tasks[NodeIDStr(f"{node_id}")].state in TASK_TO_START_STATES
+            if comp_tasks[f"{node_id}"].state in TASK_TO_START_STATES
         }
 
         if not tasks_ready_to_start:
@@ -708,9 +708,7 @@ class BaseCompScheduler(ABC):
                 RunningState.WAITING_FOR_CLUSTER,
             )
             for task in tasks_ready_to_start:
-                comp_tasks[
-                    NodeIDStr(f"{task}")
-                ].state = RunningState.WAITING_FOR_CLUSTER
+                comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
 
         except ComputationalBackendOnDemandNotReadyError as exc:
             _logger.info(
@@ -732,9 +730,7 @@ class BaseCompScheduler(ABC):
                 RunningState.WAITING_FOR_CLUSTER,
             )
             for task in tasks_ready_to_start:
-                comp_tasks[
-                    NodeIDStr(f"{task}")
-                ].state = RunningState.WAITING_FOR_CLUSTER
+                comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
         except ClustersKeeperNotAvailableError:
             _logger.exception("Unexpected error while starting tasks:")
             await publish_project_log(
@@ -755,7 +751,7 @@ class BaseCompScheduler(ABC):
                 optional_stopped=arrow.utcnow().datetime,
             )
             for task in tasks_ready_to_start:
-                comp_tasks[NodeIDStr(f"{task}")].state = RunningState.FAILED
+                comp_tasks[f"{task}"].state = RunningState.FAILED
             raise
         except TaskSchedulingError as exc:
             _logger.exception(
@@ -773,7 +769,7 @@ class BaseCompScheduler(ABC):
                 optional_progress=1.0,
                 optional_stopped=arrow.utcnow().datetime,
             )
-            comp_tasks[NodeIDStr(f"{exc.node_id}")].state = RunningState.FAILED
+            comp_tasks[f"{exc.node_id}"].state = RunningState.FAILED
         except Exception:
             _logger.exception(
                 "Unexpected error for %s with %s on %s happened when scheduling %s:",
@@ -792,7 +788,7 @@ class BaseCompScheduler(ABC):
                 optional_stopped=arrow.utcnow().datetime,
             )
             for task in tasks_ready_to_start:
-                comp_tasks[NodeIDStr(f"{task}")].state = RunningState.FAILED
+                comp_tasks[f"{task}"].state = RunningState.FAILED
             raise
 
         return comp_tasks
