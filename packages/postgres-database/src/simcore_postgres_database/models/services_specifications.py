@@ -8,6 +8,7 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
+from ._common import RefActions
 from .base import metadata
 
 services_specifications = sa.Table(
@@ -31,8 +32,8 @@ services_specifications = sa.Table(
         sa.ForeignKey(
             "groups.gid",
             name="fk_services_specifications_gid_groups",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         doc="Group Identifier",
     ),
@@ -52,8 +53,8 @@ services_specifications = sa.Table(
     sa.ForeignKeyConstraint(
         ["service_key", "service_version"],
         ["services_meta_data.key", "services_meta_data.version"],
-        onupdate="CASCADE",
-        ondelete="CASCADE",
+        onupdate=RefActions.CASCADE,
+        ondelete=RefActions.CASCADE,
     ),
     # This table stores services (key:version) that consume filetype by AT LEAST one input_port
     # if more ports can consume, then it should only be added once in this table

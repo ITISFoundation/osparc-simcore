@@ -57,13 +57,14 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_409_CONFLICT,
         "Invalid folder value set: {reason}",
     ),
+    # Trashing
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         "One or more studies in this folder are in use and cannot be trashed. Please stop all services first and try again",
     ),
     ProjectStoppingError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        "Something went wrong while stopping services before trashing. Aborting trash.",
+        "Something went wrong while stopping running services in studies within this folder before trashing. Aborting trash.",
     ),
 }
 
