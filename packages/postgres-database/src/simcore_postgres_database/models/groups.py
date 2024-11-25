@@ -10,6 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
+from ._common import RefActions
 from .base import metadata
 
 
@@ -86,8 +87,8 @@ user_to_groups = sa.Table(
         sa.ForeignKey(
             "users.id",
             name="fk_user_to_groups_id_users",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         doc="User unique IDentifier",
     ),
@@ -97,8 +98,8 @@ user_to_groups = sa.Table(
         sa.ForeignKey(
             "groups.gid",
             name="fk_user_to_groups_gid_groups",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         doc="Group unique IDentifier",
     ),

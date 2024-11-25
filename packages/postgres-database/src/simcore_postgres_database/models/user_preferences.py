@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 
+from ._common import RefActions
 from .base import metadata
 from .products import products
 from .users import users
@@ -12,8 +13,8 @@ def _user_id_column(fk_name: str) -> sa.Column:
         sa.ForeignKey(
             users.c.id,
             name=fk_name,
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=False,
     )
@@ -26,8 +27,8 @@ def _product_name_column(fk_name: str) -> sa.Column:
         sa.ForeignKey(
             products.c.name,
             name=fk_name,
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=False,
     )

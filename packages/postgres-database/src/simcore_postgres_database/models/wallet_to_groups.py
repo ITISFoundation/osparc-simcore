@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 from sqlalchemy.sql import expression
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 from .groups import groups
 from .wallets import wallets
@@ -15,8 +15,8 @@ wallet_to_groups = sa.Table(
         sa.ForeignKey(
             wallets.c.wallet_id,
             name="fk_wallet_to_groups_id_wallets",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         doc="Wallet unique ID",
     ),
@@ -26,8 +26,8 @@ wallet_to_groups = sa.Table(
         sa.ForeignKey(
             groups.c.gid,
             name="fk_wallet_to_groups_gid_groups",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         doc="Group unique IDentifier",
     ),

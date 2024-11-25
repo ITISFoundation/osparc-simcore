@@ -7,6 +7,7 @@
 import sqlalchemy as sa
 
 from ._common import (
+    RefActions,
     column_created_datetime,
     column_modified_datetime,
     register_modified_datetime_auto_update_trigger,
@@ -22,8 +23,8 @@ projects_node_to_pricing_unit = sa.Table(
         sa.BIGINT,
         sa.ForeignKey(
             projects_nodes.c.project_node_id,
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_projects_nodes__project_node_to_pricing_unit__uuid",
         ),
         nullable=False,

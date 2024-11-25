@@ -3,6 +3,7 @@ from functools import total_ordering
 
 import sqlalchemy as sa
 
+from ._common import RefActions
 from .base import metadata
 
 _USER_ROLE_TO_LEVEL = {
@@ -113,8 +114,8 @@ users = sa.Table(
         sa.ForeignKey(
             "groups.gid",
             name="fk_users_gid_groups",
-            onupdate="CASCADE",
-            ondelete="RESTRICT",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.RESTRICT,
         ),
         doc="User's group ID",
     ),
