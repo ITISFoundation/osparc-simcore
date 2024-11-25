@@ -306,9 +306,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __rebuildLayout: function(resourceType) {
       this.__cleanAll();
-      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        this.__addFoldersContainer();
-      }
       if (this.getGroupBy()) {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this.__groupedContainers.add(noGroupContainer);
