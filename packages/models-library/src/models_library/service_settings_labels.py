@@ -226,7 +226,7 @@ class PathMappingsLabel(BaseModel):
                     "outputs_path": "/tmp/outputs",  # noqa: S108 nosec
                     "inputs_path": "/tmp/inputs",  # noqa: S108 nosec
                     "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108 nosec
-                    "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108 nosec
+                    "state_exclude": ["/tmp/strip_me/*"],  # noqa: S108 nosec
                 },
                 {
                     "outputs_path": "/t_out",
