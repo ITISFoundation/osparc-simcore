@@ -1689,13 +1689,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getUntrashStudyMenuButton: function(studyData) {
-      const trashButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
-      trashButton["untrashButton"] = true;
-      trashButton.set({
+      const restoreButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
+      restoreButton["untrashButton"] = true;
+      restoreButton.set({
         appearance: "menu-button"
       });
-      trashButton.addListener("execute", () => this.__untrashStudy(studyData), this);
-      return trashButton;
+      restoreButton.addListener("execute", () => this.__untrashStudy(studyData), this);
+      return restoreButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData) {

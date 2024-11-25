@@ -225,9 +225,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         trashButton.addListener("execute", () => this.__trashFolderRequested(), this);
         menu.add(trashButton);
       } else if (studyBrowserContext === "trash") {
-        const trashButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
-        trashButton.addListener("execute", () => this.fireDataEvent("untrashFolderRequested", this.getFolder()), this);
-        menu.add(trashButton);
+        const restoreButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
+        restoreButton.addListener("execute", () => this.fireDataEvent("untrashFolderRequested", this.getFolder()), this);
+        menu.add(restoreButton);
 
         menu.addSeparator();
 
