@@ -2,7 +2,9 @@
     Models node UI (legacy model, use instead projects.ui.py)
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
 from pydantic_extra_types.color import Color
 
 
@@ -14,6 +16,6 @@ class Position(BaseModel):
 
 
 class Marker(BaseModel):
-    color: Color = Field(...)
+    color: Annotated[Color, PlainSerializer(str), Field(...)]
 
     model_config = ConfigDict(extra="forbid")

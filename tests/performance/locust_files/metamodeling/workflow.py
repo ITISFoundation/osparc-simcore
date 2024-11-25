@@ -6,7 +6,7 @@ from uuid import UUID
 
 from locust import HttpUser, task
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests.auth import HTTPBasicAuth
 from tenacity import (
     Retrying,
@@ -27,6 +27,7 @@ _MAX_WAIT_SECONDS: Final[int] = 60
 
 
 class UserSettings(BaseSettings):
+    model_config = SettingsConfigDict(extra="ignore")
     OSPARC_API_KEY: str = Field(default=...)
     OSPARC_API_SECRET: str = Field(default=...)
 
