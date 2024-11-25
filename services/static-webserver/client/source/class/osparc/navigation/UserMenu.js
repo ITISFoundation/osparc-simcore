@@ -213,6 +213,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
         if (osparc.data.Permissions.getInstance().isProductOwner()) {
           this.getChildControl("po-center");
         }
+        if (osparc.data.Permissions.getInstance().isTester()) {
+          this.getChildControl("tester-center");
+        }
         if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
           this.getChildControl("billing-center");
         }
