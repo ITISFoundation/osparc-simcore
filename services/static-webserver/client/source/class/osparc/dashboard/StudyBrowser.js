@@ -168,7 +168,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
         !osparc.utils.DisabledPlugins.isFoldersEnabled() ||
         this.getCurrentContext() === "studiesAndFolders" ||
-        this.getCurrentContext() === "search" || // not yet implemented
+        this.getCurrentContext() === "search" || // not yet implemented for workspaces
         this.__loadingWorkspaces
       ) {
         return;
