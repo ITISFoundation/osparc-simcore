@@ -80,6 +80,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "deleteFolderRequested": "qx.event.type.Data",
     "workspaceSelected": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Data",
+    "trashWorkspaceRequested": "qx.event.type.Data",
+    "untrashWorkspaceRequested": "qx.event.type.Data",
     "deleteWorkspaceRequested": "qx.event.type.Data",
     "changeContext": "qx.event.type.Data",
   },
@@ -385,6 +387,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       [
         "workspaceSelected",
         "workspaceUpdated",
+        "trashWorkspaceRequested",
+        "untrashWorkspaceRequested",
         "deleteWorkspaceRequested",
       ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
       return card;

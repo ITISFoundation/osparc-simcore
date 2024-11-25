@@ -290,6 +290,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         this._changeContext(context, workspaceId, folderId);
       }, this);
       resourcesContainer.addListener("workspaceUpdated", e => this._workspaceUpdated(e.getData()));
+      resourcesContainer.addListener("trashWorkspaceRequested", e => this._trashWorkspaceRequested(e.getData()));
+      resourcesContainer.addListener("untrashWorkspaceRequested", e => this._untrashWorkspaceRequested(e.getData()));
       resourcesContainer.addListener("deleteWorkspaceRequested", e => this._deleteWorkspaceRequested(e.getData()));
 
       this._addToLayout(resourcesContainer);

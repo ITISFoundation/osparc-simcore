@@ -140,6 +140,37 @@ qx.Class.define("osparc.store.Workspaces", {
         });
     },
 
+    trashWorkspace: function(workspaceId) {
+      const params = {
+        "url": {
+          workspaceId
+        }
+      };
+      return osparc.data.Resources.getInstance().fetch("workspaces", "trash", params)
+        .then(() => {
+          const workspace = this.getWorkspace(workspaceId);
+          if (workspace) {
+            this.__deleteFromCache(workspaceId);
+            this.fireDataEvent("workspaceRemoved", workspace);
+          }
+        })
+        .catch(console.error);
+    },
+
+    untrashWorkspace: function(workspace) {
+      const params = {
+        "url": {
+          workspaceId: workspace.getWorkspaceId(),
+        }
+      };
+      return osparc.data.Resources.getInstance().fetch("workspaces", "untrash", params)
+        .then(() => {
+          this.workspacesCached.unshift(workspace);
+          this.fireDataEvent("workspaceAdded", workspace);
+        })
+        .catch(console.error);
+    },
+
     deleteWorkspace: function(workspaceId) {
       const params = {
         "url": {

@@ -455,11 +455,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__reloadWorkspaceCards();
     },
 
+    _trashWorkspaceRequested: function(workspaceId) {
+      osparc.store.Workspaces.getInstance().trashWorkspace(workspaceId)
+        .then(() => this.__reloadWorkspaces())
+        .catch(err => console.error(err));
+    },
+
+    _untrashWorkspaceRequested: function(workspace) {
+      osparc.store.Workspaces.getInstance().untrashWorkspace(workspace)
+        .then(() => this.__reloadWorkspaces())
+        .catch(err => console.error(err));
+    },
+
     _deleteWorkspaceRequested: function(workspaceId) {
       osparc.store.Workspaces.getInstance().deleteWorkspace(workspaceId)
-        .then(() => {
-          this.__reloadWorkspaces();
-        })
+        .then(() => this.__reloadWorkspaces())
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
