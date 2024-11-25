@@ -1,7 +1,9 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
+#     "faker",
 #     "locust",
+#     "locust-plugins",
 #     "parse",
 #     "pydantic",
 #     "pydantic-settings",
@@ -63,9 +65,6 @@ def _get_settings_classes(file_path: Path) -> list[type[BaseSettings]]:
         for _, obj in inspect.getmembers(module, inspect.isclass)
         if issubclass(obj, BaseSettings) and obj is not BaseSettings
     ]
-
-    s = settings_classes[0]
-    s.model_construct
 
     return settings_classes
 

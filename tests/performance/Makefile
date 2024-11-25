@@ -72,7 +72,7 @@ dashboards-up: ## Create Grafana dashboard for inspecting locust results. See da
 	@locust-compose up
 
 
-dashboards-down:
+dashboards-down: ## stops and removes Grafana dashboard and Timescale postgress containers
 	@locust-compose down
 
 .PHONY: install-ci install-dev
