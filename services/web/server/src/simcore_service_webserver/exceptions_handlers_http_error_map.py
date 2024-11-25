@@ -7,14 +7,14 @@ from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exc
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error
 
-from .exceptions_handlers_base import WebApiExceptionHandler
+from .exceptions_handlers_base import AiohttpExceptionHandler
 
 _logger = logging.getLogger(__name__)
 
 
-_STATUS_CODE_TO_HTTP_EXCEPTIONS: dict[
+_STATUS_CODE_TO_HTTP_ERRORS: dict[
     int, type[web.HTTPException]
-] = get_all_aiohttp_http_exceptions(web.HTTPException)
+] = get_all_aiohttp_http_exceptions(web.HTTPError)
 
 
 class _DefaultDict(dict):
@@ -37,7 +37,7 @@ def create_exception_handler_from_http_error(
     *,
     status_code: int,
     msg_template: str,
-) -> WebApiExceptionHandler:
+) -> AiohttpExceptionHandler:
     """
     Custom Exception-Handler factory
 
@@ -60,16 +60,13 @@ def create_exception_handler_from_http_error(
     async def _exception_handler(
         request: web.Request,
         exception: BaseException,
-    ) -> web.HTTPException | BaseException | None:
+    ) -> web.Response:
         assert isinstance(exception, exception_cls)  # nosec
 
         # safe formatting, i.e. does not raise
         user_msg = msg_template.format_map(
             _DefaultDict(getattr(exception, "__dict__", {}))
         )
-
-        http_error_cls = _STATUS_CODE_TO_HTTP_EXCEPTIONS[status_code]
-        assert http_error_cls  # nosec
 
         if is_5xx_server_error(status_code):
             _logger.exception(
@@ -84,7 +81,17 @@ def create_exception_handler_from_http_error(
                     },
                 )
             )
-        return http_error_cls(reason=user_msg)
+
+        # TODO: make this part customizable? e.g. so we can inject e.g. oec?
+        # TODO: connect with ErrorModel
+        return web.json_response(
+            {
+                "error": {
+                    "msg": user_msg,
+                }
+            },
+            status=status_code,
+        )
 
     return _exception_handler
 
@@ -101,7 +108,7 @@ def _sort_exceptions_by_specificity(
 
 def create_exception_handler_from_http_error_map(
     exc_to_http_error_map: ExceptionToHttpErrorMap,
-) -> WebApiExceptionHandler:
+) -> AiohttpExceptionHandler:
     """
     Custom Exception-Handler factory
 
@@ -126,7 +133,7 @@ def create_exception_handler_from_http_error_map(
     async def _exception_handler(
         request: web.Request,
         exception: BaseException,
-    ) -> web.HTTPError | BaseException | None:
+    ) -> web.Response:
         if exc_cls := next(
             (_ for _ in _catch_exceptions if isinstance(exception, _)), None
         ):
