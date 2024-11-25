@@ -10,7 +10,6 @@ from models_library.api_schemas_webserver.folders_v2 import (
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -82,7 +81,7 @@ async def list_folders(request: web.Request):
         trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=OrderBy.model_validate(query_params.order_by),
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
     page = Page[FolderGet].model_validate(
@@ -121,7 +120,7 @@ async def list_folders_full_search(request: web.Request):
         trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=TypeAdapter(OrderBy).validate_python(query_params.order_by),
+        order_by=OrderBy(**query_params.order_by.model_dump()),
     )
 
     page = Page[FolderGet].model_validate(

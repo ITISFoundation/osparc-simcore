@@ -203,7 +203,7 @@ async def list_projects(request: web.Request):
         limit=query_params.limit,
         offset=query_params.offset,
         search=query_params.search,
-        order_by=OrderBy.model_validate(query_params.order_by),
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
         folder_id=query_params.folder_id,
         workspace_id=query_params.workspace_id,
     )
@@ -241,7 +241,7 @@ async def list_projects_full_search(request: web.Request):
         limit=query_params.limit,
         offset=query_params.offset,
         text=query_params.text,
-        order_by=query_params.order_by,
+        order_by=OrderBy(**query_params.order_by.model_dump()),
         tag_ids_list=tag_ids_list,
     )
 
