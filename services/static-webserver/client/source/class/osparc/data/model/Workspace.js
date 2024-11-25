@@ -38,6 +38,7 @@ qx.Class.define("osparc.data.model.Workspace", {
       createdAt: new Date(workspaceData.createdAt),
       modifiedAt: new Date(workspaceData.modifiedAt),
       trashedAt: workspaceData.trashedAt ? new Date(workspaceData.trashedAt) : null,
+      trashedBy: workspaceData.trashedBy,
     });
   },
 
@@ -100,6 +101,12 @@ qx.Class.define("osparc.data.model.Workspace", {
 
     trashedAt: {
       check: "Date",
+      nullable: true,
+      init: null,
+    },
+
+    trashedBy: {
+      check: "Number",
       nullable: true,
       init: null,
     },
