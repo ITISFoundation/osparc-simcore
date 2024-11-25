@@ -93,11 +93,15 @@ def get_redis_client_from_app(*args, **kwargs) -> RedisClientSDK:
 
 
 def get_redis_lock_key(
-    suffix: str, *, unique_lock_key_builder: Callable[..., str]
+    suffix: str, *, unique_lock_key_builder: Callable[..., str] | None
 ) -> Callable[..., str]:
     def _(*args, **kwargs) -> str:
         app = _get_app_from_args(*args, **kwargs)
-        unique_lock_part = unique_lock_key_builder(*args, **kwargs)
-        return f"{app.title}-{suffix}-{unique_lock_part}"
+        unique_lock_part = (
+            unique_lock_key_builder(*args, **kwargs) if unique_lock_key_builder else ""
+        )
+        if unique_lock_part:
+            unique_lock_part = f"-{unique_lock_part}"
+        return f"{app.title}-{suffix}{unique_lock_part}"
 
     return _

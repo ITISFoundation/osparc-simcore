@@ -113,9 +113,7 @@ async def _get_pipeline_dag(project_id: ProjectID, db_engine: Engine) -> nx.DiGr
 
 @exclusive(
     get_redis_client_from_app,
-    lock_key=get_redis_lock_key(
-        MODULE_NAME_SCHEDULER, unique_lock_key_builder=lambda: ""
-    ),
+    lock_key=get_redis_lock_key(MODULE_NAME_SCHEDULER, unique_lock_key_builder=None),
 )
 async def schedule_pipelines(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, msg="scheduling pipelines"):

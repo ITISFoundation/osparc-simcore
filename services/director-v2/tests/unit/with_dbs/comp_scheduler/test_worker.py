@@ -48,6 +48,7 @@ def mocked_get_scheduler_worker(
 
 
 async def test_worker_properly_calls_scheduler_api(
+    with_disabled_auto_scheduling: mock.Mock,
     initialized_app: FastAPI,
     mocked_get_scheduler_worker: mock.Mock,
     published_project: PublishedProject,

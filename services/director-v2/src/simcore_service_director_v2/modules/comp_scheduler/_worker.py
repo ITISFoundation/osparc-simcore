@@ -26,7 +26,7 @@ def _get_scheduler_worker(app: FastAPI) -> BaseCompScheduler:
 
 
 def _unique_key_builder(
-    user_id: UserID, project_id: ProjectID, iteration: Iteration
+    _app, user_id: UserID, project_id: ProjectID, iteration: Iteration
 ) -> str:
     return f"{user_id}:{project_id}:{iteration}"
 
