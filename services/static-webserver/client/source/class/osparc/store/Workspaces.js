@@ -298,7 +298,7 @@ qx.Class.define("osparc.store.Workspaces", {
           if (key === "createdAt") {
             workspace.set("createdAt", new Date(workspaceData["createdAt"]));
           } else if (key === "modifiedAt") {
-            workspace.set("lastModified", new Date(workspaceData["modifiedAt"]));
+            workspace.set("modifiedAt", new Date(workspaceData["modifiedAt"]));
           } else if (key === "trashedAt") {
             workspace.set("trashedAt", new Date(workspaceData["trashedAt"]));
           } else if (props.includes(key)) {
@@ -309,6 +309,7 @@ qx.Class.define("osparc.store.Workspaces", {
         workspace = new osparc.data.model.Workspace(workspaceData);
         this.workspacesCached.unshift(workspace);
       }
+      return workspace;
     },
 
     __deleteFromCache: function(workspaceId) {
