@@ -11,6 +11,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
+from ._common import RefActions
 from .base import metadata
 
 group_classifiers = sa.Table(
@@ -32,8 +33,8 @@ group_classifiers = sa.Table(
         sa.ForeignKey(
             "groups.gid",
             name="fk_group_classifiers_gid_to_groups_gid",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         unique=True,  # Every Group can ONLY have one set of classifiers
     ),

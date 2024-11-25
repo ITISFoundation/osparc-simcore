@@ -2,6 +2,7 @@ import sqlalchemy as sa
 
 from ._common import (
     NUMERIC_KWARGS,
+    RefActions,
     column_created_datetime,
     column_modified_datetime,
     register_modified_datetime_auto_update_trigger,
@@ -49,8 +50,8 @@ payments_autorecharge = sa.Table(
         sa.ForeignKey(
             payments_methods.c.payment_method_id,
             name="fk_payments_autorecharge_primary_payment_method_id",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         nullable=False,
         unique=True,

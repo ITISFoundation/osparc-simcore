@@ -6,7 +6,12 @@
 """
 import sqlalchemy as sa
 
-from ._common import NUMERIC_KWARGS, column_created_datetime, column_modified_datetime
+from ._common import (
+    NUMERIC_KWARGS,
+    RefActions,
+    column_created_datetime,
+    column_modified_datetime,
+)
 from .base import metadata
 
 resource_tracker_pricing_unit_costs = sa.Table(
@@ -25,8 +30,8 @@ resource_tracker_pricing_unit_costs = sa.Table(
         sa.ForeignKey(
             "resource_tracker_pricing_plans.pricing_plan_id",
             name="fk_resource_tracker_pricing_units_costs_pricing_plan_id",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         nullable=False,
         doc="Foreign key to pricing plan",
@@ -44,8 +49,8 @@ resource_tracker_pricing_unit_costs = sa.Table(
         sa.ForeignKey(
             "resource_tracker_pricing_units.pricing_unit_id",
             name="fk_resource_tracker_pricing_units_costs_pricing_unit_id",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         nullable=False,
         doc="Foreign key to pricing unit",

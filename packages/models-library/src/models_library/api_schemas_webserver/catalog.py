@@ -228,8 +228,7 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
     )
 
 
-class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
-    model_config = OutputSchema.model_config
+ServiceResourcesGet: TypeAlias = api_schemas_catalog_services.ServiceResourcesGet
 
 
 class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):

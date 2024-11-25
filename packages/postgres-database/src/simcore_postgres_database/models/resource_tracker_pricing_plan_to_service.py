@@ -4,7 +4,7 @@
 
 import sqlalchemy as sa
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 resource_tracker_pricing_plan_to_service = sa.Table(
@@ -16,8 +16,8 @@ resource_tracker_pricing_plan_to_service = sa.Table(
         sa.ForeignKey(
             "resource_tracker_pricing_plans.pricing_plan_id",
             name="fk_resource_tracker_pricing_details_pricing_plan_id",
-            onupdate="CASCADE",
-            ondelete="RESTRICT",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.RESTRICT,
         ),
         nullable=False,
         doc="Identifier index",
@@ -49,7 +49,7 @@ resource_tracker_pricing_plan_to_service = sa.Table(
         ["service_key", "service_version"],
         ["services_meta_data.key", "services_meta_data.version"],
         name="fk_rut_pricing_plan_to_service_key_and_version",
-        onupdate="CASCADE",
-        ondelete="CASCADE",
+        onupdate=RefActions.CASCADE,
+        ondelete=RefActions.CASCADE,
     ),
 )

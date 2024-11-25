@@ -7,6 +7,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.sql import expression, func
 
+from ._common import RefActions
 from .base import metadata
 
 
@@ -64,8 +65,8 @@ projects = sa.Table(
         sa.ForeignKey(
             "users.id",
             name="fk_projects_prj_owner_users",
-            onupdate="CASCADE",
-            ondelete="RESTRICT",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.RESTRICT,
         ),
         nullable=True,
         doc="Project's owner",
@@ -161,8 +162,8 @@ projects = sa.Table(
         sa.BigInteger,
         sa.ForeignKey(
             "workspaces.workspace_id",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_projects_to_workspaces_id",
         ),
         nullable=True,

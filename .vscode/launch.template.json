@@ -15,6 +15,7 @@
         "--log-cli-level=INFO",
         "--pdb",
         "--setup-show",
+        "--durations=5",
         "-sx",
         "-vv",
         "${file}"

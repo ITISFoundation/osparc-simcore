@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 from .projects import projects
 from .users import users
@@ -22,8 +22,8 @@ projects_comments = sa.Table(
         sa.ForeignKey(
             projects.c.uuid,
             name="fk_projects_comments_project_uuid",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         index=True,
         nullable=False,
@@ -36,7 +36,7 @@ projects_comments = sa.Table(
         sa.ForeignKey(
             users.c.id,
             name="fk_projects_comments_user_id",
-            ondelete="SET NULL",
+            ondelete=RefActions.SET_NULL,
         ),
         doc="user who created the comment",
         nullable=True,
