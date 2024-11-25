@@ -8,7 +8,7 @@ import locust_plugins
 from locust import task
 from locust.contrib.fasthttp import FastHttpUser
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,6 +20,7 @@ assert locust_plugins  # nosec
 
 
 class MonitoringBasicAuth(BaseSettings):
+    model_config = SettingsConfigDict(extra="ignore")
     SC_USER_NAME: str = Field(default=..., examples=["<your username>"])
     SC_PASSWORD: str = Field(default=..., examples=["<your password>"])
 
