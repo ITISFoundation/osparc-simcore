@@ -631,16 +631,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       // check the entries in currentParams are the same as the reqParams
       let sameContext = true;
       Object.entries(currentParams).forEach(([key, value]) => {
-        sameContext &= key in reqParams && reqParams[key] === value;
+        // loose equality: will do a Number to String conversion if necessary
+        sameContext &= key in reqParams && reqParams[key] == value;
       });
       return !sameContext;
     },
 
     __getNextPageParams: function() {
-      if (this._resourcesContainer.getFlatList() && this._resourcesContainer.getFlatList().nextRequest) {
+      const studiesContainer = this._resourcesContainer.getFlatList();
+      if (studiesContainer && studiesContainer.nextRequest) {
         // Context might have been changed while waiting for the response.
         // The new call is on the way, therefore this response can be ignored.
-        const url = new URL(this._resourcesContainer.getFlatList().nextRequest);
+        const url = new URL(studiesContainer.nextRequest);
         const urlSearchParams = new URLSearchParams(url.search);
         const urlParams = {};
         for (const [snakeKey, value] of urlSearchParams.entries()) {
@@ -650,12 +652,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const contextChanged = this.__didContextChange(urlParams);
         if (
           !contextChanged &&
-          osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
-          osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
+          osparc.utils.Utils.hasParamFromURL(studiesContainer.nextRequest, "offset") &&
+          osparc.utils.Utils.hasParamFromURL(studiesContainer.nextRequest, "limit")
         ) {
           return {
-            offset: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset"),
-            limit: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
+            offset: osparc.utils.Utils.getParamFromURL(studiesContainer.nextRequest, "offset"),
+            limit: osparc.utils.Utils.getParamFromURL(studiesContainer.nextRequest, "limit")
           };
         }
       }

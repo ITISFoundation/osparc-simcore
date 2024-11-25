@@ -797,7 +797,10 @@ qx.Class.define("osparc.data.model.Workbench", {
         } else {
           // patch only what was changed
           Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
-            patchData[changedFieldKey] = nodeData[changedFieldKey];
+            if (nodeData[changedFieldKey] !== undefined) {
+              // do not patch if it's undefined
+              patchData[changedFieldKey] = nodeData[changedFieldKey];
+            }
           });
         }
         const params = {
@@ -807,7 +810,9 @@ qx.Class.define("osparc.data.model.Workbench", {
           },
           data: patchData
         };
-        promises.push(osparc.data.Resources.fetch("studies", "patchNode", params));
+        if (Object.keys(patchData).length) {
+          promises.push(osparc.data.Resources.fetch("studies", "patchNode", params));
+        }
       })
       return Promise.all(promises);
     }
