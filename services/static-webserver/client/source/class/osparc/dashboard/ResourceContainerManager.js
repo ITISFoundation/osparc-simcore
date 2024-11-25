@@ -263,7 +263,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this.__resourcesList = resourcesList;
     },
 
-    __cleanAll: function() {
+    cleanAll: function() {
       if (this.__workspacesContainer) {
         this.__workspacesContainer.removeAll();
       }
@@ -302,7 +302,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __rebuildLayout: function(resourceType) {
-      this.__cleanAll();
+      this.cleanAll();
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         this.__addFoldersContainer();
       }
@@ -365,7 +365,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     reloadWorkspaces: function() {
-      this.__cleanAll();
+      this.cleanAll();
       this._add(this.__workspacesContainer);
       let workspacesCards = [];
       this.__workspacesList.forEach(workspaceData => workspacesCards.push(this.__workspaceToCard(workspaceData)));
