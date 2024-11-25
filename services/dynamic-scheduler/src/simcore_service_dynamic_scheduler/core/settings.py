@@ -80,6 +80,10 @@ class ApplicationSettings(_BaseApplicationSettings):
     These settings includes extra configuration for the http-API
     """
 
+    DYNAMIC_SCHEDULER_UI_STORAGE_SECRET: str = Field(
+        ..., description="secret key used to enabled browser-based storage for the UI"
+    )
+
     DYNAMIC_SCHEDULER_RABBITMQ: RabbitSettings = Field(
         json_schema_extra={"auto_default_from_env": True},
         description="settings for service/rabbitmq",

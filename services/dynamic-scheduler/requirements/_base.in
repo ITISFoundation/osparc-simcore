@@ -17,8 +17,8 @@
 
 arrow
 fastapi
-fastui
 httpx
+nicegui
 packaging
 python-socketio
 typer[all]
