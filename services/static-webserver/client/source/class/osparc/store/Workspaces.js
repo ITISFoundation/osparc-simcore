@@ -70,8 +70,7 @@ qx.Class.define("osparc.store.Workspaces", {
       return osparc.data.Resources.getInstance().getAllPages("workspaces")
         .then(workspacesData => {
           workspacesData.forEach(workspaceData => {
-            const workspace = new osparc.data.model.Workspace(workspaceData);
-            this.__addToCache(workspace);
+            this.__addToCache(workspaceData);
           });
           return this.workspacesCached;
         });
@@ -133,8 +132,7 @@ qx.Class.define("osparc.store.Workspaces", {
       };
       return osparc.data.Resources.getInstance().fetch("workspaces", "post", params)
         .then(workspaceData => {
-          const newWorkspace = new osparc.data.model.Workspace(workspaceData);
-          this.__addToCache(newWorkspace);
+          const newWorkspace = this.__addToCache(workspaceData);
           this.fireDataEvent("workspaceAdded", newWorkspace);
           return newWorkspace;
         });
@@ -291,9 +289,24 @@ qx.Class.define("osparc.store.Workspaces", {
       return this.workspacesCached;
     },
 
-    __addToCache: function(workspace) {
-      const found = this.workspacesCached.find(w => w.getWorkspaceId() === workspace.getWorkspaceId());
-      if (!found) {
+    __addToCache: function(workspaceData) {
+      let workspace = this.workspacesCached.find(w => w.getWorkspaceId() === workspaceData["workspaceId"]);
+      if (workspace) {
+        const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Workspace));
+        // put
+        Object.keys(workspaceData).forEach(key => {
+          if (key === "createdAt") {
+            workspace.set("createdAt", new Date(workspaceData["createdAt"]));
+          } else if (key === "modifiedAt") {
+            workspace.set("lastModified", new Date(workspaceData["modifiedAt"]));
+          } else if (key === "trashedAt") {
+            workspace.set("trashedAt", new Date(workspaceData["trashedAt"]));
+          } else if (props.includes(key)) {
+            workspace.set(key, workspaceData[key]);
+          }
+        });
+      } else {
+        workspace = new osparc.data.model.Workspace(workspaceData);
         this.workspacesCached.unshift(workspace);
       }
     },

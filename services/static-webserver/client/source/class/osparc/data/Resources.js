@@ -388,11 +388,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           trash: {
             method: "POST",
-            url: statics.API + "/workspaces/{workspacesId}:trash"
+            url: statics.API + "/workspaces/{workspaceId}:trash"
           },
           untrash: {
             method: "POST",
-            url: statics.API + "/workspaces/{workspacesId}:untrash"
+            url: statics.API + "/workspaces/{workspaceId}:untrash"
           },
           postAccessRights: {
             method: "POST",
