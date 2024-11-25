@@ -76,9 +76,7 @@ def _get_dynamic_sidecar_service_final_spec(
     return AioDockerServiceSpec.model_validate(
         nested_update(
             jsonable_encoder(
-                dynamic_sidecar_service_spec_base,
-                exclude_unset=True,
-                by_alias=False,
+                dynamic_sidecar_service_spec_base, exclude_unset=True, by_alias=False
             ),
             jsonable_encoder(
                 user_specific_service_spec, exclude_unset=True, by_alias=False
