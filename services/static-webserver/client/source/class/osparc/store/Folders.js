@@ -128,6 +128,7 @@ qx.Class.define("osparc.store.Folders", {
       return osparc.data.Resources.getInstance().getAllPages("folders", params, "getPageSearch")
         .then(foldersData => {
           const folders = [];
+          foldersData.forEach(folderData => {
             const folder = this.__addToCache(folderData);
             folders.push(folder);
           });
