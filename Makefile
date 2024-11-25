@@ -595,11 +595,16 @@ settings-schema.json: ## [container] dumps json-schema settings of all services
 
 
 .PHONY: auto-doc
-auto-doc: .stack-simcore-version.yml ## updates diagrams for README.md
+auto-doc: .stack-simcore-version.yml ## Auto generates diagrams for README.md
 	# Parsing docker compose config $< and creating graph
 	@./scripts/docker-compose-viz.bash $<
 	# Updating docs/img
 	@mv --verbose $<.png docs/img/
+
+.PHONY: services.ignore.md
+services.ignore.md: ## Auto generates service.md
+	# Making $@
+	scripts/echo_services_markdown.py > $@
 
 
 .PHONY: postgres-upgrade

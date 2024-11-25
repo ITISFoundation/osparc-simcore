@@ -105,7 +105,9 @@ python-dateutil==2.9.0.post0
     #   botocore
     #   faker
 python-dotenv==1.0.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 requests==2.32.3
     # via
     #   -c requirements/_base.txt
@@ -142,7 +144,7 @@ typing-extensions==4.11.0
     #   mypy
     #   sqlalchemy2-stubs
     #   types-aiobotocore-s3
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

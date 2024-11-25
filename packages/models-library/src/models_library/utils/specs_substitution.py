@@ -1,9 +1,9 @@
 from typing import Any, NamedTuple, TypeAlias, cast
 
+from common_library.errors_classes import OsparcErrorMixin
+from common_library.json_serialization import json_dumps, json_loads
 from pydantic import StrictBool, StrictFloat, StrictInt
-from pydantic.errors import PydanticErrorMixin
 
-from .json_serialization import json_dumps, json_loads
 from .string_substitution import (
     SubstitutionsDict,
     TextTemplate,
@@ -15,7 +15,7 @@ from .string_substitution import (
 SubstitutionValue: TypeAlias = StrictBool | StrictInt | StrictFloat | str
 
 
-class IdentifierSubstitutionError(PydanticErrorMixin, KeyError):
+class IdentifierSubstitutionError(OsparcErrorMixin, KeyError):
     msg_template: str = (
         "Was not able to substitute identifier "
         "'{name}'. It was not found in: {substitutions}"

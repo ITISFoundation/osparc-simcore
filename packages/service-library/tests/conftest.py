@@ -80,9 +80,12 @@ async def get_redis_client_sdk(
         database: RedisDatabase, decode_response: bool = True  # noqa: FBT002
     ) -> AsyncIterator[RedisClientSDK]:
         redis_resources_dns = redis_service.build_redis_dsn(database)
-        client = RedisClientSDK(redis_resources_dns, decode_responses=decode_response)
+        client = RedisClientSDK(
+            redis_resources_dns, decode_responses=decode_response, client_name="pytest"
+        )
         assert client
         assert client.redis_dsn == redis_resources_dns
+        assert client.client_name == "pytest"
         await client.setup()
 
         yield client
@@ -94,7 +97,9 @@ async def get_redis_client_sdk(
             await clients_manager.client(db).redis.flushall()
 
     async with RedisClientsManager(
-        {RedisManagerDBConfig(db) for db in RedisDatabase}, redis_service
+        {RedisManagerDBConfig(db) for db in RedisDatabase},
+        redis_service,
+        client_name="pytest",
     ) as clients_manager:
         await _cleanup_redis_data(clients_manager)
         yield _

@@ -2,8 +2,11 @@
 # Specifies third-party dependencies for 'models-library'
 #
 --constraint ../../../requirements/constraints.txt
+--requirement ../../../packages/common-library/requirements/_base.in
 
 arrow
 jsonschema
 orjson
 pydantic[email]
+pydantic-settings
+pydantic-extra-types

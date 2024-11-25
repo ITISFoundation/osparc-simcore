@@ -3,12 +3,12 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Field, ValidationError, parse_obj_as
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
@@ -22,10 +22,10 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
+from ..models import RequestContext
 from ..products import api as products_api
 from ..security.decorators import permission_required
 from ..users.exceptions import UserDefaultWalletNotFoundError
@@ -41,11 +41,6 @@ _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
-
-
-class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 class _ComputationStarted(BaseModel):
@@ -64,7 +59,7 @@ class _ComputationStarted(BaseModel):
 async def start_computation(request: web.Request) -> web.Response:
     # pylint: disable=too-many-statements
     try:
-        req_ctx = RequestContext.parse_obj(request)
+        req_ctx = RequestContext.model_validate(request)
         computations = ComputationsApi(request.app)
 
         run_policy = get_project_run_policy(request.app)
@@ -78,7 +73,9 @@ async def start_computation(request: web.Request) -> web.Response:
 
         if request.can_read_body:
             body = await request.json()
-            assert parse_obj_as(ComputationStart, body) is not None  # nosec
+            assert (
+                TypeAdapter(ComputationStart).validate_python(body) is not None
+            )  # nosec
 
             subgraph = body.get("subgraph", [])
             force_restart = bool(body.get("force_restart", force_restart))
@@ -158,7 +155,9 @@ async def start_computation(request: web.Request) -> web.Response:
         if project_vc_commits:
             data["ref_ids"] = project_vc_commits
 
-        assert parse_obj_as(_ComputationStarted, data) is not None  # nosec
+        assert (
+            TypeAdapter(_ComputationStarted).validate_python(data) is not None
+        )  # nosec
 
         return envelope_json_response(data, status_cls=web.HTTPCreated)
 
@@ -186,7 +185,7 @@ async def start_computation(request: web.Request) -> web.Response:
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def stop_computation(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     computations = ComputationsApi(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
@@ -234,8 +233,7 @@ async def get_computation(request: web.Request) -> web.Response:
             request, project_id
         )
         _logger.debug("Project %s will get %d variants", project_id, len(project_ids))
-        list_computation_tasks = parse_obj_as(
-            list[ComputationTaskGet],
+        list_computation_tasks = TypeAdapter(list[ComputationTaskGet]).validate_python(
             await asyncio.gather(
                 *[
                     computations.get(project_id=pid, user_id=user_id)
@@ -251,7 +249,7 @@ async def get_computation(request: web.Request) -> web.Response:
             for c in list_computation_tasks
         )
         return web.json_response(
-            data={"data": list_computation_tasks[0].dict(by_alias=True)},
+            data={"data": list_computation_tasks[0].model_dump(by_alias=True)},
             dumps=json_dumps,
         )
     except DirectorServiceError as exc:

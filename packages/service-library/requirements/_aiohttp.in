@@ -9,7 +9,6 @@ aiohttp
 aiopg[sa]
 attrs
 jsonschema
-openapi-core
 opentelemetry-instrumentation-aiohttp-client
 opentelemetry-instrumentation-aiohttp-server
 opentelemetry-instrumentation-aiopg

@@ -9,6 +9,7 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
+from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
@@ -132,16 +133,16 @@ def create_base_app() -> FastAPI:
     # settings
     settings = ApplicationSettings.create_from_envs()
     setup_logger(settings)
-    logger.debug(settings.json(indent=2))
+    logger.debug(settings.model_dump_json(indent=2))
 
     # minimal
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE.is_devel_mode(),
+        debug=settings.SC_BOOT_MODE.is_devel_mode(),  # pylint: disable=no-member
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        **get_common_oas_options(settings.SC_BOOT_MODE.is_devel_mode()),
+        **get_common_oas_options(is_devel_mode=settings.SC_BOOT_MODE.is_devel_mode()),
     )
     override_fastapi_openapi_method(app)
     app.state.settings = settings
@@ -190,9 +191,14 @@ def create_app():
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
 
+    if application_settings.DYNAMIC_SIDECAR_TRACING:
+        setup_tracing(app, application_settings.DYNAMIC_SIDECAR_TRACING, PROJECT_NAME)
+
     # ERROR HANDLERS  ------------
-    app.add_exception_handler(NodeNotFound, node_not_found_error_handler)
-    app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
+    app.add_exception_handler(
+        NodeNotFound, node_not_found_error_handler  # type: ignore[arg-type]
+    )
+    app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)  # type: ignore[arg-type]
 
     # EVENTS ---------------------
 

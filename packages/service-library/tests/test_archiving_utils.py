@@ -19,7 +19,7 @@ import numpy
 import pytest
 from faker import Faker
 from PIL import Image
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_benchmark.plugin import BenchmarkFixture
 from servicelib import archiving_utils
 from servicelib.archiving_utils import ArchiveError, archive_dir, unarchive_dir
@@ -568,7 +568,8 @@ async def _archive_dir_performance(
 
 @pytest.mark.skip(reason="manual testing")
 @pytest.mark.parametrize(
-    "compress, file_size, num_files", [(False, parse_obj_as(ByteSize, "1Mib"), 10000)]
+    "compress, file_size, num_files",
+    [(False, TypeAdapter(ByteSize).validate_python("1Mib"), 10000)],
 )
 def test_archive_dir_performance(
     benchmark: BenchmarkFixture,

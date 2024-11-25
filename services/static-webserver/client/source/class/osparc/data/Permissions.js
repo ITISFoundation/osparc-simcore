@@ -138,7 +138,6 @@ qx.Class.define("osparc.data.Permissions", {
           "study.nodestree.uuid.read",
           "study.filestree.uuid.read",
           "study.logger.debug.read",
-          "statics.read"
         ],
         "product_owner": [
           "user.invitation.generate",
@@ -289,11 +288,11 @@ qx.Class.define("osparc.data.Permissions", {
     },
 
     isProductOwner: function() {
-      return ["admin", "product_owner"].includes(this.getRole());
+      return this.getRole() === "product_owner";
     },
 
     isAdmin: function() {
-      return ["admin"].includes(this.getRole());
+      return this.getRole() === "admin";
     },
   }
 });

@@ -8,8 +8,7 @@ from models_library.api_schemas_storage import FileUploadSchema, LinkType
 from models_library.basic_types import IDStr, SHA256Str
 from models_library.services_types import FileName, ServicePortKey
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize
-from pydantic.tools import parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.progress_bar import ProgressBarData
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
@@ -64,6 +63,7 @@ async def get_value_from_link(
         file_name = other_value.name
         # move the file to the right final location
         # if a file alias is present use it
+
         if file_to_key_map:
             file_name = next(iter(file_to_key_map))
 
@@ -101,7 +101,7 @@ async def get_download_link_from_storage(
 
     # could raise ValidationError but will never do it since
     assert isinstance(link, URL)  # nosec
-    url: AnyUrl = parse_obj_as(AnyUrl, f"{link}")
+    url: AnyUrl = TypeAdapter(AnyUrl).validate_python(f"{link}")
     return url
 
 
@@ -123,7 +123,7 @@ async def get_download_link_from_storage_overload(
         s3_object=s3_object,
         link_type=link_type,
     )
-    url: AnyUrl = parse_obj_as(AnyUrl, f"{link}")
+    url: AnyUrl = TypeAdapter(AnyUrl).validate_python(f"{link}")
     return url
 
 

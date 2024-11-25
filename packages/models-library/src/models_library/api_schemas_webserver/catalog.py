@@ -1,13 +1,12 @@
-from typing import Any, ClassVar, TypeAlias
+from typing import Any, TypeAlias
 
-from pydantic import Extra, Field
+from pydantic import ConfigDict, Field
 from pydantic.main import BaseModel
 
 from ..api_schemas_catalog import services as api_schemas_catalog_services
 from ..services_io import ServiceInput, ServiceOutput
 from ..services_types import ServicePortKey
 from ..utils.change_case import snake_to_camel
-from ..utils.json_serialization import json_dumps, json_loads
 from ._base import InputSchema, OutputSchema
 
 ServiceInputKey: TypeAlias = ServicePortKey
@@ -24,12 +23,9 @@ class _BaseCommonApiExtension(BaseModel):
         description="Short name for the unit for display (html-compatible), if available",
     )
 
-    class Config:
-        alias_generator = snake_to_camel
-        allow_population_by_field_name = True
-        extra = Extra.forbid
-        json_dumps = json_dumps
-        json_loads = json_loads
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel, populate_by_name=True, extra="forbid"
+    )
 
 
 class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
@@ -39,8 +35,8 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
         ..., description="Unique name identifier for this input"
     )
 
-    class Config(_BaseCommonApiExtension.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "displayOrder": 2,
                 "label": "Sleep Time",
@@ -70,6 +66,7 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
                 }
             ],
         }
+    )
 
 
 class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
@@ -79,8 +76,8 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
         ..., description="Unique name identifier for this input"
     )
 
-    class Config(_BaseCommonApiExtension.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "displayOrder": 2,
                 "label": "Time Slept",
@@ -92,6 +89,7 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
                 "keyId": "output_2",
             }
         }
+    )
 
 
 ServiceInputsGetDict: TypeAlias = dict[ServicePortKey, ServiceInputGet]
@@ -99,7 +97,7 @@ ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
 
 
 _EXAMPLE_FILEPICKER: dict[str, Any] = {
-    **api_schemas_catalog_services.ServiceGet.Config.schema_extra["examples"][1],
+    **api_schemas_catalog_services.ServiceGet.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index,dict-item]
     "inputs": {},
     "outputs": {
         "outFile": {
@@ -114,7 +112,7 @@ _EXAMPLE_FILEPICKER: dict[str, Any] = {
 }
 
 _EXAMPLE_SLEEPER: dict[str, Any] = {
-    **api_schemas_catalog_services.ServiceGet.Config.schema_extra["examples"][0],
+    **api_schemas_catalog_services.ServiceGet.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index,dict-item]
     "inputs": {
         "input_1": {
             "displayOrder": 1,
@@ -224,15 +222,13 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
         ..., description="outputs with extended information"
     )
 
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]
-        }
+    model_config = ConfigDict(
+        **OutputSchema.model_config,
+        json_schema_extra={"examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]},
+    )
 
 
-class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
-    class Config(OutputSchema.Config):
-        ...
+ServiceResourcesGet: TypeAlias = api_schemas_catalog_services.ServiceResourcesGet
 
 
 class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
@@ -246,23 +242,26 @@ class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
         ..., description="outputs with extended information"
     )
 
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        **OutputSchema.model_config,
+        json_schema_extra={
             "example": {
-                **api_schemas_catalog_services.ServiceGetV2.Config.schema_extra[
-                    "examples"
-                ][0],
+                **api_schemas_catalog_services.ServiceGetV2.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index,dict-item]
                 "inputs": {
                     f"input{i}": example
                     for i, example in enumerate(
-                        ServiceInputGet.Config.schema_extra["examples"]
+                        ServiceInputGet.model_config["json_schema_extra"]["examples"]  # type: ignore[index,arg-type]
                     )
                 },
-                "outputs": {"outFile": ServiceOutputGet.Config.schema_extra["example"]},
+                "outputs": {
+                    "outFile": ServiceOutputGet.model_config["json_schema_extra"][
+                        "example"
+                    ]  # type: ignore[index]
+                },
             }
-        }
+        },
+    )
 
 
 class CatalogServiceUpdate(api_schemas_catalog_services.ServiceUpdateV2):
-    class Config(InputSchema.Config):
-        ...
+    model_config = InputSchema.model_config

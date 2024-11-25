@@ -25,8 +25,8 @@ class CompPipelinesRepository(BaseRepository):
             )
             row: RowProxy | None = await result.fetchone()
         if not row:
-            raise PipelineNotFoundError(str(project_id))
-        return CompPipelineAtDB.from_orm(row)
+            raise PipelineNotFoundError(pipeline_id=project_id)
+        return CompPipelineAtDB.model_validate(row)
 
     async def upsert_pipeline(
         self,
@@ -39,14 +39,16 @@ class CompPipelinesRepository(BaseRepository):
             dag_adjacency_list=nx.to_dict_of_lists(dag_graph),
             state=RunningState.PUBLISHED if publish else RunningState.NOT_STARTED,
         )
-        insert_stmt = insert(comp_pipeline).values(**pipeline_at_db.dict(by_alias=True))
+        insert_stmt = insert(comp_pipeline).values(
+            **pipeline_at_db.model_dump(by_alias=True)
+        )
         # FIXME: This is not a nice thing. this part of the information should be kept in comp_runs.
         update_exclusion_policy = set()
         if not dag_graph.nodes():
             update_exclusion_policy.add("dag_adjacency_list")
         on_update_stmt = insert_stmt.on_conflict_do_update(
             index_elements=[comp_pipeline.c.project_id],
-            set_=pipeline_at_db.dict(
+            set_=pipeline_at_db.model_dump(
                 by_alias=True, exclude_unset=True, exclude=update_exclusion_policy
             ),
         )

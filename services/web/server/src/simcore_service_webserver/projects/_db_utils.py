@@ -9,7 +9,7 @@ from typing import Any, Literal, cast
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectAtDB
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
@@ -164,7 +164,10 @@ class BaseProjectDB:
 
     @staticmethod
     async def _upsert_tags_in_project(
-        conn: SAConnection, project_index_id: int, project_tags: list[int]
+        conn: SAConnection,
+        project_index_id: int,
+        project_uuid: ProjectID,
+        project_tags: list[int],
     ) -> None:
         for tag_id in project_tags:
             await conn.execute(
@@ -172,6 +175,7 @@ class BaseProjectDB:
                 .values(
                     project_id=project_index_id,
                     tag_id=tag_id,
+                    project_uuid_for_rut=project_uuid,
                 )
                 .on_conflict_do_nothing()
             )
@@ -191,7 +195,7 @@ class BaseProjectDB:
             assert isinstance(row, RowProxy)  # nosec
             try:
                 await asyncio.get_event_loop().run_in_executor(
-                    None, ProjectAtDB.from_orm, row
+                    None, ProjectAtDB.model_validate, row
                 )
 
             except ProjectInvalidRightsError:
@@ -380,7 +384,7 @@ def patch_workbench(
                 raise ProjectInvalidUsageError
             # if it's a new node, let's check that it validates
             try:
-                Node.parse_obj(new_node_data)
+                Node.model_validate(new_node_data)
                 patched_project["workbench"][node_key] = new_node_data
                 changed_entries.update({node_key: new_node_data})
             except ValidationError as err:

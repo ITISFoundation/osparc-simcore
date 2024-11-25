@@ -25,21 +25,13 @@ qx.Class.define("osparc.announcement.Tracker", {
 
   members: {
     __checkInterval: null,
-    __announcements: null,
 
     checkAnnouncements: async function() {
-      return new Promise(resolve => {
-        osparc.data.Resources.get("announcements")
-          .then(announcements => {
-            if (announcements && announcements.length) {
-              this.__setAnnouncements(announcements);
-            } else {
-              this.__setAnnouncements(null);
-            }
-            resolve();
-          })
-          .catch(err => console.error(err));
-      });
+      osparc.data.Resources.get("announcements")
+        .then(announcements => {
+          osparc.announcement.AnnouncementUIFactory.getInstance().setAnnouncementsData((announcements && announcements.length) ? announcements : []);
+        })
+        .catch(err => console.error(err));
     },
 
     startTracker: function() {
@@ -52,15 +44,5 @@ qx.Class.define("osparc.announcement.Tracker", {
         clearInterval(this.__checkInterval);
       }
     },
-
-    __setAnnouncements: function(announcementsData) {
-      this.__announcements = {};
-      if (announcementsData) {
-        announcementsData.forEach(announcementData => {
-          const announcement = new osparc.announcement.Announcement(announcementData);
-          osparc.announcement.AnnouncementUIFactory.getInstance().setAnnouncement(announcement);
-        });
-      }
-    }
   }
 });

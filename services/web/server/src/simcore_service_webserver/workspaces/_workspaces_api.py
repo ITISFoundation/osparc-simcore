@@ -10,7 +10,11 @@ from models_library.api_schemas_webserver.workspaces import (
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
-from models_library.workspaces import UserWorkspaceAccessRightsDB, WorkspaceID
+from models_library.workspaces import (
+    UserWorkspaceAccessRightsDB,
+    WorkspaceID,
+    WorkspaceUpdateDB,
+)
 from pydantic import NonNegativeInt
 
 from ..projects._db_utils import PermissionStr
@@ -21,8 +25,24 @@ from .errors import WorkspaceAccessForbiddenError
 _logger = logging.getLogger(__name__)
 
 
+def _to_api_model(workspace_db: UserWorkspaceAccessRightsDB) -> WorkspaceGet:
+    return WorkspaceGet(
+        workspace_id=workspace_db.workspace_id,
+        name=workspace_db.name,
+        description=workspace_db.description,
+        thumbnail=workspace_db.thumbnail,
+        created_at=workspace_db.created,
+        modified_at=workspace_db.modified,
+        trashed_at=workspace_db.trashed,
+        trashed_by=workspace_db.trashed_by if workspace_db.trashed else None,
+        my_access_rights=workspace_db.my_access_rights,
+        access_rights=workspace_db.access_rights,
+    )
+
+
 async def create_workspace(
     app: web.Application,
+    *,
     user_id: UserID,
     name: str,
     description: str | None,
@@ -45,20 +65,12 @@ async def create_workspace(
         workspace_id=created_workspace_db.workspace_id,
         product_name=product_name,
     )
-    return WorkspaceGet(
-        workspace_id=workspace_db.workspace_id,
-        name=workspace_db.name,
-        description=workspace_db.description,
-        thumbnail=workspace_db.thumbnail,
-        created_at=workspace_db.created,
-        modified_at=workspace_db.modified,
-        my_access_rights=workspace_db.my_access_rights,
-        access_rights=workspace_db.access_rights,
-    )
+    return _to_api_model(workspace_db)
 
 
 async def get_workspace(
     app: web.Application,
+    *,
     user_id: UserID,
     workspace_id: WorkspaceID,
     product_name: ProductName,
@@ -70,22 +82,15 @@ async def get_workspace(
         product_name=product_name,
         permission="read",
     )
-    return WorkspaceGet(
-        workspace_id=workspace_db.workspace_id,
-        name=workspace_db.name,
-        description=workspace_db.description,
-        thumbnail=workspace_db.thumbnail,
-        created_at=workspace_db.created,
-        modified_at=workspace_db.modified,
-        my_access_rights=workspace_db.my_access_rights,
-        access_rights=workspace_db.access_rights,
-    )
+    return _to_api_model(workspace_db)
 
 
 async def list_workspaces(
     app: web.Application,
+    *,
     user_id: UserID,
     product_name: ProductName,
+    filter_trashed: bool | None,
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
@@ -94,38 +99,27 @@ async def list_workspaces(
         app,
         user_id=user_id,
         product_name=product_name,
+        filter_trashed=filter_trashed,
         offset=offset,
         limit=limit,
         order_by=order_by,
     )
 
     return WorkspaceGetPage(
-        items=[
-            WorkspaceGet(
-                workspace_id=workspace.workspace_id,
-                name=workspace.name,
-                description=workspace.description,
-                thumbnail=workspace.thumbnail,
-                created_at=workspace.created,
-                modified_at=workspace.modified,
-                my_access_rights=workspace.my_access_rights,
-                access_rights=workspace.access_rights,
-            )
-            for workspace in workspaces
-        ],
+        items=[_to_api_model(workspace_db) for workspace_db in workspaces],
         total=total_count,
     )
 
 
 async def update_workspace(
     app: web.Application,
+    *,
+    product_name: ProductName,
     user_id: UserID,
     workspace_id: WorkspaceID,
-    name: str,
-    description: str | None,
-    thumbnail: str | None,
-    product_name: ProductName,
+    **updates,
 ) -> WorkspaceGet:
+
     await check_user_workspace_access(
         app=app,
         user_id=user_id,
@@ -136,10 +130,8 @@ async def update_workspace(
     await db.update_workspace(
         app,
         workspace_id=workspace_id,
-        name=name,
-        description=description,
-        thumbnail=thumbnail,
         product_name=product_name,
+        updates=WorkspaceUpdateDB(**updates),
     )
     workspace_db = await db.get_workspace_for_user(
         app,
@@ -147,20 +139,12 @@ async def update_workspace(
         workspace_id=workspace_id,
         product_name=product_name,
     )
-    return WorkspaceGet(
-        workspace_id=workspace_db.workspace_id,
-        name=workspace_db.name,
-        description=workspace_db.description,
-        thumbnail=workspace_db.thumbnail,
-        created_at=workspace_db.created,
-        modified_at=workspace_db.modified,
-        my_access_rights=workspace_db.my_access_rights,
-        access_rights=workspace_db.access_rights,
-    )
+    return _to_api_model(workspace_db)
 
 
 async def delete_workspace(
     app: web.Application,
+    *,
     user_id: UserID,
     workspace_id: WorkspaceID,
     product_name: ProductName,
@@ -191,5 +175,10 @@ async def check_user_workspace_access(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
     if getattr(workspace_db.my_access_rights, permission, False) is False:
-        raise WorkspaceAccessForbiddenError
+        raise WorkspaceAccessForbiddenError(
+            user_id=user_id,
+            workspace_id=workspace_id,
+            product_name=product_name,
+            permission_checked=permission,
+        )
     return workspace_db

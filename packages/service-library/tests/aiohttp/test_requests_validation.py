@@ -3,15 +3,21 @@
 # pylint: disable=unused-variable
 
 import json
-from typing import Callable
+from collections.abc import Callable
 from uuid import UUID
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestClient, make_mocked_request
+from common_library.json_serialization import json_dumps
 from faker import Faker
-from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Extra, Field
+from models_library.rest_base import RequestParameters, StrictRequestParameters
+from models_library.rest_ordering import (
+    OrderBy,
+    OrderDirection,
+    create_ordering_query_model_classes,
+)
+from pydantic import BaseModel, ConfigDict, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -19,6 +25,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from yarl import URL
 
 RQT_USERID_KEY = f"{__name__}.user_id"
 APP_SECRET_KEY = f"{__name__}.secret"
@@ -30,7 +37,7 @@ def jsonable_encoder(data):
     return json.loads(json_dumps(data))
 
 
-class MyRequestContext(BaseModel):
+class MyRequestContext(RequestParameters):
     user_id: int = Field(alias=RQT_USERID_KEY)
     secret: str = Field(alias=APP_SECRET_KEY)
 
@@ -39,36 +46,29 @@ class MyRequestContext(BaseModel):
         return cls(user_id=faker.pyint(), secret=faker.password())
 
 
-class MyRequestPathParams(BaseModel):
+class MyRequestPathParams(StrictRequestParameters):
     project_uuid: UUID
-
-    class Config:
-        extra = Extra.forbid
 
     @classmethod
     def create_fake(cls, faker: Faker):
         return cls(project_uuid=faker.uuid4())
 
 
-class MyRequestQueryParams(BaseModel):
+class MyRequestQueryParams(RequestParameters):
     is_ok: bool = True
     label: str
-
-    def as_params(self, **kwargs) -> dict[str, str]:
-        data = self.dict(**kwargs)
-        return {k: f"{v}" for k, v in data.items()}
 
     @classmethod
     def create_fake(cls, faker: Faker):
         return cls(is_ok=faker.pybool(), label=faker.word())
 
 
-class MyRequestHeadersParams(BaseModel):
+class MyRequestHeadersParams(RequestParameters):
     user_agent: str = Field(alias="X-Simcore-User-Agent")
     optional_header: str | None = Field(default=None, alias="X-Simcore-Optional-Header")
-
-    class Config:
-        allow_population_by_field_name = False
+    model_config = ConfigDict(
+        populate_by_name=False,
+    )
 
     @classmethod
     def create_fake(cls, faker: Faker):
@@ -111,7 +111,9 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
     async def _handler(request: web.Request) -> web.Response:
         # --------- UNDER TEST -------
         # NOTE: app context does NOT need to be validated everytime!
-        context = MyRequestContext.parse_obj({**dict(request.app), **dict(request)})
+        context = MyRequestContext.model_validate(
+            {**dict(request.app), **dict(request)}
+        )
 
         path_params = parse_request_path_parameters_as(
             MyRequestPathParams, request, use_enveloped_error_v1=False
@@ -129,11 +131,11 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
 
         return web.json_response(
             {
-                "parameters": path_params.dict(),
-                "queries": query_params.dict(),
-                "body": body.dict(),
-                "context": context.dict(),
-                "headers": headers_params.dict(),
+                "parameters": path_params.model_dump(),
+                "queries": query_params.model_dump(),
+                "body": body.model_dump(),
+                "context": context.model_dump(),
+                "headers": headers_params.model_dump(),
             },
             dumps=json_dumps,
         )
@@ -194,21 +196,21 @@ async def test_parse_request_as(
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
-        json=body.dict(),
-        headers=headers_params.dict(by_alias=True),
+        json=body.model_dump(),
+        headers=headers_params.model_dump(by_alias=True),
     )
     assert r.status == status.HTTP_200_OK, f"{await r.text()}"
 
     got = await r.json()
 
-    assert got["parameters"] == jsonable_encoder(path_params.dict())
-    assert got["queries"] == jsonable_encoder(query_params.dict())
-    assert got["body"] == body.dict()
+    assert got["parameters"] == jsonable_encoder(path_params.model_dump())
+    assert got["queries"] == jsonable_encoder(query_params.model_dump())
+    assert got["body"] == body.model_dump()
     assert got["context"] == {
         "secret": client.app[APP_SECRET_KEY],
         "user_id": 42,
     }
-    assert got["headers"] == jsonable_encoder(headers_params.dict())
+    assert got["headers"] == jsonable_encoder(headers_params.model_dump())
 
 
 async def test_parse_request_with_invalid_path_params(
@@ -221,8 +223,8 @@ async def test_parse_request_with_invalid_path_params(
     r = await client.get(
         "/projects/invalid-uuid",
         params=query_params.as_params(),
-        json=body.dict(),
-        headers=headers_params.dict(by_alias=True),
+        json=body.model_dump(),
+        headers=headers_params.model_dump(by_alias=True),
     )
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
@@ -234,8 +236,8 @@ async def test_parse_request_with_invalid_path_params(
             "details": [
                 {
                     "loc": "project_uuid",
-                    "msg": "value is not a valid uuid",
-                    "type": "type_error.uuid",
+                    "msg": "Input should be a valid UUID, invalid character: expected an optional prefix of `urn:uuid:` followed by [0-9a-fA-F-], found `i` at 1",
+                    "type": "uuid_parsing",
                 }
             ],
         }
@@ -252,8 +254,8 @@ async def test_parse_request_with_invalid_query_params(
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params={},
-        json=body.dict(),
-        headers=headers_params.dict(by_alias=True),
+        json=body.model_dump(),
+        headers=headers_params.model_dump(by_alias=True),
     )
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
@@ -265,8 +267,8 @@ async def test_parse_request_with_invalid_query_params(
             "details": [
                 {
                     "loc": "label",
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -284,7 +286,7 @@ async def test_parse_request_with_invalid_body(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
         json={"invalid": "body"},
-        headers=headers_params.dict(by_alias=True),
+        headers=headers_params.model_dump(by_alias=True),
     )
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
@@ -298,13 +300,13 @@ async def test_parse_request_with_invalid_body(
             "details": [
                 {
                     "loc": "x",
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
                     "loc": "z",
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -322,7 +324,7 @@ async def test_parse_request_with_invalid_json_body(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
         data=b"[ 1 2, 3 'broken-json' ]",
-        headers=headers_params.dict(by_alias=True),
+        headers=headers_params.model_dump(by_alias=True),
     )
 
     body = await r.text()
@@ -340,8 +342,8 @@ async def test_parse_request_with_invalid_headers_params(
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
-        json=body.dict(),
-        headers=headers_params.dict(),  # we pass the wrong names
+        json=body.model_dump(),
+        headers=headers_params.model_dump(),  # we pass the wrong names
     )
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
@@ -353,9 +355,25 @@ async def test_parse_request_with_invalid_headers_params(
             "details": [
                 {
                     "loc": "X-Simcore-User-Agent",
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
     }
+
+
+def test_parse_request_query_parameters_as_with_order_by_query_models():
+
+    OrderQueryModel = create_ordering_query_model_classes(
+        ordering_fields={"modified", "name"}, default=OrderBy(field="name")
+    )
+
+    expected = OrderBy(field="name", direction=OrderDirection.ASC)
+
+    url = URL("/test").with_query(order_by=expected.model_dump_json())
+
+    request = make_mocked_request("GET", path=f"{url}")
+
+    query_params = parse_request_query_parameters_as(OrderQueryModel, request)
+    assert query_params.order_by.model_dump() == expected.model_dump()

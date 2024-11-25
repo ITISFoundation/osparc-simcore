@@ -1,16 +1,16 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import sqlalchemy as sa
-from pydantic import parse_obj_as
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
+from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .models.projects import projects
 from .utils_repos import transaction_context
 
 
-class DBBaseProjectError(PydanticErrorMixin, Exception):
+class DBBaseProjectError(OsparcErrorMixin, Exception):
     msg_template: str = "Project utils unexpected error"
 
 
@@ -37,5 +37,5 @@ class ProjectsRepo:
             row = result.first()
             if row is None:
                 raise DBProjectNotFoundError(project_uuid=project_uuid)
-            date = parse_obj_as(datetime, row[0])
-            return date.replace(tzinfo=timezone.utc)
+            date = TypeAdapter(datetime).validate_python(row[0])
+            return date.replace(tzinfo=UTC)

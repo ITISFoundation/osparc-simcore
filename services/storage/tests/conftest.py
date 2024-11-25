@@ -39,7 +39,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
@@ -75,6 +75,7 @@ pytest_plugins = [
     "pytest_simcore.file_extra",
     "pytest_simcore.httpbin_service",
     "pytest_simcore.minio_service",
+    "pytest_simcore.openapi_specs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
@@ -173,9 +174,9 @@ def app_settings(
         s3_settings = S3Settings.create_from_envs(**external_envfile_dict)
         if s3_settings.S3_ENDPOINT is None:
             monkeypatch.delenv("S3_ENDPOINT")
-            s3_settings_dict = s3_settings.dict(exclude={"S3_ENDPOINT"})
+            s3_settings_dict = s3_settings.model_dump(exclude={"S3_ENDPOINT"})
         else:
-            s3_settings_dict = s3_settings.dict()
+            s3_settings_dict = s3_settings.model_dump()
     setenvs_from_dict(
         monkeypatch,
         {
@@ -184,7 +185,7 @@ def app_settings(
         },
     )
     test_app_settings = Settings.create_from_envs()
-    print(f"{test_app_settings.json(indent=2)=}")
+    print(f"{test_app_settings.model_dump_json(indent=2)=}")
     return test_app_settings
 
 
@@ -261,7 +262,7 @@ async def get_file_meta_data(
         data, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
         assert data
-        received_fmd = parse_obj_as(FileMetaDataGet, data)
+        received_fmd = TypeAdapter(FileMetaDataGet).validate_python(data)
         assert received_fmd
         return received_fmd
 
@@ -293,7 +294,7 @@ async def create_upload_file_link_v2(
         data, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
         assert data
-        received_file_upload = parse_obj_as(FileUploadSchema, data)
+        received_file_upload = TypeAdapter(FileUploadSchema).validate_python(data)
         assert received_file_upload
         file_params.append((user_id, location_id, file_id))
         return received_file_upload
@@ -355,7 +356,7 @@ def upload_file(
             file, file_upload_link
         )
         # complete the upload
-        complete_url = URL(file_upload_link.links.complete_upload).relative()
+        complete_url = URL(f"{file_upload_link.links.complete_upload}").relative()
         with log_context(logging.INFO, f"completing upload of {file=}"):
             response = await client.post(
                 f"{complete_url}",
@@ -365,8 +366,10 @@ def upload_file(
             data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
             assert not error
             assert data
-            file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-            state_url = URL(file_upload_complete_response.links.state).relative()
+            file_upload_complete_response = FileUploadCompleteResponse.model_validate(
+                data
+            )
+            state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
             completion_etag = None
             async for attempt in AsyncRetrying(
@@ -384,7 +387,7 @@ def upload_file(
                     data, error = await assert_status(response, status.HTTP_200_OK)
                     assert not error
                     assert data
-                    future = FileUploadCompleteFutureResponse.parse_obj(data)
+                    future = FileUploadCompleteFutureResponse.model_validate(data)
                     if future.state == FileUploadCompleteState.NOK:
                         msg = f"{data=}"
                         raise ValueError(msg)
@@ -432,7 +435,7 @@ def create_simcore_file_id(
         if file_base_path:
             s3_file_name = f"{file_base_path / file_name}"
         clean_path = Path(f"{project_id}/{node_id}/{s3_file_name}")
-        return SimcoreS3FileID(f"{clean_path}")
+        return TypeAdapter(SimcoreS3FileID).validate_python(f"{clean_path}")
 
     return _creator
 
@@ -472,7 +475,7 @@ async def create_empty_directory(
         assert len(directory_file_upload.urls) == 1
 
         # complete the upload
-        complete_url = URL(directory_file_upload.links.complete_upload).relative()
+        complete_url = URL(f"{directory_file_upload.links.complete_upload}").relative()
         response = await client.post(
             f"{complete_url}",
             json=jsonable_encoder(FileUploadCompletionBody(parts=[])),
@@ -481,8 +484,8 @@ async def create_empty_directory(
         data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
         assert not error
         assert data
-        file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-        state_url = URL(file_upload_complete_response.links.state).relative()
+        file_upload_complete_response = FileUploadCompleteResponse.model_validate(data)
+        state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
         # check that it finished updating
         assert client.app
@@ -502,7 +505,7 @@ async def create_empty_directory(
                 data, error = await assert_status(response, status.HTTP_200_OK)
                 assert not error
                 assert data
-                future = FileUploadCompleteFutureResponse.parse_obj(data)
+                future = FileUploadCompleteFutureResponse.model_validate(data)
                 assert future.state == FileUploadCompleteState.OK
                 assert future.e_tag is None
                 ctx.logger.info(
@@ -537,7 +540,9 @@ async def populate_directory(
             await storage_s3_client.upload_file(
                 bucket=storage_s3_bucket,
                 file=file,
-                object_key=SimcoreS3FileID(f"{clean_path}"),
+                object_key=TypeAdapter(SimcoreS3FileID).validate_python(
+                    f"{clean_path}"
+                ),
                 bytes_transfered_cb=None,
             )
 

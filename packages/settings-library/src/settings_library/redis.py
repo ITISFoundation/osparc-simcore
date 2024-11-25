@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pydantic.networks import RedisDsn
 from pydantic.types import SecretStr
 
@@ -24,20 +24,24 @@ class RedisSettings(BaseCustomSettings):
     # host
     REDIS_SECURE: bool = False
     REDIS_HOST: str = "redis"
-    REDIS_PORT: PortInt = parse_obj_as(PortInt, 6789)
+    REDIS_PORT: PortInt = TypeAdapter(PortInt).validate_python(6789)
 
     # auth
     REDIS_USER: str | None = None
     REDIS_PASSWORD: SecretStr | None = None
 
-    def build_redis_dsn(self, db_index: RedisDatabase):
-        return RedisDsn.build(
-            scheme="rediss" if self.REDIS_SECURE else "redis",
-            user=self.REDIS_USER or None,
-            password=(
-                self.REDIS_PASSWORD.get_secret_value() if self.REDIS_PASSWORD else None
-            ),
-            host=self.REDIS_HOST,
-            port=f"{self.REDIS_PORT}",
-            path=f"/{db_index}",
+    def build_redis_dsn(self, db_index: RedisDatabase) -> str:
+        return str(
+            RedisDsn.build(  # pylint: disable=no-member
+                scheme="rediss" if self.REDIS_SECURE else "redis",
+                username=self.REDIS_USER or None,
+                password=(
+                    self.REDIS_PASSWORD.get_secret_value()
+                    if self.REDIS_PASSWORD
+                    else None
+                ),
+                host=self.REDIS_HOST,
+                port=self.REDIS_PORT,
+                path=f"/{db_index}",
+            )
         )

@@ -33,7 +33,7 @@ async def lock_project(
         PROJECT_REDIS_LOCK_KEY.format(project_uuid),
         timeout=PROJECT_LOCK_TIMEOUT.total_seconds(),
     )
-    owner = Owner(user_id=user_id, **user_fullname)  # type: ignore[arg-type]
+    owner = Owner(user_id=user_id, **user_fullname)
 
     async with common_lock_project(
         redis_lock, project_uuid=project_uuid, status=status, owner=owner
@@ -63,5 +63,5 @@ async def get_project_locked_state(
         if lock_value := await redis_locks_client.get(
             PROJECT_REDIS_LOCK_KEY.format(project_uuid)
         ):
-            return ProjectLocked.parse_raw(lock_value)
+            return ProjectLocked.model_validate_json(lock_value)
     return None

@@ -36,6 +36,9 @@
     "thumbnail": "https://via.placeholder.com/170x120.png",
     "creationDate": "2023-10-26T14:13:08.013Z",
     "lastChangeDate": "2023-10-26T14:13:08.013Z",
+    "workspaceId": 3,
+    "folderId": 2,
+    "trashedAt": null,
     "workbench": {
      "3b0b20e0-c860-51d9-9f82-d6b4bc5c2f24": {
       "key": "simcore/services/comp/itis/sleeper",

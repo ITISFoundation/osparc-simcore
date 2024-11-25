@@ -1,18 +1,18 @@
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
-from pydantic import BaseModel, NonNegativeFloat
+from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
 
 class ActivityInfo(BaseModel):
     seconds_inactive: NonNegativeFloat
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {"seconds_inactive": 0},
                 {"seconds_inactive": 100},
             ]
         }
+    )
 
 
 ActivityInfoOrNone: TypeAlias = ActivityInfo | None

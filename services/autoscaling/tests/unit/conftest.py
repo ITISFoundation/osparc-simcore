@@ -43,8 +43,9 @@ from models_library.generated_models.docker_rest_api import (
     ObjectVersion,
     ResourceObject,
     Service,
+    TaskSpec,
 )
-from pydantic import ByteSize, PositiveInt, parse_obj_as
+from pydantic import ByteSize, PositiveInt, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.logging_tools import log_context
@@ -86,6 +87,7 @@ pytest_plugins = [
     "pytest_simcore.aws_iam_service",
     "pytest_simcore.aws_ssm_service",
     "pytest_simcore.dask_scheduler",
+    "pytest_simcore.docker",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
@@ -118,7 +120,7 @@ def mocked_ec2_server_envs(
     # NOTE: overrides the EC2Settings with what autoscaling expects
     changed_envs: EnvVarsDict = {
         f"{AUTOSCALING_ENV_PREFIX}{k}": v
-        for k, v in mocked_ec2_server_settings.dict().items()
+        for k, v in mocked_ec2_server_settings.model_dump().items()
     }
     return setenvs_from_dict(monkeypatch, changed_envs)  # type: ignore
 
@@ -173,7 +175,8 @@ def app_with_docker_join_drained(
 
 @pytest.fixture(scope="session")
 def fake_ssm_settings() -> SSMSettings:
-    return SSMSettings(**SSMSettings.Config.schema_extra["examples"][0])
+    assert "json_schema_extra" in SSMSettings.model_config
+    return SSMSettings(**SSMSettings.model_config["json_schema_extra"]["examples"][0])
 
 
 @pytest.fixture
@@ -213,7 +216,6 @@ def app_environment(
     external_envfile_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     # SEE https://faker.readthedocs.io/en/master/providers/faker.providers.internet.html?highlight=internet#faker-providers-internet
-
     if external_envfile_dict:
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
         return setenvs_from_dict(monkeypatch, {**external_envfile_dict})
@@ -237,7 +239,9 @@ def app_environment(
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                            "examples"
+                        ]
                     )
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
@@ -268,7 +272,9 @@ def mocked_ec2_instances_envs(
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                            "examples"
+                        ]
                     )
                     | {"ami_id": aws_ami_id}
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
@@ -427,59 +433,55 @@ async def autoscaling_docker() -> AsyncIterator[AutoscalingDocker]:
 
 
 @pytest.fixture
-async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
-    async with aiodocker.Docker() as docker_client:
-        yield docker_client
-
-
-@pytest.fixture
 async def host_node(
     docker_swarm: None,
     async_docker_client: aiodocker.Docker,
 ) -> AsyncIterator[DockerNode]:
-    nodes = parse_obj_as(list[DockerNode], await async_docker_client.nodes.list())
+    nodes = TypeAdapter(list[DockerNode]).validate_python(
+        await async_docker_client.nodes.list()
+    )
     assert len(nodes) == 1
     # keep state of node for later revert
     old_node = deepcopy(nodes[0])
-    assert old_node.ID
-    assert old_node.Spec
-    assert old_node.Spec.Role
-    assert old_node.Spec.Availability
-    assert old_node.Version
-    assert old_node.Version.Index
-    labels = old_node.Spec.Labels or {}
+    assert old_node.id
+    assert old_node.spec
+    assert old_node.spec.role
+    assert old_node.spec.availability
+    assert old_node.version
+    assert old_node.version.index
+    labels = old_node.spec.labels or {}
     # ensure we have the necessary labels
     await async_docker_client.nodes.update(
-        node_id=old_node.ID,
-        version=old_node.Version.Index,
+        node_id=old_node.id,
+        version=old_node.version.index,
         spec={
-            "Availability": old_node.Spec.Availability.value,
+            "Availability": old_node.spec.availability.value,
             "Labels": labels
             | {
                 _OSPARC_SERVICE_READY_LABEL_KEY: "true",
                 _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: arrow.utcnow().isoformat(),
             },
-            "Role": old_node.Spec.Role.value,
+            "Role": old_node.spec.role.value,
         },
     )
-    modified_host_node = parse_obj_as(
-        DockerNode, await async_docker_client.nodes.inspect(node_id=old_node.ID)
+    modified_host_node = TypeAdapter(DockerNode).validate_python(
+        await async_docker_client.nodes.inspect(node_id=old_node.id)
     )
     yield modified_host_node
     # revert state
-    current_node = parse_obj_as(
-        DockerNode, await async_docker_client.nodes.inspect(node_id=old_node.ID)
+    current_node = TypeAdapter(DockerNode).validate_python(
+        await async_docker_client.nodes.inspect(node_id=old_node.id)
     )
-    assert current_node.ID
-    assert current_node.Version
-    assert current_node.Version.Index
+    assert current_node.id
+    assert current_node.version
+    assert current_node.version.index
     await async_docker_client.nodes.update(
-        node_id=current_node.ID,
-        version=current_node.Version.Index,
+        node_id=current_node.id,
+        version=current_node.version.index,
         spec={
-            "Availability": old_node.Spec.Availability.value,
-            "Labels": old_node.Spec.Labels,
-            "Role": old_node.Spec.Role.value,
+            "Availability": old_node.spec.availability.value,
+            "Labels": old_node.spec.labels,
+            "Role": old_node.spec.role.value,
         },
     )
 
@@ -597,46 +599,54 @@ async def create_service(
                 labels=base_labels,  # type: ignore
             )
             assert service
-            service = parse_obj_as(
-                Service, await async_docker_client.services.inspect(service["ID"])
+            service = TypeAdapter(Service).validate_python(
+                await async_docker_client.services.inspect(service["ID"])
             )
-            assert service.Spec
+            assert service.spec
             ctx.logger.info(
                 "%s",
-                f"service {service.ID} with {service.Spec.Name} created",
+                f"service {service.id} with {service.spec.name} created",
             )
-        assert service.Spec.Labels == base_labels
+        assert service.spec.labels == base_labels
 
         created_services.append(service)
         # get more info on that service
 
-        assert service.Spec.Name == service_name
+        assert service.spec.name == service_name
+
+        original_task_template_model = TypeAdapter(TaskSpec).validate_python(
+            task_template
+        )
+
         excluded_paths = {
-            "ForceUpdate",
-            "Runtime",
-            "root['ContainerSpec']['Isolation']",
+            "force_update",
+            "runtime",
+            "root['container_spec']['isolation']",
         }
         if not base_labels:
-            excluded_paths.add("root['ContainerSpec']['Labels']")
-        for reservation in ["MemoryBytes", "NanoCPUs"]:
+            excluded_paths.add("root['container_spec']['labels']")
+        for reservation in ["memory_bytes", "nano_cp_us"]:
             if (
-                task_template.get("Resources", {})
-                .get("Reservations", {})
-                .get(reservation, 0)
+                original_task_template_model.resources
+                and original_task_template_model.resources.reservations
+                and getattr(
+                    original_task_template_model.resources.reservations, reservation
+                )
                 == 0
             ):
                 # NOTE: if a 0 memory reservation is done, docker removes it from the task inspection
                 excluded_paths.add(
-                    f"root['Resources']['Reservations']['{reservation}']"
+                    f"root['resources']['reservations']['{reservation}']"
                 )
-        assert service.Spec.TaskTemplate
+
+        assert service.spec.task_template
         diff = DeepDiff(
-            task_template,
-            service.Spec.TaskTemplate.dict(exclude_unset=True),
+            original_task_template_model.model_dump(exclude_unset=True),
+            service.spec.task_template.model_dump(exclude_unset=True),
             exclude_paths=list(excluded_paths),
         )
         assert not diff, f"{diff}"
-        assert service.Spec.Labels == base_labels
+        assert service.spec.labels == base_labels
         await _assert_wait_for_service_state(
             async_docker_client, service, [wait_for_service_state]
         )
@@ -645,7 +655,7 @@ async def create_service(
     yield _creator
 
     await asyncio.gather(
-        *(async_docker_client.services.delete(s.ID) for s in created_services),
+        *(async_docker_client.services.delete(s.id) for s in created_services),
         return_exceptions=True,
     )
 
@@ -657,15 +667,15 @@ async def create_service(
         stop=stop_after_delay(30),
     )
     async def _check_service_task_gone(service: Service) -> None:
-        assert service.Spec
+        assert service.spec
         with log_context(
             logging.INFO,
-            msg=f"check service {service.ID}:{service.Spec.Name} is really gone",
+            msg=f"check service {service.id}:{service.spec.name} is really gone",
         ):
             assert not await async_docker_client.containers.list(
                 all=True,
                 filters={
-                    "label": [f"com.docker.swarm.service.id={service.ID}"],
+                    "label": [f"com.docker.swarm.service.id={service.id}"],
                 },
             )
 
@@ -681,7 +691,7 @@ async def _assert_wait_for_service_state(
     async_docker_client: aiodocker.Docker, service: Service, expected_states: list[str]
 ) -> None:
     with log_context(
-        logging.INFO, msg=f"wait for service {service.ID} to become {expected_states}"
+        logging.INFO, msg=f"wait for service {service.id} to become {expected_states}"
     ) as ctx:
         number_of_success = {"count": 0}
 
@@ -695,9 +705,9 @@ async def _assert_wait_for_service_state(
         )
         async def _() -> None:
             services = await async_docker_client.services.list(
-                filters={"id": service.ID}
+                filters={"id": service.id}
             )
-            assert services, f"no service with {service.ID}!"
+            assert services, f"no service with {service.id}!"
             assert len(services) == 1
             found_service = services[0]
 
@@ -763,7 +773,7 @@ def host_memory_total() -> ByteSize:
 def osparc_docker_label_keys(
     faker: Faker,
 ) -> StandardSimcoreDockerLabels:
-    return StandardSimcoreDockerLabels.parse_obj(
+    return StandardSimcoreDockerLabels.model_validate(
         {
             "user_id": faker.pyint(),
             "project_id": faker.uuid4(),
@@ -839,11 +849,11 @@ def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
         docker_client: AutoscalingDocker, node: DockerNode, *, available: bool
     ) -> DockerNode:
         returned_node = deepcopy(node)
-        assert returned_node.Spec
-        returned_node.Spec.Availability = (
+        assert returned_node.spec
+        returned_node.spec.availability = (
             Availability.active if available else Availability.drain
         )
-        returned_node.UpdatedAt = datetime.datetime.now(
+        returned_node.updated_at = datetime.datetime.now(
             tz=datetime.timezone.utc
         ).isoformat()
         return returned_node
@@ -865,9 +875,9 @@ def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
         available: bool,
     ) -> DockerNode:
         updated_node = deepcopy(node)
-        assert updated_node.Spec
-        updated_node.Spec.Labels = deepcopy(cast(dict[str, str], tags))
-        updated_node.Spec.Availability = (
+        assert updated_node.spec
+        updated_node.spec.labels = deepcopy(cast(dict[str, str], tags))
+        updated_node.spec.availability = (
             Availability.active if available else Availability.drain
         )
         return updated_node

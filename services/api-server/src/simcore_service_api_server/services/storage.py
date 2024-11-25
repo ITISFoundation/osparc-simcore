@@ -14,6 +14,7 @@ from models_library.api_schemas_storage import FileUploadSchema, PresignedLink
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from pydantic import AnyUrl, PositiveInt
+from settings_library.tracing import TracingSettings
 from starlette.datastructures import URL
 
 from ..core.settings import StorageSettings
@@ -72,9 +73,11 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        files_metadata = Envelope[FileMetaDataArray].parse_raw(response.text).data
+        files_metadata = (
+            Envelope[FileMetaDataArray].model_validate_json(response.text).data
+        )
         files: list[StorageFileMetaData] = (
-            [] if files_metadata is None else files_metadata.__root__
+            [] if files_metadata is None else files_metadata.root
         )
         return files
 
@@ -107,9 +110,11 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        files_metadata = Envelope[FileMetaDataArray].parse_raw(response.text).data
+        files_metadata = (
+            Envelope[FileMetaDataArray].model_validate_json(response.text).data
+        )
         files: list[StorageFileMetaData] = (
-            [] if files_metadata is None else files_metadata.__root__
+            [] if files_metadata is None else files_metadata.root
         )
         assert len(files) <= limit if limit else True  # nosec
         return files
@@ -127,7 +132,7 @@ class StorageApi(BaseServiceClientApi):
         response.raise_for_status()
 
         presigned_link: PresignedLink | None = (
-            Envelope[PresignedLink].parse_raw(response.text).data
+            Envelope[PresignedLink].model_validate_json(response.text).data
         )
         assert presigned_link is not None
         link: AnyUrl = presigned_link.link
@@ -154,7 +159,7 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        enveloped_data = Envelope[FileUploadSchema].parse_raw(response.text)
+        enveloped_data = Envelope[FileUploadSchema].model_validate_json(response.text)
         assert enveloped_data.data  # nosec
         return enveloped_data.data
 
@@ -200,7 +205,9 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        stored_file_meta = Envelope[StorageFileMetaData].parse_raw(response.text).data
+        stored_file_meta = (
+            Envelope[StorageFileMetaData].model_validate_json(response.text).data
+        )
         assert stored_file_meta is not None
         file_meta: File = to_file_api_model(stored_file_meta)
         return file_meta
@@ -209,12 +216,18 @@ class StorageApi(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: StorageSettings) -> None:
+def setup(
+    app: FastAPI, settings: StorageSettings, tracing_settings: TracingSettings | None
+) -> None:
     if not settings:
         settings = StorageSettings()
 
     setup_client_instance(
-        app, StorageApi, api_baseurl=settings.api_base_url, service_name="storage"
+        app,
+        StorageApi,
+        api_baseurl=settings.api_base_url,
+        service_name="storage",
+        tracing_settings=tracing_settings,
     )
 
 

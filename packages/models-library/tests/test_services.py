@@ -182,7 +182,7 @@ def test_same_regex_patterns_in_jsonschema_and_python(
 
 
 def test_boot_option_wrong_default() -> None:
-    for example in [deepcopy(x) for x in BootOption.Config.schema_extra["examples"]]:
+    for example in [deepcopy(x) for x in BootOption.model_config["json_schema_extra"]["examples"]]:
         with pytest.raises(ValueError):
             example["default"] = "__undefined__"
             assert BootOption(**example)
@@ -201,11 +201,12 @@ def test_service_docker_data_labels_convesion():
     # we want labels to look like io.simcore.a_label_property
     convension_breaking_fields: set[tuple[str, str]] = set()
 
-    fiedls_with_aliases: list[tuple[str, str]] = [
-        (x.name, x.alias) for x in ServiceMetaDataPublished.__fields__.values()
+    fields_with_aliases: list[tuple[str, str]] = [
+        (name, info.alias) for name, info in ServiceMetaDataPublished.model_fields.items()
+        if info.alias is not None
     ]
 
-    for name, alias in fiedls_with_aliases:
+    for name, alias in fields_with_aliases:
         if alias in FIELD_NAME_EXCEPTIONS:
             continue
         # check dashes and uppercase

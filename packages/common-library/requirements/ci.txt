@@ -1,0 +1,17 @@
+# Shortcut to install all packages for the contigous integration (CI) of 'common-library'
+#
+# - As ci.txt but w/ tests
+#
+# Usage:
+#   pip install -r requirements/ci.txt
+#
+
+# installs base + tests requirements
+--requirement _base.txt
+--requirement _test.txt
+
+# installs this repo's packages
+pytest-simcore @ ../pytest-simcore
+
+# current module
+simcore-common-library @ .

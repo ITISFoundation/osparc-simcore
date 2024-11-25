@@ -21,7 +21,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SubstitutionValue
 from models_library.utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_compose_specs import generate_fake_docker_compose
 from simcore_postgres_database.models.services_environments import VENDOR_SECRET_PREFIX
@@ -48,8 +48,8 @@ from simcore_service_director_v2.utils.osparc_variables import (
 def session_context(faker: Faker) -> ContextDict:
     return ContextDict(
         app=FastAPI(),
-        service_key=parse_obj_as(ServiceKey, "simcore/services/dynamic/foo"),
-        service_version=parse_obj_as(ServiceVersion, "1.2.3"),
+        service_key=TypeAdapter(ServiceKey).validate_python("simcore/services/dynamic/foo"),
+        service_version=TypeAdapter(ServiceVersion).validate_python("1.2.3"),
         compose_spec=generate_fake_docker_compose(faker),
         product_name=faker.word(),
         project_id=faker.uuid4(),
@@ -101,7 +101,7 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
 
     # All values extracted from the context MUST be SubstitutionValue
     assert {
-        key: parse_obj_as(SubstitutionValue, value) for key, value in environs.items()
+        key: TypeAdapter(SubstitutionValue).validate_python(value) for key, value in environs.items()
     }
 
     for osparc_variable_name, context_name in [

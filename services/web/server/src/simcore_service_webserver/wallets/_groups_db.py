@@ -9,7 +9,7 @@ from datetime import datetime
 from aiohttp import web
 from models_library.users import GroupID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel, TypeAdapter
 from simcore_postgres_database.models.wallet_to_groups import wallet_to_groups
 from sqlalchemy import func, literal_column
 from sqlalchemy.sql import select
@@ -58,7 +58,7 @@ async def create_wallet_group(
             .returning(literal_column("*"))
         )
         row = await result.first()
-        return parse_obj_as(WalletGroupGetDB, row)
+        return WalletGroupGetDB.model_validate(row)
 
 
 async def list_wallet_groups(
@@ -81,7 +81,7 @@ async def list_wallet_groups(
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         rows = await result.fetchall() or []
-        return parse_obj_as(list[WalletGroupGetDB], rows)
+        return TypeAdapter(list[WalletGroupGetDB]).validate_python(rows)
 
 
 async def get_wallet_group(
@@ -112,7 +112,7 @@ async def get_wallet_group(
             raise WalletGroupNotFoundError(
                 reason=f"Wallet {wallet_id} group {group_id} not found"
             )
-        return parse_obj_as(WalletGroupGetDB, row)
+        return WalletGroupGetDB.model_validate(row)
 
 
 async def update_wallet_group(
@@ -143,7 +143,7 @@ async def update_wallet_group(
             raise WalletGroupNotFoundError(
                 reason=f"Wallet {wallet_id} group {group_id} not found"
             )
-        return parse_obj_as(WalletGroupGetDB, row)
+        return WalletGroupGetDB.model_validate(row)
 
 
 async def delete_wallet_group(

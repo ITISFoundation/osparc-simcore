@@ -36,7 +36,7 @@ SETUP = {
     "packages": find_packages(where="src"),
     "package_data": {"": ["py.typed"]},
     "package_dir": {"": "src"},
-    "python_requires": ">=3.6",
+    "python_requires": "~=3.11",
     "install_requires": INSTALL_REQUIREMENTS,
     "tests_require": TEST_REQUIREMENTS,
     "extras_require": {"test": TEST_REQUIREMENTS},

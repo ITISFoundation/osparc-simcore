@@ -8,7 +8,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
-from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
+from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from servicelib.fastapi.long_running_tasks._context_manager import _ProgressManager
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -49,7 +49,8 @@ async def a_test_task(task_progress: TaskProgress) -> int:
 
 async def a_failing_test_task(task_progress: TaskProgress) -> None:
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
-    raise RuntimeError("I am failing as requested")
+    msg = "I am failing as requested"
+    raise RuntimeError(msg)
 
 
 @pytest.fixture
@@ -90,7 +91,7 @@ async def bg_task_app(
 
 @pytest.fixture
 def mock_task_id() -> TaskId:
-    return parse_obj_as(TaskId, "fake_task_id")
+    return TypeAdapter(TaskId).validate_python("fake_task_id")
 
 
 async def test_task_result(
@@ -100,7 +101,7 @@ async def test_task_result(
     assert result.status_code == status.HTTP_200_OK, result.text
     task_id = result.json()
 
-    url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
+    url = TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io/")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
     async with periodic_task_result(
         client,
@@ -120,7 +121,7 @@ async def test_task_result_times_out(
     assert result.status_code == status.HTTP_200_OK, result.text
     task_id = result.json()
 
-    url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
+    url = TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io/")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
     timeout = TASK_SLEEP_INTERVAL / 10
     with pytest.raises(TaskClientTimeoutError) as exec_info:
@@ -146,7 +147,7 @@ async def test_task_result_task_result_is_an_error(
     assert result.status_code == status.HTTP_200_OK, result.text
     task_id = result.json()
 
-    url = parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
+    url = TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io/")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
     with pytest.raises(TaskClientResultError) as exec_info:
         async with periodic_task_result(
@@ -157,7 +158,7 @@ async def test_task_result_task_result_is_an_error(
         ):
             pass
     assert f"{exec_info.value}".startswith(f"Task {task_id} finished with exception:")
-    assert 'raise RuntimeError("I am failing as requested")' in f"{exec_info.value}"
+    assert "I am failing as requested" in f"{exec_info.value}"
     await _assert_task_removed(async_client, task_id, router_prefix)
 
 
@@ -185,13 +186,17 @@ async def test_progress_updater(repeat: int, mock_task_id: TaskId) -> None:
         assert received == ("", None)
 
     for _ in range(repeat):
-        await progress_updater.update(mock_task_id, percent=ProgressPercent(0.0))
+        await progress_updater.update(
+            mock_task_id, percent=TypeAdapter(ProgressPercent).validate_python(0.0)
+        )
         assert counter == 2
         assert received == ("", 0.0)
 
     for _ in range(repeat):
         await progress_updater.update(
-            mock_task_id, percent=ProgressPercent(1.0), message="done"
+            mock_task_id,
+            percent=TypeAdapter(ProgressPercent).validate_python(1.0),
+            message="done",
         )
         assert counter == 3
         assert received == ("done", 1.0)

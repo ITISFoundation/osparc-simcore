@@ -26,7 +26,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -82,7 +82,7 @@ async def test_simcore_s3_access_returns_default(client: TestClient):
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     assert data
-    received_settings = S3Settings.parse_obj(data)
+    received_settings = S3Settings.model_validate(data)
     assert received_settings
 
 
@@ -209,12 +209,12 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     ],
 ):
     # 1. create a src project with 1 large file
-    sha256_checksum: SHA256Str = parse_obj_as(
-        SHA256Str, "0b3216d95ec5a36c120ba16c88911dcf5ff655925d0fbdbc74cf95baf86de6fc"
+    sha256_checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(
+        "0b3216d95ec5a36c120ba16c88911dcf5ff655925d0fbdbc74cf95baf86de6fc"
     )
     src_project, src_projects_list = await random_project_with_files(
         1,
-        (parse_obj_as(ByteSize, "210Mib"),),
+        (TypeAdapter(ByteSize).validate_python("210Mib"),),
         (sha256_checksum,),
     )
     # 2. create a dst project without files
@@ -233,7 +233,9 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     )
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
-        dst_node_id = nodes_map.get(NodeIDStr(f"{src_node_id}"))
+        dst_node_id = nodes_map.get(
+            TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}")
+        )
         assert dst_node_id
         for src_file_id, src_file in src_projects_list[src_node_id].items():
             path: Any = src_file["path"]
@@ -242,17 +244,18 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
             assert isinstance(checksum, str)
             await assert_file_meta_data_in_db(
                 aiopg_engine,
-                file_id=parse_obj_as(
-                    SimcoreS3FileID,
+                file_id=TypeAdapter(SimcoreS3FileID).validate_python(
                     f"{src_file_id}".replace(
                         src_project["uuid"], dst_project["uuid"]
-                    ).replace(f"{src_node_id}", f"{dst_node_id}"),
+                    ).replace(f"{src_node_id}", f"{dst_node_id}")
                 ),
                 expected_entry_exists=True,
                 expected_file_size=path.stat().st_size,
                 expected_upload_id=None,
                 expected_upload_expiration_date=None,
-                expected_sha256_checksum=SHA256Str(checksum),
+                expected_sha256_checksum=TypeAdapter(SHA256Str).validate_python(
+                    checksum
+                ),
             )
 
 
@@ -292,7 +295,9 @@ async def test_copy_folders_from_valid_project(
 
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
-        dst_node_id = nodes_map.get(NodeIDStr(f"{src_node_id}"))
+        dst_node_id = nodes_map.get(
+            TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}")
+        )
         assert dst_node_id
         for src_file_id, src_file in src_projects_list[src_node_id].items():
             path: Any = src_file["path"]
@@ -301,17 +306,18 @@ async def test_copy_folders_from_valid_project(
             assert isinstance(checksum, str)
             await assert_file_meta_data_in_db(
                 aiopg_engine,
-                file_id=parse_obj_as(
-                    SimcoreS3FileID,
+                file_id=TypeAdapter(SimcoreS3FileID).validate_python(
                     f"{src_file_id}".replace(
                         src_project["uuid"], dst_project["uuid"]
-                    ).replace(f"{src_node_id}", f"{dst_node_id}"),
+                    ).replace(f"{src_node_id}", f"{dst_node_id}")
                 ),
                 expected_entry_exists=True,
                 expected_file_size=path.stat().st_size,
                 expected_upload_id=None,
                 expected_upload_expiration_date=None,
-                expected_sha256_checksum=SHA256Str(checksum),
+                expected_sha256_checksum=TypeAdapter(SHA256Str).validate_python(
+                    checksum
+                ),
             )
 
 
@@ -394,9 +400,9 @@ async def with_random_project_with_files(
 ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],]:
     return await random_project_with_files(
         file_sizes=(
-            parse_obj_as(ByteSize, "1Mib"),
-            parse_obj_as(ByteSize, "2Mib"),
-            parse_obj_as(ByteSize, "5Mib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("2Mib"),
+            TypeAdapter(ByteSize).validate_python("5Mib"),
         )
     )
 
@@ -472,7 +478,7 @@ async def uploaded_file_ids(
 
     for _ in range(expected_number_of_user_files):
         file_path, file_id = await upload_file(
-            file_size=parse_obj_as(ByteSize, "10Mib"),
+            file_size=TypeAdapter(ByteSize).validate_python("10Mib"),
             file_name=faker.file_name(),
             sha256_checksum=faker.sha256(),
         )
@@ -525,7 +531,7 @@ async def test_search_files_request(
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
 
-    found = parse_obj_as(list[FileMetaDataGet], data)
+    found = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
 
     expected = uploaded_file_ids[
         search_files_query_params.offset : search_files_query_params.offset
@@ -548,7 +554,7 @@ async def test_search_files(
 ):
     assert client.app
     _file_name: str = faker.file_name()
-    _sha256_checksum: SHA256Str = parse_obj_as(SHA256Str, faker.sha256())
+    _sha256_checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
 
     url = (
         client.app.router["search_files"]
@@ -571,12 +577,12 @@ async def test_search_files(
 
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
-    list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+    list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert not list_fmds
 
     # let's upload some files now
     file, file_id = await upload_file(
-        file_size=parse_obj_as(ByteSize, "10Mib"),
+        file_size=TypeAdapter(ByteSize).validate_python("10Mib"),
         file_name=_file_name,
         sha256_checksum=_sha256_checksum,
     )
@@ -584,7 +590,7 @@ async def test_search_files(
     response = await client.post(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
-    list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+    list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert len(list_fmds) == 1
     assert list_fmds[0].file_id == file_id
     assert list_fmds[0].file_size == file.stat().st_size
@@ -600,7 +606,7 @@ async def test_search_files(
     response = await client.post(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
-    list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+    list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert len(list_fmds) == 1
     assert list_fmds[0].file_id == file_id
     assert list_fmds[0].file_size == file.stat().st_size
@@ -620,5 +626,5 @@ async def test_search_files(
         response = await client.post(f"{url}")
         data, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
-        list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+        list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
         assert not list_fmds

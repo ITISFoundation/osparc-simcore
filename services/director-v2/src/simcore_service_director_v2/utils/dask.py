@@ -2,15 +2,15 @@ import asyncio
 import collections
 import logging
 from collections.abc import Awaitable, Callable, Coroutine, Generator
-from typing import Any, Final, NoReturn, Optional, ParamSpec, TypeVar, cast, get_args
+from typing import Any, Final, NoReturn, ParamSpec, TypeVar, cast
 from uuid import uuid4
 
 import dask_gateway  # type: ignore[import-untyped]
 import distributed
 from aiopg.sa.engine import Engine
+from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
-    PortValue,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
@@ -29,8 +29,7 @@ from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from models_library.utils.json_serialization import json_dumps
-from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
@@ -61,11 +60,7 @@ _logger = logging.getLogger(__name__)
 ServiceKeyStr = str
 ServiceVersionStr = str
 
-_PVType = Optional[_NPItemValue]
-
-assert len(get_args(_PVType)) == len(  # nosec
-    get_args(PortValue)
-), "Types returned by port.get_value() -> _PVType MUST map one-to-one to PortValue. See compute_input_data"
+_PVType = _NPItemValue | None
 
 
 def _get_port_validation_errors(port_key: str, err: ValidationError) -> list[ErrorDict]:
@@ -73,7 +68,7 @@ def _get_port_validation_errors(port_key: str, err: ValidationError) -> list[Err
     for error in errors:
         assert error["loc"][-1] != (port_key,)
         error["loc"] = error["loc"] + (port_key,)
-    return errors
+    return list(errors)
 
 
 def generate_dask_job_id(
@@ -104,7 +99,7 @@ def parse_dask_job_id(
     return (
         parts[0],
         parts[1],
-        UserID(parts[2][len("userid_") :]),
+        TypeAdapter(UserID).validate_python(parts[2][len("userid_") :]),
         ProjectID(parts[3][len("projectid_") :]),
         NodeID(parts[4][len("nodeid_") :]),
     )
@@ -130,11 +125,13 @@ async def create_node_ports(
         return await node_ports_v2.ports(
             user_id=user_id,
             project_id=ProjectIDStr(f"{project_id}"),
-            node_uuid=NodeIDStr(f"{node_id}"),
+            node_uuid=TypeAdapter(NodeIDStr).validate_python(f"{node_id}"),
             db_manager=db_manager,
         )
     except ValidationError as err:
-        raise PortsValidationError(project_id, node_id, err.errors()) from err
+        raise PortsValidationError(
+            project_id=project_id, node_id=node_id, errors_list=list(err.errors())
+        ) from err
 
 
 async def parse_output_data(
@@ -186,7 +183,9 @@ async def parse_output_data(
             ports_errors.extend(_get_port_validation_errors(port_key, err))
 
     if ports_errors:
-        raise PortsValidationError(project_id, node_id, ports_errors)
+        raise PortsValidationError(
+            project_id=project_id, node_id=node_id, errors_list=ports_errors
+        )
 
 
 async def compute_input_data(
@@ -223,13 +222,15 @@ async def compute_input_data(
             else:
                 input_data[port.key] = value
 
-        except ValidationError as err:  # noqa: PERF203
+        except ValidationError as err:
             ports_errors.extend(_get_port_validation_errors(port.key, err))
 
     if ports_errors:
-        raise PortsValidationError(project_id, node_id, ports_errors)
+        raise PortsValidationError(
+            project_id=project_id, node_id=node_id, errors_list=ports_errors
+        )
 
-    return TaskInputData.parse_obj(input_data)
+    return TaskInputData.model_validate(input_data)
 
 
 async def compute_output_data_schema(
@@ -276,7 +277,7 @@ async def compute_output_data_schema(
                 }
             )
 
-    return TaskOutputDataSchema.parse_obj(output_data_schema)
+    return TaskOutputDataSchema.model_validate(output_data_schema)
 
 
 _LOGS_FILE_NAME = "logs.zip"
@@ -314,7 +315,7 @@ def compute_task_labels(
         ValidationError
     """
     product_name = run_metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
-    standard_simcore_labels = StandardSimcoreDockerLabels.construct(
+    standard_simcore_labels = StandardSimcoreDockerLabels.model_construct(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
@@ -326,8 +327,7 @@ def compute_task_labels(
         memory_limit=node_requirements.ram,
         cpu_limit=node_requirements.cpu,
     ).to_simcore_runtime_docker_labels()
-    return standard_simcore_labels | parse_obj_as(
-        ContainerLabelsDict,
+    return standard_simcore_labels | TypeAdapter(ContainerLabelsDict).validate_python(
         {
             DockerLabelKey.from_key(k): f"{v}"
             for k, v in run_metadata.items()
@@ -351,8 +351,8 @@ async def compute_task_envs(
         vendor_substituted_envs = await substitute_vendor_secrets_in_specs(
             app,
             cast(dict[str, Any], node_image.envs),
-            service_key=ServiceKey(node_image.name),
-            service_version=ServiceVersion(node_image.tag),
+            service_key=TypeAdapter(ServiceKey).validate_python(node_image.name),
+            service_version=TypeAdapter(ServiceVersion).validate_python(node_image.tag),
             product_name=product_name,
         )
         resolved_envs = await resolve_and_substitute_session_variables_in_specs(
@@ -470,7 +470,7 @@ def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
 ) -> dict[str, int | float]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
-    dask_resources: dict[str, int | float] = node_reqs.dict(
+    dask_resources: dict[str, int | float] = node_reqs.model_dump(
         exclude_unset=True,
         by_alias=True,
         exclude_none=True,
@@ -552,9 +552,9 @@ def _to_human_readable_resource_values(resources: dict[str, Any]) -> dict[str, A
     for res_name, res_value in resources.items():
         if "RAM" in res_name:
             try:
-                human_readable_resources[res_name] = parse_obj_as(
-                    ByteSize, res_value
-                ).human_readable()
+                human_readable_resources[res_name] = (
+                    TypeAdapter(ByteSize).validate_python(res_value).human_readable()
+                )
             except ValidationError:
                 _logger.warning(
                     "could not parse %s:%s, please check what changed in how Dask prepares resources!",
@@ -614,18 +614,25 @@ def check_if_cluster_is_able_to_run_pipeline(
         raise MissingComputationalResourcesError(
             project_id=project_id,
             node_id=node_id,
-            msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled "
-            f"on cluster {cluster_id}: task needs '{task_resources}', "
-            f"cluster has {cluster_resources}",
+            service_name=node_image.name,
+            service_version=node_image.tag,
+            cluster_id=cluster_id,
+            task_resources=task_resources,
+            cluster_resources=cluster_resources,
         )
 
     # well then our workers are not powerful enough
     raise InsuficientComputationalResourcesError(
         project_id=project_id,
         node_id=node_id,
-        msg=f"Insufficient computational resources to run {node_image.name}:{node_image.tag} with {_to_human_readable_resource_values( task_resources)} on cluster {cluster_id}."
-        f"Cluster available workers: {[_to_human_readable_resource_values( worker.get('resources', None)) for worker in workers.values()]}"
-        "TIP: Reduce service required resources or contact oSparc support",
+        service_name=node_image.name,
+        service_version=node_image.tag,
+        service_requested_resources=_to_human_readable_resource_values(task_resources),
+        cluster_id=cluster_id,
+        cluster_available_resources=[
+            _to_human_readable_resource_values(worker.get("resources", None))
+            for worker in workers.values()
+        ],
     )
 
 

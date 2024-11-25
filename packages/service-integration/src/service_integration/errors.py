@@ -1,7 +1,7 @@
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
-class ServiceIntegrationError(PydanticErrorMixin, RuntimeError):
+class ServiceIntegrationError(OsparcErrorMixin, RuntimeError):
     pass
 
 
@@ -13,5 +13,5 @@ class UndefinedOciImageSpecError(ServiceIntegrationError):
     ...
 
 
-class InvalidLabelsError(PydanticErrorMixin, ValueError):
+class InvalidLabelsError(OsparcErrorMixin, ValueError):
     template_msg = "Invalid build labels {build_labels}"

@@ -23,7 +23,7 @@ from models_library.services import (
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pint import UnitRegistry
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -42,9 +42,7 @@ class CatalogRequestContext(BaseModel):
     user_id: UserID
     product_name: str
     unit_registry: UnitRegistry
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @classmethod
     def create(cls, request: Request) -> "CatalogRequestContext":
@@ -157,7 +155,7 @@ async def update_service_v2(
         user_id=user_id,
         service_key=service_key,
         service_version=service_version,
-        update=ServiceUpdateV2.parse_obj(update_data),
+        update=ServiceUpdateV2.model_validate(update_data),
     )
 
     data = jsonable_encoder(service, exclude_unset=True)
@@ -286,8 +284,8 @@ async def get_compatible_inputs_given_source_output(
         from_service_key, from_service_version, from_output_key, ctx
     )
 
-    from_output: ServiceOutput = ServiceOutput.construct(
-        **service_output.dict(include=ServiceOutput.__fields__.keys())
+    from_output: ServiceOutput = ServiceOutput.model_construct(
+        **service_output.model_dump(include=ServiceOutput.model_fields.keys())  # type: ignore[arg-type]
     )
 
     # N inputs
@@ -295,8 +293,8 @@ async def get_compatible_inputs_given_source_output(
 
     def iter_service_inputs() -> Iterator[tuple[ServiceInputKey, ServiceInput]]:
         for service_input in service_inputs:
-            yield service_input.key_id, ServiceInput.construct(
-                **service_input.dict(include=ServiceInput.__fields__.keys())
+            yield service_input.key_id, ServiceInput.model_construct(
+                **service_input.model_dump(include=ServiceInput.model_fields.keys())    # type: ignore[arg-type]
             )
 
     # check
@@ -354,16 +352,16 @@ async def get_compatible_outputs_given_target_input(
 
     def iter_service_outputs() -> Iterator[tuple[ServiceOutputKey, ServiceOutput]]:
         for service_output in service_outputs:
-            yield service_output.key_id, ServiceOutput.construct(
-                **service_output.dict(include=ServiceOutput.__fields__.keys())
+            yield service_output.key_id, ServiceOutput.model_construct(
+                **service_output.model_dump(include=ServiceOutput.model_fields.keys())  # type: ignore[arg-type]
             )
 
     # 1 input
     service_input = await get_service_input(
         to_service_key, to_service_version, to_input_key, ctx
     )
-    to_input: ServiceInput = ServiceInput.construct(
-        **service_input.dict(include=ServiceInput.__fields__.keys())
+    to_input: ServiceInput = ServiceInput.model_construct(
+        **service_input.model_dump(include=ServiceInput.model_fields.keys())    # type: ignore[arg-type]
     )
 
     # check

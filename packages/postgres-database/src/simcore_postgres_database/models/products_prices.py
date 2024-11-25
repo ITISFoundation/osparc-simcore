@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import NUMERIC_KWARGS
+from ._common import NUMERIC_KWARGS, RefActions
 from .base import metadata
 from .products import products
 
@@ -20,8 +20,8 @@ products_prices = sa.Table(
         sa.ForeignKey(
             products.c.name,
             name="fk_products_prices_product_name",
-            ondelete="RESTRICT",
-            onupdate="CASCADE",
+            ondelete=RefActions.RESTRICT,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=False,
         doc="Product name",

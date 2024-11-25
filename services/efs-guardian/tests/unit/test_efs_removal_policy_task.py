@@ -56,7 +56,7 @@ def app_environment(
             **app_environment,
             **postgres_env_vars_dict,
             "POSTGRES_CLIENT_NAME": "efs-guardian-service-pg-client",
-            "EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA": "3600",
+            "EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA": "01:00:00",
         },
     )
 

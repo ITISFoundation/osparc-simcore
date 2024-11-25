@@ -1,32 +1,26 @@
+# Specifies dependencies required to run 'services/api-server/test'
+#  both for unit and integration tests!!
 #
-# Specifies dependencies required to run 'director'
+--constraint ../../../requirements/constraints.txt
+
+# Adds base AS CONSTRAINT specs, not requirement.
+#  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
 #
-
-# frozen specs
---requirement _base.txt
-
-# NOTE:
-# FROZEN  (see notes in _base.in)
-# DO NOT CHANGE ANYTHING HERE.
-# IT WON'T HAVE ANY EFFECT
-#
-
-# FROZEN as well (DO NOT CHANGE anything in pytest-simcore, it will have no effect in the director package)
-pytest-simcore @  git+https://github.com/ITISFoundation/osparc-simcore.git@79f866219bf650c5eeb4fcdf8f017319087c92c7#egg=pytest-simcore&subdirectory=packages/pytest-simcore
-
+--constraint _base.txt
 
 # testing
+asgi_lifespan
 aioresponses
-coverage==4.5.1 # TODO: Downgraded because of a bug https://github.com/nedbat/coveragepy/issues/716
 docker
-openapi-spec-validator~=0.2  # TODO: this library is limiting jsonschema<3
-ptvsd
-pylint
+faker
+jsonref
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-asyncio
+pytest-benchmark
 pytest-cov
+pytest-docker
 pytest-instafail
 pytest-mock
 pytest-runner
 pytest-sugar
-python-dotenv
+respx

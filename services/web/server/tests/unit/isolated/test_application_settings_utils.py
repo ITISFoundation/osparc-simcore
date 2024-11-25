@@ -19,7 +19,7 @@ def test_settings_infered_from_default_tests_config(
 
     settings = ApplicationSettings.create_from_envs()
 
-    print("settings=\n", settings.json(indent=1, sort_keys=True))
+    print("settings=\n", settings.model_dump_json(indent=1))
 
     infered_config = convert_to_app_config(settings)
 

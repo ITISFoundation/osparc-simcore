@@ -64,7 +64,7 @@ SETUP = {
         "Framework :: Pytest",
     ],
     "long_description": Path(CURRENT_DIR / "README.md").read_text(),
-    "python_requires": ">=3.6",
+    "python_requires": "~=3.11",
     "license": "MIT license",
     "install_requires": INSTALL_REQUIREMENTS,
     "packages": find_packages(where="src"),

@@ -6,20 +6,19 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.users import GroupID, UserID
+from models_library.users import GroupID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.request_keys import RQT_USERID_KEY
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
+from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
@@ -28,11 +27,6 @@ from ._handlers import WalletsPathParams
 from .errors import WalletAccessForbiddenError, WalletGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
-
-
-class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 def _handle_wallets_groups_exceptions(handler: Handler):
@@ -60,18 +54,14 @@ routes = web.RouteTableDef()
 class _WalletsGroupsPathParams(BaseModel):
     wallet_id: WalletID
     group_id: GroupID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class _WalletsGroupsBodyParams(BaseModel):
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.post(
@@ -81,7 +71,7 @@ class _WalletsGroupsBodyParams(BaseModel):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def create_wallet_group(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
     body_params = await parse_request_body_as(_WalletsGroupsBodyParams, request)
 
@@ -104,7 +94,7 @@ async def create_wallet_group(request: web.Request):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def list_wallet_groups(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
     wallets: list[
@@ -127,7 +117,7 @@ async def list_wallet_groups(request: web.Request):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def update_wallet_group(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
     body_params = await parse_request_body_as(_WalletsGroupsBodyParams, request)
 
@@ -151,7 +141,7 @@ async def update_wallet_group(request: web.Request):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def delete_wallet_group(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
 
     await _groups_api.delete_wallet_group(

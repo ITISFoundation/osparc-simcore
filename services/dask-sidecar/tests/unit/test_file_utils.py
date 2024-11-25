@@ -15,7 +15,7 @@ from unittest import mock
 import fsspec
 import pytest
 from faker import Faker
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
@@ -28,7 +28,6 @@ from simcore_service_dask_sidecar.file_utils import (
 
 @pytest.fixture()
 async def mocked_log_publishing_cb(
-    event_loop: asyncio.AbstractEventLoop,
     mocker: MockerFixture,
 ) -> AsyncIterable[mock.AsyncMock]:
     async with mocker.AsyncMock() as mocked_callback:
@@ -46,8 +45,8 @@ def s3_presigned_link_storage_kwargs(s3_settings: S3Settings) -> dict[str, Any]:
 
 @pytest.fixture
 def ftp_remote_file_url(ftpserver: ProcessFTPServer, faker: Faker) -> AnyUrl:
-    return parse_obj_as(
-        AnyUrl, f"{ftpserver.get_login_data(style='url')}/{faker.file_name()}"
+    return TypeAdapter(AnyUrl).validate_python(
+        f"{ftpserver.get_login_data(style='url')}/{faker.file_name()}"
     )
 
 
@@ -57,8 +56,7 @@ async def s3_presigned_link_remote_file_url(
     aiobotocore_s3_client,
     faker: Faker,
 ) -> AnyUrl:
-    return parse_obj_as(
-        AnyUrl,
+    return TypeAdapter(AnyUrl).validate_python(
         await aiobotocore_s3_client.generate_presigned_url(
             "put_object",
             Params={"Bucket": s3_settings.S3_BUCKET_NAME, "Key": faker.file_name()},
@@ -69,7 +67,9 @@ async def s3_presigned_link_remote_file_url(
 
 @pytest.fixture
 def s3_remote_file_url(s3_settings: S3Settings, faker: Faker) -> AnyUrl:
-    return parse_obj_as(AnyUrl, f"s3://{s3_settings.S3_BUCKET_NAME}{faker.file_path()}")
+    return TypeAdapter(AnyUrl).validate_python(
+        f"s3://{s3_settings.S3_BUCKET_NAME}{faker.file_path()}"
+    )
 
 
 @dataclass(frozen=True)
@@ -122,7 +122,7 @@ async def test_push_file_to_remote(
     with cast(
         fsspec.core.OpenFile,
         fsspec.open(
-            remote_parameters.remote_file_url,
+            f"{remote_parameters.remote_file_url}",
             mode="rt",
             **storage_kwargs,
         ),
@@ -153,15 +153,14 @@ async def test_push_file_to_remote_s3_http_presigned_link(
     )
 
     # check the remote is actually having the file in, but we need s3 access now
-    s3_remote_file_url = parse_obj_as(
-        AnyUrl,
+    s3_remote_file_url = TypeAdapter(AnyUrl).validate_python(
         f"s3:/{s3_presigned_link_remote_file_url.path}",
     )
 
     storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     with cast(
         fsspec.core.OpenFile,
-        fsspec.open(s3_remote_file_url, mode="rt", **storage_kwargs),
+        fsspec.open(f"{s3_remote_file_url}", mode="rt", **storage_kwargs),
     ) as fp:
         assert fp.read() == TEXT_IN_FILE
     mocked_log_publishing_cb.assert_called()
@@ -173,7 +172,9 @@ async def test_push_file_to_remote_compresses_if_zip_destination(
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
 ):
-    destination_url = parse_obj_as(AnyUrl, f"{remote_parameters.remote_file_url}.zip")
+    destination_url = TypeAdapter(AnyUrl).validate_python(
+        f"{remote_parameters.remote_file_url}.zip"
+    )
     src_path = tmp_path / faker.file_name()
     TEXT_IN_FILE = faker.text()
     src_path.write_text(TEXT_IN_FILE)
@@ -214,7 +215,7 @@ async def test_pull_file_from_remote(
     with cast(
         fsspec.core.OpenFile,
         fsspec.open(
-            remote_parameters.remote_file_url,
+            f"{remote_parameters.remote_file_url}",
             mode="wt",
             **storage_kwargs,
         ),
@@ -250,7 +251,7 @@ async def test_pull_file_from_remote_s3_presigned_link(
     with cast(
         fsspec.core.OpenFile,
         fsspec.open(
-            s3_remote_file_url,
+            f"{s3_remote_file_url}",
             mode="wt",
             **storage_kwargs,
         ),
@@ -259,8 +260,7 @@ async def test_pull_file_from_remote_s3_presigned_link(
 
     # create a corresponding presigned get link
     assert s3_remote_file_url.path
-    remote_file_url = parse_obj_as(
-        AnyUrl,
+    remote_file_url = TypeAdapter(AnyUrl).validate_python(
         await aiobotocore_s3_client.generate_presigned_url(
             "get_object",
             Params={
@@ -303,7 +303,9 @@ async def test_pull_compressed_zip_file_from_remote(
             zfp.write(local_test_file, local_test_file.name)
             file_names_within_zip_file.add(local_test_file.name)
 
-    destination_url = parse_obj_as(AnyUrl, f"{remote_parameters.remote_file_url}.zip")
+    destination_url = TypeAdapter(AnyUrl).validate_python(
+        f"{remote_parameters.remote_file_url}.zip"
+    )
     storage_kwargs = {}
     if remote_parameters.s3_settings:
         storage_kwargs = _s3fs_settings_from_s3_settings(remote_parameters.s3_settings)
@@ -311,7 +313,7 @@ async def test_pull_compressed_zip_file_from_remote(
     with cast(
         fsspec.core.OpenFile,
         fsspec.open(
-            destination_url,
+            f"{destination_url}",
             mode="wb",
             **storage_kwargs,
         ),
@@ -395,8 +397,12 @@ async def test_push_file_to_remote_creates_reproducible_zip_archive(
     faker: Faker,
     mocked_log_publishing_cb: mock.AsyncMock,
 ):
-    destination_url1 = parse_obj_as(AnyUrl, f"{remote_parameters.remote_file_url}1.zip")
-    destination_url2 = parse_obj_as(AnyUrl, f"{remote_parameters.remote_file_url}2.zip")
+    destination_url1 = TypeAdapter(AnyUrl).validate_python(
+        f"{remote_parameters.remote_file_url}1.zip"
+    )
+    destination_url2 = TypeAdapter(AnyUrl).validate_python(
+        f"{remote_parameters.remote_file_url}2.zip"
+    )
     src_path = tmp_path / faker.file_name()
     TEXT_IN_FILE = faker.text()
     src_path.write_text(TEXT_IN_FILE)

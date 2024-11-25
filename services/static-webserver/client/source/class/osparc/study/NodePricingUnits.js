@@ -30,8 +30,10 @@ qx.Class.define("osparc.study.NodePricingUnits", {
       layout: new qx.ui.layout.VBox()
     });
 
-    this.__studyId = studyId;
-    this.__nodeId = nodeId;
+    this.set({
+      studyId,
+      nodeId,
+    });
     if (node instanceof osparc.data.model.Node) {
       this.__nodeKey = node.getKey();
       this.__nodeVersion = node.getVersion();
@@ -43,8 +45,35 @@ qx.Class.define("osparc.study.NodePricingUnits", {
     }
   },
 
+  properties: {
+    studyId: {
+      check: "String",
+      init: null,
+      nullable: false,
+    },
+
+    nodeId: {
+      check: "String",
+      init: null,
+      nullable: false,
+    },
+
+    pricingPlanId: {
+      check: "Number",
+      init: null,
+      nullable: false,
+    },
+
+    patchNode: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changePatchNode",
+    },
+  },
+
   statics: {
-    pricingUnitSelected: function(studyId, nodeId, planId, selectedUnitId) {
+    patchPricingUnitSelection: function(studyId, nodeId, planId, selectedUnitId) {
       const params = {
         url: {
           studyId,
@@ -58,19 +87,18 @@ qx.Class.define("osparc.study.NodePricingUnits", {
   },
 
   members: {
-    __studyId: null,
-    __nodeId: null,
     __nodeKey: null,
     __nodeVersion: null,
     __nodeLabel: null,
+    __pricingUnits: null,
 
     showPricingUnits: function(inGroupBox = true) {
       return new Promise(resolve => {
         const nodeKey = this.__nodeKey;
         const nodeVersion = this.__nodeVersion;
         const nodeLabel = this.__nodeLabel;
-        const studyId = this.__studyId;
-        const nodeId = this.__nodeId;
+        const studyId = this.getStudyId();
+        const nodeId = this.getNodeId();
 
         const plansParams = {
           url: osparc.data.Resources.getServiceUrl(
@@ -79,30 +107,36 @@ qx.Class.define("osparc.study.NodePricingUnits", {
           )
         };
         osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
-          .then(pricingPlans => {
-            if (pricingPlans) {
+          .then(pricingPlan => {
+            if (pricingPlan) {
               const unitParams = {
                 url: {
                   studyId,
                   nodeId
                 }
               };
+              this.set({
+                pricingPlanId: pricingPlan["pricingPlanId"]
+              });
               osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
                 .then(preselectedPricingUnit => {
-                  if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
-                    const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"], preselectedPricingUnit);
+                  if (pricingPlan && "pricingUnits" in pricingPlan && pricingPlan["pricingUnits"].length) {
+                    const pricingUnitButtons = this.__pricingUnits = new osparc.study.PricingUnits(pricingPlan["pricingUnits"], preselectedPricingUnit);
                     if (inGroupBox) {
                       const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
-                      pricingUnitsLayout.add(unitButtons);
+                      pricingUnitsLayout.add(pricingUnitButtons);
                       this._add(pricingUnitsLayout);
                     } else {
-                      this._add(unitButtons);
+                      this._add(pricingUnitButtons);
                     }
-                    unitButtons.addListener("changeSelectedUnitId", e => {
-                      unitButtons.setEnabled(false);
-                      const selectedPricingUnitId = e.getData();
-                      this.self().pricingUnitSelected(this.__studyId, this.__nodeId, pricingPlans["pricingPlanId"], selectedPricingUnitId)
-                        .finally(() => unitButtons.setEnabled(true));
+                    pricingUnitButtons.addListener("changeSelectedUnitId", e => {
+                      if (this.isPatchNode()) {
+                        pricingUnitButtons.setEnabled(false);
+                        const pricingPlanId = this.getPricingPlanId();
+                        const selectedPricingUnitId = e.getData();
+                        this.self().patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId)
+                          .finally(() => pricingUnitButtons.setEnabled(true));
+                      }
                     });
                   }
                 })
@@ -110,6 +144,10 @@ qx.Class.define("osparc.study.NodePricingUnits", {
             }
           });
       });
-    }
+    },
+
+    getPricingUnits: function() {
+      return this.__pricingUnits;
+    },
   }
 });

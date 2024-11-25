@@ -6,7 +6,7 @@ import pytest
 from faker import Faker
 from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
-from pydantic import create_model, parse_obj_as
+from pydantic import RootModel, TypeAdapter, create_model
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -20,7 +20,7 @@ from simcore_service_api_server.services.solver_job_models_converters import (
 
 
 def test_create_project_model_for_job(faker: Faker):
-    solver = Solver.parse_obj(
+    solver = Solver.model_validate(
         {
             "id": "simcore/services/comp/itis/sleeper",
             "version": "2.0.2",
@@ -31,7 +31,7 @@ def test_create_project_model_for_job(faker: Faker):
         }
     )
 
-    inputs = JobInputs.parse_obj(
+    inputs = JobInputs.model_validate(
         {
             "values": {
                 "input_3": False,  # Fail after sleep ?
@@ -46,7 +46,7 @@ def test_create_project_model_for_job(faker: Faker):
         }
     )
 
-    print(inputs.json(indent=2))
+    print(inputs.model_dump_json(indent=2))
 
     job = Job.create_solver_job(solver=solver, inputs=inputs)
 
@@ -77,7 +77,7 @@ def test_job_to_node_inputs_conversion():
         }
     )
     for value in job_inputs.values.values():
-        assert parse_obj_as(ArgumentTypes, value) == value
+        assert TypeAdapter(ArgumentTypes).validate_python(value) == value
 
     node_inputs: InputsDict = {
         "x": 4.33,
@@ -94,22 +94,22 @@ def test_job_to_node_inputs_conversion():
     }
 
     for value in node_inputs.values():
-        assert parse_obj_as(InputTypes, value) == value
+        assert TypeAdapter(InputTypes).validate_python(value) == value
 
     # test transformations in both directions
     got_node_inputs = create_node_inputs_from_job_inputs(inputs=job_inputs)
     got_job_inputs = create_job_inputs_from_node_inputs(inputs=node_inputs)
 
-    NodeInputs = create_model("NodeInputs", __root__=(dict[str, InputTypes], ...))
-    print(NodeInputs.parse_obj(got_node_inputs).json(indent=2))
-    print(got_job_inputs.json(indent=2))
+    NodeInputs = create_model("NodeInputs", __base__=RootModel[dict[str, InputTypes]])
+    print(NodeInputs.model_validate(got_node_inputs).model_dump_json(indent=2))
+    print(got_job_inputs.model_dump_json(indent=2))
 
     assert got_job_inputs == job_inputs
     assert got_node_inputs == node_inputs
 
 
 def test_create_job_from_project(faker: Faker):
-    project = Project.parse_obj(
+    project = Project.model_validate(
         {
             "uuid": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",
             "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",
@@ -181,7 +181,7 @@ def test_create_job_from_project(faker: Faker):
         },
     )
 
-    expected_job = Job.parse_obj(
+    expected_job = Job.model_validate(
         {
             "id": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",
             "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",
@@ -207,12 +207,12 @@ def test_create_job_from_project(faker: Faker):
     assert job.id == project.uuid
     assert job.name == project.name
 
-    url_field_names = {name for name in job.__fields__ if name.endswith("url")}
+    url_field_names = {name for name in job.model_fields if name.endswith("url")}
     assert all(getattr(job, _) for _ in url_field_names)
 
     # this tends to be a problem
     assert job.inputs_checksum == expected_job.inputs_checksum
-    assert job.dict(exclude=url_field_names) == expected_job.dict(
+    assert job.model_dump(exclude=url_field_names) == expected_job.model_dump(
         exclude=url_field_names
     )
 
@@ -222,7 +222,7 @@ def test_create_jobstatus_from_task():
     from simcore_service_api_server.models.schemas.jobs import JobStatus
     from simcore_service_api_server.services.director_v2 import ComputationTaskGet
 
-    task = ComputationTaskGet.parse_obj({})  # TODO:
+    task = ComputationTaskGet.model_validate({})  # TODO:
     job_status: JobStatus = create_jobstatus_from_task(task)
 
     assert job_status.job_id == task.id

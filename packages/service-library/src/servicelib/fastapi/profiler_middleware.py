@@ -1,9 +1,9 @@
 from typing import Any, Final
 
-from fastapi import FastAPI
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from starlette.requests import Request
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from ..utils_profiling_middleware import (
     _is_profiling,
@@ -31,11 +31,11 @@ class ProfilerMiddleware:
     https://fastapi.tiangolo.com/advanced/middleware/#advanced-middleware
     """
 
-    def __init__(self, app: FastAPI):
-        self._app: FastAPI = app
+    def __init__(self, app: ASGIApp):
+        self._app = app
         self._profile_header_trigger: Final[str] = "x-profile"
 
-    async def __call__(self, scope, receive, send):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] != "http":
             await self._app(scope, receive, send)
             return

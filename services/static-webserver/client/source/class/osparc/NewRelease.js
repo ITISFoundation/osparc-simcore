@@ -44,13 +44,19 @@ qx.Class.define("osparc.NewRelease", {
     /**
      * Compare the latest version provided by the backend with the one loaded in the browser (might be an old cached one)
      */
-    isMyFrontendOld: async function() {
-      const lastUICommit = await osparc.store.AppSummary.getLatestUIFromBE();
-      const thisUICommit = osparc.utils.LibVersions.getVcsRefUI();
-      if (lastUICommit && thisUICommit) {
-        return lastUICommit !== thisUICommit;
-      }
-      return false;
+    isMyFrontendOld: function() {
+      return new Promise((resolve, reject) => {
+        osparc.store.AppSummary.getLatestUIFromBE()
+          .then(lastUICommit => {
+            const thisUICommit = osparc.utils.LibVersions.getVcsRefUI();
+            if (lastUICommit && thisUICommit) {
+              resolve(lastUICommit !== thisUICommit)
+            } else {
+              reject();
+            }
+          })
+          .catch(() => reject());
+      });
     }
   },
 

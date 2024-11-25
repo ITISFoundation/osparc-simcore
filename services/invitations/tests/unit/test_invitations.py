@@ -5,6 +5,7 @@
 
 import binascii
 from datetime import datetime, timezone
+from typing import Counter
 from urllib import parse
 
 import cryptography.fernet
@@ -28,7 +29,7 @@ from starlette.datastructures import URL
 def test_all_invitation_fields_have_short_and_unique_aliases():
     # all have short alias
     all_alias = []
-    for field in _ContentWithShortNames.__fields__.values():
+    for field in _ContentWithShortNames.model_fields.values():
         assert field.alias
         assert field.alias not in all_alias
         all_alias.append(field.alias)
@@ -38,7 +39,7 @@ def test_import_and_export_invitation_alias_by_alias(
     invitation_data: InvitationInputs,
 ):
     expected_content = InvitationContent(
-        **invitation_data.dict(),
+        **invitation_data.model_dump(),
         created=datetime.now(tz=timezone.utc),
     )
     raw_data = _ContentWithShortNames.serialize(expected_content)
@@ -51,13 +52,13 @@ def test_export_by_alias_produces_smaller_strings(
     invitation_data: InvitationInputs,
 ):
     content = InvitationContent(
-        **invitation_data.dict(),
+        **invitation_data.model_dump(),
         created=datetime.now(tz=timezone.utc),
     )
     raw_data = _ContentWithShortNames.serialize(content)
 
     # export by alias produces smaller strings
-    assert len(raw_data) < len(content.json())
+    assert len(raw_data) < len(content.model_dump_json())
 
 
 def test_create_and_decrypt_invitation(
@@ -72,8 +73,8 @@ def test_create_and_decrypt_invitation(
         base_url=faker.url(),
         default_product=default_product,
     )
-    assert invitation_link.fragment
-    query_params = dict(parse.parse_qsl(URL(invitation_link.fragment).query))
+    assert URL(f"{invitation_link}").fragment
+    query_params = dict(parse.parse_qsl(URL(URL(f"{invitation_link}").fragment).query))
 
     # will raise TokenError or ValidationError
     invitation = decrypt_invitation(
@@ -85,9 +86,9 @@ def test_create_and_decrypt_invitation(
     assert isinstance(invitation, InvitationContent)
     assert invitation.product is not None
 
-    expected = invitation_data.dict(exclude_none=True)
+    expected = invitation_data.model_dump(exclude_none=True)
     expected.setdefault("product", default_product)
-    assert invitation.dict(exclude={"created"}, exclude_none=True) == expected
+    assert invitation.model_dump(exclude={"created"}, exclude_none=True) == expected
 
 
 #
@@ -116,9 +117,9 @@ def test_valid_invitation_code(
         default_product=default_product,
     )
 
-    expected = invitation_data.dict(exclude_none=True)
+    expected = invitation_data.model_dump(exclude_none=True)
     expected.setdefault("product", default_product)
-    assert invitation.dict(exclude={"created"}, exclude_none=True) == expected
+    assert invitation.model_dump(exclude={"created"}, exclude_none=True) == expected
 
 
 def test_invalid_invitation_encoding(
@@ -176,7 +177,7 @@ def test_invalid_invitation_data(secret_key: str, default_product: ProductName):
 
     secret = secret_key.encode()
     other_code = _fernet_encrypt_as_urlsafe_code(
-        data=OtherModel().json().encode(), secret_key=secret
+        data=OtherModel().model_dump_json().encode(), secret_key=secret
     )
 
     with pytest.raises(ValidationError):
@@ -192,3 +193,13 @@ def test_invalid_invitation_data(secret_key: str, default_product: ProductName):
             secret_key=secret,
             default_product=default_product,
         )
+
+
+def test_aliases_uniqueness():
+    assert not [
+        item
+        for item, count in Counter(
+            [field.alias for field in _ContentWithShortNames.model_fields.values()]
+        ).items()
+        if count > 1
+    ]  # nosec

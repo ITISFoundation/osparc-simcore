@@ -2,6 +2,8 @@ import logging
 from copy import deepcopy
 from typing import Any, NamedTuple
 
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
@@ -14,14 +16,10 @@ from models_library.docker import (
 )
 from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
-from models_library.utils.json_serialization import json_dumps
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager
 from servicelib.utils import unused_port
-from settings_library.aws_s3_cli import AwsS3CliSettings
-from settings_library.docker_registry import RegistrySettings
-from settings_library.utils_encoders import create_json_encoder_wo_secrets
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.dynamic_services_settings.scheduler import (
@@ -101,8 +99,11 @@ def _get_environment_variables(
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS
         and app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS.AWS_S3_CLI_S3
     ):
-        dy_sidecar_aws_s3_cli_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS.json(
-            encoder=create_json_encoder_wo_secrets(AwsS3CliSettings),
+        dy_sidecar_aws_s3_cli_settings = json_dumps(
+            model_dump_with_secrets(
+                app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS,
+                show_secrets=True,
+            )
         )
 
     state_exclude = set()
@@ -133,7 +134,7 @@ def _get_environment_variables(
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
         "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": f"{telemetry_enabled}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
-        "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.json(),
+        "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.model_dump_json(),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
         ),
@@ -157,14 +158,22 @@ def _get_environment_variables(
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
-        "DY_DEPLOYMENT_REGISTRY_SETTINGS": app_settings.DIRECTOR_V2_DOCKER_REGISTRY.json(
-            encoder=create_json_encoder_wo_secrets(RegistrySettings),
-            exclude={"resolved_registry_url", "api_url"},
+        "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
+            json_dumps(
+                model_dump_with_secrets(
+                    app_settings.DIRECTOR_V2_DOCKER_REGISTRY,
+                    show_secrets=True,
+                    exclude={"resolved_registry_url", "api_url"},
+                )
+            )
         ),
         "DY_DOCKER_HUB_REGISTRY_SETTINGS": (
-            app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY.json(
-                encoder=create_json_encoder_wo_secrets(RegistrySettings),
-                exclude={"resolved_registry_url", "api_url"},
+            json_dumps(
+                model_dump_with_secrets(
+                    app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY,
+                    show_secrets=True,
+                    exclude={"resolved_registry_url", "api_url"},
+                )
             )
             if app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY
             else "null"
@@ -175,6 +184,11 @@ def _get_environment_variables(
         "S3_SECRET_KEY": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
         "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_SC_BOOT_MODE}",
         "SSL_CERT_FILE": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
+        "DYNAMIC_SIDECAR_TRACING": (
+            app_settings.DIRECTOR_V2_TRACING.json()
+            if app_settings.DIRECTOR_V2_TRACING
+            else "null"
+        ),
         # For background info on this special env-var above, see
         # - https://stackoverflow.com/questions/31448854/how-to-force-requests-use-the-certificates-on-my-ubuntu-system#comment78596389_37447847
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
@@ -190,7 +204,7 @@ def _get_environment_variables(
         "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": f"{app_settings.DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS}",
     }
     if r_clone_settings.R_CLONE_S3.S3_ENDPOINT is not None:
-        envs["S3_ENDPOINT"] = r_clone_settings.R_CLONE_S3.S3_ENDPOINT
+        envs["S3_ENDPOINT"] = f"{r_clone_settings.R_CLONE_S3.S3_ENDPOINT}"
     return envs
 
 
@@ -471,8 +485,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
     if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
         ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
         placement_constraints.append(
-            parse_obj_as(
-                DockerPlacementConstraint,
+            TypeAdapter(DockerPlacementConstraint).validate_python(
                 f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ec2_instance_type}",
             )
         )
@@ -554,4 +567,4 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         create_service_params=create_service_params,
     )
 
-    return AioDockerServiceSpec.parse_obj(create_service_params)
+    return AioDockerServiceSpec.model_validate(create_service_params)

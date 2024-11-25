@@ -15,6 +15,7 @@ def is_storage_secure() -> bool:
 @lru_cache
 def get_base_url() -> str:
     settings = NodePortsSettings.create_from_envs()
+    # pylint:disable=no-member
     base_url: str = settings.NODE_PORTS_STORAGE_AUTH.api_base_url
     return base_url
 

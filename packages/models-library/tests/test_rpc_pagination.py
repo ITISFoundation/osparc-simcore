@@ -2,12 +2,13 @@ from typing import Any
 
 import pytest
 from models_library.rpc_pagination import PageRpc
+from pytest_simcore.examples.models_library import RPC_PAGE_EXAMPLES
 
 
-@pytest.mark.parametrize("example", PageRpc.Config.schema_extra["examples"])
+@pytest.mark.parametrize("example", RPC_PAGE_EXAMPLES)
 def test_create_page_rpc(example: dict[str, Any]):
 
-    expected = PageRpc.parse_obj(example)
+    expected = PageRpc.model_validate(example)
 
     assert PageRpc[str].create(
         expected.data,

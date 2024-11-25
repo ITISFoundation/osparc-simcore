@@ -12,6 +12,7 @@ from http import HTTPStatus
 from typing import Any
 
 import hypothesis
+import hypothesis.provisional
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -21,7 +22,14 @@ from models_library.api_schemas_webserver.clusters import (
     ClusterPatch,
     ClusterPing,
 )
-from models_library.clusters import CLUSTER_ADMIN_RIGHTS, Cluster, SimpleAuthentication
+from models_library.clusters import (
+    CLUSTER_ADMIN_RIGHTS,
+    Cluster,
+    ClusterTypeInModel,
+    SimpleAuthentication,
+)
+from pydantic import HttpUrl, TypeAdapter
+from pydantic_core import Url
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import (  # nopycln: import
@@ -39,25 +47,48 @@ from simcore_service_webserver.director_v2.exceptions import (
 )
 
 
+@st.composite
+def http_url_strategy(draw):
+    return TypeAdapter(HttpUrl).validate_python(draw(hypothesis.provisional.urls()))
+
+
+@st.composite
+def cluster_patch_strategy(draw):
+    return ClusterPatch(
+        name=draw(st.text()),
+        description=draw(st.text()),
+        owner=draw(st.integers(min_value=1)),
+        type=draw(st.sampled_from(ClusterTypeInModel)),
+        thumbnail=draw(http_url_strategy()),
+        endpoint=draw(http_url_strategy()),
+        authentication=None,
+        accessRights={},
+    )
+
+
+st.register_type_strategy(ClusterPatch, cluster_patch_strategy())
+st.register_type_strategy(Url, http_url_strategy())
+
+
 @pytest.fixture
 def mocked_director_v2_api(mocker: MockerFixture):
     mocked_director_v2_api = mocker.patch(
         "simcore_service_webserver.clusters._handlers.director_v2_api", autospec=True
     )
 
-    mocked_director_v2_api.create_cluster.return_value = Cluster.parse_obj(
-        random.choice(Cluster.Config.schema_extra["examples"])
+    mocked_director_v2_api.create_cluster.return_value = random.choice(
+        Cluster.model_config["json_schema_extra"]["examples"]
     )
     mocked_director_v2_api.list_clusters.return_value = []
-    mocked_director_v2_api.get_cluster.return_value = Cluster.parse_obj(
-        random.choice(Cluster.Config.schema_extra["examples"])
+    mocked_director_v2_api.get_cluster.return_value = random.choice(
+        Cluster.model_config["json_schema_extra"]["examples"]
     )
     mocked_director_v2_api.get_cluster_details.return_value = {
         "scheduler": {"status": "running"},
         "dashboardLink": "https://link.to.dashboard",
     }
-    mocked_director_v2_api.update_cluster.return_value = Cluster.parse_obj(
-        random.choice(Cluster.Config.schema_extra["examples"])
+    mocked_director_v2_api.update_cluster.return_value = random.choice(
+        Cluster.model_config["json_schema_extra"]["examples"]
     )
     mocked_director_v2_api.delete_cluster.return_value = None
     mocked_director_v2_api.ping_cluster.return_value = None
@@ -94,6 +125,7 @@ def cluster_create(faker: Faker) -> ClusterCreate:
         name=faker.name(),
         endpoint=faker.uri(),
         type=random.choice(list(ClusterType)),
+        owner=faker.pyint(),
         authentication=SimpleAuthentication(
             username=faker.user_name(), password=faker.password()
         ),
@@ -120,19 +152,19 @@ async def test_create_cluster(
     url = client.app.router["create_cluster"].url_for()
     rsp = await client.post(
         f"{url}",
-        json=json.loads(cluster_create.json(by_alias=True, exclude_unset=True)),
+        json=json.loads(cluster_create.model_dump_json(by_alias=True)),
     )
     data, error = await assert_status(
         rsp,
-        expected.forbidden
-        if user_role == UserRole.USER
-        else expected.created,  # only accessible for TESTER
+        (
+            expected.forbidden if user_role == UserRole.USER else expected.created
+        ),  # only accessible for TESTER
     )
     if error:
         # we are done here
         return
 
-    created_cluster = Cluster.parse_obj(data)
+    created_cluster = Cluster.model_validate(data)
     assert created_cluster
 
 
@@ -214,7 +246,7 @@ async def test_update_cluster(
     url = client.app.router["update_cluster"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
         f"{url}",
-        json=json.loads(cluster_patch.json(**_PATCH_EXPORT)),
+        json=json.loads(cluster_patch.model_dump_json(**_PATCH_EXPORT)),
     )
     data, error = await assert_status(rsp, expected.ok)
     if not error:
@@ -259,7 +291,9 @@ async def test_ping_cluster(
     print(f"--> pinging {cluster_ping=!r}")
     assert client.app
     url = client.app.router["ping_cluster"].url_for()
-    rsp = await client.post(f"{url}", json=json.loads(cluster_ping.json(by_alias=True)))
+    rsp = await client.post(
+        f"{url}", json=json.loads(cluster_ping.model_dump_json(by_alias=True))
+    )
     data, error = await assert_status(rsp, expected.no_content)
     if not error:
         assert data is None
@@ -307,7 +341,7 @@ async def test_create_cluster_with_error(
     url = client.app.router["create_cluster"].url_for()
     rsp = await client.post(
         f"{url}",
-        json=json.loads(cluster_create.json(by_alias=True, exclude_unset=True)),
+        json=json.loads(cluster_create.model_dump_json(by_alias=True)),
     )
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
@@ -408,7 +442,7 @@ async def test_update_cluster_with_error(
     url = client.app.router["update_cluster"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
         f"{url}",
-        json=json.loads(ClusterPatch().json(**_PATCH_EXPORT)),
+        json=json.loads(ClusterPatch().model_dump_json(**_PATCH_EXPORT)),
     )
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
@@ -463,7 +497,9 @@ async def test_ping_cluster_with_error(
     )
     assert client.app
     url = client.app.router["ping_cluster"].url_for()
-    rsp = await client.post(f"{url}", json=json.loads(cluster_ping.json(by_alias=True)))
+    rsp = await client.post(
+        f"{url}", json=json.loads(cluster_ping.model_dump_json(by_alias=True))
+    )
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
     assert error

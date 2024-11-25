@@ -1,12 +1,12 @@
 import urllib.parse
-from typing import Any, ClassVar, Literal
+from typing import Annotated, Any, Literal
 
 import packaging.version
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from packaging.version import Version
-from pydantic import BaseModel, ConstrainedStr, Extra, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
 
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr
@@ -30,15 +30,15 @@ LATEST_VERSION = "latest"
 SOLVER_RESOURCE_NAME_RE = r"^solvers/([^\s/]+)/releases/([\d\.]+)$"
 
 
-class SolverKeyId(ConstrainedStr):
-    strip_whitespace = True
-    regex = COMPUTATIONAL_SERVICE_KEY_RE
+SolverKeyId = Annotated[
+    str, StringConstraints(strip_whitespace=True, pattern=COMPUTATIONAL_SERVICE_KEY_RE)
+]
 
 
 class Solver(BaseModel):
     """A released solver with a specific version"""
 
-    id: SolverKeyId = Field(..., description="Solver identifier")  # noqa: A003
+    id: SolverKeyId = Field(..., description="Solver identifier")
     version: VersionStr = Field(
         ...,
         description="semantic version number of the node",
@@ -46,17 +46,16 @@ class Solver(BaseModel):
 
     # Human readables Identifiers
     title: str = Field(..., description="Human readable name")
-    description: str | None
+    description: str | None = None
     maintainer: str
     # TODO: consider released: Optional[datetime]   required?
     # TODO: consider version_aliases: list[str] = []  # remaining tags
 
     # Get links to other resources
-    url: HttpUrl | None = Field(..., description="Link to get this resource")
-
-    class Config:
-        extra = Extra.ignore
-        schema_extra: ClassVar[dict[str, Any]] = {
+    url: Annotated[HttpUrl | None, Field(..., description="Link to get this resource")]
+    model_config = ConfigDict(
+        extra="ignore",
+        json_schema_extra={
             "example": {
                 "id": "simcore/services/comp/isolve",
                 "version": "2.1.1",
@@ -65,11 +64,12 @@ class Solver(BaseModel):
                 "maintainer": "info@itis.swiss",
                 "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.1",
             }
-        }
+        },
+    )
 
     @classmethod
     def create_from_image(cls, image_meta: ServiceMetaDataPublished) -> "Solver":
-        data = image_meta.dict(
+        data = image_meta.model_dump(
             include={"name", "key", "version", "description", "contact"},
         )
 
@@ -114,7 +114,7 @@ class SolverPort(BaseModel):
     key: str = Field(
         ...,
         description="port identifier name",
-        regex=PUBLIC_VARIABLE_NAME_RE,
+        pattern=PUBLIC_VARIABLE_NAME_RE,
         title="Key name",
     )
     kind: PortKindStr
@@ -122,10 +122,9 @@ class SolverPort(BaseModel):
         None,
         description="jsonschema for the port's value. SEE https://json-schema.org",
     )
-
-    class Config:
-        extra = Extra.ignore
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="ignore",
+        json_schema_extra={
             "example": {
                 "key": "input_2",
                 "kind": "input",
@@ -137,4 +136,5 @@ class SolverPort(BaseModel):
                     "maximum": 5,
                 },
             }
-        }
+        },
+    )

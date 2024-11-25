@@ -10,7 +10,7 @@ from typing import Final
 from uuid import UUID, uuid4
 
 import pytest
-from pydantic import BaseModel, NonNegativeInt, StrBytes
+from pydantic import BaseModel, NonNegativeInt
 from pytest_mock import MockerFixture
 from servicelib.redis import RedisClientSDK
 from servicelib.utils import logged_gather
@@ -132,14 +132,16 @@ class RandomTextResourcesManager(
         return f"{identifier._id}"  # noqa: SLF001
 
     @classmethod
-    def _deserialize_cleanup_context(cls, raw: StrBytes) -> AnEmptyTextCleanupContext:
-        return AnEmptyTextCleanupContext.parse_raw(raw)
+    def _deserialize_cleanup_context(
+        cls, raw: str | bytes
+    ) -> AnEmptyTextCleanupContext:
+        return AnEmptyTextCleanupContext.model_validate_json(raw)
 
     @classmethod
     def _serialize_cleanup_context(
         cls, cleanup_context: AnEmptyTextCleanupContext
     ) -> str:
-        return cleanup_context.json()
+        return cleanup_context.model_dump_json()
 
     async def is_used(
         self, identifier: UserDefinedID, cleanup_context: AnEmptyTextCleanupContext
@@ -171,7 +173,7 @@ async def redis_client_sdk(
         RedisDatabase.DISTRIBUTED_IDENTIFIERS
     )
 
-    client = RedisClientSDK(redis_resources_dns)
+    client = RedisClientSDK(redis_resources_dns, client_name="pytest")
     assert client
     assert client.redis_dsn == redis_resources_dns
     await client.setup()

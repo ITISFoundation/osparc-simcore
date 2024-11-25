@@ -1,14 +1,19 @@
+# pylint: disable=no-member
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
 import datetime
 import json
+import logging
+import os
+from typing import Final
 
 import pytest
 from faker import Faker
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from settings_library.base import _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING
 from simcore_service_autoscaling.core.settings import (
     ApplicationSettings,
     EC2InstancesSettings,
@@ -140,7 +145,10 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_valid(  # noqa: N802
 
 
 def test_EC2_INSTANCES_ALLOWED_TYPES_passing_invalid_image_tags(  # noqa: N802
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+    caplog: pytest.LogCaptureFixture,
 ):
     # passing an invalid image tag name will fail
     setenvs_from_dict(
@@ -156,8 +164,18 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_passing_invalid_image_tags(  # noqa: N802
             )
         },
     )
-    with pytest.raises(ValidationError):
-        ApplicationSettings.create_from_envs()
+
+    with caplog.at_level(logging.WARNING):
+
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.AUTOSCALING_EC2_INSTANCES is None
+
+        assert (
+            _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+                field_name="AUTOSCALING_EC2_INSTANCES"
+            )
+            in caplog.text
+        )
 
 
 def test_EC2_INSTANCES_ALLOWED_TYPES_passing_valid_image_tags(  # noqa: N802
@@ -194,17 +212,98 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_passing_valid_image_tags(  # noqa: N802
     ]
 
 
+ENABLED_VALUE: Final = "{}"
+
+
 def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed(  # noqa: N802
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
-    monkeypatch.setenv("EC2_INSTANCES_ALLOWED_TYPES", "{}")
+    assert (
+        os.environ["AUTOSCALING_EC2_INSTANCES"] == ENABLED_VALUE
+    )  # parent field in ApplicationSettings
+    monkeypatch.setenv(
+        "EC2_INSTANCES_ALLOWED_TYPES", "{}"
+    )  # child field in EC2InstancesSettings
 
-    with pytest.raises(ValidationError):
-        ApplicationSettings.create_from_envs()
+    with pytest.raises(ValidationError) as err_info:
+        # test **child** EC2InstancesSettings
+        EC2InstancesSettings.create_from_envs()
+
+    assert err_info.value.errors()[0]["loc"] == ("EC2_INSTANCES_ALLOWED_TYPES",)
 
 
-def test_invalid_instance_names(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_with_main_field_env_var(  # noqa: N802
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    assert (
+        os.environ["AUTOSCALING_EC2_INSTANCES"] == ENABLED_VALUE
+    )  # parent field in ApplicationSettings
+    monkeypatch.setenv(
+        "EC2_INSTANCES_ALLOWED_TYPES", "{}"
+    )  # child field in EC2InstancesSettings
+
+    # explicit init of parent -> fails
+    with pytest.raises(ValidationError) as exc_info:
+        # NOTE: input captured via InitSettingsSource
+        ApplicationSettings.create_from_envs(AUTOSCALING_EC2_INSTANCES={})
+
+    assert exc_info.value.error_count() == 1
+    error = exc_info.value.errors()[0]
+
+    assert error["type"] == "value_error"
+    assert error["input"] == {}
+    assert error["loc"] == ("AUTOSCALING_EC2_INSTANCES", "EC2_INSTANCES_ALLOWED_TYPES")
+
+    # NOTE: input captured via EnvSettingsWithAutoDefaultSource
+    # default env factory -> None
+    with caplog.at_level(logging.WARNING):
+
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.AUTOSCALING_EC2_INSTANCES is None
+
+        assert (
+            _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+                field_name="AUTOSCALING_EC2_INSTANCES"
+            )
+            in caplog.text
+        )
+
+
+def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_without_main_field_env_var(  # noqa: N802
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    assert os.environ["AUTOSCALING_EC2_INSTANCES"] == ENABLED_VALUE
+    monkeypatch.delenv(
+        "AUTOSCALING_EC2_INSTANCES"
+    )  # parent field in ApplicationSettings
+    monkeypatch.setenv(
+        "EC2_INSTANCES_ALLOWED_TYPES", "{}"
+    )  # child field in EC2InstancesSettings
+
+    # removing any value for AUTOSCALING_EC2_INSTANCES
+    caplog.clear()
+    with caplog.at_level(logging.WARNING):
+
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.AUTOSCALING_EC2_INSTANCES is None
+
+        assert (
+            _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+                field_name="AUTOSCALING_EC2_INSTANCES"
+            )
+            in caplog.text
+        )
+
+
+def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_instance_names(  # noqa: N802
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+    caplog: pytest.LogCaptureFixture,
 ):
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
@@ -214,9 +313,24 @@ def test_invalid_instance_names(
         monkeypatch,
         {
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
-                {faker.pystr(): {"ami_id": faker.pystr(), "pre_pull_images": []}}
+                {
+                    faker.pystr(): {
+                        "ami_id": faker.pystr(),
+                        "pre_pull_images": [],
+                    }
+                }
             )
         },
     )
-    with pytest.raises(ValidationError):
-        ApplicationSettings.create_from_envs()
+    caplog.clear()
+    with caplog.at_level(logging.WARNING):
+
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.AUTOSCALING_EC2_INSTANCES is None
+
+        assert (
+            _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+                field_name="AUTOSCALING_EC2_INSTANCES"
+            )
+            in caplog.text
+        )

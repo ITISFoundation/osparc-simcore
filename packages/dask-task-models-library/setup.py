@@ -36,7 +36,7 @@ SETUP = {
     "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
     "author": "Sylvain Anderegg (sanderegg)",
     "description": "Core service library for simcore pydantic dask task models",
-    "python_requires": "~=3.10",
+    "python_requires": "~=3.11",
     "classifiers": [
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",

@@ -10,7 +10,7 @@ from typing import Any, cast
 
 from aiohttp import web
 from aiopg.sa import Engine, create_engine
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 from servicelib.aiohttp.aiopg_utils import is_pg_responsive
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.logging_utils import log_context

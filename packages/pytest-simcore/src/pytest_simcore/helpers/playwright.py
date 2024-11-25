@@ -2,16 +2,25 @@ import contextlib
 import json
 import logging
 import re
+import typing
 from collections import defaultdict
-from collections.abc import Generator, Iterator
+from collections.abc import Generator
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
 from typing import Any, Final
 
+import httpx
+from playwright._impl._sync_base import EventContextManager
 from playwright.sync_api import FrameLocator, Page, Request
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import WebSocket
-from pytest_simcore.helpers.logging_tools import log_context
+from pydantic import AnyUrl
+
+from .logging_tools import log_context
+
+_logger = logging.getLogger(__name__)
+
 
 SECOND: Final[int] = 1000
 MINUTE: Final[int] = 60 * SECOND
@@ -101,6 +110,94 @@ class SocketIOEvent:
 
 
 SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
+
+
+@dataclass
+class RestartableWebSocket:
+    page: Page
+    ws: WebSocket
+    _registered_events: list[tuple[str, typing.Callable | None]] = field(
+        default_factory=list
+    )
+    _number_of_restarts: int = 0
+
+    def __post_init__(self):
+        self._configure_websocket_events()
+
+    def _configure_websocket_events(self):
+        try:
+            with log_context(
+                logging.DEBUG,
+                msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
+            ) as ctx:
+
+                def on_framesent(payload: str | bytes) -> None:
+                    ctx.logger.debug("⬇️ Frame sent: %s", payload)
+
+                def on_framereceived(payload: str | bytes) -> None:
+                    ctx.logger.debug("⬆️ Frame received: %s", payload)
+
+                def on_close(_: WebSocket) -> None:
+                    ctx.logger.warning(
+                        "⚠️ WebSocket closed. Attempting to reconnect..."
+                    )
+                    self._attempt_reconnect(ctx.logger)
+
+                def on_socketerror(error_msg: str) -> None:
+                    ctx.logger.error("❌ WebSocket error: %s", error_msg)
+
+                # Attach core event listeners
+                self.ws.on("framesent", on_framesent)
+                self.ws.on("framereceived", on_framereceived)
+                self.ws.on("close", on_close)
+                self.ws.on("socketerror", on_socketerror)
+
+        finally:
+            # Detach core event listeners
+            self.ws.remove_listener("framesent", on_framesent)
+            self.ws.remove_listener("framereceived", on_framereceived)
+            self.ws.remove_listener("close", on_close)
+            self.ws.remove_listener("socketerror", on_socketerror)
+
+    def _attempt_reconnect(self, logger: logging.Logger) -> None:
+        """
+        Attempt to reconnect the WebSocket and restore event listeners.
+        """
+        try:
+            with self.page.expect_websocket() as ws_info:
+                assert not ws_info.value.is_closed()
+
+            self.ws = ws_info.value
+            self._number_of_restarts += 1
+            logger.info(
+                "🔄 Reconnected to WebSocket successfully. Number of reconnections: %s",
+                self._number_of_restarts,
+            )
+            self._configure_websocket_events()
+            # Re-register all custom event listeners
+            for event, predicate in self._registered_events:
+                self.ws.expect_event(event, predicate)
+
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error("🚨 Failed to reconnect WebSocket: %s", e)
+
+    def expect_event(
+        self,
+        event: str,
+        predicate: typing.Callable | None = None,
+        *,
+        timeout: float | None = None,
+    ) -> EventContextManager:
+        """
+        Register an event listener with support for reconnection.
+        """
+        output = self.ws.expect_event(event, predicate, timeout=timeout)
+        self._registered_events.append((event, predicate))
+        return output
+
+    @classmethod
+    def create(cls, page: Page, ws: WebSocket):
+        return cls(page, ws)
 
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:
@@ -196,9 +293,11 @@ class SocketIOOsparcMessagePrinter:
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
     logger: logging.Logger
+    product_url: AnyUrl
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
+    _last_poll_timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
 
     def __call__(self, message: str) -> bool:
         # socket.io encodes messages like so
@@ -234,6 +333,32 @@ class SocketIONodeProgressCompleteWaiter:
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
+
+        _current_timestamp = datetime.now(UTC)
+        if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
+            url = f"https://{self.node_id}.services.{self.get_partial_product_url()}"
+            response = httpx.get(url, timeout=10)
+            self.logger.info(
+                "Querying the service endpoint from the E2E test. Url: %s Response: %s TIP: %s",
+                url,
+                response,
+                (
+                    "Response 401 is OK. It means that service is ready."
+                    if response.status_code == 401
+                    else "We are emulating the frontend; a 500 response is acceptable if the service is not yet ready."
+                ),
+            )
+            if response.status_code <= 401:
+                # NOTE: If the response status is less than 400, it means that the backend is ready (There are some services that respond with a 3XX)
+                # MD: for now I have included 401 - as this also means that backend is ready
+                if self.got_expected_node_progress_types():
+                    self.logger.warning(
+                        "⚠️ Progress bar didn't receive 100 percent but service is already running: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                        self.get_current_progress(),
+                    )
+                return True
+            self._last_poll_timestamp = datetime.now(UTC)
+
         return False
 
     def got_expected_node_progress_types(self):
@@ -245,11 +370,14 @@ class SocketIONodeProgressCompleteWaiter:
     def get_current_progress(self):
         return self._current_progress.values()
 
+    def get_partial_product_url(self):
+        return f"{self.product_url}".split("//")[1]
+
 
 def wait_for_pipeline_state(
     current_state: RunningState,
     *,
-    websocket: WebSocket,
+    websocket: RestartableWebSocket,
     if_in_states: tuple[RunningState, ...],
     expected_states: tuple[RunningState, ...],
     timeout_ms: int,
@@ -270,39 +398,6 @@ def wait_for_pipeline_state(
                     decode_socketio_42_message(event.value)
                 )
     return current_state
-
-
-@contextlib.contextmanager
-def web_socket_default_log_handler(web_socket: WebSocket) -> Iterator[None]:
-
-    try:
-        with log_context(
-            logging.DEBUG,
-            msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
-        ) as ctx:
-
-            def on_framesent(payload: str | bytes) -> None:
-                ctx.logger.debug("⬇️ Frame sent: %s", payload)
-
-            def on_framereceived(payload: str | bytes) -> None:
-                ctx.logger.debug("⬆️ Frame received: %s", payload)
-
-            def on_close(payload: WebSocket) -> None:
-                ctx.logger.warning("⚠️ Websocket closed: %s", payload)
-
-            def on_socketerror(error_msg: str) -> None:
-                ctx.logger.error("❌ Websocket error: %s", error_msg)
-
-            web_socket.on("framesent", on_framesent)
-            web_socket.on("framereceived", on_framereceived)
-            web_socket.on("close", on_close)
-            web_socket.on("socketerror", on_socketerror)
-            yield
-    finally:
-        web_socket.remove_listener("framesent", on_framesent)
-        web_socket.remove_listener("framereceived", on_framereceived)
-        web_socket.remove_listener("close", on_close)
-        web_socket.remove_listener("socketerror", on_socketerror)
 
 
 def _node_started_predicate(request: Request) -> bool:
@@ -329,12 +424,17 @@ def expected_service_running(
     *,
     page: Page,
     node_id: str,
-    websocket: WebSocket,
+    websocket: RestartableWebSocket,
     timeout: int,
     press_start_button: bool,
+    product_url: AnyUrl,
 ) -> Generator[ServiceRunning, None, None]:
-    with log_context(logging.INFO, msg="Waiting for node to run") as ctx:
-        waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id, logger=ctx.logger)
+    with log_context(
+        logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
+    ) as ctx:
+        waiter = SocketIONodeProgressCompleteWaiter(
+            node_id=node_id, logger=ctx.logger, product_url=product_url
+        )
         service_running = ServiceRunning(iframe_locator=None)
 
         try:
@@ -363,15 +463,20 @@ def wait_for_service_running(
     *,
     page: Page,
     node_id: str,
-    websocket: WebSocket,
+    websocket: RestartableWebSocket,
     timeout: int,
     press_start_button: bool,
+    product_url: AnyUrl,
 ) -> FrameLocator:
     """NOTE: if the service was already started this will not work as some of the required websocket events will not be emitted again
     In which case this will need further adjutment"""
 
-    with log_context(logging.INFO, msg="Waiting for node to run") as ctx:
-        waiter = SocketIONodeProgressCompleteWaiter(node_id=node_id, logger=ctx.logger)
+    with log_context(
+        logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
+    ) as ctx:
+        waiter = SocketIONodeProgressCompleteWaiter(
+            node_id=node_id, logger=ctx.logger, product_url=product_url
+        )
         with websocket.expect_event("framereceived", waiter, timeout=timeout):
             if press_start_button:
                 _trigger_service_start(page, node_id)

@@ -8,11 +8,11 @@ import urllib.parse
 from typing import TypeAlias
 
 from aiohttp import web
-from models_library.error_codes import create_error_code
+from common_library.error_codes import create_error_code
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Extra, ValidationError, validator
+from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -81,7 +81,7 @@ def _create_service_info_from(service: ValidService) -> ServiceInfo:
     )
     if service.thumbnail:
         values_map["thumbnail"] = service.thumbnail
-    return ServiceInfo.construct(_fields_set=set(values_map.keys()), **values_map)
+    return ServiceInfo.model_construct(_fields_set=set(values_map.keys()), **values_map)
 
 
 def _handle_errors_with_error_page(handler: Handler):
@@ -153,15 +153,13 @@ def _handle_errors_with_error_page(handler: Handler):
 
 
 class ServiceQueryParams(ServiceParams):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class FileQueryParams(FileParams):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
-    @validator("file_type")
+    @field_validator("file_type")
     @classmethod
     def ensure_extension_upper_and_dotless(cls, v):
         # NOTE: see filetype constraint-check
@@ -172,14 +170,14 @@ class FileQueryParams(FileParams):
 
 
 class ServiceAndFileParams(FileQueryParams, ServiceParams):
-    class Config:
-        # Optional configuration to exclude duplicates from schema
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "allOf": [
                 {"$ref": "#/definitions/FileParams"},
                 {"$ref": "#/definitions/ServiceParams"},
             ]
         }
+    )
 
 
 class ViewerQueryParams(BaseModel):
@@ -190,13 +188,13 @@ class ViewerQueryParams(BaseModel):
     @staticmethod
     def from_viewer(viewer: ViewerInfo) -> "ViewerQueryParams":
         # can safely construct w/o validation from a viewer
-        return ViewerQueryParams.construct(
+        return ViewerQueryParams.model_construct(
             file_type=viewer.filetype,
             viewer_key=viewer.key,
             viewer_version=viewer.version,
         )
 
-    @validator("file_type")
+    @field_validator("file_type")
     @classmethod
     def ensure_extension_upper_and_dotless(cls, v):
         # NOTE: see filetype constraint-check

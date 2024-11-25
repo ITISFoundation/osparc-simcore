@@ -11,5 +11,6 @@
 --requirement _test.txt
 --requirement _tools.txt
 
+simcore-common-library @ ../../packages/common-library/
 simcore-settings-library @ ../../packages/settings-library/
 pytest-simcore @ ../../packages/pytest-simcore/

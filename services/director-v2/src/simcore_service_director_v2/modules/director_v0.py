@@ -1,7 +1,4 @@
-""" Module that takes care of communications with director v0 service
-
-
-"""
+"""Module that takes care of communications with director v0 service"""
 
 import logging
 import urllib.parse
@@ -20,7 +17,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.users import UserID
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_decorator
+from settings_library.tracing import TracingSettings
 
 from ..core.settings import DirectorV0Settings
 from ..utils.client_decorators import handle_errors, handle_retry
@@ -31,25 +30,34 @@ logger = logging.getLogger(__name__)
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: DirectorV0Settings | None):
-    if not settings:
-        settings = DirectorV0Settings()
+def setup(
+    app: FastAPI,
+    director_v0_settings: DirectorV0Settings | None,
+    tracing_settings: TracingSettings | None,
+):
+    if not director_v0_settings:
+        director_v0_settings = DirectorV0Settings()
 
     def on_startup() -> None:
+        client = httpx.AsyncClient(
+            base_url=f"{director_v0_settings.endpoint}",
+            timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
+        )
+        if tracing_settings:
+            setup_httpx_client_tracing(client=client)
         DirectorV0Client.create(
             app,
-            client=httpx.AsyncClient(
-                base_url=f"{settings.endpoint}",
-                timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
-            ),
+            client=client,
         )
-        logger.debug("created client for director-v0: %s", settings.endpoint)
+        logger.debug(
+            "created client for director-v0: %s", director_v0_settings.endpoint
+        )
 
     async def on_shutdown() -> None:
         client = DirectorV0Client.instance(app).client
         await client.aclose()
         del client
-        logger.debug("delete client for director-v0: %s", settings.endpoint)
+        logger.debug("delete client for director-v0: %s", director_v0_settings.endpoint)
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -83,7 +91,7 @@ class DirectorV0Client:
             f"/service_extras/{urllib.parse.quote_plus(service_key)}/{service_version}",
         )
         if resp.status_code == status.HTTP_200_OK:
-            return ServiceExtras.parse_obj(unenvelope_or_raise_error(resp))
+            return ServiceExtras.model_validate(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
@@ -94,7 +102,7 @@ class DirectorV0Client:
             "GET", f"running_interactive_services/{service_uuid}"
         )
         if resp.status_code == status.HTTP_200_OK:
-            return RunningDynamicServiceDetails.parse_obj(
+            return RunningDynamicServiceDetails.model_validate(
                 unenvelope_or_raise_error(resp)
             )
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
@@ -109,7 +117,7 @@ class DirectorV0Client:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return SimcoreServiceLabels.parse_obj(unenvelope_or_raise_error(resp))
+            return SimcoreServiceLabels.model_validate(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)

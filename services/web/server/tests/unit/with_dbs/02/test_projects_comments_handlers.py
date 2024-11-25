@@ -42,7 +42,7 @@ async def test_project_comments_user_role_access(
     base_url = client.app.router["list_project_comments"].url_for(
         project_uuid=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     assert resp.status == 401 if user_role == UserRole.ANONYMOUS else 200
 
 
@@ -65,7 +65,7 @@ async def test_project_comments_full_workflow(
     base_url = client.app.router["list_project_comments"].url_for(
         project_uuid=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _, meta, links = await assert_status(
         resp,
         expected,
@@ -78,7 +78,7 @@ async def test_project_comments_full_workflow(
 
     # Now we will add first comment
     body = {"contents": "My first comment"}
-    resp = await client.post(base_url, json=body)
+    resp = await client.post(f"{base_url}", json=body)
     data, _ = await assert_status(
         resp,
         status.HTTP_201_CREATED,
@@ -86,7 +86,7 @@ async def test_project_comments_full_workflow(
     first_comment_id = data["comment_id"]
 
     # Now we will add second comment
-    resp = await client.post(base_url, json={"contents": "My second comment"})
+    resp = await client.post(f"{base_url}", json={"contents": "My second comment"})
     data, _ = await assert_status(
         resp,
         status.HTTP_201_CREATED,
@@ -94,7 +94,7 @@ async def test_project_comments_full_workflow(
     second_comment_id = data["comment_id"]
 
     # Now we will list all comments for the project
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _, meta, links = await assert_status(
         resp,
         expected,
@@ -108,7 +108,7 @@ async def test_project_comments_full_workflow(
     # Now we will update the second comment
     updated_comment = "Updated second comment"
     resp = await client.put(
-        base_url / f"{second_comment_id}",
+        f"{base_url}/{second_comment_id}",
         json={"contents": updated_comment},
     )
     data, _ = await assert_status(
@@ -117,7 +117,7 @@ async def test_project_comments_full_workflow(
     )
 
     # Now we will get the second comment
-    resp = await client.get(base_url / f"{second_comment_id}")
+    resp = await client.get(f"{base_url}/{second_comment_id}")
     data, _ = await assert_status(
         resp,
         expected,
@@ -125,14 +125,14 @@ async def test_project_comments_full_workflow(
     assert data["contents"] == updated_comment
 
     # Now we will delete the second comment
-    resp = await client.delete(base_url / f"{second_comment_id}")
+    resp = await client.delete(f"{base_url}/{second_comment_id}")
     data, _ = await assert_status(
         resp,
         status.HTTP_204_NO_CONTENT,
     )
 
     # Now we will list all comments for the project
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _, meta, links = await assert_status(
         resp,
         expected,
@@ -146,14 +146,14 @@ async def test_project_comments_full_workflow(
     # Now we will log as a different user
     async with LoggedUser(client) as new_logged_user:
         # As this user does not have access to the project, they should get 403
-        resp = await client.get(base_url)
+        resp = await client.get(f"{base_url}")
         _, errors = await assert_status(
             resp,
             status.HTTP_403_FORBIDDEN,
         )
         assert errors
 
-        resp = await client.get(base_url / f"{first_comment_id}")
+        resp = await client.get(f"{base_url}/{first_comment_id}")
         _, errors = await assert_status(
             resp,
             status.HTTP_403_FORBIDDEN,
@@ -173,7 +173,7 @@ async def test_project_comments_full_workflow(
         # Now the user should have access to the project now
         # New user will add comment
         resp = await client.post(
-            base_url,
+            f"{base_url}",
             json={"contents": "My first comment as a new user"},
         )
         data, _ = await assert_status(
@@ -185,7 +185,7 @@ async def test_project_comments_full_workflow(
         # New user will modify the comment
         updated_comment = "Updated My first comment as a new user"
         resp = await client.put(
-            base_url / f"{new_user_comment_id}",
+            f"{base_url}/{new_user_comment_id}",
             json={"contents": updated_comment},
         )
         data, _ = await assert_status(
@@ -195,7 +195,7 @@ async def test_project_comments_full_workflow(
         assert data["contents"] == updated_comment
 
         # New user will list all comments
-        resp = await client.get(base_url)
+        resp = await client.get(f"{base_url}")
         data, _, meta, links = await assert_status(
             resp,
             expected,
@@ -209,7 +209,7 @@ async def test_project_comments_full_workflow(
         # New user will modify comment of the previous user
         updated_comment = "Updated comment of previous user"
         resp = await client.put(
-            base_url / f"{first_comment_id}",
+            f"{base_url}/{first_comment_id}",
             json={"contents": updated_comment},
         )
         data, _ = await assert_status(
@@ -219,7 +219,7 @@ async def test_project_comments_full_workflow(
         assert data["contents"] == updated_comment
 
         # New user will delete comment of the previous user
-        resp = await client.delete(base_url / f"{first_comment_id}")
+        resp = await client.delete(f"{base_url}/{first_comment_id}")
         data, _ = await assert_status(
             resp,
             status.HTTP_204_NO_CONTENT,

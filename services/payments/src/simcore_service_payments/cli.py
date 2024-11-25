@@ -3,6 +3,7 @@ import logging
 import os
 
 import typer
+from common_library.json_serialization import json_dumps
 from servicelib.utils_secrets import generate_password, generate_token_secret_key
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
@@ -20,7 +21,9 @@ _logger = logging.getLogger(__name__)
 main = typer.Typer(name=PROJECT_NAME)
 
 main.command()(
-    create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
+    create_settings_command(
+        settings_cls=ApplicationSettings, logger=_logger, json_serializer=json_dumps
+    )
 )
 main.callback()(create_version_callback(__version__))
 

@@ -8,7 +8,7 @@
     class MyModel(BaseModel):
        thumbnail: str | None
 
-       _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+       _empty_is_none = validator("thumbnail", mode="before")(
            empty_str_to_none_pre_validator
        )
 
@@ -19,6 +19,9 @@ import enum
 import functools
 import operator
 from typing import Any
+
+from common_library.json_serialization import json_loads
+from orjson import JSONDecodeError
 
 
 def empty_str_to_none_pre_validator(value: Any):
@@ -36,6 +39,16 @@ def none_to_empty_str_pre_validator(value: Any):
 def none_to_empty_list_pre_validator(value: Any):
     if value is None:
         return []
+    return value
+
+
+def parse_json_pre_validator(value: Any):
+    if isinstance(value, str):
+        try:
+            return json_loads(value)
+        except JSONDecodeError as err:
+            msg = f"Invalid JSON {value=}: {err}"
+            raise ValueError(msg) from err
     return value
 
 
@@ -93,7 +106,8 @@ def create__check_only_one_is_set__root_validator(alternative_field_names: list[
         assert set(alternative_field_names).issubset(cls.__fields__)  # nosec
 
         got = {
-            field_name: values.get(field_name) for field_name in alternative_field_names
+            field_name: getattr(values, field_name)
+            for field_name in alternative_field_names
         }
 
         if not functools.reduce(operator.xor, (v is not None for v in got.values())):

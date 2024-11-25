@@ -5,6 +5,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
+from ._common import RefActions
 from .base import metadata
 from .comp_pipeline import StateType
 
@@ -26,8 +27,8 @@ comp_runs = sa.Table(
         sa.ForeignKey(
             "projects.uuid",
             name="fk_comp_runs_project_uuid_projects",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         nullable=False,
         doc="The project uuid with which the run entry is associated",
@@ -38,8 +39,8 @@ comp_runs = sa.Table(
         sa.ForeignKey(
             "users.id",
             name="fk_comp_runs_user_id_users",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         nullable=False,
         doc="The user id with which the run entry is associated",
@@ -50,8 +51,8 @@ comp_runs = sa.Table(
         sa.ForeignKey(
             "clusters.id",
             name="fk_comp_runs_cluster_id_clusters",
-            onupdate="CASCADE",
-            ondelete="SET NULL",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.SET_NULL,
         ),
         nullable=True,
         doc="The cluster id on which the run entry is associated, if NULL or 0 uses the default",
@@ -98,6 +99,12 @@ comp_runs = sa.Table(
         sa.DateTime,
         nullable=True,
         doc="When the run was finished",
+    ),
+    sa.Column(
+        "cancelled",
+        sa.DateTime(timezone=True),
+        nullable=True,
+        doc="If filled, when cancellation was requested",
     ),
     sa.Column("metadata", JSONB, nullable=True, doc="the run optional metadata"),
     sa.Column(

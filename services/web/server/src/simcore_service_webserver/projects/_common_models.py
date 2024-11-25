@@ -5,27 +5,22 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 """
 
 from models_library.projects import ProjectID
-from models_library.users import UserID
-from pydantic import BaseModel, Extra, Field
-from servicelib.request_keys import RQT_USERID_KEY
+from pydantic import BaseModel, ConfigDict, Field
 
-from .._constants import RQ_PRODUCT_KEY
+from ..models import RequestContext
 
-
-class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
+assert RequestContext.__name__  # nosec
 
 
 class ProjectPathParams(BaseModel):
     project_id: ProjectID
-
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
 class RemoveQueryParams(BaseModel):
     force: bool = Field(
         default=False, description="Force removal (even if resource is active)"
     )
+
+
+__all__: tuple[str, ...] = ("RequestContext",)

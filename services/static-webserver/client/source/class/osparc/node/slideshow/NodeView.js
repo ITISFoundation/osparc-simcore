@@ -143,14 +143,15 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       this._iFrameLayout.removeAll();
 
       const node = this.getNode();
-
-      const loadingPage = node.getLoadingPage();
-      const iFrame = node.getIFrame();
-      const src = iFrame.getSource();
-      const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-      this._iFrameLayout.add(iFrameView, {
-        flex: 1
-      });
+      if (node) {
+        const loadingPage = node.getLoadingPage();
+        const iFrame = node.getIFrame();
+        const src = iFrame.getSource();
+        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
+        this._iFrameLayout.add(iFrameView, {
+          flex: 1
+        });
+      }
     }
   }
 });

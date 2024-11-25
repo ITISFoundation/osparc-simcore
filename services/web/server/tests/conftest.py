@@ -16,11 +16,11 @@ from urllib.parse import urlparse
 import pytest
 import simcore_service_webserver
 from aiohttp.test_utils import TestClient
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
-from models_library.utils.json_serialization import json_dumps
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -75,6 +75,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_service_library_fixtures",
     "pytest_simcore.simcore_services",
     "pytest_simcore.socketio_client",
+    "pytest_simcore.openapi_specs",
 ]
 
 
@@ -327,9 +328,9 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                 data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
-                task_status = TaskStatus.parse_obj(data)
+                task_status = TaskStatus.model_validate(data)
                 assert task_status
-                print(f"<-- status: {task_status.json(indent=2)}")
+                print(f"<-- status: {task_status.model_dump_json(indent=2)}")
                 assert task_status.done, "task incomplete"
                 print(
                     f"-- project creation completed: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
@@ -403,7 +404,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             # the access rights are set to use the logged user primary group + whatever was inside the project
             expected_data["accessRights"].update(
                 {
-                    str(primary_group["gid"]): {
+                    f"{primary_group['gid']}": {
                         "read": True,
                         "write": True,
                         "delete": True,

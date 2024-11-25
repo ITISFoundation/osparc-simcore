@@ -17,7 +17,7 @@ from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
@@ -45,7 +45,7 @@ class _ToAdd(NamedTuple):
 
 def _network_name(project_id: ProjectID, user_defined: str) -> DockerNetworkName:
     network_name = f"{PROJECT_NETWORK_PREFIX}_{project_id}_{user_defined}"
-    return parse_obj_as(DockerNetworkName, network_name)
+    return TypeAdapter(DockerNetworkName).validate_python(network_name)
 
 
 async def requires_dynamic_sidecar(
@@ -64,7 +64,7 @@ async def requires_dynamic_sidecar(
 
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
-            service=ServiceKeyVersion.parse_obj(
+            service=ServiceKeyVersion.model_validate(
                 {"key": decoded_service_key, "version": service_version}
             )
         )
@@ -184,10 +184,10 @@ async def _get_networks_with_aliases_for_default_network(
     be on the same network.
     Return an updated version of the projects_networks
     """
-    new_networks_with_aliases: NetworksWithAliases = NetworksWithAliases.parse_obj({})
+    new_networks_with_aliases: NetworksWithAliases = NetworksWithAliases.model_validate({})
 
     default_network = _network_name(project_id, "default")
-    new_networks_with_aliases[default_network] = ContainerAliases.parse_obj({})
+    new_networks_with_aliases[default_network] = ContainerAliases.model_validate({})
 
     for node_uuid, node_content in new_workbench.items():
         # only add dynamic-sidecar nodes
@@ -200,7 +200,7 @@ async def _get_networks_with_aliases_for_default_network(
 
         # only add if network label is valid, otherwise it will be skipped
         try:
-            network_alias = parse_obj_as(DockerNetworkAlias, node_content.label)
+            network_alias = TypeAdapter(DockerNetworkAlias).validate_python(node_content.label)
         except ValidationError:
             message = LoggerRabbitMessage(
                 user_id=user_id,
@@ -248,7 +248,7 @@ async def update_from_workbench(
             )
         )
     except ProjectNetworkNotFoundError:
-        existing_projects_networks = ProjectsNetworks.parse_obj(
+        existing_projects_networks = ProjectsNetworks.model_validate(
             {"project_uuid": project_id, "networks_with_aliases": {}}
         )
 

@@ -15,6 +15,7 @@ from aws_library.ec2 import (
     EC2InstanceBootSpecific,
     EC2InstanceData,
 )
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.api_schemas_clusters_keeper.clusters import ClusterState
 from models_library.clusters import (
@@ -22,8 +23,7 @@ from models_library.clusters import (
     NoAuthentication,
     TLSAuthentication,
 )
-from models_library.utils.json_serialization import json_dumps
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.clusters import (
@@ -69,9 +69,9 @@ def app_environment(
         monkeypatch,
         {
             "CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": json_dumps(
-                TLSAuthentication.Config.schema_extra["examples"][0]
+                TLSAuthentication.model_config["json_schema_extra"]["examples"][0]
                 if isinstance(backend_cluster_auth, TLSAuthentication)
-                else NoAuthentication.Config.schema_extra["examples"][0]
+                else NoAuthentication.model_config["json_schema_extra"]["examples"][0]
             )
         },
     )
@@ -223,7 +223,7 @@ def test_create_startup_script_script_size_below_16kb(
     script_size_in_bytes = len(startup_script.encode("utf-8"))
 
     print(
-        f"current script size is {parse_obj_as(ByteSize, script_size_in_bytes).human_readable()}"
+        f"current script size is {TypeAdapter(ByteSize).validate_python(script_size_in_bytes).human_readable()}"
     )
     # NOTE: EC2 user data cannot be above 16KB, we keep some margin here
     assert script_size_in_bytes < 15 * 1024
@@ -285,7 +285,9 @@ def test__prepare_environment_variables_defines_all_envs_for_docker_compose(
     "authentication",
     [
         NoAuthentication(),
-        TLSAuthentication(**TLSAuthentication.Config.schema_extra["examples"][0]),
+        TLSAuthentication(
+            **TLSAuthentication.model_config["json_schema_extra"]["examples"][0]
+        ),
     ],
 )
 def test_create_cluster_from_ec2_instance(

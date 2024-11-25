@@ -17,7 +17,7 @@ from models_library.api_schemas_storage import (
     FileUploadLinks,
     FileUploadSchema,
 )
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -59,7 +59,7 @@ def mock_request_storage(mocker: MockerFixture, expected_response: Any) -> None:
     )
 
     def _resolve(*args, **kwargs) -> AnyUrl:
-        return parse_obj_as(AnyUrl, "http://private-url")
+        return TypeAdapter(AnyUrl).validate_python("http://private-url")
 
     mocker.patch(
         "simcore_service_webserver.storage._handlers._from_storage_url",
@@ -69,16 +69,19 @@ def mock_request_storage(mocker: MockerFixture, expected_response: Any) -> None:
 
 
 MOCK_FILE_UPLOAD_SCHEMA = FileUploadSchema(
-    chunk_size=parse_obj_as(ByteSize, "5GiB"),
-    urls=[parse_obj_as(AnyUrl, "s3://file_id")],
+    chunk_size=TypeAdapter(ByteSize).validate_python("5GiB"),
+    urls=[TypeAdapter(AnyUrl).validate_python("s3://file_id")],
     links=FileUploadLinks(
-        abort_upload=parse_obj_as(AnyUrl, "http://private-url/operation:abort"),
-        complete_upload=parse_obj_as(AnyUrl, "http://private-url/operation:complete"),
+        abort_upload=TypeAdapter(AnyUrl).validate_python(
+            "http://private-url/operation:abort"
+        ),
+        complete_upload=TypeAdapter(AnyUrl).validate_python(
+            "http://private-url/operation:complete"
+        ),
     ),
 )
 
-MOCK_FILE_UPLOAD_SCHEMA = parse_obj_as(
-    FileUploadSchema,
+MOCK_FILE_UPLOAD_SCHEMA = FileUploadSchema.model_validate(
     {
         "chunk_size": "5",
         "urls": ["s3://file_id"],
@@ -90,8 +93,8 @@ MOCK_FILE_UPLOAD_SCHEMA = parse_obj_as(
 )
 
 
-MOCK_FILE_UPLOAD_COMPLETE_RESPONSE = parse_obj_as(
-    FileUploadCompleteResponse, {"links": {"state": "http://private-url"}}
+MOCK_FILE_UPLOAD_COMPLETE_RESPONSE = FileUploadCompleteResponse.model_validate(
+    {"links": {"state": "http://private-url"}}
 )
 
 
@@ -124,7 +127,7 @@ SINGLE_ENCODE_SLASH_IN_FILE_ID = "ef944bbe-14c7-11ee-a195-02420a0f07ab%2F46ac491
             "PUT",
             "/v0/storage/locations/0/files/{file_id}",
             None,
-            json.loads(MOCK_FILE_UPLOAD_SCHEMA.json()),
+            json.loads(MOCK_FILE_UPLOAD_SCHEMA.model_dump_json()),
             id="upload_file",
         ),
         pytest.param(
@@ -145,14 +148,14 @@ SINGLE_ENCODE_SLASH_IN_FILE_ID = "ef944bbe-14c7-11ee-a195-02420a0f07ab%2F46ac491
             "POST",
             "/v0/storage/locations/0/files/{file_id}:complete",
             {"parts": []},
-            json.loads(MOCK_FILE_UPLOAD_COMPLETE_RESPONSE.json()),
+            json.loads(MOCK_FILE_UPLOAD_COMPLETE_RESPONSE.model_dump_json()),
             id="complete_upload_file",
         ),
         pytest.param(
             "POST",
             "/v0/storage/locations/0/files/{file_id}:complete/futures/RANDOM_FUTURE_ID",
             None,
-            json.loads(MOCK_FILE_UPLOAD_SCHEMA.json()),
+            json.loads(MOCK_FILE_UPLOAD_SCHEMA.model_dump_json()),
             id="is_completed_upload_file",
         ),
     ],
@@ -208,7 +211,7 @@ def test_url_storage_resolver_helpers(faker: Faker, app_environment: EnvVarsDict
 
     # storage -> web
     web_url: AnyUrl = _from_storage_url(
-        web_request, parse_obj_as(AnyUrl, str(storage_url))
+        web_request, TypeAdapter(AnyUrl).validate_python(f"{storage_url}")
     )
 
     assert storage_url.host != web_url.host
@@ -216,4 +219,4 @@ def test_url_storage_resolver_helpers(faker: Faker, app_environment: EnvVarsDict
 
     assert isinstance(storage_url, URL)  # this is a bit inconvenient
     assert isinstance(web_url, AnyUrl)
-    assert str(web_url) == str(web_request.url)
+    assert f"{web_url}" == f"{web_request.url}"

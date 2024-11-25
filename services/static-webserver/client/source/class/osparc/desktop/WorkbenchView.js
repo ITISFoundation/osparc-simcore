@@ -40,16 +40,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     TAB_BUTTON_HEIGHT: 46,
 
     decorateSplitter: function(splitter) {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const binaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
       splitter.set({
         width: 2,
-        backgroundColor: binaryColor
+        backgroundColor: "workbench-view-splitter"
       });
-      colorManager.addListener("changeTheme", () => {
-        const newBinaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
-        splitter.setBackgroundColor(newBinaryColor);
-      }, this);
     },
 
     decorateSlider: function(slider) {
@@ -202,7 +196,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           control = new qx.ui.tabview.TabView().set({
             contentPadding: osparc.widget.CollapsibleViewLight.CARET_WIDTH + 2, // collapse bar + padding
             contentPaddingRight: 2,
-            backgroundColor: this.self().PRIMARY_COL_BG_COLOR,
             barPosition: "top"
           });
           const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
@@ -322,7 +315,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewPrimary.getChildControl("bar");
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
-        backgroundColor: "tab_navigation_bar_background_color"
+        backgroundColor: "workbench-view-navbar"
       });
       this.__addTopBarSpacer(topBar);
 
@@ -392,7 +385,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewSecondary.getChildControl("bar");
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
-        backgroundColor: "tab_navigation_bar_background_color"
+        backgroundColor: "workbench-view-navbar"
       });
       this.__addTopBarSpacer(topBar);
 
@@ -427,7 +420,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
         alignY: "top",
-        backgroundColor: "tab_navigation_bar_background_color"
+        backgroundColor: "workbench-view-navbar"
       });
       this.__addTopBarSpacer(topBar);
 
@@ -483,7 +476,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __addTopBarSpacer: function(tabViewTopBar) {
       const spacer = new qx.ui.core.Widget().set({
-        backgroundColor: "tab_navigation_bar_background_color"
+        backgroundColor: "workbench-view-navbar"
       });
       tabViewTopBar.add(spacer, {
         flex: 1
@@ -492,7 +485,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __createCollapsibleViewSpacer: function() {
       const spacer = new qx.ui.core.Widget().set({
-        backgroundColor: "tab_navigation_bar_background_color",
+        backgroundColor: "workbench-view-navbar",
         height: this.self().TAB_BUTTON_HEIGHT
       });
       return spacer;
@@ -759,13 +752,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __iFrameChanged: function(node) {
       this.__iframePage.removeAll();
 
-      const loadingPage = node.getLoadingPage();
-      const iFrame = node.getIFrame();
-      const src = iFrame.getSource();
-      const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-      this.__iframePage.add(iFrameView, {
-        flex: 1
-      });
+      if (node) {
+        const loadingPage = node.getLoadingPage();
+        const iFrame = node.getIFrame();
+        const src = iFrame.getSource();
+        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
+        this.__iframePage.add(iFrameView, {
+          flex: 1
+        });
+      }
     },
 
     __populateSecondaryColumn: function(node) {
@@ -1079,13 +1074,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const nodeOptions = new osparc.widget.NodeOptions(node);
       nodeOptions.buildLayout();
-      [
-        "versionChanged",
-        "bootModeChanged",
-        "limitsChanged"
-      ].forEach(eventName => {
-        nodeOptions.addListener(eventName, () => this.__populateSecondaryColumn(node));
-      });
 
       return nodeOptions;
     },

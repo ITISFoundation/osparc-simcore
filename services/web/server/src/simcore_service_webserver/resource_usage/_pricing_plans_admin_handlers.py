@@ -19,19 +19,18 @@ from models_library.resource_tracker import (
     PricingUnitWithCostCreate,
     PricingUnitWithCostUpdate,
 )
-from models_library.users import UserID
-from pydantic import BaseModel, Extra, Field
+from models_library.rest_base import StrictRequestParameters
+from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.rabbitmq._errors import RPCServerError
-from servicelib.request_keys import RQT_USERID_KEY
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
+from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _pricing_plans_admin_api as admin_api
@@ -55,11 +54,6 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
     return wrapper
 
 
-class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
-
-
 #
 # API handlers
 #
@@ -70,11 +64,9 @@ routes = web.RouteTableDef()
 ## Admin Pricing Plan endpoints
 
 
-class _GetPricingPlanPathParams(BaseModel):
+class PricingPlanGetPathParams(StrictRequestParameters):
     pricing_plan_id: PricingPlanId
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.get(
@@ -85,7 +77,7 @@ class _GetPricingPlanPathParams(BaseModel):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def list_pricing_plans(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
 
     pricing_plans_list = await admin_api.list_pricing_plans(
         app=request.app,
@@ -116,8 +108,8 @@ async def list_pricing_plans(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def get_pricing_plan(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
 
     pricing_plan_get = await admin_api.get_pricing_plan(
         app=request.app,
@@ -125,7 +117,8 @@ async def get_pricing_plan(request: web.Request):
         pricing_plan_id=path_params.pricing_plan_id,
     )
     if pricing_plan_get.pricing_units is None:
-        raise ValueError("Pricing plan units should not be None")
+        msg = "Pricing plan units should not be None"
+        raise ValueError(msg)
 
     webserver_admin_pricing_plan_get = PricingPlanAdminGet(
         pricing_plan_id=pricing_plan_get.pricing_plan_id,
@@ -138,7 +131,7 @@ async def get_pricing_plan(request: web.Request):
             PricingUnitAdminGet(
                 pricing_unit_id=pricing_unit.pricing_unit_id,
                 unit_name=pricing_unit.unit_name,
-                unit_extra_info=pricing_unit.unit_extra_info,  # type: ignore[arg-type]
+                unit_extra_info=pricing_unit.unit_extra_info,
                 specific_info=pricing_unit.specific_info,
                 current_cost_per_unit=pricing_unit.current_cost_per_unit,
                 default=pricing_unit.default,
@@ -159,7 +152,7 @@ async def get_pricing_plan(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def create_pricing_plan(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     body_params = await parse_request_body_as(CreatePricingPlanBodyParams, request)
 
     _data = PricingPlanCreate(
@@ -187,7 +180,7 @@ async def create_pricing_plan(request: web.Request):
             PricingUnitAdminGet(
                 pricing_unit_id=pricing_unit.pricing_unit_id,
                 unit_name=pricing_unit.unit_name,
-                unit_extra_info=pricing_unit.unit_extra_info,  # type: ignore[arg-type]
+                unit_extra_info=pricing_unit.unit_extra_info,
                 specific_info=pricing_unit.specific_info,
                 current_cost_per_unit=pricing_unit.current_cost_per_unit,
                 default=pricing_unit.default,
@@ -208,8 +201,8 @@ async def create_pricing_plan(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def update_pricing_plan(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
     body_params = await parse_request_body_as(UpdatePricingPlanBodyParams, request)
 
     _data = PricingPlanUpdate(
@@ -237,7 +230,7 @@ async def update_pricing_plan(request: web.Request):
             PricingUnitAdminGet(
                 pricing_unit_id=pricing_unit.pricing_unit_id,
                 unit_name=pricing_unit.unit_name,
-                unit_extra_info=pricing_unit.unit_extra_info,  # type: ignore[arg-type]
+                unit_extra_info=pricing_unit.unit_extra_info,
                 specific_info=pricing_unit.specific_info,
                 current_cost_per_unit=pricing_unit.current_cost_per_unit,
                 default=pricing_unit.default,
@@ -253,12 +246,10 @@ async def update_pricing_plan(request: web.Request):
 ## Admin Pricing Unit endpoints
 
 
-class _GetPricingUnitPathParams(BaseModel):
+class PricingUnitGetPathParams(BaseModel):
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.get(
@@ -269,8 +260,8 @@ class _GetPricingUnitPathParams(BaseModel):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def get_pricing_unit(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingUnitPathParams, request)
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(PricingUnitGetPathParams, request)
 
     pricing_unit_get = await admin_api.get_pricing_unit(
         app=request.app,
@@ -282,7 +273,7 @@ async def get_pricing_unit(request: web.Request):
     webserver_pricing_unit_get = PricingUnitAdminGet(
         pricing_unit_id=pricing_unit_get.pricing_unit_id,
         unit_name=pricing_unit_get.unit_name,
-        unit_extra_info=pricing_unit_get.unit_extra_info,  # type: ignore[arg-type]
+        unit_extra_info=pricing_unit_get.unit_extra_info,
         specific_info=pricing_unit_get.specific_info,
         current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
         default=pricing_unit_get.default,
@@ -299,8 +290,8 @@ async def get_pricing_unit(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def create_pricing_unit(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
     body_params = await parse_request_body_as(CreatePricingUnitBodyParams, request)
 
     _data = PricingUnitWithCostCreate(
@@ -321,7 +312,7 @@ async def create_pricing_unit(request: web.Request):
     webserver_pricing_unit_get = PricingUnitAdminGet(
         pricing_unit_id=pricing_unit_get.pricing_unit_id,
         unit_name=pricing_unit_get.unit_name,
-        unit_extra_info=pricing_unit_get.unit_extra_info,  # type: ignore[arg-type]
+        unit_extra_info=pricing_unit_get.unit_extra_info,
         specific_info=pricing_unit_get.specific_info,
         current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
         default=pricing_unit_get.default,
@@ -338,8 +329,8 @@ async def create_pricing_unit(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def update_pricing_unit(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingUnitPathParams, request)
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(PricingUnitGetPathParams, request)
     body_params = await parse_request_body_as(UpdatePricingUnitBodyParams, request)
 
     _data = PricingUnitWithCostUpdate(
@@ -360,7 +351,7 @@ async def update_pricing_unit(request: web.Request):
     webserver_pricing_unit_get = PricingUnitAdminGet(
         pricing_unit_id=pricing_unit_get.pricing_unit_id,
         unit_name=pricing_unit_get.unit_name,
-        unit_extra_info=pricing_unit_get.unit_extra_info,  # type: ignore[arg-type]
+        unit_extra_info=pricing_unit_get.unit_extra_info,
         specific_info=pricing_unit_get.specific_info,
         current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
         default=pricing_unit_get.default,
@@ -380,8 +371,8 @@ async def update_pricing_unit(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def list_connected_services_to_pricing_plan(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
 
     connected_services_list = await admin_api.list_connected_services_to_pricing_plan(
         app=request.app,
@@ -409,8 +400,8 @@ async def list_connected_services_to_pricing_plan(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def connect_service_to_pricing_plan(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
     body_params = await parse_request_body_as(
         ConnectServiceToPricingPlanBodyParams, request
     )

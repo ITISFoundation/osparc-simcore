@@ -6,14 +6,14 @@ from typing import Final, TypedDict
 
 import arrow
 from playwright.sync_api import FrameLocator, Page, WebSocket, expect
-from pydantic import TypeAdapter  # pylint: disable=no-name-in-module
-from pydantic import ByteSize
+from pydantic import AnyUrl, ByteSize, TypeAdapter  # pylint: disable=no-name-in-module
 
 from .logging_tools import log_context
 from .playwright import (
     MINUTE,
     SECOND,
     SOCKETIO_MESSAGE_PREFIX,
+    RestartableWebSocket,
     SocketIOEvent,
     decode_socketio_42_message,
     wait_for_service_running,
@@ -101,10 +101,11 @@ class WaitForS4LDict(TypedDict):
 def wait_for_launched_s4l(
     page: Page,
     node_id,
-    log_in_and_out: WebSocket,
+    log_in_and_out: RestartableWebSocket,
     *,
     autoscaled: bool,
     copy_workspace: bool,
+    product_url: AnyUrl,
 ) -> WaitForS4LDict:
     with log_context(logging.INFO, "launch S4L") as ctx:
         predicate = S4LWaitForWebsocket(logger=ctx.logger)
@@ -130,6 +131,7 @@ def wait_for_launched_s4l(
                 )
                 + (_S4L_COPY_WORKSPACE_TIME if copy_workspace else 0),
                 press_start_button=False,
+                product_url=product_url,
             )
         s4l_websocket = ws_info.value
         ctx.logger.info("acquired S4L websocket!")

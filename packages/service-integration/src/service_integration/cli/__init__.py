@@ -62,7 +62,7 @@ def main(
         overrides["COMPOSE_VERSION"] = compose_version
 
     # save states
-    ctx.settings = AppSettings.parse_obj(overrides)  # type: ignore[attr-defined] # pylint:disable=no-member
+    ctx.settings = AppSettings.model_validate(overrides)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
 #

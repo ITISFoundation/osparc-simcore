@@ -51,7 +51,7 @@ qx.Class.define("osparc.store.Folders", {
       orderBy = {
         field: "modified_at",
         direction: "desc"
-      }
+      },
     ) {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
@@ -98,6 +98,36 @@ qx.Class.define("osparc.store.Folders", {
         .then(trashedFoldersData => {
           const folders = [];
           trashedFoldersData.forEach(folderData => {
+            const folder = this.__addToCache(folderData);
+            folders.push(folder);
+          });
+          return folders;
+        });
+    },
+
+    searchFolders: function(
+      text,
+      orderBy = {
+        field: "modified_at",
+        direction: "desc"
+      },
+    ) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
+      const params = {
+        url: {
+          text,
+          orderBy: JSON.stringify(curatedOrderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("folders", params, "getPageSearch")
+        .then(foldersData => {
+          const folders = [];
             const folder = this.__addToCache(folderData);
             folders.push(folder);
           });
@@ -199,6 +229,7 @@ qx.Class.define("osparc.store.Folders", {
     __addToCache: function(folderData) {
       let folder = this.foldersCached.find(f => f.getFolderId() === folderData["folderId"] && f.getWorkspaceId() === folderData["workspaceId"]);
       if (folder) {
+        const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Folder));
         // put
         Object.keys(folderData).forEach(key => {
           if (key === "createdAt") {
@@ -207,7 +238,7 @@ qx.Class.define("osparc.store.Folders", {
             folder.set("lastModified", new Date(folderData["modifiedAt"]));
           } else if (key === "trashedAt") {
             folder.set("trashedAt", new Date(folderData["trashedAt"]));
-          } else {
+          } else if (props.includes(key)) {
             folder.set(key, folderData[key]);
           }
         });

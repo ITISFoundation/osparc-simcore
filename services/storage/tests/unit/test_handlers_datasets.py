@@ -15,7 +15,7 @@ from models_library.api_schemas_storage import DatasetMetaDataGet, FileMetaDataG
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.parametrizations import (
@@ -73,7 +73,7 @@ async def test_get_files_metadata_dataset(
         data, error = await assert_status(response, status.HTTP_200_OK)
         assert data
         assert not error
-        list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+        list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
         assert len(list_fmds) == (n + 1)
         fmd = list_fmds[n]
         assert fmd.file_name == file.name
@@ -100,7 +100,7 @@ async def test_get_datasets_metadata(
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
-    list_datasets = parse_obj_as(list[DatasetMetaDataGet], data)
+    list_datasets = TypeAdapter(list[DatasetMetaDataGet]).validate_python(data)
     assert len(list_datasets) == 1
     dataset = list_datasets[0]
     assert dataset.dataset_id == project_id

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import NamedTuple
 
-from pydantic import Extra, PositiveInt, validator
+from pydantic import ConfigDict, PositiveInt, field_validator
 
 from ..access_rights import AccessRights
 from ..basic_types import IDStr
@@ -29,30 +29,26 @@ class FolderGetPage(NamedTuple):
     total: PositiveInt
 
 
-class CreateFolderBodyParams(InputSchema):
+class FolderCreateBodyParams(InputSchema):
     name: IDStr
     parent_folder_id: FolderID | None = None
     workspace_id: WorkspaceID | None = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        extra = Extra.forbid
-
-    _null_or_none_str_to_none_validator = validator(
-        "parent_folder_id", allow_reuse=True, pre=True
+    _null_or_none_str_to_none_validator = field_validator(
+        "parent_folder_id", mode="before"
     )(null_or_none_str_to_none_validator)
 
-    _null_or_none_str_to_none_validator2 = validator(
-        "workspace_id", allow_reuse=True, pre=True
+    _null_or_none_str_to_none_validator2 = field_validator(
+        "workspace_id", mode="before"
     )(null_or_none_str_to_none_validator)
 
 
-class PutFolderBodyParams(InputSchema):
+class FolderReplaceBodyParams(InputSchema):
     name: IDStr
-    parent_folder_id: FolderID | None
+    parent_folder_id: FolderID | None = None
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        extra = Extra.forbid
-
-    _null_or_none_str_to_none_validator = validator(
-        "parent_folder_id", allow_reuse=True, pre=True
+    _null_or_none_str_to_none_validator = field_validator(
+        "parent_folder_id", mode="before"
     )(null_or_none_str_to_none_validator)

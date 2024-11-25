@@ -25,7 +25,7 @@ _OAS_DEVELOPMENT_SERVER = {
 }
 
 
-def get_common_oas_options(is_devel_mode: bool) -> dict[str, Any]:
+def get_common_oas_options(*, is_devel_mode: bool) -> dict[str, Any]:
     """common OAS options for FastAPI constructor"""
     servers: list[dict[str, Any]] = [
         _OAS_DEFAULT_SERVER,
@@ -166,3 +166,37 @@ def override_fastapi_openapi_method(app: FastAPI):
         return output
 
     setattr(app, "openapi", types.MethodType(_custom_openapi_method, app))  # noqa: B010
+
+
+def create_openapi_specs(
+    app: FastAPI,
+    *,
+    drop_fastapi_default_422: bool = True,
+    remove_main_sections: bool = True,
+):
+    """
+    Includes some patches used in the api/specs generators
+    """
+    override_fastapi_openapi_method(app)
+    openapi = app.openapi()
+
+    # Remove these sections
+    if remove_main_sections:
+        for section in ("info", "openapi"):
+            openapi.pop(section, None)
+
+    schemas = openapi["components"]["schemas"]
+    for section in ("HTTPValidationError", "ValidationError"):
+        schemas.pop(section, None)
+
+    # Removes default response 422
+    if drop_fastapi_default_422:
+        for method_item in openapi.get("paths", {}).values():
+            for param in method_item.values():
+                # NOTE: If description is like this,
+                # it assumes it is the default HTTPValidationError from fastapi
+                if (e422 := param.get("responses", {}).get("422", None)) and e422.get(
+                    "description"
+                ) == "Validation Error":
+                    param.get("responses", {}).pop("422", None)
+    return openapi

@@ -30,7 +30,7 @@ class _StoreMixin(BaseModel):
         async with aiofiles.open(
             self._shared_store_dir / STORE_FILE_NAME, "w"
         ) as data_file:
-            await data_file.write(self.json())
+            await data_file.write(self.model_dump_json())
 
     def post_init(self, shared_store_dir: Path):
         self._shared_store_dir = shared_store_dir
@@ -66,6 +66,17 @@ class SharedStore(_StoreMixin):
         default_factory=dict, description="persist the state of each volume"
     )
 
+    def __eq__(self, other: object) -> bool:
+        return all(
+            getattr(self, n, None) == getattr(other, n, None)
+            for n in (
+                "compose_spec",
+                "container_names",
+                "original_to_container_names",
+                "volume_states",
+            )
+        )
+
     async def _setup_initial_volume_states(self) -> None:
         async with self:
             for category, status in [
@@ -74,6 +85,7 @@ class SharedStore(_StoreMixin):
                 (VolumeCategory.OUTPUTS, VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED),
                 (VolumeCategory.STATES, VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED),
             ]:
+                # pylint: disable=unsupported-assignment-operation
                 self.volume_states[category] = VolumeState(status=status)
 
     @classmethod
@@ -93,7 +105,7 @@ class SharedStore(_StoreMixin):
         async with aiofiles.open(shared_store_dir / store_file_name) as data_file:
             file_content = await data_file.read()
 
-        obj = cls.parse_raw(file_content)
+        obj = cls.model_validate_json(file_content)
         obj.post_init(shared_store_dir)
         return obj
 

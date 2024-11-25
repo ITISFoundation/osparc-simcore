@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   title: simcore-service-storage API
   description: API definition for simcore-service-storage service
@@ -8,7 +8,7 @@ info:
   license:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
-  version: 0.4.0
+  version: 0.5.0
 servers:
 - url: /
   description: 'Default server: requests directed to serving url'
@@ -28,27 +28,27 @@ paths:
       description: returns all the top level datasets a user has access to
       operationId: get_datasets_metadata
       parameters:
-      - required: true
+      - name: location_id
+        in: path
+        required: true
         schema:
           type: integer
           title: Location Id
-        name: location_id
-        in: path
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
-        in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_storage.models.DatasetMetaData__'
+                $ref: '#/components/schemas/Envelope_list_DatasetMetaData__'
   /v0/locations/{location_id}/datasets/{dataset_id}/metadata:
     get:
       tags:
@@ -57,44 +57,44 @@ paths:
       description: returns all the file meta data inside dataset with dataset_id
       operationId: get_files_metadata_dataset
       parameters:
-      - required: true
+      - name: location_id
+        in: path
+        required: true
         schema:
           type: integer
           title: Location Id
-        name: location_id
+      - name: dataset_id
         in: path
-      - required: true
+        required: true
         schema:
           type: string
           title: Dataset Id
-        name: dataset_id
-        in: path
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
+      - name: expand_dirs
         in: query
-      - description: Automatic directory expansion. This will be replaced by pagination
-          the future
         required: false
         schema:
           type: boolean
-          title: Expand Dirs
           description: Automatic directory expansion. This will be replaced by pagination
             the future
           default: true
-        name: expand_dirs
-        in: query
+          title: Expand Dirs
+        description: Automatic directory expansion. This will be replaced by pagination
+          the future
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_storage.FileMetaDataGet__'
+                $ref: '#/components/schemas/Envelope_list_FileMetaDataGet__'
   /v0/locations:
     get:
       tags:
@@ -103,23 +103,23 @@ paths:
       description: Returns the list of available storage locations
       operationId: get_storage_locations
       parameters:
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
-        in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
+                type: array
                 items:
                   $ref: '#/components/schemas/DatasetMetaData'
-                type: array
                 title: Response Get Storage Locations
   /v0/locations/{location_id}:sync:
     post:
@@ -130,26 +130,26 @@ paths:
       description: Returns an object containing added, changed and removed paths
       operationId: synchronise_meta_data_table
       parameters:
-      - required: true
+      - name: location_id
+        in: path
+        required: true
         schema:
           type: integer
           title: Location Id
-        name: location_id
-        in: path
-      - required: false
+      - name: dry_run
+        in: query
+        required: false
         schema:
           type: boolean
+          default: false
           title: Dry Run
-          default: false
-        name: dry_run
+      - name: fire_and_forget
         in: query
-      - required: false
+        required: false
         schema:
           type: boolean
-          title: Fire And Forget
           default: false
-        name: fire_and_forget
-        in: query
+          title: Fire And Forget
       responses:
         '200':
           description: Successful Response
@@ -166,37 +166,37 @@ paths:
         may be used)
       operationId: get_files_metadata
       parameters:
-      - required: true
+      - name: location_id
+        in: path
+        required: true
         schema:
           type: integer
           title: Location Id
-        name: location_id
-        in: path
-      - required: false
+      - name: uuid_filter
+        in: query
+        required: false
         schema:
           type: string
-          title: Uuid Filter
           default: ''
-        name: uuid_filter
+          title: Uuid Filter
+      - name: expand_dirs
         in: query
-      - description: Automatic directory expansion. This will be replaced by pagination
-          the future
         required: false
         schema:
           type: boolean
-          title: Expand Dirs
           description: Automatic directory expansion. This will be replaced by pagination
             the future
           default: true
-        name: expand_dirs
-        in: query
+          title: Expand Dirs
+        description: Automatic directory expansion. This will be replaced by pagination
+          the future
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_storage.models.DatasetMetaData__'
+                $ref: '#/components/schemas/Envelope_list_DatasetMetaData__'
   /v0/locations/{location_id}/files/{file_id}/metadata:
     get:
       tags:
@@ -206,13 +206,15 @@ paths:
         to
       operationId: get_file_metadata
       parameters:
-      - required: true
+      - name: location_id
+        in: path
+        required: true
         schema:
           type: integer
           title: Location Id
-        name: location_id
+      - name: file_id
         in: path
-      - required: true
+        required: true
         schema:
           anyOf:
           - type: string
@@ -220,16 +222,14 @@ paths:
           - type: string
             pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
           title: File Id
-        name: file_id
-        in: path
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
-        in: query
       responses:
         '200':
           description: Successful Response
@@ -248,13 +248,15 @@ paths:
       description: creates a download file link if user has the rights to
       operationId: download_file
       parameters:
-      - required: true
+      - name: location_id
+        in: path
+        required: true
         schema:
           type: integer
           title: Location Id
-        name: location_id
+      - name: file_id
         in: path
-      - required: true
+        required: true
         schema:
           anyOf:
           - type: string
@@ -262,23 +264,20 @@ paths:
           - type: string
             pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
           title: File Id
-        name: file_id
-        in: path
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
+      - name: link_type
         in: query
-      - required: false
+        required: false
         schema:
-          allOf:
-          - $ref: '#/components/schemas/LinkType'
+          $ref: '#/components/schemas/LinkType'
           default: PRESIGNED
-        name: link_type
-        in: query
       responses:
         '200':
           description: Successful Response
@@ -294,13 +293,15 @@ paths:
         expects the client to complete/abort upload
       operationId: upload_file
       parameters:
-      - required: true
+      - name: location_id
+        in: path
+        required: true
         schema:
           type: integer
           title: Location Id
-        name: location_id
+      - name: file_id
         in: path
-      - required: true
+        required: true
         schema:
           anyOf:
           - type: string
@@ -308,28 +309,30 @@ paths:
           - type: string
             pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
           title: File Id
-        name: file_id
-        in: path
-      - required: true
+      - name: file_size
+        in: query
+        required: true
         schema:
-          type: integer
+          anyOf:
+          - type: string
+            pattern: ^\s*(\d*\.?\d+)\s*(\w+)?
+          - type: integer
+            minimum: 0
+          - type: 'null'
           title: File Size
-        name: file_size
+      - name: link_type
         in: query
-      - required: false
+        required: false
         schema:
-          allOf:
-          - $ref: '#/components/schemas/LinkType'
+          $ref: '#/components/schemas/LinkType'
           default: PRESIGNED
-        name: link_type
+      - name: is_directory
         in: query
-      - required: false
+        required: false
         schema:
           type: boolean
-          title: Is Directory
           default: false
-        name: is_directory
-        in: query
+          title: Is Directory
       responses:
         '200':
           description: Successful Response
@@ -338,7 +341,7 @@ paths:
               schema:
                 anyOf:
                 - $ref: '#/components/schemas/Envelope_FileUploadSchema_'
-                - $ref: '#/components/schemas/Envelope_AnyUrl_'
+                - $ref: '#/components/schemas/Envelope_Url_'
                 title: Response Upload File
     delete:
       tags:
@@ -347,13 +350,15 @@ paths:
       description: deletes file if user has the rights to
       operationId: delete_file
       parameters:
-      - required: true
+      - name: location_id
+        in: path
+        required: true
         schema:
           type: integer
           title: Location Id
-        name: location_id
+      - name: file_id
         in: path
-      - required: true
+        required: true
         schema:
           anyOf:
           - type: string
@@ -361,16 +366,14 @@ paths:
           - type: string
             pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
           title: File Id
-        name: file_id
-        in: path
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
-        in: query
       responses:
         '204':
           description: Successful Response
@@ -384,13 +387,15 @@ paths:
         to the latest version if available, else will delete the file'
       operationId: abort_upload_file
       parameters:
-      - required: true
+      - name: location_id
+        in: path
+        required: true
         schema:
           type: integer
           title: Location Id
-        name: location_id
+      - name: file_id
         in: path
-      - required: true
+        required: true
         schema:
           anyOf:
           - type: string
@@ -398,16 +403,14 @@ paths:
           - type: string
             pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
           title: File Id
-        name: file_id
-        in: path
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
-        in: query
       responses:
         '204':
           description: Successful Response
@@ -419,13 +422,15 @@ paths:
       description: completes an upload if the user has the rights to
       operationId: complete_upload_file
       parameters:
-      - required: true
+      - name: location_id
+        in: path
+        required: true
         schema:
           type: integer
           title: Location Id
-        name: location_id
+      - name: file_id
         in: path
-      - required: true
+        required: true
         schema:
           anyOf:
           - type: string
@@ -433,22 +438,20 @@ paths:
           - type: string
             pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
           title: File Id
-        name: file_id
-        in: path
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
-        in: query
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/Envelope_FileUploadCompletionBody_'
-        required: true
       responses:
         '202':
           description: Successful Response
@@ -464,13 +467,15 @@ paths:
       description: Returns state of upload completion
       operationId: is_completed_upload_file
       parameters:
-      - required: true
+      - name: location_id
+        in: path
+        required: true
         schema:
           type: integer
           title: Location Id
-        name: location_id
+      - name: file_id
         in: path
-      - required: true
+        required: true
         schema:
           anyOf:
           - type: string
@@ -478,22 +483,20 @@ paths:
           - type: string
             pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
           title: File Id
-        name: file_id
+      - name: future_id
         in: path
-      - required: true
+        required: true
         schema:
           type: string
           title: Future Id
-        name: future_id
-        in: path
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
-        in: query
       responses:
         '200':
           description: Successful Response
@@ -537,7 +540,9 @@ paths:
       description: creates and returns a soft link
       operationId: copy_as_soft_link
       parameters:
-      - required: true
+      - name: file_id
+        in: path
+        required: true
         schema:
           anyOf:
           - type: string
@@ -545,22 +550,20 @@ paths:
           - type: string
             pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
           title: File Id
-        name: file_id
-        in: path
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
-        in: query
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/SoftCopyBody'
-        required: true
       responses:
         '200':
           description: Successful Response
@@ -576,14 +579,14 @@ paths:
       description: returns a set of S3 credentials
       operationId: get_or_create_temporary_s3_access
       parameters:
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
-        in: query
       responses:
         '200':
           description: Successful Response
@@ -599,20 +602,20 @@ paths:
       description: copies folders from project
       operationId: copy_folders_from_project
       parameters:
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
-        in: query
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/FoldersBody'
-        required: true
       responses:
         '200':
           description: Successful Response
@@ -628,27 +631,29 @@ paths:
       description: removes folders from a project
       operationId: delete_folders_of_project
       parameters:
-      - required: true
+      - name: folder_id
+        in: path
+        required: true
         schema:
           type: string
           title: Folder Id
-        name: folder_id
-        in: path
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
+      - name: node_id
         in: query
-      - required: false
+        required: false
         schema:
-          type: string
-          format: uuid
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
           title: Node Id
-        name: node_id
-        in: query
       responses:
         '204':
           description: Successful Response
@@ -656,43 +661,62 @@ paths:
     post:
       tags:
       - simcore-s3
-      summary: search for files starting with
+      summary: search for owned files
       description: search for files starting with `startswith` and/or matching a sha256_checksum
         in the file_meta_data table
       operationId: search_files
       parameters:
-      - required: true
+      - name: user_id
+        in: query
+        required: true
         schema:
           type: integer
           exclusiveMinimum: true
           title: User Id
           minimum: 0
-        name: user_id
+      - name: startswith
         in: query
-      - required: false
+        required: false
         schema:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Startswith
-          default: ''
-        name: startswith
+      - name: sha256_checksum
         in: query
-      - required: false
+        required: false
         schema:
-          type: string
-          pattern: ^[a-fA-F0-9]{64}$
+          anyOf:
+          - type: string
+            pattern: ^[a-fA-F0-9]{64}$
+          - type: 'null'
           title: Sha256 Checksum
-        name: sha256_checksum
+      - name: kind
         in: query
-      - required: false
+        required: true
         schema:
-          type: string
           enum:
-          - read
-          - write
-          title: Access Right
-          default: read
-        name: access_right
+          - owned
+          const: owned
+          type: string
+          title: Kind
+      - name: limit
         in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
       responses:
         '200':
           description: Successful Response
@@ -722,12 +746,12 @@ paths:
       description: gets the status of the task
       operationId: get_task_status
       parameters:
-      - required: true
+      - name: task_id
+        in: path
+        required: true
         schema:
           type: string
           title: Task Id
-        name: task_id
-        in: path
       responses:
         '200':
           description: Successful Response
@@ -742,12 +766,12 @@ paths:
       description: cancels and removes the task
       operationId: cancel_and_delete_task
       parameters:
-      - required: true
+      - name: task_id
+        in: path
+        required: true
         schema:
           type: string
           title: Task Id
-        name: task_id
-        in: path
       responses:
         '204':
           description: Successful Response
@@ -759,12 +783,12 @@ paths:
       description: get result of the task
       operationId: get_task_result
       parameters:
-      - required: true
+      - name: task_id
+        in: path
+        required: true
         schema:
           type: string
           title: Task Id
-        name: task_id
-        in: path
       responses:
         '200':
           description: Successful Response
@@ -790,23 +814,27 @@ components:
           description: Other backend services connected from this service
           default: {}
         sessions:
-          type: object
+          anyOf:
+          - type: object
+          - type: 'null'
           title: Sessions
           description: Client sessions info. If single session per app, then is denoted
             as main
           default: {}
         url:
-          type: string
-          maxLength: 65536
-          minLength: 1
-          format: uri
+          anyOf:
+          - type: string
+            minLength: 1
+            format: uri
+          - type: 'null'
           title: Url
           description: Link to current resource
         diagnostics_url:
-          type: string
-          maxLength: 65536
-          minLength: 1
-          format: uri
+          anyOf:
+          - type: string
+            minLength: 1
+            format: uri
+          - type: 'null'
           title: Diagnostics Url
           description: Link to diagnostics report sub-resource. This MIGHT take some
             time to compute
@@ -833,136 +861,210 @@ components:
       - dataset_id
       - display_name
       title: DatasetMetaData
-    Envelope_AnyUrl_:
-      properties:
-        data:
-          type: string
-          maxLength: 65536
-          minLength: 1
-          format: uri
-          title: Data
-        error:
-          title: Error
-      type: object
-      title: Envelope[AnyUrl]
     Envelope_AppStatusCheck_:
       properties:
         data:
-          $ref: '#/components/schemas/AppStatusCheck'
+          anyOf:
+          - $ref: '#/components/schemas/AppStatusCheck'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[AppStatusCheck]
     Envelope_FileMetaDataGet_:
       properties:
         data:
-          $ref: '#/components/schemas/FileMetaDataGet'
+          anyOf:
+          - $ref: '#/components/schemas/FileMetaDataGet'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[FileMetaDataGet]
     Envelope_FileUploadCompleteFutureResponse_:
       properties:
         data:
-          $ref: '#/components/schemas/FileUploadCompleteFutureResponse'
+          anyOf:
+          - $ref: '#/components/schemas/FileUploadCompleteFutureResponse'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[FileUploadCompleteFutureResponse]
     Envelope_FileUploadCompleteResponse_:
       properties:
         data:
-          $ref: '#/components/schemas/FileUploadCompleteResponse'
+          anyOf:
+          - $ref: '#/components/schemas/FileUploadCompleteResponse'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[FileUploadCompleteResponse]
     Envelope_FileUploadCompletionBody_:
       properties:
         data:
-          $ref: '#/components/schemas/FileUploadCompletionBody'
+          anyOf:
+          - $ref: '#/components/schemas/FileUploadCompletionBody'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[FileUploadCompletionBody]
     Envelope_FileUploadSchema_:
       properties:
         data:
-          $ref: '#/components/schemas/FileUploadSchema'
+          anyOf:
+          - $ref: '#/components/schemas/FileUploadSchema'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[FileUploadSchema]
     Envelope_HealthCheck_:
       properties:
         data:
-          $ref: '#/components/schemas/HealthCheck'
+          anyOf:
+          - $ref: '#/components/schemas/HealthCheck'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[HealthCheck]
     Envelope_PresignedLink_:
       properties:
         data:
-          $ref: '#/components/schemas/PresignedLink'
+          anyOf:
+          - $ref: '#/components/schemas/PresignedLink'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[PresignedLink]
     Envelope_S3Settings_:
       properties:
         data:
-          $ref: '#/components/schemas/S3Settings'
+          anyOf:
+          - $ref: '#/components/schemas/S3Settings'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[S3Settings]
     Envelope_TableSynchronisation_:
       properties:
         data:
-          $ref: '#/components/schemas/TableSynchronisation'
+          anyOf:
+          - $ref: '#/components/schemas/TableSynchronisation'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[TableSynchronisation]
     Envelope_TaskGet_:
       properties:
         data:
-          $ref: '#/components/schemas/TaskGet'
+          anyOf:
+          - $ref: '#/components/schemas/TaskGet'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[TaskGet]
     Envelope_TaskStatus_:
       properties:
         data:
-          $ref: '#/components/schemas/TaskStatus'
+          anyOf:
+          - $ref: '#/components/schemas/TaskStatus'
+          - type: 'null'
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
       title: Envelope[TaskStatus]
-    Envelope_list_models_library.api_schemas_storage.FileMetaDataGet__:
+    Envelope_Url_:
       properties:
         data:
-          items:
-            $ref: '#/components/schemas/FileMetaDataGet'
-          type: array
+          anyOf:
+          - type: string
+            minLength: 1
+            format: uri
+          - type: 'null'
           title: Data
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[models_library.api_schemas_storage.FileMetaDataGet]]
-    Envelope_list_simcore_service_storage.models.DatasetMetaData__:
+      title: Envelope[Url]
+    Envelope_list_DatasetMetaData__:
       properties:
         data:
-          items:
-            $ref: '#/components/schemas/DatasetMetaData'
-          type: array
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/DatasetMetaData'
+            type: array
+          - type: 'null'
           title: Data
         error:
+          anyOf:
+          - {}
+          - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[simcore_service_storage.models.DatasetMetaData]]
+      title: Envelope[list[DatasetMetaData]]
+    Envelope_list_FileMetaDataGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/FileMetaDataGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[FileMetaDataGet]]
     FileMetaData:
       properties:
         file_uuid:
@@ -975,11 +1077,15 @@ components:
           title: Location Id
           description: Storage location
         project_name:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Project Name
           description: optional project name, used by frontend to display path
         node_name:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Node Name
           description: optional node name, used by frontend to display path
         file_name:
@@ -1006,12 +1112,18 @@ components:
         file_size:
           anyOf:
           - type: integer
+            enum:
+            - -1
+            const: -1
           - type: integer
+            minimum: 0
           title: File Size
           description: File size in bytes (-1 means invalid)
           default: -1
         entity_tag:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Entity Tag
           description: Entity tag (or ETag), represents a specific version of the
             file, None if invalid upload or datcore
@@ -1027,15 +1139,21 @@ components:
           description: if True this is a directory
           default: false
         sha256_checksum:
-          type: string
-          pattern: ^[a-fA-F0-9]{64}$
+          anyOf:
+          - type: string
+            pattern: ^[a-fA-F0-9]{64}$
+          - type: 'null'
           title: Sha256 Checksum
         upload_id:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Upload Id
         upload_expires_at:
-          type: string
-          format: date-time
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
           title: Upload Expires At
         location:
           type: string
@@ -1047,19 +1165,24 @@ components:
           type: string
           title: Object Name
         project_id:
-          type: string
-          format: uuid
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
           title: Project Id
         node_id:
-          type: string
-          format: uuid
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
           title: Node Id
         user_id:
-          type: integer
-          exclusiveMinimum: true
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
           title: User Id
-          minimum: 0
-      additionalProperties: false
       type: object
       required:
       - file_uuid
@@ -1068,9 +1191,13 @@ components:
       - file_id
       - created_at
       - last_modified
+      - sha256_checksum
       - location
       - bucket_name
       - object_name
+      - project_id
+      - node_id
+      - user_id
       title: FileMetaData
     FileMetaDataGet:
       properties:
@@ -1084,11 +1211,15 @@ components:
           title: Location Id
           description: Storage location
         project_name:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Project Name
           description: optional project name, used by frontend to display path
         node_name:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Node Name
           description: optional node name, used by frontend to display path
         file_name:
@@ -1115,12 +1246,18 @@ components:
         file_size:
           anyOf:
           - type: integer
+            enum:
+            - -1
+            const: -1
           - type: integer
+            minimum: 0
           title: File Size
           description: File size in bytes (-1 means invalid)
           default: -1
         entity_tag:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Entity Tag
           description: Entity tag (or ETag), represents a specific version of the
             file, None if invalid upload or datcore
@@ -1136,12 +1273,13 @@ components:
           description: if True this is a directory
           default: false
         sha256_checksum:
-          type: string
-          pattern: ^[a-fA-F0-9]{64}$
+          anyOf:
+          - type: string
+            pattern: ^[a-fA-F0-9]{64}$
+          - type: 'null'
           title: Sha256 Checksum
           description: 'SHA256 message digest of the file content. Main purpose: cheap
             lookup.'
-      additionalProperties: false
       type: object
       required:
       - file_uuid
@@ -1156,7 +1294,9 @@ components:
         state:
           $ref: '#/components/schemas/FileUploadCompleteState'
         e_tag:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: E Tag
       type: object
       required:
@@ -1166,7 +1306,6 @@ components:
       properties:
         state:
           type: string
-          maxLength: 65536
           minLength: 1
           format: uri
           title: State
@@ -1183,11 +1322,11 @@ components:
       - links
       title: FileUploadCompleteResponse
     FileUploadCompleteState:
+      type: string
       enum:
       - ok
       - nok
       title: FileUploadCompleteState
-      description: An enumeration.
     FileUploadCompletionBody:
       properties:
         parts:
@@ -1203,13 +1342,11 @@ components:
       properties:
         abort_upload:
           type: string
-          maxLength: 65536
           minLength: 1
           format: uri
           title: Abort Upload
         complete_upload:
           type: string
-          maxLength: 65536
           minLength: 1
           format: uri
           title: Complete Upload
@@ -1222,11 +1359,11 @@ components:
       properties:
         chunk_size:
           type: integer
+          minimum: 0
           title: Chunk Size
         urls:
           items:
             type: string
-            maxLength: 65536
             minLength: 1
             format: uri
           type: array
@@ -1258,18 +1395,31 @@ components:
     HealthCheck:
       properties:
         name:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Name
         status:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Status
         api_version:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Api Version
         version:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Version
       type: object
+      required:
+      - name
+      - status
+      - api_version
+      - version
       title: HealthCheck
     LinkType:
       type: string
@@ -1277,12 +1427,10 @@ components:
       - PRESIGNED
       - S3
       title: LinkType
-      description: An enumeration.
     PresignedLink:
       properties:
         link:
           type: string
-          maxLength: 65536
           minLength: 1
           format: uri
           title: Link
@@ -1292,41 +1440,42 @@ components:
       title: PresignedLink
     S3Settings:
       properties:
-        S3_SECURE:
-          type: boolean
-          title: S3 Secure
-          default: false
-        S3_ENDPOINT:
-          type: string
-          title: S3 Endpoint
         S3_ACCESS_KEY:
           type: string
+          maxLength: 50
+          minLength: 1
           title: S3 Access Key
-        S3_SECRET_KEY:
-          type: string
-          title: S3 Secret Key
-        S3_ACCESS_TOKEN:
-          type: string
-          title: S3 Access Token
         S3_BUCKET_NAME:
           type: string
+          maxLength: 50
+          minLength: 1
           title: S3 Bucket Name
+        S3_ENDPOINT:
+          anyOf:
+          - type: string
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: S3 Endpoint
+          description: do not define if using standard AWS
         S3_REGION:
           type: string
+          maxLength: 50
+          minLength: 1
           title: S3 Region
-          default: us-east-1
+        S3_SECRET_KEY:
+          type: string
+          maxLength: 50
+          minLength: 1
+          title: S3 Secret Key
       additionalProperties: false
       type: object
       required:
-      - S3_ENDPOINT
       - S3_ACCESS_KEY
-      - S3_SECRET_KEY
       - S3_BUCKET_NAME
+      - S3_REGION
+      - S3_SECRET_KEY
       title: S3Settings
-      description: "- Customized configuration for all settings\n- If a field is a\
-        \ BaseCustomSettings subclass, it allows creating a default from env vars\
-        \ setting the Field\n  option 'auto_default_from_env=True'.\n\nSEE tests for\
-        \ details."
     SoftCopyBody:
       properties:
         link_id:
@@ -1340,10 +1489,14 @@ components:
     TableSynchronisation:
       properties:
         dry_run:
-          type: boolean
+          anyOf:
+          - type: boolean
+          - type: 'null'
           title: Dry Run
         fire_and_forget:
-          type: boolean
+          anyOf:
+          - type: boolean
+          - type: 'null'
           title: Fire And Forget
         removed:
           items:
@@ -1381,6 +1534,11 @@ components:
       title: TaskGet
     TaskProgress:
       properties:
+        task_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Task Id
         message:
           type: string
           title: Message

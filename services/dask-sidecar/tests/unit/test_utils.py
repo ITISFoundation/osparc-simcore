@@ -13,12 +13,11 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dask_sidecar.utils import num_available_gpus
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_aiodocker(mocker: MockerFixture) -> mock.MagicMock:
-    mock_docker = mocker.patch(
+    return mocker.patch(
         "simcore_service_dask_sidecar.utils.aiodocker.Docker", autospec=True
     )
-    return mock_docker
 
 
 def test_num_available_gpus_returns_0_when_container_not_created(
@@ -74,7 +73,7 @@ def test_num_available_gpus_returns_0_when_container_wait_timesout(
     mock_aiodocker: mock.MagicMock,
 ):
     mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.wait.side_effect = (
-        asyncio.TimeoutError()
+        TimeoutError()
     )
     assert num_available_gpus() == 0
 
@@ -91,6 +90,9 @@ def test_num_available_gpus(
     mock_aiodocker: mock.MagicMock,
 ):
     # default with mock should return 0 gpus
+    mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.wait.return_value = {
+        "StatusCode": 0
+    }
     assert num_available_gpus() == 0
 
     # add the correct log

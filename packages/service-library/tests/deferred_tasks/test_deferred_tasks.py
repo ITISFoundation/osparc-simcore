@@ -16,6 +16,8 @@ from typing import Any, Protocol
 import psutil
 import pytest
 from aiohttp.test_utils import unused_port
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock import MockerFixture
 from servicelib import redis as servicelib_redis
@@ -24,7 +26,6 @@ from servicelib.redis import RedisClientSDK
 from servicelib.sequences_utils import partition_gen
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from settings_library.utils_encoders import create_json_encoder_wo_secrets
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -125,7 +126,6 @@ async def _tcp_command(
 
 def _get_serialization_options() -> dict[str, Any]:
     return {
-        "encoder": create_json_encoder_wo_secrets(RabbitSettings),
         "exclude_defaults": True,
         "exclude_none": True,
         "exclude_unset": True,
@@ -160,8 +160,20 @@ class _RemoteProcessLifecycleManager:
         response = await _tcp_command(
             "init-context",
             {
-                "rabbit": self.rabbit_service.json(**_get_serialization_options()),
-                "redis": self.redis_service.json(**_get_serialization_options()),
+                "rabbit": json_dumps(
+                    model_dump_with_secrets(
+                        self.rabbit_service,
+                        show_secrets=True,
+                        **_get_serialization_options(),
+                    )
+                ),
+                "redis": json_dumps(
+                    model_dump_with_secrets(
+                        self.redis_service,
+                        show_secrets=True,
+                        **_get_serialization_options(),
+                    )
+                ),
                 "max-workers": self.max_workers,
             },
             port=self.remote_process.port,

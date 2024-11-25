@@ -277,12 +277,11 @@ qx.Class.define("osparc.utils.Utils", {
       return reloadButton;
     },
 
-    getUniqueStudyName: function(preferredName, list) {
+    getUniqueName: function(preferredName, existingNames) {
       let title = preferredName;
-      const existingTitles = list.map(study => study.name);
-      if (existingTitles.includes(title)) {
+      if (existingNames.includes(title)) {
         let cont = 1;
-        while (existingTitles.includes(`${title} (${cont})`)) {
+        while (existingNames.includes(`${title} (${cont})`)) {
           cont++;
         }
         title += ` (${cont})`;
@@ -1031,6 +1030,13 @@ qx.Class.define("osparc.utils.Utils", {
     getIdFromWidget: qWidget => {
       if (qWidget.getContentElement && qWidget.getContentElement()) {
         return qWidget.getContentElement().getAttribute("osparc-test-id");
+      }
+      return null;
+    },
+
+    removeIdAttribute: qWidget => {
+      if (qWidget.getContentElement && qWidget.getContentElement()) {
+        return qWidget.getContentElement().removeAttribute("osparc-test-id");
       }
       return null;
     },

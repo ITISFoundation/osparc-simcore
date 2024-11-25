@@ -4,14 +4,17 @@
 from contextlib import contextmanager
 from typing import Any, AsyncIterable, Callable, Iterator
 from unittest.mock import AsyncMock
+from models_library.api_schemas_dynamic_sidecar.containers import (
+    ActivityInfoOrNone
+)
 
 import pytest
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from models_library.utils.json_serialization import json_dumps
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.http_client_thin import ClientHttpError, UnexpectedStatusError
@@ -33,7 +36,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 
 @pytest.fixture
 def dynamic_sidecar_endpoint() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
+    return TypeAdapter(AnyHttpUrl).validate_python("http://missing-host:1111")
 
 
 @pytest.fixture
@@ -352,21 +355,21 @@ async def test_update_volume_state(
 
 
 @pytest.mark.parametrize(
-    "mock_json",
+    "mock_dict",
     [{"seconds_inactive": 1}, {"seconds_inactive": 0}, None],
 )
 async def test_get_service_activity(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
-    mock_json: dict[str, Any],
+    mock_dict: dict[str, Any],
 ) -> None:
     with get_patched_client(
         "get_containers_activity",
         return_value=Response(
-            status_code=status.HTTP_200_OK, text=json_dumps(mock_json)
+            status_code=status.HTTP_200_OK, text=json_dumps(mock_dict)
         ),
     ) as client:
-        assert await client.get_service_activity(dynamic_sidecar_endpoint) == mock_json
+        assert await client.get_service_activity(dynamic_sidecar_endpoint) == TypeAdapter(ActivityInfoOrNone).validate_python(mock_dict)
 
 
 async def test_free_reserved_disk_space(

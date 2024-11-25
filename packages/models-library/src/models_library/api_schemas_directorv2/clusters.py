@@ -1,13 +1,15 @@
-from typing import Any, ClassVar, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
+    ConfigDict,
     Field,
     HttpUrl,
     NonNegativeFloat,
-    root_validator,
-    validator,
+    ValidationInfo,
+    field_validator,
+    model_validator,
 )
 from pydantic.networks import AnyUrl
 from pydantic.types import ByteSize, PositiveFloat
@@ -44,15 +46,14 @@ AvailableResources: TypeAlias = DictModel[str, PositiveFloat]
 
 
 class UsedResources(DictModel[str, NonNegativeFloat]):
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
-    def ensure_negative_value_is_zero(cls, values):
+    def ensure_negative_value_is_zero(cls, values: dict[str, Any]):
         # dasks adds/remove resource values and sometimes
         # they end up being negative instead of 0
-        if v := values.get("__root__", {}):
-            for res_key, res_value in v.items():
-                if res_value < 0:
-                    v[res_key] = 0
+        for res_key, res_value in values.items():
+            if res_value < 0:
+                values[res_key] = 0
         return values
 
 
@@ -72,7 +73,7 @@ class Scheduler(BaseModel):
     status: str = Field(..., description="The running status of the scheduler")
     workers: WorkersDict | None = Field(default_factory=dict)
 
-    @validator("workers", pre=True, always=True)
+    @field_validator("workers", mode="before")
     @classmethod
     def ensure_workers_is_empty_dict(cls, v):
         if v is None:
@@ -91,14 +92,25 @@ class ClusterDetails(BaseModel):
 
 
 class ClusterGet(Cluster):
-    access_rights: dict[GroupID, ClusterAccessRights] = Field(
-        alias="accessRights", default_factory=dict
+    access_rights: Annotated[
+        dict[GroupID, ClusterAccessRights],
+        Field(
+            alias="accessRights",
+            default_factory=dict,
+            json_schema_extra={"default": {}},
+        ),
+    ]
+
+    model_config = ConfigDict(
+        extra="allow",
+        populate_by_name=True,
+        json_schema_extra={
+            # NOTE: make openapi-specs fails because
+            # Cluster.model_config.json_schema_extra is raises `TypeError: unhashable type: 'ClusterAccessRights'`
+        },
     )
 
-    class Config(Cluster.Config):
-        allow_population_by_field_name = True
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def ensure_access_rights_converted(cls, values):
         if "access_rights" in values:
@@ -112,27 +124,14 @@ class ClusterDetailsGet(ClusterDetails):
 
 
 class ClusterCreate(BaseCluster):
-    owner: GroupID | None  # type: ignore[assignment]
-    authentication: ExternalClusterAuthentication
+    owner: GroupID | None = None  # type: ignore[assignment]
+    authentication: ExternalClusterAuthentication = Field(discriminator="type")
     access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
     )
 
-    @validator("thumbnail", always=True, pre=True)
-    @classmethod
-    def set_default_thumbnail_if_empty(cls, v, values):
-        if v is None:
-            cluster_type = values["type"]
-            default_thumbnails = {
-                ClusterTypeInModel.AWS.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
-                ClusterTypeInModel.ON_PREMISE.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Crystal_Clear_app_network_local.png/120px-Crystal_Clear_app_network_local.png",
-                ClusterTypeInModel.ON_DEMAND.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
-            }
-            return default_thumbnails[cluster_type]
-        return v
-
-    class Config(BaseCluster.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "name": "My awesome cluster",
@@ -156,29 +155,43 @@ class ClusterCreate(BaseCluster):
                         "password": "somepassword",
                     },
                     "accessRights": {
-                        154: CLUSTER_ADMIN_RIGHTS,
-                        12: CLUSTER_MANAGER_RIGHTS,
-                        7899: CLUSTER_USER_RIGHTS,
+                        154: CLUSTER_ADMIN_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        12: CLUSTER_MANAGER_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        7899: CLUSTER_USER_RIGHTS.model_dump(),  # type:ignore[dict-item]
                     },
                 },
             ]
         }
+    )
+
+    @field_validator("thumbnail", mode="before")
+    @classmethod
+    def set_default_thumbnail_if_empty(cls, v, info: ValidationInfo):
+        if v is None:
+            cluster_type = info.data["type"]
+            default_thumbnails = {
+                ClusterTypeInModel.AWS.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
+                ClusterTypeInModel.ON_PREMISE.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Crystal_Clear_app_network_local.png/120px-Crystal_Clear_app_network_local.png",
+                ClusterTypeInModel.ON_DEMAND.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
+            }
+            return default_thumbnails[cluster_type]
+        return v
 
 
 class ClusterPatch(BaseCluster):
-    name: str | None  # type: ignore[assignment]
-    description: str | None
-    type: ClusterTypeInModel | None  # type: ignore[assignment]
-    owner: GroupID | None  # type: ignore[assignment]
-    thumbnail: HttpUrl | None
-    endpoint: AnyUrl | None  # type: ignore[assignment]
-    authentication: ExternalClusterAuthentication | None  # type: ignore[assignment]
+    name: str | None = None  # type: ignore[assignment]
+    description: str | None = None
+    type: ClusterTypeInModel | None = None  # type: ignore[assignment]
+    owner: GroupID | None = None  # type: ignore[assignment]
+    thumbnail: HttpUrl | None = None
+    endpoint: AnyUrl | None = None  # type: ignore[assignment]
+    authentication: ExternalClusterAuthentication | None = Field(None, discriminator="type")  # type: ignore[assignment]
     access_rights: dict[GroupID, ClusterAccessRights] | None = Field(  # type: ignore[assignment]
-        alias="accessRights"
+        default=None, alias="accessRights"
     )
 
-    class Config(BaseCluster.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "name": "Changing the name of my cluster",
@@ -188,17 +201,20 @@ class ClusterPatch(BaseCluster):
                 },
                 {
                     "accessRights": {
-                        154: CLUSTER_ADMIN_RIGHTS,
-                        12: CLUSTER_MANAGER_RIGHTS,
-                        7899: CLUSTER_USER_RIGHTS,
+                        154: CLUSTER_ADMIN_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        12: CLUSTER_MANAGER_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        7899: CLUSTER_USER_RIGHTS.model_dump(),  # type:ignore[dict-item]
                     },
                 },
             ]
         }
+    )
 
 
 class ClusterPing(BaseModel):
     endpoint: AnyHttpUrl
     authentication: ClusterAuthentication = Field(
-        ..., description="Dask gateway authentication"
+        ...,
+        description="Dask gateway authentication",
+        discriminator="type",
     )

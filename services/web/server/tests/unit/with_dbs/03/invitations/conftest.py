@@ -66,7 +66,7 @@ def fake_osparc_invitation(
     Emulates an invitation for osparc product
     """
     oas = deepcopy(invitations_service_openapi_specs)
-    content = ApiInvitationContent.parse_obj(
+    content = ApiInvitationContent.model_validate(
         oas["components"]["schemas"]["ApiInvitationContent"]["example"]
     )
     content.product = "osparc"
@@ -117,11 +117,11 @@ def mock_invitations_service_http_api(
     assert "/v1/invitations:extract" in oas["paths"]
 
     def _extract(url, **kwargs):
-        fake_code = URL(URL(kwargs["json"]["invitation_url"]).fragment).query[
+        fake_code = URL(URL(f'{kwargs["json"]["invitation_url"]}').fragment).query[
             "invitation"
         ]
         # if nothing is encoded in fake_code, just return fake_osparc_invitation
-        body = fake_osparc_invitation.dict()
+        body = fake_osparc_invitation.model_dump()
         with suppress(Exception):
             decoded = json.loads(binascii.unhexlify(fake_code).decode())
             body.update(decoded)
@@ -150,7 +150,7 @@ def mock_invitations_service_http_api(
         return CallbackResult(
             status=status.HTTP_200_OK,
             payload=jsonable_encoder(
-                ApiInvitationContentAndLink.parse_obj(
+                ApiInvitationContentAndLink.model_validate(
                     {
                         **example,
                         **body,
@@ -212,5 +212,5 @@ def app_environment(
     )
 
     # tests envs
-    print(ApplicationSettings.create_from_envs().json(indent=2))
+    print(ApplicationSettings.create_from_envs().model_dump_json(indent=2))
     return envs

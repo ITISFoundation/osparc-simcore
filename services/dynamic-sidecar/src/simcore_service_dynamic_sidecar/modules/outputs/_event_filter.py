@@ -14,7 +14,7 @@ from pydantic import (
     NonNegativeInt,
     PositiveFloat,
     PositiveInt,
-    parse_obj_as,
+    TypeAdapter,
 )
 from servicelib.logging_utils import log_context
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
@@ -24,11 +24,11 @@ from ._manager import OutputsManager
 
 PortEvent: TypeAlias = str | None
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-_1_MB: Final[PositiveInt] = parse_obj_as(ByteSize, "1mib")
-_500_MB: Final[PositiveInt] = parse_obj_as(ByteSize, "500mib")
+_1_MB: Final[PositiveInt] = TypeAdapter(ByteSize).validate_python("1mib")
+_500_MB: Final[PositiveInt] = TypeAdapter(ByteSize).validate_python("500mib")
 
 
 class BaseDelayPolicy(ABC):
@@ -164,14 +164,14 @@ class EventFilter:
             if port_key is None:
                 break
 
-            logger.debug("Request upload for port_key %s", port_key)
+            _logger.debug("Request upload for port_key %s", port_key)
             await self.outputs_manager.port_key_content_changed(port_key)
 
     async def enqueue(self, port_key: str) -> None:
         await self._incoming_events_queue.put(port_key)
 
     async def start(self) -> None:
-        with log_context(logger, logging.INFO, f"{EventFilter.__name__} start"):
+        with log_context(_logger, logging.INFO, f"{EventFilter.__name__} start"):
             self._task_incoming_event_ingestion = create_task(
                 self._worker_incoming_event_ingestion(),
                 name=self._worker_incoming_event_ingestion.__name__,
@@ -195,7 +195,7 @@ class EventFilter:
             with suppress(CancelledError):
                 await task
 
-        with log_context(logger, logging.INFO, f"{EventFilter.__name__} shutdown"):
+        with log_context(_logger, logging.INFO, f"{EventFilter.__name__} shutdown"):
             await self._incoming_events_queue.put(None)
             await _cancel_task(self._task_incoming_event_ingestion)
 

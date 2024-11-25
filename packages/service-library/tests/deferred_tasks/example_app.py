@@ -60,6 +60,7 @@ class InMemoryLists:
         self.redis: Redis = RedisClientSDK(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
             decode_responses=True,
+            client_name="example_app",
         ).redis
         self.port = port
 
@@ -84,6 +85,7 @@ class ExampleApp:
         self._redis_client = RedisClientSDK(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
             decode_responses=False,
+            client_name="example_app",
         )
         self._manager = DeferredManager(
             rabbit_settings,
@@ -110,8 +112,8 @@ async def _commands_handler(
 ) -> Any:
     """Handles all commands send by remote party"""
     if command == "init-context":
-        context.redis_settings = RedisSettings.parse_raw(payload["redis"])
-        context.rabbit_settings = RabbitSettings.parse_raw(payload["rabbit"])
+        context.redis_settings = RedisSettings.model_validate_json(payload["redis"])
+        context.rabbit_settings = RabbitSettings.model_validate_json(payload["rabbit"])
         # using the same db as the deferred tasks with different keys
         context.in_memory_lists = InMemoryLists(context.redis_settings, port)
 

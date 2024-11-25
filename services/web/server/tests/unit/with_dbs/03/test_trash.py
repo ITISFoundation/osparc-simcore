@@ -7,7 +7,7 @@
 
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import AsyncIterable, Callable
 from uuid import UUID
 
 import arrow
@@ -16,6 +16,7 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.api_schemas_webserver.folders_v2 import FolderGet
 from models_library.api_schemas_webserver.projects import ProjectGet, ProjectListItem
+from models_library.api_schemas_webserver.workspaces import WorkspaceGet
 from models_library.rest_pagination import Page
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -103,7 +104,7 @@ async def test_trash_projects(  # noqa: PLR0915
     resp = await client.get("/v0/projects")
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[ProjectListItem].parse_obj(await resp.json())
+    page = Page[ProjectListItem].model_validate(await resp.json())
     assert page.meta.total == 1
 
     got = page.data[0]
@@ -114,7 +115,7 @@ async def test_trash_projects(  # noqa: PLR0915
     resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[ProjectListItem].parse_obj(await resp.json())
+    page = Page[ProjectListItem].model_validate(await resp.json())
     assert page.meta.total == 0
 
     # TRASH
@@ -138,7 +139,7 @@ async def test_trash_projects(  # noqa: PLR0915
     # GET
     resp = await client.get(f"/v0/projects/{project_uuid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = ProjectGet.parse_obj(data)
+    got = ProjectGet.model_validate(data)
     assert got.uuid == project_uuid
 
     if could_not_trash:
@@ -152,7 +153,7 @@ async def test_trash_projects(  # noqa: PLR0915
     resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[ProjectListItem].parse_obj(await resp.json())
+    page = Page[ProjectListItem].model_validate(await resp.json())
     if could_not_trash:
         assert page.meta.total == 0
     else:
@@ -166,7 +167,7 @@ async def test_trash_projects(  # noqa: PLR0915
         # GET
         resp = await client.get(f"/v0/projects/{project_uuid}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
-        got = ProjectGet.parse_obj(data)
+        got = ProjectGet.model_validate(data)
 
         assert got.uuid == project_uuid
         assert got.trashed_at is None
@@ -187,7 +188,7 @@ async def test_trash_single_folder(client: TestClient, logged_user: UserInfoDict
     # CREATE a folder
     resp = await client.post("/v0/folders", json={"name": "My first folder"})
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    folder = FolderGet.parse_obj(data)
+    folder = FolderGet.model_validate(data)
 
     # ---------------------------------------------------------------------
 
@@ -195,7 +196,7 @@ async def test_trash_single_folder(client: TestClient, logged_user: UserInfoDict
     resp = await client.get("/v0/folders")
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[FolderGet].parse_obj(await resp.json())
+    page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 1
 
     assert page.data[0] == folder
@@ -204,7 +205,7 @@ async def test_trash_single_folder(client: TestClient, logged_user: UserInfoDict
     resp = await client.get("/v0/folders", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[FolderGet].parse_obj(await resp.json())
+    page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 0
 
     # TRASH
@@ -222,7 +223,7 @@ async def test_trash_single_folder(client: TestClient, logged_user: UserInfoDict
     # GET
     resp = await client.get(f"/v0/folders/{folder.folder_id}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = FolderGet.parse_obj(data)
+    got = FolderGet.model_validate(data)
     assert got.folder_id == folder.folder_id
 
     assert got.trashed_at
@@ -233,7 +234,7 @@ async def test_trash_single_folder(client: TestClient, logged_user: UserInfoDict
     resp = await client.get("/v0/folders", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[FolderGet].parse_obj(await resp.json())
+    page = Page[FolderGet].model_validate(await resp.json())
 
     assert page.meta.total == 1
     assert page.data[0].folder_id == folder.folder_id
@@ -249,7 +250,7 @@ async def test_trash_single_folder(client: TestClient, logged_user: UserInfoDict
     # GET
     resp = await client.get(f"/v0/folders/{folder.folder_id}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = FolderGet.parse_obj(data)
+    got = FolderGet.model_validate(data)
 
     assert got.folder_id == folder.folder_id
     assert got.trashed_at is None
@@ -271,7 +272,7 @@ async def test_trash_folder_with_content(
     # CREATE a folder
     resp = await client.post("/v0/folders", json={"name": "My first folder"})
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    folder = FolderGet.parse_obj(data)
+    folder = FolderGet.model_validate(data)
 
     # CREATE a SUB-folder
     resp = await client.post(
@@ -279,7 +280,7 @@ async def test_trash_folder_with_content(
         json={"name": "My subfolder 1", "parentFolderId": folder.folder_id},
     )
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    subfolder = FolderGet.parse_obj(data)
+    subfolder = FolderGet.model_validate(data)
 
     # MOVE project to SUB-folder
     resp = await client.put(
@@ -290,13 +291,13 @@ async def test_trash_folder_with_content(
     # CHECK created
     resp = await client.get("/v0/folders")
     await assert_status(resp, status.HTTP_200_OK)
-    page = Page[FolderGet].parse_obj(await resp.json())
+    page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 1
     assert page.data[0] == folder
 
     resp = await client.get("/v0/folders", params={"folder_id": f"{folder.folder_id}"})
     await assert_status(resp, status.HTTP_200_OK)
-    page = Page[FolderGet].parse_obj(await resp.json())
+    page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 1
     assert page.data[0] == subfolder
 
@@ -304,7 +305,7 @@ async def test_trash_folder_with_content(
         "/v0/projects", params={"folder_id": f"{subfolder.folder_id}"}
     )
     await assert_status(resp, status.HTTP_200_OK)
-    page = Page[ProjectListItem].parse_obj(await resp.json())
+    page = Page[ProjectListItem].model_validate(await resp.json())
     assert page.meta.total == 1
     assert page.data[0].uuid == project_uuid
     assert page.data[0].folder_id == subfolder.folder_id
@@ -318,7 +319,7 @@ async def test_trash_folder_with_content(
     # ONLY folder listed in trash. The rest is not listed anymore!
     resp = await client.get("/v0/folders", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
-    page = Page[FolderGet].parse_obj(await resp.json())
+    page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 1
     assert page.data[0].folder_id == folder.folder_id
 
@@ -327,7 +328,7 @@ async def test_trash_folder_with_content(
         params={"filters": '{"trashed": true}', "folder_id": f"{folder.folder_id}"},
     )
     await assert_status(resp, status.HTTP_200_OK)
-    page = Page[FolderGet].parse_obj(await resp.json())
+    page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 0
 
     resp = await client.get(
@@ -335,23 +336,23 @@ async def test_trash_folder_with_content(
         params={"filters": '{"trashed": true}', "folder_id": f"{subfolder.folder_id}"},
     )
     await assert_status(resp, status.HTTP_200_OK)
-    page = Page[ProjectListItem].parse_obj(await resp.json())
+    page = Page[ProjectListItem].model_validate(await resp.json())
     assert page.meta.total == 0
 
     # CHECK marked as trashed
     resp = await client.get(f"/v0/folders/{folder.folder_id}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = FolderGet.parse_obj(data)
+    got = FolderGet.model_validate(data)
     assert got.trashed_at is not None
 
     resp = await client.get(f"/v0/folders/{subfolder.folder_id}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = FolderGet.parse_obj(data)
+    got = FolderGet.model_validate(data)
     assert got.trashed_at is not None
 
     resp = await client.get(f"/v0/projects/{project_uuid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = ProjectGet.parse_obj(data)
+    got = ProjectGet.model_validate(data)
     assert got.trashed_at is not None
 
     # UNTRASH folder
@@ -361,7 +362,7 @@ async def test_trash_folder_with_content(
     # NO folders listed in trash.
     resp = await client.get("/v0/folders", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
-    page = Page[FolderGet].parse_obj(await resp.json())
+    page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 0
 
     resp = await client.get(
@@ -369,7 +370,7 @@ async def test_trash_folder_with_content(
         params={"filters": '{"trashed": true}', "folder_id": f"{folder.folder_id}"},
     )
     await assert_status(resp, status.HTTP_200_OK)
-    page = Page[FolderGet].parse_obj(await resp.json())
+    page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 0
 
     resp = await client.get(
@@ -377,21 +378,120 @@ async def test_trash_folder_with_content(
         params={"filters": '{"trashed": true}', "folder_id": f"{subfolder.folder_id}"},
     )
     await assert_status(resp, status.HTTP_200_OK)
-    page = Page[ProjectListItem].parse_obj(await resp.json())
+    page = Page[ProjectListItem].model_validate(await resp.json())
     assert page.meta.total == 0
 
     # CHECK marked as trashed
     resp = await client.get(f"/v0/folders/{folder.folder_id}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = FolderGet.parse_obj(data)
+    got = FolderGet.model_validate(data)
     assert got.trashed_at is None
 
     resp = await client.get(f"/v0/folders/{subfolder.folder_id}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = FolderGet.parse_obj(data)
+    got = FolderGet.model_validate(data)
     assert got.trashed_at is None
 
     resp = await client.get(f"/v0/projects/{project_uuid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = ProjectGet.parse_obj(data)
+    got = ProjectGet.model_validate(data)
     assert got.trashed_at is None
+
+
+@pytest.fixture
+async def workspace(
+    client: TestClient, logged_user: UserInfoDict
+) -> AsyncIterable[WorkspaceGet]:
+
+    # CREATE a workspace
+    resp = await client.post("/v0/workspaces", json={"name": "My first workspace"})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    workspace = WorkspaceGet.parse_obj(data)
+
+    yield workspace
+
+    # DELETE a workspace
+    resp = await client.delete(f"/v0/workspaces/{workspace.workspace_id}")
+    data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-simcore/pull/6690"
+)
+async def test_trash_empty_workspace(
+    client: TestClient, logged_user: UserInfoDict, workspace: WorkspaceGet
+):
+    assert client.app
+
+    assert workspace.trashed_at is None
+    assert workspace.trashed_by is None
+
+    # LIST NOT trashed (default)
+    resp = await client.get("/v0/workspaces")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0] == workspace
+
+    # LIST trashed
+    resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 0
+
+    # -------------
+
+    _exclude_attrs = {"trashed_by", "trashed_at", "modified_at"}
+
+    # TRASH
+    before_trash = arrow.utcnow().datetime
+    resp = await client.post(f"/v0/workspaces/{workspace.workspace_id}:trash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # LIST NOT trashed (default)
+    resp = await client.get("/v0/workspaces")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 0
+
+    # LIST trashed
+    resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0].dict(exclude=_exclude_attrs) == workspace.dict(
+        exclude=_exclude_attrs
+    )
+    assert page.data[0].trashed_at is not None
+    assert before_trash < page.data[0].trashed_at
+    assert page.data[0].trashed_by == logged_user["id"]
+
+    # --------
+
+    # UN_TRASH
+    resp = await client.post(f"/v0/workspaces/{workspace.workspace_id}:untrash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # LIST NOT trashed (default)
+    resp = await client.get("/v0/workspaces")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0].dict(exclude=_exclude_attrs) == workspace.dict(
+        exclude=_exclude_attrs
+    )
+
+    assert page.data[0].trashed_at is None
+    assert page.data[0].trashed_by is None
+
+    # LIST trashed
+    resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    assert page.meta.total == 0

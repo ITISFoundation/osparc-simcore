@@ -1,14 +1,15 @@
 from contextlib import suppress
-from typing import Any, ClassVar
 
 from pydantic import (
+    AnyHttpUrl,
     AnyUrl,
     BaseModel,
+    ConfigDict,
     Field,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
-    root_validator,
-    validator,
+    field_validator,
+    model_validator,
 )
 
 from ..emails import LowerCaseEmailStr
@@ -25,15 +26,15 @@ class GroupAccessRights(BaseModel):
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {"read": True, "write": False, "delete": False},
                 {"read": True, "write": True, "delete": False},
                 {"read": True, "write": True, "delete": True},
             ]
         }
+    )
 
 
 class GroupGet(OutputSchema):
@@ -50,17 +51,8 @@ class GroupGet(OutputSchema):
         alias="inclusionRules",
     )
 
-    @validator("thumbnail", pre=True)
-    @classmethod
-    def _sanitize_legacy_data(cls, v):
-        if v:
-            # Enforces null if thumbnail is not valid URL or empty
-            with suppress(ValidationError):
-                return parse_obj_as(AnyUrl, v)
-        return None
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "gid": "27",
@@ -91,6 +83,16 @@ class GroupGet(OutputSchema):
                 },
             ]
         }
+    )
+
+    @field_validator("thumbnail", mode="before")
+    @classmethod
+    def _sanitize_legacy_data(cls, v):
+        if v:
+            # Enforces null if thumbnail is not valid URL or empty
+            with suppress(ValidationError):
+                return TypeAdapter(AnyHttpUrl).validate_python(v)
+        return None
 
 
 class GroupCreate(InputSchema):
@@ -111,8 +113,8 @@ class MyGroupsGet(OutputSchema):
     all: GroupGet
     product: GroupGet | None = None
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "me": {
                     "gid": "27",
@@ -150,19 +152,22 @@ class MyGroupsGet(OutputSchema):
                 },
             }
         }
+    )
 
 
 class GroupUserGet(BaseModel):
-    id: str | None = Field(None, description="the user id")
+    id: str | None = Field(None, description="the user id", coerce_numbers_to_str=True)
     login: LowerCaseEmailStr | None = Field(None, description="the user login email")
     first_name: str | None = Field(None, description="the user first name")
     last_name: str | None = Field(None, description="the user last name")
     gravatar_id: str | None = Field(None, description="the user gravatar id hash")
-    gid: str | None = Field(None, description="the user primary gid")
+    gid: str | None = Field(
+        None, description="the user primary gid", coerce_numbers_to_str=True
+    )
     access_rights: GroupAccessRights = Field(..., alias="accessRights")
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "1",
                 "login": "mr.smith@matrix.com",
@@ -177,6 +182,7 @@ class GroupUserGet(BaseModel):
                 },
             }
         }
+    )
 
 
 class GroupUserAdd(InputSchema):
@@ -187,14 +193,13 @@ class GroupUserAdd(InputSchema):
     uid: UserID | None = None
     email: LowerCaseEmailStr | None = None
 
-    _check_uid_or_email = root_validator(allow_reuse=True)(
+    _check_uid_or_email = model_validator(mode="after")(
         create__check_only_one_is_set__root_validator(["uid", "email"])
     )
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [{"uid": 42}, {"email": "foo@email.com"}]
-        }
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [{"uid": 42}, {"email": "foo@email.com"}]}
+    )
 
 
 class GroupUserUpdate(InputSchema):
@@ -202,8 +207,8 @@ class GroupUserUpdate(InputSchema):
     # update for the moment partial attributes e.g. {read: False}
     access_rights: GroupAccessRights
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "accessRights": {
                     "read": True,
@@ -212,3 +217,4 @@ class GroupUserUpdate(InputSchema):
                 },
             }
         }
+    )

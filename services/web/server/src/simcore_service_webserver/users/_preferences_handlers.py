@@ -5,32 +5,23 @@ from models_library.api_schemas_webserver.users_preferences import (
     PatchPathParams,
     PatchRequestBody,
 )
-from models_library.products import ProductName
-from models_library.users import UserID
-from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_user_preferences import (
     CouldNotCreateOrUpdateUserPreferenceError,
 )
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
+from ..models import RequestContext
 from . import _preferences_api
 from .exceptions import FrontendUserPreferenceIsNotDefinedError
 
 routes = web.RouteTableDef()
-
-
-class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: ProductName = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 def _handle_users_exceptions(handler: Handler):
@@ -55,7 +46,7 @@ def _handle_users_exceptions(handler: Handler):
 @login_required
 @_handle_users_exceptions
 async def set_frontend_preference(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     req_body = await parse_request_body_as(PatchRequestBody, request)
     req_path_params = parse_request_path_parameters_as(PatchPathParams, request)
 

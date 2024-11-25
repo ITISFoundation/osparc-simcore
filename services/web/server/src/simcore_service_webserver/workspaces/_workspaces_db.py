@@ -15,18 +15,25 @@ from models_library.workspaces import (
     UserWorkspaceAccessRightsDB,
     WorkspaceDB,
     WorkspaceID,
+    WorkspaceUpdateDB,
 )
 from pydantic import NonNegativeInt
-from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
 )
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
+from simcore_postgres_database.utils_workspaces_sql import (
+    create_my_workspace_access_rights_subquery,
+)
 from sqlalchemy import asc, desc, func
-from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
-from sqlalchemy.sql import Subquery, select
+from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.sql import select
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_asyncpg_engine
 from .errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -40,19 +47,28 @@ _SELECTION_ARGS = (
     workspaces.c.thumbnail,
     workspaces.c.created,
     workspaces.c.modified,
+    workspaces.c.trashed,
+    workspaces.c.trashed_by,
+)
+
+assert set(WorkspaceDB.model_fields) == {c.name for c in _SELECTION_ARGS}  # nosec
+assert set(WorkspaceUpdateDB.model_fields).issubset(  # nosec
+    c.name for c in workspaces.columns
 )
 
 
 async def create_workspace(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     product_name: ProductName,
     owner_primary_gid: GroupID,
     name: str,
     description: str | None,
     thumbnail: str | None,
 ) -> WorkspaceDB:
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
             workspaces.insert()
             .values(
                 name=name,
@@ -66,10 +82,10 @@ async def create_workspace(
             .returning(*_SELECTION_ARGS)
         )
         row = await result.first()
-        return WorkspaceDB.from_orm(row)
+        return WorkspaceDB.model_validate(row)
 
 
-access_rights_subquery = (
+_access_rights_subquery = (
     select(
         workspaces_access_rights.c.workspace_id,
         func.jsonb_object_agg(
@@ -91,51 +107,39 @@ access_rights_subquery = (
 ).subquery("access_rights_subquery")
 
 
-def _create_my_access_rights_subquery(user_id: UserID) -> Subquery:
-    return (
-        select(
-            workspaces_access_rights.c.workspace_id,
-            func.json_build_object(
-                "read",
-                func.max(workspaces_access_rights.c.read.cast(INTEGER)).cast(BOOLEAN),
-                "write",
-                func.max(workspaces_access_rights.c.write.cast(INTEGER)).cast(BOOLEAN),
-                "delete",
-                func.max(workspaces_access_rights.c.delete.cast(INTEGER)).cast(BOOLEAN),
-            ).label("my_access_rights"),
-        )
-        .select_from(
-            workspaces_access_rights.join(
-                user_to_groups, user_to_groups.c.gid == workspaces_access_rights.c.gid
-            )
-        )
-        .where(user_to_groups.c.uid == user_id)
-        .group_by(workspaces_access_rights.c.workspace_id)
-    ).subquery("my_access_rights_subquery")
-
-
 async def list_workspaces_for_user(
     app: web.Application,
+    connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     product_name: ProductName,
+    filter_trashed: bool | None,
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
 ) -> tuple[int, list[UserWorkspaceAccessRightsDB]]:
-    my_access_rights_subquery = _create_my_access_rights_subquery(user_id=user_id)
+    my_access_rights_subquery = create_my_workspace_access_rights_subquery(
+        user_id=user_id
+    )
 
     base_query = (
         select(
             *_SELECTION_ARGS,
-            access_rights_subquery.c.access_rights,
+            _access_rights_subquery.c.access_rights,
             my_access_rights_subquery.c.my_access_rights,
         )
         .select_from(
-            workspaces.join(access_rights_subquery).join(my_access_rights_subquery)
+            workspaces.join(_access_rights_subquery).join(my_access_rights_subquery)
         )
         .where(workspaces.c.product_name == product_name)
     )
+
+    if filter_trashed is not None:
+        base_query = base_query.where(
+            workspaces.c.trashed.is_not(None)
+            if filter_trashed
+            else workspaces.c.trashed.is_(None)
+        )
 
     # Select total count from base_query
     subquery = base_query.subquery()
@@ -148,35 +152,37 @@ async def list_workspaces_for_user(
         list_query = base_query.order_by(desc(getattr(workspaces.c, order_by.field)))
     list_query = list_query.offset(offset).limit(limit)
 
-    async with get_database_engine(app).acquire() as conn:
-        count_result = await conn.execute(count_query)
-        total_count = await count_result.scalar()
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        total_count = await conn.scalar(count_query)
 
-        result = await conn.execute(list_query)
-        rows = await result.fetchall() or []
-        results: list[UserWorkspaceAccessRightsDB] = [
-            UserWorkspaceAccessRightsDB.from_orm(row) for row in rows
+        result = await conn.stream(list_query)
+        items: list[UserWorkspaceAccessRightsDB] = [
+            UserWorkspaceAccessRightsDB.model_validate(row) async for row in result
         ]
 
-        return cast(int, total_count), results
+        return cast(int, total_count), items
 
 
 async def get_workspace_for_user(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     user_id: UserID,
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> UserWorkspaceAccessRightsDB:
-    my_access_rights_subquery = _create_my_access_rights_subquery(user_id=user_id)
+    my_access_rights_subquery = create_my_workspace_access_rights_subquery(
+        user_id=user_id
+    )
 
     base_query = (
         select(
             *_SELECTION_ARGS,
-            access_rights_subquery.c.access_rights,
+            _access_rights_subquery.c.access_rights,
             my_access_rights_subquery.c.my_access_rights,
         )
         .select_from(
-            workspaces.join(access_rights_subquery).join(my_access_rights_subquery)
+            workspaces.join(_access_rights_subquery).join(my_access_rights_subquery)
         )
         .where(
             (workspaces.c.workspace_id == workspace_id)
@@ -184,33 +190,34 @@ async def get_workspace_for_user(
         )
     )
 
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(base_query)
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(base_query)
         row = await result.first()
         if row is None:
             raise WorkspaceAccessForbiddenError(
                 reason=f"User {user_id} does not have access to the workspace {workspace_id}. Or workspace does not exist.",
             )
-        return UserWorkspaceAccessRightsDB.from_orm(row)
+        return UserWorkspaceAccessRightsDB.model_validate(row)
 
 
 async def update_workspace(
     app: web.Application,
-    workspace_id: WorkspaceID,
-    name: str,
-    description: str | None,
-    thumbnail: str | None,
+    connection: AsyncConnection | None = None,
+    *,
     product_name: ProductName,
+    workspace_id: WorkspaceID,
+    updates: WorkspaceUpdateDB,
 ) -> WorkspaceDB:
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(
+    # NOTE: at least 'touch' if updated_values is empty
+    _updates = {
+        **updates.dict(exclude_unset=True),
+        "modified": func.now(),
+    }
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
             workspaces.update()
-            .values(
-                name=name,
-                description=description,
-                thumbnail=thumbnail,
-                modified=func.now(),
-            )
+            .values(**_updates)
             .where(
                 (workspaces.c.workspace_id == workspace_id)
                 & (workspaces.c.product_name == product_name)
@@ -220,15 +227,17 @@ async def update_workspace(
         row = await result.first()
         if row is None:
             raise WorkspaceNotFoundError(reason=f"Workspace {workspace_id} not found.")
-        return WorkspaceDB.from_orm(row)
+        return WorkspaceDB.model_validate(row)
 
 
 async def delete_workspace(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
             workspaces.delete().where(
                 (workspaces.c.workspace_id == workspace_id)

@@ -12,8 +12,9 @@
 --requirement _tools.txt
 
 # installs this repo's packages
+simcore-common-library @ ../common-library
+simcore-models-library @ ../models-library/
 pytest-simcore @ ../pytest-simcore
-simcore-models-library @ ../models-library
 simcore-service-library @ ../service-library/
 simcore-settings-library @ ../settings-library/
 

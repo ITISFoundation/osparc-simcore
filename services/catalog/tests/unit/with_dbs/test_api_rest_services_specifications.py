@@ -4,10 +4,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
-from random import choice, randint
 from typing import Any
 
 import pytest
@@ -16,7 +14,6 @@ from faker import Faker
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
-    ServiceSpecificationsGet,
 )
 from models_library.generated_models.docker_rest_api import (
     DiscreteResourceSpec,
@@ -29,7 +26,7 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.generated_models.docker_rest_api import (
     Resources1 as ServiceTaskResources,
 )
-from models_library.generated_models.docker_rest_api import ServiceSpec
+from models_library.generated_models.docker_rest_api import ServiceSpec, TaskSpec
 from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.models.groups import user_to_groups
@@ -93,29 +90,33 @@ def create_service_specifications(
             service_key=service_key,
             service_version=service_version,
             gid=gid,
-            sidecar=ServiceSpec(Labels=faker.pydict(allowed_types=(str,))),  # type: ignore
-            service=ServiceTaskResources(
-                Limits=Limit(
-                    NanoCPUs=faker.pyint(),
-                    MemoryBytes=faker.pyint(),
-                    Pids=faker.pyint(),
-                ),
-                Reservations=ResourceObject(
-                    NanoCPUs=faker.pyint(),
-                    MemoryBytes=faker.pyint(),
-                    GenericResources=GenericResources(
-                        __root__=[
-                            GenericResource(
-                                NamedResourceSpec=NamedResourceSpec(
-                                    Kind=faker.pystr(), Value=faker.pystr()
-                                ),
-                                DiscreteResourceSpec=DiscreteResourceSpec(
-                                    Kind=faker.pystr(), Value=faker.pyint()
-                                ),
-                            )
-                        ]
-                    ),
-                ),
+            sidecar=ServiceSpec(Labels=faker.pydict(allowed_types=(str,))),
+            service=ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=ServiceTaskResources(
+                        Limits=Limit(
+                            NanoCPUs=faker.pyint(),
+                            MemoryBytes=faker.pyint(),
+                            Pids=faker.pyint(),
+                        ),
+                        Reservations=ResourceObject(
+                            NanoCPUs=faker.pyint(),
+                            MemoryBytes=faker.pyint(),
+                            GenericResources=GenericResources(
+                                root=[
+                                    GenericResource(
+                                        NamedResourceSpec=NamedResourceSpec(
+                                            Kind=faker.pystr(), Value=faker.pystr()
+                                        ),
+                                        DiscreteResourceSpec=DiscreteResourceSpec(
+                                            Kind=faker.pystr(), Value=faker.pyint()
+                                        ),
+                                    )
+                                ]
+                            ),
+                        ),
+                    )
+                )
             ),
         )
 
@@ -128,9 +129,14 @@ async def test_get_service_specifications_returns_403_if_user_does_not_exist(
     rabbitmq_and_rpc_setup_disabled: None,
     client: TestClient,
     user_id: UserID,
+    faker: Faker,
 ):
-    service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
-    service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
+    service_key = (
+        f"simcore/services/{faker.random_element(['comp', 'dynamic'])}/jupyter-math"
+    )
+    service_version = (
+        f"{faker.random_int(0,100)}.{faker.random_int(0,100)}.{faker.random_int(0,100)}"
+    )
     url = URL(
         f"/v0/services/{service_key}/{service_version}/specifications"
     ).with_query(user_id=user_id)
@@ -147,21 +153,21 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
     user: dict[str, Any],
     faker: Faker,
 ):
-    service_key = (
-        f"simcore/services/{choice(['comp', 'dynamic'])}/{faker.pystr().lower()}"
+    service_key = f"simcore/services/{faker.random_element(['comp', 'dynamic'])}/{faker.pystr().lower()}"
+    service_version = (
+        f"{faker.random_int(0,100)}.{faker.random_int(0,100)}.{faker.random_int(0,100)}"
     )
-    service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
     url = URL(
         f"/v0/services/{service_key}/{service_version}/specifications"
     ).with_query(user_id=user_id)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
 
     assert (
-        service_specs
-        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+        service_specs.model_dump()
+        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
     )
 
 
@@ -201,11 +207,11 @@ async def test_get_service_specifications(
     # this should now return default specs since there are none in the db
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
     assert (
-        service_specs
-        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+        service_specs.model_dump()
+        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
     )
 
     everyone_gid, user_gid, team_gid = user_groups_ids
@@ -216,10 +222,10 @@ async def test_get_service_specifications(
     await services_specifications_injector(everyone_service_specs)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
-    assert service_specs == ServiceSpecifications.parse_obj(
-        everyone_service_specs.dict()
+    assert service_specs == ServiceSpecifications.model_validate(
+        everyone_service_specs.model_dump()
     )
 
     # let's inject some rights in a standard group, user is not part of that group yet, so it should still return only everyone
@@ -229,10 +235,10 @@ async def test_get_service_specifications(
     await services_specifications_injector(standard_group_service_specs)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
-    assert service_specs == ServiceSpecifications.parse_obj(
-        everyone_service_specs.dict()
+    assert service_specs == ServiceSpecifications.model_validate(
+        everyone_service_specs.model_dump()
     )
 
     # put the user in that group now and try again
@@ -240,10 +246,10 @@ async def test_get_service_specifications(
         await conn.execute(user_to_groups.insert().values(uid=user_id, gid=team_gid))
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
-    assert service_specs == ServiceSpecifications.parse_obj(
-        standard_group_service_specs.dict()
+    assert service_specs == ServiceSpecifications.model_validate(
+        standard_group_service_specs.model_dump()
     )
 
     # now add some other spec in the primary gid, this takes precedence
@@ -253,10 +259,10 @@ async def test_get_service_specifications(
     await services_specifications_injector(user_group_service_specs)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
-    assert service_specs == ServiceSpecifications.parse_obj(
-        user_group_service_specs.dict()
+    assert service_specs == ServiceSpecifications.model_validate(
+        user_group_service_specs.model_dump()
     )
 
 
@@ -328,11 +334,11 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         )
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
-        service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+        service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
         assert (
-            service_specs
-            == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+            service_specs.model_dump()
+            == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
         )
 
     # check version between first index and second all return the specs of the first
@@ -344,10 +350,10 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         )
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
-        service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+        service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
-        assert service_specs == ServiceSpecifications.parse_obj(
-            version_speced[0].dict()
+        assert service_specs == ServiceSpecifications.model_validate(
+            version_speced[0].model_dump()
         ), f"specifications for {version=} are not passed down from {sorted_versions[INDEX_FIRST_SERVICE_VERSION_WITH_SPEC]}"
 
     # check version from second to last use the second version
@@ -357,10 +363,10 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         )
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
-        service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+        service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
-        assert service_specs == ServiceSpecifications.parse_obj(
-            version_speced[1].dict()
+        assert service_specs == ServiceSpecifications.model_validate(
+            version_speced[1].model_dump()
         ), f"specifications for {version=} are not passed down from {sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC]}"
 
     # if we call with the strict parameter set to true, then we should only get the specs for the one that were specified
@@ -370,7 +376,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         )
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
-        service_specs = ServiceSpecificationsGet.parse_obj(response.json())
+        service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
         if version in versions_with_specs:
             assert (

@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 from typing import cast
 
 from aiohttp import ClientSession, ClientTimeout, web
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 
 from ..utils import (
     get_http_client_request_aiohttp_connect_timeout,

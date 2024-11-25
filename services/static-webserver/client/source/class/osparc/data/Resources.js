@@ -314,6 +314,11 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
+          getPageSearch: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/folders:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}"
+          },
           getOne: {
             method: "GET",
             url: statics.API + "/folders/{folderId}"

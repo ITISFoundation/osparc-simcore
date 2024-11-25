@@ -3,6 +3,7 @@ import logging
 from collections import deque
 from typing import Any
 
+import arrow
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
@@ -51,7 +52,7 @@ class CompRunsRepository(BaseRepository):
             row: RowProxy | None = await result.first()
             if not row:
                 raise ComputationalRunNotFoundError
-            return CompRunsAtDB.from_orm(row)
+            return CompRunsAtDB.model_validate(row)
 
     async def list(
         self, filter_by_state: set[RunningState] | None = None
@@ -70,7 +71,7 @@ class CompRunsRepository(BaseRepository):
                     )
                 )
             ):
-                runs_in_db.append(CompRunsAtDB.from_orm(row))
+                runs_in_db.append(CompRunsAtDB.model_validate(row))
         return list(runs_in_db)
 
     async def create(
@@ -114,7 +115,7 @@ class CompRunsRepository(BaseRepository):
                     .returning(literal_column("*"))
                 )
                 row = await result.first()
-                return CompRunsAtDB.from_orm(row)
+                return CompRunsAtDB.model_validate(row)
         except ForeignKeyViolation as exc:
             raise ClusterNotFoundError(cluster_id=cluster_id) from exc
 
@@ -133,7 +134,7 @@ class CompRunsRepository(BaseRepository):
                 .returning(literal_column("*"))
             )
             row = await result.first()
-            return CompRunsAtDB.from_orm(row) if row else None
+            return CompRunsAtDB.model_validate(row) if row else None
 
     async def set_run_result(
         self,
@@ -146,10 +147,20 @@ class CompRunsRepository(BaseRepository):
     ) -> CompRunsAtDB | None:
         values: dict[str, Any] = {"result": RUNNING_STATE_TO_DB[result_state]}
         if final_state:
-            values.update({"ended": datetime.datetime.now(tz=datetime.UTC)})
+            values.update({"ended": arrow.utcnow().datetime})
         return await self.update(
             user_id,
             project_id,
             iteration,
             **values,
+        )
+
+    async def mark_for_cancellation(
+        self, *, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+    ) -> CompRunsAtDB | None:
+        return await self.update(
+            user_id,
+            project_id,
+            iteration,
+            cancelled=arrow.utcnow().datetime,
         )

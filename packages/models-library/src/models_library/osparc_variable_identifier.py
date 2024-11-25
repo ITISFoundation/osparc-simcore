@@ -1,29 +1,24 @@
 from copy import deepcopy
 from typing import Any, TypeVar
 
-from pydantic import BaseModel, Field
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
+from models_library.basic_types import ConstrainedStr
+
+from pydantic import BaseModel
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 
 T = TypeVar("T")
 
 
-class OsparcVariableIdentifier(BaseModel):
+class OsparcVariableIdentifier(ConstrainedStr):
     # NOTE: To allow parametrized value, set the type to Union[OsparcVariableIdentifier, ...]
     # NOTE: When dealing with str types, to avoid unexpected behavior, the following
     # order is suggested `OsparcVariableIdentifier | str`
-    __root__: str = Field(
-        ...,
-        # NOTE: in below regex `{`` and `}` are respectively escaped with `{{` and `}}`
-        regex=rf"^\${{1,2}}(?:\{{)?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+(?:\}})?(:-.+)?$",
+    # NOTE: in below regex `{`` and `}` are respectively escaped with `{{` and `}}`
+    pattern = (
+        rf"^\${{1,2}}(?:\{{)?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+(?:\}})?(:-.+)?$"
     )
-
-    def __hash__(self):
-        return hash(str(self.__root__))
-
-    def __eq__(self, other):
-        return self.__root__ == other.__root__
 
     def _get_without_template_markers(self) -> str:
         # $VAR
@@ -32,7 +27,7 @@ class OsparcVariableIdentifier(BaseModel):
         # ${VAR:-default}
         # ${VAR:-{}}
         return (
-            self.__root__.removeprefix("$$")
+            self.removeprefix("$$")
             .removeprefix("$")
             .removeprefix("{")
             .removesuffix("}")
@@ -48,7 +43,7 @@ class OsparcVariableIdentifier(BaseModel):
         return parts[1] if len(parts) > 1 else None
 
 
-class UnresolvedOsparcVariableIdentifierError(PydanticErrorMixin, TypeError):
+class UnresolvedOsparcVariableIdentifierError(OsparcErrorMixin, TypeError):
     msg_template = "Provided argument is unresolved: value={value}"
 
 

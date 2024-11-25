@@ -1,6 +1,5 @@
 import logging
 from functools import partial
-from typing import Any, ClassVar
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -8,15 +7,21 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as
-from simcore_service_api_server.exceptions.backend_errors import (
-    JobNotFoundError,
-    LogFileNotFoundError,
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    TypeAdapter,
 )
+from settings_library.tracing import TracingSettings
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
 from ..db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
+from ..exceptions.backend_errors import JobNotFoundError, LogFileNotFoundError
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.schemas.jobs import PercentageInt
 from ..models.schemas.studies import JobLogsMap, LogLink
@@ -40,18 +45,19 @@ class ComputationTaskGet(ComputationTask):
     def guess_progress(self) -> PercentageInt:
         # guess progress based on self.state
         if self.state in [RunningState.SUCCESS, RunningState.FAILED]:
-            return PercentageInt(100)
-        return PercentageInt(0)
+            return 100
+        return 0
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
-                    **ComputationTask.Config.schema_extra["examples"][0],
+                    **ComputationTask.model_config["json_schema_extra"]["examples"][0],  # type: ignore
                     "url": "https://link-to-stop-computation",
                 }
             ]
         }
+    )
 
 
 class TaskLogFileGet(BaseModel):
@@ -85,7 +91,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
     @_exception_mapper({})
@@ -121,7 +127,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
@@ -135,7 +141,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
@@ -149,7 +155,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
@@ -178,12 +184,13 @@ class DirectorV2Api(BaseServiceClientApi):
         # probably not found
         response.raise_for_status()
 
-        log_links: list[LogLink] = []
-        for r in parse_raw_as(list[TaskLogFileGet], response.text or "[]"):
-            if r.download_link:
-                log_links.append(
-                    LogLink(node_name=f"{r.task_id}", download_link=r.download_link)
-                )
+        log_links: list[LogLink] = [
+            LogLink(node_name=f"{r.task_id}", download_link=r.download_link)
+            for r in TypeAdapter(list[TaskLogFileGet]).validate_json(
+                response.text or "[]"
+            )
+            if r.download_link
+        ]
 
         return JobLogsMap(log_links=log_links)
 
@@ -191,11 +198,14 @@ class DirectorV2Api(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: DirectorV2Settings) -> None:
+def setup(
+    app: FastAPI, settings: DirectorV2Settings, tracing_settings: TracingSettings | None
+) -> None:
     setup_client_instance(
         app,
         DirectorV2Api,
         # WARNING: it has /v0 and /v2 prefixes
         api_baseurl=settings.base_url,
         service_name="director_v2",
+        tracing_settings=tracing_settings,
     )

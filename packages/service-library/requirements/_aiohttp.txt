@@ -2,7 +2,10 @@ aiohappyeyeballs==2.4.0
     # via aiohttp
 aiohttp==3.10.5
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_aiohttp.in
@@ -18,14 +21,6 @@ attrs==24.2.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2024.8.30
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   requests
-charset-normalizer==3.3.2
-    # via requests
 deprecated==1.2.14
     # via
     #   opentelemetry-api
@@ -37,45 +32,19 @@ frozenlist==1.4.1
 greenlet==3.1.1
     # via sqlalchemy
 idna==3.10
-    # via
-    #   requests
-    #   yarl
+    # via yarl
 importlib-metadata==8.4.0
     # via opentelemetry-api
-isodate==0.6.1
-    # via openapi-core
 jsonschema==4.23.0
-    # via
-    #   -r requirements/_aiohttp.in
-    #   openapi-core
-    #   openapi-schema-validator
-    #   openapi-spec-validator
-jsonschema-path==0.3.3
-    # via
-    #   openapi-core
-    #   openapi-spec-validator
+    # via -r requirements/_aiohttp.in
 jsonschema-specifications==2023.7.1
-    # via
-    #   jsonschema
-    #   openapi-schema-validator
-lazy-object-proxy==1.10.0
-    # via openapi-spec-validator
+    # via jsonschema
 markupsafe==2.1.5
     # via werkzeug
-more-itertools==10.5.0
-    # via openapi-core
 multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-openapi-core==0.19.4
-    # via -r requirements/_aiohttp.in
-openapi-schema-validator==0.6.2
-    # via
-    #   openapi-core
-    #   openapi-spec-validator
-openapi-spec-validator==0.7.1
-    # via openapi-core
 opentelemetry-api==1.27.0
     # via
     #   opentelemetry-instrumentation
@@ -107,58 +76,33 @@ opentelemetry-util-http==0.48b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-parse==1.20.2
-    # via openapi-core
-pathable==0.4.3
-    # via jsonschema-path
 prometheus-client==0.21.0
     # via -r requirements/_aiohttp.in
 psycopg2-binary==2.9.9
     # via
     #   aiopg
     #   sqlalchemy
-pyyaml==6.0.2
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   jsonschema-path
 referencing==0.29.3
     # via
-    #   -c requirements/./constraints.txt
     #   jsonschema
-    #   jsonschema-path
     #   jsonschema-specifications
-requests==2.32.3
-    # via jsonschema-path
-rfc3339-validator==0.1.4
-    # via openapi-schema-validator
 rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
 setuptools==75.1.0
     # via opentelemetry-instrumentation
-six==1.16.0
-    # via
-    #   isodate
-    #   rfc3339-validator
 sqlalchemy==1.4.54
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   aiopg
-urllib3==2.2.3
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   requests
 werkzeug==3.0.4
-    # via
-    #   -r requirements/_aiohttp.in
-    #   openapi-core
+    # via -r requirements/_aiohttp.in
 wrapt==1.16.0
     # via
     #   deprecated

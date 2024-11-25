@@ -29,7 +29,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         settings = ApplicationSettings.create_from_envs()
 
     assert settings  # nosec
-    _logger.debug(settings.json(indent=2))
+    _logger.debug(settings.model_dump_json(indent=2))
 
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
@@ -46,8 +46,13 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     # STATE
     app.state.settings = settings
 
+    if settings.CATALOG_TRACING:
+        setup_tracing(app, settings.CATALOG_TRACING, APP_NAME)
+
     # STARTUP-EVENT
-    app.add_event_handler("startup", create_on_startup(app))
+    app.add_event_handler(
+        "startup", create_on_startup(app, tracing_settings=settings.CATALOG_TRACING)
+    )
 
     # PLUGIN SETUP
     setup_function_services(app)
@@ -65,8 +70,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         app.add_middleware(
             BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
         )
-    if app.state.settings.CATALOG_TRACING:
-        setup_tracing(app, app.state.settings.CATALOG_TRACING, APP_NAME)
 
     app.add_middleware(GZipMiddleware)
 

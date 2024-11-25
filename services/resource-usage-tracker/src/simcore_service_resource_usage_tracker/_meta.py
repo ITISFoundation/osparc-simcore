@@ -6,7 +6,7 @@ from typing import Final
 
 from models_library.basic_types import VersionStr
 from packaging.version import Version
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.utils_meta import PackageInfo
 from settings_library.basic_types import VersionTag
 
@@ -17,9 +17,11 @@ __version__: Final[VersionStr] = info.__version__
 PROJECT_NAME: Final[str] = info.project_name
 VERSION: Final[Version] = info.version
 API_VERSION: Final[VersionStr] = info.__version__
-API_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, info.api_prefix_path_tag)
+API_VTAG: Final[VersionTag] = TypeAdapter(VersionTag).validate_python(
+    info.api_prefix_path_tag
+)
 SUMMARY: Final[str] = info.get_summary()
-
+APP_NAME: Final[str] = PROJECT_NAME
 
 # NOTE: https://texteditor.com/ascii-frames/
 APP_STARTED_BANNER_MSG = r"""

@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter, ValidationError
 
 from ..core.settings import ApplicationSettings, get_application_settings
 from . import efs_manager_utils
@@ -128,9 +128,9 @@ class EfsManager:
         for child in _dir_path.iterdir():
             if child.is_dir():
                 try:
-                    _project_id = parse_obj_as(ProjectID, child.name)
+                    _project_id = TypeAdapter(ProjectID).validate_python(child.name)
                     project_uuids.append(_project_id)
-                except ValueError:
+                except ValidationError:
                     _logger.error(
                         "This is not a project ID. This should not happen! %s",
                         _dir_path / child.name,
@@ -155,17 +155,15 @@ class EfsManager:
             try:
                 shutil.rmtree(_dir_path)
                 _logger.info("%s has been deleted.", _dir_path)
-            except FileNotFoundError as e:
-                _logger.error("Directory %s does not exist. Error: %s", _dir_path, e)
-            except PermissionError as e:
-                _logger.error(
-                    "Permission denied when trying to delete %s. Error: %s",
-                    _dir_path,
-                    e,
+            except FileNotFoundError:
+                _logger.exception("Directory %s does not exist.", _dir_path)
+            except PermissionError:
+                _logger.exception(
+                    "Permission denied when trying to delete %s.", _dir_path
                 )
-            except NotADirectoryError as e:
-                _logger.error("%s is not a directory. Error: %s", _dir_path, e)
-            except OSError as e:
-                _logger.error("Issue with path: %s Error: %s", _dir_path, e)
+            except NotADirectoryError:
+                _logger.exception("%s is not a directory.", _dir_path)
+            except OSError:
+                _logger.exception("Issue with path: %s", _dir_path)
         else:
             _logger.error("%s does not exist.", _dir_path)

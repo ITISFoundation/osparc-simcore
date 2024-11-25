@@ -324,6 +324,10 @@ qx.Class.define("osparc.info.StudyLarge", {
           studyData["resourceType"] = this.__isTemplate ? "template" : "study";
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
+          if (this.__isTemplate) {
+            // reload templates
+            osparc.data.Resources.get("templates", {}, false)
+          }
         })
         .catch(err => {
           console.error(err);

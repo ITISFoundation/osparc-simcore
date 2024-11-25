@@ -10,21 +10,25 @@ import pytest
 import tenacity
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
+from .helpers.storage import replace_storage_endpoint
+from .helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture(scope="module")
-def storage_endpoint(docker_stack: dict, testing_environ_vars: dict) -> Iterable[URL]:
-    prefix = testing_environ_vars["SWARM_STACK_NAME"]
+def storage_endpoint(
+    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict
+) -> Iterable[URL]:
+    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_storage" in docker_stack["services"]
 
-    default_port = testing_environ_vars["STORAGE_ENDPOINT"].split(":")[1]
+    default_port = int(env_vars_for_docker_compose["STORAGE_ENDPOINT"].split(":")[1])
     endpoint = (
         f"{get_localhost_ip()}:{get_service_published_port('storage', default_port)}"
     )
@@ -45,22 +49,12 @@ async def storage_service(
 ) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
 
-    def correct_ip(url: AnyUrl):
-        assert storage_endpoint.host is not None
-        assert storage_endpoint.port is not None
-
-        return AnyUrl.build(
-            scheme=url.scheme,
-            host=storage_endpoint.host,
-            port=f"{storage_endpoint.port}",
-            path=url.path,
-            query=url.query,
-        )
-
     # NOTE: Mock to ensure container IP agrees with host IP when testing
+    assert storage_endpoint.host is not None
+    assert storage_endpoint.port is not None
     mocker.patch(
         "simcore_sdk.node_ports_common._filemanager._get_https_link_if_storage_secure",
-        correct_ip,
+        replace_storage_endpoint(storage_endpoint.host, storage_endpoint.port),
     )
 
     return storage_endpoint
@@ -82,6 +76,8 @@ def create_simcore_file_id() -> Callable[[ProjectID, NodeID, str], SimcoreS3File
     def _creator(
         project_id: ProjectID, node_id: NodeID, file_name: str
     ) -> SimcoreS3FileID:
-        return parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_id}/{file_name}")
+        return TypeAdapter(SimcoreS3FileID).validate_python(
+            f"{project_id}/{node_id}/{file_name}"
+        )
 
     return _creator

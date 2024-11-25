@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import Any, ClassVar, TypeAlias
+from typing import Any, TypeAlias
 
 from models_library.api_schemas_storage import TableSynchronisation
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 # NOTE: storage generates URLs that contain double encoded
 # slashes, and when applying validation via `StorageFileID`
@@ -14,18 +14,18 @@ StorageFileIDStr: TypeAlias = str
 class FileLocation(BaseModel):
     name: str | None = None
     id: float | None = None
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "simcore.s3",
                 "id": 0,
             },
         }
+    )
 
 
-class FileLocationArray(BaseModel):
-    __root__: list[FileLocation]
+class FileLocationArray(RootModel[list[FileLocation]]):
+    ...
 
 
 class Links(BaseModel):
@@ -60,18 +60,18 @@ class FileUploadCompleteFuture(BaseModel):
 class DatasetMetaData(BaseModel):
     dataset_id: str | None = None
     display_name: str | None = None
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "dataset_id": "N:id-aaaa",
                 "display_name": "simcore-testing",
             },
         }
+    )
 
 
-class DatasetMetaDataArray(BaseModel):
-    __root__: list[DatasetMetaData]
+class DatasetMetaDataArray(RootModel[list[DatasetMetaData]]):
+    ...
 
 
 class FileLocationEnveloped(BaseModel):
@@ -122,8 +122,8 @@ class FileMetaData(BaseModel):
     entity_tag: str | None = None
     is_directory: bool | None = None
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "file_uuid": "simcore-testing/105/1000/3",
                 "location_id": "0",
@@ -138,10 +138,11 @@ class FileMetaData(BaseModel):
                 "is_directory": False,
             }
         }
+    )
 
 
-class FileMetaDataArray(BaseModel):
-    __root__: list[FileMetaData]
+class FileMetaDataArray(RootModel[list[FileMetaData]]):
+    ...
 
 
 class FileMetaEnvelope(BaseModel):
@@ -152,8 +153,7 @@ class FileMetaEnvelope(BaseModel):
 class PresignedLink(BaseModel):
     link: str | None = None
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {"example": {"link": "example_link"}}
+    model_config = ConfigDict(json_schema_extra={"example": {"link": "example_link"}})
 
 
 class PresignedLinkEnveloped(BaseModel):

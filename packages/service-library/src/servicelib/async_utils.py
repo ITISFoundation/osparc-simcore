@@ -39,6 +39,7 @@ class QueueElement:
     output: Any | None = None
 
 
+# NOTE: If you get issues with event loop already closed error use ensure_run_in_sequence_context_is_empty fixture in your tests
 _sequential_jobs_contexts: dict[str, Context] = {}
 
 

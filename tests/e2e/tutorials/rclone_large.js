@@ -64,12 +64,12 @@ async function runTutorial() {
 
       await tutorial.takeScreenshot("after_run_all_menu");
 
-     
+
       await tutorial.waitFor(60000); // we are creating 12 x 1 GB files with 75 % probability
     }
   }
   catch (err) {
-    await tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed();
     console.log('Tutorial error: ' + err);
   }
   finally {

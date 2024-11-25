@@ -5,12 +5,14 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from operator import attrgetter
+from typing import Final
 
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceMetaDataPublished, ServiceType
-from pydantic import Extra, ValidationError, parse_obj_as, parse_raw_as
+from pydantic import ConfigDict, TypeAdapter, ValidationError
 from settings_library.catalog import CatalogSettings
+from settings_library.tracing import TracingSettings
 from simcore_service_api_server.exceptions.backend_errors import (
     ListSolversOrStudiesError,
     SolverOrStudyNotFoundError,
@@ -42,14 +44,12 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
     that asks only what is needed.
     """
 
-    owner: LowerCaseEmailStr | None
-
-    class Config:
-        extra = Extra.ignore
+    owner: LowerCaseEmailStr | None = None
+    model_config = ConfigDict(extra="ignore")
 
     # Converters
     def to_solver(self) -> Solver:
-        data = self.dict(
+        data = self.model_dump(
             include={"name", "key", "version", "description", "contact", "owner"},
         )
 
@@ -69,6 +69,17 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
 #
 
 _exception_mapper = partial(service_exception_mapper, "Catalog")
+
+TruncatedCatalogServiceOutAdapter: Final[
+    TypeAdapter[TruncatedCatalogServiceOut]
+] = TypeAdapter(TruncatedCatalogServiceOut)
+TruncatedCatalogServiceOutListAdapter: Final[
+    TypeAdapter[list[TruncatedCatalogServiceOut]]
+] = TypeAdapter(list[TruncatedCatalogServiceOut])
+
+
+def _parse_response(type_adapter: TypeAdapter, response):
+    return type_adapter.validate_json(response.text)
 
 
 @dataclass
@@ -99,7 +110,10 @@ class CatalogApi(BaseServiceClientApi):
         services: list[
             TruncatedCatalogServiceOut
         ] = await asyncio.get_event_loop().run_in_executor(
-            None, parse_raw_as, list[TruncatedCatalogServiceOut], response.text
+            None,
+            _parse_response,
+            TruncatedCatalogServiceOutListAdapter,
+            response,
         )
         solvers = []
         for service in services:
@@ -115,7 +129,7 @@ class CatalogApi(BaseServiceClientApi):
                 #       invalid items instead of returning error
                 _logger.warning(
                     "Skipping invalid service returned by catalog '%s': %s",
-                    service.json(),
+                    service.model_dump_json(),
                     err,
                 )
         return solvers
@@ -140,7 +154,7 @@ class CatalogApi(BaseServiceClientApi):
         service: (
             TruncatedCatalogServiceOut
         ) = await asyncio.get_event_loop().run_in_executor(
-            None, parse_raw_as, TruncatedCatalogServiceOut, response.text
+            None, _parse_response, TruncatedCatalogServiceOutAdapter, response
         )
         assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
@@ -167,7 +181,7 @@ class CatalogApi(BaseServiceClientApi):
 
         response.raise_for_status()
 
-        return parse_obj_as(list[SolverPort], response.json())
+        return TypeAdapter(list[SolverPort]).validate_python(response.json())
 
     async def list_latest_releases(
         self, *, user_id: int, product_name: str
@@ -209,10 +223,16 @@ class CatalogApi(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: CatalogSettings) -> None:
+def setup(
+    app: FastAPI, settings: CatalogSettings, tracing_settings: TracingSettings | None
+) -> None:
     if not settings:
         settings = CatalogSettings()
 
     setup_client_instance(
-        app, CatalogApi, api_baseurl=settings.api_base_url, service_name="catalog"
+        app,
+        CatalogApi,
+        api_baseurl=settings.api_base_url,
+        service_name="catalog",
+        tracing_settings=tracing_settings,
     )
