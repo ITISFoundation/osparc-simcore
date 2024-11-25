@@ -358,6 +358,7 @@ async def running_project(
             started=now_time,
             result=StateType.RUNNING,
         ),
+        task_to_callback_mapping={},
     )
 
 
@@ -394,6 +395,7 @@ async def running_project_mark_for_cancellation(
             started=now_time,
             cancelled=now_time + datetime.timedelta(seconds=5),
         ),
+        task_to_callback_mapping={},
     )
 
 
