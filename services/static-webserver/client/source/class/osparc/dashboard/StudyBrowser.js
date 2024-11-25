@@ -1088,7 +1088,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this.__reloadStudies();
             break;
           case "workspaces":
-            this._toolbar.hide();
+            this._toolbar.exclude();
             this._searchBarFilter.resetFilters();
             this.__reloadWorkspaces();
             break;
