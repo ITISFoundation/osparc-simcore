@@ -9,6 +9,8 @@ export LOCUST_VERSION
 ENV_FILE=$(shell pwd)/.env
 export ENV_FILE
 
+KERNEL_NAME=$(shell uname -s)
+
 NETWORK_NAME=dashboards_timenet
 
 # UTILS
@@ -44,14 +46,8 @@ build: ## builds distributed osparc locust docker image
 push:
 	docker push itisfoundation/locust:$(LOCUST_VERSION)
 
-
-
-.PHONY: down
-down: ## stops and removes osparc locust containers
-	docker compose --file docker-compose.yml down
-
-.PHONY: test
-test: ## runs osparc locust. Locust and test configuration are specified in ENV_FILE
+.PHONY: test-up test-down
+test-up: ## runs osparc locust. Locust and test configuration are specified in ENV_FILE
 	@if [ ! -f $${ENV_FILE} ]; then echo "You must generate a .env file before running tests!!! See the README..." && exit 1; fi;
 	@if ! docker network ls | grep -q $(NETWORK_NAME); then \
 		docker network create $(NETWORK_NAME); \
@@ -59,7 +55,8 @@ test: ## runs osparc locust. Locust and test configuration are specified in ENV_
 	fi
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master
 
-
+test-down: ## stops and removes osparc locust containers
+	@docker compose --file docker-compose.yml down
 
 .PHONY: dashboards-up dashboards-down
 
@@ -69,12 +66,14 @@ dashboards-up: ## Create Grafana dashboard for inspecting locust results. See da
 		docker network rm $(NETWORK_NAME); \
 		echo "Removed docker network $(NETWORK_NAME)"; \
 	fi
+	@if [[ "$(KERNEL_NAME)" == "Linux" ]]; then \
+		( sleep 3 && xdg-open http://localhost:3000 ) & \
+	fi
 	@locust-compose up
+
 
 dashboards-down:
 	@locust-compose down
-
-
 
 .PHONY: install-ci install-dev
 
