@@ -943,12 +943,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._addToLayout(header);
       }
 
-      this._createResourcesLayout();
-
-      const list = this._resourcesContainer.getFlatList();
-      if (list) {
-        osparc.utils.Utils.setIdToWidget(list, "studiesList");
-      }
+      this._createResourcesLayout("studiesList");
 
       const importStudyButton = this.__createImportButton();
       const isDisabled = osparc.utils.DisabledPlugins.isImportDisabled();

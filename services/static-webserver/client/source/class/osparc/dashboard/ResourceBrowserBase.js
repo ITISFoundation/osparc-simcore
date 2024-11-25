@@ -244,7 +244,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._addToLayout(searchBarFilter);
     },
 
-    _createResourcesLayout: function() {
+    _createResourcesLayout: function(flatListId) {
       const toolbar = this._toolbar = new qx.ui.toolbar.ToolBar().set({
         backgroundColor: "transparent",
         spacing: 10,
@@ -255,7 +255,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       this.__viewModeLayout = new qx.ui.toolbar.Part();
 
-      const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager();
+      const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager(this._resourceType);
+      if (flatListId) {
+        const list = this._resourcesContainer.getFlatList();
+        if (list) {
+          osparc.utils.Utils.setIdToWidget(list, flatListId);
+        }
+      }
       if (this._resourceType === "study") {
         const viewMode = osparc.utils.Utils.localCache.getLocalStorageItem("studiesViewMode");
         if (viewMode) {

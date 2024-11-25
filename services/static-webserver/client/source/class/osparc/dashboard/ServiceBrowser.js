@@ -129,11 +129,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     // LAYOUT //
     _createLayout: function() {
       this._createSearchBar();
-      this._createResourcesLayout();
-      const list = this._resourcesContainer.getFlatList();
-      if (list) {
-        osparc.utils.Utils.setIdToWidget(list, "servicesList");
-      }
+      this._createResourcesLayout("servicesList");
 
       this.__addNewServiceButtons();
       this._toolbar.add(new qx.ui.core.Spacer(), {

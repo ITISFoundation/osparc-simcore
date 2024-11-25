@@ -18,7 +18,7 @@
 qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(resourceType) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(15));
@@ -32,14 +32,15 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this.__resourcesList = [];
     this.__groupedContainersList = [];
 
+    if (resourceType === "study") {
+      const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.ToggleButtonContainer();
+      this._add(workspacesContainer);
+      workspacesContainer.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
 
-    const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.ToggleButtonContainer();
-    this._add(workspacesContainer);
-    workspacesContainer.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
-
-    const foldersContainer = this.__foldersContainer = new osparc.dashboard.ToggleButtonContainer();
-    this._add(foldersContainer);
-    foldersContainer.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
+      const foldersContainer = this.__foldersContainer = new osparc.dashboard.ToggleButtonContainer();
+      this._add(foldersContainer);
+      foldersContainer.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
+    }
 
     const nonGroupedContainer = this.__nonGroupedContainer = this.__createFlatList();
     this._add(nonGroupedContainer);
@@ -503,7 +504,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
                 }
               })
               .finally(() => {
-                this._add(groupContainer);
+                this.__groupedContainers.add(groupContainer);
                 this.__moveNoGroupToLast();
               });
           }
