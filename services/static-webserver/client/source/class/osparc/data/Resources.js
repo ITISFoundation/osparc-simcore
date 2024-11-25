@@ -314,14 +314,14 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/folders/{folderId}"
+          },
           getPageSearch: {
             useCache: false,
             method: "GET",
             url: statics.API + "/folders:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}"
-          },
-          getOne: {
-            method: "GET",
-            url: statics.API + "/folders/{folderId}"
           },
           getPageTrashed: {
             useCache: false,
@@ -363,6 +363,16 @@ qx.Class.define("osparc.data.Resources", {
           getOne: {
             method: "GET",
             url: statics.API + "/workspaces/{workspaceId}"
+          },
+          getPageSearch: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/workspaces:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}"
+          },
+          getPageTrashed: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/workspaces?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           post: {
             method: "POST",

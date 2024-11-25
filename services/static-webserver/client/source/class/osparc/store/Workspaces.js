@@ -68,6 +68,64 @@ qx.Class.define("osparc.store.Workspaces", {
         });
     },
 
+    fetchTrashedWorkspaces: function(orderBy = {
+      field: "modified_at",
+      direction: "desc"
+    }) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
+      const params = {
+        url: {
+          orderBy: JSON.stringify(curatedOrderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("workspaces", params, "getPageTrashed")
+        .then(trashedWorkspacesData => {
+          const workspaces = [];
+          trashedWorkspacesData.forEach(workspaceData => {
+            const workspace = this.__addToCache(workspaceData);
+            workspaces.push(workspace);
+          });
+          return workspaces;
+        });
+    },
+
+    searchWorkspaces: function(
+      text,
+      orderBy = {
+        field: "modified_at",
+        direction: "desc"
+      },
+    ) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
+      const params = {
+        url: {
+          text,
+          orderBy: JSON.stringify(curatedOrderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("workspaces", params, "getPageSearch")
+        .then(workspacesData => {
+          const workspaces = [];
+          workspacesData.forEach(workspaceData => {
+            const workspace = this.__addToCache(workspaceData);
+            workspaces.push(workspace);
+          });
+          return workspaces;
+        });
+    },
+
     postWorkspace: function(newWorkspaceData) {
       const params = {
         data: newWorkspaceData
