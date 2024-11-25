@@ -12,6 +12,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from servicelib.aiohttp import status
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_service_webserver.errors import WebServerBaseError
 from simcore_service_webserver.exceptions_handlers import (
     ExceptionToHttpErrorMap,
@@ -94,7 +95,8 @@ async def test_factory__create_exception_handler_from_http_error(
     response = await one_error_to_404(fake_request, caught)
     assert response.status == status.HTTP_404_NOT_FOUND
     assert response.text is not None
-    assert "one error message" in response.text
+    assert "one error message" in response.reason
+    assert response.content_type == MIMETYPE_APPLICATION_JSON
 
 
 async def test_factory__create_exception_handler_from_http_error_map(
@@ -111,12 +113,10 @@ async def test_factory__create_exception_handler_from_http_error_map(
     )
 
     # Converts exception in map
-    with pytest.raises(web.HTTPBadRequest) as exc_info:
-        await exc_handler(fake_request, OneError())
 
-    got_exc = exc_info.value
-    assert isinstance(got_exc, web.HTTPBadRequest)
-    assert got_exc.reason == "Error One mapped to 400"
+    response = await exc_handler(fake_request, OneError())
+    assert response.status == status.HTTP_400_BAD_REQUEST
+    assert response.reason == "Error One mapped to 400"
 
     # By-passes exceptions not listed
     err = RuntimeError()

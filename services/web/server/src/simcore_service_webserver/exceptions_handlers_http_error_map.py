@@ -3,6 +3,10 @@ from collections.abc import Iterable
 from typing import NamedTuple, TypeAlias
 
 from aiohttp import web
+from common_library.error_codes import create_error_code
+from common_library.json_serialization import json_dumps
+from models_library.basic_types import IDStr
+from models_library.rest_error import ErrorGet
 from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exceptions
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error
@@ -68,11 +72,15 @@ def create_exception_handler_from_http_error(
             _DefaultDict(getattr(exception, "__dict__", {}))
         )
 
+        error = ErrorGet(msg=user_msg)
+
         if is_5xx_server_error(status_code):
+            oec = create_error_code(exception)
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
                     user_msg,
                     error=exception,
+                    error_code=oec,
                     error_context={
                         "request": request,
                         "request.remote": f"{request.remote}",
@@ -81,16 +89,11 @@ def create_exception_handler_from_http_error(
                     },
                 )
             )
+            error = ErrorGet(msg=user_msg, support_id=IDStr(oec))
 
-        # TODO: make this part customizable? e.g. so we can inject e.g. oec?
-        # TODO: connect with ErrorModel
         return web.json_response(
-            {
-                "error": {
-                    "msg": user_msg,
-                }
-            },
-            status=status_code,
+            data={"error": error.model_dump(exclude_unset=True, mode="json")},
+            dumps=json_dumps,
         )
 
     return _exception_handler
