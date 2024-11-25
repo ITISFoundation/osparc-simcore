@@ -57,13 +57,13 @@ from ._events_utils import get_allow_metrics_collection, get_director_v0_client
 _logger = logging.getLogger(__name__)
 
 _DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
-    ["labels"],
-    ["task_template", "Resources", "Limits"],
-    ["task_template", "Resources", "Reservation", "MemoryBytes"],
-    ["task_template", "Resources", "Reservation", "NanoCPUs"],
-    ["task_template", "Placement", "Constraints"],
-    ["task_template", "ContainerSpec", "Env"],
-    ["task_template", "Resources", "Reservation", "GenericResources"],
+    ["Labels"],
+    ["TaskTemplate", "Resources", "Limits"],
+    ["TaskTemplate", "Resources", "Reservation", "MemoryBytes"],
+    ["TaskTemplate", "Resources", "Reservation", "NanoCPUs"],
+    ["TaskTemplate", "Placement", "Constraints"],
+    ["TaskTemplate", "ContainerSpec", "Env"],
+    ["TaskTemplate", "Resources", "Reservation", "GenericResources"],
 )
 
 
