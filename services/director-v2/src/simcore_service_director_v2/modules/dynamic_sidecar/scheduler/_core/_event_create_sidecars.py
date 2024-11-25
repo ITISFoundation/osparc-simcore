@@ -249,7 +249,9 @@ class CreateSidecars(DynamicSchedulerEvent):
         # we do not use aliases when exporting dynamic_sidecar_service_spec_base
         dynamic_sidecar_service_final_spec = AioDockerServiceSpec.model_validate(
             nested_update(
-                jsonable_encoder(dynamic_sidecar_service_spec_base, exclude_unset=True),
+                jsonable_encoder(
+                    dynamic_sidecar_service_spec_base, exclude_unset=True, by_alias=True
+                ),
                 jsonable_encoder(
                     user_specific_service_spec, exclude_unset=True, by_alias=True
                 ),
