@@ -706,6 +706,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // loose equality: will do a Number to String conversion if necessary
         sameContext &= key in reqParams && reqParams[key] == value;
       });
+      // both ways
+      Object.entries(reqParams).forEach(([key, value]) => {
+        // loose equality: will do a Number to String conversion if necessary
+        sameContext &= key in currentParams && currentParams[key] == value;
+      });
       return !sameContext;
     },
 
