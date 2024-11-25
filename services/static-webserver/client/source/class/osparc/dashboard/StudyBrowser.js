@@ -168,6 +168,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
         !osparc.utils.DisabledPlugins.isFoldersEnabled() ||
         this.getCurrentContext() === "studiesAndFolders" ||
+        this.getCurrentContext() === "search" || // not yet implemented
         this.__loadingWorkspaces
       ) {
         return;
@@ -308,6 +309,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
             if (
               nStudies === 0 &&
+              this.getCurrentContext() === "studiesAndFolders" &&
               this.getCurrentWorkspaceId() === null &&
               this.getCurrentFolderId() === null
             ) {
@@ -1020,7 +1022,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }, this);
 
         this._resourceFilter.addListener("trashContext", () => {
-          this.__changeContext("trash");
+          this._changeContext("trash");
         });
 
         this._searchBarFilter.addListener("filterChanged", e => {

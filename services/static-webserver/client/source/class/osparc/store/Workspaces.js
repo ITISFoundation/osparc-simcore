@@ -68,14 +68,23 @@ qx.Class.define("osparc.store.Workspaces", {
         });
     },
 
-    fetchTrashedWorkspaces: function() {
+    fetchTrashedWorkspaces: function(orderBy = {
+      field: "modified_at",
+      direction: "desc"
+    }) {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
           resolve([]);
         });
       }
 
-      return osparc.data.Resources.getInstance().getAllPages("workspaces", {}, "getPageTrashed")
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
+      const params = {
+        url: {
+          orderBy: JSON.stringify(curatedOrderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("workspaces", params, "getPageTrashed")
         .then(trashedWorkspacesData => {
           const workspaces = [];
           trashedWorkspacesData.forEach(workspaceData => {
