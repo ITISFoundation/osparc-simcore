@@ -426,6 +426,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.setWorkspacesToList(this.__workspacesList);
       this._resourcesContainer.reloadWorkspaces();
 
+      this.__addNewWorkspaceButton();
+    },
+
+    __addNewWorkspaceButton: function() {
+      if (this.getCurrentContext() !== "workspaces") {
+        return;
+      }
+
       const newWorkspaceCard = new osparc.dashboard.WorkspaceButtonNew();
       newWorkspaceCard.setCardKey("new-workspace");
       newWorkspaceCard.subscribeToFilterGroup("searchBarFilter");
