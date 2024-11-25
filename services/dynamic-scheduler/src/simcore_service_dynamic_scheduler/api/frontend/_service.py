@@ -42,6 +42,9 @@ async def service_details(node_id: NodeID):
         ui.markdown("**Start Parameters**")
         ui.code(json.dumps(dynamic_service_start, indent=2), language="json")
 
+        ui.markdown("**RAW**")
+        ui.code(service_model.model_dump_json(indent=2), language="json")
+
 
 @router.page("/service/{node_id}:stop")
 async def service_stop(node_id: NodeID):

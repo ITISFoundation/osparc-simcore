@@ -73,34 +73,31 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
             on_click=lambda: ui.navigate.to(f"/service/{node_id}:details"),
         )
 
-        def _render_progress() -> None:
-            ui.spinner(size="lg")
-
-        storage_key = f"removing-{node_id}"
-        if app.storage.general.get(storage_key, None):
-            # removal is in progress just render progress bar
-            _render_progress()
+        if service.current_state != SchedulerServiceState.RUNNING:
             return
 
-        if service.current_state == SchedulerServiceState.RUNNING:
-            with ui.row(align_items="baseline").classes("p-0 m-0") as container:
+        async def stop_process_task():
+            ui.notify(f"Started service stop request for {node_id}")
 
-                async def async_task():
-                    container.clear()
+            await httpx.AsyncClient(timeout=10).get(
+                f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
+            )
 
-                    _render_progress()
-                    app.storage.general[storage_key] = True
+            ui.notify(
+                f"Stop request accepted by {node_id}. Please give the service some time to stop!"
+            )
 
-                    ui.notify(f"Started service stop request for {node_id}")
+        with ui.dialog() as confirm_dialog, ui.card():
+            ui.label(f"Are you sure you want to stop the service {node_id}?")
+            ui.label("The service will also result sopped for the user in his project.")
+            with ui.row():
+                ui.button("Yes", on_click=stop_process_task)
+                ui.button("No", on_click=lambda: confirm_dialog.submit("No"))
 
-                    await httpx.AsyncClient(timeout=10).get(
-                        f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
-                    )
+        async def display_confirm_dialog():
+            await confirm_dialog
 
-                    app.storage.general.pop("removing-{node_id}", None)
-                    ui.notify(f"Finished service stop request for {node_id}")
-
-                ui.button("Stop service", icon="stop", on_click=async_task)
+        ui.button("Stop service", icon="stop", on_click=display_confirm_dialog)
 
 
 def _render_card(
@@ -112,20 +109,41 @@ def _render_card(
             _render_buttons(node_id, service)
 
 
+def _get_stable_hash(model: TrackedServiceModel) -> dict:
+    data = model.model_dump(mode="json")
+    data.pop("last_state_change")
+    data.pop("check_status_after")
+    data.pop("last_status_notification")
+    return data
+
+
+def _get_hash(items: list[tuple[NodeID, TrackedServiceModel]]) -> int:
+    return hash(
+        json.dumps([(f"{key}", _get_stable_hash(model)) for key, model in items])
+    )
+
+
 class CardUpdater:
     def __init__(self, parent_app: FastAPI, container: Element) -> None:
         self.parent_app = parent_app
         self.container = container
+        self.last_hash: int = _get_hash([])
 
     async def update(self) -> None:
-        # TODO: rerender only if data changed
-
-        self.container.clear()  # Clear the current cards
-
         tracked_services = await get_all_tracked_services(self.parent_app)
+        tracked_items: list[tuple[NodeID, TrackedServiceModel]] = sorted(
+            tracked_services.items(), reverse=True
+        )
 
-        for node_id, service in tracked_services.items():
-            _render_card(self.container, node_id, service)
+        current_hash = _get_hash(tracked_items)
+
+        if self.last_hash != current_hash:
+            # Clear the current cards
+            self.container.clear()
+            for node_id, service in tracked_items:
+                _render_card(self.container, node_id, service)
+
+        self.last_hash = current_hash
 
 
 @router.page("/")
@@ -142,4 +160,4 @@ async def index():
         # render cards when page is loaded
         await updater.update()
         # update card at a set interval
-        ui.timer(1, lambda: updater.update())
+        ui.timer(1, updater.update)
