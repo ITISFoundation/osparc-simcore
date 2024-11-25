@@ -291,7 +291,9 @@ def test_container_outgoing_permit_list_and_container_allow_internet_without_com
             )
         },
     ):
-        assert TypeAdapter(DynamicSidecarServiceLabels).validate_json(json.dumps(dict_data))
+        assert TypeAdapter(DynamicSidecarServiceLabels).validate_json(
+            json.dumps(dict_data)
+        )
 
 
 def test_container_allow_internet_no_compose_spec_not_ok():
@@ -414,7 +416,7 @@ def service_labels() -> dict[str, str]:
                 "inputs_path": "/tmp/inputs",  # noqa: S108
                 "outputs_path": "/tmp/outputs",  # noqa: S108
                 "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108
-                "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108
+                "state_exclude": ["/tmp/strip_me/*"],  # noqa: S108
             }
         ),
         "simcore.service.compose-spec": json.dumps(
