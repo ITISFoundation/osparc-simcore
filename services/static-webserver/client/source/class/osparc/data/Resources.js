@@ -386,6 +386,14 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/workspaces/{workspaceId}"
           },
+          trash: {
+            method: "POST",
+            url: statics.API + "/workspaces/{workspacesId}:trash"
+          },
+          untrash: {
+            method: "POST",
+            url: statics.API + "/workspaces/{workspacesId}:untrash"
+          },
           postAccessRights: {
             method: "POST",
             url: statics.API + "/workspaces/{workspaceId}/groups/{groupId}"
