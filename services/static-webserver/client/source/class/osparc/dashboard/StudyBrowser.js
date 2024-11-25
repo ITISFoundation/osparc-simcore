@@ -99,6 +99,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __workspacesList: null,
     __foldersList: null,
     __loadingFolders: null,
+    __loadingWorkspaces: null,
 
     // overridden
     initResources: function() {
@@ -163,11 +164,40 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadWorkspaces: function() {
+      if (
+        !osparc.auth.Manager.getInstance().isLoggedIn() ||
+        !osparc.utils.DisabledPlugins.isFoldersEnabled() ||
+        this.getCurrentContext() === "studiesAndFolders" ||
+        this.__loadingWorkspaces
+      ) {
+        return;
+      }
+
+      let request = null;
+      switch (this.getCurrentContext()) {
+        case "search": {
+          const filterData = this._searchBarFilter.getFilterData();
+          const text = filterData.text ? encodeURIComponent(filterData.text) : "";
+          request = osparc.store.Workspaces.getInstance().searchWorkspaces(text);
+          break;
+        }
+        case "workspaces": {
+          request = osparc.store.Workspaces.getInstance().fetchWorkspaces();
+          break;
+        }
+        case "trash":
+          request = osparc.store.Workspaces.getInstance().fetchTrashedWorkspaces();
+          break;
+      }
+
+      this.__loadingWorkspaces = true;
       this.__setWorkspacesToList([]);
-      osparc.store.Workspaces.getInstance().fetchWorkspaces()
+      request
         .then(workspaces => {
           this.__setWorkspacesToList(workspaces);
-        });
+        })
+        .catch(console.error)
+        .finally(() => this.__loadingWorkspaces = null);
     },
 
     __reloadFolders: function() {
@@ -180,7 +210,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return;
       }
 
-      this.__loadingFolders = true;
       let request = null;
       switch (this.getCurrentContext()) {
         case "search": {
@@ -200,6 +229,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
       }
 
+      this.__loadingFolders = true;
       this.__setFoldersToList([]);
       request
         .then(folders => {
@@ -1032,10 +1062,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
         this._toolbar.show();
         if (context === "search") {
+          this.__reloadWorkspaces();
           this.__reloadFolders();
           this.__reloadStudies();
         } else if (context === "trash") {
-          // for now, studies only
+          this._searchBarFilter.resetFilters();
+          this.__reloadWorkspaces();
           this.__reloadFolders();
           this.__reloadStudies();
         } else if (context === "workspaces") {
