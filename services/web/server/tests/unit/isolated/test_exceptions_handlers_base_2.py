@@ -9,12 +9,13 @@
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
+from servicelib.aiohttp import status
 from simcore_service_webserver.errors import WebServerBaseError
 from simcore_service_webserver.exceptions_handlers_base_2 import (
     add_exception_handler,
     add_exception_mapper,
     handle_registered_exceptions,
-    setup_exception_handlers,
+    setup_exceptions_handlers,
 )
 
 # Some custom errors in my service
@@ -41,17 +42,29 @@ def test_it():
 
     app = web.Application()
 
-    async def my_error_handler(request: web.Request, exc: OneError):
+    async def my_error_handler(request: web.Request, exc: BaseException):
+        assert isinstance(exc, OneError)
         return web.HTTPNotFound()
 
     # create register
-    setup_exception_handlers(app)
+    setup_exceptions_handlers(app)
 
-    # register
+    # register exception handler
     add_exception_handler(app, OneError, my_error_handler)
 
-    # this is a handler create mapping to status_code and reason
+    # mapper is defined as a higher abstraction
+    # that automatically produces an exception handler
+
+    # map two exceptions?
     add_exception_mapper(app, OtherError, web.HTTPNotFound)
+
+    # this is a handler create mapping to status_code and reason
+    add_exception_mapper(app, OtherError, status.HTTP_404_NOT_FOUND)
+
+    # NOTE: that we respond always the same way to errors, i.e. using Error model
+
+    # shouldn't this be automatic?
+    add_exception_mapper(app, web.HTTPNotFound, status.HTTP_404_NOT_FOUND)
 
     async def foo():
         raise OneError

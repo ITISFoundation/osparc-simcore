@@ -136,8 +136,8 @@ async def test_create_decorator_from_exception_handler(
     )
 
     _handle_exceptions = create_decorator_from_exception_handler(
-        exception_handler=exc_handler,
         exception_types=BasePluginError,  # <--- FIXME" this is redundant because exception has been already passed in exc_handler!
+        exception_handler=exc_handler,
     )
 
     @_handle_exceptions
