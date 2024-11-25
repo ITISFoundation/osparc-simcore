@@ -7,6 +7,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
 from ._common import (
+    RefActions,
     column_created_datetime,
     column_modified_datetime,
     register_modified_datetime_auto_update_trigger,
@@ -42,8 +43,8 @@ projects_metadata = sa.Table(
         sa.String,
         sa.ForeignKey(
             projects.c.uuid,
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_projects_metadata_project_uuid",
         ),
         nullable=False,
@@ -88,15 +89,15 @@ projects_metadata = sa.Table(
     sa.ForeignKeyConstraint(
         ("parent_project_uuid", "parent_node_id"),
         (projects_nodes.c.project_uuid, projects_nodes.c.node_id),
-        onupdate="CASCADE",
-        ondelete="SET NULL",
+        onupdate=RefActions.CASCADE,
+        ondelete=RefActions.SET_NULL,
         name="fk_projects_metadata_parent_node_id",
     ),
     sa.ForeignKeyConstraint(
         ("root_parent_project_uuid", "root_parent_node_id"),
         (projects_nodes.c.project_uuid, projects_nodes.c.node_id),
-        onupdate="CASCADE",
-        ondelete="SET NULL",
+        onupdate=RefActions.CASCADE,
+        ondelete=RefActions.SET_NULL,
         name="fk_projects_metadata_root_parent_node_id",
     ),
 )

@@ -8,14 +8,16 @@ from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
+from models_library.trash import RemoveQueryParams
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.folders._models import (
     FoldersPathParams,
-    RemoveQueryParams,
+    FolderTrashQueryParams,
 )
 from simcore_service_webserver.projects._trash_handlers import ProjectPathParams
-from simcore_service_webserver.projects._trash_handlers import (
-    RemoveQueryParams as RemoveQueryParams_duplicated,
+from simcore_service_webserver.workspaces._models import (
+    WorkspacesPathParams,
+    WorkspaceTrashQueryParams,
 )
 
 router = APIRouter(
@@ -75,14 +77,14 @@ _extra_tags = ["folders"]
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Not such a folder"},
         status.HTTP_409_CONFLICT: {
-            "description": "One or more projects is in use and cannot be trashed"
+            "description": "One or more projects in the folder are in use and cannot be trashed"
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Trash service error"},
     },
 )
 def trash_folder(
     _path: Annotated[FoldersPathParams, Depends()],
-    _query: Annotated[RemoveQueryParams_duplicated, Depends()],
+    _query: Annotated[FolderTrashQueryParams, Depends()],
 ):
     ...
 
@@ -94,5 +96,38 @@ def trash_folder(
 )
 def untrash_folder(
     _path: Annotated[FoldersPathParams, Depends()],
+):
+    ...
+
+
+_extra_tags = ["workspaces"]
+
+
+@router.post(
+    "/workspaces/{workspace_id}:trash",
+    tags=_extra_tags,
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Not such a workspace"},
+        status.HTTP_409_CONFLICT: {
+            "description": "One or more projects in the workspace are in use and cannot be trashed"
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Trash service error"},
+    },
+)
+def trash_workspace(
+    _path: Annotated[WorkspacesPathParams, Depends()],
+    _query: Annotated[WorkspaceTrashQueryParams, Depends()],
+):
+    ...
+
+
+@router.post(
+    "/workspaces/{workspace_id}:untrash",
+    tags=_extra_tags,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def untrash_workspace(
+    _path: Annotated[WorkspacesPathParams, Depends()],
 ):
     ...

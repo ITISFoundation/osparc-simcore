@@ -9,6 +9,7 @@ import enum
 
 import sqlalchemy as sa
 
+from ._common import RefActions
 from .base import metadata
 from .users import users
 
@@ -57,6 +58,9 @@ confirmations = sa.Table(
     # constraints ----------------
     sa.PrimaryKeyConstraint("code", name="confirmation_code"),
     sa.ForeignKeyConstraint(
-        ["user_id"], [users.c.id], name="user_confirmation_fkey", ondelete="CASCADE"
+        ["user_id"],
+        [users.c.id],
+        name="user_confirmation_fkey",
+        ondelete=RefActions.CASCADE,
     ),
 )

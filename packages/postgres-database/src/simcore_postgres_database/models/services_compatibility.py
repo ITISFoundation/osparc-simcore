@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from typing_extensions import NotRequired, Required
 
 from ._common import (
+    RefActions,
     column_created_datetime,
     column_modified_by_user,
     column_modified_datetime,
@@ -61,8 +62,8 @@ services_compatibility = sa.Table(
     sa.ForeignKeyConstraint(
         ["key", "version"],
         ["services_meta_data.key", "services_meta_data.version"],
-        onupdate="CASCADE",
-        ondelete="CASCADE",
+        onupdate=RefActions.CASCADE,
+        ondelete=RefActions.CASCADE,
     ),
     sa.PrimaryKeyConstraint("key", "version", name="services_compatibility_pk"),
 )

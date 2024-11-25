@@ -4,10 +4,14 @@
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
 
+APP_OPENAPI_RELPATH=src/$(APP_PACKAGE_NAME)/api/v0/openapi.yaml
+
 
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications
-	$(MAKE) -C $(CURDIR)/src/simcore_service_${APP_NAME}/api $@
+	$(MAKE_C) $(REPO_BASE_DIR)/api/specs/$(APP_NAME) all
+	# validates OAS file: $(APP_OPENAPI_RELPATH)
+	$(call validate_openapi_specs,$(APP_OPENAPI_RELPATH))
 
 
 .PHONY: tests

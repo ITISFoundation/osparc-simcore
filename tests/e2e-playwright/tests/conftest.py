@@ -19,7 +19,7 @@ from typing import Any, Final
 import arrow
 import pytest
 from faker import Faker
-from playwright.sync_api import APIRequestContext, BrowserContext, Page
+from playwright.sync_api import APIRequestContext, BrowserContext, Page, expect
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
@@ -414,6 +414,17 @@ def log_in_and_out(
         page.wait_for_timeout(500)
 
 
+def _open_with_resources(page: Page, *, click_it: bool):
+    study_title_field = page.get_by_test_id("studyTitleField")
+    # wait until the title is automatically filled up
+    expect(study_title_field).not_to_have_value("", timeout=5000)
+
+    open_with_resources_button = page.get_by_test_id("openWithResources")
+    if click_it:
+        open_with_resources_button.click()
+    return open_with_resources_button
+
+
 @pytest.fixture
 def create_new_project_and_delete(
     page: Page,
@@ -460,8 +471,7 @@ def create_new_project_and_delete(
                     if template_id is not None:
                         if is_product_billable:
                             open_button.click()
-                            # Open project with default resources
-                            open_button = page.get_by_test_id("openWithResources")
+                            open_button = _open_with_resources(page, click_it=False)
                         # it returns a Long Running Task
                         with page.expect_response(
                             re.compile(rf"/projects\?from_study\={template_id}")
@@ -506,14 +516,10 @@ def create_new_project_and_delete(
                     else:
                         open_button.click()
                         if is_product_billable:
-                            # Open project with default resources
-                            open_button = page.get_by_test_id("openWithResources")
-                            open_button.click()
+                            _open_with_resources(page, click_it=True)
                             open_with_resources_clicked = True
                 if is_product_billable and not open_with_resources_clicked:
-                    # Open project with default resources
-                    open_button = page.get_by_test_id("openWithResources")
-                    open_button.click()
+                    _open_with_resources(page, click_it=True)
             project_data = response_info.value.json()
             assert project_data
             project_uuid = project_data["data"]["uuid"]

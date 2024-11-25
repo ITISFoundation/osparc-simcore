@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 
 from ._common import (
+    RefActions,
     column_created_datetime,
     column_modified_datetime,
     register_modified_datetime_auto_update_trigger,
@@ -16,8 +17,8 @@ products_to_templates = sa.Table(
         sa.String,
         sa.ForeignKey(
             "products.name",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_products_to_templates_product_name",
         ),
         nullable=False,
@@ -28,8 +29,8 @@ products_to_templates = sa.Table(
         sa.ForeignKey(
             jinja2_templates.c.name,
             name="fk_products_to_templates_template_name",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=True,
         doc="Custom jinja2 template",

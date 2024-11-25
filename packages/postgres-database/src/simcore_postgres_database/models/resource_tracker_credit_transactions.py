@@ -5,7 +5,12 @@ import enum
 
 import sqlalchemy as sa
 
-from ._common import NUMERIC_KWARGS, column_created_datetime, column_modified_datetime
+from ._common import (
+    NUMERIC_KWARGS,
+    RefActions,
+    column_created_datetime,
+    column_modified_datetime,
+)
 from .base import metadata
 
 
@@ -130,7 +135,7 @@ resource_tracker_credit_transactions = sa.Table(
             "resource_tracker_service_runs.service_run_id",
         ],
         name="resource_tracker_credit_trans_fkey",
-        onupdate="CASCADE",
-        ondelete="RESTRICT",
+        onupdate=RefActions.CASCADE,
+        ondelete=RefActions.RESTRICT,
     ),
 )

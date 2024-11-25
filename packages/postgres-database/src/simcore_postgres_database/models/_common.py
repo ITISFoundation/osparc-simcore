@@ -5,6 +5,17 @@ import sqlalchemy as sa
 from ..constants import DECIMAL_PLACES
 
 
+class RefActions:
+    """Referential actions for `ON UPDATE`, `ON DELETE`"""
+
+    # SEE https://docs.sqlalchemy.org/en/20/core/constraints.html#on-update-on-delete
+    CASCADE: Final[str] = "CASCADE"
+    SET_NULL: Final[str] = "SET NULL"
+    SET_DEFAULT: Final[str] = "SET DEFAULT"
+    RESTRICT: Final[str] = "RESTRICT"
+    NO_ACTION: Final[str] = "NO ACTION"
+
+
 def column_created_datetime(*, timezone: bool = True) -> sa.Column:
     return sa.Column(
         "created",
@@ -34,8 +45,8 @@ def column_created_by_user(
         sa.Integer,
         sa.ForeignKey(
             users_table.c.id,
-            onupdate="CASCADE",
-            ondelete="SET NULL",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.SET_NULL,
         ),
         nullable=not required,
         doc="Who created this row at `created`",
@@ -50,11 +61,36 @@ def column_modified_by_user(
         sa.Integer,
         sa.ForeignKey(
             users_table.c.id,
-            onupdate="CASCADE",
-            ondelete="SET NULL",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.SET_NULL,
         ),
         nullable=not required,
         doc="Who modified this row at `modified`",
+    )
+
+
+def column_trashed_datetime(resource_name: str) -> sa.Column:
+    return sa.Column(
+        "trashed",
+        sa.DateTime(timezone=True),
+        nullable=True,
+        comment=f"The date and time when the {resource_name} was marked as trashed. "
+        f"Null if the {resource_name} has not been trashed [default].",
+    )
+
+
+def column_trashed_by_user(resource_name: str, users_table: sa.Table) -> sa.Column:
+    return sa.Column(
+        "trashed_by",
+        sa.BigInteger,
+        sa.ForeignKey(
+            users_table.c.id,
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.SET_NULL,
+            name=f"fk_{resource_name}_trashed_by_user_id",
+        ),
+        nullable=True,
+        comment=f"User who trashed the {resource_name}, or null if not trashed or user is unknown.",
     )
 
 

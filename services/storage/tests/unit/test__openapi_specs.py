@@ -3,26 +3,26 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import NamedTuple
 
-import openapi_core
 import pytest
 import simcore_service_storage.application
 from aiohttp import web
 from faker import Faker
-from openapi_core import Spec as OpenApiSpecs
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.openapi_specs import Entrypoint
 from simcore_service_storage._meta import API_VTAG
 from simcore_service_storage.resources import storage_resources
 from simcore_service_storage.settings import Settings
 
 
-class Entrypoint(NamedTuple):
-    name: str
-    method: str
-    path: str
+@pytest.fixture(scope="session")
+def openapi_specs_path() -> Path:
+    # overrides pytest_simcore.openapi_specs.app_openapi_specs_path fixture
+    spec_path: Path = storage_resources.get_path(f"api/{API_VTAG}/openapi.yaml")
+    return spec_path
 
 
 @pytest.fixture
@@ -42,6 +42,7 @@ def app_environment(
 
 @pytest.fixture
 def app(app_environment: EnvVarsDict) -> web.Application:
+    assert app_environment
     # Expects that:
     # - routings happen during setup!
     # - all plugins are setup but app is NOT started (i.e events are not triggered)
@@ -50,61 +51,20 @@ def app(app_environment: EnvVarsDict) -> web.Application:
     return simcore_service_storage.application.create(settings)
 
 
-@pytest.fixture(scope="module")
-def openapi_specs() -> openapi_core.Spec:
-    spec_path: Path = storage_resources.get_path(f"api/{API_VTAG}/openapi.yaml")
-    return openapi_core.Spec.from_path(spec_path)
-
-
 @pytest.fixture
-def expected_openapi_entrypoints(openapi_specs: OpenApiSpecs) -> set[Entrypoint]:
-    entrypoints: set[Entrypoint] = set()
-
-    # openapi-specifications, i.e. "contract"
-    for path, path_obj in openapi_specs["paths"].items():
-        for operation, operation_obj in path_obj.items():
-            entrypoints.add(
-                Entrypoint(
-                    method=operation.upper(),
-                    path=path,
-                    name=operation_obj["operationId"],
-                )
-            )
-    return entrypoints
-
-
-@pytest.fixture
-def app_entrypoints(app: web.Application) -> set[Entrypoint]:
-    entrypoints: set[Entrypoint] = set()
-
-    # app routes, i.e. "exposed"
-    for resource_name, resource in app.router.named_resources().items():
-        resource_path = resource.canonical
-        for route in resource:
-            assert route.name == resource_name
-            assert route.resource
-            assert route.name is not None
-
-            if route.method == "HEAD":
-                continue
-
-            entrypoints.add(
-                Entrypoint(
-                    method=route.method,
-                    path=resource_path,
-                    name=route.name,
-                )
-            )
-    return entrypoints
+def app_rest_entrypoints(
+    app: web.Application,
+    create_aiohttp_app_rest_entrypoints: Callable[[web.Application], set[Entrypoint]],
+) -> set[Entrypoint]:
+    # check whether exposed routes implements openapi.json contract
+    return create_aiohttp_app_rest_entrypoints(app)
 
 
 def test_app_named_resources_against_openapi_specs(
-    expected_openapi_entrypoints: set[Entrypoint],
-    app_entrypoints: set[Entrypoint],
+    openapi_specs_entrypoints: set[Entrypoint],
+    app_rest_entrypoints: set[Entrypoint],
 ):
-    # check whether exposed routes implements openapi.json contract
-
-    assert app_entrypoints == expected_openapi_entrypoints
+    assert app_rest_entrypoints == openapi_specs_entrypoints
 
     # NOTE: missing here is:
     # - input schemas (path, query and body)
