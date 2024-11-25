@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 from .groups import groups
 from .tags import tags
@@ -17,8 +17,8 @@ tags_access_rights = sa.Table(
         sa.BigInteger(),
         sa.ForeignKey(
             tags.c.id,
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_tag_to_group_tag_id",
         ),
         nullable=False,
@@ -29,8 +29,8 @@ tags_access_rights = sa.Table(
         sa.BigInteger,
         sa.ForeignKey(
             groups.c.gid,
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_tag_to_group_group_id",
         ),
         nullable=False,

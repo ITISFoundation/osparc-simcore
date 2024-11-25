@@ -15,6 +15,7 @@ from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard
     TypedDict,
 )
 
+from ._common import RefActions
 from .base import metadata
 from .groups import groups
 from .jinja2_templates import jinja2_templates
@@ -199,8 +200,8 @@ products = sa.Table(
         sa.ForeignKey(
             jinja2_templates.c.name,
             name="fk_jinja2_templates_name",
-            ondelete="SET NULL",
-            onupdate="CASCADE",
+            ondelete=RefActions.SET_NULL,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=True,
         doc="Custom jinja2 template for registration email",
@@ -238,8 +239,8 @@ products = sa.Table(
         sa.ForeignKey(
             groups.c.gid,
             name="fk_products_group_id",
-            ondelete="SET NULL",
-            onupdate="CASCADE",
+            ondelete=RefActions.SET_NULL,
+            onupdate=RefActions.CASCADE,
         ),
         unique=True,
         nullable=True,

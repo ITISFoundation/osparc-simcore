@@ -7,6 +7,7 @@ from models_library.workspaces import WorkspaceID
 from pydantic import ConfigDict, PositiveInt
 
 from ..access_rights import AccessRights
+from ..users import UserID
 from ._base import InputSchema, OutputSchema
 
 
@@ -17,6 +18,8 @@ class WorkspaceGet(OutputSchema):
     thumbnail: str | None
     created_at: datetime
     modified_at: datetime
+    trashed_at: datetime | None
+    trashed_by: UserID | None
     my_access_rights: AccessRights
     access_rights: dict[GroupID, AccessRights]
 
@@ -26,7 +29,7 @@ class WorkspaceGetPage(NamedTuple):
     total: PositiveInt
 
 
-class CreateWorkspaceBodyParams(InputSchema):
+class WorkspaceCreateBodyParams(InputSchema):
     name: str
     description: str | None = None
     thumbnail: str | None = None
@@ -34,7 +37,7 @@ class CreateWorkspaceBodyParams(InputSchema):
     model_config = ConfigDict(extra="forbid")
 
 
-class PutWorkspaceBodyParams(InputSchema):
+class WorkspaceReplaceBodyParams(InputSchema):
     name: IDStr
     description: str | None = None
     thumbnail: str | None = None

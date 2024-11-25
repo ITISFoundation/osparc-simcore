@@ -2,7 +2,7 @@ import enum
 
 import sqlalchemy as sa
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 
@@ -30,8 +30,8 @@ wallets = sa.Table(
         sa.ForeignKey(
             "groups.gid",
             name="fk_wallets_gid_groups",
-            onupdate="CASCADE",
-            ondelete="RESTRICT",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.RESTRICT,
         ),
         nullable=False,
         doc="Identifier of the group that owns this wallet (Should be just PRIMARY GROUP)",
@@ -55,8 +55,8 @@ wallets = sa.Table(
         sa.String,
         sa.ForeignKey(
             "products.name",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_wallets_product_name",
         ),
         nullable=False,

@@ -29,7 +29,7 @@ class FolderGetPage(NamedTuple):
     total: PositiveInt
 
 
-class CreateFolderBodyParams(InputSchema):
+class FolderCreateBodyParams(InputSchema):
     name: IDStr
     parent_folder_id: FolderID | None = None
     workspace_id: WorkspaceID | None = None
@@ -44,7 +44,7 @@ class CreateFolderBodyParams(InputSchema):
     )(null_or_none_str_to_none_validator)
 
 
-class PutFolderBodyParams(InputSchema):
+class FolderReplaceBodyParams(InputSchema):
     name: IDStr
     parent_folder_id: FolderID | None = None
     model_config = ConfigDict(extra="forbid")

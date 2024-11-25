@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 projects_to_products = sa.Table(
@@ -11,8 +11,8 @@ projects_to_products = sa.Table(
         sa.String,
         sa.ForeignKey(
             "projects.uuid",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_projects_to_products_product_uuid",
         ),
         nullable=False,
@@ -23,8 +23,8 @@ projects_to_products = sa.Table(
         sa.String,
         sa.ForeignKey(
             "products.name",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_projects_to_products_product_name",
         ),
         nullable=False,

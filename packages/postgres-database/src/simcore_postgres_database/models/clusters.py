@@ -4,6 +4,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
+from ._common import RefActions
 from .base import metadata
 
 
@@ -36,8 +37,8 @@ clusters = sa.Table(
         sa.ForeignKey(
             "groups.gid",
             name="fk_clusters_gid_groups",
-            onupdate="CASCADE",
-            ondelete="RESTRICT",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.RESTRICT,
         ),
         nullable=False,
         doc="Identifier of the group that owns this cluster",

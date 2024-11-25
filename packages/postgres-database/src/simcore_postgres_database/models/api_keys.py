@@ -13,6 +13,7 @@ These keys grant the client authorization to the API resources
 import sqlalchemy as sa
 from sqlalchemy.sql import func
 
+from ._common import RefActions
 from .base import metadata
 from .users import users
 
@@ -35,7 +36,7 @@ api_keys = sa.Table(
     sa.Column(
         "user_id",
         sa.BigInteger(),
-        sa.ForeignKey(users.c.id, ondelete="CASCADE"),
+        sa.ForeignKey(users.c.id, ondelete=RefActions.CASCADE),
         nullable=False,
         doc="Identified user",
     ),
@@ -44,8 +45,8 @@ api_keys = sa.Table(
         sa.String,
         sa.ForeignKey(
             "products.name",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_api_keys_product_name",
         ),
         nullable=False,

@@ -35,7 +35,7 @@ class MockApp(dict):
 
 
 @pytest.fixture
-def app_mock(openapi_specs):
+def app_mock():
     app = MockApp()
 
     # emulates security is initialized
@@ -44,9 +44,7 @@ def app_mock(openapi_specs):
     return app
 
 
-def test_unique_application_keys(
-    app_mock, openapi_specs, mock_env_devel_environment: dict[str, str]
-):
+def test_unique_application_keys(app_mock, mock_env_devel_environment: dict[str, str]):
     setup_settings(app_mock)
     setup_rest(app_mock)
     setup_diagnostics(app_mock)

@@ -12,9 +12,9 @@ from typing import Annotated
 from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.folders_v2 import (
-    CreateFolderBodyParams,
+    FolderCreateBodyParams,
     FolderGet,
-    PutFolderBodyParams,
+    FolderReplaceBodyParams,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
@@ -38,7 +38,7 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_folder(
-    _body: CreateFolderBodyParams,
+    _body: FolderCreateBodyParams,
 ):
     ...
 
@@ -79,7 +79,7 @@ async def get_folder(
 )
 async def replace_folder(
     _path: Annotated[FoldersPathParams, Depends()],
-    _body: PutFolderBodyParams,
+    _body: FolderReplaceBodyParams,
 ):
     ...
 
