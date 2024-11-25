@@ -16,7 +16,7 @@ from models_library.rest_base import RequestParameters
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
-    create_ordering_query_model_classes,
+    create_ordering_query_model_class,
 )
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
@@ -53,7 +53,7 @@ def _handle_resource_usage_exceptions(handler: Handler):
 
 _ResorceUsagesListOrderQueryParams: type[
     RequestParameters
-] = create_ordering_query_model_classes(
+] = create_ordering_query_model_class(
     ordering_fields={
         "wallet_id",
         "wallet_name",

@@ -1,10 +1,12 @@
+import pickle
+
 import pytest
 from common_library.json_serialization import json_dumps
 from models_library.basic_types import IDStr
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
-    create_ordering_query_model_classes,
+    create_ordering_query_model_class,
 )
 from pydantic import (
     BaseModel,
@@ -48,8 +50,31 @@ class ReferenceOrderQueryParamsClass(BaseModel):
     )
 
 
+@pytest.mark.xfail(
+    reason="create_ordering_query_model_class.<locals>._OrderBy is still not pickable"
+)
+def test_pickle_ordering_query_model_class():
+    OrderQueryParamsModel = create_ordering_query_model_class(
+        ordering_fields={"name", "description"},
+        default=OrderBy(field=IDStr("name"), direction=OrderDirection.DESC),
+    )
+
+    data = {"order_by": {"field": "name", "direction": "asc"}}
+    query_model = OrderQueryParamsModel.model_validate(data)
+
+    # https://docs.pydantic.dev/latest/concepts/serialization/#pickledumpsmodel
+    expected = query_model.order_by
+
+    # see https://github.com/ITISFoundation/osparc-simcore/pull/6828
+    # FAILURE: raises `AttributeError: Can't pickle local object 'create_ordering_query_model_class.<locals>._OrderBy'`
+    data = pickle.dumps(expected)
+
+    loaded = pickle.loads(data)
+    assert loaded == expected
+
+
 def test_conversion_order_by_from_query_to_domain_model():
-    OrderQueryParamsModel = create_ordering_query_model_classes(
+    OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified_at", "name", "description"},
         default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
     )
@@ -90,7 +115,7 @@ def test_conversion_order_by_from_query_to_domain_model():
 
 
 def test_ordering_query_model_class_factory():
-    BaseOrderingQueryModel = create_ordering_query_model_classes(
+    BaseOrderingQueryModel = create_ordering_query_model_class(
         ordering_fields={"modified_at", "name", "description"},
         default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
         ordering_fields_api_to_column_map={"modified_at": "modified_column"},
@@ -119,7 +144,7 @@ def test_ordering_query_model_class_factory():
 
 def test_ordering_query_model_class__fails_with_invalid_fields():
 
-    OrderQueryParamsModel = create_ordering_query_model_classes(
+    OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
     )
@@ -136,7 +161,7 @@ def test_ordering_query_model_class__fails_with_invalid_fields():
 
 
 def test_ordering_query_model_class__fails_with_invalid_direction():
-    OrderQueryParamsModel = create_ordering_query_model_classes(
+    OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
     )
@@ -154,7 +179,7 @@ def test_ordering_query_model_class__fails_with_invalid_direction():
 
 def test_ordering_query_model_class__defaults():
 
-    OrderQueryParamsModel = create_ordering_query_model_classes(
+    OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
         ordering_fields_api_to_column_map={"modified": "modified_at"},
@@ -184,7 +209,7 @@ def test_ordering_query_model_class__defaults():
 
 
 def test_ordering_query_model_with_map():
-    OrderQueryParamsModel = create_ordering_query_model_classes(
+    OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
         ordering_fields_api_to_column_map={"modified": "some_db_column_name"},
@@ -197,7 +222,7 @@ def test_ordering_query_model_with_map():
 
 def test_ordering_query_parse_json_pre_validator():
 
-    OrderQueryParamsModel = create_ordering_query_model_classes(
+    OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
     )
