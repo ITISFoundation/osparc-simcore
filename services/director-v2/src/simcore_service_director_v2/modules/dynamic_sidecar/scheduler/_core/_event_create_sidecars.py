@@ -67,7 +67,7 @@ _DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
 )
 
 
-def _get_dynamic_sidecar_service_final_spec(
+def _merge_service_base_and_user_specs(
     dynamic_sidecar_service_spec_base: AioDockerServiceSpec,
     user_specific_service_spec: AioDockerServiceSpec,
 ) -> AioDockerServiceSpec:
@@ -264,7 +264,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         user_specific_service_spec = AioDockerServiceSpec.model_validate(
             user_specific_service_spec
         )
-        dynamic_sidecar_service_final_spec = _get_dynamic_sidecar_service_final_spec(
+        dynamic_sidecar_service_final_spec = _merge_service_base_and_user_specs(
             dynamic_sidecar_service_spec_base, user_specific_service_spec
         )
         rabbit_message = ProgressRabbitMessageNode.model_construct(
