@@ -115,7 +115,7 @@ async def _get_pipeline_dag(project_id: ProjectID, db_engine: Engine) -> nx.DiGr
     get_redis_client_from_app,
     lock_key=get_redis_lock_key(MODULE_NAME_SCHEDULER, unique_lock_key_builder=None),
 )
-async def schedule_pipelines(app: FastAPI) -> None:
+async def schedule_all_pipelines(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, msg="scheduling pipelines"):
         db_engine = get_db_engine(app)
         runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
@@ -142,7 +142,7 @@ async def schedule_pipelines(app: FastAPI) -> None:
 
 async def setup_manager(app: FastAPI) -> None:
     app.state.scheduler_manager = start_periodic_task(
-        schedule_pipelines,
+        schedule_all_pipelines,
         interval=SCHEDULER_INTERVAL,
         task_name=MODULE_NAME_SCHEDULER,
         app=app,
