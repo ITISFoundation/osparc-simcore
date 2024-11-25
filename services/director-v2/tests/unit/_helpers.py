@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 import aiopg
 import aiopg.sa
@@ -23,9 +23,10 @@ class PublishedProject:
     tasks: list[CompTaskAtDB]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class RunningProject(PublishedProject):
     runs: CompRunsAtDB
+    task_to_callback_mapping: dict[NodeID, Callable[[], None]]
 
 
 async def set_comp_task_outputs(
@@ -89,7 +90,7 @@ async def assert_comp_tasks(
     task_ids: list[NodeID],
     expected_state: RunningState,
     expected_progress: float | None,
-) -> None:
+) -> list[CompTaskAtDB]:
     # check the database is correctly updated, the run is published
     async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
@@ -105,3 +106,4 @@ async def assert_comp_tasks(
     assert all(
         t.progress == expected_progress for t in tasks
     ), f"{expected_progress=}, found: {[t.progress for t in tasks]}"
+    return tasks
