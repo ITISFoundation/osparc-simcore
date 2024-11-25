@@ -24,7 +24,15 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       init: true,
       nullable: false,
       event: "changeShowDeleteButton"
-    }
+    },
+
+    groupMembers: {
+      check: "Object",
+      nullable: true,
+      init: null,
+      event: "changeGroupMembers",
+      apply: "updateNMembers",
+    },
   },
 
   events: {
@@ -39,11 +47,16 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       return;
     },
 
+    updateNMembers: function() {
+      const roleText = this.getGroupMembers() ? Object.keys(this.getGroupMembers()).length + this.tr(" members") : "-";
+      this.setRole(roleText);
+    },
+
     // overridden
     _getOptionsMenu: function() {
       let menu = null;
       const accessRights = this.getAccessRights();
-      if (accessRights.getWrite()) {
+      if (accessRights["write"]) {
         const optionsMenu = this.getChildControl("options");
         optionsMenu.show();
 
@@ -51,7 +64,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
           position: "bottom-right"
         });
 
-        if (accessRights.getWrite()) {
+        if (accessRights["write"]) {
           const editOrgButton = new qx.ui.menu.Button(this.tr("Edit details..."));
           editOrgButton.addListener("execute", () => {
             this.fireDataEvent("openEditOrganization", this.getKey());
@@ -59,7 +72,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
           menu.add(editOrgButton);
         }
 
-        if (accessRights.getDelete()) {
+        if (accessRights["delete"]) {
           const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
           this.bind("showDeleteButton", deleteOrgButton, "visibility", {
             converter: show => show ? "visible" : "excluded"
@@ -83,14 +96,12 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
         thumbnail.setSource(osparc.utils.Icons.organization(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
       }
       if (this.isPropertyInitialized("key")) {
-        const store = osparc.store.Store.getInstance();
-        store.getProductEveryone()
-          .then(groupProductEveryone => {
-            if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone["gid"]) {
-              thumbnail.setSource(osparc.utils.Icons.everyone(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
-            }
-          });
+        const groupsStore = osparc.store.Groups.getInstance();
+        const groupProductEveryone = groupsStore.getEveryoneProductGroup();
+        if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone.getGroupId()) {
+          thumbnail.setSource(osparc.utils.Icons.everyone(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
+        }
       }
-    }
+    },
   }
 });

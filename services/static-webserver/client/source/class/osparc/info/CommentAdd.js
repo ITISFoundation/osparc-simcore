@@ -68,9 +68,9 @@ qx.Class.define("osparc.info.CommentAdd", {
             maxHeight: 32,
             decorator: "rounded",
           });
-          const userEmail = osparc.auth.Data.getInstance().getEmail();
+          const myEmail = osparc.auth.Data.getInstance().getEmail();
           control.set({
-            source: osparc.utils.Avatar.getUrl(userEmail, 32)
+            source: osparc.utils.Avatar.getUrl(myEmail, 32)
           });
           const layout = this.getChildControl("add-comment-layout");
           layout.add(control, {

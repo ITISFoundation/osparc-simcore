@@ -32,23 +32,18 @@ qx.Class.define("osparc.editor.OrganizationEditor", {
     organization ? this.getChildControl("save") : this.getChildControl("create");
 
     if (organization) {
-      organization.bind("gid", this, "gid");
+      organization.bind("groupId", this, "gid");
       organization.bind("label", this, "label");
       organization.bind("description", this, "description");
       organization.bind("thumbnail", this, "thumbnail", {
         converter: val => val ? val : ""
       });
     } else {
-      osparc.store.Store.getInstance().getGroupsOrganizations()
-        .then(orgs => {
-          const existingNames = orgs.map(org => org["label"]);
-          const defaultName = osparc.utils.Utils.getUniqueName("New Organization", existingNames)
-          title.setValue(defaultName);
-        })
-        .catch(err => {
-          console.error(err);
-          title.setValue("New Organization");
-        });
+      const groupsStore = osparc.store.Groups.getInstance();
+      const orgs = groupsStore.getOrganizations();
+      const existingNames = Object.values(orgs).map(org => org.getLabel());
+      const defaultName = osparc.utils.Utils.getUniqueName("New Organization", existingNames)
+      title.setValue(defaultName);
     }
 
     this.addListener("appear", () => {

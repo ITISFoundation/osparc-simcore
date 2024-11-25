@@ -166,9 +166,9 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       membersCtrl.setDelegate({
         createItem: () => new osparc.desktop.wallets.MemberListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("id", "model", null, item, id);
-          ctrl.bindProperty("id", "key", null, item, id);
-          ctrl.bindProperty("gid", "gid", null, item, id);
+          ctrl.bindProperty("userId", "model", null, item, id);
+          ctrl.bindProperty("userId", "key", null, item, id);
+          ctrl.bindProperty("groupId", "gid", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
@@ -183,16 +183,16 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
               "border-radius": "16px"
             });
           item.addListener("promoteToAccountant", e => {
-            const walletMember = e.getData();
-            this.__promoteToAccountant(walletMember);
+            const listedMember = e.getData();
+            this.__promoteToAccountant(listedMember);
           });
           item.addListener("demoteToMember", e => {
-            const walletMember = e.getData();
-            this.__demoteToMember(walletMember);
+            const listedMember = e.getData();
+            this.__demoteToMember(listedMember);
           });
           item.addListener("removeMember", e => {
-            const walletMember = e.getData();
-            this.__deleteMember(walletMember);
+            const listedMember = e.getData();
+            this.__deleteMember(listedMember);
           });
         }
       });
@@ -211,24 +211,24 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
 
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const membersList = [];
-      const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators(true);
+      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(true);
       const canIWrite = wallet.getMyAccessRights()["write"];
       wallet.getAccessRights().forEach(accessRights => {
-        const gid = accessRights["gid"];
-        if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
-          const collab = potentialCollaborators[parseInt(gid)];
-          // Do not override collaborator object
-          const collaborator = osparc.utils.Utils.deepCloneObject(collab);
-          if ("first_name" in collaborator) {
-            collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
-            collaborator["name"] = osparc.utils.Utils.firstsUp(
-              `${"first_name" in collaborator && collaborator["first_name"] != null ?
-                collaborator["first_name"] : collaborator["login"]}`,
-              `${"last_name" in collaborator && collaborator["last_name"] != null ?
-                collaborator["last_name"] : ""}`
-            );
-          }
-          collaborator["accessRights"] = accessRights;
+        const gid = parseInt(accessRights["gid"]);
+        if (Object.prototype.hasOwnProperty.call(potentialCollaborators, gid)) {
+          // only users or groupMe
+          const collab = potentialCollaborators[gid];
+          const collaborator = {};
+          collaborator["userId"] = gid === myGroupId ? osparc.auth.Data.getInstance().getUserId() : collab.getUserId();
+          collaborator["groupId"] = collab.getGroupId();
+          collaborator["thumbnail"] = collab.getThumbnail();
+          collaborator["name"] = collab.getLabel();
+          collaborator["login"] = gid === myGroupId ? osparc.auth.Data.getInstance().getEmail() : collab.getLogin();
+          collaborator["accessRights"] = {
+            read: accessRights["read"],
+            write: accessRights["write"],
+            delete: accessRights["delete"],
+          };
           let options = [];
           if (canIWrite) {
             // accountant...
@@ -289,21 +289,18 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
             });
 
           // push 'WALLET_SHARED' notification
-          osparc.store.Store.getInstance().getPotentialCollaborators()
-            .then(potentialCollaborators => {
-              gids.forEach(gid => {
-                if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
-                  // it's a user, not an organization
-                  const collab = potentialCollaborators[gid];
-                  const uid = collab["id"];
-                  osparc.notification.Notifications.postNewWallet(uid, wallet.getWalletId());
-                }
-              });
-            });
+          const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
+          gids.forEach(gid => {
+            if (gid in potentialCollaborators && "getUserId" in potentialCollaborators[gid]) {
+              // it's a user, not an organization
+              const uid = potentialCollaborators[gid].getUserId();
+              osparc.notification.Notifications.postNewWallet(uid, wallet.getWalletId());
+            }
+          });
         });
     },
 
-    __promoteToAccountant: function(walletMember) {
+    __promoteToAccountant: function(listedMember) {
       const wallet = this.__currentModel;
       if (wallet === null) {
         return;
@@ -312,7 +309,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       const params = {
         url: {
           "walletId": wallet.getWalletId(),
-          "groupId": walletMember["gid"]
+          "groupId": listedMember["gid"],
         },
         data: this.self().getWriteAccess()
       };
@@ -323,7 +320,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         });
     },
 
-    __demoteToMember: function(walletMember) {
+    __demoteToMember: function(listedMember) {
       const wallet = this.__currentModel;
       if (wallet === null) {
         return;
@@ -332,7 +329,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       const params = {
         url: {
           "walletId": wallet.getWalletId(),
-          "groupId": walletMember["gid"]
+          "groupId": listedMember["gid"],
         },
         data: this.self().getReadAccess()
       };
@@ -343,7 +340,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         });
     },
 
-    __deleteMember: function(walletMember) {
+    __deleteMember: function(listedMember) {
       const wallet = this.__currentModel;
       if (wallet === null) {
         return;
@@ -352,7 +349,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       const params = {
         url: {
           "walletId": wallet.getWalletId(),
-          "groupId": walletMember["gid"]
+          "groupId": listedMember["gid"],
         }
       };
       osparc.data.Resources.fetch("wallets", "deleteAccessRights", params)

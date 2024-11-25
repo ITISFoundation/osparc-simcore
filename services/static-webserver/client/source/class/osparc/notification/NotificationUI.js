@@ -134,9 +134,12 @@ qx.Class.define("osparc.notification.NotificationUI", {
         case "NEW_ORGANIZATION":
           icon.setSource("@FontAwesome5Solid/users/14");
           if (resourceId) {
-            osparc.store.Store.getInstance().getGroup(resourceId)
-              .then(group => descriptionLabel.setValue("You're now member of '" + group["label"] + "'"))
-              .catch(() => this.setEnabled(false));
+            const org = osparc.store.Groups.getInstance().getOrganization(resourceId);
+            if (org) {
+              descriptionLabel.setValue("You're now member of '" + org.getLabel() + "'")
+            } else {
+              this.setEnabled(false);
+            }
           }
           break;
         case "STUDY_SHARED":
@@ -157,9 +160,9 @@ qx.Class.define("osparc.notification.NotificationUI", {
               .catch(() => this.setEnabled(false));
           }
           if (userFromId) {
-            const user = osparc.store.Store.getInstance().getUser(userFromId);
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
             if (user) {
-              descriptionLabel.setValue("was shared by " + user["label"]);
+              descriptionLabel.setValue("was shared by " + user.getLabel());
             }
           }
           break;
@@ -177,9 +180,9 @@ qx.Class.define("osparc.notification.NotificationUI", {
             }
           }
           if (userFromId) {
-            const user = osparc.store.Store.getInstance().getUser(userFromId);
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
             if (user) {
-              descriptionLabel.setValue("was shared by " + user["label"]);
+              descriptionLabel.setValue("was shared by " + user.getLabel());
             }
           }
           break;
@@ -196,9 +199,9 @@ qx.Class.define("osparc.notification.NotificationUI", {
               .catch(() => this.setEnabled(false));
           }
           if (userFromId) {
-            const user = osparc.store.Store.getInstance().getUser(userFromId);
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
             if (user) {
-              descriptionLabel.setValue("was added by " + user["label"]);
+              descriptionLabel.setValue("was added by " + user.getLabel());
             }
           }
           break;
@@ -264,16 +267,14 @@ qx.Class.define("osparc.notification.NotificationUI", {
 
     __openOrganizationDetails: function(orgId) {
       // make sure org is available
-      osparc.store.Store.getInstance().getGroup(orgId)
-        .then(org => {
-          if (org) {
-            const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();
-            orgsWindow.openOrganizationDetails(orgId);
-          } else {
-            const msg = this.tr("You don't have access anymore");
-            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-          }
-        });
+      const org = osparc.store.Groups.getInstance().getOrganization(orgId)
+      if (org) {
+        const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();
+        orgsWindow.openOrganizationDetails(orgId);
+      } else {
+        const msg = this.tr("You don't have access anymore");
+        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+      }
     },
 
     __openStudyDetails: function(studyId, notification) {
