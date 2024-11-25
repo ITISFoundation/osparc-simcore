@@ -15,7 +15,7 @@ make config input="--LOCUST_HOST=https://api.osparc-master.speag.com
 ```
 This will validate your settings and you should be good to go once you see a the settings printed in your terminal.
 
-2. Once you have all settings setup you uun your test script using the Make `test` recipe:
+2. Once you have all settings setup you run your test script using the Make `test` recipe:
 ```bash
 make test-up
 ```
