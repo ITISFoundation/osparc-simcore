@@ -34,8 +34,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
 
     const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.ToggleButtonContainer();
+    this._add(workspacesContainer);
     workspacesContainer.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
-
 
     const foldersContainer = this.__foldersContainer = new osparc.dashboard.ToggleButtonContainer();
     this._add(foldersContainer);
@@ -264,9 +264,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __cleanAll: function() {
-      if (this.__workspacesContainer) {
-        this.__workspacesContainer.removeAll();
+      if (this._getChildren().includes(this.__nonGroupedContainer)) {
+        this._remove(this.__nonGroupedContainer);
       }
+      if (this._getChildren().includes(this.__groupedContainers)) {
+        this._remove(this.__groupedContainers);
+      }
+
       if (this.__nonGroupedContainer) {
         this.__nonGroupedContainer.removeAll();
         this.__nonGroupedContainer = null;
@@ -278,7 +282,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         groupedContainer.getContentContainer().removeAll();
       });
       this.__groupedContainersList = [];
-      this._removeAll();
     },
 
     __addFoldersContainer: function() {
@@ -365,8 +368,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     reloadWorkspaces: function() {
-      this.__cleanAll();
-      this._add(this.__workspacesContainer);
+      if (this.__workspacesContainer) {
+        this.__workspacesContainer.removeAll();
+      }
       let workspacesCards = [];
       this.__workspacesList.forEach(workspaceData => workspacesCards.push(this.__workspaceToCard(workspaceData)));
       return workspacesCards;
