@@ -11,6 +11,7 @@ from pydantic import (
     ConfigDict,
     Field,
     Json,
+    TypeAdapter,
     ValidationError,
     field_validator,
 )
@@ -45,6 +46,47 @@ class ReferenceOrderQueryParamsClass(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+
+
+def test_conversion_order_by_from_query_to_domain_model():
+    OrderQueryParamsModel = create_ordering_query_model_classes(
+        ordering_fields={"modified_at", "name", "description"},
+        default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+    )
+
+    # normal
+    data = {"order_by": {"field": "modified_at", "direction": "asc"}}
+    query_model = OrderQueryParamsModel.model_validate(data)
+
+    expected_data = data["order_by"]
+
+    assert type(query_model.order_by) is not OrderBy
+    assert isinstance(query_model.order_by, OrderBy)
+
+    # NOTE: This does NOT convert to OrderBy but has correct data
+    order_by = TypeAdapter(OrderBy).validate_python(
+        query_model.order_by, from_attributes=True
+    )
+    assert type(order_by) is not OrderBy
+    assert order_by.model_dump(mode="json") == expected_data
+
+    order_by = OrderBy.model_validate(query_model.order_by.model_dump())
+    assert type(order_by) is OrderBy
+    assert order_by.model_dump(mode="json") == expected_data
+
+    # NOTE: This does NOT convert to OrderBy but has correct data
+    order_by = OrderBy.model_validate(query_model.order_by, from_attributes=True)
+    assert type(order_by) is not OrderBy
+    assert order_by.model_dump(mode="json") == expected_data
+
+    order_by = OrderBy(**query_model.order_by.model_dump())
+    assert type(order_by) is OrderBy
+    assert order_by.model_dump(mode="json") == expected_data
+
+    # we should use this !!!
+    order_by = OrderBy.model_construct(**query_model.order_by.model_dump())
+    assert type(order_by) is OrderBy
+    assert order_by.model_dump(mode="json") == expected_data
 
 
 def test_ordering_query_model_class_factory():
