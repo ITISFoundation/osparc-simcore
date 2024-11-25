@@ -625,3 +625,14 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         ),
     )
     assert another_merged_dict
+
+
+def test_regression_aio_docker_service_spec_serialization():
+    raw_json = json.loads(
+        '{"sidecar":{"Name":null,"Labels":{"io.simcore.scalable-service":"true"},"TaskTemplate":{"PluginSpec":null,"ContainerSpec":null,"NetworkAttachmentSpec":null,"Resources":null,"RestartPolicy":null,"Placement":{"Constraints":["node.labels.io.simcore.autoscaled-node==true","node.labels.io.simcore.osparc-services-ready==true"],"Preferences":null,"MaxReplicas":0,"Platforms":null},"ForceUpdate":null,"Runtime":null,"Networks":null,"LogDriver":null},"Mode":null,"UpdateConfig":null,"RollbackConfig":null,"Networks":null,"EndpointSpec":null},"service":null}'
+    )
+    to_validate = raw_json["sidecar"]
+    result = AioDockerServiceSpec.model_validate(to_validate)
+    assert (
+        result.model_dump(mode="json", exclude_unset=True, by_alias=True) == to_validate
+    )
