@@ -15,21 +15,18 @@ make config input="--LOCUST_HOST=https://api.osparc-master.speag.com
 ```
 This will validate your settings and you should be good to go once you see a the settings printed in your terminal.
 
-2. Add settings related to your locust file. E.g. if your file expects to find an environment variable `MYENVVAR` you add it to `.env`:
+2. Once you have all settings setup you run your test script using the Make `test` recipe:
 ```bash
-echo "MYENVVAR=thisismyenvvar" >> .env
+make test-up
 ```
 
-3. Once you have all settings setup you uun your test script using the Make `test` recipe:
-```bash
-make test
-```
+3. If you want to clean up after your tests (remove docker containers) you run `make test-down`
 
 ## Dashboards for visualization
 - You can visualize the results of your tests (in real time) in a collection of beautiful [Grafana dashboards](https://github.com/SvenskaSpel/locust-plugins/tree/master/locust_plugins/dashboards).
-- To do this, run `make dashboards-up` and go to `localhost:3000` to view the dashboards. The way you tell locust to send test results to the database/grafana is by ensuring `LOCUST_TIMESCALE=1` (see how to generate settings in [usage](#usage))
+- To do this, run `make dashboards-up`. If you are on linux you should see your browser opening `localhost:3000`, where you can view the dashboards. If the browser doesn't open automatically, do it manually and navigate to `localhost:3000`.The way you tell locust to send test results to the database/grafana is by ensuring `LOCUST_TIMESCALE=1` (see how to generate settings in [usage](#usage))
 - When you are done you run `make dashboards-down` to clean up.
-- If you are using VPN you will need to forward port 300 to your local machine to view the dashboard.
+- If you are using VPN you will need to forward port 3000 to your local machine to view the dashboard.
 
 
 ## Tricky settings 🚨
