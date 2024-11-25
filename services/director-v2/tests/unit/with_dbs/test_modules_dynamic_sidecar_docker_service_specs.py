@@ -45,6 +45,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs im
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._event_create_sidecars import (
     _DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
+    _get_dynamic_sidecar_service_final_spec,
 )
 from simcore_service_director_v2.utils.dict_utils import nested_update
 
@@ -622,7 +623,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     assert another_merged_dict
 
 
-def test_regression_nested_update():
+def test_regression__get_dynamic_sidecar_service_final_spec():
     mock_service_spec = AioDockerServiceSpec.model_validate(
         {"Labels": {"l1": "false", "l0": "a"}}
     )
@@ -655,14 +656,10 @@ def test_regression_nested_update():
             },
         }
     )
-    result = nested_update(
-        jsonable_encoder(mock_service_spec, exclude_unset=True, by_alias=False),
-        jsonable_encoder(mock_catalog_constraints, exclude_unset=True, by_alias=False),
-        include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
+    result = _get_dynamic_sidecar_service_final_spec(
+        mock_service_spec, mock_catalog_constraints
     )
-    assert AioDockerServiceSpec.model_validate(result).model_dump(
-        by_alias=True, exclude_unset=True
-    ) == {
+    assert result.model_dump(by_alias=True, exclude_unset=True) == {
         "Labels": {"l1": "true", "l2": "a", "l0": "a"},
         "TaskTemplate": {
             "Placement": {

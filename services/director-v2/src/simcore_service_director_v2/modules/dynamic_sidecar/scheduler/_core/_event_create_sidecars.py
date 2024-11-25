@@ -67,6 +67,27 @@ _DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
 )
 
 
+def _get_dynamic_sidecar_service_final_spec(
+    dynamic_sidecar_service_spec_base: AioDockerServiceSpec,
+    user_specific_service_spec: AioDockerServiceSpec,
+) -> AioDockerServiceSpec:
+    # NOTE: since user_specific_service_spec follows Docker Service Spec and not Aio
+    # we do not use aliases when exporting dynamic_sidecar_service_spec_base
+    return AioDockerServiceSpec.model_validate(
+        nested_update(
+            jsonable_encoder(
+                dynamic_sidecar_service_spec_base,
+                exclude_unset=True,
+                by_alias=False,
+            ),
+            jsonable_encoder(
+                user_specific_service_spec, exclude_unset=True, by_alias=False
+            ),
+            include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
+        )
+    )
+
+
 async def _create_proxy_service(
     app,
     *,
@@ -245,18 +266,8 @@ class CreateSidecars(DynamicSchedulerEvent):
         user_specific_service_spec = AioDockerServiceSpec.model_validate(
             user_specific_service_spec
         )
-        # NOTE: since user_specific_service_spec follows Docker Service Spec and not Aio
-        # we do not use aliases when exporting dynamic_sidecar_service_spec_base
-        dynamic_sidecar_service_final_spec = AioDockerServiceSpec.model_validate(
-            nested_update(
-                jsonable_encoder(
-                    dynamic_sidecar_service_spec_base, exclude_unset=True, by_alias=True
-                ),
-                jsonable_encoder(
-                    user_specific_service_spec, exclude_unset=True, by_alias=True
-                ),
-                include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
-            )
+        dynamic_sidecar_service_final_spec = _get_dynamic_sidecar_service_final_spec(
+            dynamic_sidecar_service_spec_base, user_specific_service_spec
         )
         rabbit_message = ProgressRabbitMessageNode.model_construct(
             user_id=scheduler_data.user_id,
