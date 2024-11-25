@@ -2,9 +2,9 @@
     Models Front-end UI
 """
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, field_validator
 from pydantic_extra_types.color import Color
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
@@ -31,7 +31,7 @@ class Slideshow(_SlideshowRequired, total=False):
 
 class Annotation(BaseModel):
     type: Literal["note", "rect", "text"] = Field(...)
-    color: Color = Field(...)
+    color: Annotated[Color, PlainSerializer(str), Field(...)]
     attributes: dict = Field(..., description="svg attributes")
     model_config = ConfigDict(
         extra="forbid",
