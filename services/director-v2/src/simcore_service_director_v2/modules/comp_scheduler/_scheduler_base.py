@@ -12,8 +12,6 @@ The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 """
 
 import asyncio
-import concurrent
-import concurrent.futures
 import datetime
 import logging
 from abc import ABC, abstractmethod
@@ -89,7 +87,7 @@ def _auto_schedule_callback(
     iteration: Iteration,
 ) -> Callable[[], None]:
     def _cb() -> None:
-        async def _async_cb():
+        async def _async_cb() -> None:
             await request_pipeline_scheduling(
                 rabbit_mq_client,
                 db_engine,
@@ -99,12 +97,8 @@ def _auto_schedule_callback(
             )
 
         future = asyncio.run_coroutine_threadsafe(_async_cb(), loop)
-
-        def handle_future_result(fut: concurrent.futures.Future) -> None:
-            with log_catch(_logger, reraise=False):
-                fut.result(timeout=10)
-
-        future.add_done_callback(handle_future_result)
+        with log_catch(_logger, reraise=False):
+            future.result(timeout=10)
 
     return _cb
 
@@ -568,6 +562,7 @@ class BaseCompScheduler(ABC):
                         dag=dag,
                         comp_run=comp_run,
                         wake_up_callback=_auto_schedule_callback(
+                            asyncio.get_running_loop(),
                             self.db_engine,
                             self.rabbitmq_client,
                             user_id=user_id,
