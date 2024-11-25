@@ -416,7 +416,7 @@ def service_labels() -> dict[str, str]:
                 "inputs_path": "/tmp/inputs",  # noqa: S108
                 "outputs_path": "/tmp/outputs",  # noqa: S108
                 "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108
-                "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108
+                "state_exclude": ["/tmp/strip_me/*"],  # noqa: S108
             }
         ),
         "simcore.service.compose-spec": json.dumps(

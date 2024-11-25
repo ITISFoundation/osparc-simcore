@@ -16,8 +16,9 @@ router = APIRouter(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def service_submission(
-    _file: Annotated[bytes, File(description="metadata.json submission file")]
+    file: Annotated[bytes, File(description="metadata.json submission file")]
 ):
     """
     Submits files with new service candidate
     """
+    assert file  # nosec

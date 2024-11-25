@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 from sqlalchemy.sql import expression
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 from .groups import groups
 from .projects import projects
@@ -15,8 +15,8 @@ project_to_groups = sa.Table(
         sa.ForeignKey(
             projects.c.uuid,
             name="fk_project_to_groups_project_uuid",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         index=True,
         nullable=False,
@@ -28,8 +28,8 @@ project_to_groups = sa.Table(
         sa.ForeignKey(
             groups.c.gid,
             name="fk_project_to_groups_gid_groups",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         nullable=False,
         doc="Group unique IDentifier",

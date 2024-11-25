@@ -20,6 +20,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
+from yarl import URL
 
 _logger = logging.getLogger(__name__)
 try:
@@ -54,7 +55,7 @@ def setup_tracing(
     """
     _ = app
     opentelemetry_collector_endpoint = (
-        tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
+        f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}"
     )
     opentelemetry_collector_port = tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
     if not opentelemetry_collector_endpoint and not opentelemetry_collector_port:
@@ -72,9 +73,8 @@ def setup_tracing(
     resource = Resource(attributes={"service.name": service_name})
     trace.set_tracer_provider(TracerProvider(resource=resource))
     tracer_provider: trace.TracerProvider = trace.get_tracer_provider()
-    tracing_destination: str = (
-        f"{opentelemetry_collector_endpoint}:{opentelemetry_collector_port}/v1/traces"
-    )
+
+    tracing_destination: str = f"{URL(opentelemetry_collector_endpoint).with_port(opentelemetry_collector_port).with_path('/v1/traces')}"
 
     _logger.info(
         "Trying to connect service %s to tracing collector at %s.",

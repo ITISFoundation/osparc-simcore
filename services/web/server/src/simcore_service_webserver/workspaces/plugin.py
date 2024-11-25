@@ -7,7 +7,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import _groups_handlers, _workspaces_handlers
+from . import _groups_handlers, _trash_handlers, _workspaces_handlers
 
 _logger = logging.getLogger(__name__)
 
@@ -25,3 +25,4 @@ def setup_workspaces(app: web.Application):
     # routes
     app.router.add_routes(_workspaces_handlers.routes)
     app.router.add_routes(_groups_handlers.routes)
+    app.router.add_routes(_trash_handlers.routes)

@@ -43,6 +43,10 @@ from simcore_service_director_v2.modules.db.repositories.groups_extra_properties
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
     get_dynamic_sidecar_spec,
 )
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._event_create_sidecars import (
+    _DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
+    _merge_service_base_and_user_specs,
+)
 from simcore_service_director_v2.utils.dict_utils import nested_update
 
 
@@ -180,7 +184,7 @@ def expected_dynamic_sidecar_spec(
                     "paths_mapping": {
                         "inputs_path": "/tmp/inputs",  # noqa: S108
                         "outputs_path": "/tmp/outputs",  # noqa: S108
-                        "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108
+                        "state_exclude": ["/tmp/strip_me/*"],  # noqa: S108
                         "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108
                     },
                     "callbacks_mapping": CallbacksMapping.model_config[
@@ -239,7 +243,7 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",  # noqa: S108
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                     "DY_SIDECAR_STATE_EXCLUDE": json_dumps(
-                        {"*.py", "/tmp/strip_me/*"}  # noqa: S108
+                        ["/tmp/strip_me/*"]  # noqa: S108
                     ),
                     "DY_SIDECAR_STATE_PATHS": json_dumps(
                         ["/tmp/save_1", "/tmp_save_2"]  # noqa: S108
@@ -614,14 +618,66 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     another_merged_dict = nested_update(
         orig_dict,
         user_dict,
-        include=(
-            ["labels"],
-            ["task_template", "Resources", "Limits"],
-            ["task_template", "Resources", "Reservation", "MemoryBytes"],
-            ["task_template", "Resources", "Reservation", "NanoCPUs"],
-            ["task_template", "Placement", "Constraints"],
-            ["task_template", "ContainerSpec", "Env"],
-            ["task_template", "Resources", "Reservation", "GenericResources"],
-        ),
+        include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
     )
     assert another_merged_dict
+
+
+def test_regression__merge_service_base_and_user_specs():
+    mock_service_spec = AioDockerServiceSpec.model_validate(
+        {"Labels": {"l1": "false", "l0": "a"}}
+    )
+    mock_catalog_constraints = AioDockerServiceSpec.model_validate(
+        {
+            "Labels": {"l1": "true", "l2": "a"},
+            "TaskTemplate": {
+                "Placement": {
+                    "Constraints": [
+                        "c1==true",
+                        "c2==true",
+                    ],
+                },
+                "Resources": {
+                    "Limits": {"MemoryBytes": 1, "NanoCPUs": 1},
+                    "Reservations": {
+                        "GenericResources": [
+                            {"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}
+                        ],
+                        "MemoryBytes": 2,
+                        "NanoCPUs": 2,
+                    },
+                },
+                "ContainerSpec": {
+                    "Env": [
+                        "key-1=value-1",
+                        "key2-value2=a",
+                    ]
+                },
+            },
+        }
+    )
+    result = _merge_service_base_and_user_specs(
+        mock_service_spec, mock_catalog_constraints
+    )
+    assert result.model_dump(by_alias=True, exclude_unset=True) == {
+        "Labels": {"l1": "true", "l2": "a", "l0": "a"},
+        "TaskTemplate": {
+            "Placement": {
+                "Constraints": [
+                    "c1==true",
+                    "c2==true",
+                ],
+            },
+            "Resources": {
+                "Limits": {"MemoryBytes": 1, "NanoCPUs": 1},
+                "Reservations": {
+                    "GenericResources": [
+                        {"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}
+                    ],
+                    "MemoryBytes": 2,
+                    "NanoCPUs": 2,
+                },
+            },
+            "ContainerSpec": {"Env": {"key-1": "value-1", "key2-value2": "a"}},
+        },
+    }

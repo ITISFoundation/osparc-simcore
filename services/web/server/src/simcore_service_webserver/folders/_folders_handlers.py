@@ -2,10 +2,10 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.folders_v2 import (
-    CreateFolderBodyParams,
+    FolderCreateBodyParams,
     FolderGet,
     FolderGetPage,
-    PutFolderBodyParams,
+    FolderReplaceBodyParams,
 )
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
@@ -46,7 +46,7 @@ routes = web.RouteTableDef()
 @handle_plugin_requests_exceptions
 async def create_folder(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
-    body_params = await parse_request_body_as(CreateFolderBodyParams, request)
+    body_params = await parse_request_body_as(FolderCreateBodyParams, request)
 
     folder = await _folders_api.create_folder(
         request.app,
@@ -167,7 +167,7 @@ async def get_folder(request: web.Request):
 async def replace_folder(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
-    body_params = await parse_request_body_as(PutFolderBodyParams, request)
+    body_params = await parse_request_body_as(FolderReplaceBodyParams, request)
 
     folder = await _folders_api.update_folder(
         app=request.app,

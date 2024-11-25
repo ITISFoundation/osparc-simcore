@@ -4,7 +4,7 @@ import enum
 
 import sqlalchemy as sa
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 
@@ -35,8 +35,8 @@ resource_tracker_pricing_plans = sa.Table(
         sa.String,
         sa.ForeignKey(
             "products.name",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
             name="fk_rut_pricing_plans_product_name",
         ),
         nullable=False,

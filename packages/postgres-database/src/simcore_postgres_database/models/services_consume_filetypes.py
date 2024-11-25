@@ -7,6 +7,7 @@
 """
 import sqlalchemy as sa
 
+from ._common import RefActions
 from .base import metadata
 
 #
@@ -75,8 +76,8 @@ services_consume_filetypes = sa.Table(
     sa.ForeignKeyConstraint(
         ["service_key", "service_version"],
         ["services_meta_data.key", "services_meta_data.version"],
-        onupdate="CASCADE",
-        ondelete="CASCADE",
+        onupdate=RefActions.CASCADE,
+        ondelete=RefActions.CASCADE,
     ),
     # This table stores services (key:version) that consume filetype by AT LEAST one input_port
     # if more ports can consume, then it should only be added once in this table

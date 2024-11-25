@@ -14,7 +14,7 @@ from ..products.api import get_product_name
 from ..security.decorators import permission_required
 from . import _trash_api
 from ._exceptions_handlers import handle_plugin_requests_exceptions
-from ._models import FoldersPathParams, RemoveQueryParams
+from ._models import FoldersPathParams, FolderTrashQueryParams
 
 _logger = logging.getLogger(__name__)
 
@@ -31,8 +31,8 @@ async def trash_folder(request: web.Request):
     user_id = get_user_id(request)
     product_name = get_product_name(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
-    query_params: RemoveQueryParams = parse_request_query_parameters_as(
-        RemoveQueryParams, request
+    query_params: FolderTrashQueryParams = parse_request_query_parameters_as(
+        FolderTrashQueryParams, request
     )
 
     await _trash_api.trash_folder(

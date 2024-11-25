@@ -2,6 +2,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.sql import expression
 
+from ._common import RefActions
 from .base import metadata
 
 services_meta_data = sa.Table(
@@ -33,8 +34,8 @@ services_meta_data = sa.Table(
         sa.ForeignKey(
             "groups.gid",
             name="fk_services_meta_data_gid_groups",
-            onupdate="CASCADE",
-            ondelete="RESTRICT",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.RESTRICT,
         ),
         nullable=True,
         doc="Identifier of the group that owns this service (editable)",
@@ -141,8 +142,8 @@ services_access_rights = sa.Table(
         sa.ForeignKey(
             "groups.gid",
             name="fk_services_gid_groups",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         doc="Group Identifier of user that get these access-rights",
     ),
@@ -168,8 +169,8 @@ services_access_rights = sa.Table(
         sa.ForeignKey(
             "products.name",
             name="fk_services_name_products",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         doc="Product Identifier",
     ),
@@ -192,8 +193,8 @@ services_access_rights = sa.Table(
     sa.ForeignKeyConstraint(
         ["key", "version"],
         ["services_meta_data.key", "services_meta_data.version"],
-        onupdate="CASCADE",
-        ondelete="CASCADE",
+        onupdate=RefActions.CASCADE,
+        ondelete=RefActions.CASCADE,
     ),
     sa.PrimaryKeyConstraint(
         "key", "version", "gid", "product_name", name="services_access_pk"
