@@ -15,7 +15,7 @@ from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
-    create_ordering_query_model_classes,
+    create_ordering_query_model_class,
 )
 from pydantic import BaseModel, ConfigDict, Field
 from servicelib.aiohttp import status
@@ -365,7 +365,7 @@ async def test_parse_request_with_invalid_headers_params(
 
 def test_parse_request_query_parameters_as_with_order_by_query_models():
 
-    OrderQueryModel = create_ordering_query_model_classes(
+    OrderQueryModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name"}, default=OrderBy(field="name")
     )
 
@@ -376,4 +376,5 @@ def test_parse_request_query_parameters_as_with_order_by_query_models():
     request = make_mocked_request("GET", path=f"{url}")
 
     query_params = parse_request_query_parameters_as(OrderQueryModel, request)
-    assert query_params.order_by.model_dump() == expected.model_dump()
+
+    assert OrderBy.model_construct(**query_params.order_by.model_dump()) == expected
