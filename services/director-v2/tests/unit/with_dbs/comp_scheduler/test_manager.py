@@ -49,7 +49,7 @@ async def scheduler_rabbit_client_parser(
 ) -> AsyncIterator[mock.AsyncMock]:
     client = create_rabbitmq_client("scheduling_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
-    queue_name = await client.subscribe(
+    queue_name, _ = await client.subscribe(
         SchedulePipelineRabbitMessage.get_channel_name(), mock, exclusive_queue=False
     )
     yield mock
