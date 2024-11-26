@@ -484,29 +484,28 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           let groupContainer = this.__getGroupContainer(orgId);
           if (groupContainer === null) {
             groupContainer = this.__createGroupContainer(orgId, "loading-label");
-            osparc.store.Store.getInstance().getOrganizationOrUser(orgId)
-              .then(org => {
-                if (org && org["collabType"] !== 2) {
-                  let icon = "";
-                  if (org.thumbnail) {
-                    icon = org.thumbnail;
-                  } else if (org["collabType"] === 0) {
-                    icon = "@FontAwesome5Solid/globe/24";
-                  } else if (org["collabType"] === 1) {
-                    icon = "@FontAwesome5Solid/users/24";
-                  }
-                  groupContainer.set({
-                    headerIcon: icon,
-                    headerLabel: org.label
-                  });
-                } else {
-                  groupContainer.exclude();
-                }
-              })
-              .finally(() => {
-                this.__groupedContainers.add(groupContainer);
-                this.__moveNoGroupToLast();
+            const groupsStore = osparc.store.Groups.getInstance();
+            const group = groupsStore.getGroup(orgId);
+            if (group) {
+              let icon = "";
+              if (group.getThumbnail()) {
+                icon = group.getThumbnail();
+              } else if (group["collabType"] === 0) {
+                icon = "@FontAwesome5Solid/globe/24";
+              } else if (group["collabType"] === 1) {
+                icon = "@FontAwesome5Solid/users/24";
+              } else if (group["collabType"] === 2) {
+                icon = "@FontAwesome5Solid/user/24";
+              }
+              groupContainer.set({
+                headerIcon: icon,
+                headerLabel: group.getLabel(),
               });
+            } else {
+              groupContainer.exclude();
+            }
+            this.__groupedContainers.add(groupContainer);
+            this.__moveNoGroupToLast();
           }
           const card = this.__createCard(resourceData);
           this.__addCardToContainer(card, groupContainer);

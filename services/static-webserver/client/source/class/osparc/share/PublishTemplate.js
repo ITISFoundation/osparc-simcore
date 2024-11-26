@@ -61,22 +61,20 @@ qx.Class.define("osparc.share.PublishTemplate", {
       addCollaborators.addListener("addCollaborators", e => {
         const gids = e.getData();
         if (gids.length) {
-          osparc.store.Store.getInstance().getPotentialCollaborators(false, true)
-            .then(potentialCollaborators => {
-              const currentGids = this.getSelectedGroups();
-              gids.forEach(gid => {
-                if (gid in potentialCollaborators && !currentGids.includes(gid)) {
-                  const collabButton = new qx.ui.toolbar.Button(potentialCollaborators[gid]["label"], "@MaterialIcons/close/12");
-                  collabButton.gid = gid;
-                  this.__selectedCollabs.add(collabButton);
-                  collabButton.addListener("execute", () => {
-                    this.__selectedCollabs.remove(collabButton);
-                    this.__updateAccessRights();
-                  });
-                }
+          const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, true)
+          const currentGids = this.getSelectedGroups();
+          gids.forEach(gid => {
+            if (gid in potentialCollaborators && !currentGids.includes(gid)) {
+              const collabButton = new qx.ui.toolbar.Button(potentialCollaborators[gid].getLabel(), "@MaterialIcons/close/12");
+              collabButton.gid = gid;
+              this.__selectedCollabs.add(collabButton);
+              collabButton.addListener("execute", () => {
+                this.__selectedCollabs.remove(collabButton);
+                this.__updateAccessRights();
               });
-              this.__updateAccessRights();
-            });
+            }
+          });
+          this.__updateAccessRights();
         }
       }, this);
     },

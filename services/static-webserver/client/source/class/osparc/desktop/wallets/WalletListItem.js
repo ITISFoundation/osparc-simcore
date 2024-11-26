@@ -64,6 +64,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   },
 
   events: {
+    "openShareWallet": "qx.event.type.Data",
     "openEditWallet": "qx.event.type.Data",
     "buyCredits": "qx.event.type.Data",
     "toggleFavourite": "qx.event.type.Data"

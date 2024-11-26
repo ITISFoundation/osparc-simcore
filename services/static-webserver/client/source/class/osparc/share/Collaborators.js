@@ -35,11 +35,7 @@ qx.Class.define("osparc.share.Collaborators", {
 
     this.__buildLayout();
 
-    this.__collaborators = {};
-    initCollabs.forEach(initCollab => {
-      this.__collaborators[initCollab["gid"]] = initCollab;
-    });
-    this.__getCollaborators();
+    this._reloadCollaboratorsList();
   },
 
   events: {
@@ -158,7 +154,6 @@ qx.Class.define("osparc.share.Collaborators", {
     _resourceType: null,
     __addCollaborators: null,
     __collaboratorsModel: null,
-    __collaborators: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -340,14 +335,6 @@ qx.Class.define("osparc.share.Collaborators", {
       return vBox;
     },
 
-    __getCollaborators: function() {
-      osparc.store.Store.getInstance().getPotentialCollaborators()
-        .then(potentialCollaborators => {
-          this.__collaborators = Object.assign(this.__collaborators, potentialCollaborators);
-          this._reloadCollaboratorsList();
-        });
-    },
-
     __getLeaveStudyButton: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (
@@ -402,32 +389,35 @@ qx.Class.define("osparc.share.Collaborators", {
       // reload list
       this.__collaboratorsModel.removeAll();
 
-      const store = osparc.store.Store.getInstance();
+      const groupsStore = osparc.store.Groups.getInstance();
       const everyoneGIds = [
-        store.getEveryoneProductGroup()["gid"],
-        store.getEveryoneGroup()["gid"]
+        groupsStore.getEveryoneProductGroup().getGroupId(),
+        groupsStore.getEveryoneGroup().getGroupId()
       ];
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
       const showOptions = this.__canIChangePermissions();
+      const allGroupsAndUsers = groupsStore.getAllGroupsAndUsers();
       Object.keys(accessRights).forEach(gid => {
-        if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
-          const collab = this.__collaborators[gid];
+        if (gid in allGroupsAndUsers) {
+          const collab = allGroupsAndUsers[gid];
           // Do not override collaborator object
-          const collaborator = osparc.utils.Utils.deepCloneObject(collab);
-          if ("first_name" in collaborator) {
+          const collaborator = {
+            "gid": collab.getGroupId(),
+            "thumbnail": collab.getThumbnail(),
+          };
+          if ("getUserId" in collab) {
             // user
-            collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
-            collaborator["name"] = osparc.utils.Utils.firstsUp(
-              `${"first_name" in collaborator && collaborator["first_name"] != null ?
-                collaborator["first_name"] : collaborator["login"]}`,
-              `${"last_name" in collaborator && collaborator["last_name"] ?
-                collaborator["last_name"] : ""}`
-            );
-          } else if (everyoneGIds.includes(parseInt(gid))) {
-            // everyone product or everyone
-            if (collaborator["thumbnail"] === null) {
+            collaborator["name"] = collab.getLabel();
+            collaborator["login"] = collab.getLogin();
+          } else {
+            // org/group
+            collaborator["label"] = collab.getLabel();
+            collaborator["description"] = collab.getDescription();
+            if (everyoneGIds.includes(parseInt(gid))) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
+            } else if (!collaborator["thumbnail"]) {
+              collaborator["thumbnail"] = "@FontAwesome5Solid/users/26";
             }
           }
           collaborator["accessRights"] = accessRights[gid];
