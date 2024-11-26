@@ -108,10 +108,16 @@ comp_runs = sa.Table(
         doc="If filled, when cancellation was requested",
     ),
     sa.Column(
-        "last_scheduled",
+        "scheduled",
         sa.DateTime(timezone=True),
         nullable=True,
         doc="last time the pipeline was scheduled to be processed",
+    ),
+    sa.Column(
+        "processed",
+        sa.DateTime(timezone=True),
+        nullable=True,
+        doc="last time the pipeline was actually processed",
     ),
     sa.Column("metadata", JSONB, nullable=True, doc="the run optional metadata"),
     sa.Column(
