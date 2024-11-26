@@ -42,7 +42,7 @@ class _ExceptionContext:
 
 @asynccontextmanager
 async def _handled_exception_context_manager(
-    exception_catch: type[BaseException] | tuple[type[BaseException], ...],
+    exception_types: type[BaseException] | tuple[type[BaseException], ...],
     exception_handler: AiohttpExceptionHandler,
     **forward_ctx,
 ) -> AsyncIterator[_ExceptionContext]:
@@ -54,7 +54,7 @@ async def _handled_exception_context_manager(
 
         yield ctx
 
-    except exception_catch as e:
+    except exception_types as e:
         response = await exception_handler(exception=e, **forward_ctx)
         assert isinstance(response, web.Response)  # nosec
         ctx.response = response

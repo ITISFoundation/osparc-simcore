@@ -39,6 +39,7 @@ ExceptionToHttpErrorMap: TypeAlias = dict[type[BaseException], HttpErrorInfo]
 def create_exception_handler_from_http_error(
     exception_cls: type[BaseException],
     *,
+    # handler is produced from here
     status_code: int,
     msg_template: str,
 ) -> AiohttpExceptionHandler:
