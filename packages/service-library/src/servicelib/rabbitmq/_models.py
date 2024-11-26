@@ -18,11 +18,9 @@ TopicName: TypeAlias = str
 
 
 class RabbitMessage(Protocol):
-    def body(self) -> bytes:
-        ...
+    def body(self) -> bytes: ...
 
-    def routing_key(self) -> str | None:
-        ...
+    def routing_key(self) -> str | None: ...
 
 
 class RPCNamespacedMethodName(ConstrainedStr):
