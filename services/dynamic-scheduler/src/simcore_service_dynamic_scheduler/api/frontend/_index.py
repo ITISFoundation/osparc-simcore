@@ -1,6 +1,5 @@
 import json
 
-import arrow
 import httpx
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
@@ -10,28 +9,20 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ...services.service_tracker import TrackedServiceModel, get_all_tracked_services
 from ...services.service_tracker._models import SchedulerServiceState
-from ._common import base_page
+from ._rendeer_utils import base_page, get_iso_formatted_date
 from ._utils import get_parent_app
 
 router = APIRouter()
-
-
-def _get_elapsed(timestamp: float) -> str:
-    elapsed_time = arrow.utcnow() - arrow.get(timestamp)
-
-    days = elapsed_time.days
-    hours, remainder = divmod(elapsed_time.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-
-    # Format as "days hours:minutes:seconds"
-    return f"{days} days, {hours:02}:{minutes:02}:{seconds:02} ago"
 
 
 def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> None:
     dict_to_render: dict[str, tuple[str, str]] = {
         "NodeID": ("copy", f"{node_id}"),
         "Display State": ("label", service.current_state),
-        "Last State Change": ("label", _get_elapsed(service.last_state_change)),
+        "Last State Change": (
+            "label",
+            get_iso_formatted_date(service.last_state_change),
+        ),
         "UserID": ("copy", f"{service.user_id}"),
         "ProjectID": ("copy", f"{service.project_id}"),
         "User Requested": ("label", service.requested_state),
