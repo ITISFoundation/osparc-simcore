@@ -40,14 +40,14 @@ def _unique_key_builder(
 async def _exclusively_schedule_pipeline(
     app: FastAPI, *, user_id: UserID, project_id: ProjectID, iteration: Iteration
 ) -> None:
-    await _get_scheduler_worker(app).schedule_pipeline(
+    await _get_scheduler_worker(app).apply(
         user_id=user_id,
         project_id=project_id,
         iteration=iteration,
     )
 
 
-async def _handle_distributed_pipeline(app: FastAPI, data: bytes) -> bool:
+async def _handle_apply_distributed_schedule(app: FastAPI, data: bytes) -> bool:
 
     with log_context(_logger, logging.DEBUG, msg="handling scheduling"):
         to_schedule_pipeline = SchedulePipelineRabbitMessage.model_validate_json(data)
@@ -65,7 +65,7 @@ async def setup_worker(app: FastAPI) -> None:
     rabbitmq_client = get_rabbitmq_client(app)
     await rabbitmq_client.subscribe(
         SchedulePipelineRabbitMessage.get_channel_name(),
-        functools.partial(_handle_distributed_pipeline, app),
+        functools.partial(_handle_apply_distributed_schedule, app),
         exclusive_queue=False,
     )
 

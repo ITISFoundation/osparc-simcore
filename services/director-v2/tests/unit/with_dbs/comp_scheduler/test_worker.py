@@ -76,7 +76,7 @@ async def test_worker_properly_autocalls_scheduler_api(
 @pytest.fixture
 async def mocked_scheduler_api(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._scheduler_base.BaseCompScheduler.schedule_pipeline"
+        "simcore_service_director_v2.modules.comp_scheduler._scheduler_base.BaseCompScheduler.apply"
     )
 
 
@@ -89,16 +89,26 @@ async def test_worker_scheduling_parallelism(
 ):
     with_disabled_auto_scheduling.assert_called_once()
 
-    mocked_scheduler_api.side_effect = asyncio.sleep(10)
+    async def _side_effect(*args, **kwargs):
+        await asyncio.sleep(10)
 
-    published_project = await publish_project()
-    assert published_project.project.prj_owner
-    await run_new_pipeline(
-        initialized_app,
-        user_id=published_project.project.prj_owner,
-        project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
-        run_metadata=run_metadata,
-        use_on_demand_clusters=False,
+    mocked_scheduler_api.side_effect = _side_effect
+
+    async def _project_pipeline_creation_workflow():
+        published_project = await publish_project()
+        assert published_project.project.prj_owner
+        await run_new_pipeline(
+            initialized_app,
+            user_id=published_project.project.prj_owner,
+            project_id=published_project.project.uuid,
+            cluster_id=DEFAULT_CLUSTER_ID,
+            run_metadata=run_metadata,
+            use_on_demand_clusters=False,
+        )
+
+    num_concurrent_calls = 10
+    await asyncio.gather(
+        *(_project_pipeline_creation_workflow() for _ in range(num_concurrent_calls))
     )
-    mocked_scheduler_api.assert_called_once()
+    mocked_scheduler_api.assert_called()
+    assert mocked_scheduler_api.call_count == num_concurrent_calls

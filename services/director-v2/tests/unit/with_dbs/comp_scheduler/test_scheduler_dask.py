@@ -213,7 +213,7 @@ async def _assert_publish_in_dask_backend(
 
     mocked_dask_client.get_tasks_status.side_effect = _return_tasks_pending
     assert published_project.project.prj_owner
-    await scheduler.schedule_pipeline(
+    await scheduler.apply(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         iteration=1,
@@ -273,7 +273,7 @@ async def _assert_publish_in_dask_backend(
     mocked_dask_client.get_tasks_status.assert_not_called()
     mocked_dask_client.get_task_result.assert_not_called()
     # there is a second run of the scheduler to move comp_runs to pending, the rest does not change
-    await scheduler.schedule_pipeline(
+    await scheduler.apply(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         iteration=1,
@@ -464,7 +464,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         ]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_running
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -514,7 +514,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         node_id=exp_started_task.node_id,
     )
 
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -591,7 +591,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         return TaskOutputData.model_validate({"out_1": None, "out_2": 45})
 
     mocked_dask_client.get_task_result.side_effect = _return_random_task_result
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -702,7 +702,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         project_id=exp_started_task.project_id,
         node_id=exp_started_task.node_id,
     )
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -758,7 +758,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     mocked_dask_client.get_tasks_status.side_effect = _return_2nd_task_failed
     mocked_dask_client.get_task_result.side_effect = None
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -822,7 +822,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_dask_client.get_task_result.side_effect = _return_random_task_result
 
     # trigger the scheduler, it should switch to FAILED, as we are done
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -934,7 +934,7 @@ async def with_started_project(
     assert isinstance(mocked_dask_client.send_computation_tasks, mock.Mock)
     assert isinstance(mocked_dask_client.get_task_result, mock.Mock)
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_running
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -984,7 +984,7 @@ async def with_started_project(
         node_id=exp_started_task.node_id,
     )
 
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -1133,7 +1133,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     #
     # Trigger scheduling manually. since the pipeline is broken, it shall be aborted
     #
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_entry.user_id,
         project_id=run_entry.project_uuid,
         iteration=run_entry.iteration,
@@ -1273,7 +1273,7 @@ async def test_handling_of_disconnected_scheduler_dask(
         project_id=published_project.project.uuid,
     )
     # we ensure the scheduler was run
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -1291,7 +1291,7 @@ async def test_handling_of_disconnected_scheduler_dask(
         expected_progress=1,
     )
     # then we have another scheduler run
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -1413,7 +1413,7 @@ async def test_handling_scheduled_tasks_after_director_reboots(
 
     mocked_dask_client.get_task_result.side_effect = mocked_get_task_result
     assert running_project.project.prj_owner
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=running_project.project.prj_owner,
         project_id=running_project.project.uuid,
         iteration=1,
@@ -1522,7 +1522,7 @@ async def test_handling_cancellation_of_jobs_after_reboot(
 
     mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
     # Running the scheduler, should actually cancel the run now
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -1571,7 +1571,7 @@ async def test_handling_cancellation_of_jobs_after_reboot(
         raise TaskCancelledError
 
     mocked_dask_client.get_task_result.side_effect = _return_random_task_result
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -1662,7 +1662,7 @@ async def test_running_pipeline_triggers_heartbeat(
         project_id=exp_started_task.project_id,
         node_id=exp_started_task.node_id,
     )
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -1678,12 +1678,12 @@ async def test_running_pipeline_triggers_heartbeat(
     # -------------------------------------------------------------------------------
     # 3. wait a bit and run again we should get another heartbeat, but only one!
     await asyncio.sleep(with_fast_service_heartbeat_s + 1)
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
     )
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -1698,12 +1698,12 @@ async def test_running_pipeline_triggers_heartbeat(
     # -------------------------------------------------------------------------------
     # 4. wait a bit and run again we should get another heartbeat, but only one!
     await asyncio.sleep(with_fast_service_heartbeat_s + 1)
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
     )
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -1776,7 +1776,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         published_project.tasks[1],
         published_project.tasks[3],
     ]
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -1801,7 +1801,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         expected_progress=None,
     )
     # again will trigger the same response
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -1880,7 +1880,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
         published_project.tasks[1],
         published_project.tasks[3],
     ]
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,
@@ -1905,7 +1905,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
         expected_progress=1.0,
     )
     # again will not re-trigger the call to clusters-keeper
-    await scheduler_api.schedule_pipeline(
+    await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
         iteration=run_in_db.iteration,

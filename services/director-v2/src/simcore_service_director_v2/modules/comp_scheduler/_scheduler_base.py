@@ -521,7 +521,7 @@ class BaseCompScheduler(ABC):
     ) -> None:
         """process tasks from the 3rd party backend"""
 
-    async def schedule_pipeline(
+    async def apply(
         self,
         *,
         user_id: UserID,
