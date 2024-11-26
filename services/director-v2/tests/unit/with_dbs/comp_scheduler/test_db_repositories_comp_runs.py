@@ -13,6 +13,7 @@ from _helpers import PublishedProject
 from faker import Faker
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster
 from models_library.projects import ProjectID
+from models_library.projects_state import RunningState
 from models_library.users import UserID
 from simcore_service_director_v2.core.errors import (
     ClusterNotFoundError,
@@ -197,21 +198,149 @@ async def test_update(
     assert updated.scheduled is not None
 
 
-async def test_delete(aiopg_engine):
-    ...
+async def test_set_run_result(
+    aiopg_engine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+):
+    published_project = await publish_project()
+    created = await CompRunsRepository(aiopg_engine).create(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+    )
+    got = await CompRunsRepository(aiopg_engine).get(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+    )
+    assert created == got
+    assert created.result is not RunningState.PENDING
+    assert created.ended is None
+
+    updated = await CompRunsRepository(aiopg_engine).set_run_result(
+        user_id=created.user_id,
+        project_id=created.project_uuid,
+        iteration=created.iteration,
+        result_state=RunningState.PENDING,
+        final_state=False,
+    )
+    assert updated
+    assert updated != created
+    assert updated.result is RunningState.PENDING
+    assert updated.ended is None
+
+    final_updated = await CompRunsRepository(aiopg_engine).set_run_result(
+        user_id=created.user_id,
+        project_id=created.project_uuid,
+        iteration=created.iteration,
+        result_state=RunningState.ABORTED,
+        final_state=True,
+    )
+    assert final_updated
+    assert final_updated != updated
+    assert final_updated.result is RunningState.ABORTED
+    assert final_updated.ended is not None
 
 
-async def test_set_run_result(aiopg_engine):
-    ...
+async def test_mark_for_cancellation(
+    aiopg_engine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+):
+    published_project = await publish_project()
+    created = await CompRunsRepository(aiopg_engine).create(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+    )
+    got = await CompRunsRepository(aiopg_engine).get(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+    )
+    assert created == got
+    assert created.cancelled is None
+
+    updated = await CompRunsRepository(aiopg_engine).mark_for_cancellation(
+        user_id=created.user_id,
+        project_id=created.project_uuid,
+        iteration=created.iteration,
+    )
+    assert updated
+    assert updated != created
+    assert updated.cancelled is not None
 
 
-async def test_mark_for_cancellation(aiopg_engine):
-    ...
+async def test_mark_for_scheduling(
+    aiopg_engine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+):
+    published_project = await publish_project()
+    created = await CompRunsRepository(aiopg_engine).create(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+    )
+    got = await CompRunsRepository(aiopg_engine).get(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+    )
+    assert created == got
+    assert created.scheduled is None
+    assert created.processed is None
+
+    updated = await CompRunsRepository(aiopg_engine).mark_for_scheduling(
+        user_id=created.user_id,
+        project_id=created.project_uuid,
+        iteration=created.iteration,
+    )
+    assert updated
+    assert updated != created
+    assert updated.scheduled is not None
+    assert updated.processed is None
 
 
-async def test_mark_for_scheduling(aiopg_engine):
-    ...
+async def test_mark_scheduling_done(
+    aiopg_engine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+):
+    published_project = await publish_project()
+    created = await CompRunsRepository(aiopg_engine).create(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+    )
+    got = await CompRunsRepository(aiopg_engine).get(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+    )
+    assert created == got
+    assert created.scheduled is None
+    assert created.processed is None
 
-
-async def test_mark_scheduling_done(aiopg_engine):
-    ...
+    updated = await CompRunsRepository(aiopg_engine).mark_scheduling_done(
+        user_id=created.user_id,
+        project_id=created.project_uuid,
+        iteration=created.iteration,
+    )
+    assert updated
+    assert updated != created
+    assert updated.scheduled is None
+    assert updated.processed is not None
