@@ -1521,14 +1521,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }
 
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const collabGids = Object.keys(studyData["accessRights"]);
-      const amICollaborator = collabGids.indexOf(myGid) > -1;
       if (deleteAccess) {
         menu.addSeparator();
         const trashButton = this.__getTrashStudyMenuButton(studyData, false);
         menu.add(trashButton);
-      } else if (amICollaborator) {
+      } else if (this.__deleteOrRemoveMe(studyData) === "remove") {
         // if I'm a collaborator, let me remove myself from the study. In that case it would be a Delete for me
         menu.addSeparator();
         const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
@@ -1740,7 +1737,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __deleteStudyRequested: function(studyData) {
       const preferencesSettings = osparc.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteStudy()) {
-        const win = false ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
+        const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
         win.center();
         win.open();
         win.addListener("close", () => {
@@ -1975,10 +1972,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __deleteOrRemoveMe: function(studyData) {
+      const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const collabGids = Object.keys(studyData["accessRights"]);
       const amICollaborator = collabGids.indexOf(myGid) > -1;
-      return (collabGids.length > 1 && amICollaborator) ? "remove" : "delete";
+      return (!deleteAccess && collabGids.length > 1 && amICollaborator) ? "remove" : "delete";
     },
 
     __removeMeFromCollaborators: function(studyData) {
