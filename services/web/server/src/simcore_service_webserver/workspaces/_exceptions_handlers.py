@@ -22,6 +22,10 @@ from .errors import (
 _logger = logging.getLogger(__name__)
 
 
+def tr(msg) -> str:
+    return msg
+
+
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     WorkspaceGroupNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,

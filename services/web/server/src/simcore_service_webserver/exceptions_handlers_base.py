@@ -1,8 +1,7 @@
 import functools
 import logging
-from collections.abc import AsyncIterator, Iterable
-from contextlib import AbstractAsyncContextManager, asynccontextmanager
-from dataclasses import dataclass
+from collections.abc import Iterable
+from contextlib import AbstractAsyncContextManager
 from types import TracebackType
 from typing import Protocol
 
@@ -45,19 +44,41 @@ def _sort_exceptions_by_specificity(
 
 
 class AsyncDynamicTryExceptContext(AbstractAsyncContextManager):
-    """Context manager to handle exceptions if they match any in the exception_handlers dictionary"""
+    """Context manager to handle exceptions if they match any in the
+    exception_handlers_map"""
 
     def __init__(
         self,
-        exception_handlers: dict[type[BaseException], AiohttpExceptionHandler],
+        exception_handlers_map: dict[type[BaseException], AiohttpExceptionHandler],
         *,
         request: web.Request,
     ):
-        self.exception_handlers = exception_handlers
-        self.request = request
-        self.response = None
+        self._exception_handlers_map = exception_handlers_map
+        self._exceptions_types_priorized = _sort_exceptions_by_specificity(
+            list(self._exception_handlers_map.keys()), concrete_first=True
+        )
+        self._request = request
+        self._response = None
+
+    def _get_exc_handler_or_none(
+        self, exc_type: type[BaseException], exc_value: BaseException
+    ) -> AiohttpExceptionHandler | None:
+        exc_handler = self._exception_handlers_map.get(exc_type)
+        if not exc_handler and (
+            base_exc_type := next(
+                (
+                    _type
+                    for _type in self._exceptions_types_priorized
+                    if isinstance(exc_value, _type)
+                ),
+                None,
+            )
+        ):
+            exc_handler = self._exception_handlers_map[base_exc_type]
+        return exc_handler
 
     async def __aenter__(self):
+        self._response = None
         return self
 
     async def __aexit__(
@@ -66,26 +87,28 @@ class AsyncDynamicTryExceptContext(AbstractAsyncContextManager):
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> bool:
-        # FIXME: the specificity is not resolved by the __aexit__ caller
-        if exc_type is not None and exc_type in self.exception_handlers:
-            assert exc_value  # nosec
-
-            exc_handler = self.exception_handlers[exc_type]
-            self.response = await exc_handler(request=self.request, exception=exc_value)
+        if (
+            exc_value is not None
+            and exc_type is not None
+            and (exc_handler := self._get_exc_handler_or_none(exc_type, exc_value))
+        ):
+            self._response = await exc_handler(
+                request=self._request, exception=exc_value
+            )
             return True  # suppress
         return False  # reraise
 
     def get_response(self):
-        return self.response
+        return self._response
 
 
 def async_try_except_decorator(
-    exception_handlers: dict[type[BaseException], AiohttpExceptionHandler]
+    exception_handlers_map: dict[type[BaseException], AiohttpExceptionHandler]
 ):
     def _decorator(handler: WebHandler):
         @functools.wraps(handler)
         async def _wrapper(request: web.Request) -> web.StreamResponse:
-            cm = AsyncDynamicTryExceptContext(exception_handlers, request=request)
+            cm = AsyncDynamicTryExceptContext(exception_handlers_map, request=request)
             async with cm:
                 return await handler(request)
 
@@ -93,63 +116,6 @@ def async_try_except_decorator(
             response = cm.get_response()
             assert response is not None  # nosec
             return response
-
-        return _wrapper
-
-    return _decorator
-
-
-# ----------------
-
-
-@dataclass
-class _ExceptionContext:
-    response: web.Response | None = None
-
-
-@asynccontextmanager
-async def _handled_exception_context_manager(
-    exception_types: type[BaseException] | tuple[type[BaseException], ...],
-    exception_handler: AiohttpExceptionHandler,
-    **forward_ctx,
-) -> AsyncIterator[_ExceptionContext]:
-    """
-    Calls `exception_handler` on exceptions raised in this context and caught in `exception_catch`
-    """
-    ctx = _ExceptionContext()
-    try:
-
-        yield ctx
-
-    except exception_types as e:
-        # NOTE: exception_types are automatically sorted by specififyt
-        response = await exception_handler(exception=e, **forward_ctx)
-        assert isinstance(response, web.Response)  # nosec
-        ctx.response = response
-
-
-def create_decorator_from_exception_handler(
-    exception_types: type[BaseException] | tuple[type[BaseException], ...],
-    exception_handler: AiohttpExceptionHandler,
-):
-    """Returns a decorator for aiohttp's web.Handler functions
-
-    Builds a decorator function that applies _handled_exception_context to an aiohttp Handler
-    """
-
-    def _decorator(handler: WebHandler):
-        @functools.wraps(handler)
-        async def _wrapper(request: web.Request) -> web.StreamResponse:
-
-            async with _handled_exception_context_manager(
-                exception_types,
-                exception_handler,
-                request=request,
-            ) as exc_ctx:
-
-                return await handler(request)
-
-            return exc_ctx.response
 
         return _wrapper
 
