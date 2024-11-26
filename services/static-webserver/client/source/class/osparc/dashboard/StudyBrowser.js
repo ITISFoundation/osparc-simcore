@@ -458,14 +458,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _trashWorkspaceRequested: function(workspaceId) {
       osparc.store.Workspaces.getInstance().trashWorkspace(workspaceId)
-        .then(() => this.__reloadWorkspaces())
-        .catch(err => console.error(err));
+        .then(() => {
+          this.__reloadWorkspaces();
+          const msg = this.tr("Successfully moved to Trash");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+        });
     },
 
     _untrashWorkspaceRequested: function(workspace) {
       osparc.store.Workspaces.getInstance().untrashWorkspace(workspace)
-        .then(() => this.__reloadWorkspaces())
-        .catch(err => console.error(err));
+        .then(() => {
+          this.__reloadWorkspaces();
+          const msg = this.tr("Successfully restored");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+        });
     },
 
     _deleteWorkspaceRequested: function(workspaceId) {
@@ -606,14 +620,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _trashFolderRequested: function(folderId) {
       osparc.store.Folders.getInstance().trashFolder(folderId, this.getCurrentWorkspaceId())
-        .then(() => this.__reloadFolders())
-        .catch(err => console.error(err));
+        .then(() => {
+          this.__reloadFolders();
+          const msg = this.tr("Successfully moved to Trash");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+        })
     },
 
     _untrashFolderRequested: function(folder) {
       osparc.store.Folders.getInstance().untrashFolder(folder)
-        .then(() => this.__reloadFolders())
-        .catch(err => console.error(err));
+        .then(() => {
+          this.__reloadFolders();
+          const msg = this.tr("Successfully restored");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+        })
     },
 
     _deleteFolderRequested: function(folderId) {
@@ -1935,7 +1963,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __untrashStudy: function(studyData) {
       osparc.store.Store.getInstance().untrashStudy(studyData.uuid)
-        .then(() => this.__removeFromStudyList(studyData.uuid))
+        .then(() => {
+          this.__removeFromStudyList(studyData.uuid);
+          const msg = this.tr("Successfully restored");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+        })
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
@@ -1944,22 +1976,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __trashStudy: function(studyData) {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const collabGids = Object.keys(studyData["accessRights"]);
-      const amICollaborator = collabGids.indexOf(myGid) > -1;
-
-      let operationPromise = null;
-      if (collabGids.length > 1 && amICollaborator) {
-        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
-        // remove collaborator
-        delete arCopy[myGid];
-        operationPromise = osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
-      } else {
-        // trash study
-        operationPromise = osparc.store.Store.getInstance().trashStudy(studyData.uuid);
-      }
-      operationPromise
-        .then(() => this.__removeFromStudyList(studyData.uuid))
+      osparc.store.Store.getInstance().trashStudy(studyData.uuid)
+        .then(() => {
+          this.__removeFromStudyList(studyData.uuid);
+          const msg = this.tr("Successfully moved to Trash");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+        })
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
