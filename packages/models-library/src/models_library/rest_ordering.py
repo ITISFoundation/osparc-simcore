@@ -27,10 +27,10 @@ class OrderBy(BaseModel):
 
 
 class _BaseOrderQueryParams(RequestParameters):
-    order_by: OrderBy | None = None
+    order_by: OrderBy
 
 
-def create_ordering_query_model_classes(
+def create_ordering_query_model_class(
     *,
     ordering_fields: set[str],
     default: OrderBy,
