@@ -37,14 +37,9 @@ qx.Class.define("osparc.filter.OrganizationsAndMembers", {
     __collaboratorsToBeRemoved: null,
 
     addOption: function(group) {
-      let name = "";
-      if ("first_name" in group) {
-        name = `${group["first_name"]} ${"last_name" in group && group["last_name"] != null ? group["last_name"] : ""}`;
-      } else {
-        name = group["label"];
-      }
+      const name = group.getLabel();
       const btn = this._addOption(name);
-      btn.gid = group["gid"];
+      btn.gid = group.getGroupId();
       return btn;
     },
 
@@ -69,7 +64,7 @@ qx.Class.define("osparc.filter.OrganizationsAndMembers", {
         this.__collaboratorsToBeRemoved = collaboratorsToBeRemoved.map(collaboratorToBeRemoved => parseInt(collaboratorToBeRemoved));
       }
 
-      osparc.store.Store.getInstance().getPotentialCollaborators()
+      osparc.store.Groups.getInstance().getPotentialCollaborators()
         .then(potentialCollaborators => {
           this.__visibleCollaborators = potentialCollaborators;
           this.__addOrgsAndMembers();
@@ -89,7 +84,7 @@ qx.Class.define("osparc.filter.OrganizationsAndMembers", {
         if (a["collabType"] < b["collabType"]) {
           return -1;
         }
-        if (a["label"] > b["label"]) {
+        if (a.getLabel() > b.getLabel()) {
           return 1;
         }
         return -1;

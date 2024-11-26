@@ -275,7 +275,8 @@ qx.Class.define("osparc.data.model.Study", {
 
     canIWrite: function(studyAccessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = [...osparc.auth.Data.getInstance().getOrgIds()];
+      const groupsStore = osparc.store.Groups.getInstance();
+      const orgIDs = groupsStore.getOrganizationIds();
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
         return osparc.share.CollaboratorsStudy.canGroupsWrite(studyAccessRights, (orgIDs));
@@ -285,7 +286,8 @@ qx.Class.define("osparc.data.model.Study", {
 
     canIDelete: function(studyAccessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const orgIDs = [...osparc.auth.Data.getInstance().getOrgIds()];
+      const groupsStore = osparc.store.Groups.getInstance();
+      const orgIDs = groupsStore.getOrganizationIds();
       orgIDs.push(myGroupId);
       if (orgIDs.length) {
         return osparc.share.CollaboratorsStudy.canGroupsDelete(studyAccessRights, (orgIDs));

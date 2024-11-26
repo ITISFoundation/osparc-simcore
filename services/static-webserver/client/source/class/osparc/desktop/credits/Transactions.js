@@ -31,13 +31,12 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       }
     }
 
+    const groupsStore = osparc.store.Groups.getInstance();
+    const myGid = groupsStore.getMyGroupId()
     const store = osparc.store.Store.getInstance();
-    store.getGroupsMe()
-      .then(personalGroup => {
-        this.__personalWallet = store.getWallets().find(wallet => wallet.getOwner() === personalGroup.gid);
-        this.__personalWalletId = this.__personalWallet.getWalletId();
-        this.__buildLayout();
-      });
+    this.__personalWallet = store.getWallets().find(wallet => wallet.getOwner() === myGid);
+    this.__personalWalletId = this.__personalWallet.getWalletId();
+    this.__buildLayout();
   },
 
   members: {

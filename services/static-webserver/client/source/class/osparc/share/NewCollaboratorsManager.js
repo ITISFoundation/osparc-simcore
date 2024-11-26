@@ -28,7 +28,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     this.__renderLayout();
 
-    this.__selectedCollaborators = new qx.data.Array();
+    this.__selectedCollaborators = [];
     this.__visibleCollaborators = {};
     this.__reloadCollaborators();
 
@@ -112,20 +112,18 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         // all users can share services with ProductEveryone
         includeProductEveryone = true;
       }
-      osparc.store.Store.getInstance().getPotentialCollaborators(false, includeProductEveryone)
-        .then(potentialCollaborators => {
-          this.__visibleCollaborators = potentialCollaborators;
-          const anyCollaborator = Object.keys(potentialCollaborators).length;
-          // tell the user that belonging to an organization is required to start sharing
-          this.__introLabel.setVisibility(anyCollaborator ? "excluded" : "visible");
-          this.__orgsButton.setVisibility(anyCollaborator ? "excluded" : "visible");
+      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, includeProductEveryone)
+      this.__visibleCollaborators = potentialCollaborators;
+      const anyCollaborator = Object.keys(potentialCollaborators).length;
+      // tell the user that belonging to an organization is required to start sharing
+      this.__introLabel.setVisibility(anyCollaborator ? "excluded" : "visible");
+      this.__orgsButton.setVisibility(anyCollaborator ? "excluded" : "visible");
 
-          // or start sharing
-          this.__textFilter.setVisibility(anyCollaborator ? "visible" : "excluded");
-          this.__collabButtonsContainer.setVisibility(anyCollaborator ? "visible" : "excluded");
-          this.__shareButton.setVisibility(anyCollaborator ? "visible" : "excluded");
-          this.__addEditors();
-        });
+      // or start sharing
+      this.__textFilter.setVisibility(anyCollaborator ? "visible" : "excluded");
+      this.__collabButtonsContainer.setVisibility(anyCollaborator ? "visible" : "excluded");
+      this.__shareButton.setVisibility(anyCollaborator ? "visible" : "excluded");
+      this.__addEditors();
     },
 
     __collaboratorButton: function(collaborator) {
@@ -133,9 +131,9 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();
         if (selected) {
-          this.__selectedCollaborators.push(collaborator.gid);
+          this.__selectedCollaborators.push(collaborator.getGroupId());
         } else {
-          this.__selectedCollaborators.remove(collaborator.gid);
+          this.__selectedCollaborators.remove(collaborator.getGroupId());
         }
         this.__shareButton.setEnabled(Boolean(this.__selectedCollaborators.length));
       }, this);
@@ -154,7 +152,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         if (a["collabType"] < b["collabType"]) {
           return -1;
         }
-        if (a["label"] > b["label"]) {
+        if (a.getLabel() > b.getLabel()) {
           return 1;
         }
         return -1;
@@ -175,7 +173,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const existingCollaborators = existingCollabs.map(c => parseInt(c));
       visibleCollaborators.forEach(visibleCollaborator => {
         // do not list the visibleCollaborators that are already collaborators
-        if (existingCollaborators.includes(visibleCollaborator["gid"])) {
+        if (existingCollaborators.includes(visibleCollaborator.getGroupId())) {
           return;
         }
         if (this.__showOrganizations === false && visibleCollaborator["collabType"] !== 2) {
@@ -189,13 +187,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       this.__collabButtonsContainer.setEnabled(false);
       this.__shareButton.setFetching(true);
 
-      const addCollabs = [];
-      for (let i=0; i<this.__selectedCollaborators.length; i++) {
-        const collabId = this.__selectedCollaborators.getItem(i);
-        addCollabs.push(collabId);
-      }
-      if (addCollabs.length) {
-        this.fireDataEvent("addCollaborators", addCollabs);
+      if (this.__selectedCollaborators.length) {
+        this.fireDataEvent("addCollaborators", this.__selectedCollaborators);
       }
       // The parent class will close the window
     }
