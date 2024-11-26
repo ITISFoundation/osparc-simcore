@@ -8,12 +8,16 @@ from ._errors import (
     RPCNotInitializedError,
     RPCServerError,
 )
+from ._models import ConsumerTag, ExchangeName, QueueName
 from ._rpc_router import RPCRouter
 from ._utils import is_rabbitmq_responsive, wait_till_rabbitmq_responsive
 
 __all__: tuple[str, ...] = (
     "BIND_TO_ALL_TOPICS",
+    "ConsumerTag",
+    "ExchangeName",
     "is_rabbitmq_responsive",
+    "QueueName",
     "RabbitMQClient",
     "RabbitMQRPCClient",
     "RemoteMethodNotRegisteredError",
