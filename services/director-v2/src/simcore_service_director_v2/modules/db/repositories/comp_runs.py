@@ -56,6 +56,7 @@ class CompRunsRepository(BaseRepository):
     async def list(
         self,
         filter_by_state: set[RunningState] | None = None,
+        need_scheduling: bool | None = None,
         scheduled_since: datetime.timedelta | None = None,
     ) -> list[CompRunsAtDB]:
 
@@ -69,14 +70,18 @@ class CompRunsRepository(BaseRepository):
                     ]
                 )
             )
+
+        scheduling_or_conditions = []
+        if need_scheduling is not None:
+            scheduling_or_conditions.append(comp_runs.c.last_scheduled.is_(None))
         if scheduled_since is not None:
             scheduled_cutoff = arrow.utcnow().datetime - scheduled_since
-            conditions.append(
-                or_(
-                    comp_runs.c.last_scheduled.is_(None),
-                    comp_runs.c.last_scheduled <= scheduled_cutoff,
-                )
+            scheduling_or_conditions.append(
+                comp_runs.c.last_scheduled <= scheduled_cutoff
             )
+
+        if scheduling_or_conditions:
+            conditions.append(sa.or_(*scheduling_or_conditions))
 
         async with self.db_engine.acquire() as conn:
             return [

@@ -1,4 +1,5 @@
 import logging
+from typing import Final
 
 import networkx as nx
 from aiopg.sa import Engine
@@ -111,6 +112,9 @@ async def _get_pipeline_dag(project_id: ProjectID, db_engine: Engine) -> nx.DiGr
     return pipeline_at_db.get_graph()
 
 
+_LOST_TASKS_FACTOR: Final[int] = 10
+
+
 @exclusive(
     get_redis_client_from_app,
     lock_key=get_redis_lock_key(MODULE_NAME_SCHEDULER, unique_lock_key_builder=None),
@@ -119,23 +123,35 @@ async def schedule_all_pipelines(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, msg="scheduling pipelines"):
         db_engine = get_db_engine(app)
         runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
-            filter_by_state=SCHEDULED_STATES, scheduled_since=SCHEDULER_INTERVAL
+            filter_by_state=SCHEDULED_STATES, need_scheduling=True
         )
+        possibly_lost_scheduled_pipelines = await CompRunsRepository.instance(
+            db_engine
+        ).list(
+            filter_by_state=SCHEDULED_STATES,
+            scheduled_since=SCHEDULER_INTERVAL * _LOST_TASKS_FACTOR,
+        )
+        if possibly_lost_scheduled_pipelines:
+            _logger.error(
+                "found %d lost pipelines, they will be re-scheduled now",
+                len(possibly_lost_scheduled_pipelines),
+            )
 
         rabbitmq_client = get_rabbitmq_client(app)
-        await limited_gather(
-            *(
-                request_pipeline_scheduling(
-                    rabbitmq_client,
-                    db_engine,
-                    user_id=run.user_id,
-                    project_id=run.project_uuid,
-                    iteration=run.iteration,
-                )
-                for run in runs_to_schedule
-            ),
-            limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
-        )
+        with log_context(_logger, logging.DEBUG, msg="distributing pipelines"):
+            await limited_gather(
+                *(
+                    request_pipeline_scheduling(
+                        rabbitmq_client,
+                        db_engine,
+                        user_id=run.user_id,
+                        project_id=run.project_uuid,
+                        iteration=run.iteration,
+                    )
+                    for run in runs_to_schedule + possibly_lost_scheduled_pipelines
+                ),
+                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
+            )
         if runs_to_schedule:
             _logger.debug("distributed %d pipelines", len(runs_to_schedule))
 
