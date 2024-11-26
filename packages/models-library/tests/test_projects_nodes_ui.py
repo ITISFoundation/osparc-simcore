@@ -1,8 +1,11 @@
+import pytest
 from models_library.projects_nodes_ui import Marker
 from pydantic_extra_types.color import Color
 
 
-def test_marker_serialization():
-    m = Marker(color=Color("#b7e28d"))
-
-    assert m.model_dump_json() == '{"color":"#b7e28d"}'
+@pytest.mark.parametrize(
+    "color_str,expected_color_str", [("#b7e28d", "#b7e28d"), ("Cyan", "#0ff")]
+)
+def test_marker_color_serialized_to_hex(color_str, expected_color_str):
+    m = Marker(color=Color(color_str))
+    assert m.model_dump_json() == f'{{"color":"{expected_color_str}"}}'
