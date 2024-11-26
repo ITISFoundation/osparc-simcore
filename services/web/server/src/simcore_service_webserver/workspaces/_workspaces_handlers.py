@@ -79,7 +79,7 @@ async def list_workspaces(request: web.Request):
         filter_trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=OrderBy.model_validate(query_params.order_by),
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
     page = Page[WorkspaceGet].model_validate(
