@@ -35,6 +35,7 @@ _DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S: Final[float] = 1
 _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS: Final[NonNegativeInt] = 15
 
 _DELAYED_EXCHANGE_NAME: Final[ExchangeName] = ExchangeName("delayed_{exchange_name}")
+_DELAYED_QUEUE_NAME: Final[ExchangeName] = ExchangeName("delayed_{queue_name}")
 
 
 def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
@@ -225,9 +226,8 @@ class RabbitMQClient(RabbitMQClientBase):
             queue = await declare_queue(
                 channel,
                 self.client_name,
-                exchange_name,
+                non_exclusive_queue_name or exchange_name,
                 exclusive_queue=exclusive_queue,
-                non_exclusive_queue_name=non_exclusive_queue_name,
                 message_ttl=message_ttl,
                 arguments={"x-dead-letter-exchange": delayed_exchange_name},
             )
@@ -241,13 +241,15 @@ class RabbitMQClient(RabbitMQClientBase):
             delayed_exchange = await channel.declare_exchange(
                 delayed_exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
             )
+            delayed_queue_name = _DELAYED_QUEUE_NAME.format(
+                queue_name=non_exclusive_queue_name or exchange_name
+            )
 
             delayed_queue = await declare_queue(
                 channel,
                 self.client_name,
-                delayed_exchange_name,
+                delayed_queue_name,
                 exclusive_queue=exclusive_queue,
-                non_exclusive_queue_name=non_exclusive_queue_name,
                 message_ttl=int(unexpected_error_retry_delay_s * 1000),
                 arguments={"x-dead-letter-exchange": exchange.name},
             )
@@ -276,7 +278,6 @@ class RabbitMQClient(RabbitMQClientBase):
                 self.client_name,
                 exchange_name,
                 exclusive_queue=True,
-                non_exclusive_queue_name=None,
                 arguments={
                     "x-dead-letter-exchange": _DELAYED_EXCHANGE_NAME.format(
                         exchange_name=exchange_name
@@ -302,7 +303,6 @@ class RabbitMQClient(RabbitMQClientBase):
                 self.client_name,
                 exchange_name,
                 exclusive_queue=True,
-                non_exclusive_queue_name=None,
                 arguments={
                     "x-dead-letter-exchange": _DELAYED_EXCHANGE_NAME.format(
                         exchange_name=exchange_name

@@ -6,7 +6,7 @@
 
 
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Final
 from unittest import mock
@@ -464,9 +464,7 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
         if _raise_once_then_true.calls == 1:
             msg = "this is a test!"
             raise KeyError(msg)
-        if _raise_once_then_true.calls == 2:
-            return False
-        return True
+        return _raise_once_then_true.calls != 2
 
     exchange_name = random_exchange_name()
     _raise_once_then_true.calls = 0
@@ -476,6 +474,22 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
     await _assert_message_received(mocked_message_parser, 3, message)
 
 
+@pytest.fixture
+async def ensure_queue_deletion(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient]
+) -> AsyncIterator[Callable[[QueueName], None]]:
+    created_queues = set()
+
+    def _(queue_name: QueueName) -> None:
+        created_queues.add(queue_name)
+
+    yield _
+
+    client = create_rabbitmq_client("ensure_queue_deletion")
+    await asyncio.gather(*(client.unsubscribe(q) for q in created_queues))
+
+
+@pytest.mark.parametrize("defined_queue_name", [None, "pytest-queue"])
 @pytest.mark.parametrize("num_subs", [10])
 async def test_pub_sub_with_non_exclusive_queue(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
@@ -483,6 +497,8 @@ async def test_pub_sub_with_non_exclusive_queue(
     mocker: MockerFixture,
     random_rabbit_message: Callable[..., PytestRabbitMessage],
     num_subs: int,
+    defined_queue_name: QueueName | None,
+    ensure_queue_deletion: Callable[[QueueName], None],
 ):
     consumers = (create_rabbitmq_client(f"consumer_{n}") for n in range(num_subs))
     mocked_message_parsers = [
@@ -492,13 +508,25 @@ async def test_pub_sub_with_non_exclusive_queue(
     publisher = create_rabbitmq_client("publisher")
     message = random_rabbit_message()
     exchange_name = random_exchange_name()
-    await asyncio.gather(
+    list_queue_name_consumer_mappings = await asyncio.gather(
         *(
-            consumer.subscribe(exchange_name, parser, exclusive_queue=False)
+            consumer.subscribe(
+                exchange_name,
+                parser,
+                exclusive_queue=False,
+                non_exclusive_queue_name=defined_queue_name,
+            )
             for consumer, parser in zip(consumers, mocked_message_parsers, strict=True)
         )
     )
-
+    for queue_name, _ in list_queue_name_consumer_mappings:
+        assert (
+            queue_name == exchange_name
+            if defined_queue_name is None
+            else defined_queue_name
+        )
+        ensure_queue_deletion(queue_name)
+        ensure_queue_deletion(f"delayed_{queue_name}")
     await publisher.publish(exchange_name, message)
     # only one consumer should have gotten the message here and the others not
     async for attempt in AsyncRetrying(
