@@ -1,7 +1,7 @@
 import datetime
 from typing import Annotated
 
-from pydantic import AliasChoices, Field, TypeAdapter, field_validator
+from pydantic import AliasChoices, Field, SecretStr, TypeAdapter, field_validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
@@ -80,7 +80,7 @@ class ApplicationSettings(_BaseApplicationSettings):
     These settings includes extra configuration for the http-API
     """
 
-    DYNAMIC_SCHEDULER_UI_STORAGE_SECRET: str = Field(
+    DYNAMIC_SCHEDULER_UI_STORAGE_SECRET: SecretStr = Field(
         ...,
         description=(
             "secret required to enabled browser-based storage for the UI. "

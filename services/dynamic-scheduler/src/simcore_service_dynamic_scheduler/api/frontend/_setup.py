@@ -12,6 +12,8 @@ def setup_frontend(app: FastAPI) -> None:
     nicegui.app.include_router(router)
 
     nicegui.ui.run_with(
-        app, mount_path="/", storage_secret=settings.DYNAMIC_SCHEDULER_UI_STORAGE_SECRET
+        app,
+        mount_path="/",
+        storage_secret=settings.DYNAMIC_SCHEDULER_UI_STORAGE_SECRET.get_secret_value(),
     )
     set_parent_app(app)
