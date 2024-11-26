@@ -1521,10 +1521,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }
 
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const collabGids = Object.keys(studyData["accessRights"]);
+      const amICollaborator = collabGids.indexOf(myGid) > -1;
       if (deleteAccess) {
-        const trashButton = this.__getTrashStudyMenuButton(studyData, false);
         menu.addSeparator();
+        const trashButton = this.__getTrashStudyMenuButton(studyData, false);
         menu.add(trashButton);
+      } else if (amICollaborator) {
+        // if I'm a collaborator, let me remove myself from the study. In that case it would be a Delete for me
+        menu.addSeparator();
+        const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
+        menu.add(deleteButton);
       }
 
       card.evaluateMenuButtons();
@@ -1730,6 +1738,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __deleteStudyRequested: function(studyData) {
+      // OM here
       const preferencesSettings = osparc.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteStudy()) {
         const win = this.__createConfirmDeleteWindow([studyData.name]);
@@ -1962,6 +1971,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .finally(() => this.resetSelection());
     },
 
+    __deleteCollaborator: function(studyData) {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const collabGids = Object.keys(studyData["accessRights"]);
+      const amICollaborator = collabGids.indexOf(myGid) > -1;
+
+      if (collabGids.length > 1 && amICollaborator) {
+        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
+        // remove collaborator
+        delete arCopy[myGid];
+        // OM here
+        operationPromise = osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
+      }
+    },
+
     __trashStudies: function(studiesData) {
       studiesData.forEach(studyData => this.__trashStudy(studyData));
     },
@@ -2003,6 +2026,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Move to Trash"),
         confirmText: this.tr("Move to Trash"),
+        confirmAction: "delete"
+      });
+      osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
+      return confirmationWin;
+    },
+
+    __createConfirmRemoveForMeWindow: function(studyName) {
+      const msg = `'${studyName} ` + this.tr("will be removed from your list. Collaborators will still have access.");
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Remove"),
+        confirmText: this.tr("Remove"),
         confirmAction: "delete"
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
