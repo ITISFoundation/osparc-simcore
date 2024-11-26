@@ -49,7 +49,11 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
         # NOTE: ignoring all events which are not relative to modifying
         # the contents of the `port_key` folders from the outputs directory
 
-        path_relative_to_outputs = Path(event.src_path).relative_to(self.outputs_path)
+        path_relative_to_outputs = Path(
+            event.src_path.decode()
+            if isinstance(event.src_path, bytes)
+            else event.src_path
+        ).relative_to(self.outputs_path)
 
         # discard event if not part of a subfolder
         relative_path_parents = path_relative_to_outputs.parents
