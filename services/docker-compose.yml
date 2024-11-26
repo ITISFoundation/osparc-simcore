@@ -570,6 +570,11 @@ services:
       DYNAMIC_SCHEDULER_UI_STORAGE_SECRET: ${DYNAMIC_SCHEDULER_UI_STORAGE_SECRET}
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
       TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
+    labels:
+        - traefik.http.services.${SWARM_STACK_NAME}_dynamic-schdlr.loadbalancer.sticky.cookie=true
+        - traefik.http.services.${SWARM_STACK_NAME}_dynamic-schdlr.loadbalancer.sticky.cookie.samesite=lax
+        - traefik.http.services.${SWARM_STACK_NAME}_dynamic-schdlr.loadbalancer.sticky.cookie.httponly=true
+        - traefik.http.services.${SWARM_STACK_NAME}_dynamic-schdlr.loadbalancer.sticky.cookie.secure=true
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
