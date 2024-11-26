@@ -227,6 +227,18 @@ class BaseCompScheduler(ABC):
             final_state=(run_result in COMPLETED_STATES),
         )
 
+    async def _set_schedule_done(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: Iteration,
+    ) -> None:
+        await CompRunsRepository.instance(self.db_engine).mark_as_scheduled_done(
+            user_id=user_id,
+            project_id=project_id,
+            iteration=iteration,
+        )
+
     async def _set_states_following_failed_to_aborted(
         self, project_id: ProjectID, dag: nx.DiGraph
     ) -> dict[NodeIDStr, CompTaskAtDB]:
@@ -631,6 +643,8 @@ class BaseCompScheduler(ABC):
                 )
             except ComputationalBackendNotConnectedError:
                 _logger.exception("Computational backend is not connected!")
+            finally:
+                await self._set_schedule_done(user_id, project_id, iteration)
 
     async def _schedule_tasks_to_stop(
         self,

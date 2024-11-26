@@ -27,6 +27,6 @@ async def request_pipeline_scheduling(
             iteration=iteration,
         ),
     )
-    await CompRunsRepository.instance(db_engine).mark_as_scheduled(
+    await CompRunsRepository.instance(db_engine).mark_for_scheduling(
         user_id=user_id, project_id=project_id, iteration=iteration
     )
