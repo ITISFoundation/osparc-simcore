@@ -13,7 +13,7 @@ from simcore_service_dynamic_scheduler.services.rabbitmq import get_rabbitmq_rpc
 from ....core.settings import ApplicationSettings
 from ....services.service_tracker import get_tracked_service, remove_tracked_service
 from .._utils import get_parent_app
-from ._rendeer_utils import base_page
+from ._render_utils import base_page
 
 router = APIRouter()
 
@@ -80,7 +80,7 @@ async def service_details(node_id: NodeID):
 
         ui.button(
             "Remove from tracking",
-            icon="delete",
+            icon="remove_circle",
             color="red",
             on_click=display_confirm_dialog,
         ).tooltip("Removes the service form the dynamic-scheduler's internal tracking")
