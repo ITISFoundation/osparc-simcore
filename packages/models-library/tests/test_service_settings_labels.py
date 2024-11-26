@@ -9,6 +9,7 @@ from pprint import pformat
 from typing import Any, Final, NamedTuple
 
 import pytest
+from common_library.json_serialization import json_dumps
 from models_library.basic_types import PortInt
 from models_library.osparc_variable_identifier import (
     OsparcVariableIdentifier,
@@ -32,7 +33,6 @@ from models_library.service_settings_nat_rule import (
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TextTemplate
 from pydantic import BaseModel, TypeAdapter, ValidationError
-from pydantic.json import pydantic_encoder
 
 
 class _Parametrization(NamedTuple):
@@ -558,11 +558,6 @@ def test_can_parse_labels_with_osparc_identifiers(
     assert "$" not in service_meta_str
 
 
-def servicelib__json_serialization__json_dumps(obj: Any, **kwargs):
-    # Analogous to 'common_library.json_serialization.json_dumps'
-    return json.dumps(obj, default=pydantic_encoder, **kwargs)
-
-
 def test_resolving_some_service_labels_at_load_time(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
@@ -579,9 +574,7 @@ def test_resolving_some_service_labels_at_load_time(
         ("settings", SimcoreServiceSettingsLabel),
     ):
         to_serialize = getattr(service_meta, attribute_name)
-        template = TextTemplate(
-            servicelib__json_serialization__json_dumps(to_serialize)
-        )
+        template = TextTemplate(json_dumps(to_serialize))
         assert template.is_valid()
         resolved_label: str = template.safe_substitute(vendor_environments)
         to_restore = TypeAdapter(pydantic_model).validate_json(resolved_label)
