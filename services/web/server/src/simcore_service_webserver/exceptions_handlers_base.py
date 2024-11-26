@@ -3,7 +3,7 @@ import logging
 from collections.abc import Iterable
 from contextlib import AbstractAsyncContextManager
 from types import TracebackType
-from typing import Protocol
+from typing import Protocol, TypeAlias
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler as WebHandler
@@ -43,19 +43,22 @@ def _sort_exceptions_by_specificity(
     )
 
 
+ExceptionHandlersMap: TypeAlias = dict[type[BaseException], AiohttpExceptionHandler]
+
+
 class AsyncDynamicTryExceptContext(AbstractAsyncContextManager):
     """Context manager to handle exceptions if they match any in the
     exception_handlers_map"""
 
     def __init__(
         self,
-        exception_handlers_map: dict[type[BaseException], AiohttpExceptionHandler],
+        exception_handlers_map: ExceptionHandlersMap,
         *,
         request: web.Request,
     ):
-        self._exception_handlers_map = exception_handlers_map
-        self._exceptions_types_priorized = _sort_exceptions_by_specificity(
-            list(self._exception_handlers_map.keys()), concrete_first=True
+        self._exc_handlers_map = exception_handlers_map
+        self._exc_types_priorized = _sort_exceptions_by_specificity(
+            list(self._exc_handlers_map.keys()), concrete_first=True
         )
         self._request = request
         self._response = None
@@ -63,18 +66,18 @@ class AsyncDynamicTryExceptContext(AbstractAsyncContextManager):
     def _get_exc_handler_or_none(
         self, exc_type: type[BaseException], exc_value: BaseException
     ) -> AiohttpExceptionHandler | None:
-        exc_handler = self._exception_handlers_map.get(exc_type)
+        exc_handler = self._exc_handlers_map.get(exc_type)
         if not exc_handler and (
             base_exc_type := next(
                 (
                     _type
-                    for _type in self._exceptions_types_priorized
+                    for _type in self._exc_types_priorized
                     if isinstance(exc_value, _type)
                 ),
                 None,
             )
         ):
-            exc_handler = self._exception_handlers_map[base_exc_type]
+            exc_handler = self._exc_handlers_map[base_exc_type]
         return exc_handler
 
     async def __aenter__(self):

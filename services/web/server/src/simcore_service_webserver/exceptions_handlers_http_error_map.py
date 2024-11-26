@@ -10,10 +10,7 @@ from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exc
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error
 
-from .exceptions_handlers_base import (
-    AiohttpExceptionHandler,
-    _sort_exceptions_by_specificity,
-)
+from .exceptions_handlers_base import AiohttpExceptionHandler, ExceptionHandlersMap
 
 _logger = logging.getLogger(__name__)
 
@@ -92,45 +89,22 @@ def create_exception_handler_from_http_error(
         return web.json_response(
             data={"error": error.model_dump(exclude_unset=True, mode="json")},
             dumps=json_dumps,
+            reason=user_msg,
+            status=status_code,
         )
 
     return _exception_handler
 
 
-def create_exception_handler_from_http_error_map(
+def to_exceptions_handlers_map(
     exc_to_http_error_map: ExceptionToHttpErrorMap,
-) -> AiohttpExceptionHandler:
-    """
-    Custom Exception-Handler factory
-
-    Creates a custom `WebApiExceptionHandler` that maps one-to-one exception to status code error codes
-
-    Analogous to `create_exception_handler_from_status_code` but ExceptionToHttpErrorMap as input
-    """
-
-    _exception_handlers = {
-        exc_cls: create_exception_handler_from_http_error(
-            status_code=http_error_info.status_code,
-            msg_template=http_error_info.msg_template,
+) -> ExceptionHandlersMap:
+    """Converts { exc_type: (status, msg), ...}  -> {exc_type: callable }"""
+    exc_handlers_map: ExceptionHandlersMap = {
+        exc_type: create_exception_handler_from_http_error(
+            status_code=info.status_code, msg_template=info.msg_template
         )
-        for exc_cls, http_error_info in exc_to_http_error_map.items()
+        for exc_type, info in exc_to_http_error_map.items()
     }
 
-    _catch_exceptions = _sort_exceptions_by_specificity(
-        list(_exception_handlers.keys())
-    )
-
-    async def _exception_handler(
-        request: web.Request,
-        exception: BaseException,
-    ) -> web.Response:
-        if exc_cls := next(
-            (_ for _ in _catch_exceptions if isinstance(exception, _)), None
-        ):
-            return await _exception_handlers[exc_cls](
-                request=request, exception=exception
-            )
-        # NOTE: not in my list, return so it gets reraised
-        return exception
-
-    return _exception_handler
+    return exc_handlers_map
