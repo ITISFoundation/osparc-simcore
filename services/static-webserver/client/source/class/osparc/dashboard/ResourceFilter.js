@@ -114,6 +114,12 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       });
       return trashButton;
     },
+
+    setTrashedNElements: function(nElements) {
+      this.__trashButton.set({
+        textColor: nElements ? "danger-red" : "text"
+      });
+    },
     /* /TRASH BIN */
 
     /* SHARED WITH */

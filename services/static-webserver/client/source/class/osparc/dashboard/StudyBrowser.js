@@ -462,6 +462,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__reloadWorkspaces();
           const msg = this.tr("Successfully moved to Trash");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          this._resourceFilter.setTrashedNElements(1);
         })
         .catch(err => {
           console.error(err);
@@ -624,6 +625,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__reloadFolders();
           const msg = this.tr("Successfully moved to Trash");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          this._resourceFilter.setTrashedNElements(1);
         })
         .catch(err => {
           console.error(err);
@@ -1981,6 +1983,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully moved to Trash");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          this._resourceFilter.setTrashedNElements(1);
         })
         .catch(err => {
           console.error(err);
