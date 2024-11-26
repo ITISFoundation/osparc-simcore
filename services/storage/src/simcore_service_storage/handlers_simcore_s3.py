@@ -18,7 +18,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.logging_utils import log_context
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from settings_library.s3 import S3Settings
 
 from . import sts
@@ -79,8 +78,8 @@ async def _copy_folders_from_project(
             task_progress=task_progress,
         )
 
-    raise web.HTTPCreated(
-        text=json_dumps(body.destination), content_type=MIMETYPE_APPLICATION_JSON
+    return web.json_response(
+        text=json_dumps(body.destination), status=status.HTTP_201_CREATED
     )
 
 
