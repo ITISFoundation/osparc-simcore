@@ -49,30 +49,43 @@ async def service_details(node_id: NodeID):
 
         ui.separator()
 
-        ui.markdown(
-            "**Dangerous Zone, beware!**\nThese actions can damage the system!"
+        ui.markdown("**Danger Zone, beware!**").classes("text-2xl text-red-700")
+        ui.label(
+            "Do not use these actions if you do not know what they are doing."
+        ).classes("text-red-700")
+
+        ui.label(
+            "They are reserved as means of recovering the system form a failing state."
         ).classes("text-red-700")
 
         with ui.dialog() as confirm_dialog, ui.card():
 
             async def remove_from_tracking():
-                confirm_dialog.submit("Yes")
+                confirm_dialog.submit("Remove")
                 await httpx.AsyncClient(timeout=10).get(
                     f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}/tracker:remove"
                 )
 
-                ui.notify(f"Removal request for {node_id} accepted")
+                ui.notify(f"Service {node_id} removed from tracking")
                 ui.navigate.to("/")
 
-            ui.markdown(f"Remove from tracking **{node_id}**?")
+            ui.markdown(f"Remove service **{node_id}** form tracker?")
             ui.label(
-                "This will break the fronted for the user! They will no longer receive status updated!"
+                "This action will result in the removal of the service form the internal tracker. "
+                "This action should be used whn you are facing issues and the service is not "
+                "automatically removed."
+            )
+            ui.label(
+                "NOTE 1: the system normally cleans up services but it might take a few minutes. "
+                "Only use this option when you have observed enough time passing without any change."
             ).classes("text-red-600")
             ui.label(
-                "You want to do this if for whatever reason the dynamic-scheduler does not remove this item."
-            )
+                "NOTE 2: This will break the fronted for the user! If the user has the service opened, "
+                "it will no longer receive an status updates."
+            ).classes("text-red-600")
+
             with ui.row():
-                ui.button("Yes", color="red", on_click=remove_from_tracking)
+                ui.button("Remove", color="red", on_click=remove_from_tracking)
                 ui.button("No", on_click=lambda: confirm_dialog.submit("No"))
 
         async def display_confirm_dialog():
@@ -115,4 +128,11 @@ async def service_stop(node_id: NodeID):
 
 @router.page("/service/{node_id}/tracker:remove")
 async def remove_service_from_tracking(node_id: NodeID):
-    await remove_tracked_service(get_parent_app(app), node_id)
+    parent_app = get_parent_app(app)
+
+    service_model = await get_tracked_service(parent_app, node_id)
+    if not service_model:
+        ui.notify(f"Could not remove service {node_id}. Was not abel to find it")
+        return
+
+    await remove_tracked_service(parent_app, node_id)

@@ -73,7 +73,7 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
         with ui.dialog() as confirm_dialog, ui.card():
 
             async def stop_process_task():
-                confirm_dialog.submit("Yes")
+                confirm_dialog.submit("Stop")
 
                 await httpx.AsyncClient(timeout=10).get(
                     f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
@@ -83,10 +83,10 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
                     f"Submitted stop request for {node_id}. Please give the service some time to stop!"
                 )
 
-            ui.markdown(f"Are you sure you want to stop the service **{node_id}**?")
-            ui.label("The service will also result sopped for the user in his project.")
+            ui.markdown(f"Stop service **{node_id}**?")
+            ui.label("The service will be stopped and its data will be saved.")
             with ui.row():
-                ui.button("Yes", color="red", on_click=stop_process_task)
+                ui.button("Stop", color="red", on_click=stop_process_task)
                 ui.button("No", on_click=lambda: confirm_dialog.submit("No"))
 
         async def display_confirm_dialog():
@@ -94,9 +94,7 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
 
         ui.button(
             "Stop service", icon="stop", color="orange", on_click=display_confirm_dialog
-        ).tooltip(
-            "Stops the service, same as the user when they press the stop button."
-        )
+        ).tooltip("Stops the service and saves the data")
 
 
 def _render_card(
