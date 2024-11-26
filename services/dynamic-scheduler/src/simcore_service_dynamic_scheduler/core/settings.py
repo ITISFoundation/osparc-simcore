@@ -81,7 +81,11 @@ class ApplicationSettings(_BaseApplicationSettings):
     """
 
     DYNAMIC_SCHEDULER_UI_STORAGE_SECRET: str = Field(
-        ..., description="secret key used to enabled browser-based storage for the UI"
+        ...,
+        description=(
+            "secret required to enabled browser-based storage for the UI. "
+            "Enables the full set of features to be used for NiceUI"
+        ),
     )
 
     DYNAMIC_SCHEDULER_RABBITMQ: RabbitSettings = Field(
