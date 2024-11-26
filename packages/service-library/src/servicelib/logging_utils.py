@@ -80,8 +80,12 @@ class CustomFormatter(logging.Formatter):
 
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
-DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_uid=%(log_uid)s | log_msg=%(message)s"
-LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
+DEFAULT_FORMATTING = (
+    "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_uid=%(log_uid)s "
+    "| trace_id=%(otelTraceID)s | span_id=%(otelSpanID)s | resource.service.name=%(otelServiceName)s | trace_sampled=%(otelTraceSampled)s] "
+    "| log_msg=%(message)s"
+)
+LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s trace_sampled=%(otelTraceSampled)s] [%(name)s:%(funcName)s(%(lineno)d)] -  %(message)s"
 
 # Graylog Grok pattern extractor:
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}

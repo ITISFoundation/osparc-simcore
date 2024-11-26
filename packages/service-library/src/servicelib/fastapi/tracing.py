@@ -19,6 +19,8 @@ from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
+from .. import tracing  # noqa
+
 _logger = logging.getLogger(__name__)
 
 try:
