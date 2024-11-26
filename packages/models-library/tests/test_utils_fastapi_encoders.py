@@ -14,6 +14,9 @@ from models_library.utils.fastapi_encoders import servicelib_jsonable_encoder
 def test_using_uuids_as_keys(faker: Faker):
     uuid_key = uuid4()
 
+    # this was previously failing
+    assert json_dumps({uuid_key: "value"}, indent=1)
+
     # uuid keys now serialize without raising to the expected format string
     data = servicelib_jsonable_encoder({uuid_key: "value"})
     assert data == {f"{uuid_key}": "value"}
