@@ -961,10 +961,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studiesMoveButton = this.__createMoveStudiesButton();
       this._toolbar.add(studiesMoveButton);
 
-      const studiesTrashButton = this.__createTrashButton();
+      const studiesTrashButton = this.__createTrashStudiesButton();
       this._toolbar.add(studiesTrashButton);
 
-      const studiesDeleteButton = this.__createDeleteButton();
+      const studiesDeleteButton = this.__createDeleteStudiesButton();
       this._toolbar.add(studiesDeleteButton);
 
       this._toolbar.add(new qx.ui.core.Spacer(), {
@@ -1233,7 +1233,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return moveStudiesButton;
     },
 
-    __createTrashButton: function() {
+    __createTrashStudiesButton: function() {
       const trashButton = new qx.ui.form.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/14").set({
         appearance: "danger-button",
         visibility: "excluded"
@@ -1258,7 +1258,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return trashButton;
     },
 
-    __createDeleteButton: function() {
+    __createDeleteStudiesButton: function() {
       const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
         appearance: "danger-button",
         visibility: "excluded"
