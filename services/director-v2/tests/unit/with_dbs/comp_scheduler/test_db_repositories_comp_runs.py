@@ -5,6 +5,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import datetime
 from collections.abc import Awaitable, Callable
 
 import pytest
@@ -101,7 +102,7 @@ async def test_create(
             use_on_demand_clusters=faker.pybool(),
         )
 
-    await CompRunsRepository(aiopg_engine).create(
+    created = await CompRunsRepository(aiopg_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
@@ -109,6 +110,30 @@ async def test_create(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
     )
+    got = await CompRunsRepository(aiopg_engine).get(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+    )
+    assert created == got
+
+    # creating a second one auto increment the iteration
+    created = await CompRunsRepository(aiopg_engine).create(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+    )
+    assert created != got
+    assert created.iteration == got.iteration + 1
+
+    # getting without specifying the iteration returns the latest
+    got = await CompRunsRepository(aiopg_engine).get(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+    )
+    assert created == got
 
     with pytest.raises(ClusterNotFoundError):
         await CompRunsRepository(aiopg_engine).create(
@@ -130,8 +155,46 @@ async def test_create(
     )
 
 
-async def test_update(aiopg_engine):
-    ...
+async def test_update(
+    aiopg_engine,
+    fake_user_id: UserID,
+    fake_project_id: ProjectID,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+):
+    # this updates nothing but also does not complain
+    updated = await CompRunsRepository(aiopg_engine).update(
+        fake_user_id, fake_project_id, faker.pyint(min_value=1)
+    )
+    assert updated is None
+    # now let's create a valid one
+    published_project = await publish_project()
+    created = await CompRunsRepository(aiopg_engine).create(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+    )
+
+    got = await CompRunsRepository(aiopg_engine).get(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+    )
+    assert created == got
+
+    updated = await CompRunsRepository(aiopg_engine).update(
+        created.user_id,
+        created.project_uuid,
+        created.iteration,
+        scheduled=datetime.datetime.now(datetime.UTC),
+    )
+    assert updated is not None
+    assert created != updated
+    assert created.scheduled is None
+    assert updated.scheduled is not None
 
 
 async def test_delete(aiopg_engine):
