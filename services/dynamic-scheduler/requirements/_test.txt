@@ -15,19 +15,19 @@ charset-normalizer==3.4.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.6.3
+coverage==7.6.8
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==30.4.0
+faker==33.0.0
     # via -r requirements/_test.in
 h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==1.0.6
+httpcore==1.0.7
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -46,7 +46,7 @@ idna==3.10
     #   requests
 iniconfig==2.0.0
     # via pytest
-packaging==24.1
+packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -67,7 +67,7 @@ pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-pytest-cov==5.0.0
+pytest-cov==6.0.0
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
