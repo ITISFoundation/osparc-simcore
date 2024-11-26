@@ -68,6 +68,7 @@ async def declare_queue(
     exchange_name: str,
     *,
     exclusive_queue: bool,
+    non_exclusive_queue_name: str | None,
     arguments: dict[str, Any] | None = None,
     message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
 ) -> aio_pika.abc.AbstractRobustQueue:
@@ -78,11 +79,11 @@ async def declare_queue(
         "durable": True,
         "exclusive": exclusive_queue,
         "arguments": default_arguments,
-        "name": f"{get_rabbitmq_client_unique_name(client_name)}_{exchange_name}_exclusive",
+        "name": f"{get_rabbitmq_client_unique_name(client_name)}_{non_exclusive_queue_name or exchange_name}_exclusive",
     }
     if not exclusive_queue:
         # NOTE: setting a name will ensure multiple instance will take their data here
-        queue_parameters |= {"name": exchange_name}
+        queue_parameters |= {"name": non_exclusive_queue_name or exchange_name}
 
     # NOTE: if below line raises something similar to ``ChannelPreconditionFailed: PRECONDITION_FAILED``
     # most likely someone changed the signature of the queues (parameters etc...)
