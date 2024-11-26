@@ -7,7 +7,7 @@
 
 import datetime
 from collections.abc import Awaitable, Callable, Iterator
-from typing import Any, cast
+from typing import Any, AsyncIterator, cast
 from uuid import uuid4
 
 import arrow
@@ -36,6 +36,7 @@ from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
 from simcore_service_director_v2.utils.db import to_clusters_db
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
@@ -75,12 +76,12 @@ def pipeline(
 
 
 @pytest.fixture
-def tasks(
-    postgres_db: sa.engine.Engine,
-) -> Iterator[Callable[..., list[CompTaskAtDB]]]:
+async def create_tasks(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[list[CompTaskAtDB]]]]:
     created_task_ids: list[int] = []
 
-    def creator(
+    async def creator(
         user: dict[str, Any], project: ProjectAtDB, **overrides_kwargs
     ) -> list[CompTaskAtDB]:
         created_tasks: list[CompTaskAtDB] = []
@@ -132,8 +133,8 @@ def tasks(
                 ),
             }
             task_config.update(**overrides_kwargs)
-            with postgres_db.connect() as conn:
-                result = conn.execute(
+            async with sqlalchemy_async_engine.connect() as conn:
+                result = await conn.execute(
                     comp_tasks.insert()
                     .values(**task_config)
                     .returning(sa.literal_column("*"))
@@ -146,8 +147,8 @@ def tasks(
     yield creator
 
     # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(
+    async with sqlalchemy_async_engine.connect() as conn:
+        await conn.execute(
             comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
         )
 
@@ -186,12 +187,12 @@ def run_metadata(
 
 
 @pytest.fixture
-def runs(
-    postgres_db: sa.engine.Engine, run_metadata: RunMetadataDict
-) -> Iterator[Callable[..., CompRunsAtDB]]:
+async def create_comp_run(
+    sqlalchemy_async_engine: AsyncEngine, run_metadata: RunMetadataDict
+) -> AsyncIterator[Callable[..., Awaitable[CompRunsAtDB]]]:
     created_run_ids: list[int] = []
 
-    def creator(
+    async def _(
         user: dict[str, Any], project: ProjectAtDB, **run_kwargs
     ) -> CompRunsAtDB:
         run_config = {
@@ -203,8 +204,8 @@ def runs(
             "use_on_demand_clusters": False,
         }
         run_config.update(**run_kwargs)
-        with postgres_db.connect() as conn:
-            result = conn.execute(
+        async with sqlalchemy_async_engine.connect() as conn:
+            result = await conn.execute(
                 comp_runs.insert()
                 .values(**jsonable_encoder(run_config))
                 .returning(sa.literal_column("*"))
@@ -213,11 +214,13 @@ def runs(
             created_run_ids.append(new_run.run_id)
             return new_run
 
-    yield creator
+    yield _
 
     # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids)))
+    async with sqlalchemy_async_engine.connect() as conn:
+        await conn.execute(
+            comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids))
+        )
 
 
 @pytest.fixture
@@ -299,7 +302,7 @@ async def publish_project(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
+    create_tasks: Callable[..., list[CompTaskAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> Callable[[], Awaitable[PublishedProject]]:
@@ -313,7 +316,9 @@ async def publish_project(
                 project_id=f"{created_project.uuid}",
                 dag_adjacency_list=fake_workbench_adjacency,
             ),
-            tasks=tasks(user=user, project=created_project, state=StateType.PUBLISHED),
+            tasks=create_tasks(
+                user=user, project=created_project, state=StateType.PUBLISHED
+            ),
         )
 
     return _
@@ -331,8 +336,8 @@ async def running_project(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
-    runs: Callable[..., CompRunsAtDB],
+    create_tasks: Callable[..., list[CompTaskAtDB]],
+    create_comp_run: Callable[..., CompRunsAtDB],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
@@ -345,14 +350,14 @@ async def running_project(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=tasks(
+        tasks=create_tasks(
             user=user,
             project=created_project,
             state=StateType.RUNNING,
             progress=0.0,
             start=now_time,
         ),
-        runs=runs(
+        runs=create_comp_run(
             user=user,
             project=created_project,
             started=now_time,
@@ -367,8 +372,8 @@ async def running_project_mark_for_cancellation(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
-    runs: Callable[..., CompRunsAtDB],
+    create_tasks: Callable[..., list[CompTaskAtDB]],
+    create_comp_run: Callable[..., CompRunsAtDB],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
@@ -381,14 +386,14 @@ async def running_project_mark_for_cancellation(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=tasks(
+        tasks=create_tasks(
             user=user,
             project=created_project,
             state=StateType.RUNNING,
             progress=0.0,
             start=now_time,
         ),
-        runs=runs(
+        runs=create_comp_run(
             user=user,
             project=created_project,
             result=StateType.RUNNING,

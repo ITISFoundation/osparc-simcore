@@ -918,7 +918,7 @@ async def test_get_computation_from_not_started_computation_task(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
+    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
@@ -935,7 +935,7 @@ async def test_get_computation_from_not_started_computation_task(
     assert response.status_code == status.HTTP_409_CONFLICT, response.text
 
     # now create the expected tasks and the state is good again
-    comp_tasks = tasks(user=user, project=proj)
+    comp_tasks = await create_tasks(user=user, project=proj)
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
     returned_computation = ComputationGet.model_validate(response.json())
@@ -990,8 +990,8 @@ async def test_get_computation_from_published_computation_task(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
-    runs: Callable[..., CompRunsAtDB],
+    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
@@ -1000,8 +1000,12 @@ async def test_get_computation_from_published_computation_task(
         project_id=proj.uuid,
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = tasks(user=user, project=proj, state=StateType.PUBLISHED, progress=0)
-    comp_runs = runs(user=user, project=proj, result=StateType.PUBLISHED)
+    comp_tasks = await create_tasks(
+        user=user, project=proj, state=StateType.PUBLISHED, progress=0
+    )
+    comp_runs = await create_comp_run(
+        user=user, project=proj, result=StateType.PUBLISHED
+    )
     assert comp_runs
     get_computation_url = httpx.URL(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"
