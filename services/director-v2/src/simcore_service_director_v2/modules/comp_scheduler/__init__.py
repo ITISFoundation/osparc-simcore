@@ -31,8 +31,6 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
             await shutdown_manager(app)
             await shutdown_worker(app)
 
-            # TODO: we might want to stop anything running in the worker too
-
     return stop_scheduler
 
 
