@@ -11,8 +11,10 @@ from pydantic import TypeAdapter
 
 MessageHandler = Callable[[Any], Awaitable[bool]]
 
+ExchangeName: TypeAlias = str
 QueueName: TypeAlias = str
 ConsumerTag: TypeAlias = str
+TopicName: TypeAlias = str
 
 
 class RabbitMessage(Protocol):

@@ -15,7 +15,13 @@ import aio_pika
 import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
-from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient, _client
+from servicelib.rabbitmq import (
+    BIND_TO_ALL_TOPICS,
+    ConsumerTag,
+    QueueName,
+    RabbitMQClient,
+    _client,
+)
 from servicelib.rabbitmq._client import _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS
 from settings_library.rabbit import RabbitSettings
 from tenacity.asyncio import AsyncRetrying
@@ -325,7 +331,7 @@ async def test_publish_with_no_registered_subscriber(
     ttl_s: float = 0.1
     topics_count: int = 1 if topics is None else len(topics)
 
-    async def _publish_random_message():
+    async def _publish_random_message() -> None:
         if topics is None:
             message = random_rabbit_message()
             await publisher.publish(exchange_name, message)
@@ -335,8 +341,8 @@ async def test_publish_with_no_registered_subscriber(
                 message = random_rabbit_message(topic=topic)
                 await publisher.publish(exchange_name, message)
 
-    async def _subscribe_consumer_to_queue():
-        await consumer.subscribe(
+    async def _subscribe_consumer_to_queue() -> tuple[QueueName, ConsumerTag]:
+        return await consumer.subscribe(
             exchange_name,
             mocked_message_parser,
             topics=topics,
@@ -346,27 +352,30 @@ async def test_publish_with_no_registered_subscriber(
             unexpected_error_retry_delay_s=ttl_s,
         )
 
-    async def _unsubscribe_consumer():
-        await consumer.unsubscribe_consumer(exchange_name)
+    async def _unsubscribe_consumer(
+        queue_name: QueueName, consumer_tag: ConsumerTag
+    ) -> None:
+        await consumer.unsubscribe_consumer(queue_name, consumer_tag)
 
     # CASE 1 (subscribe immediately after publishing message)
 
-    await _subscribe_consumer_to_queue()
-    await _unsubscribe_consumer()
+    consumer_1 = await _subscribe_consumer_to_queue()
+    await _unsubscribe_consumer(*consumer_1)
     await _publish_random_message()
     # reconnect immediately
-    await _subscribe_consumer_to_queue()
+    consumer_2 = await _subscribe_consumer_to_queue()
     # expected to receive a message (one per topic)
     await _assert_wait_for_messages(on_message_spy, 1 * topics_count)
 
     # CASE 2 (no subscriber attached when publishing)
     on_message_spy.reset_mock()
 
-    await _unsubscribe_consumer()
+    await _unsubscribe_consumer(*consumer_2)
     await _publish_random_message()
     # wait for message to expire (will be dropped)
     await asyncio.sleep(ttl_s * 2)
-    await _subscribe_consumer_to_queue()
+    _consumer_3 = await _subscribe_consumer_to_queue()
+
     # wait for a message to be possibly delivered
     await asyncio.sleep(ttl_s * 2)
     # nothing changed from before
@@ -604,7 +613,7 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     )
 
     # we should get no messages since no one was subscribed
-    queue_name = await consumer.subscribe(
+    queue_name, consumer_tag = await consumer.subscribe(
         exchange_name, mocked_message_parser, topics=[]
     )
     await _assert_message_received(mocked_message_parser, 0)
@@ -666,7 +675,7 @@ async def test_rabbit_adding_topics_to_a_fanout_exchange(
     message = random_rabbit_message()
     publisher = create_rabbitmq_client("publisher")
     consumer = create_rabbitmq_client("consumer")
-    queue_name = await consumer.subscribe(exchange_name, mocked_message_parser)
+    queue_name, _ = await consumer.subscribe(exchange_name, mocked_message_parser)
     await publisher.publish(exchange_name, message)
     await _assert_message_received(mocked_message_parser, 1, message)
     mocked_message_parser.reset_mock()
@@ -709,10 +718,12 @@ async def test_unsubscribe_consumer(
 ):
     exchange_name = f"{random_exchange_name()}"
     client = create_rabbitmq_client("consumer")
-    await client.subscribe(exchange_name, mocked_message_parser, exclusive_queue=False)
+    queue_name, consumer_tag = await client.subscribe(
+        exchange_name, mocked_message_parser, exclusive_queue=False
+    )
     # Unsubsribe just a consumer, the queue will be still there
-    await client.unsubscribe_consumer(exchange_name)
+    await client.unsubscribe_consumer(queue_name, consumer_tag)
     # Unsubsribe the queue
-    await client.unsubscribe(exchange_name)
+    await client.unsubscribe(queue_name)
     with pytest.raises(aio_pika.exceptions.ChannelNotFoundEntity):
-        await client.unsubscribe(exchange_name)
+        await client.unsubscribe(queue_name)
