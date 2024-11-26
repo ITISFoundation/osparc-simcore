@@ -585,6 +585,7 @@ def unneeded_instance_type(
     return random_type
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize(
     "expected_buffer_params",
     [

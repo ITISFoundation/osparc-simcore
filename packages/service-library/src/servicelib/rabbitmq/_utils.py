@@ -13,6 +13,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ..logging_utils import log_context
+from ._models import QueueName
 
 _logger = logging.getLogger(__file__)
 
@@ -65,7 +66,7 @@ def get_rabbitmq_client_unique_name(base_name: str) -> str:
 async def declare_queue(
     channel: aio_pika.RobustChannel,
     client_name: str,
-    exchange_name: str,
+    queue_name: QueueName,
     *,
     exclusive_queue: bool,
     arguments: dict[str, Any] | None = None,
@@ -78,11 +79,11 @@ async def declare_queue(
         "durable": True,
         "exclusive": exclusive_queue,
         "arguments": default_arguments,
-        "name": f"{get_rabbitmq_client_unique_name(client_name)}_{exchange_name}_exclusive",
+        "name": f"{get_rabbitmq_client_unique_name(client_name)}_{queue_name}_exclusive",
     }
     if not exclusive_queue:
         # NOTE: setting a name will ensure multiple instance will take their data here
-        queue_parameters |= {"name": exchange_name}
+        queue_parameters |= {"name": queue_name}
 
     # NOTE: if below line raises something similar to ``ChannelPreconditionFailed: PRECONDITION_FAILED``
     # most likely someone changed the signature of the queues (parameters etc...)
