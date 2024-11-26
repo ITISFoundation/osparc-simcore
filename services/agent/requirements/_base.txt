@@ -1,10 +1,10 @@
-aio-pika==9.4.3
+aio-pika==9.5.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiocache==0.12.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiodocker==0.23.0
+aiodocker==0.24.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -12,7 +12,7 @@ aiofiles==24.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiohappyeyeballs==2.4.3
     # via aiohttp
-aiohttp==3.10.10
+aiohttp==3.11.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -74,7 +74,7 @@ click==8.1.7
     # via
     #   typer
     #   uvicorn
-deprecated==1.2.14
+deprecated==1.2.15
     # via
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -84,29 +84,31 @@ dnspython==2.7.0
     # via email-validator
 email-validator==2.2.0
     # via pydantic
+exceptiongroup==1.2.2
+    # via aio-pika
 fast-depends==2.4.12
     # via faststream
 fastapi==0.115.5
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
-faststream==0.5.28
+faststream==0.5.30
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-frozenlist==1.4.1
+frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-googleapis-common-protos==1.65.0
+googleapis-common-protos==1.66.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-grpcio==1.67.0
+grpcio==1.68.0
     # via opentelemetry-exporter-otlp-proto-grpc
 h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==1.0.6
+httpcore==1.0.7
     # via httpx
 httpx==0.27.2
     # via
@@ -130,13 +132,13 @@ idna==3.10
     #   httpx
     #   requests
     #   yarl
-importlib-metadata==8.4.0
+importlib-metadata==8.5.0
     # via opentelemetry-api
 jsonschema==4.23.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-jsonschema-specifications==2023.7.1
+jsonschema-specifications==2024.10.1
     # via jsonschema
 markdown-it-py==3.0.0
     # via rich
@@ -146,7 +148,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-opentelemetry-api==1.27.0
+opentelemetry-api==1.28.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -159,58 +161,59 @@ opentelemetry-api==1.27.0
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-otlp==1.27.0
+opentelemetry-exporter-otlp==1.28.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-exporter-otlp-proto-common==1.27.0
+opentelemetry-exporter-otlp-proto-common==1.28.2
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-grpc==1.27.0
+opentelemetry-exporter-otlp-proto-grpc==1.28.2
     # via opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.27.0
+opentelemetry-exporter-otlp-proto-http==1.28.2
     # via opentelemetry-exporter-otlp
-opentelemetry-instrumentation==0.48b0
+opentelemetry-instrumentation==0.49b2
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
-opentelemetry-instrumentation-asgi==0.48b0
+opentelemetry-instrumentation-asgi==0.49b2
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-fastapi==0.48b0
+opentelemetry-instrumentation-fastapi==0.49b2
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-opentelemetry-instrumentation-httpx==0.48b0
+opentelemetry-instrumentation-httpx==0.49b2
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-opentelemetry-instrumentation-redis==0.48b0
+opentelemetry-instrumentation-redis==0.49b2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-requests==0.48b0
+opentelemetry-instrumentation-requests==0.49b2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-proto==1.27.0
+opentelemetry-proto==1.28.2
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.27.0
+opentelemetry-sdk==1.28.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.48b0
+opentelemetry-semantic-conventions==0.49b2
     # via
+    #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
-opentelemetry-util-http==0.48b0
+opentelemetry-util-http==0.49b2
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
-orjson==3.10.7
+orjson==3.10.12
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -232,8 +235,10 @@ orjson==3.10.7
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-packaging==24.1
-    # via -r requirements/_base.in
+packaging==24.2
+    # via
+    #   -r requirements/_base.in
+    #   opentelemetry-instrumentation
 pamqp==3.3.0
     # via aiormq
 prometheus-client==0.21.0
@@ -243,14 +248,16 @@ prometheus-client==0.21.0
 prometheus-fastapi-instrumentator==7.0.0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 propcache==0.2.0
-    # via yarl
-protobuf==4.25.5
+    # via
+    #   aiohttp
+    #   yarl
+protobuf==5.28.3
     # via
     #   googleapis-common-protos
     #   opentelemetry-proto
-psutil==6.0.0
+psutil==6.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-pydantic==2.9.2
+pydantic==2.10.2
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -280,9 +287,9 @@ pydantic==2.9.2
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.23.4
+pydantic-core==2.27.1
     # via pydantic
-pydantic-extra-types==2.9.0
+pydantic-extra-types==2.10.0
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
@@ -321,7 +328,7 @@ pyyaml==6.0.2
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-redis==5.1.1
+redis==5.2.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -336,26 +343,23 @@ redis==5.1.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-referencing==0.29.3
+referencing==0.35.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 repro-zipfile==0.3.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 requests==2.32.3
     # via opentelemetry-exporter-otlp-proto-http
-rich==13.9.2
+rich==13.9.4
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.20.0
+rpds-py==0.21.0
     # via
     #   jsonschema
     #   referencing
-setuptools==75.2.0
-    # via opentelemetry-instrumentation
 shellingham==1.5.4
     # via typer
 six==1.16.0
@@ -364,7 +368,7 @@ sniffio==1.3.1
     # via
     #   anyio
     #   httpx
-starlette==0.40.0
+starlette==0.41.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -384,9 +388,9 @@ tenacity==9.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 toolz==1.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-tqdm==4.66.5
+tqdm==4.67.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-typer==0.12.5
+typer==0.13.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
@@ -400,6 +404,7 @@ typing-extensions==4.12.2
     #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
+    #   pydantic-extra-types
     #   typer
 urllib3==2.2.3
     # via
@@ -416,19 +421,21 @@ urllib3==2.2.3
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.32.0
+uvicorn==0.32.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
-wrapt==1.16.0
+wrapt==1.17.0
     # via
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
-yarl==1.15.3
+yarl==1.18.0
     # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq
-zipp==3.20.2
+zipp==3.21.0
     # via importlib-metadata
