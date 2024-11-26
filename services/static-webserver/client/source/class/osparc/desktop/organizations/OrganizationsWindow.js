@@ -49,7 +49,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsWindow", {
 
   members: {
     __stack: null,
-    __orgsList: null,
+    __orgsPage: null,
     __orgDetails: null,
 
     __buildLayout: function() {
@@ -58,7 +58,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsWindow", {
         flex: 1
       });
 
-      const orgsPage = this.__orgsList = new osparc.desktop.organizations.OrganizationsList();
+      const orgsPage = this.__orgsPage = new osparc.desktop.organizations.OrganizationsList();
       const orgDetails = this.__orgDetails = new osparc.desktop.organizations.OrganizationDetails();
       stack.add(orgsPage);
       stack.add(orgDetails);
@@ -77,15 +77,15 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsWindow", {
 
     openOrganizationDetails: function(organizationId) {
       const openOrgDetails = orgId => {
-        const orgModel = this.__orgsList.getOrgModel(orgId);
+        const orgModel = this.__orgsPage.getOrgModel(orgId);
         this.__orgDetails.setCurrentOrg(orgModel);
         this.getChildControl("title").setValue(this.tr("Organization details"));
         this.__stack.setSelection([this.__orgDetails]);
       };
-      if (this.__orgsList.isOrganizationsLoaded()) {
+      if (this.__orgsPage.isOrganizationsLoaded()) {
         openOrgDetails(organizationId);
       } else {
-        this.__orgsList.addListenerOnce("changeOrganizationsLoaded", () => openOrgDetails(organizationId));
+        this.__orgsPage.addListenerOnce("changeOrganizationsLoaded", () => openOrgDetails(organizationId));
       }
     }
   }

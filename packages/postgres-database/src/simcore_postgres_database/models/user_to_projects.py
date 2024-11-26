@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 
+from ._common import RefActions
 from .base import metadata
 from .projects import projects
 from .users import users
@@ -15,8 +16,8 @@ user_to_projects = sa.Table(
         sa.ForeignKey(
             users.c.id,
             name="fk_user_to_projects_id_users",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=False,
     ),
@@ -26,8 +27,8 @@ user_to_projects = sa.Table(
         sa.ForeignKey(
             projects.c.id,
             name="fk_user_to_projects_id_projects",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=False,
     ),

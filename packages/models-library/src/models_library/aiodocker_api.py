@@ -1,4 +1,4 @@
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import Field, field_validator
 
 from .generated_models.docker_rest_api import (
     ContainerSpec,
@@ -7,7 +7,6 @@ from .generated_models.docker_rest_api import (
     ServiceSpec,
     TaskSpec,
 )
-from .utils.change_case import camel_to_snake
 
 
 class AioDockerContainerSpec(ContainerSpec):
@@ -38,8 +37,6 @@ class AioDockerResources1(Resources1):
         None, description="Define resources reservation.", alias="Reservations"
     )
 
-    model_config = ConfigDict(populate_by_name=True)
-
 
 class AioDockerTaskSpec(TaskSpec):
     container_spec: AioDockerContainerSpec | None = Field(
@@ -51,5 +48,3 @@ class AioDockerTaskSpec(TaskSpec):
 
 class AioDockerServiceSpec(ServiceSpec):
     task_template: AioDockerTaskSpec | None = Field(default=None, alias="TaskTemplate")
-
-    model_config = ConfigDict(populate_by_name=True, alias_generator=camel_to_snake)

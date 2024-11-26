@@ -127,7 +127,7 @@ def get_compatible_outputs_given_target_input(
 
 @router.get(
     "/catalog/services/{service_key}/{service_version}/resources",
-    response_model=ServiceResourcesGet,
+    response_model=Envelope[ServiceResourcesGet],
 )
 def get_service_resources(
     _params: Annotated[ServicePathParams, Depends()],

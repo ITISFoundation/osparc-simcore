@@ -50,9 +50,17 @@ qx.Class.define("osparc.ui.list.ListItem", {
 
     const layout = new qx.ui.layout.Grid(8, 1);
     layout.setColumnWidth(0, 32);
+    layout.setRowFlex(0, 1);
     layout.setColumnFlex(1, 1);
+    layout.setColumnAlign(0, "center", "middle");
+    layout.setColumnAlign(2, "center", "middle");
     this._setLayout(layout);
-    this.setPadding(5);
+
+    this.set({
+      padding: 5,
+      minHeight: 48,
+      alignY: "middle",
+    });
 
     this.addListener("pointerover", this._onPointerOver, this);
     this.addListener("pointerout", this._onPointerOut, this);

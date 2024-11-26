@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 from sqlalchemy.sql import expression, func
 
+from ._common import RefActions
 from .base import metadata
 from .clusters import clusters
 from .groups import groups
@@ -14,8 +15,8 @@ cluster_to_groups = sa.Table(
         sa.ForeignKey(
             clusters.c.id,
             name="fk_cluster_to_groups_id_clusters",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         doc="Cluster unique ID",
     ),
@@ -25,8 +26,8 @@ cluster_to_groups = sa.Table(
         sa.ForeignKey(
             groups.c.gid,
             name="fk_cluster_to_groups_gid_groups",
-            onupdate="CASCADE",
-            ondelete="CASCADE",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
         ),
         doc="Group unique IDentifier",
     ),

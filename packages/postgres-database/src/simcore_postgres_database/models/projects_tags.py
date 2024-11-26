@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 
+from ._common import RefActions
 from .base import metadata
 from .projects import projects
 from .tags import tags
@@ -15,8 +16,8 @@ projects_tags = sa.Table(
         sa.BigInteger,
         sa.ForeignKey(
             projects.c.id,
-            onupdate="CASCADE",
-            ondelete="SET NULL",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.SET_NULL,
             name="project_tags_project_id_fkey",
         ),
         nullable=True,  # <-- NULL means that project was deleted
@@ -25,7 +26,9 @@ projects_tags = sa.Table(
     sa.Column(
         "tag_id",
         sa.BigInteger,
-        sa.ForeignKey(tags.c.id, onupdate="CASCADE", ondelete="CASCADE"),
+        sa.ForeignKey(
+            tags.c.id, onupdate=RefActions.CASCADE, ondelete=RefActions.CASCADE
+        ),
         nullable=False,
     ),
     sa.Column(
