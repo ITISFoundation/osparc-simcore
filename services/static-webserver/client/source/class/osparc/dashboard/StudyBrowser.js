@@ -1971,18 +1971,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .finally(() => this.resetSelection());
     },
 
-    __deleteCollaborator: function(studyData) {
+    __removeMeFromCollaborators: function(studyData) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const collabGids = Object.keys(studyData["accessRights"]);
       const amICollaborator = collabGids.indexOf(myGid) > -1;
-
       if (collabGids.length > 1 && amICollaborator) {
         const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
         // remove collaborator
         delete arCopy[myGid];
-        // OM here
-        operationPromise = osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
+        return osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
       }
+      return null;
     },
 
     __trashStudies: function(studiesData) {
@@ -1996,10 +1995,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
-        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
-        // remove collaborator
-        delete arCopy[myGid];
-        operationPromise = osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
+        operationPromise = this.__removeMeFromCollaborators(studyData);
+        if (operationPromise === null) {
+          return;
+        }
       } else {
         // delete study
         operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
