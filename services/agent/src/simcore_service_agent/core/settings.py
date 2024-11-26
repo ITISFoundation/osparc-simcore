@@ -12,7 +12,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     LOGLEVEL: LogLevel = Field(
-        LogLevel.WARNING.value,
+        LogLevel.WARNING,
         validation_alias=AliasChoices(
             "AGENT_LOGLEVEL",
             "LOG_LEVEL",
