@@ -1,5 +1,5 @@
 from collections.abc import Awaitable, Callable
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeAlias
 
 from models_library.basic_types import ConstrainedStr
 from models_library.rabbitmq_basic_types import (
@@ -10,6 +10,9 @@ from models_library.rabbitmq_basic_types import (
 from pydantic import TypeAdapter
 
 MessageHandler = Callable[[Any], Awaitable[bool]]
+
+QueueName: TypeAlias = str
+ConsumerTag: TypeAlias = str
 
 
 class RabbitMessage(Protocol):

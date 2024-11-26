@@ -8,6 +8,7 @@ from ._errors import (
     RPCNotInitializedError,
     RPCServerError,
 )
+from ._models import ConsumerTag, QueueName
 from ._rpc_router import RPCRouter
 from ._utils import is_rabbitmq_responsive, wait_till_rabbitmq_responsive
 
@@ -23,6 +24,8 @@ __all__: tuple[str, ...] = (
     "RPCRouter",
     "RPCServerError",
     "wait_till_rabbitmq_responsive",
+    "QueueName",
+    "ConsumerTag",
 )
 
 # nopycln: file
