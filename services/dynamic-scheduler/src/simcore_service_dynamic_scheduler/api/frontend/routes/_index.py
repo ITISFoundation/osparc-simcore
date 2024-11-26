@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from nicegui import APIRouter, app, ui
 from nicegui.element import Element
+from nicegui.elements.label import Label
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ....services.service_tracker import TrackedServiceModel, get_all_tracked_services
@@ -123,9 +124,12 @@ def _get_hash(items: list[tuple[NodeID, TrackedServiceModel]]) -> int:
 
 
 class CardUpdater:
-    def __init__(self, parent_app: FastAPI, container: Element) -> None:
+    def __init__(
+        self, parent_app: FastAPI, container: Element, services_count_label: Label
+    ) -> None:
         self.parent_app = parent_app
         self.container = container
+        self.services_count_label = services_count_label
         self.last_hash: int = _get_hash([])
 
     async def update(self) -> None:
@@ -137,6 +141,7 @@ class CardUpdater:
         current_hash = _get_hash(tracked_items)
 
         if self.last_hash != current_hash:
+            self.services_count_label.set_text(f"{len(tracked_services)}")
             # Clear the current cards
             self.container.clear()
             for node_id, service in tracked_items:
@@ -148,13 +153,15 @@ class CardUpdater:
 @router.page("/")
 async def index():
     with base_page():
-
-        # Initial UI setup
-        ui.label("Dynamic Item List")
+        with ui.row().classes("gap-0"):
+            ui.label("Total tracked services:")
+            ui.label("").classes("w-1")
+            with ui.label("0") as services_count_label:
+                pass
 
         card_container: Element = ui.row()
 
-        updater = CardUpdater(get_parent_app(app), card_container)
+        updater = CardUpdater(get_parent_app(app), card_container, services_count_label)
 
         # render cards when page is loaded
         await updater.update()
