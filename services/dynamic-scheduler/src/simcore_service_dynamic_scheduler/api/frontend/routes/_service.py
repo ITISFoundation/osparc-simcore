@@ -47,7 +47,11 @@ async def service_details(node_id: NodeID):
         ui.markdown("**Raw serialized data (the one used to render the above**")
         ui.code(service_model.model_dump_json(indent=2), language="json")
 
-        ui.markdown("**Dangerous Zone, beware!**")
+        ui.separator()
+
+        ui.markdown(
+            "**Dangerous Zone, beware!**\nThese actions can damage the system!"
+        ).classes("text-red-700")
 
         with ui.dialog() as confirm_dialog, ui.card():
 

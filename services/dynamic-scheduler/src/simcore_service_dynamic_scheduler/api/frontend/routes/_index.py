@@ -73,7 +73,6 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
 
             async def stop_process_task():
                 confirm_dialog.submit("Yes")
-                ui.notify(f"Started service stop request for {node_id}")
 
                 await httpx.AsyncClient(timeout=10).get(
                     f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
