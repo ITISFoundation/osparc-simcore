@@ -108,7 +108,8 @@ def _render_card(
             _render_buttons(node_id, service)
 
 
-def _get_stable_hash(model: TrackedServiceModel) -> dict:
+def _get_clean_hashable(model: TrackedServiceModel) -> dict:
+    """removes items which trigger frequent updates and are not interesting to the user"""
     data = model.model_dump(mode="json")
     data.pop("check_status_after")
     data.pop("last_status_notification")
@@ -118,7 +119,7 @@ def _get_stable_hash(model: TrackedServiceModel) -> dict:
 
 def _get_hash(items: list[tuple[NodeID, TrackedServiceModel]]) -> int:
     return hash(
-        json.dumps([(f"{key}", _get_stable_hash(model)) for key, model in items])
+        json.dumps([(f"{key}", _get_clean_hashable(model)) for key, model in items])
     )
 
 
