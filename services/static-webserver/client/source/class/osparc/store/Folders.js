@@ -78,7 +78,7 @@ qx.Class.define("osparc.store.Folders", {
         });
     },
 
-    fetchTrashedFolders: function(orderBy = {
+    fetchAllTrashedFolders: function(orderBy = {
       field: "modified_at",
       direction: "desc"
     }) {

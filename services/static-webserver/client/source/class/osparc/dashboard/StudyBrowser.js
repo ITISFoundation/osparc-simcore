@@ -187,7 +187,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         }
         case "trash":
-          request = osparc.store.Workspaces.getInstance().fetchTrashedWorkspaces();
+          request = osparc.store.Workspaces.getInstance().fetchAllTrashedWorkspaces();
           break;
       }
 
@@ -229,7 +229,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         }
         case "trash":
-          request = osparc.store.Folders.getInstance().fetchTrashedFolders(this.getOrderBy());
+          request = osparc.store.Folders.getInstance().fetchAllTrashedFolders(this.getOrderBy());
           break;
       }
 

@@ -76,7 +76,7 @@ qx.Class.define("osparc.store.Workspaces", {
         });
     },
 
-    fetchTrashedWorkspaces: function(orderBy = {
+    fetchAllTrashedWorkspaces: function(orderBy = {
       field: "modified_at",
       direction: "desc"
     }) {
