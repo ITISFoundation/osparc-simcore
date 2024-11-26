@@ -325,7 +325,7 @@ async def test_empty_pipeline_is_not_scheduled(
     initialized_app: FastAPI,
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     run_metadata: RunMetadataDict,
     sqlalchemy_async_engine: AsyncEngine,
     scheduler_rabbit_client_parser: mock.AsyncMock,
@@ -349,7 +349,7 @@ async def test_empty_pipeline_is_not_scheduled(
     scheduler_rabbit_client_parser.assert_not_called()
 
     # create the empty pipeline now
-    pipeline(project_id=f"{empty_project.uuid}")
+    await create_pipeline(project_id=f"{empty_project.uuid}")
 
     # creating a run with an empty pipeline is useless, check the scheduler is not kicking in
     with caplog.at_level(logging.WARNING):

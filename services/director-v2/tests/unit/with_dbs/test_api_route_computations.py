@@ -789,12 +789,12 @@ async def test_start_computation_with_deprecated_services_raises_406(
 
 
 @pytest.fixture
-def unusable_cluster(
+async def unusable_cluster(
     registered_user: Callable[..., dict[str, Any]],
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
 ) -> ClusterID:
     user = registered_user()
-    created_cluster = cluster(user)
+    created_cluster = await create_cluster(user)
     return created_cluster.id
 
 
@@ -865,7 +865,7 @@ async def test_get_computation_from_empty_project(
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     faker: Faker,
     async_client: httpx.AsyncClient,
 ):
@@ -884,7 +884,7 @@ async def test_get_computation_from_empty_project(
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     # create an empty pipeline
-    pipeline(
+    await create_pipeline(
         project_id=proj.uuid,
     )
     response = await async_client.get(get_computation_url)
@@ -917,7 +917,7 @@ async def test_get_computation_from_not_started_computation_task(
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     async_client: httpx.AsyncClient,
 ):
@@ -926,7 +926,7 @@ async def test_get_computation_from_not_started_computation_task(
     get_computation_url = httpx.URL(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"
     )
-    pipeline(
+    await create_pipeline(
         project_id=proj.uuid,
         dag_adjacency_list=fake_workbench_adjacency,
     )
@@ -989,14 +989,14 @@ async def test_get_computation_from_published_computation_task(
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
     proj = await project(user, workbench=fake_workbench_without_outputs)
-    pipeline(
+    await create_pipeline(
         project_id=proj.uuid,
         dag_adjacency_list=fake_workbench_adjacency,
     )

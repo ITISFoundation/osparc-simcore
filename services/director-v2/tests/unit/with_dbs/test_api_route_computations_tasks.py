@@ -116,16 +116,16 @@ async def project_id(
     fake_workbench_adjacency: dict[str, Any],
     user: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
-):
+) -> ProjectID:
     """project uuid of a saved project (w/ tasks up-to-date)"""
 
     # insert project -> db
     proj = await project(user, workbench=fake_workbench_without_outputs)
 
     # insert pipeline  -> comp_pipeline
-    pipeline(
+    await create_pipeline(
         project_id=proj.uuid,
         dag_adjacency_list=fake_workbench_adjacency,
     )

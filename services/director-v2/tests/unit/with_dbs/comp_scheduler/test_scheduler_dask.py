@@ -1091,7 +1091,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     scheduler_api: BaseCompScheduler,
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     sqlalchemy_async_engine: AsyncEngine,
@@ -1101,7 +1101,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     It shall be aborted and shown as such in the comp_runs db"""
     user = registered_user()
     sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
-    pipeline(
+    await create_pipeline(
         project_id=f"{sleepers_project.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
