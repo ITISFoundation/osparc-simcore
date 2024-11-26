@@ -12,8 +12,8 @@ from ..application_settings_utils import requires_dev_feature_enabled
 from ..exceptions_handlers import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    create_decorator_from_exception_handler,
-    create_exception_handler_from_http_error_map,
+    async_try_except_decorator,
+    to_exceptions_handlers_map,
 )
 from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
@@ -21,11 +21,7 @@ from ..projects._common_models import ProjectPathParams
 from ..security.decorators import permission_required
 from . import _trash_api
 from ._common_models import RemoveQueryParams
-from .exceptions import (
-    ProjectRunningConflictError,
-    ProjectStoppingError,
-    ProjectTrashError,
-)
+from .exceptions import ProjectRunningConflictError, ProjectStoppingError
 
 _logger = logging.getLogger(__name__)
 
@@ -46,9 +42,8 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-_handle_exceptions = create_decorator_from_exception_handler(
-    exception_types=ProjectTrashError,
-    exception_handler=create_exception_handler_from_http_error_map(_TO_HTTP_ERROR_MAP),
+_handle_exceptions = async_try_except_decorator(
+    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
 
 

@@ -5,19 +5,14 @@ from servicelib.aiohttp import status
 from ..exceptions_handlers import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    create_decorator_from_exception_handler,
-    create_exception_handler_from_http_error_map,
+    async_try_except_decorator,
+    to_exceptions_handlers_map,
 )
-from ..projects.exceptions import (
-    BaseProjectError,
-    ProjectRunningConflictError,
-    ProjectStoppingError,
-)
+from ..projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
 from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceFolderInconsistencyError,
     WorkspaceNotFoundError,
-    WorkspacesValueError,
 )
 from .errors import (
     FolderAccessForbiddenError,
@@ -70,8 +65,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-handle_plugin_requests_exceptions = create_decorator_from_exception_handler(
-    exception_types=(BaseProjectError, FoldersValueError, WorkspacesValueError),
-    exception_handler=create_exception_handler_from_http_error_map(_TO_HTTP_ERROR_MAP),
+handle_plugin_requests_exceptions = async_try_except_decorator(
+    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
 # this is one decorator with a single exception handler

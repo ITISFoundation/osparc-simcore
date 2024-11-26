@@ -5,25 +5,17 @@ from servicelib.aiohttp import status
 from ..exceptions_handlers import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    create_exception_handlers_decorator,
+    async_try_except_decorator,
+    to_exceptions_handlers_map,
 )
-from ..projects.exceptions import (
-    BaseProjectError,
-    ProjectRunningConflictError,
-    ProjectStoppingError,
-)
+from ..projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
 from .errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceGroupNotFoundError,
     WorkspaceNotFoundError,
-    WorkspacesValueError,
 )
 
 _logger = logging.getLogger(__name__)
-
-
-def tr(msg) -> str:
-    return msg
 
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
@@ -51,7 +43,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-handle_plugin_requests_exceptions = create_exception_handlers_decorator(
-    exceptions_catch=(BaseProjectError, WorkspacesValueError),
-    exc_to_status_map=_TO_HTTP_ERROR_MAP,
+handle_plugin_requests_exceptions = async_try_except_decorator(
+    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )

@@ -104,7 +104,7 @@ async def test__handled_exception_context_manager():
 
 
 @pytest.mark.parametrize("exception_cls", [OneError, OtherError])
-async def test_create_decorator_from_exception_handler(exception_cls: type[Exception]):
+async def test_async_try_except_decorator(exception_cls: type[Exception]):
     expected_request = make_mocked_request("GET", "/foo")
     expected_exception = exception_cls()
     expected_response = web.Response(reason=f"suppressed {exception_cls}")
