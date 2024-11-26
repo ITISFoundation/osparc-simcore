@@ -8,11 +8,7 @@ from typing import Annotated, cast
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from fastapi import FastAPI
-from models_library.basic_types import (
-    LogLevel,
-    PortInt,
-    VersionTag,
-)
+from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.clusters import (
     DEFAULT_CLUSTER_ID,
     Cluster,
@@ -26,6 +22,7 @@ from pydantic import (
     AnyUrl,
     Field,
     NonNegativeInt,
+    PositiveInt,
     field_validator,
 )
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
@@ -76,6 +73,10 @@ class DirectorV0Settings(BaseCustomSettings):
 class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_ENABLED: bool = Field(
         default=True,
+    )
+    COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY: PositiveInt = Field(
+        default=50,
+        description="defines how many pipelines the application can schedule concurrently",
     )
     COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED: bool = Field(
         default=True,

@@ -8,7 +8,7 @@
 # pylint: disable=too-many-statements
 
 import asyncio
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from unittest import mock
 
 import pytest
@@ -16,6 +16,8 @@ from _helpers import PublishedProject
 from fastapi import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.modules.comp_scheduler._manager import run_new_pipeline
 from simcore_service_director_v2.modules.comp_scheduler._models import (
@@ -83,10 +85,23 @@ async def mocked_scheduler_api(mocker: MockerFixture) -> mock.Mock:
     )
 
 
+@pytest.fixture
+def with_scheduling_concurrency(
+    mock_env: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, scheduling_concurrency: int
+) -> EnvVarsDict:
+    return mock_env | setenvs_from_dict(
+        monkeypatch,
+        {"COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY": f"{scheduling_concurrency}"},
+    )
+
+
+@pytest.mark.parametrize("scheduling_concurrency", [1, 50, 100])
 @pytest.mark.parametrize(
     "queue_name", [SchedulePipelineRabbitMessage.get_channel_name()]
 )
 async def test_worker_scheduling_parallelism(
+    scheduling_concurrency: int,
+    with_scheduling_concurrency: EnvVarsDict,
     with_disabled_auto_scheduling: mock.Mock,
     mocked_scheduler_api: mock.Mock,
     initialized_app: FastAPI,
@@ -113,9 +128,8 @@ async def test_worker_scheduling_parallelism(
             use_on_demand_clusters=False,
         )
 
-    num_concurrent_calls = 10
     await asyncio.gather(
-        *(_project_pipeline_creation_workflow() for _ in range(num_concurrent_calls))
+        *(_project_pipeline_creation_workflow() for _ in range(scheduling_concurrency))
     )
     mocked_scheduler_api.assert_called()
-    assert mocked_scheduler_api.call_count == num_concurrent_calls
+    assert mocked_scheduler_api.call_count == scheduling_concurrency

@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import functools
 import logging
@@ -10,6 +11,7 @@ from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError
 from servicelib.redis_utils import exclusive
 
+from ...core.settings import get_application_settings
 from ...models.comp_runs import Iteration
 from ..rabbitmq import get_rabbitmq_client
 from ._constants import MODULE_NAME_WORKER
@@ -62,11 +64,19 @@ async def _handle_apply_distributed_schedule(app: FastAPI, data: bytes) -> bool:
 
 
 async def setup_worker(app: FastAPI) -> None:
+    app_settings = get_application_settings(app)
     rabbitmq_client = get_rabbitmq_client(app)
-    await rabbitmq_client.subscribe(
-        SchedulePipelineRabbitMessage.get_channel_name(),
-        functools.partial(_handle_apply_distributed_schedule, app),
-        exclusive_queue=False,
+    app.state.scheduler_worker_consumers = await asyncio.gather(
+        *(
+            rabbitmq_client.subscribe(
+                SchedulePipelineRabbitMessage.get_channel_name(),
+                functools.partial(_handle_apply_distributed_schedule, app),
+                exclusive_queue=False,
+            )
+            for _ in range(
+                app_settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY
+            )
+        )
     )
 
     app.state.scheduler_worker = create_scheduler(app)
@@ -74,5 +84,11 @@ async def setup_worker(app: FastAPI) -> None:
 
 async def shutdown_worker(app: FastAPI) -> None:
     assert app.state.scheduler_worker  # nosec
-    # TODO: we might need to cancel stuff here. not sure yet what
-    # unsubscribing is maybe not a good idea if we want to keep the data in the queue
+    rabbitmq_client = get_rabbitmq_client(app)
+    await asyncio.gather(
+        *(
+            rabbitmq_client.unsubscribe_consumer(*consumer)
+            for consumer in app.state.scheduler_worker_consumers
+        ),
+        return_exceptions=False,
+    )
