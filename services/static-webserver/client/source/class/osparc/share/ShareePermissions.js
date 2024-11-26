@@ -33,42 +33,40 @@ qx.Class.define("osparc.share.ShareePermissions", {
       this._add(layout);
       for (let i=0; i<shareesData.length; i++) {
         const shareeData = shareesData[i];
-        osparc.store.Store.getInstance().getGroup(shareeData.gid)
-          .then(group => {
-            if (group) {
-              layout.add(new qx.ui.basic.Label(group.label), {
-                row: i,
-                column: 0
-              });
-
-              const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
-              shareeData["inaccessible_services"].forEach(inaccessibleService => {
-                const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
-                  alignY: "middle"
-                });
-                const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
-                infoButton.setAppearance("strong-button");
-                const label = new qx.ui.basic.Label();
-                hBox.add(infoButton);
-                hBox.add(label);
-                osparc.store.Services.getService(inaccessibleService.key, inaccessibleService.version)
-                  .then(metadata => {
-                    label.setValue(metadata["name"] + " : " + metadata["version"])
-                    infoButton.addListener("execute", () => {
-                      metadata["resourceType"] = "service";
-                      const resourceDetails = new osparc.dashboard.ResourceDetails(metadata);
-                      osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
-                    }, this);
-                  })
-
-                vBox.add(hBox);
-              });
-              layout.add(vBox, {
-                row: i,
-                column: 1
-              });
-            }
+        const group = osparc.store.Groups.getInstance().getGroup(shareeData.gid);
+        if (group) {
+          layout.add(new qx.ui.basic.Label(group.getLabel()), {
+            row: i,
+            column: 0
           });
+
+          const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
+          shareeData["inaccessible_services"].forEach(inaccessibleService => {
+            const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+              alignY: "middle"
+            });
+            const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
+            infoButton.setAppearance("strong-button");
+            const label = new qx.ui.basic.Label();
+            hBox.add(infoButton);
+            hBox.add(label);
+            osparc.store.Services.getService(inaccessibleService.key, inaccessibleService.version)
+              .then(metadata => {
+                label.setValue(metadata["name"] + " : " + metadata["version"])
+                infoButton.addListener("execute", () => {
+                  metadata["resourceType"] = "service";
+                  const resourceDetails = new osparc.dashboard.ResourceDetails(metadata);
+                  osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+                }, this);
+              })
+
+            vBox.add(hBox);
+          });
+          layout.add(vBox, {
+            row: i,
+            column: 1
+          });
+        }
       }
     }
   }

@@ -255,11 +255,6 @@ qx.Class.define("osparc.auth.Manager", {
         role: profile.role.toLowerCase()
       });
       this.updateProfile(profile);
-      if ("organizations" in profile["groups"]) {
-        const orgIds = [];
-        profile["groups"]["organizations"].forEach(org => orgIds.push(org["gid"]));
-        authData.setOrgIds(orgIds);
-      }
       const role = profile.role.toLowerCase();
       osparc.data.Permissions.getInstance().setRole(role);
 

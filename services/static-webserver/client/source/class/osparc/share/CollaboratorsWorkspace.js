@@ -157,9 +157,8 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         );
       };
 
-      const groupData = await osparc.store.Store.getInstance().getGroup(groupId);
-      const isOrganization = (groupData && !("id" in groupData));
-      if (isOrganization) {
+      const group = osparc.store.Groups.getInstance().getOrganization(groupId);
+      if (group) {
         const msg = this.tr(`Demoting to ${osparc.data.Roles.WORKSPACE[1].label} will remove write access to all the members of the Organization. Are you sure?`);
         const win = new osparc.ui.window.Confirmation(msg).set({
           caption: this.tr("Demote"),

@@ -225,15 +225,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       }
 
-      osparc.data.Resources.get("organizations")
-        .then(() => {
-          if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
-            this.__startAutoSaveTimer();
-          } else {
-            const msg = this.self().READ_ONLY_TEXT;
-            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-          }
-        });
+      if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
+        this.__startAutoSaveTimer();
+      } else {
+        const msg = this.self().READ_ONLY_TEXT;
+        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+      }
 
       const pageContext = study.getUi().getMode();
       switch (pageContext) {

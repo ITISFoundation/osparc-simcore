@@ -1935,16 +1935,14 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const win = osparc.editor.AnnotationNoteCreator.popUpInWindow(noteEditor);
         noteEditor.addListener("addNote", () => {
           const gid = noteEditor.getRecipientGid();
-          osparc.store.Store.getInstance().getGroup(gid)
-            .then(user => {
-              serializeData.attributes.recipientGid = gid;
-              serializeData.attributes.text = noteEditor.getNote();
-              if (user) {
-                osparc.notification.Notifications.postNewAnnotationNote(user.id, this.getStudy().getUuid());
-              }
-              this.__addAnnotation(serializeData);
-            })
-            .finally(() => win.close());
+          serializeData.attributes.recipientGid = gid;
+          serializeData.attributes.text = noteEditor.getNote();
+          const user = osparc.store.Groups.getInstance().getUserByGroupId(gid)
+          if (user) {
+            osparc.notification.Notifications.postNewAnnotationNote(user.getUserId(), this.getStudy().getUuid());
+          }
+          this.__addAnnotation(serializeData);
+          win.close();
         }, this);
         noteEditor.addListener("cancel", () => win.close());
       } else if (type === "rect") {

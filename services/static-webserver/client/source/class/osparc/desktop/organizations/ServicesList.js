@@ -114,19 +114,19 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
         return;
       }
 
-      const gid = orgModel.getGid();
+      const groupId = orgModel.getGroupId();
       osparc.store.Services.getServicesLatest()
         .then(servicesLatest => {
           const orgServices = [];
           Object.keys(servicesLatest).forEach(key => {
             const serviceLatest = servicesLatest[key];
-            if (gid in serviceLatest["accessRights"]) {
+            if (groupId in serviceLatest["accessRights"]) {
               orgServices.push(serviceLatest);
             }
           });
           orgServices.forEach(orgService => {
             const orgServiceCopy = osparc.utils.Utils.deepCloneObject(orgService);
-            orgServiceCopy["orgId"] = gid;
+            orgServiceCopy["orgId"] = groupId;
             if (orgServiceCopy["thumbnail"] === null) {
               orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.PRODUCT_ICON;
             }

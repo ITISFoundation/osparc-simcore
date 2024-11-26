@@ -41,25 +41,30 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
     __templatesList: null,
     __servicesList: null,
 
-    setCurrentOrg: function(orgModel) {
-      if (orgModel === null) {
+    setCurrentOrg: function(organization) {
+      if (organization === null) {
         return;
       }
-      this.__orgModel = orgModel;
+      this.__orgModel = organization;
 
       const organizationListItem = this.__addOrganizationListItem();
-      orgModel.bind("gid", organizationListItem, "key");
-      orgModel.bind("gid", organizationListItem, "model");
-      orgModel.bind("thumbnail", organizationListItem, "thumbnail");
-      orgModel.bind("label", organizationListItem, "title");
-      orgModel.bind("description", organizationListItem, "subtitle");
-      orgModel.bind("nMembers", organizationListItem, "role");
-      orgModel.bind("accessRights", organizationListItem, "accessRights");
+      organization.bind("groupId", organizationListItem, "key");
+      organization.bind("groupId", organizationListItem, "model");
+      organization.bind("thumbnail", organizationListItem, "thumbnail");
+      organization.bind("label", organizationListItem, "title");
+      organization.bind("description", organizationListItem, "subtitle");
+      organization.bind("groupMembers", organizationListItem, "groupMembers");
+      organization.bind("accessRights", organizationListItem, "accessRights");
+      organizationListItem.updateNMembers();
+      [
+        "memberAdded",
+        "memberRemoved",
+      ].forEach(ev => organization.addListener(ev, () => organizationListItem.updateNMembers()));
 
       // set orgModel to the tab views
-      this.__membersList.setCurrentOrg(orgModel);
-      this.__templatesList.setCurrentOrg(orgModel);
-      this.__servicesList.setCurrentOrg(orgModel);
+      this.__membersList.setCurrentOrg(organization);
+      this.__templatesList.setCurrentOrg(organization);
+      this.__servicesList.setCurrentOrg(organization);
     },
 
     __getTitleLayout: function() {
@@ -104,31 +109,15 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
     },
 
     __updateOrganization: function(win, button, orgEditor) {
-      const orgKey = orgEditor.getGid();
+      const groupId = orgEditor.getGid();
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
       const thumbnail = orgEditor.getThumbnail();
-      const params = {
-        url: {
-          "gid": orgKey
-        },
-        data: {
-          "label": name,
-          "description": description,
-          "thumbnail": thumbnail || null
-        }
-      };
-      osparc.data.Resources.fetch("organizations", "patch", params)
+      osparc.store.Groups.getInstance().patchOrganization(groupId, name, description, thumbnail)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);
           win.close();
-          osparc.store.Store.getInstance().reset("organizations");
-          this.__orgModel.set({
-            label: name,
-            description: description,
-            thumbnail: thumbnail || null
-          });
         })
         .catch(err => {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
