@@ -395,6 +395,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return this.getResourceType() === resourceType;
     },
 
+    isItemNotClickable: function() {
+      const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+      return (
+        this.getBlocked() === true || // It could be blocked by IN_USE or UNKNOWN_SERVICE
+        (this.isResourceType("study") && (studyBrowserContext === "trash")) // It could a trashed study
+      );
+    },
+
     __applyResourceData: function(resourceData) {
       let uuid = null;
       let owner = null;

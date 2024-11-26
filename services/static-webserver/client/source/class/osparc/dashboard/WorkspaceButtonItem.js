@@ -254,7 +254,9 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
     },
 
     __itemSelected: function(newVal) {
-      if (newVal) {
+      const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+      // do not allow selecting workspace
+      if (studyBrowserContext !== "trash" && newVal) {
         this.fireDataEvent("workspaceSelected", this.getWorkspaceId());
       }
       this.setValue(false);

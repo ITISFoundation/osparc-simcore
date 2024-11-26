@@ -241,7 +241,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     },
 
     __itemSelected: function(newVal) {
-      if (newVal) {
+      const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+      // do not allow selecting workspace
+      if (studyBrowserContext !== "trash" && newVal) {
         this.fireDataEvent("folderSelected", this.getFolderId());
       }
       this.setValue(false);
