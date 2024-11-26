@@ -71,7 +71,7 @@ async def test_worker_properly_autocalls_scheduler_api(
         use_on_demand_clusters=False,
     )
     mocked_get_scheduler_worker.assert_called_once_with(initialized_app)
-    mocked_get_scheduler_worker.return_value.schedule_pipeline.assert_called_once_with(
+    mocked_get_scheduler_worker.return_value.apply.assert_called_once_with(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         iteration=1,
