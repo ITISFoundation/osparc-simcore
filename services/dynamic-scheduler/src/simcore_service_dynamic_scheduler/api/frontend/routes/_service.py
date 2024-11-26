@@ -10,10 +10,10 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_service_dynamic_scheduler.services.rabbitmq import get_rabbitmq_rpc_client
 
-from ...core.settings import ApplicationSettings
-from ...services.service_tracker import get_tracked_service, remove_tracked_service
+from ....core.settings import ApplicationSettings
+from ....services.service_tracker import get_tracked_service, remove_tracked_service
+from .._utils import get_parent_app
 from ._rendeer_utils import base_page
-from ._utils import get_parent_app
 
 router = APIRouter()
 

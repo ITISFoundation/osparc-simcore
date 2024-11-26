@@ -2,8 +2,8 @@ import nicegui
 from fastapi import FastAPI
 
 from ...core.settings import ApplicationSettings
-from ._router import router
 from ._utils import set_parent_app
+from .routes import router
 
 
 def setup_frontend(app: FastAPI) -> None:
