@@ -300,6 +300,7 @@ opentelemetry-api==1.26.0
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-propagator-aws-xray
@@ -324,6 +325,7 @@ opentelemetry-instrumentation==0.47b0
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-asgi==0.47b0
@@ -336,6 +338,10 @@ opentelemetry-instrumentation-fastapi==0.47b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-httpx==0.47b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+opentelemetry-instrumentation-logging==0.47b0
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.47b0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -620,8 +626,6 @@ redis==5.0.4
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 referencing==0.29.3
     # via
-    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 regex==2023.12.25
@@ -819,7 +823,9 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-redis
 yarl==1.9.4
     # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq
