@@ -18,6 +18,9 @@ from models_library.clusters import DEFAULT_CLUSTER_ID
 from pytest_mock import MockerFixture
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.modules.comp_scheduler._manager import run_new_pipeline
+from simcore_service_director_v2.modules.comp_scheduler._models import (
+    SchedulePipelineRabbitMessage,
+)
 from simcore_service_director_v2.modules.comp_scheduler._worker import (
     _get_scheduler_worker,
 )
@@ -80,12 +83,16 @@ async def mocked_scheduler_api(mocker: MockerFixture) -> mock.Mock:
     )
 
 
+@pytest.mark.parametrize(
+    "queue_name", [SchedulePipelineRabbitMessage.get_channel_name()]
+)
 async def test_worker_scheduling_parallelism(
     with_disabled_auto_scheduling: mock.Mock,
     mocked_scheduler_api: mock.Mock,
     initialized_app: FastAPI,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     run_metadata: RunMetadataDict,
+    ensure_parametrized_queue_is_empty: None,
 ):
     with_disabled_auto_scheduling.assert_called_once()
 
@@ -94,7 +101,7 @@ async def test_worker_scheduling_parallelism(
 
     mocked_scheduler_api.side_effect = _side_effect
 
-    async def _project_pipeline_creation_workflow():
+    async def _project_pipeline_creation_workflow() -> None:
         published_project = await publish_project()
         assert published_project.project.prj_owner
         await run_new_pipeline(
