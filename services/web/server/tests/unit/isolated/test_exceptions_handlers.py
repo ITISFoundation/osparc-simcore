@@ -23,7 +23,6 @@ from simcore_service_webserver.exceptions_handlers_base import (
     _handled_exception_context_manager,
 )
 from simcore_service_webserver.exceptions_handlers_http_error_map import (
-    _sort_exceptions_by_specificity,
     create_exception_handler_from_http_error,
     create_exception_handler_from_http_error_map,
 )
@@ -41,39 +40,6 @@ class OneError(BaseError):
 
 class OtherError(BaseError):
     ...
-
-
-def test_sort_concrete_first():
-    assert _sort_exceptions_by_specificity([Exception, BaseError]) == [
-        BaseError,
-        Exception,
-    ]
-
-    assert _sort_exceptions_by_specificity(
-        [Exception, BaseError], concrete_first=False
-    ) == [
-        Exception,
-        BaseError,
-    ]
-
-
-def test_sort_exceptions_by_specificity():
-
-    got_exceptions_cls = _sort_exceptions_by_specificity(
-        [
-            Exception,
-            OtherError,
-            OneError,
-            BaseError,
-            ValueError,
-            ArithmeticError,
-            ZeroDivisionError,
-        ]
-    )
-
-    for from_, exc in enumerate(got_exceptions_cls, start=1):
-        for exc_after in got_exceptions_cls[from_:]:
-            assert not issubclass(exc_after, exc), f"{got_exceptions_cls=}"
 
 
 @pytest.fixture

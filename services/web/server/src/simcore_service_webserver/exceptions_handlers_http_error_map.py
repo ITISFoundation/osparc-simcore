@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Iterable
 from typing import NamedTuple, TypeAlias
 
 from aiohttp import web
@@ -11,7 +10,10 @@ from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exc
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error
 
-from .exceptions_handlers_base import AiohttpExceptionHandler
+from .exceptions_handlers_base import (
+    AiohttpExceptionHandler,
+    _sort_exceptions_by_specificity,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -37,9 +39,6 @@ ExceptionToHttpErrorMap: TypeAlias = dict[type[BaseException], HttpErrorInfo]
 
 
 def create_exception_handler_from_http_error(
-    exception_cls: type[BaseException],
-    *,
-    # handler is produced from here
     status_code: int,
     msg_template: str,
 ) -> AiohttpExceptionHandler:
@@ -54,7 +53,6 @@ def create_exception_handler_from_http_error(
     returned as-is for re-raising.
 
     Arguments:
-        exception_cls: exception raise during the request
         status_code: the http status code to associate at the web-api interface to this error
         msg_template: a template string to pass to the HttpError
 
@@ -66,7 +64,6 @@ def create_exception_handler_from_http_error(
         request: web.Request,
         exception: BaseException,
     ) -> web.Response:
-        assert isinstance(exception, exception_cls)  # nosec
 
         # safe formatting, i.e. does not raise
         user_msg = msg_template.format_map(
@@ -100,16 +97,6 @@ def create_exception_handler_from_http_error(
     return _exception_handler
 
 
-def _sort_exceptions_by_specificity(
-    exceptions: Iterable[type[BaseException]], *, concrete_first: bool = True
-) -> list[type[BaseException]]:
-    return sorted(
-        exceptions,
-        key=lambda exc: sum(issubclass(e, exc) for e in exceptions if e is not exc),
-        reverse=not concrete_first,
-    )
-
-
 def create_exception_handler_from_http_error_map(
     exc_to_http_error_map: ExceptionToHttpErrorMap,
 ) -> AiohttpExceptionHandler:
@@ -123,7 +110,6 @@ def create_exception_handler_from_http_error_map(
 
     _exception_handlers = {
         exc_cls: create_exception_handler_from_http_error(
-            exception_cls=exc_cls,
             status_code=http_error_info.status_code,
             msg_template=http_error_info.msg_template,
         )

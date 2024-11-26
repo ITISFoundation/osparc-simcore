@@ -12,6 +12,7 @@ from aiohttp.test_utils import make_mocked_request
 from simcore_service_webserver.errors import WebServerBaseError
 from simcore_service_webserver.exceptions_handlers_base import (
     _handled_exception_context_manager,
+    _sort_exceptions_by_specificity,
     create_decorator_from_exception_handler,
 )
 
@@ -28,6 +29,39 @@ class OneError(BaseError):
 
 class OtherError(BaseError):
     ...
+
+
+def test_sort_concrete_first():
+    assert _sort_exceptions_by_specificity([Exception, BaseError]) == [
+        BaseError,
+        Exception,
+    ]
+
+    assert _sort_exceptions_by_specificity(
+        [Exception, BaseError], concrete_first=False
+    ) == [
+        Exception,
+        BaseError,
+    ]
+
+
+def test_sort_exceptions_by_specificity():
+
+    got_exceptions_cls = _sort_exceptions_by_specificity(
+        [
+            Exception,
+            OtherError,
+            OneError,
+            BaseError,
+            ValueError,
+            ArithmeticError,
+            ZeroDivisionError,
+        ]
+    )
+
+    for from_, exc in enumerate(got_exceptions_cls, start=1):
+        for exc_after in got_exceptions_cls[from_:]:
+            assert not issubclass(exc_after, exc), f"{got_exceptions_cls=}"
 
 
 async def test__handled_exception_context_manager():
