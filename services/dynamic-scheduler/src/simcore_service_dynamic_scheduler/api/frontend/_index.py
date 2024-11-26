@@ -29,11 +29,11 @@ def _get_elapsed(timestamp: float) -> str:
 
 def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> None:
     dict_to_render: dict[str, tuple[str, str]] = {
-        "NodeID": ("code", f"{node_id}"),
+        "NodeID": ("copy", f"{node_id}"),
         "Display State": ("label", service.current_state),
         "Last State Change": ("label", _get_elapsed(service.last_state_change)),
-        "UserID": ("code", f"{service.user_id}"),
-        "ProjectID": ("code", f"{service.project_id}"),
+        "UserID": ("copy", f"{service.user_id}"),
+        "ProjectID": ("copy", f"{service.project_id}"),
         "User Requested": ("label", service.requested_state),
     }
 
@@ -49,16 +49,18 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
         service_status = json.loads(service.service_status) or {}
         dict_to_render["Service State"] = (
             "label",
-            service_status.get("service_state", ""),
+            service_status.get(
+                "state" if "boot_type" in service_status else "service_state", "N/A"
+            ),
         )
 
-    with ui.column().classes("p-0 m-0"):
+    with ui.column().classes("gap-0"):
         for key, (widget, value) in dict_to_render.items():
-            with ui.row(align_items="baseline").classes("p-0 m-0"):
+            with ui.row(align_items="baseline"):
                 ui.label(key).classes("font-bold")
                 match widget:
-                    case "code":
-                        ui.code(value)
+                    case "copy":
+                        ui.label(value).classes("border bg-slate-200 px-1")
                     case "label":
                         ui.label(value)
                     case _:
@@ -66,54 +68,60 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
 
 
 def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
-    with ui.row(align_items="baseline").classes("p-0 m-0"):
+    with ui.button_group():
         ui.button(
             "Details",
             icon="source",
             on_click=lambda: ui.navigate.to(f"/service/{node_id}:details"),
-        )
+        ).tooltip("Display more information about what the scheduler is tracking")
 
         if service.current_state != SchedulerServiceState.RUNNING:
             return
 
-        async def stop_process_task():
-            ui.notify(f"Started service stop request for {node_id}")
-
-            await httpx.AsyncClient(timeout=10).get(
-                f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
-            )
-
-            ui.notify(
-                f"Stop request accepted by {node_id}. Please give the service some time to stop!"
-            )
-
         with ui.dialog() as confirm_dialog, ui.card():
-            ui.label(f"Are you sure you want to stop the service {node_id}?")
+
+            async def stop_process_task():
+                confirm_dialog.submit("Yes")
+                ui.notify(f"Started service stop request for {node_id}")
+
+                await httpx.AsyncClient(timeout=10).get(
+                    f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
+                )
+
+                ui.notify(
+                    f"Submitted stop request for {node_id}. Please give the service some time to stop!"
+                )
+
+            ui.markdown(f"Are you sure you want to stop the service **{node_id}**?")
             ui.label("The service will also result sopped for the user in his project.")
             with ui.row():
-                ui.button("Yes", on_click=stop_process_task)
+                ui.button("Yes", color="red", on_click=stop_process_task)
                 ui.button("No", on_click=lambda: confirm_dialog.submit("No"))
 
         async def display_confirm_dialog():
             await confirm_dialog
 
-        ui.button("Stop service", icon="stop", on_click=display_confirm_dialog)
+        ui.button(
+            "Stop service", icon="stop", color="orange", on_click=display_confirm_dialog
+        ).tooltip(
+            "Stops the service, same as the user when they press the stop button."
+        )
 
 
 def _render_card(
     card_container: Element, node_id: NodeID, service: TrackedServiceModel
 ) -> None:
     with card_container:  # noqa: SIM117
-        with ui.column().classes("border p-0 m-0"):
+        with ui.column().classes("border p-1"):
             _render_service_details(node_id, service)
             _render_buttons(node_id, service)
 
 
 def _get_stable_hash(model: TrackedServiceModel) -> dict:
     data = model.model_dump(mode="json")
-    data.pop("last_state_change")
     data.pop("check_status_after")
     data.pop("last_status_notification")
+    data.pop("service_status_task_uid")
     return data
 
 
