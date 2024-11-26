@@ -46,8 +46,8 @@ async def _handled_exception_context_manager(
     exception_handler: AiohttpExceptionHandler,
     **forward_ctx,
 ) -> AsyncIterator[_ExceptionContext]:
-    """Calls `exception_handler` on exceptions raised in this context
-    and caught in `exception_catch`
+    """
+    Calls `exception_handler` on exceptions raised in this context and caught in `exception_catch`
     """
     ctx = _ExceptionContext()
     try:
@@ -61,8 +61,8 @@ async def _handled_exception_context_manager(
 
 
 def create_decorator_from_exception_handler(
+    exception_types: type[BaseException] | tuple[type[BaseException], ...],
     exception_handler: AiohttpExceptionHandler,
-    exception_types: type[BaseException] | tuple[type[BaseException], ...] = Exception,
 ):
     """Returns a decorator for aiohttp's web.Handler functions
 
