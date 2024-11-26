@@ -7,9 +7,10 @@
 import json
 import random
 from collections import UserDict
+from collections.abc import Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
