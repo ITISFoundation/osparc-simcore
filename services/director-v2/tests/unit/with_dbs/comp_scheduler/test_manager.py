@@ -177,8 +177,8 @@ async def test_schedule_all_pipelines(
     assert comp_run.cluster_id == DEFAULT_CLUSTER_ID
     assert comp_run.metadata == run_metadata
     assert comp_run.result is RunningState.PUBLISHED
-    assert comp_run.last_scheduled is not None
-    start_schedule_time = comp_run.last_scheduled
+    assert comp_run.scheduled is not None
+    start_schedule_time = comp_run.scheduled
     start_modified_time = comp_run.modified
 
     # this will now not schedule the pipeline since it was already scheduled
@@ -186,12 +186,12 @@ async def test_schedule_all_pipelines(
     scheduler_rabbit_client_parser.assert_not_called()
     comp_runs = await assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
     comp_run = comp_runs[0]
-    assert comp_run.last_scheduled == start_schedule_time, "scheduled time changed!"
+    assert comp_run.scheduled == start_schedule_time, "scheduled time changed!"
     assert comp_run.cancelled is None
     assert comp_run.modified == start_modified_time
 
     # once the worker is done, the schedule time is set back to None
-    await CompRunsRepository(aiopg_engine).mark_as_scheduled_done(
+    await CompRunsRepository(aiopg_engine).mark_scheduling_done(
         user_id=comp_run.user_id,
         project_id=comp_run.project_uuid,
         iteration=comp_run.iteration,
@@ -210,9 +210,9 @@ async def test_schedule_all_pipelines(
     scheduler_rabbit_client_parser.reset_mock()
     comp_runs = await assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
     comp_run = comp_runs[0]
-    assert comp_run.last_scheduled is not None
-    assert comp_run.last_scheduled > start_schedule_time
-    last_schedule_time = comp_run.last_scheduled
+    assert comp_run.scheduled is not None
+    assert comp_run.scheduled > start_schedule_time
+    last_schedule_time = comp_run.scheduled
     assert comp_run.cancelled is None
     assert comp_run.modified > start_modified_time
 
@@ -233,8 +233,8 @@ async def test_schedule_all_pipelines(
     scheduler_rabbit_client_parser.reset_mock()
     comp_runs = await assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
     comp_run = comp_runs[0]
-    assert comp_run.last_scheduled is not None
-    assert comp_run.last_scheduled > last_schedule_time
+    assert comp_run.scheduled is not None
+    assert comp_run.scheduled > last_schedule_time
     assert comp_run.cancelled is not None
 
 
@@ -277,8 +277,8 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
     assert comp_run.cluster_id == DEFAULT_CLUSTER_ID
     assert comp_run.metadata == run_metadata
     assert comp_run.result is RunningState.PUBLISHED
-    assert comp_run.last_scheduled is not None
-    start_schedule_time = comp_run.last_scheduled
+    assert comp_run.scheduled is not None
+    start_schedule_time = comp_run.scheduled
     start_modified_time = comp_run.modified
 
     # this will now not schedule the pipeline since it was already scheduled
@@ -286,7 +286,7 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
     scheduler_rabbit_client_parser.assert_not_called()
     comp_runs = await assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
     comp_run = comp_runs[0]
-    assert comp_run.last_scheduled == start_schedule_time, "scheduled time changed!"
+    assert comp_run.scheduled == start_schedule_time, "scheduled time changed!"
     assert comp_run.cancelled is None
     assert comp_run.modified == start_modified_time
 
@@ -295,7 +295,7 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
         comp_run.user_id,
         comp_run.project_uuid,
         comp_run.iteration,
-        last_scheduled=datetime.datetime.now(tz=datetime.UTC)
+        scheduled=datetime.datetime.now(tz=datetime.UTC)
         - SCHEDULER_INTERVAL * (_LOST_TASKS_FACTOR + 1),
     )
     with caplog.at_level(logging.ERROR):
@@ -313,8 +313,8 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
     scheduler_rabbit_client_parser.reset_mock()
     comp_runs = await assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
     comp_run = comp_runs[0]
-    assert comp_run.last_scheduled is not None
-    assert comp_run.last_scheduled > start_schedule_time
+    assert comp_run.scheduled is not None
+    assert comp_run.scheduled > start_schedule_time
     assert comp_run.cancelled is None
     assert comp_run.modified > start_modified_time
 

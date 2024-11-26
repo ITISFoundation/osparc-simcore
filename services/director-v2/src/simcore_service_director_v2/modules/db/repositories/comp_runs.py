@@ -55,11 +55,12 @@ class CompRunsRepository(BaseRepository):
 
     async def list(
         self,
+        *,
         filter_by_state: set[RunningState] | None = None,
-        need_scheduling: bool | None = None,
-        scheduled_since: datetime.timedelta | None = None,
+        never_scheduled: bool = False,
+        processed_before: datetime.datetime | None = None,
+        scheduled_after: datetime.timedelta | None = None,
     ) -> list[CompRunsAtDB]:
-
         conditions = []
         if filter_by_state:
             conditions.append(
@@ -72,13 +73,14 @@ class CompRunsRepository(BaseRepository):
             )
 
         scheduling_or_conditions = []
-        if need_scheduling is not None:
-            scheduling_or_conditions.append(comp_runs.c.last_scheduled.is_(None))
-        if scheduled_since is not None:
-            scheduled_cutoff = arrow.utcnow().datetime - scheduled_since
-            scheduling_or_conditions.append(
-                comp_runs.c.last_scheduled <= scheduled_cutoff
-            )
+        if never_scheduled:
+            scheduling_or_conditions.append(comp_runs.c.scheduled.is_(None))
+        if scheduled_after is not None:
+            scheduled_cutoff = arrow.utcnow().datetime - scheduled_after
+            scheduling_or_conditions.append(comp_runs.c.scheduled <= scheduled_cutoff)
+
+        if processed_before is not None:
+            scheduling_or_conditions.append(comp_runs.c.processed <= processed_before)
 
         if scheduling_or_conditions:
             conditions.append(sa.or_(*scheduling_or_conditions))
@@ -189,15 +191,16 @@ class CompRunsRepository(BaseRepository):
             user_id,
             project_id,
             iteration,
-            last_scheduled=arrow.utcnow().datetime,
+            scheduled=arrow.utcnow().datetime,
+            processed=None,
         )
 
-    async def mark_as_scheduled_done(
+    async def mark_scheduling_done(
         self, *, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
     ) -> CompRunsAtDB | None:
         return await self.update(
             user_id,
             project_id,
             iteration,
-            last_scheduled=None,
+            processed=arrow.utcnow().datetime,
         )

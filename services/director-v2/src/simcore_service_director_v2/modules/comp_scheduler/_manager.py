@@ -1,6 +1,7 @@
 import logging
 from typing import Final
 
+import arrow
 import networkx as nx
 from aiopg.sa import Engine
 from fastapi import FastAPI
@@ -123,13 +124,15 @@ async def schedule_all_pipelines(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, msg="scheduling pipelines"):
         db_engine = get_db_engine(app)
         runs_to_schedule = await CompRunsRepository.instance(db_engine).list(
-            filter_by_state=SCHEDULED_STATES, need_scheduling=True
+            filter_by_state=SCHEDULED_STATES,
+            never_scheduled=True,
+            processed_before=arrow.utcnow().datetime - SCHEDULER_INTERVAL,
         )
         possibly_lost_scheduled_pipelines = await CompRunsRepository.instance(
             db_engine
         ).list(
             filter_by_state=SCHEDULED_STATES,
-            scheduled_since=SCHEDULER_INTERVAL * _LOST_TASKS_FACTOR,
+            scheduled_after=SCHEDULER_INTERVAL * _LOST_TASKS_FACTOR,
         )
         if possibly_lost_scheduled_pipelines:
             _logger.error(
