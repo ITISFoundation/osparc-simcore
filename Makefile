@@ -323,6 +323,7 @@ printf "$$rows" "oSparc platform" "http://$(get_my_ip).nip.io:9081";\
 printf "$$rows" "oSparc public API doc" "http://$(get_my_ip).nip.io:8006/dev/doc";\
 printf "$$rows" "oSparc web API doc" "http://$(get_my_ip).nip.io:9081/dev/doc";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
+printf "$$rows" "Dy-schd Dashboard" "http://$(get_my_ip).nip.io:8012";\
 printf "$$rows" "Docker Registry" "http://$${REGISTRY_URL}/v2/_catalog" $${REGISTRY_USER} $${REGISTRY_PW};\
 printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
 printf "$$rows" "Jaeger" "http://$(get_my_ip).nip.io:16686";\
