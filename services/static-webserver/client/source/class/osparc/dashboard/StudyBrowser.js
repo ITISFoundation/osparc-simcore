@@ -1738,10 +1738,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __deleteStudyRequested: function(studyData) {
-      // OM here
       const preferencesSettings = osparc.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteStudy()) {
-        const win = this.__createConfirmDeleteWindow([studyData.name]);
+        const win = false ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
         win.center();
         win.open();
         win.addListener("close", () => {
@@ -1971,34 +1970,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .finally(() => this.resetSelection());
     },
 
-    __removeMeFromCollaborators: function(studyData) {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const collabGids = Object.keys(studyData["accessRights"]);
-      const amICollaborator = collabGids.indexOf(myGid) > -1;
-      if (collabGids.length > 1 && amICollaborator) {
-        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
-        // remove collaborator
-        delete arCopy[myGid];
-        return osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
-      }
-      return null;
-    },
-
     __trashStudies: function(studiesData) {
       studiesData.forEach(studyData => this.__trashStudy(studyData));
     },
 
-    __doDeleteStudy: function(studyData) {
+    __deleteOrRemoveMe: function(studyData) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const collabGids = Object.keys(studyData["accessRights"]);
       const amICollaborator = collabGids.indexOf(myGid) > -1;
+      return (collabGids.length > 1 && amICollaborator) ? "remove" : "delete";
+    },
 
+    __removeMeFromCollaborators: function(studyData) {
+      const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
+      // remove me from collaborators
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      delete arCopy[myGid];
+      return osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
+    },
+
+    __doDeleteStudy: function(studyData) {
       let operationPromise = null;
-      if (collabGids.length > 1 && amICollaborator) {
+      if (this.__deleteOrRemoveMe(studyData) === "remove") {
         operationPromise = this.__removeMeFromCollaborators(studyData);
-        if (operationPromise === null) {
-          return;
-        }
       } else {
         // delete study
         operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
