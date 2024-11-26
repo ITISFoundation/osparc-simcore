@@ -67,7 +67,7 @@ async def create_pipeline(
     yield _
 
     # cleanup
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             comp_pipeline.delete().where(
                 comp_pipeline.c.project_id.in_(created_pipeline_ids)
@@ -123,7 +123,7 @@ async def create_tasks(
                 ),
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
-                "submit": datetime.datetime.now(tz=datetime.UTC),
+                "submit": datetime.datetime.now(),
                 "job_id": generate_dask_job_id(
                     service_key=node_data.key,
                     service_version=node_data.version,
@@ -133,7 +133,7 @@ async def create_tasks(
                 ),
             }
             task_config.update(**overrides_kwargs)
-            async with sqlalchemy_async_engine.connect() as conn:
+            async with sqlalchemy_async_engine.begin() as conn:
                 result = await conn.execute(
                     comp_tasks.insert()
                     .values(**task_config)
@@ -147,7 +147,7 @@ async def create_tasks(
     yield _
 
     # cleanup
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
         )
@@ -197,14 +197,14 @@ async def create_comp_run(
     ) -> CompRunsAtDB:
         run_config = {
             "project_uuid": f"{project.uuid}",
-            "user_id": f"{user['id']}",
+            "user_id": user["id"],
             "iteration": 1,
             "result": StateType.NOT_STARTED,
             "metadata": run_metadata,
             "use_on_demand_clusters": False,
         }
         run_config.update(**run_kwargs)
-        async with sqlalchemy_async_engine.connect() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
                 comp_runs.insert()
                 .values(**jsonable_encoder(run_config))
@@ -217,7 +217,7 @@ async def create_comp_run(
     yield _
 
     # cleanup
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids))
         )
@@ -242,7 +242,7 @@ async def create_cluster(
         new_cluster = Cluster.model_validate(cluster_config)
         assert new_cluster
 
-        async with sqlalchemy_async_engine.connect() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             # insert basic cluster
             created_cluster = (
                 await conn.execute(
@@ -298,7 +298,7 @@ async def create_cluster(
     yield _
 
     # cleanup
-    async with sqlalchemy_async_engine.connect() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             clusters.delete().where(clusters.c.id.in_(created_cluster_ids))
         )
@@ -318,6 +318,7 @@ async def publish_project(
     async def _() -> PublishedProject:
         created_project = await project(user, workbench=fake_workbench_without_outputs)
         return PublishedProject(
+            user=user,
             project=created_project,
             pipeline=await create_pipeline(
                 project_id=f"{created_project.uuid}",
@@ -352,6 +353,7 @@ async def running_project(
     created_project = await project(user, workbench=fake_workbench_without_outputs)
     now_time = arrow.utcnow().datetime
     return RunningProject(
+        user=user,
         project=created_project,
         pipeline=await create_pipeline(
             project_id=f"{created_project.uuid}",
@@ -388,6 +390,7 @@ async def running_project_mark_for_cancellation(
     created_project = await project(user, workbench=fake_workbench_without_outputs)
     now_time = arrow.utcnow().datetime
     return RunningProject(
+        user=user,
         project=created_project,
         pipeline=await create_pipeline(
             project_id=f"{created_project.uuid}",

@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 @dataclass
 class PublishedProject:
+    user: dict[str, Any]
     project: ProjectAtDB
     pipeline: CompPipelineAtDB
     tasks: list[CompTaskAtDB]

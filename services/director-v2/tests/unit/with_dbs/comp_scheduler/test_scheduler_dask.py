@@ -1046,6 +1046,7 @@ async def with_started_project(
     assert messages[0].node_id == exp_started_task.node_id
 
     return RunningProject(
+        published_project.user,
         published_project.project,
         published_project.pipeline,
         tasks_in_db,
