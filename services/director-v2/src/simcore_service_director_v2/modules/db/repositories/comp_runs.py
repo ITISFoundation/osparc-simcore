@@ -16,7 +16,13 @@ from sqlalchemy.sql import or_
 from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
 
-from ....core.errors import ClusterNotFoundError, ComputationalRunNotFoundError
+from ....core.errors import (
+    ClusterNotFoundError,
+    ComputationalRunNotFoundError,
+    DirectorError,
+    ProjectNotFoundError,
+    UserNotFoundError,
+)
 from ....models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ....utils.db import RUNNING_STATE_TO_DB
 from ..tables import comp_runs
@@ -136,7 +142,16 @@ class CompRunsRepository(BaseRepository):
                 row = await result.first()
                 return CompRunsAtDB.model_validate(row)
         except ForeignKeyViolation as exc:
-            raise ClusterNotFoundError(cluster_id=cluster_id) from exc
+            message = exc.args[0]
+            match message:
+                case s if "users" in s and "user_id" in s:
+                    raise UserNotFoundError(user_id=user_id) from exc
+                case s if "projects" in s and "project_uuid" in s:
+                    raise ProjectNotFoundError(project_id=project_id) from exc
+                case s if "clusters" in s and "cluster_id" in s:
+                    raise ClusterNotFoundError(cluster_id=cluster_id) from exc
+                case _:
+                    raise DirectorError from exc
 
     async def update(
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
