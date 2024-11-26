@@ -2031,9 +2031,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createConfirmTrashWindow: function(studyNames) {
-      let msg = this.tr("Are you sure you want to move to the trash");
-      const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
-      msg += (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText}?` : ` <b>${studyNames[0]}</b>?`);
+      let msg = this.tr("Are you sure you want to move");
+      if (studyNames.length > 1) {
+        const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
+        msg += ` ${studyNames.length} ${studiesText} `
+      } else {
+        msg += ` '${studyNames[0]}' `;
+      }
+      msg += this.tr("to the Trash?");
       const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
       msg += "<br><br>" + (studyNames.length > 1 ? "They" : "It") + this.tr(` will be permanently deleted after ${trashDays} days.`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
