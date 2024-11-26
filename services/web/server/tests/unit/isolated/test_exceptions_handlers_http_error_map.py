@@ -6,6 +6,8 @@
 # pylint: disable=unused-variable
 
 
+import logging
+
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
@@ -14,6 +16,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_service_webserver.errors import WebServerBaseError
 from simcore_service_webserver.exceptions_handlers_base import (
     AsyncDynamicTryExceptContext,
+    async_try_except_decorator,
 )
 from simcore_service_webserver.exceptions_handlers_http_error_map import (
     ExceptionToHttpErrorMap,
@@ -59,120 +62,93 @@ async def test_factory__create_exception_handler_from_http_error(
     assert response.content_type == MIMETYPE_APPLICATION_JSON
 
 
-async def test_factory__create_exception_handler_from_http_error_map(
+async def test_handling_different_exceptions_with_context(
     fake_request: web.Request,
+    caplog: pytest.LogCaptureFixture,
 ):
     exc_to_http_error_map: ExceptionToHttpErrorMap = {
-        OneError: HttpErrorInfo(status.HTTP_400_BAD_REQUEST, "Error One mapped to 400")
+        OneError: HttpErrorInfo(status.HTTP_400_BAD_REQUEST, "Error {code} to 400"),
+        OtherError: HttpErrorInfo(status.HTTP_500_INTERNAL_SERVER_ERROR, "{code}"),
     }
-
     cm = AsyncDynamicTryExceptContext(
         to_exceptions_handlers_map(exc_to_http_error_map), request=fake_request
     )
-    async with cm:
-        raise OneError
 
-    response = cm.get_response()
-    assert response is not None
-    assert response.status == status.HTTP_400_BAD_REQUEST
-    assert response.reason == "Error One mapped to 400"
-
-    # By-passes exceptions not listed
-    err = RuntimeError()
-    with pytest.raises(RuntimeError) as err_info:
+    with caplog.at_level(logging.ERROR):
+        # handles as 4XX
         async with cm:
-            raise err
+            raise OneError
 
-    assert cm.get_response() is None
-    assert err_info.value == err
+        response = cm.get_response()
+        assert response is not None
+        assert response.status == status.HTTP_400_BAD_REQUEST
+        assert response.reason == exc_to_http_error_map[OneError].msg_template.format(
+            code="WebServerBaseError.BaseError.OneError"
+        )
+        assert not caplog.records
 
+        # unhandled -> reraises
+        err = RuntimeError()
+        with pytest.raises(RuntimeError) as err_info:
+            async with cm:
+                raise err
 
-# async def test__handled_exception_context_manager(fake_request: web.Request):
+        assert cm.get_response() is None
+        assert err_info.value == err
 
-#     expected_response = web.json_response({"error": {"msg": "Foo"}})
+        # handles as 5XX and logs
+        async with cm:
+            raise OtherError
 
-#     async def _custom_handler(request, exception):
-#         assert request == fake_request
-#         assert isinstance(
-#             exception, BaseError
-#         ), "only BasePluginError exceptions should call this handler"
-#         return expected_response
-
-#     exc_handling_ctx = _handled_exception_context_manager(
-#         BaseError, _custom_handler, request=fake_request
-#     )
-
-#     # handles any BaseError returning a response
-#     async with exc_handling_ctx as ctx:
-#         raise OneError
-#     assert ctx.response == expected_response
-
-#     async with exc_handling_ctx as ctx:
-#         raise OtherError
-#     assert ctx.response == expected_response
-
-#     # otherwise thru
-#     with pytest.raises(ArithmeticError):
-#         async with exc_handling_ctx:
-#             raise ArithmeticError
+        response = cm.get_response()
+        assert response is not None
+        assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert response.reason == exc_to_http_error_map[OtherError].msg_template.format(
+            code="WebServerBaseError.BaseError.OtherError"
+        )
+        assert caplog.records, "Expected 5XX troubleshooting logged as error"
+        assert caplog.records[0].levelno == logging.ERROR
 
 
-# async def test_create_decorator_from_exception_handler(
-#     caplog: pytest.LogCaptureFixture,
-# ):
-#     # Create an SINGLE exception handler that acts as umbrella for all these exceptions
-#     http_error_map: ExceptionToHttpErrorMap = {
-#         OneError: HttpErrorInfo(
-#             status.HTTP_503_SERVICE_UNAVAILABLE,
-#             "Human readable error transmitted to the front-end",
-#         )
-#     }
+async def test_handling_different_exceptions_with_decorator(
+    fake_request: web.Request,
+    caplog: pytest.LogCaptureFixture,
+):
+    exc_to_http_error_map: ExceptionToHttpErrorMap = {
+        OneError: HttpErrorInfo(status.HTTP_503_SERVICE_UNAVAILABLE, "{code}"),
+    }
 
-#     exc_handler = create_exception_handler_from_http_error_map(http_error_map)
-#     _exc_handling_ctx = create_decorator_from_exception_handler(
-#         exception_types=BaseError,  # <--- FIXME" this is redundant because exception has been already passed in exc_handler!
-#         exception_handler=exc_handler,
-#     )
+    exc_handling_decorator = async_try_except_decorator(
+        to_exceptions_handlers_map(exc_to_http_error_map)
+    )
 
-#     @_exc_handling_ctx
-#     async def _rest_handler(request: web.Request) -> web.Response:
-#         if request.query.get("raise") == "OneError":
-#             raise OneError
-#         if request.query.get("raise") == "ArithmeticError":
-#             raise ArithmeticError
+    @exc_handling_decorator
+    async def _rest_handler(request: web.Request) -> web.Response:
+        if request.query.get("raise") == "OneError":
+            raise OneError
+        if request.query.get("raise") == "ArithmeticError":
+            raise ArithmeticError
+        return web.json_response(reason="all good")
 
-#         return web.Response(reason="all good")
+    with caplog.at_level(logging.ERROR):
 
-#     with caplog.at_level(logging.ERROR):
+        # emulates successful call
+        resp = await _rest_handler(make_mocked_request("GET", "/foo"))
+        assert resp.status == status.HTTP_200_OK
+        assert resp.reason == "all good"
 
-#         # emulates successful call
-#         resp = await _rest_handler(make_mocked_request("GET", "/foo"))
-#         assert resp.status == status.HTTP_200_OK
-#         assert resp.reason == "all good"
+        assert not caplog.records
 
-#         assert not caplog.records
+        # reraised
+        with pytest.raises(ArithmeticError):
+            await _rest_handler(
+                make_mocked_request("GET", "/foo?raise=ArithmeticError")
+            )
 
-#         # this will be passed and catched by the outermost error middleware
-#         with pytest.raises(ArithmeticError):
-#             await _rest_handler(
-#                 make_mocked_request("GET", "/foo?raise=ArithmeticError")
-#             )
+        assert not caplog.records
 
-#         assert not caplog.records
-
-#         # this is a 5XX will be converted to response but is logged as error as well
-#         with pytest.raises(web.HTTPException) as exc_info:
-#             await _rest_handler(make_mocked_request("GET", "/foo?raise=OneError"))
-
-#         resp = exc_info.value
-#         assert resp.status == status.HTTP_503_SERVICE_UNAVAILABLE
-#         assert "front-end" in resp.reason
-
-#         assert caplog.records, "Expected 5XX troubleshooting logged as error"
-#         assert caplog.records[0].levelno == logging.ERROR
-
-#     # typically capture by last
-#     with pytest.raises(ArithmeticError):
-#         resp = await _rest_handler(
-#             make_mocked_request("GET", "/foo?raise=ArithmeticError")
-#         )
+        # handles as 5XX and logs
+        resp = await _rest_handler(make_mocked_request("GET", "/foo?raise=OneError"))
+        assert resp.status == status.HTTP_503_SERVICE_UNAVAILABLE
+        assert caplog.records, "Expected 5XX troubleshooting logged as error"
+        assert caplog.records[0].levelno == logging.ERROR

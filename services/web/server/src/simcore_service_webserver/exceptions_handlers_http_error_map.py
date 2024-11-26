@@ -99,7 +99,7 @@ def create_exception_handler_from_http_error(
 def to_exceptions_handlers_map(
     exc_to_http_error_map: ExceptionToHttpErrorMap,
 ) -> ExceptionHandlersMap:
-    """Converts { exc_type: (status, msg), ...}  -> {exc_type: callable }"""
+    """Converts { exc_type: (status, msg), ... }  -> { exc_type: callable, ... }"""
     exc_handlers_map: ExceptionHandlersMap = {
         exc_type: create_exception_handler_from_http_error(
             status_code=info.status_code, msg_template=info.msg_template
