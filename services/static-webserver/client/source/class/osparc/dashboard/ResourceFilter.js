@@ -112,11 +112,53 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           this.fireEvent("trashContext");
         }
       });
+      this.evaluateTrashEmpty();
       return trashButton;
     },
 
     evaluateTrashEmpty: function() {
-
+      const studiesParams = {
+        url: {
+          offset: 0,
+          limit: 1, // just one
+          orderBy: JSON.stringify({
+            field: "last_change_date",
+            direction: "desc"
+          }),
+        }
+      };
+      const foldersParams = {
+        url: {
+          offset: 0,
+          limit: 1, // just one
+          orderBy: JSON.stringify({
+            field: "modified_at",
+            direction: "desc"
+          }),
+        }
+      };
+      const workspacesParams = {
+        url: {
+          offset: 0,
+          limit: 1, // just one
+          orderBy: JSON.stringify({
+            field: "modified_at",
+            direction: "desc"
+          }),
+        }
+      };
+      Promise.all([
+        osparc.data.Resources.fetch("studies", "getPageTrashed", studiesParams),
+        osparc.data.Resources.fetch("folders", "getPageTrashed", foldersParams),
+        osparc.data.Resources.fetch("workspaces", "getPageTrashed", workspacesParams),
+      ])
+        .then(values => {
+          const nTrashedStudies = values[0].length;
+          const nTrashedFolders = values[1].length;
+          const nTrashedWorkspaces = values[2].length;
+          this.setTrashEmpty((nTrashedStudies+nTrashedFolders+nTrashedWorkspaces) === 0);
+        })
+        .catch(err => console.error(err));
     },
 
     setTrashEmpty: function(isEmpty) {
