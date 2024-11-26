@@ -79,7 +79,9 @@ async def _copy_folders_from_project(
         )
 
     return web.json_response(
-        text=json_dumps(body.destination), status=status.HTTP_201_CREATED
+        {"data": jsonable_encoder(body.destination)},
+        status=status.HTTP_201_CREATED,
+        dumps=json_dumps,
     )
 
 
