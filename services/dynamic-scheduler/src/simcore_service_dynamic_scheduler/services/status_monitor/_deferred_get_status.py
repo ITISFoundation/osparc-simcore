@@ -76,8 +76,6 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
             )
             if user_id:
                 await notify_service_status_change(app, user_id, result)
-                # TODO: also notify the UI renderer about the change
-                # Write this using pubsub and a queue. We render if stuff changes?
                 await service_tracker.set_frontend_notified_for_service(app, node_id)
             else:
                 _logger.info(
