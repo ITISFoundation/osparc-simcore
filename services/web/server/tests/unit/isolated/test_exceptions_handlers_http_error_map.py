@@ -15,13 +15,13 @@ from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_service_webserver.errors import WebServerBaseError
 from simcore_service_webserver.exceptions_handlers_base import (
-    AsyncDynamicTryExceptContext,
-    async_try_except_decorator,
+    ExceptionHandlingContextManager,
+    exception_handling_decorator,
 )
 from simcore_service_webserver.exceptions_handlers_http_error_map import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    create_exception_handler_from_http_error,
+    create_exception_handler_from_http_info,
     to_exceptions_handlers_map,
 )
 
@@ -48,7 +48,7 @@ def fake_request() -> web.Request:
 async def test_factory__create_exception_handler_from_http_error(
     fake_request: web.Request,
 ):
-    one_error_to_404 = create_exception_handler_from_http_error(
+    one_error_to_404 = create_exception_handler_from_http_info(
         status_code=status.HTTP_404_NOT_FOUND,
         msg_template="one error message for the user: {code} {value}",
     )
@@ -70,7 +70,7 @@ async def test_handling_different_exceptions_with_context(
         OneError: HttpErrorInfo(status.HTTP_400_BAD_REQUEST, "Error {code} to 400"),
         OtherError: HttpErrorInfo(status.HTTP_500_INTERNAL_SERVER_ERROR, "{code}"),
     }
-    cm = AsyncDynamicTryExceptContext(
+    cm = ExceptionHandlingContextManager(
         to_exceptions_handlers_map(exc_to_http_error_map), request=fake_request
     )
 
@@ -118,7 +118,7 @@ async def test_handling_different_exceptions_with_decorator(
         OneError: HttpErrorInfo(status.HTTP_503_SERVICE_UNAVAILABLE, "{code}"),
     }
 
-    exc_handling_decorator = async_try_except_decorator(
+    exc_handling_decorator = exception_handling_decorator(
         to_exceptions_handlers_map(exc_to_http_error_map)
     )
 

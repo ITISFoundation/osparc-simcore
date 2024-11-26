@@ -12,9 +12,9 @@ from aiohttp.test_utils import make_mocked_request
 from simcore_service_webserver.errors import WebServerBaseError
 from simcore_service_webserver.exceptions_handlers_base import (
     AiohttpExceptionHandler,
-    AsyncDynamicTryExceptContext,
+    ExceptionHandlingContextManager,
     _sort_exceptions_by_specificity,
-    async_try_except_decorator,
+    exception_handling_decorator,
 )
 
 # Some custom errors in my service
@@ -88,7 +88,9 @@ async def test__handled_exception_context_manager():
     }
 
     # handles any BaseError returning a response
-    cm = AsyncDynamicTryExceptContext(exception_handlers_map, request=expected_request)
+    cm = ExceptionHandlingContextManager(
+        exception_handlers_map, request=expected_request
+    )
     async with cm:
         raise OneError
     assert cm.get_response() == expected_response
@@ -115,7 +117,7 @@ async def test_async_try_except_decorator(exception_cls: type[Exception]):
         assert request == expected_request
         return expected_response
 
-    @async_try_except_decorator({BaseError: _suppress_all})
+    @exception_handling_decorator({BaseError: _suppress_all})
     async def _rest_handler(request: web.Request) -> web.Response:
         raise expected_exception
 

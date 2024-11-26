@@ -7,6 +7,7 @@ from typing import Protocol, TypeAlias
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler as WebHandler
+from servicelib.aiohttp.typing_extension import Middleware as WebMiddleware
 
 _logger = logging.getLogger(__name__)
 
@@ -46,10 +47,7 @@ def _sort_exceptions_by_specificity(
 ExceptionHandlersMap: TypeAlias = dict[type[BaseException], AiohttpExceptionHandler]
 
 
-class AsyncDynamicTryExceptContext(AbstractAsyncContextManager):
-    """Context manager to handle exceptions if they match any in the
-    exception_handlers_map"""
-
+class ExceptionHandlingContextManager(AbstractAsyncContextManager):
     def __init__(
         self,
         exception_handlers_map: ExceptionHandlersMap,
@@ -105,13 +103,15 @@ class AsyncDynamicTryExceptContext(AbstractAsyncContextManager):
         return self._response
 
 
-def async_try_except_decorator(
+def exception_handling_decorator(
     exception_handlers_map: dict[type[BaseException], AiohttpExceptionHandler]
 ):
     def _decorator(handler: WebHandler):
         @functools.wraps(handler)
         async def _wrapper(request: web.Request) -> web.StreamResponse:
-            cm = AsyncDynamicTryExceptContext(exception_handlers_map, request=request)
+            cm = ExceptionHandlingContextManager(
+                exception_handlers_map, request=request
+            )
             async with cm:
                 return await handler(request)
 
@@ -123,3 +123,17 @@ def async_try_except_decorator(
         return _wrapper
 
     return _decorator
+
+
+def exception_handling_middleware(
+    exception_handlers_map: dict[type[BaseException], AiohttpExceptionHandler]
+) -> WebMiddleware:
+    _handle_excs = exception_handling_decorator(
+        exception_handlers_map=exception_handlers_map
+    )
+
+    @web.middleware
+    async def middleware_handler(request: web.Request, handler: WebHandler):
+        return await _handle_excs(handler)(request)
+
+    return middleware_handler

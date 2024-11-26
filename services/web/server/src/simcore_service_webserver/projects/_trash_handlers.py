@@ -12,7 +12,7 @@ from ..application_settings_utils import requires_dev_feature_enabled
 from ..exceptions_handlers import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    async_try_except_decorator,
+    exception_handling_decorator,
     to_exceptions_handlers_map,
 )
 from ..login.decorators import get_user_id, login_required
@@ -42,7 +42,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-_handle_exceptions = async_try_except_decorator(
+_handle_exceptions = exception_handling_decorator(
     to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
 

@@ -8,16 +8,22 @@ from models_library.basic_types import IDStr
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exceptions
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
-from servicelib.status_codes_utils import is_5xx_server_error
+from servicelib.status_codes_utils import is_5xx_server_error, is_error
 
 from .exceptions_handlers_base import AiohttpExceptionHandler, ExceptionHandlersMap
 
 _logger = logging.getLogger(__name__)
 
 
-_STATUS_CODE_TO_HTTP_ERRORS: dict[
-    int, type[web.HTTPException]
-] = get_all_aiohttp_http_exceptions(web.HTTPError)
+def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
+    assert is_error(status_code), f"{status_code=} must be an error [{error=}]"  # nosec
+
+    return web.json_response(
+        data={"error": error.model_dump(exclude_unset=True, mode="json")},
+        dumps=json_dumps,
+        reason=error.msg,
+        status=status_code,
+    )
 
 
 class _DefaultDict(dict):
@@ -35,7 +41,7 @@ class HttpErrorInfo(NamedTuple):
 ExceptionToHttpErrorMap: TypeAlias = dict[type[BaseException], HttpErrorInfo]
 
 
-def create_exception_handler_from_http_error(
+def create_exception_handler_from_http_info(
     status_code: int,
     msg_template: str,
 ) -> AiohttpExceptionHandler:
@@ -56,10 +62,13 @@ def create_exception_handler_from_http_error(
     Returns:
         A web api exception handler
     """
+    assert is_error(  # nosec
+        status_code
+    ), f"{status_code=} must be an error [{msg_template=}]"
 
     async def _exception_handler(
         request: web.Request,
-        exception: BaseException,
+        exception: BaseException,  # TODO: for different type of exceptions e.g HTTPError
     ) -> web.Response:
 
         # safe formatting, i.e. does not raise
@@ -86,12 +95,7 @@ def create_exception_handler_from_http_error(
             )
             error = ErrorGet(msg=user_msg, support_id=IDStr(oec))
 
-        return web.json_response(
-            data={"error": error.model_dump(exclude_unset=True, mode="json")},
-            dumps=json_dumps,
-            reason=user_msg,
-            status=status_code,
-        )
+        return create_error_response(error, status_code=status_code)
 
     return _exception_handler
 
@@ -101,10 +105,28 @@ def to_exceptions_handlers_map(
 ) -> ExceptionHandlersMap:
     """Converts { exc_type: (status, msg), ... }  -> { exc_type: callable, ... }"""
     exc_handlers_map: ExceptionHandlersMap = {
-        exc_type: create_exception_handler_from_http_error(
+        exc_type: create_exception_handler_from_http_info(
             status_code=info.status_code, msg_template=info.msg_template
         )
         for exc_type, info in exc_to_http_error_map.items()
     }
 
+    return exc_handlers_map
+
+
+_STATUS_CODE_TO_HTTP_ERRORS: dict[
+    int, type[web.HTTPError]
+] = get_all_aiohttp_http_exceptions(web.HTTPError)
+
+
+def create_http_error_exception_handlers_map():
+    """
+    Creates handles for all web.HTTPError
+    """
+    exc_handlers_map: ExceptionHandlersMap = {
+        exc_type: create_exception_handler_from_http_info(
+            status_code=code, msg_template="{reason}"
+        )
+        for code, exc_type in _STATUS_CODE_TO_HTTP_ERRORS.items()
+    }
     return exc_handlers_map

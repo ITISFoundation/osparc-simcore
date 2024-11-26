@@ -5,7 +5,7 @@ from servicelib.aiohttp import status
 from ..exceptions_handlers import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    async_try_except_decorator,
+    exception_handling_decorator,
     to_exceptions_handlers_map,
 )
 from ..projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
@@ -65,7 +65,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-handle_plugin_requests_exceptions = async_try_except_decorator(
+handle_plugin_requests_exceptions = exception_handling_decorator(
     to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
 # this is one decorator with a single exception handler
