@@ -159,6 +159,11 @@ async def search_files(request: web.Request) -> web.Response:
     )
 
     return web.json_response(
-        {"data": [jsonable_encoder(FileMetaDataGet(**d.model_dump())) for d in data]},
+        {
+            "data": [
+                jsonable_encoder(FileMetaDataGet(**d.model_dump()), exclude_unset=True)
+                for d in data
+            ]
+        },
         dumps=json_dumps,
     )
