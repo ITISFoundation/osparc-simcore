@@ -50,7 +50,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
       this.set({
         pricingUnitId: pricingUnitData.pricingUnitId,
         unitName: pricingUnitData.unitName,
-        costPerUnit: pricingUnitData.currentCostPerUnit,
+        costPerUnit: parseFloat(pricingUnitData.currentCostPerUnit),
         comment: pricingUnitData.comment ? pricingUnitData.comment : "",
         specificInfo: pricingUnitData.specificInfo && pricingUnitData.specificInfo["aws_ec2_instances"] ? pricingUnitData.specificInfo["aws_ec2_instances"].toString() : "",
         default: pricingUnitData.default

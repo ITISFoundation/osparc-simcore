@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
             let cost = 0;
             currentTasks.forEach(currentTask => {
               if (currentTask["credit_cost"]) {
-                cost += currentTask["credit_cost"];
+                cost += parseFloat(currentTask["credit_cost"]);
               }
             });
             this.setUsedCredits(cost);
