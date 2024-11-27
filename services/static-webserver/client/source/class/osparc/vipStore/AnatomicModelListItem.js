@@ -23,12 +23,12 @@ qx.Class.define("osparc.vipStore.AnatomicModelListItem", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(8, 1);
-    layout.setColumnWidth(0, 32);
+    const layout = new qx.ui.layout.Grid(5, 5);
+    layout.setColumnWidth(0, 64);
     layout.setRowFlex(0, 1);
     layout.setColumnFlex(1, 1);
     layout.setColumnAlign(0, "center", "middle");
-    layout.setColumnAlign(2, "center", "middle");
+    layout.setColumnAlign(1, "center", "middle");
     this._setLayout(layout);
 
     this.set({
