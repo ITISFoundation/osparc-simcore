@@ -15,15 +15,9 @@ from .exception_handling_base import AiohttpExceptionHandler, ExceptionHandlersM
 _logger = logging.getLogger(__name__)
 
 
-def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
-    assert is_error(status_code), f"{status_code=} must be an error [{error=}]"  # nosec
-
-    return web.json_response(
-        data={"error": error.model_dump(exclude_unset=True, mode="json")},
-        dumps=json_dumps,
-        reason=error.msg,
-        status=status_code,
-    )
+_STATUS_CODE_TO_HTTP_ERRORS: dict[
+    int, type[web.HTTPError]
+] = get_all_aiohttp_http_exceptions(web.HTTPError)
 
 
 class _DefaultDict(dict):
@@ -39,6 +33,17 @@ class HttpErrorInfo(NamedTuple):
 
 
 ExceptionToHttpErrorMap: TypeAlias = dict[type[BaseException], HttpErrorInfo]
+
+
+def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
+    assert is_error(status_code), f"{status_code=} must be an error [{error=}]"  # nosec
+
+    return web.json_response(
+        data={"error": error.model_dump(exclude_unset=True, mode="json")},
+        dumps=json_dumps,
+        reason=error.msg,
+        status=status_code,
+    )
 
 
 def create_exception_handler_from_http_info(
@@ -112,11 +117,6 @@ def to_exceptions_handlers_map(
     }
 
     return exc_handlers_map
-
-
-_STATUS_CODE_TO_HTTP_ERRORS: dict[
-    int, type[web.HTTPError]
-] = get_all_aiohttp_http_exceptions(web.HTTPError)
 
 
 def create_http_error_exception_handlers_map():

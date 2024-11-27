@@ -18,7 +18,7 @@ from simcore_service_webserver.exception_handling_base import (
     ExceptionHandlingContextManager,
     exception_handling_decorator,
 )
-from simcore_service_webserver.exception_handling_http import (
+from simcore_service_webserver.exception_handling_factory import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     create_exception_handler_from_http_info,

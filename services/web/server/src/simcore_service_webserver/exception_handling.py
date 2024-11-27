@@ -1,5 +1,5 @@
 from .exception_handling_base import exception_handling_decorator
-from .exception_handling_http import (
+from .exception_handling_factory import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     to_exceptions_handlers_map,
