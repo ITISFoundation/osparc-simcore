@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Any
 
+from models_library.generics import Envelope
 from pydantic import BaseModel, ConfigDict, Field
 
 from .basic_types import IDStr, LogLevel
@@ -75,8 +76,7 @@ class ErrorGet(BaseModel):
         Field(description="ID to track the incident during support", alias="supportId"),
     ] = None
 
-    # NOTE: The fields blow are DEPRECATED.
-    # Still here to keep compatibilty with front-end until updated
+    # NOTE: The fields blow are DEPRECATED. Still here to keep compatibilty with front-end until updated
     status: Annotated[int, Field(deprecated=True)] = 400
     errors: Annotated[
         list[ErrorItemType],
@@ -93,10 +93,28 @@ class ErrorGet(BaseModel):
         frozen=True,
         json_schema_extra={
             "examples": [
-                {"msg": "Sorry you do not have sufficient access rights for product"},
                 {
-                    "msg": "Opps this error was unexpected. We are working on that!",
+                    "message": "Sorry you do not have sufficient access rights for product"
+                },
+                {
+                    "message": "Opps this error was unexpected. We are working on that!",
                     "supportId": "OEC:12346789",
+                },
+            ]
+        },
+    )
+
+
+class EnvelopedError(Envelope[Any]):
+    error: ErrorGet  # type: ignore
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"error": {"message": "display error message here"}},
+                {
+                    "error": {"message": "failure", "supportId": "OEC:123455"},
+                    "data": None,
                 },
             ]
         },

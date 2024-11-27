@@ -9,7 +9,7 @@
 
 from typing import Annotated
 
-from _common import EnvelopeE, as_query
+from _comon import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.folders_v2 import (
     FolderCreateBodyParams,
@@ -17,7 +17,7 @@ from models_library.api_schemas_webserver.folders_v2 import (
     FolderReplaceBodyParams,
 )
 from models_library.generics import Envelope
-from models_library.rest_error import ErrorGet
+from models_library.rest_error import EnvelopedError
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.folders._exceptions_handlers import _TO_HTTP_ERROR_MAP
 from simcore_service_webserver.folders._models import (
@@ -32,8 +32,7 @@ router = APIRouter(
         "folders",
     ],
     responses={
-        i.status_code: {"model": EnvelopeE[ErrorGet]}
-        for i in _TO_HTTP_ERROR_MAP.values()
+        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
     },
 )
 
