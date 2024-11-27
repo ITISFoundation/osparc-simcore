@@ -28,7 +28,7 @@ qx.Class.define("osparc.vipStore.AnatomicModelListItem", {
     layout.setRowFlex(0, 1);
     layout.setColumnFlex(1, 1);
     layout.setColumnAlign(0, "center", "middle");
-    layout.setColumnAlign(1, "center", "middle");
+    layout.setColumnAlign(1, "left", "middle");
     this._setLayout(layout);
 
     this.set({
