@@ -9247,9 +9247,7 @@ components:
     EnvelopedError:
       properties:
         data:
-          anyOf:
-          - {}
-          - type: 'null'
+          type: 'null'
           title: Data
         error:
           $ref: '#/components/schemas/ErrorGet'

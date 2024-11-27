@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Annotated, Any
+from typing import Annotated
 
 from models_library.generics import Envelope
 from pydantic import BaseModel, ConfigDict, Field
@@ -105,7 +105,7 @@ class ErrorGet(BaseModel):
     )
 
 
-class EnvelopedError(Envelope[Any]):
+class EnvelopedError(Envelope[None]):
     error: ErrorGet  # type: ignore
 
     model_config = ConfigDict(
