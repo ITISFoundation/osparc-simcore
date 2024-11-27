@@ -9,7 +9,7 @@ from servicelib.aiohttp.requests_validation import (
 
 from .._meta import API_VTAG as VTAG
 from ..application_settings_utils import requires_dev_feature_enabled
-from ..exceptions_handlers import (
+from ..exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,

@@ -10,7 +10,7 @@ from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exc
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error, is_error
 
-from .exceptions_handlers_base import AiohttpExceptionHandler, ExceptionHandlersMap
+from .exception_handling_base import AiohttpExceptionHandler, ExceptionHandlersMap
 
 _logger = logging.getLogger(__name__)
 

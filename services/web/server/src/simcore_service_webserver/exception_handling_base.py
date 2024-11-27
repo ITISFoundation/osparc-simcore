@@ -11,10 +11,6 @@ from servicelib.aiohttp.typing_extension import Middleware as WebMiddleware
 
 _logger = logging.getLogger(__name__)
 
-#
-# Definition
-#
-
 
 class AiohttpExceptionHandler(Protocol):
     __name__: str
@@ -34,6 +30,9 @@ class AiohttpExceptionHandler(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
+ExceptionHandlersMap: TypeAlias = dict[type[BaseException], AiohttpExceptionHandler]
+
+
 def _sort_exceptions_by_specificity(
     exceptions: Iterable[type[BaseException]], *, concrete_first: bool = True
 ) -> list[type[BaseException]]:
@@ -42,9 +41,6 @@ def _sort_exceptions_by_specificity(
         key=lambda exc: sum(issubclass(e, exc) for e in exceptions if e is not exc),
         reverse=not concrete_first,
     )
-
-
-ExceptionHandlersMap: TypeAlias = dict[type[BaseException], AiohttpExceptionHandler]
 
 
 class ExceptionHandlingContextManager(AbstractAsyncContextManager):

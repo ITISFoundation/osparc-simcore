@@ -2,7 +2,7 @@ import logging
 
 from servicelib.aiohttp import status
 
-from ..exceptions_handlers import (
+from ..exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,

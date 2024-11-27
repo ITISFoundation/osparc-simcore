@@ -1,5 +1,5 @@
-from .exceptions_handlers_base import exception_handling_decorator
-from .exceptions_handlers_http_error_map import (
+from .exception_handling_base import exception_handling_decorator
+from .exception_handling_http import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     to_exceptions_handlers_map,
