@@ -558,7 +558,7 @@ async def instrumentation_rabbit_client_parser(
 ) -> AsyncIterator[mock.AsyncMock]:
     client = create_rabbitmq_client("instrumentation_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
-    queue_name = await client.subscribe(
+    queue_name, _ = await client.subscribe(
         InstrumentationRabbitMessage.get_channel_name(), mock
     )
     yield mock
@@ -571,7 +571,7 @@ async def resource_tracking_rabbit_client_parser(
 ) -> AsyncIterator[mock.AsyncMock]:
     client = create_rabbitmq_client("resource_tracking_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
-    queue_name = await client.subscribe(
+    queue_name, _ = await client.subscribe(
         RabbitResourceTrackingBaseMessage.get_channel_name(), mock
     )
     yield mock
