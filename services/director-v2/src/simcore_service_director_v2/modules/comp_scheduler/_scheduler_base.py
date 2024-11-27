@@ -233,7 +233,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         iteration: Iteration,
     ) -> None:
-        await CompRunsRepository.instance(self.db_engine).mark_scheduling_done(
+        await CompRunsRepository.instance(self.db_engine).mark_as_processed(
             user_id=user_id,
             project_id=project_id,
             iteration=iteration,

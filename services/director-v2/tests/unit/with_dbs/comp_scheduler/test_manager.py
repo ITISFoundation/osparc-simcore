@@ -191,7 +191,7 @@ async def test_schedule_all_pipelines(
     assert comp_run.modified == start_modified_time
 
     # once the worker is done, the schedule time is set back to None
-    await CompRunsRepository(aiopg_engine).mark_scheduling_done(
+    await CompRunsRepository(aiopg_engine).mark_as_processed(
         user_id=comp_run.user_id,
         project_id=comp_run.project_uuid,
         iteration=comp_run.iteration,

@@ -7,8 +7,11 @@
 
 import asyncio
 import datetime
+import random
 from collections.abc import Awaitable, Callable
+from typing import cast
 
+import arrow
 import pytest
 from _helpers import PublishedProject
 from faker import Faker
@@ -23,6 +26,9 @@ from simcore_service_director_v2.core.errors import (
     UserNotFoundError,
 )
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
+from simcore_service_director_v2.modules.comp_scheduler._constants import (
+    SCHEDULER_INTERVAL,
+)
 from simcore_service_director_v2.modules.db.repositories.comp_runs import (
     CompRunsRepository,
 )
@@ -117,13 +123,86 @@ async def test_list(
         )
         == []
     )
-
     assert sorted(
         await CompRunsRepository(aiopg_engine).list(
             filter_by_state={RunningState.PUBLISHED}
         ),
         key=lambda x: x.iteration,
     ) == sorted(created, key=lambda x: x.iteration)
+
+    # test with never scheduled filter, let's create a bunch of scheduled entries,
+    assert sorted(
+        await CompRunsRepository(aiopg_engine).list(never_scheduled=True),
+        key=lambda x: x.iteration,
+    ) == sorted(created, key=lambda x: x.iteration)
+    comp_runs_marked_for_scheduling = random.sample(created, k=25)
+    await asyncio.gather(
+        *(
+            CompRunsRepository(aiopg_engine).mark_for_scheduling(
+                user_id=comp_run.user_id,
+                project_id=comp_run.project_uuid,
+                iteration=comp_run.iteration,
+            )
+            for comp_run in comp_runs_marked_for_scheduling
+        )
+    )
+    # filter them away
+    created = [r for r in created if r not in comp_runs_marked_for_scheduling]
+    assert sorted(
+        await CompRunsRepository(aiopg_engine).list(never_scheduled=True),
+        key=lambda x: x.iteration,
+    ) == sorted(created, key=lambda x: x.iteration)
+
+    # now mark a few of them as processed
+    comp_runs_marked_as_processed = random.sample(comp_runs_marked_for_scheduling, k=11)
+    await asyncio.gather(
+        *(
+            CompRunsRepository(aiopg_engine).mark_as_processed(
+                user_id=comp_run.user_id,
+                project_id=comp_run.project_uuid,
+                iteration=comp_run.iteration,
+            )
+            for comp_run in comp_runs_marked_as_processed
+        )
+    )
+    # filter them away
+    comp_runs_marked_for_scheduling = [
+        r
+        for r in comp_runs_marked_for_scheduling
+        if r not in comp_runs_marked_as_processed
+    ]
+    # since they were just marked as processed now, we will get nothing
+    assert (
+        sorted(
+            await CompRunsRepository(aiopg_engine).list(
+                never_scheduled=False, processed_since=SCHEDULER_INTERVAL
+            ),
+            key=lambda x: x.iteration,
+        )
+        == []
+    )
+    # now we artificially change the processed time and set it 2x the scheduler interval
+    fake_processed_time = arrow.utcnow().datetime - 2 * SCHEDULER_INTERVAL
+    comp_runs_marked_as_processed = await asyncio.gather(
+        *(
+            CompRunsRepository(aiopg_engine).update(
+                user_id=comp_run.user_id,
+                project_id=comp_run.project_uuid,
+                iteration=comp_run.iteration,
+                processed=fake_processed_time,
+            )
+            for comp_run in comp_runs_marked_as_processed
+        )
+    )
+    # now we should get them
+    assert sorted(
+        await CompRunsRepository(aiopg_engine).list(
+            never_scheduled=False, processed_since=SCHEDULER_INTERVAL
+        ),
+        key=lambda x: x.iteration,
+    ) == sorted(
+        comp_runs_marked_as_processed, key=lambda x: cast(CompRunsAtDB, x).iteration
+    )
 
 
 async def test_create(
@@ -387,7 +466,7 @@ async def test_mark_scheduling_done(
     assert created.scheduled is None
     assert created.processed is None
 
-    updated = await CompRunsRepository(aiopg_engine).mark_scheduling_done(
+    updated = await CompRunsRepository(aiopg_engine).mark_as_processed(
         user_id=created.user_id,
         project_id=created.project_uuid,
         iteration=created.iteration,

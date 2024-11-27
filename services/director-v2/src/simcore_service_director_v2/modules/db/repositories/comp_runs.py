@@ -64,7 +64,7 @@ class CompRunsRepository(BaseRepository):
         *,
         filter_by_state: set[RunningState] | None = None,
         never_scheduled: bool = False,
-        processed_before: datetime.datetime | None = None,
+        processed_since: datetime.timedelta | None = None,
         scheduled_after: datetime.timedelta | None = None,
     ) -> list[CompRunsAtDB]:
         conditions = []
@@ -85,8 +85,9 @@ class CompRunsRepository(BaseRepository):
             scheduled_cutoff = arrow.utcnow().datetime - scheduled_after
             scheduling_or_conditions.append(comp_runs.c.scheduled <= scheduled_cutoff)
 
-        if processed_before is not None:
-            scheduling_or_conditions.append(comp_runs.c.processed <= processed_before)
+        if processed_since is not None:
+            processed_cutoff = arrow.utcnow().datetime - processed_since
+            scheduling_or_conditions.append(comp_runs.c.processed <= processed_cutoff)
 
         if scheduling_or_conditions:
             conditions.append(sa.or_(*scheduling_or_conditions))
@@ -210,7 +211,7 @@ class CompRunsRepository(BaseRepository):
             processed=None,
         )
 
-    async def mark_scheduling_done(
+    async def mark_as_processed(
         self, *, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
     ) -> CompRunsAtDB | None:
         return await self.update(
