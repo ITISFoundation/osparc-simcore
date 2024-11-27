@@ -14,24 +14,31 @@
     "operationId": "init_payment",
     "parameters": [
      {
+      "name": "x-init-api-secret",
+      "in": "header",
       "required": false,
       "schema": {
-       "type": "string",
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
        "title": "X-Init-Api-Secret"
-      },
-      "name": "x-init-api-secret",
-      "in": "header"
+      }
      }
     ],
     "requestBody": {
+     "required": true,
      "content": {
       "application/json": {
        "schema": {
         "$ref": "#/components/schemas/InitPayment"
        }
       }
-     },
-     "required": true
+     }
     },
     "responses": {
      "200": {
@@ -45,14 +52,14 @@
       }
      },
      "4XX": {
-      "description": "Client Error",
       "content": {
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/ErrorModel"
         }
        }
-      }
+      },
+      "description": "Client Error"
      }
     }
    }
@@ -66,15 +73,15 @@
     "operationId": "get_payment_form",
     "parameters": [
      {
+      "name": "id",
+      "in": "query",
       "required": true,
       "schema": {
        "type": "string",
-       "maxLength": 50,
        "minLength": 1,
+       "maxLength": 100,
        "title": "Id"
-      },
-      "name": "id",
-      "in": "query"
+      }
      }
     ],
     "responses": {
@@ -89,14 +96,14 @@
       }
      },
      "4XX": {
-      "description": "Client Error",
       "content": {
        "text/html": {
         "schema": {
          "type": "string"
         }
        }
-      }
+      },
+      "description": "Client Error"
      }
     }
    }
@@ -110,24 +117,31 @@
     "operationId": "cancel_payment",
     "parameters": [
      {
+      "name": "x-init-api-secret",
+      "in": "header",
       "required": false,
       "schema": {
-       "type": "string",
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
        "title": "X-Init-Api-Secret"
-      },
-      "name": "x-init-api-secret",
-      "in": "header"
+      }
      }
     ],
     "requestBody": {
+     "required": true,
      "content": {
       "application/json": {
        "schema": {
         "$ref": "#/components/schemas/PaymentInitiated"
        }
       }
-     },
-     "required": true
+     }
     },
     "responses": {
      "200": {
@@ -141,14 +155,14 @@
       }
      },
      "4XX": {
-      "description": "Client Error",
       "content": {
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/ErrorModel"
         }
        }
-      }
+      },
+      "description": "Client Error"
      }
     }
    }
@@ -162,24 +176,31 @@
     "operationId": "init_payment_method",
     "parameters": [
      {
+      "name": "x-init-api-secret",
+      "in": "header",
       "required": false,
       "schema": {
-       "type": "string",
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
        "title": "X-Init-Api-Secret"
-      },
-      "name": "x-init-api-secret",
-      "in": "header"
+      }
      }
     ],
     "requestBody": {
+     "required": true,
      "content": {
       "application/json": {
        "schema": {
         "$ref": "#/components/schemas/InitPaymentMethod"
        }
       }
-     },
-     "required": true
+     }
     },
     "responses": {
      "200": {
@@ -193,14 +214,14 @@
       }
      },
      "4XX": {
-      "description": "Client Error",
       "content": {
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/ErrorModel"
         }
        }
-      }
+      },
+      "description": "Client Error"
      }
     }
    }
@@ -214,15 +235,15 @@
     "operationId": "get_form_payment_method",
     "parameters": [
      {
+      "name": "id",
+      "in": "query",
       "required": true,
       "schema": {
        "type": "string",
-       "maxLength": 50,
        "minLength": 1,
+       "maxLength": 100,
        "title": "Id"
-      },
-      "name": "id",
-      "in": "query"
+      }
      }
     ],
     "responses": {
@@ -237,14 +258,14 @@
       }
      },
      "4XX": {
-      "description": "Client Error",
       "content": {
        "text/html": {
         "schema": {
          "type": "string"
         }
        }
-      }
+      },
+      "description": "Client Error"
      }
     }
    }
@@ -258,24 +279,31 @@
     "operationId": "batch_get_payment_methods",
     "parameters": [
      {
+      "name": "x-init-api-secret",
+      "in": "header",
       "required": false,
       "schema": {
-       "type": "string",
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
        "title": "X-Init-Api-Secret"
-      },
-      "name": "x-init-api-secret",
-      "in": "header"
+      }
      }
     ],
     "requestBody": {
+     "required": true,
      "content": {
       "application/json": {
        "schema": {
         "$ref": "#/components/schemas/BatchGetPaymentMethods"
        }
       }
-     },
-     "required": true
+     }
     },
     "responses": {
      "200": {
@@ -289,14 +317,14 @@
       }
      },
      "4XX": {
-      "description": "Client Error",
       "content": {
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/ErrorModel"
         }
        }
-      }
+      },
+      "description": "Client Error"
      }
     }
    }
@@ -310,24 +338,31 @@
     "operationId": "get_payment_method",
     "parameters": [
      {
+      "name": "id",
+      "in": "path",
       "required": true,
       "schema": {
        "type": "string",
-       "maxLength": 50,
        "minLength": 1,
+       "maxLength": 100,
        "title": "Id"
-      },
-      "name": "id",
-      "in": "path"
+      }
      },
      {
+      "name": "x-init-api-secret",
+      "in": "header",
       "required": false,
       "schema": {
-       "type": "string",
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
        "title": "X-Init-Api-Secret"
-      },
-      "name": "x-init-api-secret",
-      "in": "header"
+      }
      }
     ],
     "responses": {
@@ -352,14 +387,14 @@
       }
      },
      "4XX": {
-      "description": "Client Error",
       "content": {
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/ErrorModel"
         }
        }
-      }
+      },
+      "description": "Client Error"
      }
     }
    },
@@ -371,24 +406,31 @@
     "operationId": "delete_payment_method",
     "parameters": [
      {
+      "name": "id",
+      "in": "path",
       "required": true,
       "schema": {
        "type": "string",
-       "maxLength": 50,
        "minLength": 1,
+       "maxLength": 100,
        "title": "Id"
-      },
-      "name": "id",
-      "in": "path"
+      }
      },
      {
+      "name": "x-init-api-secret",
+      "in": "header",
       "required": false,
       "schema": {
-       "type": "string",
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
        "title": "X-Init-Api-Secret"
-      },
-      "name": "x-init-api-secret",
-      "in": "header"
+      }
      }
     ],
     "responses": {
@@ -396,14 +438,14 @@
       "description": "Successful Response"
      },
      "4XX": {
-      "description": "Client Error",
       "content": {
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/ErrorModel"
         }
        }
-      }
+      },
+      "description": "Client Error"
      }
     }
    }
@@ -417,35 +459,42 @@
     "operationId": "pay_with_payment_method",
     "parameters": [
      {
+      "name": "id",
+      "in": "path",
       "required": true,
       "schema": {
        "type": "string",
-       "maxLength": 50,
        "minLength": 1,
+       "maxLength": 100,
        "title": "Id"
-      },
-      "name": "id",
-      "in": "path"
+      }
      },
      {
+      "name": "x-init-api-secret",
+      "in": "header",
       "required": false,
       "schema": {
-       "type": "string",
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
        "title": "X-Init-Api-Secret"
-      },
-      "name": "x-init-api-secret",
-      "in": "header"
+      }
      }
     ],
     "requestBody": {
+     "required": true,
      "content": {
       "application/json": {
        "schema": {
         "$ref": "#/components/schemas/InitPayment"
        }
       }
-     },
-     "required": true
+     }
     },
     "responses": {
      "200": {
@@ -459,14 +508,14 @@
       }
      },
      "4XX": {
-      "description": "Client Error",
       "content": {
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/ErrorModel"
         }
        }
-      }
+      },
+      "description": "Client Error"
      }
     }
    }
@@ -481,50 +530,93 @@
       "title": "Success"
      },
      "message": {
-      "type": "string",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Message"
      },
      "provider_payment_id": {
-      "type": "string",
-      "maxLength": 50,
-      "minLength": 1,
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Provider Payment Id",
       "description": "Payment ID from the provider (e.g. stripe payment ID)"
      },
      "invoice_url": {
-      "type": "string",
-      "maxLength": 2083,
-      "minLength": 1,
-      "format": "uri",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Invoice Url",
       "description": "Link to invoice is required when success=true"
      },
      "invoice_pdf": {
-      "type": "string",
-      "maxLength": 2083,
-      "minLength": 1,
-      "format": "uri",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Invoice Pdf",
       "description": "Link to invoice PDF"
      },
      "stripe_invoice_id": {
-      "type": "string",
-      "maxLength": 50,
-      "minLength": 1,
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Stripe Invoice Id",
       "description": "Stripe invoice ID"
      },
      "stripe_customer_id": {
-      "type": "string",
-      "maxLength": 50,
-      "minLength": 1,
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Stripe Customer Id",
-      "description": "Customer invoice ID"
+      "description": "Stripe customer ID"
      },
      "payment_id": {
-      "type": "string",
-      "maxLength": 50,
-      "minLength": 1,
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Payment Id",
       "description": "Payment ID from the gateway"
      }
@@ -535,10 +627,10 @@
     ],
     "title": "AckPaymentWithPaymentMethod",
     "example": {
-     "success": true,
-     "provider_payment_id": "pi_123ABC",
      "invoice_url": "https://invoices.com/id=12345",
-     "payment_id": "D19EE68B-B007-4B61-A8BC-32B7115FB244"
+     "payment_id": "D19EE68B-B007-4B61-A8BC-32B7115FB244",
+     "provider_payment_id": "pi_123ABC",
+     "success": true
     }
    },
    "BatchGetPaymentMethods": {
@@ -546,7 +638,7 @@
      "payment_methods_ids": {
       "items": {
        "type": "string",
-       "maxLength": 50,
+       "maxLength": 100,
        "minLength": 1
       },
       "type": "array",
@@ -566,7 +658,14 @@
       "title": "Message"
      },
      "exception": {
-      "type": "string",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Exception"
      },
      "file": {
@@ -577,17 +676,34 @@
        },
        {
         "type": "string"
+       },
+       {
+        "type": "null"
        }
       ],
       "title": "File"
      },
      "line": {
-      "type": "integer",
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Line"
      },
      "trace": {
-      "items": {},
-      "type": "array",
+      "anyOf": [
+       {
+        "items": {},
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Trace"
      }
     },
@@ -601,28 +717,63 @@
     "properties": {
      "id": {
       "type": "string",
-      "maxLength": 50,
+      "maxLength": 100,
       "minLength": 1,
       "title": "Id"
      },
      "card_holder_name": {
-      "type": "string",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Card Holder Name"
      },
      "card_number_masked": {
-      "type": "string",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Card Number Masked"
      },
      "card_type": {
-      "type": "string",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Card Type"
      },
      "expiration_month": {
-      "type": "integer",
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Expiration Month"
      },
      "expiration_year": {
-      "type": "integer",
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Expiration Year"
      },
      "created": {
@@ -641,24 +792,39 @@
    "InitPayment": {
     "properties": {
      "amount_dollars": {
-      "type": "number",
-      "exclusiveMaximum": true,
-      "exclusiveMinimum": true,
-      "title": "Amount Dollars",
-      "maximum": 1000000.0,
-      "minimum": 0.0
+      "anyOf": [
+       {
+        "type": "number",
+        "exclusiveMaximum": true,
+        "exclusiveMinimum": true,
+        "maximum": 1000000.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Amount Dollars"
      },
      "credits": {
-      "type": "number",
-      "exclusiveMaximum": true,
-      "exclusiveMinimum": true,
+      "anyOf": [
+       {
+        "type": "number",
+        "exclusiveMaximum": true,
+        "exclusiveMinimum": true,
+        "maximum": 1000000.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "string"
+       }
+      ],
       "title": "Credits",
-      "maximum": 1000000.0,
-      "minimum": 0.0
+      "describe": "This is equal to `quantity` field in Stripe"
      },
      "user_name": {
       "type": "string",
-      "maxLength": 50,
+      "maxLength": 100,
       "minLength": 1,
       "title": "User Name"
      },
@@ -668,24 +834,20 @@
       "title": "User Email"
      },
      "user_address": {
-      "$ref": "#/components/schemas/UserAddress"
+      "$ref": "#/components/schemas/UserInvoiceAddress"
      },
      "wallet_name": {
       "type": "string",
-      "maxLength": 50,
+      "maxLength": 100,
       "minLength": 1,
       "title": "Wallet Name"
      },
      "stripe_price_id": {
       "type": "string",
-      "maxLength": 50,
-      "minLength": 1,
       "title": "Stripe Price Id"
      },
      "stripe_tax_rate_id": {
       "type": "string",
-      "maxLength": 50,
-      "minLength": 1,
       "title": "Stripe Tax Rate Id"
      },
      "stripe_tax_exempt_value": {
@@ -711,15 +873,13 @@
     "properties": {
      "method": {
       "type": "string",
-      "enum": [
-       "CC"
-      ],
+      "const": "CC",
       "title": "Method",
       "default": "CC"
      },
      "user_name": {
       "type": "string",
-      "maxLength": 50,
+      "maxLength": 100,
       "minLength": 1,
       "title": "User Name"
      },
@@ -730,7 +890,7 @@
      },
      "wallet_name": {
       "type": "string",
-      "maxLength": 50,
+      "maxLength": 100,
       "minLength": 1,
       "title": "Wallet Name"
      }
@@ -747,7 +907,14 @@
    "PaymentCancelled": {
     "properties": {
      "message": {
-      "type": "string",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Message"
      }
     },
@@ -758,7 +925,7 @@
     "properties": {
      "payment_id": {
       "type": "string",
-      "maxLength": 50,
+      "maxLength": 100,
       "minLength": 1,
       "title": "Payment Id"
      }
@@ -773,7 +940,7 @@
     "properties": {
      "payment_method_id": {
       "type": "string",
-      "maxLength": 50,
+      "maxLength": 100,
       "minLength": 1,
       "title": "Payment Method Id"
      }
@@ -807,37 +974,65 @@
      "none",
      "reverse"
     ],
-    "title": "StripeTaxExempt",
-    "description": "An enumeration."
+    "title": "StripeTaxExempt"
    },
-   "UserAddress": {
+   "UserInvoiceAddress": {
     "properties": {
      "line1": {
-      "type": "string",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Line1"
      },
      "state": {
-      "type": "string",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "State"
      },
      "postal_code": {
-      "type": "string",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Postal Code"
      },
      "city": {
-      "type": "string",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "City"
      },
      "country": {
       "type": "string",
-      "title": "Country"
+      "title": "Country",
+      "description": "Currently validated in webserver via pycountry library. Two letter country code alpha_2 expected."
      }
     },
     "type": "object",
     "required": [
      "country"
     ],
-    "title": "UserAddress"
+    "title": "UserInvoiceAddress"
    }
   }
  }
