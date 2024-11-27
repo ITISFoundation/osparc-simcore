@@ -15,19 +15,23 @@ from simcore_service_webserver.exception_handling import exception_handling_deco
 async def test_handling_exceptions_decorating_a_route(aiohttp_client: Callable):
 
     # custom exception handler
-    async def value_error_as_422(
+    async def _value_error_as_422(
         request: web.Request, exception: BaseException
     ) -> web.Response:
         return web.json_response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-    # decorator
-    exc_handling = exception_handling_decorator({ValueError: value_error_as_422})
+    # 1. create decorator
+    exc_handling = exception_handling_decorator(
+        exception_handlers_map={
+            ValueError: _value_error_as_422,
+        }
+    )
 
     # adding new routes
     routes = web.RouteTableDef()
 
     @routes.get("/{what}")
-    @exc_handling  # < ----- using decorator
+    @exc_handling  # < ----- 2. using decorator
     async def _handler(request: web.Request):
         match request.match_info["what"]:
             case "ValueError":
@@ -47,7 +51,7 @@ async def test_handling_exceptions_decorating_a_route(aiohttp_client: Callable):
     app = web.Application()
     app.add_routes(routes)
 
-    # testing from the client side
+    # 3. testing from the client side
     client = await aiohttp_client(app)
 
     # success
