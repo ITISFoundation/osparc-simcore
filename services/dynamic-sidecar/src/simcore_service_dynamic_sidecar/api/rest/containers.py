@@ -241,7 +241,9 @@ async def get_container_logs(
         if timestamps:
             args["timestamps"] = True
 
-        container_logs: list[str] = await container_instance.log(**args)
+        container_logs: list[str] = await container_instance.log(
+            **args
+        )  # type:ignore[call-overload]
         return container_logs
 
 

@@ -29,7 +29,7 @@ qx.Class.define("osparc.pricing.UnitData", {
     this.set({
       pricingUnitId: unitData.pricingUnitId ? unitData.pricingUnitId : null,
       unitName: unitData.unitName,
-      currentCostPerUnit: unitData.currentCostPerUnit,
+      currentCostPerUnit: parseFloat(unitData.currentCostPerUnit),
       comment: unitData.comment ? unitData.comment : "",
       awsSpecificInfo: unitData.specificInfo && unitData.specificInfo["aws_ec2_instances"] ? unitData.specificInfo["aws_ec2_instances"].toString() : "",
       unitExtraInfo: unitData.unitExtraInfo,
