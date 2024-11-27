@@ -1151,7 +1151,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // notify header
         const header = this.__header;
         header.set({
-          currentContext: context,
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });

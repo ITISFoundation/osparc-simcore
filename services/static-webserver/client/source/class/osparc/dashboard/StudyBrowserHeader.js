@@ -39,6 +39,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
 
     this.initCurrentWorkspaceId();
     this.initCurrentFolderId();
+
+    osparc.store.Store.getInstance().addListener("changeStudyBrowserContext", () => this.__buildLayout(), this);
   },
 
   events: {
@@ -49,14 +51,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   },
 
   properties: {
-    currentContext: {
-      check: ["studiesAndFolders", "workspaces", "search", "trash"],
-      nullable: false,
-      init: "studiesAndFolders",
-      event: "changeCurrentContext",
-      apply: "__buildLayout"
-    },
-
     currentWorkspaceId: {
       check: "Number",
       nullable: true,
@@ -236,7 +230,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       description.resetValue();
       this.getChildControl("empty-trash-button").exclude();
 
-      switch (this.getCurrentContext()) {
+      const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+      switch (currentContext) {
         case "studiesAndFolders": {
           const workspaceId = this.getCurrentWorkspaceId();
           title.setCursor("pointer");
