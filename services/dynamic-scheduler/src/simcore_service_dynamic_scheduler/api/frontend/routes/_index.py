@@ -11,6 +11,7 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from ....services.service_tracker import TrackedServiceModel, get_all_tracked_services
 from ....services.service_tracker._models import SchedulerServiceState
 from .._utils import get_parent_app
+from . import marker_tags
 from ._render_utils import base_page, get_iso_formatted_date
 
 router = APIRouter()
@@ -38,7 +39,9 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
             "label",
             service.dynamic_service_start.product_name,
         )
-        service_status = json.loads(service.service_status) or {}
+        service_status = (
+            json.loads(service.service_status) if service.service_status else {}
+        )
         dict_to_render["Service State"] = (
             "label",
             service_status.get(
@@ -46,7 +49,7 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
             ),
         )
 
-    with ui.column().classes("gap-0"):
+    with ui.column().classes("gap-0").mark(marker_tags.INDEX_SERVICE_CARD):
         for key, (widget, value) in dict_to_render.items():
             with ui.row(align_items="baseline"):
                 ui.label(key).classes("font-bold")
@@ -65,7 +68,9 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
             "Details",
             icon="source",
             on_click=lambda: ui.navigate.to(f"/service/{node_id}:details"),
-        ).tooltip("Display more information about what the scheduler is tracking")
+        ).tooltip("Display more information about what the scheduler is tracking").mark(
+            marker_tags.INDEX_SERVICE_CARD_DETAILS_BUTTON
+        )
 
         if service.current_state != SchedulerServiceState.RUNNING:
             return
@@ -94,7 +99,9 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
 
         ui.button(
             "Stop service", icon="stop", color="orange", on_click=display_confirm_dialog
-        ).tooltip("Stops the service and saves the data")
+        ).tooltip("Stops the service and saves the data").mark(
+            marker_tags.INDEX_SERVICE_CARD_STOP_BUTTON
+        )
 
 
 def _render_card(
@@ -152,10 +159,12 @@ class CardUpdater:
 async def index():
     with base_page():
         with ui.row().classes("gap-0"):
-            ui.label("Total tracked services:")
+            ui.label("Total tracked services:").mark(
+                marker_tags.INDEX_TOTAL_SERVICES_LABEL
+            )
             ui.label("").classes("w-1")
             with ui.label("0") as services_count_label:
-                pass
+                services_count_label.mark(marker_tags.INDEX_TOTAL_SERVICES_COUNT_LABEL)
 
         card_container: Element = ui.row()
 
