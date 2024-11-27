@@ -75,27 +75,34 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
         if service.current_state != SchedulerServiceState.RUNNING:
             return
 
-        with ui.dialog() as confirm_dialog, ui.card():
-
-            async def stop_process_task():
-                confirm_dialog.submit("Stop")
-
-                await httpx.AsyncClient(timeout=10).get(
-                    f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
-                )
-
-                ui.notify(
-                    f"Submitted stop request for {node_id}. Please give the service some time to stop!"
-                )
-
-            ui.markdown(f"Stop service **{node_id}**?")
-            ui.label("The service will be stopped and its data will be saved.")
-            with ui.row():
-                ui.button("Stop", color="red", on_click=stop_process_task)
-                ui.button("No", on_click=lambda: confirm_dialog.submit("No"))
-
         async def display_confirm_dialog():
-            await confirm_dialog
+            with ui.dialog() as confirm_dialog, ui.card():
+                confirm_dialog.mark(marker_tags.INDEX_SERVICE_CARD_STOP_CONFIRM_DIALOG)
+
+                ui.markdown(f"Stop service **{node_id}**?")
+                ui.label("The service will be stopped and its data will be saved.")
+                with ui.row():
+                    ui.button(
+                        "Stop",
+                        color="red",
+                        on_click=lambda: confirm_dialog.submit("Stop"),
+                    )
+                    ui.button("No", on_click=lambda: confirm_dialog.submit("No")).mark(
+                        marker_tags.INDEX_SERVICE_CARD_STOP_CONFIRM_DIALOG_NO_BUTTON
+                    )
+
+            click_result = await confirm_dialog
+
+            if click_result != "Stop":
+                return
+
+            await httpx.AsyncClient(timeout=10).get(
+                f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
+            )
+
+            ui.notify(
+                f"Submitted stop request for {node_id}. Please give the service some time to stop!"
+            )
 
         ui.button(
             "Stop service", icon="stop", color="orange", on_click=display_confirm_dialog
