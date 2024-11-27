@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.vipCenter.VIPStore", {
+qx.Class.define("osparc.vipStore.VIPStore", {
   extend: osparc.ui.window.Window,
   type: "singleton",
 
@@ -23,7 +23,7 @@ qx.Class.define("osparc.vipCenter.VIPStore", {
     this.base(arguments, this.tr("VIP Store"));
 
     this.set({
-      layout: new qx.ui.layout.VBox(10),
+      layout: new qx.ui.layout.HBox(10),
       maxWidth: this.self().MAX_WIDTH,
       maxHeight: this.self().MAX_HEIGHT,
       contentPadding: this.self().PADDING,
@@ -41,7 +41,7 @@ qx.Class.define("osparc.vipCenter.VIPStore", {
   },
 
   statics: {
-    MAX_WIDTH: 700,
+    MAX_WIDTH: 900,
     MAX_HEIGHT: 700,
     PADDING: 15,
   },
@@ -61,7 +61,7 @@ qx.Class.define("osparc.vipCenter.VIPStore", {
     },
 
     __populateModels: function(anatomicalModels) {
-      this.__dummyViewer.setData(anatomicalModels);
+      this.__dummyViewer.setJson(anatomicalModels);
     },
   }
 });
