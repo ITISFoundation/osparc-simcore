@@ -98,6 +98,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   },
 
   members: {
+    __spacers: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -220,6 +222,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
     __buildLayout: function() {
       this._removeAll();
 
+      this.__spacers = [];
+
       this.getChildControl("icon");
       const title = this.getChildControl("title");
       const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
@@ -245,25 +249,20 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         }
         case "workspaces":
           this.__setIcon(osparc.store.Workspaces.iconPath(32));
-          title.set({
-            value: this.tr("Shared Workspaces"),
-          });
+          title.setValue(this.tr("Shared Workspaces"));
           break;
         case "search":
           this.__setIcon("@FontAwesome5Solid/search/24");
-          title.set({
-            value: this.tr("Search results"),
-          });
+          title.setValue(this.tr("Search results"));
           break;
         case "trash": {
           this.__setIcon("@FontAwesome5Solid/trash/20");
-          title.set({
-            value: this.tr("Trash")
-          });
+          title.setValue(this.tr("Trash"));
           const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
           this.getChildControl("description").set({
             value: this.tr(`Items in the bin will be permanently deleted after ${trashDays} days.`)
           });
+          // the study browser will take care of making it visible
           this.getChildControl("empty-trash-button").exclude();
           break;
         }
