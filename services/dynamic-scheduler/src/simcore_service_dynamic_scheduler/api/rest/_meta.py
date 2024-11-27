@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 
 from ..._meta import API_VERSION, PROJECT_NAME
 from ...models.schemas.meta import Meta
-from ..dependencies import get_reverse_url_mapper
+from ._dependencies import get_reverse_url_mapper
 
 router = APIRouter()
 

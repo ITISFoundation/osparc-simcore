@@ -1,10 +1,12 @@
 import json
 
 import httpx
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
+)
 from models_library.projects_nodes_io import NodeID
 from nicegui import APIRouter, app, ui
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
-    DynamicServiceStop,
     stop_dynamic_service,
 )
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
