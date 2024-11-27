@@ -51,6 +51,27 @@ COLORS = {
 }
 
 
+class LogExtra(TypedDict):
+    log_uid: NotRequired[str]
+    log_oec: NotRequired[str]
+
+
+def get_log_record_extra(
+    *,
+    user_id: int | str | None = None,
+    error_code: str | None = None,
+) -> LogExtra | None:
+    extra: LogExtra = {}
+
+    if user_id:
+        assert int(user_id) > 0  # nosec
+        extra["log_uid"] = f"{user_id}"
+    if error_code:
+        extra["log_oec"] = error_code
+
+    return extra or None
+
+
 class CustomFormatter(logging.Formatter):
     """Custom Formatter does these 2 things:
     1. Overrides 'funcName' with the value of 'func_name_override', if it exists.
@@ -66,8 +87,10 @@ class CustomFormatter(logging.Formatter):
             record.funcName = record.func_name_override
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
-        if not hasattr(record, "log_uid"):
-            record.log_uid = None  # Default value if user is not provided in the log
+
+        for name in LogExtra.__optional_keys__:  # pylint: disable=no-member
+            if not hasattr(record, name):
+                setattr(record, name, None)
 
         if self.log_format_local_dev_enabled:
             levelname = record.levelname
@@ -77,11 +100,6 @@ class CustomFormatter(logging.Formatter):
             return super().format(record)
 
         return super().format(record).replace("\n", "\\n")
-
-
-class LogExtra(TypedDict):
-    log_uid: NotRequired[str]
-    log_oec: NotRequired[str]
 
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
@@ -350,22 +368,6 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
 
 LogLevelInt: TypeAlias = int
 LogMessageStr: TypeAlias = str
-
-
-def get_log_record_extra(
-    *,
-    user_id: int | str | None = None,
-    error_code: str | None = None,
-) -> LogExtra | None:
-    extra: LogExtra = {}
-
-    if user_id:
-        assert int(user_id) > 0  # nosec
-        extra["log_uid"] = f"{user_id}"
-    if error_code:
-        extra["log_oec"] = error_code
-
-    return extra or None
 
 
 def _un_capitalize(s: str) -> str:
