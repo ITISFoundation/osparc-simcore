@@ -9,7 +9,7 @@
 from enum import Enum
 from typing import Annotated
 
-from _common import as_query
+from _common import EnvelopeE, as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.workspaces import (
     WorkspaceCreateBodyParams,
@@ -17,7 +17,9 @@ from models_library.api_schemas_webserver.workspaces import (
     WorkspaceReplaceBodyParams,
 )
 from models_library.generics import Envelope
+from models_library.rest_error import ErrorGet
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.folders._exceptions_handlers import _TO_HTTP_ERROR_MAP
 from simcore_service_webserver.workspaces._groups_api import WorkspaceGroupGet
 from simcore_service_webserver.workspaces._models import (
     WorkspacesGroupsBodyParams,
@@ -31,6 +33,10 @@ router = APIRouter(
     tags=[
         "workspaces",
     ],
+    responses={
+        i.status_code: {"model": EnvelopeE[ErrorGet]}
+        for i in _TO_HTTP_ERROR_MAP.values()
+    },
 )
 
 
