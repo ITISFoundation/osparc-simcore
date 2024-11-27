@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=protected-access
 
 import asyncio
 import logging
@@ -130,10 +131,3 @@ async def rabbitmq_rpc_client(
     yield _creator
     # cleanup, properly close the clients
     await asyncio.gather(*(client.close() for client in created_clients))
-
-
-async def rabbitmq_client(create_rabbitmq_client):
-    # NOTE: Legacy fixture
-    # Use create_rabbitmq_client instead of rabbitmq_client
-    # SEE docs/coding-conventions.md::CC4
-    return create_rabbitmq_client
