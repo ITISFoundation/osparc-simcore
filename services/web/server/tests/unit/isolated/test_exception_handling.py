@@ -9,6 +9,7 @@ from collections.abc import Callable
 
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON, MIMETYPE_TEXT_PLAIN
@@ -24,8 +25,6 @@ from simcore_service_webserver.exception_handling_base import (
 from simcore_service_webserver.exception_handling_factory import (
     create_http_error_exception_handlers_map,
 )
-
-from services.web.server.tests.conftest import TestClient
 
 
 @pytest.fixture
