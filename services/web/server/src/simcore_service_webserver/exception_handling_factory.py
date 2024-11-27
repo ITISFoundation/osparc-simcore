@@ -41,7 +41,7 @@ def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
     return web.json_response(
         data={"error": error.model_dump(exclude_unset=True, mode="json")},
         dumps=json_dumps,
-        reason=error.msg,
+        reason=error.message,
         status=status_code,
     )
 
@@ -81,7 +81,7 @@ def create_exception_handler_from_http_info(
             _DefaultDict(getattr(exception, "__dict__", {}))
         )
 
-        error = ErrorGet(msg=user_msg)
+        error = ErrorGet(message=user_msg)
 
         if is_5xx_server_error(status_code):
             oec = create_error_code(exception)
@@ -98,7 +98,7 @@ def create_exception_handler_from_http_info(
                     },
                 )
             )
-            error = ErrorGet(msg=user_msg, support_id=IDStr(oec))
+            error = ErrorGet(message=user_msg, support_id=IDStr(oec))
 
         return create_error_response(error, status_code=status_code)
 
