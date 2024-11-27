@@ -11,7 +11,7 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from ....services.service_tracker import TrackedServiceModel, get_all_tracked_services
 from ....services.service_tracker._models import SchedulerServiceState
 from .._utils import get_parent_app
-from . import marker_tags
+from . import markers
 from ._render_utils import base_page, get_iso_formatted_date
 
 router = APIRouter()
@@ -49,7 +49,7 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
             ),
         )
 
-    with ui.column().classes("gap-0").mark(marker_tags.INDEX_SERVICE_CARD):
+    with ui.column().classes("gap-0").mark(markers.INDEX_SERVICE_CARD):
         for key, (widget, value) in dict_to_render.items():
             with ui.row(align_items="baseline"):
                 ui.label(key).classes("font-bold")
@@ -63,51 +63,54 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
 
 
 def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
+    async def _display_confirm_dialog():
+        with ui.dialog() as confirm_dialog, ui.card():
+            confirm_dialog.mark(markers.INDEX_SERVICE_CARD_STOP_CONFIRM_DIALOG)
+
+            ui.markdown(f"Stop service **{node_id}**?")
+            ui.label("The service will be stopped and its data will be saved.")
+            with ui.row():
+                ui.button(
+                    "Stop",
+                    color="red",
+                    on_click=lambda: confirm_dialog.submit("Stop"),
+                )
+                ui.button("No", on_click=lambda: confirm_dialog.submit("No")).mark(
+                    markers.INDEX_SERVICE_CARD_STOP_CONFIRM_DIALOG_NO_BUTTON
+                )
+
+        click_result = await confirm_dialog
+
+        if click_result != "Stop":
+            return
+
+        await httpx.AsyncClient(timeout=10).get(
+            f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
+        )
+
+        ui.notify(
+            f"Submitted stop request for {node_id}. Please give the service some time to stop!"
+        )
+
     with ui.button_group():
         ui.button(
             "Details",
             icon="source",
             on_click=lambda: ui.navigate.to(f"/service/{node_id}:details"),
         ).tooltip("Display more information about what the scheduler is tracking").mark(
-            marker_tags.INDEX_SERVICE_CARD_DETAILS_BUTTON
+            markers.INDEX_SERVICE_CARD_DETAILS_BUTTON
         )
 
         if service.current_state != SchedulerServiceState.RUNNING:
             return
 
-        async def display_confirm_dialog():
-            with ui.dialog() as confirm_dialog, ui.card():
-                confirm_dialog.mark(marker_tags.INDEX_SERVICE_CARD_STOP_CONFIRM_DIALOG)
-
-                ui.markdown(f"Stop service **{node_id}**?")
-                ui.label("The service will be stopped and its data will be saved.")
-                with ui.row():
-                    ui.button(
-                        "Stop",
-                        color="red",
-                        on_click=lambda: confirm_dialog.submit("Stop"),
-                    )
-                    ui.button("No", on_click=lambda: confirm_dialog.submit("No")).mark(
-                        marker_tags.INDEX_SERVICE_CARD_STOP_CONFIRM_DIALOG_NO_BUTTON
-                    )
-
-            click_result = await confirm_dialog
-
-            if click_result != "Stop":
-                return
-
-            await httpx.AsyncClient(timeout=10).get(
-                f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
-            )
-
-            ui.notify(
-                f"Submitted stop request for {node_id}. Please give the service some time to stop!"
-            )
-
         ui.button(
-            "Stop service", icon="stop", color="orange", on_click=display_confirm_dialog
+            "Stop service",
+            icon="stop",
+            color="orange",
+            on_click=_display_confirm_dialog,
         ).tooltip("Stops the service and saves the data").mark(
-            marker_tags.INDEX_SERVICE_CARD_STOP_BUTTON
+            markers.INDEX_SERVICE_CARD_STOP_BUTTON
         )
 
 
@@ -166,12 +169,10 @@ class CardUpdater:
 async def index():
     with base_page():
         with ui.row().classes("gap-0"):
-            ui.label("Total tracked services:").mark(
-                marker_tags.INDEX_TOTAL_SERVICES_LABEL
-            )
+            ui.label("Total tracked services:").mark(markers.INDEX_TOTAL_SERVICES_LABEL)
             ui.label("").classes("w-1")
             with ui.label("0") as services_count_label:
-                services_count_label.mark(marker_tags.INDEX_TOTAL_SERVICES_COUNT_LABEL)
+                services_count_label.mark(markers.INDEX_TOTAL_SERVICES_COUNT_LABEL)
 
         card_container: Element = ui.row()
 
