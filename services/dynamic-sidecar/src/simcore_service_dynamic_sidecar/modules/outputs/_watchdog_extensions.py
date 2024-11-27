@@ -31,13 +31,15 @@ logger = logging.getLogger(__name__)
 
 
 class _ExtendedInotifyBuffer(InotifyBuffer):
-    def __init__(self, path, recursive=False):  # pylint:disable=super-init-not-called
+    def __init__(
+        self, path: bytes, *, recursive: bool = False
+    ):  # pylint:disable=super-init-not-called
         # below call to `BaseThread.__init__` is correct since we want to
         # overwrite the `InotifyBuffer.__init__` method
         BaseThread.__init__(self)  # pylint:disable=non-parent-init-called
         self._queue = DelayedQueue(self.delay)
         self._inotify = Inotify(  # pylint:disable=too-many-function-args
-            path, recursive, _EVENTS_TO_WATCH
+            path, recursive=recursive, event_mask=_EVENTS_TO_WATCH
         )
         self.start()
 
@@ -46,7 +48,7 @@ class _ExtendedInotifyEmitter(InotifyEmitter):
     def on_thread_start(self):
         path = os.fsencode(self.watch.path)
         # pylint:disable=attribute-defined-outside-init
-        self._inotify = _ExtendedInotifyBuffer(path, self.watch.is_recursive)
+        self._inotify = _ExtendedInotifyBuffer(path, recursive=self.watch.is_recursive)
 
 
 class ExtendedInotifyObserver(BaseObserver):
