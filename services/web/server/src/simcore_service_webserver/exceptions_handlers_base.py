@@ -49,19 +49,22 @@ ExceptionHandlersMap: TypeAlias = dict[type[BaseException], AiohttpExceptionHand
 
 class ExceptionHandlingContextManager(AbstractAsyncContextManager):
     """
-    Essentially a dynamic try-except context manager to handle exceptions raised by a aiohttp handler, roughly:
+
+    Essentially a dynamic try-except context manager to
+    handle exceptions raised by a aiohttp handler, i.e. roughly
     ```
-    try:
+        try:
 
-        resp = await handler(request)
+            resp = await handler(request)
 
-    except exc_type1 as exc1:
-        resp = await exc_handler1(request)
-    except exc_type2 as exc1:
-        resp = await exc_handler2(request)
+        except exc_type1 as exc1:
+            resp = await exc_handler1(request)
+        except exc_type2 as exc1:
+            resp = await exc_handler2(request)
 
-    # except  ... dynamically as in `exception_handlers_map`
+        # and so on ... as in `exception_handlers_map[exc_type] == exc_handler`
     ```
+
     """
 
     def __init__(
@@ -122,6 +125,8 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
 def exception_handling_decorator(
     exception_handlers_map: dict[type[BaseException], AiohttpExceptionHandler]
 ):
+    """ """
+
     def _decorator(handler: WebHandler):
         @functools.wraps(handler)
         async def _wrapper(request: web.Request) -> web.StreamResponse:
