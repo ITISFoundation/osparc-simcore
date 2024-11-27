@@ -7768,6 +7768,19 @@ components:
       additionalProperties: false
       type: object
       title: EmptyModel
+    EnvelopeE_ErrorGet_:
+      properties:
+        error:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorGet'
+          - type: 'null'
+        data:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Data
+      type: object
+      title: EnvelopeE[ErrorGet]
     Envelope_AppStatusCheck_:
       properties:
         data:
