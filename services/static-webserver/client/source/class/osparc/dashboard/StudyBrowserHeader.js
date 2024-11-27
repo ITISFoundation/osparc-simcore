@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Widget used for displaying a Workspace information
+ * Widget used for displaying a Study Browser's context information
  *
  */
 
@@ -77,7 +77,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       nullable: false,
       init: {},
       event: "changeAccessRights",
-      apply: "__applyAccessRights"
+      apply: "__updateShareInfo"
     },
 
     myAccessRights: {
@@ -203,6 +203,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           control = new qx.ui.form.Button(this.tr("Empty Trash"), "@FontAwesome5Solid/trash/14").set({
             appearance: "danger-button",
             allowGrowY: false,
+            alignY: "middle",
           });
           control.addListener("execute", () => this.fireEvent("emptyTrashRequested"));
           this._addAt(control, this.self().POS.EMPTY_TRASH_BUTTON);
@@ -333,7 +334,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       return shareIcon;
     },
 
-    __applyAccessRights: function(accessRights) {
+    __updateShareInfo: function(accessRights) {
       const shareIcon = this.__getShareIcon();
       const shareText = this.getChildControl("share-text");
       if (accessRights && Object.keys(accessRights).length) {
@@ -396,7 +397,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
       permissionsView.addListener("updateAccessRights", () => {
         win.close();
-        this.__applyAccessRights(workspace.getAccessRights());
+        this.__updateShareInfo(workspace.getAccessRights());
       }, this);
     },
   }
