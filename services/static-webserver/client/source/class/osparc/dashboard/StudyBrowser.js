@@ -196,6 +196,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       request
         .then(workspaces => {
           this.__setWorkspacesToList(workspaces);
+          if (this.getCurrentContext() === "trash") {
+            if (workspaces.length) {
+              this.__header.getChildControl("empty-trash-button").show();
+            }
+          }
         })
         .catch(console.error)
         .finally(() => {
@@ -238,6 +243,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       request
         .then(folders => {
           this.__setFoldersToList(folders);
+          if (this.getCurrentContext() === "trash") {
+            if (folders.length) {
+              this.__header.getChildControl("empty-trash-button").show();
+            }
+          }
         })
         .catch(console.error)
         .finally(() => {
@@ -302,7 +312,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
 
           if (this.getCurrentContext() === "trash") {
-            this.__header.getChildControl("empty-trash-button").setVisibility(this._resourcesList.length ? "visible" : "excluded");
+            if (this._resourcesList.length) {
+              this.__header.getChildControl("empty-trash-button").show();
+            }
           }
 
           // Show Quick Start if there are no studies in the root folder of the personal workspace
