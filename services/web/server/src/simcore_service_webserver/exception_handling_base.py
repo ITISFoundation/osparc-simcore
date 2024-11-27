@@ -44,10 +44,8 @@ def _sort_exceptions_by_specificity(
 
 
 class ExceptionHandlingContextManager(AbstractAsyncContextManager):
-    """
-
-    Essentially a dynamic try-except context manager to
-    handle exceptions raised by a aiohttp handler, i.e. roughly
+    """Essentially a dynamic try-except context manager to
+    handle exceptions raised by a web handler, i.e.
     ```
         try:
 
@@ -121,7 +119,10 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
 def exception_handling_decorator(
     exception_handlers_map: dict[type[BaseException], AiohttpExceptionHandler]
 ):
-    """ """
+    """Creates a decorator to handle all registered exceptions raised in a given route handler
+
+    SEE usage example in test_exception_handling
+    """
 
     def _decorator(handler: WebHandler):
         @functools.wraps(handler)
@@ -145,6 +146,9 @@ def exception_handling_decorator(
 def exception_handling_middleware(
     exception_handlers_map: dict[type[BaseException], AiohttpExceptionHandler]
 ) -> WebMiddleware:
+    """
+    Creates a middleware to handle all registered exceptions raised in any app's route
+    """
     _handle_excs = exception_handling_decorator(
         exception_handlers_map=exception_handlers_map
     )

@@ -1,4 +1,4 @@
-from .exception_handling_base import exception_handling_decorator
+from .exception_handling_base import ExceptionHandlersMap, exception_handling_decorator
 from .exception_handling_factory import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
@@ -6,6 +6,7 @@ from .exception_handling_factory import (
 )
 
 __all__: tuple[str, ...] = (
+    "ExceptionHandlersMap",
     "ExceptionToHttpErrorMap",
     "HttpErrorInfo",
     "exception_handling_decorator",
