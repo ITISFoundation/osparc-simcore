@@ -127,7 +127,7 @@ class LogStreamer:
                     done = await self._project_done()
 
         except (BaseBackEndError, LogStreamerRegistionConflictError) as exc:
-            _logger.info("%s", f"{exc}")
+            _logger.info("%s: %s", exc.code, f"{exc}")
 
             yield ErrorGet(errors=[f"{exc}"]).model_dump_json() + _NEW_LINE
 
