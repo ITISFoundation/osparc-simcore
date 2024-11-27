@@ -93,7 +93,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/verify-phone-number:
     post:
       tags:
@@ -160,7 +160,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/validate-code-login:
     post:
       tags:
@@ -186,7 +186,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/two_factor:resend:
     post:
       tags:
@@ -212,7 +212,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/logout:
     post:
       tags:
@@ -248,7 +248,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/reset-password:
     post:
       tags:
@@ -274,7 +274,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/reset-password/{code}:
     post:
       tags:
@@ -307,7 +307,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/change-password:
     post:
       tags:
@@ -333,19 +333,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
         '409':
           description: mismatch between new and confirmation passwords
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
         '422':
           description: current password is invalid
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/confirmation/{code}:
     get:
       tags:
@@ -2617,25 +2617,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
     get:
       tags:
@@ -2707,25 +2707,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
   /v0/folders:search:
     get:
@@ -2786,25 +2786,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
   /v0/folders/{folder_id}:
     get:
@@ -2832,25 +2832,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
     put:
       tags:
@@ -2883,25 +2883,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
     delete:
       tags:
@@ -2924,25 +2924,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
   /v0/tasks:
     get:
@@ -5969,25 +5969,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
     get:
       tags:
@@ -6039,25 +6039,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
   /v0/workspaces/{workspace_id}:
     get:
@@ -6085,25 +6085,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
     put:
       tags:
@@ -6136,25 +6136,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
     delete:
       tags:
@@ -6177,25 +6177,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
   /v0/workspaces/{workspace_id}/groups/{group_id}:
     post:
@@ -6238,25 +6238,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
     put:
       tags:
@@ -6298,25 +6298,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
     delete:
       tags:
@@ -6348,25 +6348,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
   /v0/workspaces/{workspace_id}/groups:
     get:
@@ -6395,25 +6395,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
         '403':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
         '409':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Conflict
         '503':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvelopeE_ErrorGet_'
+                $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
   /v0/email:test:
     post:
@@ -7768,19 +7768,6 @@ components:
       additionalProperties: false
       type: object
       title: EmptyModel
-    EnvelopeE_ErrorGet_:
-      properties:
-        error:
-          anyOf:
-          - $ref: '#/components/schemas/ErrorGet'
-          - type: 'null'
-        data:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Data
-      type: object
-      title: EnvelopeE[ErrorGet]
     Envelope_AppStatusCheck_:
       properties:
         data:
@@ -9257,6 +9244,19 @@ components:
           title: Error
       type: object
       title: Envelope[str]
+    EnvelopedError:
+      properties:
+        data:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Data
+        error:
+          $ref: '#/components/schemas/ErrorGet'
+      type: object
+      required:
+      - error
+      title: EnvelopedError
     ErrorGet:
       properties:
         message:
