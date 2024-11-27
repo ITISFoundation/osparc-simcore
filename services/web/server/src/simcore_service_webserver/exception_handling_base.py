@@ -112,7 +112,7 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
             return True  # suppress
         return False  # reraise
 
-    def get_response(self):
+    def get_response(self) -> web.Response | None:
         return self._response
 
 
@@ -126,7 +126,7 @@ def exception_handling_decorator(
 
     def _decorator(handler: WebHandler):
         @functools.wraps(handler)
-        async def _wrapper(request: web.Request) -> web.StreamResponse:
+        async def _wrapper(request: web.Request):
             cm = ExceptionHandlingContextManager(
                 exception_handlers_map, request=request
             )

@@ -17,6 +17,9 @@ from simcore_service_webserver.exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
+from simcore_service_webserver.exception_handling_base import (
+    exception_handling_middleware,
+)
 
 
 @pytest.fixture
@@ -114,3 +117,42 @@ async def test_handling_exceptions_decorating_a_route(
     # undhandled HTTPSuccess
     resp = await client.get("/HTTPOk")
     assert resp.status == status.HTTP_200_OK
+
+
+@pytest.mark.parametrize("build_method", ["custom", "http_map"])
+async def test_handling_exceptions_with_middelware(
+    aiohttp_client: Callable,
+    exception_handlers_map: ExceptionHandlersMap,
+    build_method: str,
+):
+    # adding new routes
+    routes = web.RouteTableDef()
+
+    @routes.get("/{what}")  # NO decorantor now
+    async def _handler(request: web.Request):
+        match request.match_info["what"]:
+            case "ValueError":
+                raise ValueError  # handled
+        return web.Response()
+
+    app = web.Application()
+    app.add_routes(routes)
+
+    # 1. create & install middleware
+    exc_handling = exception_handling_middleware(exception_handlers_map)
+    app.middlewares.append(exc_handling)
+
+    # 2. testing from the client side
+    client = await aiohttp_client(app)
+
+    # success
+    resp = await client.get("/ok")
+    assert resp.status == status.HTTP_200_OK
+
+    # handled non-HTTPException exception
+    resp = await client.get("/ValueError")
+    assert resp.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    if build_method == "http_map":
+        body = await resp.json()
+        error = ErrorGet.model_validate(body["error"])
+        assert error.message == f"{build_method=}"

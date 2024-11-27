@@ -4,7 +4,6 @@ from typing import NamedTuple, TypeAlias
 from aiohttp import web
 from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps
-from models_library.basic_types import IDStr
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exceptions
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
@@ -81,7 +80,7 @@ def create_exception_handler_from_http_info(
             _DefaultDict(getattr(exception, "__dict__", {}))
         )
 
-        error = ErrorGet(message=user_msg)
+        error = ErrorGet.model_construct(message=user_msg)
 
         if is_5xx_server_error(status_code):
             oec = create_error_code(exception)
@@ -98,7 +97,7 @@ def create_exception_handler_from_http_info(
                     },
                 )
             )
-            error = ErrorGet(message=user_msg, support_id=IDStr(oec))
+            error = ErrorGet.model_construct(message=user_msg, support_id=oec)
 
         return create_error_response(error, status_code=status_code)
 
