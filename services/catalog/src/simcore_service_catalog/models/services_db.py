@@ -17,8 +17,9 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
     thumbnail: Annotated[str, HttpUrl] | None = None
     description: str | None = None
 
-    classifiers: list[str] | None = Field(default_factory=list)
+    classifiers: Annotated[list[str] | None, Field(default_factory=list)]
     owner: PositiveInt | None = None
+
     model_config = ConfigDict(
         from_attributes=True,
         json_schema_extra={
