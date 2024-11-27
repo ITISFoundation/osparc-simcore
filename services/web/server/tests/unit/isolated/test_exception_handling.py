@@ -11,6 +11,7 @@ import pytest
 from aiohttp import web
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp import status
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON, MIMETYPE_TEXT_PLAIN
 from simcore_service_webserver.exception_handling import (
     ExceptionHandlersMap,
     HttpErrorInfo,
@@ -20,6 +21,11 @@ from simcore_service_webserver.exception_handling import (
 from simcore_service_webserver.exception_handling_base import (
     exception_handling_middleware,
 )
+from simcore_service_webserver.exception_handling_factory import (
+    create_http_error_exception_handlers_map,
+)
+
+from services.web.server.tests.conftest import TestClient
 
 
 @pytest.fixture
@@ -29,9 +35,9 @@ def exception_handlers_map(build_method: str) -> ExceptionHandlersMap:
     """
     exception_handlers_map: ExceptionHandlersMap = {}
 
-    if build_method == "custom":
+    if build_method == "function":
 
-        async def _value_error_as_422(
+        async def _value_error_as_422_func(
             request: web.Request, exception: BaseException
         ) -> web.Response:
             # custom exception handler
@@ -40,7 +46,7 @@ def exception_handlers_map(build_method: str) -> ExceptionHandlersMap:
             )
 
         exception_handlers_map = {
-            ValueError: _value_error_as_422,
+            ValueError: _value_error_as_422_func,
         }
 
     elif build_method == "http_map":
@@ -57,7 +63,7 @@ def exception_handlers_map(build_method: str) -> ExceptionHandlersMap:
     return exception_handlers_map
 
 
-@pytest.mark.parametrize("build_method", ["custom", "http_map"])
+@pytest.mark.parametrize("build_method", ["function", "http_map"])
 async def test_handling_exceptions_decorating_a_route(
     aiohttp_client: Callable,
     exception_handlers_map: ExceptionHandlersMap,
@@ -70,10 +76,11 @@ async def test_handling_exceptions_decorating_a_route(
     # adding new routes
     routes = web.RouteTableDef()
 
-    @routes.get("/{what}")
+    @routes.post("/{what}")
     @exc_handling  # < ----- 2. using decorator
     async def _handler(request: web.Request):
-        match request.match_info["what"]:
+        what = request.match_info["what"]
+        match what:
             case "ValueError":
                 raise ValueError  # handled
             case "IndexError":
@@ -86,20 +93,20 @@ async def test_handling_exceptions_decorating_a_route(
                 # but if it is so ...
                 raise web.HTTPOk  # not-handled
 
-        return web.Response()
+        return web.Response(text=what)
 
     app = web.Application()
     app.add_routes(routes)
 
     # 3. testing from the client side
-    client = await aiohttp_client(app)
+    client: TestClient = await aiohttp_client(app)
 
     # success
-    resp = await client.get("/ok")
+    resp = await client.post("/ok")
     assert resp.status == status.HTTP_200_OK
 
     # handled non-HTTPException exception
-    resp = await client.get("/ValueError")
+    resp = await client.post("/ValueError")
     assert resp.status == status.HTTP_422_UNPROCESSABLE_ENTITY
     if build_method == "http_map":
         body = await resp.json()
@@ -107,28 +114,27 @@ async def test_handling_exceptions_decorating_a_route(
         assert error.message == f"{build_method=}"
 
     # undhandled non-HTTPException
-    resp = await client.get("/IndexError")
+    resp = await client.post("/IndexError")
     assert resp.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
     # undhandled HTTPError
-    resp = await client.get("/HTTPConflict")
+    resp = await client.post("/HTTPConflict")
     assert resp.status == status.HTTP_409_CONFLICT
 
     # undhandled HTTPSuccess
-    resp = await client.get("/HTTPOk")
+    resp = await client.post("/HTTPOk")
     assert resp.status == status.HTTP_200_OK
 
 
-@pytest.mark.parametrize("build_method", ["custom", "http_map"])
+@pytest.mark.parametrize("build_method", ["function", "http_map"])
 async def test_handling_exceptions_with_middelware(
     aiohttp_client: Callable,
     exception_handlers_map: ExceptionHandlersMap,
     build_method: str,
 ):
-    # adding new routes
     routes = web.RouteTableDef()
 
-    @routes.get("/{what}")  # NO decorantor now
+    @routes.post("/{what}")  # NO decorantor now
     async def _handler(request: web.Request):
         match request.match_info["what"]:
             case "ValueError":
@@ -143,16 +149,51 @@ async def test_handling_exceptions_with_middelware(
     app.middlewares.append(exc_handling)
 
     # 2. testing from the client side
-    client = await aiohttp_client(app)
+    client: TestClient = await aiohttp_client(app)
 
     # success
-    resp = await client.get("/ok")
+    resp = await client.post("/ok")
     assert resp.status == status.HTTP_200_OK
 
     # handled non-HTTPException exception
-    resp = await client.get("/ValueError")
+    resp = await client.post("/ValueError")
     assert resp.status == status.HTTP_422_UNPROCESSABLE_ENTITY
     if build_method == "http_map":
         body = await resp.json()
         error = ErrorGet.model_validate(body["error"])
         assert error.message == f"{build_method=}"
+
+
+@pytest.mark.parametrize("with_middleware", [True, False])
+async def test_raising_aiohttp_http_errors(
+    aiohttp_client: Callable, with_middleware: bool
+):
+    routes = web.RouteTableDef()
+
+    @routes.post("/raise-http-error")
+    async def _handler1(request: web.Request):
+        # 1. raises aiohttp.web_exceptions.HttpError
+        raise web.HTTPConflict
+
+    app = web.Application()
+    app.add_routes(routes)
+
+    # 2. create & install middleware handlers for ALL http (optional)
+    if with_middleware:
+        exc_handling = exception_handling_middleware(
+            exception_handlers_map=create_http_error_exception_handlers_map()
+        )
+        app.middlewares.append(exc_handling)
+
+    # 3. testing from the client side
+    client: TestClient = await aiohttp_client(app)
+
+    resp = await client.post("/raise-http-error")
+    assert resp.status == status.HTTP_409_CONFLICT
+
+    if with_middleware:
+        assert resp.content_type == MIMETYPE_APPLICATION_JSON
+        ErrorGet.model_construct((await resp.json())["error"])
+    else:
+        # default
+        assert resp.content_type == MIMETYPE_TEXT_PLAIN
