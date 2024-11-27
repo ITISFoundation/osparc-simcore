@@ -20,7 +20,7 @@ _RUT_MESSAGE_TTL_IN_MS = 2 * 60 * 60 * 1000  # 2 hours
 async def _subscribe_to_rabbitmq(app) -> str:
     with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channel"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-        subscribed_queue: str = await rabbit_client.subscribe(
+        subscribed_queue, _ = await rabbit_client.subscribe(
             RabbitResourceTrackingBaseMessage.get_channel_name(),
             message_handler=functools.partial(process_message, app),
             exclusive_queue=False,
