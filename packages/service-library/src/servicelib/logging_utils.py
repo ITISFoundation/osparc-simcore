@@ -79,12 +79,24 @@ class CustomFormatter(logging.Formatter):
         return super().format(record).replace("\n", "\\n")
 
 
+class LogExtra(TypedDict):
+    log_uid: NotRequired[str]
+    log_oec: NotRequired[str]
+
+
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
-DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_uid=%(log_uid)s | log_msg=%(message)s"
+DEFAULT_FORMATTING = (
+    "log_level=%(levelname)s "
+    "| log_timestamp=%(asctime)s "
+    "| log_source=%(name)s:%(funcName)s(%(lineno)d) "
+    "| log_uid=%(log_uid)s "
+    "| log_oec=%(log_oec)s"
+    "| log_msg=%(message)s"
+)
 LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
 
 # Graylog Grok pattern extractor:
-# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}
+# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| (log_uid=%{WORD:log_uid} \| )?log_msg=%{GREEDYDATA:log_msg}
 
 
 def config_all_loggers(
@@ -334,11 +346,6 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
         logger.exception("Unhandled exception:")
         if reraise:
             raise exc from exc
-
-
-class LogExtra(TypedDict):
-    log_uid: NotRequired[str]
-    log_oec: NotRequired[str]
 
 
 LogLevelInt: TypeAlias = int
