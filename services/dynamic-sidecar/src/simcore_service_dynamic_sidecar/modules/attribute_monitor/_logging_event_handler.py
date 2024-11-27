@@ -27,7 +27,11 @@ class _LoggingEventHandler(SafeFileSystemEventHandler):
     def event_handler(self, event: FileSystemEvent) -> None:
         # NOTE: runs in the created process
 
-        file_path = Path(event.src_path)
+        file_path = Path(
+            event.src_path.decode()
+            if isinstance(event.src_path, bytes)
+            else event.src_path
+        )
         with suppress(FileNotFoundError):
             file_stat = file_path.stat()
             logger.info(
