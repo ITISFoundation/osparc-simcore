@@ -2594,77 +2594,25 @@ paths:
       responses:
         '200':
           description: Successful Response
-  /v0/folders:
-    post:
+  /v0/folders/{folder_id}/workspaces/{workspace_id}:
+    put:
       tags:
       - folders
-      summary: Create Folder
-      operationId: create_folder
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FolderCreateBodyParams'
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_FolderGet_'
-    get:
-      tags:
-      - folders
-      summary: List Folders
-      operationId: list_folders
+      - workspaces
+      summary: Move folder to the workspace
+      operationId: replace_folder_workspace
       parameters:
-      - name: filters
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-            contentMediaType: application/json
-            contentSchema: {}
-          - type: 'null'
-          title: Filters
-      - name: order_by
-        in: query
-        required: false
-        schema:
-          type: string
-          contentMediaType: application/json
-          contentSchema: {}
-          default: '{"field":"modified","direction":"desc"}'
-          title: Order By
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 20
-          title: Limit
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 0
-          title: Offset
       - name: folder_id
-        in: query
-        required: false
+        in: path
+        required: true
         schema:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
+          type: integer
+          exclusiveMinimum: true
           title: Folder Id
+          minimum: 0
       - name: workspace_id
-        in: query
-        required: false
+        in: path
+        required: true
         schema:
           anyOf:
           - type: integer
@@ -2672,131 +2620,6 @@ paths:
             minimum: 0
           - type: 'null'
           title: Workspace Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_FolderGet__'
-  /v0/folders:search:
-    get:
-      tags:
-      - folders
-      summary: List Folders Full Search
-      operationId: list_folders_full_search
-      parameters:
-      - name: filters
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-            contentMediaType: application/json
-            contentSchema: {}
-          - type: 'null'
-          title: Filters
-      - name: order_by
-        in: query
-        required: false
-        schema:
-          type: string
-          contentMediaType: application/json
-          contentSchema: {}
-          default: '{"field":"modified","direction":"desc"}'
-          title: Order By
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 20
-          title: Limit
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 0
-          title: Offset
-      - name: text
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Text
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_FolderGet__'
-  /v0/folders/{folder_id}:
-    get:
-      tags:
-      - folders
-      summary: Get Folder
-      operationId: get_folder
-      parameters:
-      - name: folder_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: Folder Id
-          minimum: 0
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_FolderGet_'
-    put:
-      tags:
-      - folders
-      summary: Replace Folder
-      operationId: replace_folder
-      parameters:
-      - name: folder_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: Folder Id
-          minimum: 0
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FolderReplaceBodyParams'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_FolderGet_'
-    delete:
-      tags:
-      - folders
-      summary: Delete Folder
-      operationId: delete_folder
-      parameters:
-      - name: folder_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: Folder Id
-          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -4396,7 +4219,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -7564,19 +7387,6 @@ components:
           title: Error
       type: object
       title: Envelope[FileUploadSchema]
-    Envelope_FolderGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/FolderGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[FolderGet]
     Envelope_GetCreditPrice_:
       properties:
         data:
@@ -8451,22 +8261,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[FileMetaDataGet]]
-    Envelope_list_FolderGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/FolderGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[FolderGet]]
     Envelope_list_GroupUserGet__:
       properties:
         data:
@@ -9240,107 +9034,6 @@ components:
       - urls
       - links
       title: FileUploadSchema
-    FolderCreateBodyParams:
-      properties:
-        name:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Name
-        parentFolderId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Parentfolderid
-        workspaceId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Workspaceid
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      title: FolderCreateBodyParams
-    FolderGet:
-      properties:
-        folderId:
-          type: integer
-          exclusiveMinimum: true
-          title: Folderid
-          minimum: 0
-        parentFolderId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Parentfolderid
-        name:
-          type: string
-          title: Name
-        createdAt:
-          type: string
-          format: date-time
-          title: Createdat
-        modifiedAt:
-          type: string
-          format: date-time
-          title: Modifiedat
-        trashedAt:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Trashedat
-        owner:
-          type: integer
-          exclusiveMinimum: true
-          title: Owner
-          minimum: 0
-        workspaceId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Workspaceid
-        myAccessRights:
-          $ref: '#/components/schemas/AccessRights'
-      type: object
-      required:
-      - folderId
-      - name
-      - createdAt
-      - modifiedAt
-      - trashedAt
-      - owner
-      - workspaceId
-      - myAccessRights
-      title: FolderGet
-    FolderReplaceBodyParams:
-      properties:
-        name:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Name
-        parentFolderId:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Parentfolderid
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      title: FolderReplaceBodyParams
     GenerateInvitation:
       properties:
         guest:

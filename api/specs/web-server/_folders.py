@@ -23,6 +23,9 @@ from simcore_service_webserver.folders._models import (
     FoldersListQueryParams,
     FoldersPathParams,
 )
+from simcore_service_webserver.folders._workspaces_handlers import (
+    _FolderWorkspacesPathParams,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -90,5 +93,25 @@ async def replace_folder(
 )
 async def delete_folder(
     _path: Annotated[FoldersPathParams, Depends()],
+):
+    ...
+
+
+### Move Folder to Workspace
+
+
+router = APIRouter(
+    prefix=f"/{API_VTAG}",
+    tags=["folders", "workspaces"],
+)
+
+
+@router.put(
+    "/folders/{folder_id}/workspaces/{workspace_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Move folder to the workspace",
+)
+async def replace_folder_workspace(
+    _path: Annotated[_FolderWorkspacesPathParams, Depends()],
 ):
     ...
