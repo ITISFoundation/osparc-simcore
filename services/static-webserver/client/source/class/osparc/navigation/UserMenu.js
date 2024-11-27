@@ -185,7 +185,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.__addAnnouncements();
 
       if (osparc.product.Utils.isProduct("osparc")) {
-        this.addSeparator();
         this.getChildControl("vip-store");
       }
 
@@ -252,6 +251,11 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.addSeparator();
 
       this.__addAnnouncements();
+      
+      if (osparc.product.Utils.isProduct("osparc")) {
+        this.getChildControl("vip-store");
+      }
+
       this.getChildControl("about");
       if (!osparc.product.Utils.isProduct("osparc")) {
         this.getChildControl("about-product");
