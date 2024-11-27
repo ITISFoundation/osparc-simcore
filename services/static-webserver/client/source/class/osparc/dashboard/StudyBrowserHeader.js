@@ -130,7 +130,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           control = new osparc.dashboard.ContextBreadcrumbs();
           this.bind("currentWorkspaceId", control, "currentWorkspaceId");
           this.bind("currentFolderId", control, "currentFolderId");
-          this.bind("currentContext", control, "currentContext");
           control.bind("currentWorkspaceId", this, "currentWorkspaceId");
           control.bind("currentFolderId", this, "currentFolderId");
           control.addListener("locationChanged", e => {
