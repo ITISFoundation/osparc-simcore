@@ -5,6 +5,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import datetime
 from collections.abc import Awaitable, Callable
 
@@ -70,8 +71,41 @@ async def test_get(
 
 async def test_list(
     aiopg_engine,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    run_metadata: RunMetadataDict,
+    faker: Faker,
 ):
     assert await CompRunsRepository(aiopg_engine).list() == []
+
+    published_project = await publish_project()
+    assert await CompRunsRepository(aiopg_engine).list() == []
+
+    created = await CompRunsRepository(aiopg_engine).create(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+    )
+    assert await CompRunsRepository(aiopg_engine).list() == [created]
+
+    created = [created] + await asyncio.gather(
+        *(
+            CompRunsRepository(aiopg_engine).create(
+                user_id=published_project.user["id"],
+                project_id=published_project.project.uuid,
+                cluster_id=DEFAULT_CLUSTER_ID,
+                iteration=created.iteration + n + 1,
+                metadata=run_metadata,
+                use_on_demand_clusters=faker.pybool(),
+            )
+            for n in range(50)
+        )
+    )
+    assert sorted(
+        await CompRunsRepository(aiopg_engine).list(), key=lambda x: x.iteration
+    ) == sorted(created, key=lambda x: x.iteration)
 
 
 async def test_create(
