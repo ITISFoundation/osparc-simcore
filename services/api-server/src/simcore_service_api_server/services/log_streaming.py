@@ -126,26 +126,23 @@ class LogStreamer:
                 except TimeoutError:
                     done = await self._project_done()
 
-        except BaseBackEndError as exc:
+        except (BaseBackEndError, LogStreamerRegistionConflictError) as exc:
             _logger.info("%s", f"{exc}")
+
             yield ErrorGet(errors=[f"{exc}"]).model_dump_json() + _NEW_LINE
+
         except Exception as exc:  # pylint: disable=W0718
             error_code = create_error_code(exc)
-            user_error_msg = (
-                MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" [{error_code}]"
-            )
+            error_msg = MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" [{error_code}]"
 
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
-                    user_error_msg,
+                    error_msg,
                     error=exc,
                     error_code=error_code,
                 )
             )
-            yield ErrorGet(
-                errors=[
-                    MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" (OEC: {error_code})"
-                ]
-            ).model_dump_json() + _NEW_LINE
+            yield ErrorGet(errors=[error_msg]).model_dump_json() + _NEW_LINE
+
         finally:
             await self._log_distributor.deregister(self._job_id)
