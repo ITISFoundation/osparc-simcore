@@ -265,50 +265,42 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
 
       const clusterMembers = clusterModel.getMembersList();
 
-      osparc.store.Store.getInstance().getGroupsMe()
-        .then(myGroup => {
-          const myGid = myGroup["gid"];
-          const membersModel = clusterModel.getMembers();
-          const getter = "get"+String(myGid);
-          const canWrite = membersModel[getter] ? membersModel[getter]().getWrite() : false;
-          if (canWrite) {
-            this.__selectOrgMemberLayout.show();
-            const memberKeys = [];
-            clusterMembers.forEach(clusterMember => memberKeys.push(clusterMember["gid"]));
-            this.__organizationsAndMembers.reloadVisibleCollaborators(memberKeys);
-          }
+      const groupsStore = osparc.store.Groups.getInstance();
+      const myGid = groupsStore.getMyGroupId();
+      const membersModel = clusterModel.getMembers();
+      const getter = "get"+String(myGid);
+      const canWrite = membersModel[getter] ? membersModel[getter]().getWrite() : false;
+      if (canWrite) {
+        this.__selectOrgMemberLayout.show();
+        const memberKeys = [];
+        clusterMembers.forEach(clusterMember => memberKeys.push(clusterMember["gid"]));
+        this.__organizationsAndMembers.reloadVisibleCollaborators(memberKeys);
+      }
 
-          osparc.store.Store.getInstance().getPotentialCollaborators()
-            .then(potentialCollaborators => {
-              clusterMembers.forEach(clusterMember => {
-                const gid = clusterMember.gid;
-                if (gid in potentialCollaborators) {
-                  const collaborator = potentialCollaborators[gid];
-                  const collabObj = {};
-                  if (collaborator["collabType"] === 1) {
-                    collabObj["thumbnail"] = collaborator["thumbnail"] || "@FontAwesome5Solid/users/24";
-                    collabObj["name"] = osparc.utils.Utils.firstsUp(collaborator["label"]);
-                    collabObj["login"] = collaborator["description"];
-                  } else if (collaborator["collabType"] === 2) {
-                    collabObj["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
-                    collaborator["name"] = osparc.utils.Utils.firstsUp(
-                      `${"first_name" in collaborator && collaborator["first_name"] != null ?
-                        collaborator["first_name"] : collaborator["login"]}`,
-                      `${"last_name" in collaborator && collaborator["last_name"] ?
-                        collaborator["last_name"] : ""}`
-                    );
-                    collabObj["login"] = collaborator["login"];
-                  }
-                  if (Object.keys(collabObj).length) {
-                    collabObj["id"] = collaborator["gid"];
-                    collabObj["accessRights"] = JSON.parse(qx.util.Serializer.toJson(clusterMember));
-                    collabObj["showOptions"] = canWrite;
-                    membersArrayModel.append(qx.data.marshal.Json.createModel(collabObj));
-                  }
-                }
-              });
-            });
-        });
+      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
+      clusterMembers.forEach(clusterMember => {
+        const gid = clusterMember.getGroupId();
+        if (gid in potentialCollaborators) {
+          const collaborator = potentialCollaborators[gid];
+          const collabObj = {};
+          if (collaborator["collabType"] === 1) {
+            // group
+            collabObj["thumbnail"] = collaborator.getThumbnail() || "@FontAwesome5Solid/users/24";
+            collabObj["login"] = collaborator.getDescription();
+          } else if (collaborator["collabType"] === 2) {
+            // user
+            collabObj["thumbnail"] = collaborator.getThumbnail() || "@FontAwesome5Solid/user/24";
+            collabObj["login"] = collaborator.getLogin();
+          }
+          if (Object.keys(collabObj).length) {
+            collabObj["id"] = collaborator.getGroupId();
+            collabObj["name"] = collaborator.getLabel();
+            collabObj["accessRights"] = clusterMember.getAccessRights();
+            collabObj["showOptions"] = canWrite;
+            membersArrayModel.append(qx.data.marshal.Json.createModel(collabObj));
+          }
+        }
+      });
     },
 
     __openEditCluster: function(clusterId) {

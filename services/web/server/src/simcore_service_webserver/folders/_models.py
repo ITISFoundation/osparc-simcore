@@ -8,7 +8,7 @@ from models_library.rest_filters import Filters, FiltersQueryParameters
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
-    create_ordering_query_model_classes,
+    create_ordering_query_model_class,
 )
 from models_library.rest_pagination import PageQueryParameters
 from models_library.trash import RemoveQueryParams
@@ -42,7 +42,7 @@ class FolderFilters(Filters):
     )
 
 
-_FolderOrderQueryParams: type[RequestParameters] = create_ordering_query_model_classes(
+_FolderOrderQueryParams: type[RequestParameters] = create_ordering_query_model_class(
     ordering_fields={
         "modified_at",
         "name",

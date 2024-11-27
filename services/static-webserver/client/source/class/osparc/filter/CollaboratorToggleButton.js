@@ -23,27 +23,13 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
       appearance: "tagbutton"
     });
 
-    let label = null;
-    if (collaborator["first_name"]) {
+    let label = collaborator.getLabel();
+    if ("getLogin" in collaborator) {
       // user
-      label = collaborator["first_name"];
-      if (collaborator["last_name"]) {
-        label += ` ${collaborator["last_name"]}`;
-      }
-      if (collaborator["login"]) {
-        label += ` (${collaborator["login"]})`;
-      }
-    } else if ("login" in collaborator) {
-      label = collaborator["login"];
-    } else {
-      // org
-      label = collaborator["label"];
+      label += ` (${collaborator.getLogin()})`;
+      this.setToolTipText(collaborator.getLogin());
     }
     this.setLabel(label);
-
-    if (collaborator["login"]) {
-      this.setToolTipText(collaborator["login"]);
-    }
 
     let iconPath = null;
     switch (collaborator["collabType"]) {

@@ -35,13 +35,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     this._resourceType = studyData["resourceType"]; // study or template
     const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
-    const initCollabs = [];
-    if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
-      initCollabs.push(this.self().getEveryoneProductObj(this._resourceType === "study"));
-      initCollabs.push(this.self().getEveryoneObj(this._resourceType === "study"));
-    }
-
-    this.base(arguments, studyDataCopy, initCollabs);
+    this.base(arguments, studyDataCopy);
   },
 
   statics: {
@@ -105,20 +99,6 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       }
       return true;
     },
-
-    getEveryoneProductObj: function(isStudy) {
-      const everyoneProductGroup = osparc.store.Store.getInstance().getEveryoneProductGroup();
-      const everyone = osparc.utils.Utils.deepCloneObject(everyoneProductGroup);
-      everyone["accessRights"] = isStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
-      return everyone;
-    },
-
-    getEveryoneObj: function(isStudy) {
-      const everyoneGroup = osparc.store.Store.getInstance().getEveryoneGroup();
-      const everyone = osparc.utils.Utils.deepCloneObject(everyoneGroup);
-      everyone["accessRights"] = isStudy ? this.getCollaboratorAccessRight() : this.getViewerAccessRight();
-      return everyone;
-    }
   },
 
   members: {
@@ -224,9 +204,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         );
       };
 
-      const groupData = await osparc.store.Store.getInstance().getGroup(groupId);
-      const isOrganization = (groupData && !("id" in groupData));
-      if (isOrganization) {
+      const organization = osparc.store.Groups.getInstance().getOrganization(groupId);
+      if (organization) {
         const msg = this.tr(`Demoting to ${osparc.data.Roles.STUDY[1].label} will remove write access to all the members of the Organization. Are you sure?`);
         const win = new osparc.ui.window.Confirmation(msg).set({
           caption: this.tr("Demote"),
@@ -257,24 +236,21 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
 
     __pushNotifications: function(gids) {
       // push 'STUDY_SHARED'/'TEMPLATE_SHARED' notification
-      osparc.store.Store.getInstance().getPotentialCollaborators()
-        .then(potentialCollaborators => {
-          gids.forEach(gid => {
-            if (gid in potentialCollaborators && "id" in potentialCollaborators[gid]) {
-              // it's a user, not an organization
-              const collab = potentialCollaborators[gid];
-              const uid = collab["id"];
-              if (this._resourceType === "study") {
-                osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
-              } else if (this._resourceType === "template") {
-                // do not push TEMPLATE_SHARED notification if users are not supposed to see the templates
-                if (osparc.data.Permissions.getInstance().canRoleDo("user", "dashboard.templates.read")) {
-                  osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
-                }
-              }
+      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
+      gids.forEach(gid => {
+        if (gid in potentialCollaborators && "getUserId" in potentialCollaborators[gid]) {
+          // it's a user, not an organization
+          const uid = potentialCollaborators[gid].getUserId();
+          if (this._resourceType === "study") {
+            osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
+          } else if (this._resourceType === "template") {
+            // do not push TEMPLATE_SHARED notification if users are not supposed to see the templates
+            if (osparc.data.Permissions.getInstance().canRoleDo("user", "dashboard.templates.read")) {
+              osparc.notification.Notifications.postNewTemplate(uid, this._serializedDataCopy["uuid"]);
             }
-          });
-        });
+          }
+        }
+      });
     },
 
     __checkShareePermissions: function(gids) {

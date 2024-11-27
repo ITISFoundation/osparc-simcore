@@ -3,13 +3,21 @@ import logging
 from dataclasses import dataclass, field
 from functools import partial
 from typing import Final
+from uuid import uuid4
 
 import aio_pika
 from pydantic import NonNegativeInt
 
 from ..logging_utils import log_catch, log_context
 from ._client_base import RabbitMQClientBase
-from ._models import MessageHandler, RabbitMessage
+from ._models import (
+    ConsumerTag,
+    ExchangeName,
+    MessageHandler,
+    QueueName,
+    RabbitMessage,
+    TopicName,
+)
 from ._utils import (
     RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
     declare_queue,
@@ -26,7 +34,8 @@ _HEADER_X_DEATH: Final[str] = "x-death"
 _DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S: Final[float] = 1
 _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS: Final[NonNegativeInt] = 15
 
-_DELAYED_EXCHANGE_NAME: Final[str] = "delayed_{exchange_name}"
+_DELAYED_EXCHANGE_NAME: Final[ExchangeName] = ExchangeName("delayed_{exchange_name}")
+_DELAYED_QUEUE_NAME: Final[ExchangeName] = ExchangeName("delayed_{queue_name}")
 
 
 def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
@@ -138,25 +147,30 @@ class RabbitMQClient(RabbitMQClientBase):
             channel.close_callbacks.add(self._channel_close_callback)
             return channel
 
-    async def _get_consumer_tag(self, exchange_name) -> str:
-        return f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}"
+    async def _create_consumer_tag(self, exchange_name) -> ConsumerTag:
+        return ConsumerTag(
+            f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}_{uuid4()}"
+        )
 
     async def subscribe(
         self,
-        exchange_name: str,
+        exchange_name: ExchangeName,
         message_handler: MessageHandler,
         *,
         exclusive_queue: bool = True,
+        non_exclusive_queue_name: str | None = None,
         topics: list[str] | None = None,
         message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
         unexpected_error_retry_delay_s: float = _DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S,
         unexpected_error_max_attempts: int = _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
-    ) -> str:
+    ) -> tuple[QueueName, ConsumerTag]:
         """subscribe to exchange_name calling ``message_handler`` for every incoming message
         - exclusive_queue: True means that every instance of this application will
             receive the incoming messages
         - exclusive_queue: False means that only one instance of this application will
             reveice the incoming message
+        - non_exclusive_queue_name: if exclusive_queue is False, then this name will be used. If None
+            it will use the exchange_name.
 
         NOTE: ``message_ttl` is also a soft timeout: if the handler does not finish processing
         the message before this is reached the message will be redelivered!
@@ -182,7 +196,7 @@ class RabbitMQClient(RabbitMQClientBase):
             aio_pika.exceptions.ChannelPreconditionFailed: In case an existing exchange with
             different type is used
         Returns:
-            queue name
+            tuple of queue name and consumer tag mapping
         """
 
         assert self._channel_pool  # nosec
@@ -212,7 +226,7 @@ class RabbitMQClient(RabbitMQClientBase):
             queue = await declare_queue(
                 channel,
                 self.client_name,
-                exchange_name,
+                non_exclusive_queue_name or exchange_name,
                 exclusive_queue=exclusive_queue,
                 message_ttl=message_ttl,
                 arguments={"x-dead-letter-exchange": delayed_exchange_name},
@@ -227,31 +241,33 @@ class RabbitMQClient(RabbitMQClientBase):
             delayed_exchange = await channel.declare_exchange(
                 delayed_exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
             )
+            delayed_queue_name = _DELAYED_QUEUE_NAME.format(
+                queue_name=non_exclusive_queue_name or exchange_name
+            )
 
             delayed_queue = await declare_queue(
                 channel,
                 self.client_name,
-                delayed_exchange_name,
+                delayed_queue_name,
                 exclusive_queue=exclusive_queue,
                 message_ttl=int(unexpected_error_retry_delay_s * 1000),
                 arguments={"x-dead-letter-exchange": exchange.name},
             )
             await delayed_queue.bind(delayed_exchange)
 
-            _consumer_tag = await self._get_consumer_tag(exchange_name)
+            consumer_tag = await self._create_consumer_tag(exchange_name)
             await queue.consume(
                 partial(_on_message, message_handler, unexpected_error_max_attempts),
                 exclusive=exclusive_queue,
-                consumer_tag=_consumer_tag,
+                consumer_tag=consumer_tag,
             )
-            output: str = queue.name
-            return output
+            return queue.name, consumer_tag
 
     async def add_topics(
         self,
-        exchange_name: str,
+        exchange_name: ExchangeName,
         *,
-        topics: list[str],
+        topics: list[TopicName],
     ) -> None:
         assert self._channel_pool  # nosec
 
@@ -275,9 +291,9 @@ class RabbitMQClient(RabbitMQClientBase):
 
     async def remove_topics(
         self,
-        exchange_name: str,
+        exchange_name: ExchangeName,
         *,
-        topics: list[str],
+        topics: list[TopicName],
     ) -> None:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
@@ -300,15 +316,24 @@ class RabbitMQClient(RabbitMQClientBase):
 
     async def unsubscribe(
         self,
-        queue_name: str,
+        queue_name: QueueName,
     ) -> None:
+        """This will delete the queue if there are no consumers left"""
+        assert self._connection_pool  # nosec
+        if self._connection_pool.is_closed:
+            _logger.warning(
+                "Connection to RabbitMQ is already closed, skipping unsubscribe from queue..."
+            )
+            return
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
             queue = await channel.get_queue(queue_name)
             # NOTE: we force delete here
             await queue.delete(if_unused=False, if_empty=False)
 
-    async def publish(self, exchange_name: str, message: RabbitMessage) -> None:
+    async def publish(
+        self, exchange_name: ExchangeName, message: RabbitMessage
+    ) -> None:
         """publish message in the exchange exchange_name.
         specifying a topic will use a TOPIC type of RabbitMQ Exchange instead of FANOUT
 
@@ -333,10 +358,18 @@ class RabbitMQClient(RabbitMQClientBase):
                 routing_key=message.routing_key() or "",
             )
 
-    async def unsubscribe_consumer(self, exchange_name: str):
+    async def unsubscribe_consumer(
+        self, queue_name: QueueName, consumer_tag: ConsumerTag
+    ) -> None:
+        """This will only remove the consumers without deleting the queue"""
+        assert self._connection_pool  # nosec
+        if self._connection_pool.is_closed:
+            _logger.warning(
+                "Connection to RabbitMQ is already closed, skipping unsubscribe consumers from queue..."
+            )
+            return
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
-            queue_name = exchange_name
+            assert isinstance(channel, aio_pika.RobustChannel)  # nosec
             queue = await channel.get_queue(queue_name)
-            _consumer_tag = await self._get_consumer_tag(exchange_name)
-            await queue.cancel(_consumer_tag)
+            await queue.cancel(consumer_tag)

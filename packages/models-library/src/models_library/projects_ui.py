@@ -31,7 +31,7 @@ class Slideshow(_SlideshowRequired, total=False):
 
 class Annotation(BaseModel):
     type: Literal["note", "rect", "text"] = Field(...)
-    color: Annotated[Color, PlainSerializer(str), Field(...)]
+    color: Annotated[Color, PlainSerializer(Color.as_hex), Field(...)]
     attributes: dict = Field(..., description="svg attributes")
     model_config = ConfigDict(
         extra="forbid",
