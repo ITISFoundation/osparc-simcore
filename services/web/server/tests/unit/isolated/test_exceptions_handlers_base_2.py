@@ -55,9 +55,6 @@ def test_it():
     # mapper is defined as a higher abstraction
     # that automatically produces an exception handler
 
-    # map two exceptions?
-    add_exception_mapper(app, OtherError, web.HTTPNotFound)
-
     # this is a handler create mapping to status_code and reason
     add_exception_mapper(app, OtherError, status.HTTP_404_NOT_FOUND)
 

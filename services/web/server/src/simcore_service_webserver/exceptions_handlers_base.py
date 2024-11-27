@@ -48,6 +48,22 @@ ExceptionHandlersMap: TypeAlias = dict[type[BaseException], AiohttpExceptionHand
 
 
 class ExceptionHandlingContextManager(AbstractAsyncContextManager):
+    """
+    Essentially a dynamic try-except context manager to handle exceptions raised by a aiohttp handler, roughly:
+    ```
+    try:
+
+        resp = await handler(request)
+
+    except exc_type1 as exc1:
+        resp = await exc_handler1(request)
+    except exc_type2 as exc1:
+        resp = await exc_handler2(request)
+
+    # except  ... dynamically as in `exception_handlers_map`
+    ```
+    """
+
     def __init__(
         self,
         exception_handlers_map: ExceptionHandlersMap,
@@ -55,11 +71,11 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
         request: web.Request,
     ):
         self._exc_handlers_map = exception_handlers_map
-        self._exc_types_priorized = _sort_exceptions_by_specificity(
+        self._exc_types_by_specificity = _sort_exceptions_by_specificity(
             list(self._exc_handlers_map.keys()), concrete_first=True
         )
-        self._request = request
-        self._response = None
+        self._request: web.Request = request
+        self._response: web.Response | None = None
 
     def _get_exc_handler_or_none(
         self, exc_type: type[BaseException], exc_value: BaseException
@@ -69,7 +85,7 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
             base_exc_type := next(
                 (
                     _type
-                    for _type in self._exc_types_priorized
+                    for _type in self._exc_types_by_specificity
                     if isinstance(exc_value, _type)
                 ),
                 None,
