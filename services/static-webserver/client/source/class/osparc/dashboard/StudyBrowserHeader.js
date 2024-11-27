@@ -237,41 +237,47 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       description.resetValue();
       this.getChildControl("empty-trash-button").exclude();
 
-      const currentContext = this.getCurrentContext();
-      if (currentContext === "search") {
-        this.__setIcon("@FontAwesome5Solid/search/24");
-        title.set({
-          value: this.tr("Search results"),
-        });
-      } else if (currentContext === "trash") {
-        this.__setIcon("@FontAwesome5Solid/trash/20");
-        const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
-        title.set({
-          value: this.tr("Trash:"),
-          cursor: "auto",
-        });
-        description.set({
-          value: this.tr(`Items in the bin will be permanently deleted after ${trashDays} days.`)
-        });
-      } else if (currentContext === "workspaces") {
-        this.__setIcon(osparc.store.Workspaces.iconPath(32));
-        title.set({
-          value: this.tr("Shared Workspaces"),
-        })
-      } else if (currentContext === "studiesAndFolders") {
-        const workspaceId = this.getCurrentWorkspaceId();
-        title.setCursor("pointer");
-        title.addListener("tap", this.__titleTapped, this);
-        const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
-        if (workspace) {
-          const thumbnail = workspace.getThumbnail();
-          this.__setIcon(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
-          workspace.bind("name", title, "value");
-          workspace.bind("accessRights", this, "accessRights");
-          workspace.bind("myAccessRights", this, "myAccessRights");
-        } else {
-          this.__setIcon("@FontAwesome5Solid/home/30");
-          title.setValue(this.tr("My Workspace"));
+      switch (this.getCurrentContext()) {
+        case "studiesAndFolders": {
+          const workspaceId = this.getCurrentWorkspaceId();
+          title.setCursor("pointer");
+          title.addListener("tap", this.__titleTapped, this);
+          const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
+          if (workspace) {
+            const thumbnail = workspace.getThumbnail();
+            this.__setIcon(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
+            workspace.bind("name", title, "value");
+            workspace.bind("accessRights", this, "accessRights");
+            workspace.bind("myAccessRights", this, "myAccessRights");
+          } else {
+            this.__setIcon("@FontAwesome5Solid/home/30");
+            title.setValue(this.tr("My Workspace"));
+          }
+          break;
+        }
+        case "workspaces":
+          this.__setIcon(osparc.store.Workspaces.iconPath(32));
+          title.set({
+            value: this.tr("Shared Workspaces"),
+          });
+          break;
+        case "search":
+          this.__setIcon("@FontAwesome5Solid/search/24");
+          title.set({
+            value: this.tr("Search results"),
+          });
+          break;
+        case "trash": {
+          this.__setIcon("@FontAwesome5Solid/trash/20");
+          const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+          title.set({
+            value: this.tr("Trash:"),
+            cursor: "auto",
+          });
+          description.set({
+            value: this.tr(`Items in the bin will be permanently deleted after ${trashDays} days.`)
+          });
+          break;
         }
       }
     },
