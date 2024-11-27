@@ -65,7 +65,7 @@ class CompRunsRepository(BaseRepository):
         filter_by_state: set[RunningState] | None = None,
         never_scheduled: bool = False,
         processed_since: datetime.timedelta | None = None,
-        scheduled_after: datetime.timedelta | None = None,
+        scheduled_since: datetime.timedelta | None = None,
     ) -> list[CompRunsAtDB]:
         conditions = []
         if filter_by_state:
@@ -81,13 +81,31 @@ class CompRunsRepository(BaseRepository):
         scheduling_or_conditions = []
         if never_scheduled:
             scheduling_or_conditions.append(comp_runs.c.scheduled.is_(None))
-        if scheduled_after is not None:
-            scheduled_cutoff = arrow.utcnow().datetime - scheduled_after
-            scheduling_or_conditions.append(comp_runs.c.scheduled <= scheduled_cutoff)
+        if scheduled_since is not None:
+            # a scheduled run is a run that has been scheduled but not processed yet
+            # e.g. the processing timepoint is either null or before the scheduling timepoint
+            scheduled_cutoff = arrow.utcnow().datetime - scheduled_since
+            scheduling_filter = (
+                comp_runs.c.scheduled.is_not(None)
+                & (
+                    comp_runs.c.processed.is_(None)
+                    | (comp_runs.c.scheduled > comp_runs.c.processed)
+                )
+                & (comp_runs.c.scheduled <= scheduled_cutoff)
+            )
+            scheduling_or_conditions.append(scheduling_filter)
 
         if processed_since is not None:
+            # a processed run is a run that has been scheduled and processed
+            # and the processing timepoint is after the scheduling timepoint
             processed_cutoff = arrow.utcnow().datetime - processed_since
-            scheduling_or_conditions.append(comp_runs.c.processed <= processed_cutoff)
+            processed_filter = (
+                comp_runs.c.processed.is_not(None)
+                & (comp_runs.c.processed > comp_runs.c.scheduled)
+                & (comp_runs.c.processed <= processed_cutoff)
+            )
+
+            scheduling_or_conditions.append(processed_filter)
 
         if scheduling_or_conditions:
             conditions.append(sa.or_(*scheduling_or_conditions))

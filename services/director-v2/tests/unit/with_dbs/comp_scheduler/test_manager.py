@@ -178,6 +178,7 @@ async def test_schedule_all_pipelines(
     assert comp_run.metadata == run_metadata
     assert comp_run.result is RunningState.PUBLISHED
     assert comp_run.scheduled is not None
+    assert comp_run.processed is None
     start_schedule_time = comp_run.scheduled
     start_modified_time = comp_run.modified
 
@@ -186,15 +187,18 @@ async def test_schedule_all_pipelines(
     scheduler_rabbit_client_parser.assert_not_called()
     comp_runs = await assert_comp_runs(sqlalchemy_async_engine, expected_total=1)
     comp_run = comp_runs[0]
+    assert comp_run.scheduled
     assert comp_run.scheduled == start_schedule_time, "scheduled time changed!"
     assert comp_run.cancelled is None
     assert comp_run.modified == start_modified_time
 
-    # once the worker is done, the schedule time is set back to None
-    await CompRunsRepository(aiopg_engine).mark_as_processed(
+    # to simulate that the worker did its job we will set times in the past
+    await CompRunsRepository(aiopg_engine).update(
         user_id=comp_run.user_id,
         project_id=comp_run.project_uuid,
         iteration=comp_run.iteration,
+        scheduled=comp_run.scheduled - 1.5 * SCHEDULER_INTERVAL,
+        processed=comp_run.scheduled - 1.1 * SCHEDULER_INTERVAL,
     )
 
     # now we schedule a pipeline again, but we wait for the scheduler interval to pass

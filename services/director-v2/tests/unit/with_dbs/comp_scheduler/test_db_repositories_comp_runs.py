@@ -181,17 +181,25 @@ async def test_list(
         )
         == []
     )
-    # now we artificially change the processed time and set it 2x the scheduler interval
-    fake_processed_time = arrow.utcnow().datetime - 2 * SCHEDULER_INTERVAL
-    comp_runs_marked_as_processed = await asyncio.gather(
-        *(
-            CompRunsRepository(aiopg_engine).update(
-                user_id=comp_run.user_id,
-                project_id=comp_run.project_uuid,
-                iteration=comp_run.iteration,
-                processed=fake_processed_time,
-            )
-            for comp_run in comp_runs_marked_as_processed
+    # now we artificially change the scheduled/processed time and set it 2x the scheduler interval
+    # these are correctly processed ones, so we should get them back
+    fake_scheduled_time = arrow.utcnow().datetime - 2 * SCHEDULER_INTERVAL
+    fake_processed_time = fake_scheduled_time + 0.5 * SCHEDULER_INTERVAL
+    comp_runs_marked_as_processed = (
+        cast(  # NOTE: the cast here is ok since gather will raise if there is an error
+            list[CompRunsAtDB],
+            await asyncio.gather(
+                *(
+                    CompRunsRepository(aiopg_engine).update(
+                        user_id=comp_run.user_id,
+                        project_id=comp_run.project_uuid,
+                        iteration=comp_run.iteration,
+                        scheduled=fake_scheduled_time,
+                        processed=fake_processed_time,
+                    )
+                    for comp_run in comp_runs_marked_as_processed
+                )
+            ),
         )
     )
     # now we should get them
@@ -200,8 +208,48 @@ async def test_list(
             never_scheduled=False, processed_since=SCHEDULER_INTERVAL
         ),
         key=lambda x: x.iteration,
+    ) == sorted(comp_runs_marked_as_processed, key=lambda x: x.iteration)
+
+    # now some of them were never processed (e.g. processed time is either null or before schedule time)
+    comp_runs_waiting_for_processing_or_never_processed = random.sample(
+        comp_runs_marked_as_processed, k=6
+    )
+    comp_runs_marked_as_processed = [
+        r
+        for r in comp_runs_marked_as_processed
+        if r not in comp_runs_waiting_for_processing_or_never_processed
+    ]
+    # now we artificially change the processed time to be before the scheduled time
+    comp_runs_waiting_for_processing_or_never_processed = cast(
+        list[CompRunsAtDB],
+        await asyncio.gather(
+            *(
+                CompRunsRepository(aiopg_engine).update(
+                    user_id=comp_run.user_id,
+                    project_id=comp_run.project_uuid,
+                    iteration=comp_run.iteration,
+                    scheduled=fake_processed_time,  # NOTE: we invert here the timings
+                    processed=random.choice([fake_scheduled_time, None]),  # noqa: S311
+                )
+                for comp_run in comp_runs_waiting_for_processing_or_never_processed
+            )
+        ),
+    )
+    # so the processed ones shall remain
+    assert sorted(
+        await CompRunsRepository(aiopg_engine).list(
+            never_scheduled=False, processed_since=SCHEDULER_INTERVAL
+        ),
+        key=lambda x: x.iteration,
+    ) == sorted(comp_runs_marked_as_processed, key=lambda x: x.iteration)
+    # the ones waiting for scheduling now
+    assert sorted(
+        await CompRunsRepository(aiopg_engine).list(
+            never_scheduled=False, scheduled_since=SCHEDULER_INTERVAL
+        ),
+        key=lambda x: x.iteration,
     ) == sorted(
-        comp_runs_marked_as_processed, key=lambda x: cast(CompRunsAtDB, x).iteration
+        comp_runs_waiting_for_processing_or_never_processed, key=lambda x: x.iteration
     )
 
 
