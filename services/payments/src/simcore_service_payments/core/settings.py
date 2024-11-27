@@ -1,3 +1,4 @@
+from decimal import Decimal
 from functools import cached_property
 from typing import Annotated
 
@@ -101,21 +102,21 @@ class ApplicationSettings(_BaseApplicationSettings):
         Field(
             description="Minimum balance in credits to top-up for auto-recharge",
         ),
-    ]
+    ] = Decimal(100)
 
     PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT: Annotated[
         NonNegativeDecimal,
         Field(
             description="Default value in USD on the amount to top-up for auto-recharge (`top_up_amount_in_usd`)",
         ),
-    ]
+    ] = Decimal(100)
 
     PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: Annotated[
         NonNegativeDecimal | None,
         Field(
             description="Default value in USD for the montly limit for auto-recharge (`monthly_limit_in_usd`)",
         ),
-    ]
+    ] = Decimal(10_000)
 
     PAYMENTS_AUTORECHARGE_ENABLED: bool = Field(
         default=False,
