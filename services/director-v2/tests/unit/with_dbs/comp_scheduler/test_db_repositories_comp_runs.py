@@ -107,6 +107,24 @@ async def test_list(
         await CompRunsRepository(aiopg_engine).list(), key=lambda x: x.iteration
     ) == sorted(created, key=lambda x: x.iteration)
 
+    # test with filter of state
+    any_state_but_published = {
+        s for s in RunningState if s is not RunningState.PUBLISHED
+    }
+    assert (
+        await CompRunsRepository(aiopg_engine).list(
+            filter_by_state=any_state_but_published
+        )
+        == []
+    )
+
+    assert sorted(
+        await CompRunsRepository(aiopg_engine).list(
+            filter_by_state={RunningState.PUBLISHED}
+        ),
+        key=lambda x: x.iteration,
+    ) == sorted(created, key=lambda x: x.iteration)
+
 
 async def test_create(
     aiopg_engine,
