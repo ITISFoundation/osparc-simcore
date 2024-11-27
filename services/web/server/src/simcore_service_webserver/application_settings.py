@@ -271,18 +271,27 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_CLUSTERS: bool = False
     WEBSERVER_DB_LISTENER: bool = True
     WEBSERVER_FOLDERS: bool = True
-    WEBSERVER_WORKSPACES: bool = True
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_NOTIFICATIONS: bool = Field(default=True)
     WEBSERVER_PRODUCTS: bool = True
+    WEBSERVER_PROFILING: bool = False
     WEBSERVER_PUBLICATIONS: bool = True
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
     WEBSERVER_TAGS: bool = True
+    WEBSERVER_TRASH: Annotated[
+        bool,
+        Field(
+            description="Currently only used to enable/disable front-end",
+            validation_alias=AliasChoices(
+                "WEBSERVER_TRASH", "WEBSERVER_DEV_FEATURES_ENABLED"
+            ),
+        ),
+    ] = False
     WEBSERVER_VERSION_CONTROL: bool = True
     WEBSERVER_WALLETS: bool = True
-    WEBSERVER_PROFILING: bool = False
+    WEBSERVER_WORKSPACES: bool = True
 
     #
     WEBSERVER_SECURITY: bool = Field(
@@ -376,6 +385,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "WEBSERVER_META_MODELING",
             "WEBSERVER_PAYMENTS",
             "WEBSERVER_SCICRUNCH",
+            "WEBSERVER_TRASH",
             "WEBSERVER_VERSION_CONTROL",
         }
         return [_ for _ in public_plugin_candidates if not self.is_enabled(_)]
