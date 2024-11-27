@@ -200,14 +200,14 @@ async def create_comp_run(
             "user_id": user["id"],
             "iteration": 1,
             "result": StateType.NOT_STARTED,
-            "metadata": run_metadata,
+            "metadata": jsonable_encoder(run_metadata),
             "use_on_demand_clusters": False,
         }
         run_config.update(**run_kwargs)
         async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
                 comp_runs.insert()
-                .values(**jsonable_encoder(run_config))
+                .values(**run_config)
                 .returning(sa.literal_column("*"))
             )
             new_run = CompRunsAtDB.model_validate(result.first())
