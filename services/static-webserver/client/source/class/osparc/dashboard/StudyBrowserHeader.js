@@ -218,24 +218,18 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
     },
 
     __buildLayout: function() {
+      this._removeAll();
+
       this.getChildControl("icon");
       const title = this.getChildControl("title");
-      title.resetCursor();
-      title.removeListener("tap", this.__titleTapped, this);
-      this.getChildControl("breadcrumbs");
-      this.getChildControl("edit-button").exclude();
-      this.resetAccessRights();
-      this.resetMyAccessRights();
-      const description = this.getChildControl("description");
-      description.resetValue();
-      this.getChildControl("empty-trash-button").exclude();
-
       const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       switch (currentContext) {
         case "studiesAndFolders": {
           const workspaceId = this.getCurrentWorkspaceId();
           title.setCursor("pointer");
           title.addListener("tap", this.__titleTapped, this);
+          this.getChildControl("breadcrumbs");
+          this.getChildControl("edit-button").exclude();
           const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
           if (workspace) {
             const thumbnail = workspace.getThumbnail();
@@ -263,14 +257,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         case "trash": {
           this.__setIcon("@FontAwesome5Solid/trash/20");
-          const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
           title.set({
-            value: this.tr("Trash:"),
-            cursor: "auto",
+            value: this.tr("Trash")
           });
-          description.set({
+          const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+          this.getChildControl("description").set({
             value: this.tr(`Items in the bin will be permanently deleted after ${trashDays} days.`)
           });
+          this.getChildControl("empty-trash-button").exclude();
           break;
         }
       }
