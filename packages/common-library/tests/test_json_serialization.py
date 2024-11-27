@@ -98,6 +98,7 @@ def test_compatiblity_with_json_interface(
 
 
 def test_serialized_model_with_urls(faker: Faker):
+    # See: https://github.com/ITISFoundation/osparc-simcore/pull/6852
     class M(BaseModel):
         any_http_url: AnyHttpUrl
         any_url: AnyUrl
