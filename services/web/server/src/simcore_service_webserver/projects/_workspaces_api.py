@@ -55,6 +55,7 @@ async def move_project_into_workspace(
         project_uuid=project_id,
         new_partial_project_data={"workspace_id": workspace_id},
     )
+    # NOTE: MD: should I also patch the project owner? -> probably yes, or if it is more like "original owner" then probably no
 
     # 5. Remove all project permissions, leave only the user who moved the project
     user = await get_user(app, user_id=user_id)

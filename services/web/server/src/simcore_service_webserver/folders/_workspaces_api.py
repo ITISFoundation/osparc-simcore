@@ -1,12 +1,15 @@
 import logging
 
 from aiohttp import web
-from models_library.access_rights import AccessRights
 from models_library.folders import FolderID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
+from simcore_service_webserver.projects.db import ProjectDBAPI
 
+from ..projects import _folders_db as project_to_folders_db
+from ..projects import _groups_db as project_groups_db
+from ..projects._access_rights_api import check_user_project_permission
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_db
@@ -22,14 +25,15 @@ async def move_folder_into_workspace(
     workspace_id: WorkspaceID | None,
     product_name: ProductName,
 ) -> None:
+    projects_db = ProjectDBAPI.get_from_app_context(app)
+
     # 1. User needs to have delete permission on source folder
     folder_db = await _folders_db.get(
         app, folder_id=folder_id, product_name=product_name
     )
     workspace_is_private = True
-    user_folder_access_rights = AccessRights(read=True, write=True, delete=True)
     if folder_db.workspace_id:
-        user_workspace_access_rights = await check_user_workspace_access(
+        await check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=folder_db.workspace_id,
@@ -37,13 +41,10 @@ async def move_folder_into_workspace(
             permission="delete",
         )
         workspace_is_private = False
-        user_folder_access_rights = user_workspace_access_rights.my_access_rights
 
-    # Here we have checked user has delete access rights on the folder he is moving
-
-    # 2.  User needs to have write permission on destination workspace
+    # 2. User needs to have write permission on destination workspace
     if workspace_id is not None:
-        user_workspace_access_rights = await check_user_workspace_access(
+        await check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=workspace_id,
@@ -51,35 +52,80 @@ async def move_folder_into_workspace(
             permission="write",
         )
 
-    # Here we have already guaranties that user has all the right permissions to do this operation
-
-    # Get all project children
-    # await _folders_db.
-    # Get all folder children
-    children_folders_list = await _folders_db.get_folders_recursively(
-        app, connection=None, folder_id=folder_id, product_name=product_name
-    )
-
-    # 3. Delete project to folders (for everybody)
-    await project_to_folders_db.delete_all_project_to_folder_by_project_id(
+    # 3. User needs to have delete permission on all the projects inside source folder
+    (
+        folder_ids,
+        project_ids,
+    ) = await _folders_db.get_all_folders_and_projects_recursively(
         app,
-        project_id=project_id,
+        connection=None,
+        folder_id=folder_id,
+        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+        product_name=product_name,
     )
+    # NOTE: Not the most effective, can be improved
+    for project_id in project_ids:
+        await check_user_project_permission(
+            app,
+            project_id=project_id,
+            user_id=user_id,
+            product_name=product_name,
+            permission="delete",
+        )
+
+    # ⬆️ Here we have already guaranties that user has all the right permissions to do this operation ⬆️
 
     # 4. Update workspace ID on the project resource
-    await project_api.patch_project(
-        project_uuid=project_id,
-        new_partial_project_data={"workspace_id": workspace_id},
+    for project_id in project_ids:
+        await projects_db.patch_project(
+            project_uuid=project_id,
+            new_partial_project_data={"workspace_id": workspace_id},
+        )
+
+    # 5. BATCH update of folders with workspace_id
+    await _folders_db.update(
+        app,
+        connection=None,
+        folders_id_or_ids=set(folder_ids),
+        product_name=product_name,
+        workspace_id=workspace_id,  # <-- Updating workspace_id
     )
 
-    # 5. Remove all project permissions, leave only the user who moved the project
-    user = await get_user(app, user_id=user_id)
-    await project_groups_db.delete_all_project_groups(app, project_id=project_id)
-    await project_groups_db.update_or_insert_project_group(
+    # 6. Update source folder parent folder ID with NULL (it will appear in the root directory)
+    await _folders_db.update(
         app,
-        project_id=project_id,
-        group_id=user["primary_gid"],
-        read=True,
-        write=True,
-        delete=True,
+        connection=None,
+        folders_id_or_ids=folder_id,
+        product_name=product_name,
+        parent_folder_id=None,  # <-- Updating parent folder ID
     )
+
+    # 7. Remove all records of project to folders that are not in the folders that we are moving
+    # (ex. If we are moving from private workspace, the same project can be in different folders for different users)
+    await project_to_folders_db.delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
+        app,
+        connection=None,
+        project_id_or_ids=set(project_ids),
+        not_in_folder_ids=set(folder_ids),
+    )
+
+    # 8. Update the user id field for the remaining folders
+    await project_to_folders_db.update_project_to_folder(
+        app,
+        connection=None,
+        folders_id_or_ids=set(folder_ids),
+        user_id=user_id if workspace_id is None else None,
+    )
+
+    # 9. Remove all project permissions, leave only the user who moved the project
+    user = await get_user(app, user_id=user_id)
+    for project_id in project_ids:
+        await project_groups_db.delete_all_project_groups(app, project_id=project_id)
+        await project_groups_db.update_or_insert_project_group(
+            app,
+            project_id=project_id,
+            group_id=user["primary_gid"],
+            read=True,
+            write=True,
+            delete=True,
+        )

@@ -14,6 +14,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from .._meta import api_version_prefix as VTAG
 from ..folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ..login.decorators import login_required
+from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..security.decorators import permission_required
 from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 from . import _workspaces_api
@@ -29,12 +30,14 @@ def _handle_folders_workspaces_exceptions(handler: Handler):
             return await handler(request)
 
         except (
+            ProjectInvalidRightsError,
             FolderNotFoundError,
             WorkspaceNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
         except (
+            ProjectNotFoundError,
             FolderAccessForbiddenError,
             WorkspaceAccessForbiddenError,
         ) as exc:
