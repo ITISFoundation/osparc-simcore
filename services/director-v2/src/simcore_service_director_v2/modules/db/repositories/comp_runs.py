@@ -67,6 +67,17 @@ class CompRunsRepository(BaseRepository):
         processed_since: datetime.timedelta | None = None,
         scheduled_since: datetime.timedelta | None = None,
     ) -> list[CompRunsAtDB]:
+        """lists the computational runs:
+        filter_by_state AND (never_scheduled OR processed_since OR scheduled_since)
+
+
+        Keyword Arguments:
+            filter_by_state -- will return only the runs with result in filter_by_state (default: {None})
+            never_scheduled -- will return the runs which were never scheduled (default: {False})
+            processed_since -- will return the runs which were processed since X, which are not re-scheduled since then (default: {None})
+            scheduled_since -- will return the runs which were scheduled since X, which are not processed since then (default: {None})
+        """
+
         conditions = []
         if filter_by_state:
             conditions.append(
