@@ -323,6 +323,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         # TODO: consider mark as dev-feature in field extras of Config attr.
         # Then they can be automtically advertised
         "WEBSERVER_META_MODELING",
+        "WEBSERVER_TRASH",
         "WEBSERVER_VERSION_CONTROL",
         mode="before",
     )
