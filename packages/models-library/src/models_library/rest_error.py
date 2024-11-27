@@ -106,7 +106,7 @@ class ErrorGet(BaseModel):
 
 
 class EnvelopedError(Envelope[None]):
-    error: ErrorGet  # type: ignore
+    error: ErrorGet
 
     model_config = ConfigDict(
         json_schema_extra={
