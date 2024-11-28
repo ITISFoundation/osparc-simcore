@@ -15,5 +15,5 @@ class SchedulePipelineRabbitMessage(RabbitMessageBase):
     project_id: ProjectID
     iteration: Iteration
 
-    def routing_key(self) -> str | None:
+    def routing_key(self) -> str | None:  # pylint: disable=no-self-use # abstract
         return None
