@@ -51,6 +51,27 @@ COLORS = {
 }
 
 
+class LogExtra(TypedDict):
+    log_uid: NotRequired[str]
+    log_oec: NotRequired[str]
+
+
+def get_log_record_extra(
+    *,
+    user_id: int | str | None = None,
+    error_code: str | None = None,
+) -> LogExtra | None:
+    extra: LogExtra = {}
+
+    if user_id:
+        assert int(user_id) > 0  # nosec
+        extra["log_uid"] = f"{user_id}"
+    if error_code:
+        extra["log_oec"] = error_code
+
+    return extra or None
+
+
 class CustomFormatter(logging.Formatter):
     """Custom Formatter does these 2 things:
     1. Overrides 'funcName' with the value of 'func_name_override', if it exists.
@@ -66,8 +87,10 @@ class CustomFormatter(logging.Formatter):
             record.funcName = record.func_name_override
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
-        if not hasattr(record, "log_uid"):
-            record.log_uid = None  # Default value if user is not provided in the log
+
+        for name in LogExtra.__optional_keys__:  # pylint: disable=no-member
+            if not hasattr(record, name):
+                setattr(record, name, None)
 
         if self.log_format_local_dev_enabled:
             levelname = record.levelname
@@ -80,11 +103,18 @@ class CustomFormatter(logging.Formatter):
 
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
-DEFAULT_FORMATTING = "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_uid=%(log_uid)s | log_msg=%(message)s"
+DEFAULT_FORMATTING = (
+    "log_level=%(levelname)s "
+    "| log_timestamp=%(asctime)s "
+    "| log_source=%(name)s:%(funcName)s(%(lineno)d) "
+    "| log_uid=%(log_uid)s "
+    "| log_oec=%(log_oec)s"
+    "| log_msg=%(message)s"
+)
 LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
 
 # Graylog Grok pattern extractor:
-# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}
+# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| (log_uid=%{WORD:log_uid} \| )?log_msg=%{GREEDYDATA:log_msg}
 
 
 def config_all_loggers(
@@ -336,29 +366,8 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
             raise exc from exc
 
 
-class LogExtra(TypedDict):
-    log_uid: NotRequired[str]
-    log_oec: NotRequired[str]
-
-
 LogLevelInt: TypeAlias = int
 LogMessageStr: TypeAlias = str
-
-
-def get_log_record_extra(
-    *,
-    user_id: int | str | None = None,
-    error_code: str | None = None,
-) -> LogExtra | None:
-    extra: LogExtra = {}
-
-    if user_id:
-        assert int(user_id) > 0  # nosec
-        extra["log_uid"] = f"{user_id}"
-    if error_code:
-        extra["log_oec"] = error_code
-
-    return extra or None
 
 
 def _un_capitalize(s: str) -> str:
