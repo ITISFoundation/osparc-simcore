@@ -4396,7 +4396,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -11285,7 +11285,7 @@ components:
         unitExtraInfo:
           $ref: '#/components/schemas/UnitExtraInfo-Output'
         currentCostPerUnit:
-          type: number
+          type: string
           title: Currentcostperunit
         default:
           type: boolean
@@ -11329,7 +11329,7 @@ components:
         unitExtraInfo:
           $ref: '#/components/schemas/UnitExtraInfo-Output'
         currentCostPerUnit:
-          type: number
+          type: string
           title: Currentcostperunit
         default:
           type: boolean
@@ -14140,7 +14140,7 @@ components:
           format: date-time
           title: Modified
         availableCredits:
-          type: number
+          type: string
           title: Availablecredits
       type: object
       required:
