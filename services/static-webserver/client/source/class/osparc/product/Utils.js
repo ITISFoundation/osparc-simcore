@@ -275,13 +275,7 @@ qx.Class.define("osparc.product.Utils", {
       if (platformName !== "master") {
         return false;
       }
-      if (this.getProductName().includes("osparc")) {
-        return true;
-      }
-      if (this.isS4LProduct()) {
-        return true;
-      }
-      return false;
+      return this.isS4LProduct();
     },
 
     getProductThumbUrl: function(asset = "Default.png") {
