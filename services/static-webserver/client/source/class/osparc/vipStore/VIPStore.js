@@ -16,34 +16,17 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.vipStore.VIPStore", {
-  extend: osparc.ui.window.Window,
-  type: "singleton",
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base(arguments, this.tr("VIP Store"));
+    this.base(arguments);
 
-    this.set({
-      layout: new qx.ui.layout.VBox(10),
-      width: this.self().MAX_WIDTH,
-      minWidth: this.self().MAX_WIDTH,
-      minHeight: this.self().MAX_HEIGHT,
-      contentPadding: this.self().PADDING,
-      resizable: true,
-      showMaximize: false,
-      showMinimize: false,
-      centerOnAppear: true,
-      clickAwayClose: true,
-      modal: true
-    });
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__buildLayout();
   },
 
   statics: {
-    MAX_WIDTH: 900,
-    MAX_HEIGHT: 700,
-    PADDING: 15,
-
     curateAnatomicalModels: function(anatomicalModelsRaw) {
       const anatomicalModels = [];
       const models = anatomicalModelsRaw["availableDownloads"];
