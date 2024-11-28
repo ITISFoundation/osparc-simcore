@@ -109,7 +109,7 @@ async def delete_folder(
     "/folders/{folder_id}/workspaces/{workspace_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Move folder to the workspace",
-    tags=["folders", "workspaces"],
+    tags=["workspaces"],
 )
 async def replace_folder_workspace(
     _path: Annotated[_FolderWorkspacesPathParams, Depends()],

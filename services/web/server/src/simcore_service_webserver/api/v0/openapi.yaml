@@ -2948,7 +2948,6 @@ paths:
     put:
       tags:
       - folders
-      - folders
       - workspaces
       summary: Move folder to the workspace
       operationId: replace_folder_workspace
