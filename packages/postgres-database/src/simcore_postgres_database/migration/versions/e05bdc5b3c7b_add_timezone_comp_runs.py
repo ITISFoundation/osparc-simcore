@@ -5,6 +5,7 @@ Revises: 7ad64e963e0f
 Create Date: 2024-11-27 22:51:21.112336+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -24,7 +25,7 @@ def upgrade():
         existing_type=postgresql.TIMESTAMP(),
         type_=sa.DateTime(timezone=True),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default=sa.sql.func.now(),
     )
     op.alter_column(
         "comp_runs",
@@ -32,7 +33,7 @@ def upgrade():
         existing_type=postgresql.TIMESTAMP(),
         type_=sa.DateTime(timezone=True),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default=sa.sql.func.now(),
     )
     op.alter_column(
         "comp_runs",
@@ -73,7 +74,7 @@ def downgrade():
         existing_type=sa.DateTime(timezone=True),
         type_=postgresql.TIMESTAMP(),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default=sa.sql.func.now(),
     )
     op.alter_column(
         "comp_runs",
@@ -81,6 +82,6 @@ def downgrade():
         existing_type=sa.DateTime(timezone=True),
         type_=postgresql.TIMESTAMP(),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default=sa.sql.func.now(),
     )
     # ### end Alembic commands ###
