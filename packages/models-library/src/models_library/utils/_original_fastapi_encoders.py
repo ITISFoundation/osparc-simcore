@@ -8,7 +8,7 @@ from collections import defaultdict, deque
 from enum import Enum
 from pathlib import PurePath
 from types import GeneratorType
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, get_origin
 
 from common_library.json_serialization import ENCODERS_BY_TYPE
 from pydantic import BaseModel
@@ -28,7 +28,8 @@ def generate_encoders_by_class_tuples(
         tuple
     )
     for type_, encoder in type_encoder_map.items():
-        encoders_by_class_tuples[encoder] += (type_,)
+        if get_origin(type_) is not Annotated:
+            encoders_by_class_tuples[encoder] += (type_,)
     return encoders_by_class_tuples
 
 

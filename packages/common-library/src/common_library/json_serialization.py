@@ -23,7 +23,7 @@ from typing import Any, Final, NamedTuple
 from uuid import UUID
 
 import orjson
-from pydantic import NameEmail, SecretBytes, SecretStr
+from pydantic import AnyHttpUrl, AnyUrl, HttpUrl, NameEmail, SecretBytes, SecretStr
 from pydantic_core import Url
 from pydantic_extra_types.color import Color
 
@@ -62,6 +62,8 @@ def decimal_encoder(dec_value: Decimal) -> int | float:
 
 
 ENCODERS_BY_TYPE: dict[type[Any], Callable[[Any], Any]] = {
+    AnyHttpUrl: str,
+    AnyUrl: str,
     bytes: lambda o: o.decode(),
     Color: str,
     datetime.date: isoformat,
@@ -73,6 +75,7 @@ ENCODERS_BY_TYPE: dict[type[Any], Callable[[Any], Any]] = {
     frozenset: list,
     deque: list,
     GeneratorType: list,
+    HttpUrl: str,
     IPv4Address: str,
     IPv4Interface: str,
     IPv4Network: str,
