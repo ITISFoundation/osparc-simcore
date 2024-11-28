@@ -9,5 +9,5 @@ class LogStreamerNotRegisteredError(LogStreamingBaseError):
     msg_template = "{msg}"
 
 
-class LogStreamerRegistionConflictError(LogStreamingBaseError):
+class LogStreamerRegistrationConflictError(LogStreamingBaseError):
     msg_template = "A stream was already connected to {job_id}. Only a single stream can be connected at the time"
