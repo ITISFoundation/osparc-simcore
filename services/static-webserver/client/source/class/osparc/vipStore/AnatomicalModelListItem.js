@@ -114,7 +114,8 @@ qx.Class.define("osparc.vipStore.AnatomicalModelListItem", {
           break;
         case "name":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            alignY: "middle",
           });
           this._add(control, {
             row: 0,

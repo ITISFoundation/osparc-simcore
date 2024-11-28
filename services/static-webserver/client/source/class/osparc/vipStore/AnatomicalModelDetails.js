@@ -136,36 +136,38 @@ qx.Class.define("osparc.vipStore.AnatomicalModelDetails", {
         }
       });
 
-      const doiTitle = new qx.ui.basic.Label().set({
-        value: "DOI",
-        font: "text-14",
-        alignX: "right",
-        marginTop: 16,
-      });
-      moreInfoLayout.add(doiTitle, {
-        column: 0,
-        row: idx,
-      });
-
-      const doiValue = new qx.ui.basic.Label().set({
-        value: anatomicalModelsData["DOI"],
-        font: "text-14",
-        alignX: "left",
-        marginTop: 16,
-      });
-      moreInfoLayout.add(doiValue, {
-        column: 1,
-        row: idx,
-      });
+      if (anatomicalModelsData["DOI"]) {
+        const doiTitle = new qx.ui.basic.Label().set({
+          value: "DOI",
+          font: "text-14",
+          alignX: "right",
+          marginTop: 16,
+        });
+        moreInfoLayout.add(doiTitle, {
+          column: 0,
+          row: idx,
+        });
+  
+        const doiValue = new qx.ui.basic.Label().set({
+          value: anatomicalModelsData["DOI"],
+          font: "text-14",
+          alignX: "left",
+          marginTop: 16,
+        });
+        moreInfoLayout.add(doiValue, {
+          column: 1,
+          row: idx,
+        });
+      }
 
       cardLayout.add(moreInfoLayout, {
         column: 1,
         row: 2,
       });
-      
+
 
       const leaseModelButton = new qx.ui.form.Button().set({
-        label: this.tr("Lease model (2 months)"),
+        label: this.tr("Lease model (2 for months)"),
         appearance: "strong-button",
         center: true,
       });
