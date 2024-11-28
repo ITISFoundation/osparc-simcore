@@ -100,16 +100,11 @@ async def delete_folder(
 ### Move Folder to Workspace
 
 
-router = APIRouter(
-    prefix=f"/{API_VTAG}",
-    tags=["folders", "workspaces"],
-)
-
-
 @router.put(
     "/folders/{folder_id}/workspaces/{workspace_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Move folder to the workspace",
+    tags=["folders", "workspaces"],
 )
 async def replace_folder_workspace(
     _path: Annotated[_FolderWorkspacesPathParams, Depends()],
