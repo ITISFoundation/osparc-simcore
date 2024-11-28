@@ -84,12 +84,15 @@ qx.Class.define("osparc.vipStore.VIPStore", {
 
       anatomicalModels.forEach(anatomicalModelData => {
         // this is a JSON but it's missing the quotes
-        const rawData = anatomicalModelData["Features"];
-        let formattedData = rawData
-          .replace(/([a-zA-Z0-9_]+):/g, '"$1":') // Add quotes around keys
-          .replace(/: ([^,{}]+)/g, ': "$1"'); // Add quotes around all values
-
-        features = JSON.parse(formattedData);
+        let featuresRaw = anatomicalModelData["Features"];
+        featuresRaw = featuresRaw.substring(1, featuresRaw.length-1); // remove brackets
+        featuresRaw = featuresRaw.split(","); // split the string by commas
+        const features = {};
+        featuresRaw.forEach(pair => { // each pair is "key: value"
+          const keyValue = pair.split(":");
+          features[keyValue[0].trim()] = keyValue[1].trim()
+        });
+        
         const anatomicalModel = {};
         anatomicalModel["id"] = anatomicalModelData["ID"];
         anatomicalModel["thumbnail"] = anatomicalModelData["Thumbnail"];
