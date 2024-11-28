@@ -162,34 +162,39 @@ qx.Class.define("osparc.vipStore.VIPStore", {
       });
 
       this.__anatomicalModelsModel.removeAll();
-      models.sort((a, b) => {
-        if (b["leased"] !== a["leased"]) {
-          return b["leased"] - a["leased"];
-        }
-        // second criteria
-        return a["name"].localeCompare(b["name"]);
-      });
+      const sortModel = sortBy => {
+        models.sort((a, b) => {
+          // first criteria
+          if (b["leased"] !== a["leased"]) {
+            return b["leased"] - a["leased"];
+          }
+          // second criteria
+          if (sortBy) {
+            if (sortBy["sort"] === "name") {
+              if (sortBy["orderBy"] === "down") {
+                return a["name"].localeCompare(b["name"]);
+              } else {
+                return b["name"].localeCompare(a["name"]);
+              }
+            } else if (sortBy["sort"] === "date") {
+              if (sortBy["orderBy"] === "down") {
+                return a["date"] - b["date"];
+              } else {
+                return b["date"] - a["date"];
+              }
+            }
+          }
+          // default criteria
+          return a["name"].localeCompare(b["name"]);
+        });
+      };
+      sortModel();
       models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
 
       this.__sortByButton.addListener("sortBy", e => {
-        const sortBy = e.getData();
         this.__anatomicalModelsModel.removeAll();
-        models.sort((a, b) => {
-          if (sortBy["sort"] === "name") {
-            if (sortBy["orderBy"] === "down") {
-              return a["name"].localeCompare(b["name"]);
-            } else {
-              return b["name"].localeCompare(a["name"]);
-            }
-          } else if (sortBy["sort"] === "date") {
-            if (sortBy["orderBy"] === "down") {
-              return a["date"] - b["date"];
-            } else {
-              return b["date"] - a["date"];
-            }
-          }
-          return a["name"].localeCompare(b["name"]);
-        });
+        const sortBy = e.getData();
+        sortModel(sortBy);
         models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
       }, this);
     },
