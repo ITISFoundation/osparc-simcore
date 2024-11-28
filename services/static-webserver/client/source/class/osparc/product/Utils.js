@@ -270,6 +270,14 @@ qx.Class.define("osparc.product.Utils", {
       return true;
     },
 
+    showS4LStore: function() {
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      if (this.isS4LProduct() && platformName !== "production") {
+        return true;
+      }
+      return false;
+    },
+
     getProductThumbUrl: function(asset = "Default.png") {
       const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails"
       let url;
