@@ -81,6 +81,13 @@ qx.Class.define("osparc.vipStore.AnatomicalModelListItem", {
       nullable: true,
       event: "changeDate",
     },
+
+    leased: {
+      check: "Boolean",
+      init: false,
+      nullable: true,
+      event: "changeLeased",
+    },
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members

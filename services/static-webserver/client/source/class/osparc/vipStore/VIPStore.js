@@ -46,6 +46,9 @@ qx.Class.define("osparc.vipStore.VIPStore", {
           } else {
             curatedModel[key] = model[key];
           }
+          if (key === "ID" && [22].includes(model[key])) {
+            curatedModel["leased"] = true;
+          }
         });
         anatomicalModels.push(curatedModel);
       });
@@ -58,7 +61,7 @@ qx.Class.define("osparc.vipStore.VIPStore", {
     __anatomicalModels: null,
     __sortByButton: null,
 
-    __buildLayout: async function() {
+    __buildLayout: function() {
       const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         alignY: "middle",
         // maxHeight: 30
@@ -101,9 +104,22 @@ qx.Class.define("osparc.vipStore.VIPStore", {
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "name", null, item, id);
           ctrl.bindProperty("date", "date", null, item, id);
+          ctrl.bindProperty("leased", "leased", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("vipModels");
+        },
+        group: model => {
+          return model.getLeased ? model.getLeased() : null;
+        },
+        createGroupItem() {
+          return new qx.ui.form.ListItem();
+        },
+        configureGroupItem: item =>  {
+          item.setBackgroundColor("strong-color");
+        },
+        bindGroupItem: (controller, item, id) => {
+          controller.bindProperty(null, "leased", null, item, id);
         },
       });
 
@@ -134,12 +150,15 @@ qx.Class.define("osparc.vipStore.VIPStore", {
         anatomicModelDetails.setAnatomicalModelsData(null);
       }, this);
 
-      // fetch data
-      const resp = await fetch("https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnatomicalModels", {method:"POST"});
-      const anatomicalModelsRaw = await resp.json();
-      this.__anatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
-
-      this.__populateModels();
+      fetch("https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnatomicalModels", {
+        method:"POST"
+      })
+        .then(resp => resp.json())
+        .then(anatomicalModelsRaw => {
+          this.__anatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
+          this.__populateModels();
+        })
+        .catch(err => console.error(err));
     },
 
     __populateModels: function() {
