@@ -109,18 +109,6 @@ qx.Class.define("osparc.vipStore.VIPStore", {
         configureItem: item => {
           item.subscribeToFilterGroup("vipModels");
         },
-        group: model => {
-          return model.getLeased ? model.getLeased() : null;
-        },
-        createGroupItem() {
-          return new qx.ui.form.ListItem();
-        },
-        configureGroupItem: item =>  {
-          item.setBackgroundColor("strong-color");
-        },
-        bindGroupItem: (controller, item, id) => {
-          controller.bindProperty(null, "leased", null, item, id);
-        },
       });
 
       const loadingModel = {

@@ -87,6 +87,7 @@ qx.Class.define("osparc.vipStore.AnatomicalModelListItem", {
       init: false,
       nullable: true,
       event: "changeLeased",
+      apply: "__applyLeased",
     },
   },
 
@@ -142,7 +143,11 @@ qx.Class.define("osparc.vipStore.AnatomicalModelListItem", {
       this.getChildControl("name").setValue(value);
     },
 
-    
+    __applyLeased: function(value) {
+      if (value) {
+        this.setBackgroundColor("strong-main");
+      }
+    },
 
     _onPointerOver: function() {
       this.addState("hovered");
