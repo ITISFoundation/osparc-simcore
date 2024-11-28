@@ -14,11 +14,11 @@ from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps
+from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
 
 from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..utils import is_production_environ
-from .rest_models import ErrorItemType, ErrorType, LogMessageType
 from .rest_responses import (
     create_data_response,
     create_http_error,
@@ -98,7 +98,7 @@ def error_middleware_factory(
             err.content_type = MIMETYPE_APPLICATION_JSON
 
             if not err.text or not is_enveloped_from_text(err.text):
-                error = ErrorType(
+                error = ErrorGet(
                     errors=[
                         ErrorItemType.from_error(err),
                     ],

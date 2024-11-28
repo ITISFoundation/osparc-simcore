@@ -93,7 +93,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Error_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/verify-phone-number:
     post:
       tags:
@@ -160,7 +160,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Error_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/validate-code-login:
     post:
       tags:
@@ -186,7 +186,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Error_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/two_factor:resend:
     post:
       tags:
@@ -212,7 +212,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Error_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/logout:
     post:
       tags:
@@ -248,7 +248,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Error_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/reset-password:
     post:
       tags:
@@ -274,7 +274,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Error_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/reset-password/{code}:
     post:
       tags:
@@ -307,7 +307,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Error_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/change-password:
     post:
       tags:
@@ -333,19 +333,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Error_'
+                $ref: '#/components/schemas/EnvelopedError'
         '409':
           description: mismatch between new and confirmation passwords
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Error_'
+                $ref: '#/components/schemas/EnvelopedError'
         '422':
           description: current password is invalid
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Error_'
+                $ref: '#/components/schemas/EnvelopedError'
   /v0/auth/confirmation/{code}:
     get:
       tags:
@@ -2613,6 +2613,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FolderGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
     get:
       tags:
       - folders
@@ -2679,6 +2703,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_FolderGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/folders:search:
     get:
       tags:
@@ -2734,6 +2782,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_FolderGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/folders/{folder_id}:
     get:
       tags:
@@ -2756,6 +2828,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FolderGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
     put:
       tags:
       - folders
@@ -2783,6 +2879,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FolderGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
     delete:
       tags:
       - folders
@@ -2800,6 +2920,30 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/folders/{folder_id}/workspaces/{workspace_id}:
     put:
       tags:
@@ -2830,6 +2974,30 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/tasks:
     get:
       tags:
@@ -4426,7 +4594,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5851,6 +6019,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
     get:
       tags:
       - workspaces
@@ -5897,6 +6089,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_WorkspaceGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/workspaces/{workspace_id}:
     get:
       tags:
@@ -5919,6 +6135,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
     put:
       tags:
       - workspaces
@@ -5946,6 +6186,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
     delete:
       tags:
       - workspaces
@@ -5963,6 +6227,30 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/workspaces/{workspace_id}/groups/{group_id}:
     post:
       tags:
@@ -6000,6 +6288,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WorkspaceGroupGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
     put:
       tags:
       - workspaces
@@ -6036,6 +6348,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WorkspaceGroupGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
     delete:
       tags:
       - workspaces
@@ -6062,6 +6398,30 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/workspaces/{workspace_id}/groups:
     get:
       tags:
@@ -6085,6 +6445,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_WorkspaceGroupGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Service Unavailable
   /v0/email:test:
     post:
       tags:
@@ -7516,19 +7900,6 @@ components:
           title: Error
       type: object
       title: Envelope[ComputationTaskGet]
-    Envelope_Error_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/Error'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[Error]
     Envelope_FileMetaDataGet_:
       properties:
         data:
@@ -8927,60 +9298,80 @@ components:
           title: Error
       type: object
       title: Envelope[str]
-    Error:
+    EnvelopedError:
       properties:
-        logs:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/Log'
-            type: array
-          - type: 'null'
-          title: Logs
-          description: log messages
-        errors:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/ErrorItem'
-            type: array
-          - type: 'null'
-          title: Errors
-          description: errors metadata
-        status:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Status
-          description: HTTP error code
+        data:
+          type: 'null'
+          title: Data
+        error:
+          $ref: '#/components/schemas/ErrorGet'
       type: object
-      title: Error
-    ErrorItem:
+      required:
+      - error
+      title: EnvelopedError
+    ErrorGet:
+      properties:
+        message:
+          type: string
+          minLength: 5
+          title: Message
+          description: Message displayed to the user
+        supportId:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Supportid
+          description: ID to track the incident during support
+        status:
+          type: integer
+          title: Status
+          default: 400
+          deprecated: true
+        errors:
+          items:
+            $ref: '#/components/schemas/ErrorItemType'
+          type: array
+          title: Errors
+          default: []
+          deprecated: true
+        logs:
+          items:
+            $ref: '#/components/schemas/LogMessageType'
+          type: array
+          title: Logs
+          default: []
+          deprecated: true
+      type: object
+      required:
+      - message
+      title: ErrorGet
+    ErrorItemType:
       properties:
         code:
           type: string
           title: Code
-          description: Typically the name of the exception that produced it otherwise
-            some known error code
         message:
           type: string
           title: Message
-          description: Error message specific to this item
         resource:
           anyOf:
           - type: string
           - type: 'null'
           title: Resource
-          description: API resource affected by this error
         field:
           anyOf:
           - type: string
           - type: 'null'
           title: Field
-          description: Specific field within the resource
       type: object
       required:
       - code
       - message
-      title: ErrorItem
+      - resource
+      - field
+      title: ErrorItemType
     ExtractedResults:
       properties:
         progress:
@@ -9974,6 +10365,23 @@ components:
       - WARNING
       - ERROR
       title: LogLevel
+    LogMessageType:
+      properties:
+        message:
+          type: string
+          title: Message
+        level:
+          type: string
+          title: Level
+          default: INFO
+        logger:
+          type: string
+          title: Logger
+          default: user
+      type: object
+      required:
+      - message
+      title: LogMessageType
     LoginBody:
       properties:
         email:
