@@ -104,10 +104,16 @@ def test_settings_to_client_statics_plugins(
 
 
 @pytest.mark.parametrize("is_dev_feature_enabled", [True, False])
-def test_settings_to_client_statics_for_webserver_trash(
+@pytest.mark.parametrize(
+    "plugin_name",
+    ["WEBSERVER_META_MODELING", "WEBSERVER_VERSION_CONTROL", "WEBSERVER_CLUSTERS"]
+    # NOTE: this is the list in _enable_only_if_dev_features_allowed
+)
+def test_disabled_plugins_settings_to_client_statics(
     is_dev_feature_enabled: bool,
     mock_webserver_service_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    plugin_name: str,
 ):
     monkeypatch.setenv(
         "WEBSERVER_DEV_FEATURES_ENABLED", f"{is_dev_feature_enabled}".lower()
@@ -116,10 +122,11 @@ def test_settings_to_client_statics_for_webserver_trash(
     settings = ApplicationSettings.create_from_envs()
     statics = settings.to_client_statics()
 
+    # checks whether it is shown to the front-end depending on the value of WEBSERVER_DEV_FEATURES_ENABLED
     if is_dev_feature_enabled:
-        assert "WEBSERVER_TRASH" not in set(statics["pluginsDisabled"])
+        assert plugin_name not in set(statics["pluginsDisabled"])
     else:
-        assert "WEBSERVER_TRASH" in set(statics["pluginsDisabled"])
+        assert plugin_name in set(statics["pluginsDisabled"])
 
 
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
