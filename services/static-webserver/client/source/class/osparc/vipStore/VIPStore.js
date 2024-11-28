@@ -162,7 +162,9 @@ qx.Class.define("osparc.vipStore.VIPStore", {
       });
 
       this.__anatomicalModelsModel.removeAll();
-      models.sort((a, b) => a["name"].localeCompare(b["name"]));
+      models.sort((a, b) => {
+        return a["name"].localeCompare(b["name"]);
+      });
       models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
 
       this.__sortByButton.addListener("sortBy", e => {
