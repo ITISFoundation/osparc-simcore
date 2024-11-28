@@ -21,32 +21,173 @@ qx.Class.define("osparc.vipStore.AnatomicalModelDetails", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(10, 10);
-    layout.setColumnWidth(0, 64);
-    layout.setRowFlex(0, 1);
-    layout.setColumnFlex(1, 1);
-    layout.setColumnAlign(0, "center", "middle");
-    layout.setColumnAlign(1, "left", "middle");
+    const layout = new qx.ui.layout.Grow();
     this._setLayout(layout);
 
-    this.set({
-      padding: 5,
-    });
+    this.__poplulateLayout();
   },
 
   properties: {
     anatomicalModelsData: {
-      check: "String",
+      check: "Object",
       init: null,
-      nullable: false,
+      nullable: true,
       apply: "__poplulateLayout"
     },
   },
 
   members: {
-
     __poplulateLayout: function() {
-      this.getChildControl("thumbnail").setSource(value);
+      this._removeAll();
+
+      const anatomicalModelsData = this.getAnatomicalModelsData();
+      if (anatomicalModelsData) {
+        const card = this.__createcCard(anatomicalModelsData);
+        this._add(card);
+      } else {
+        const selectModelLabel = new qx.ui.basic.Label().set({
+          value: this.tr("Select a model for more details"),
+          font: "text-16",
+          alignX: "center",
+          alignY: "middle",
+          allowGrowX: true,
+          allowGrowY: true,
+        });
+        this._add(selectModelLabel);
+      }
+    },
+
+    __createcCard: function(anatomicalModelsData) {
+      console.log(anatomicalModelsData);
+
+      const cardGrid = new qx.ui.layout.Grid(16, 16);
+      const cardLayout = new qx.ui.container.Composite(cardGrid);
+
+      const features = anatomicalModelsData["Features"];
+
+      const titleLabel = new qx.ui.basic.Label().set({
+        value: anatomicalModelsData["Description"],
+        font: "text-16",
+        alignX: "center",
+        alignY: "middle",
+        allowGrowX: true,
+        allowGrowY: true,
+      });
+      cardLayout.add(titleLabel, {
+        column: 0,
+        row: 0,
+        colSpan: 2,
+      });
+
+      const nameLabel = new qx.ui.basic.Label().set({
+        value: features["name"],
+        font: "text-16",
+        alignX: "center",
+        alignY: "middle",
+        allowGrowX: true,
+        allowGrowY: true,
+      });
+      cardLayout.add(nameLabel, {
+        column: 0,
+        row: 1,
+        colSpan: 2,
+      });
+
+      const thumbnail = new qx.ui.basic.Image().set({
+        source: anatomicalModelsData["Thumbnail"],
+        alignY: "middle",
+        scale: true,
+        allowGrowX: true,
+        allowGrowY: true,
+        allowShrinkX: true,
+        allowShrinkY: true,
+        maxWidth: 256,
+        maxHeight: 256,
+      });
+      cardLayout.add(thumbnail, {
+        column: 0,
+        row: 2,
+      });
+
+      const moreInfoGrid = new qx.ui.layout.Grid(8, 8);
+      const moreInfoLayout = new qx.ui.container.Composite(moreInfoGrid).set({
+        marginTop: 16,
+      });
+      let idx = 0;
+      [
+        "Name",
+        "Version",
+        "Sex",
+        "Weight",
+        "Height",
+        "Date",
+        "Ethnicity",
+      ].forEach(key => {
+        if (key.toLowerCase() in features) {
+          const titleLabel = new qx.ui.basic.Label().set({
+            value: key,
+            font: "text-14",
+            alignX: "right",
+          });
+          moreInfoLayout.add(titleLabel, {
+            column: 0,
+            row: idx,
+          });
+  
+          const nameLabel = new qx.ui.basic.Label().set({
+            value: features[key.toLowerCase()],
+            font: "text-14",
+            alignX: "left",
+          });
+          moreInfoLayout.add(nameLabel, {
+            column: 1,
+            row: idx,
+          });
+  
+          idx++;
+        }
+      });
+
+      const doiTitle = new qx.ui.basic.Label().set({
+        value: "DOI",
+        font: "text-14",
+        alignX: "right",
+        marginTop: 16,
+      });
+      moreInfoLayout.add(doiTitle, {
+        column: 0,
+        row: idx,
+      });
+
+      const doiValue = new qx.ui.basic.Label().set({
+        value: anatomicalModelsData["DOI"],
+        font: "text-14",
+        alignX: "left",
+        marginTop: 16,
+      });
+      moreInfoLayout.add(doiValue, {
+        column: 1,
+        row: idx,
+      });
+
+      cardLayout.add(moreInfoLayout, {
+        column: 1,
+        row: 2,
+      });
+      
+
+      const leaseModelButton = new qx.ui.form.Button().set({
+        label: this.tr("Lease model (2 months)"),
+        appearance: "strong-button",
+        center: true,
+      });
+      cardLayout.add(leaseModelButton, {
+        column: 0,
+        row: 3,
+        colSpan: 2,
+      });
+
+      return cardLayout;
     },
   }
 });
