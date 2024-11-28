@@ -317,6 +317,7 @@ async def update(
     trashed_at: datetime | None | UnSet = _unset,
     trashed_explicitly: bool | UnSet = _unset,
     workspace_id: WorkspaceID | None | UnSet = _unset,
+    user_id: UserID | None | UnSet = _unset,
 ) -> FolderDB:
     """
     Batch/single patch of folder/s
@@ -328,6 +329,7 @@ async def update(
         trashed_at=trashed_at,
         trashed_explicitly=trashed_explicitly,
         workspace_id=workspace_id,
+        user_id=user_id,
     )
 
     query = (

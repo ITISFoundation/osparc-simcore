@@ -123,7 +123,7 @@ async def update_project_to_folder(
     connection: AsyncConnection | None = None,
     *,
     folders_id_or_ids: FolderID | set[FolderID],
-    filter_by_user_id: UserID | None | UnSet = _unset,
+    # filter_by_user_id: UserID | None | UnSet = _unset,
     # updatable columns
     user_id: UserID | None | UnSet = _unset,
 ) -> None:
@@ -146,8 +146,8 @@ async def update_project_to_folder(
         # single-update
         query = query.where(projects_to_folders.c.folder_id == folders_id_or_ids)
 
-    if not isinstance(filter_by_user_id, UnSet):
-        query = query.where(projects_to_folders.c.user_id == filter_by_user_id)
+    # if not isinstance(filter_by_user_id, UnSet):
+    #     query = query.where(projects_to_folders.c.user_id == filter_by_user_id)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.stream(query)
@@ -166,7 +166,9 @@ async def delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
     if isinstance(project_id_or_ids, set):
         # batch-delete
         query = query.where(
-            projects_to_folders.c.project_uuid.in_(list(project_id_or_ids))
+            projects_to_folders.c.project_uuid.in_(
+                [f"{project_id}" for project_id in project_id_or_ids]
+            )
         )
     else:
         # single-delete
@@ -175,9 +177,7 @@ async def delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
         )
 
     query = query.where(
-        projects_to_folders.c.folder_id.not_in(  # <-- NOT IN!
-            [f"{folder_id}" for folder_id in not_in_folder_ids]
-        )
+        projects_to_folders.c.folder_id.not_in(not_in_folder_ids)  # <-- NOT IN!
     )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:

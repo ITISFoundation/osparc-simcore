@@ -89,6 +89,7 @@ async def move_folder_into_workspace(
         folders_id_or_ids=set(folder_ids),
         product_name=product_name,
         workspace_id=workspace_id,  # <-- Updating workspace_id
+        user_id=user_id if workspace_id is None else None,  # <-- Updating user_id
     )
 
     # 6. Update source folder parent folder ID with NULL (it will appear in the root directory)
@@ -114,7 +115,7 @@ async def move_folder_into_workspace(
         app,
         connection=None,
         folders_id_or_ids=set(folder_ids),
-        user_id=user_id if workspace_id is None else None,
+        user_id=user_id if workspace_id is None else None,  # <-- Updating user_id
     )
 
     # 9. Remove all project permissions, leave only the user who moved the project
