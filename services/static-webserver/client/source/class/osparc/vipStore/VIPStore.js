@@ -171,20 +171,23 @@ qx.Class.define("osparc.vipStore.VIPStore", {
           // second criteria
           if (sortBy) {
             if (sortBy["sort"] === "name") {
-              if (sortBy["orderBy"] === "down") {
+              if (sortBy["order"] === "down") {
+                // A -> Z
                 return a["name"].localeCompare(b["name"]);
               } else {
                 return b["name"].localeCompare(a["name"]);
               }
             } else if (sortBy["sort"] === "date") {
-              if (sortBy["orderBy"] === "down") {
-                return a["date"] - b["date"];
-              } else {
+              if (sortBy["order"] === "down") {
+                // Now -> Yesterday
                 return b["date"] - a["date"];
+              } else {
+                return a["date"] - b["date"];
               }
             }
           }
           // default criteria
+          // A -> Z
           return a["name"].localeCompare(b["name"]);
         });
       };
