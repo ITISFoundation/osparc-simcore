@@ -64,16 +64,16 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
             let totalHours = 0;
             entries.forEach(entry => {
               totalHours += entry["running_time_in_hours"]
-              totalCredits+= entry["osparc_credits"]
+              totalCredits+= parseFloat(entry["osparc_credits"])
             });
             let datas = [];
             entries.forEach(entry => {
               datas.push({
                 service: entry["service_key"],
-                credits: -1*entry["osparc_credits"],
+                credits: -1*parseFloat(entry["osparc_credits"]),
                 hours: entry["running_time_in_hours"],
                 percentageHours: totalHours ? 100*entry["running_time_in_hours"]/totalHours : 0,
-                percentageCredits: totalCredits ? 100*entry["osparc_credits"]/totalCredits : 0,
+                percentageCredits: totalCredits ? 100*parseFloat(entry["osparc_credits"])/totalCredits : 0,
               });
             });
             datas.sort((a, b) => {

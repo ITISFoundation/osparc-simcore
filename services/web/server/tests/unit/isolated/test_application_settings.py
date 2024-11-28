@@ -103,6 +103,25 @@ def test_settings_to_client_statics_plugins(
     assert set(statics["pluginsDisabled"]) == (disable_plugins | {"WEBSERVER_CLUSTERS"})
 
 
+@pytest.mark.parametrize("is_dev_feature_enabled", [True, False])
+def test_settings_to_client_statics_for_webserver_trash(
+    is_dev_feature_enabled: bool,
+    mock_webserver_service_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv(
+        "WEBSERVER_DEV_FEATURES_ENABLED", f"{is_dev_feature_enabled}".lower()
+    )
+
+    settings = ApplicationSettings.create_from_envs()
+    statics = settings.to_client_statics()
+
+    if is_dev_feature_enabled:
+        assert "WEBSERVER_TRASH" not in set(statics["pluginsDisabled"])
+    else:
+        assert "WEBSERVER_TRASH" in set(statics["pluginsDisabled"])
+
+
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
     # avoids display of sensitive info
     assert not any("pass" in key for key in app_settings.public_dict())

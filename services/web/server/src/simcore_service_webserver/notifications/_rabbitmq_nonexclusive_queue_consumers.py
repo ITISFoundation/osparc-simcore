@@ -59,8 +59,8 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         await logged_gather(
             *(
-                rabbit_client.unsubscribe_consumer(queue_name)
-                for queue_name in app[_APP_RABBITMQ_CONSUMERS_KEY].values()
+                rabbit_client.unsubscribe_consumer(*queue_consumer_map)
+                for queue_consumer_map in app[_APP_RABBITMQ_CONSUMERS_KEY].values()
             ),
         )
 

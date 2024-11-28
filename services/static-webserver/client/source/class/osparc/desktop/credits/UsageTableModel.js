@@ -148,7 +148,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
                 [usageCols.START.id]: start,
                 [usageCols.DURATION.id]: duration,
                 [usageCols.STATUS.id]: qx.lang.String.firstUp(rawRow["service_run_status"].toLowerCase()),
-                [usageCols.COST.id]: rawRow["credit_cost"] ? rawRow["credit_cost"].toFixed(2) : "",
+                [usageCols.COST.id]: rawRow["credit_cost"] ? parseFloat(rawRow["credit_cost"]).toFixed(2) : "",
                 [usageCols.USER.id]: rawRow["user_email"]
               })
             })
