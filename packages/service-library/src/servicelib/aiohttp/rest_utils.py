@@ -1,5 +1,3 @@
-from dataclasses import asdict
-
 from aiohttp import web
 from aiohttp.web import RouteDef, RouteTableDef
 from common_library.json_serialization import json_dumps
@@ -13,11 +11,7 @@ class EnvelopeFactory:
     """
 
     def __init__(self, data=None, error=None):
-        enveloped = {"data": data, "error": error}
-        for key, value in enveloped.items():
-            if value is not None and not isinstance(value, dict):
-                enveloped[key] = asdict(value)
-        self._envelope = enveloped
+        self._envelope = {"data": data, "error": error}
 
     def as_dict(self) -> dict:
         return self._envelope

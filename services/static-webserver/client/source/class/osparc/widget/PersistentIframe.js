@@ -128,7 +128,8 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         top: this.self().HIDDEN_TOP
       });
       const iframeEl = this._getIframeElement();
-      iframeEl.setAttribute("allow", "clipboard-write");
+      const host = window.location.host;
+      iframeEl.setAttribute("allow", `clipboard-read; clipboard-write; from *.services.${host}`);
 
       const buttonContainer = this.__buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "right",

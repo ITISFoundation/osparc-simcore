@@ -31,7 +31,10 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
       this.removeAll();
       this.__form = new osparc.desktop.credits.BuyCreditsForm(this.__paymentMethods);
       this.__form.addListener("submit", e => {
-        const { amountDollars: priceDollars, osparcCredits, paymentMethodId } = e.getData();
+        const {
+          amountDollars: priceDollars,
+          osparcCredits, paymentMethodId
+        } = e.getData();
         const params = {
           url: {
             walletId: this.__personalWallet.getWalletId()

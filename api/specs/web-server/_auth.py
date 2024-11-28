@@ -6,7 +6,6 @@
 
 from typing import Any
 
-from _common import Error, Log
 from fastapi import APIRouter, status
 from models_library.api_schemas_webserver.auth import (
     AccountRequestInfo,
@@ -15,6 +14,7 @@ from models_library.api_schemas_webserver.auth import (
     UnregisterCheck,
 )
 from models_library.generics import Envelope
+from models_library.rest_error import EnvelopedError, Log
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.login._2fa_handlers import Resend2faBody
@@ -75,7 +75,7 @@ async def register(_body: RegisterBody):
     "/auth/unregister",
     response_model=Envelope[Log],
     status_code=status.HTTP_200_OK,
-    responses={status.HTTP_409_CONFLICT: {"model": Envelope[Error]}},
+    responses={status.HTTP_409_CONFLICT: {"model": EnvelopedError}},
 )
 async def unregister_account(_body: UnregisterCheck):
     ...
@@ -107,7 +107,7 @@ async def phone_confirmation(_body: PhoneConfirmationBody):
     responses={
         # status.HTTP_503_SERVICE_UNAVAILABLE
         status.HTTP_401_UNAUTHORIZED: {
-            "model": Envelope[Error],
+            "model": EnvelopedError,
             "description": "unauthorized reset due to invalid token code",
         }
     },
@@ -122,7 +122,7 @@ async def login(_body: LoginBody):
     operation_id="auth_login_2fa",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
-            "model": Envelope[Error],
+            "model": EnvelopedError,
             "description": "unauthorized reset due to invalid token code",
         }
     },
@@ -137,7 +137,7 @@ async def login_2fa(_body: LoginTwoFactorAuthBody):
     operation_id="auth_resend_2fa_code",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
-            "model": Envelope[Error],
+            "model": EnvelopedError,
             "description": "unauthorized reset due to invalid token code",
         }
     },
@@ -161,7 +161,7 @@ async def logout(_body: LogoutBody):
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         status.HTTP_401_UNAUTHORIZED: {
-            "model": Envelope[Error],
+            "model": EnvelopedError,
             "description": "unauthorized reset due to invalid token code",
         }
     },
@@ -174,7 +174,7 @@ async def check_auth():
     "/auth/reset-password",
     response_model=Envelope[Log],
     operation_id="auth_reset_password",
-    responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": Envelope[Error]}},
+    responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": EnvelopedError}},
 )
 async def reset_password(_body: ResetPasswordBody):
     """a non logged-in user requests a password reset"""
@@ -186,7 +186,7 @@ async def reset_password(_body: ResetPasswordBody):
     operation_id="auth_reset_password_allowed",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
-            "model": Envelope[Error],
+            "model": EnvelopedError,
             "description": "unauthorized reset due to invalid token code",
         }
     },
@@ -201,11 +201,11 @@ async def reset_password_allowed(code: str, _body: ResetPasswordConfirmation):
     operation_id="auth_change_email",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
-            "model": Envelope[Error],
+            "model": EnvelopedError,
             "description": "unauthorized user. Login required",
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
-            "model": Envelope[Error],
+            "model": EnvelopedError,
             "description": "unable to send confirmation email",
         },
     },
@@ -233,15 +233,15 @@ class PasswordCheckSchema(BaseModel):
     operation_id="auth_change_password",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
-            "model": Envelope[Error],
+            "model": EnvelopedError,
             "description": "unauthorized user. Login required",
         },
         status.HTTP_409_CONFLICT: {
-            "model": Envelope[Error],
+            "model": EnvelopedError,
             "description": "mismatch between new and confirmation passwords",
         },
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "model": Envelope[Error],
+            "model": EnvelopedError,
             "description": "current password is invalid",
         },
     },
