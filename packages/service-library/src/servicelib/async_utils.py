@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Deque
 
-from opentelemetry import context as otcontext
+from servicelib import tracing
 
 from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
 
@@ -36,7 +36,7 @@ class Context:
 
 @dataclass
 class QueueElement:
-    tracing_context: otcontext.Context
+    tracing_context: tracing.TracingContext
     do_profile: bool = False
     input: Awaitable | None = None
     output: Any | None = None
@@ -165,7 +165,7 @@ def run_sequentially_in_context(
                     while True:
                         element = await in_q.get()
                         in_q.task_done()
-                        otcontext.attach(element.tracing_context)
+                        tracing.attach_context(element.tracing_context)
                         # check if requested to shutdown
                         try:
                             do_profile = element.do_profile
@@ -177,7 +177,7 @@ def run_sequentially_in_context(
                         except Exception as e:  # pylint: disable=broad-except
                             result = e
                         finally:
-                            otcontext.detach(element.tracing_context)
+                            tracing.detach_context(element.tracing_context)
                         await out_q.put(result)
 
                     logging.info(
@@ -195,7 +195,7 @@ def run_sequentially_in_context(
                 queue_input = QueueElement(
                     input=decorated_function(*args, **kwargs),
                     do_profile=is_profiling(),
-                    tracing_context=otcontext.get_current(),
+                    tracing_context=tracing.get_context(),
                 )
                 await context.in_queue.put(queue_input)
                 wrapped_result = await context.out_queue.get()
