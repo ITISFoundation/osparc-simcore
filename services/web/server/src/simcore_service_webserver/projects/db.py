@@ -85,6 +85,7 @@ from ._db_utils import (
     patch_workbench,
     update_workbench,
 )
+from ._db_v2 import _SELECTION_PROJECT_DB_ARGS
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
@@ -676,33 +677,10 @@ class ProjectDBAPI(BaseProjectDB):
                 project_type,
             )
 
-    # NOTE: MD: I intentionally didn't include the workbench. There is a special interface
-    # for the workbench, and at some point, this column should be removed from the table.
-    # The same holds true for access_rights/ui/classifiers/quality, but we have decided to proceed step by step.
-    _SELECTION_PROJECT_DB_ARGS = [  # noqa: RUF012
-        projects.c.id,
-        projects.c.type,
-        projects.c.uuid,
-        projects.c.name,
-        projects.c.description,
-        projects.c.thumbnail,
-        projects.c.prj_owner,
-        projects.c.creation_date,
-        projects.c.last_change_date,
-        projects.c.ui,
-        projects.c.classifiers,
-        projects.c.dev,
-        projects.c.quality,
-        projects.c.published,
-        projects.c.hidden,
-        projects.c.workspace_id,
-        projects.c.trashed_at,
-    ]
-
     async def get_project_db(self, project_uuid: ProjectID) -> ProjectDB:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
-                sa.select(*self._SELECTION_PROJECT_DB_ARGS).where(
+                sa.select(*_SELECTION_PROJECT_DB_ARGS).where(
                     projects.c.uuid == f"{project_uuid}"
                 )
             )
@@ -716,9 +694,7 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> UserSpecificProjectDataDB:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
-                sa.select(
-                    *self._SELECTION_PROJECT_DB_ARGS, projects_to_folders.c.folder_id
-                )
+                sa.select(*_SELECTION_PROJECT_DB_ARGS, projects_to_folders.c.folder_id)
                 .select_from(
                     projects.join(
                         projects_to_folders,
@@ -864,21 +840,6 @@ class ProjectDBAPI(BaseProjectDB):
             return convert_to_schema_names(project, user_email, tags=tags)
         msg = "linter unhappy without this"
         raise RuntimeError(msg)
-
-    async def patch_project(
-        self, project_uuid: ProjectID, new_partial_project_data: dict
-    ) -> ProjectDB:
-        async with self.engine.acquire() as conn:
-            result = await conn.execute(
-                projects.update()
-                .values(last_change_date=sa.func.now(), **new_partial_project_data)
-                .where(projects.c.uuid == f"{project_uuid}")
-                .returning(*self._SELECTION_PROJECT_DB_ARGS)
-            )
-            row = await result.fetchone()
-            if row is None:
-                raise ProjectNotFoundError(project_uuid=project_uuid)
-            return ProjectDB.model_validate(row)
 
     async def get_project_product(self, project_uuid: ProjectID) -> ProductName:
         async with self.engine.acquire() as conn:

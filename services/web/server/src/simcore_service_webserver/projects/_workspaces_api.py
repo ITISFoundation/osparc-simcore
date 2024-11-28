@@ -9,6 +9,7 @@ from models_library.workspaces import WorkspaceID
 from ..projects._access_rights_api import get_user_project_access_rights
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
+from . import _db_v2 as project_db_v2
 from . import _folders_db as project_to_folders_db
 from . import _groups_db as project_groups_db
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
@@ -51,7 +52,8 @@ async def move_project_into_workspace(
     )
 
     # 4. Update workspace ID on the project resource
-    await project_api.patch_project(
+    await project_db_v2.patch_project(
+        app=app,
         project_uuid=project_id,
         new_partial_project_data={"workspace_id": workspace_id},
     )

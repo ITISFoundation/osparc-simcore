@@ -17,6 +17,7 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import create_project
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -229,6 +230,7 @@ async def test_moving_between_private_and_shared_workspaces(
     workspaces_clean_db: None,
 ):
     assert client.app
+    setup_db(client.app)
 
     moving_folder_id = await _setup_test(client, logged_user, fake_project)
 

@@ -3,6 +3,7 @@
     - Adds a layer to the postgres API with a focus on the projects comments
 
 """
+
 import logging
 from datetime import datetime
 
@@ -11,11 +12,13 @@ from models_library.projects import ProjectID
 from models_library.users import GroupID
 from pydantic import BaseModel, TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy import func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_asyncpg_engine
 from .exceptions import ProjectGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -37,33 +40,38 @@ class ProjectGroupGetDB(BaseModel):
 
 async def create_project_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     project_id: ProjectID,
     group_id: GroupID,
-    *,
     read: bool,
     write: bool,
     delete: bool,
 ) -> ProjectGroupGetDB:
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(
-            project_to_groups.insert()
-            .values(
-                project_uuid=f"{project_id}",
-                gid=group_id,
-                read=read,
-                write=write,
-                delete=delete,
-                created=func.now(),
-                modified=func.now(),
-            )
-            .returning(literal_column("*"))
+    query = (
+        project_to_groups.insert()
+        .values(
+            project_uuid=f"{project_id}",
+            gid=group_id,
+            read=read,
+            write=write,
+            delete=delete,
+            created=func.now(),
+            modified=func.now(),
         )
+        .returning(literal_column("*"))
+    )
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(query)
         row = await result.first()
         return ProjectGroupGetDB.model_validate(row)
 
 
 async def list_project_groups(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     project_id: ProjectID,
 ) -> list[ProjectGroupGetDB]:
     stmt = (
@@ -79,14 +87,16 @@ async def list_project_groups(
         .where(project_to_groups.c.project_uuid == f"{project_id}")
     )
 
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(stmt)
-        rows = await result.fetchall() or []
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(stmt)
+        rows = await result.first() or []
         return TypeAdapter(list[ProjectGroupGetDB]).validate_python(rows)
 
 
 async def get_project_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     project_id: ProjectID,
     group_id: GroupID,
 ) -> ProjectGroupGetDB:
@@ -106,8 +116,8 @@ async def get_project_group(
         )
     )
 
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(stmt)
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(stmt)
         row = await result.first()
         if row is None:
             raise ProjectGroupNotFoundError(
@@ -118,27 +128,31 @@ async def get_project_group(
 
 async def replace_project_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     project_id: ProjectID,
     group_id: GroupID,
-    *,
     read: bool,
     write: bool,
     delete: bool,
 ) -> ProjectGroupGetDB:
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(
-            project_to_groups.update()
-            .values(
-                read=read,
-                write=write,
-                delete=delete,
-            )
-            .where(
-                (project_to_groups.c.project_uuid == f"{project_id}")
-                & (project_to_groups.c.gid == group_id)
-            )
-            .returning(literal_column("*"))
+
+    query = (
+        project_to_groups.update()
+        .values(
+            read=read,
+            write=write,
+            delete=delete,
         )
+        .where(
+            (project_to_groups.c.project_uuid == f"{project_id}")
+            & (project_to_groups.c.gid == group_id)
+        )
+        .returning(literal_column("*"))
+    )
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(query)
         row = await result.first()
         if row is None:
             raise ProjectGroupNotFoundError(
@@ -149,14 +163,15 @@ async def replace_project_group(
 
 async def update_or_insert_project_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     project_id: ProjectID,
     group_id: GroupID,
-    *,
     read: bool,
     write: bool,
     delete: bool,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         insert_stmt = pg_insert(project_to_groups).values(
             project_uuid=f"{project_id}",
             gid=group_id,
@@ -175,16 +190,18 @@ async def update_or_insert_project_group(
                 "modified": func.now(),
             },
         )
-        await conn.execute(on_update_stmt)
+        await conn.stream(on_update_stmt)
 
 
 async def delete_project_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     project_id: ProjectID,
     group_id: GroupID,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
-        await conn.execute(
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        await conn.stream(
             project_to_groups.delete().where(
                 (project_to_groups.c.project_uuid == f"{project_id}")
                 & (project_to_groups.c.gid == group_id)
@@ -194,10 +211,12 @@ async def delete_project_group(
 
 async def delete_all_project_groups(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     project_id: ProjectID,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
-        await conn.execute(
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        await conn.stream(
             project_to_groups.delete().where(
                 project_to_groups.c.project_uuid == f"{project_id}"
             )

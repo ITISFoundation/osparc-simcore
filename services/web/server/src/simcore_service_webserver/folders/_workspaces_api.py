@@ -5,8 +5,8 @@ from models_library.folders import FolderID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
-from simcore_service_webserver.projects.db import ProjectDBAPI
 
+from ..projects import _db_v2 as projects_db
 from ..projects import _folders_db as project_to_folders_db
 from ..projects import _groups_db as project_groups_db
 from ..projects._access_rights_api import check_user_project_permission
@@ -25,8 +25,6 @@ async def move_folder_into_workspace(
     workspace_id: WorkspaceID | None,
     product_name: ProductName,
 ) -> None:
-    projects_db = ProjectDBAPI.get_from_app_context(app)
-
     # 1. User needs to have delete permission on source folder
     folder_db = await _folders_db.get(
         app, folder_id=folder_id, product_name=product_name
@@ -78,6 +76,8 @@ async def move_folder_into_workspace(
     # 4. Update workspace ID on the project resource
     for project_id in project_ids:
         await projects_db.patch_project(
+            app=app,
+            connection=None,
             project_uuid=project_id,
             new_partial_project_data={"workspace_id": workspace_id},
         )
@@ -121,9 +121,12 @@ async def move_folder_into_workspace(
     # 9. Remove all project permissions, leave only the user who moved the project
     user = await get_user(app, user_id=user_id)
     for project_id in project_ids:
-        await project_groups_db.delete_all_project_groups(app, project_id=project_id)
+        await project_groups_db.delete_all_project_groups(
+            app, connection=None, project_id=project_id
+        )
         await project_groups_db.update_or_insert_project_group(
             app,
+            connection=None,
             project_id=project_id,
             group_id=user["primary_gid"],
             read=True,
