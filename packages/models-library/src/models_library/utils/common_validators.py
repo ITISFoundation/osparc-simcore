@@ -22,6 +22,7 @@ from typing import Any
 
 from common_library.json_serialization import json_loads
 from orjson import JSONDecodeError
+from pydantic import BaseModel
 
 
 def empty_str_to_none_pre_validator(value: Any):
@@ -102,8 +103,8 @@ def create__check_only_one_is_set__root_validator(alternative_field_names: list[
     SEE test_uid_or_email_are_set.py for more details
     """
 
-    def _validator(cls, values):
-        assert set(alternative_field_names).issubset(cls.__fields__)  # nosec
+    def _validator(cls: type[BaseModel], values):
+        assert set(alternative_field_names).issubset(cls.model_fields)  # nosec
 
         got = {
             field_name: getattr(values, field_name)
