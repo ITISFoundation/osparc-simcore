@@ -166,6 +166,7 @@ qx.Class.define("osparc.vipStore.VIPStore", {
         models.sort((a, b) => {
           // first criteria
           if (b["leased"] !== a["leased"]) {
+            // leased first
             return b["leased"] - a["leased"];
           }
           // second criteria
