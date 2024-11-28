@@ -46,8 +46,8 @@ qx.Class.define("osparc.vipStore.VIPStore", {
           } else {
             curatedModel[key] = model[key];
           }
-          if (key === "ID" && [22].includes(model[key])) {
-            curatedModel["leased"] = true;
+          if (key === "ID") {
+            curatedModel["leased"] = [22].includes(model[key]);
           }
         });
         anatomicalModels.push(curatedModel);
@@ -169,6 +169,7 @@ qx.Class.define("osparc.vipStore.VIPStore", {
         anatomicalModel["thumbnail"] = model["Thumbnail"];
         anatomicalModel["name"] = model["Features"]["name"] + " " + model["Features"]["version"];
         anatomicalModel["date"] = new Date(model["Features"]["date"]);
+        anatomicalModel["leased"] = model["leased"];
         models.push(anatomicalModel);
       });
 

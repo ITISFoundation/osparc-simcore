@@ -33,7 +33,7 @@ qx.Class.define("osparc.vipStore.AnatomicalModelListItem", {
 
     this.set({
       padding: 5,
-      minHeight: 48,
+      height: 48,
       alignY: "middle",
     });
 
