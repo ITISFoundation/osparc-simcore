@@ -88,6 +88,13 @@ qx.Class.define("osparc.vipStore.VIPStore", {
         },
       });
 
+      const loadingModel = {
+        id: 0,
+        thumbnail: "@FontAwesome5Solid/spinner/32",
+        name: this.tr("Loading"),
+      };
+      this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(loadingModel));
+
       const anatomicModelDetails = new osparc.vipStore.AnatomicalModelDetails().set({
         padding: 20,
       });
