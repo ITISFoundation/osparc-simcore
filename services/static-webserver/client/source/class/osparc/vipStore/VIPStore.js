@@ -56,6 +56,7 @@ qx.Class.define("osparc.vipStore.VIPStore", {
   members: {
     __anatomicalModelsModel: null,
     __anatomicalModels: null,
+    __sortByButton: null,
 
     __buildLayout: async function() {
       const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
@@ -64,7 +65,7 @@ qx.Class.define("osparc.vipStore.VIPStore", {
       });
       this._add(toolbarLayout);
 
-      const sortModelsButtons = new osparc.vipStore.SortModelsButtons().set({
+      const sortModelsButtons = this.__sortByButton = new osparc.vipStore.SortModelsButtons().set({
         alignY: "bottom",
         maxHeight: 27,
       });
@@ -73,7 +74,7 @@ qx.Class.define("osparc.vipStore.VIPStore", {
       const filter = new osparc.filter.TextFilter("text", "vipModels").set({
         alignY: "middle",
         allowGrowY: false,
-        minWidth: 200,
+        minWidth: 170,
       });
       this.addListener("appear", () => filter.getChildControl("textfield").focus());
       toolbarLayout.add(filter);
@@ -137,12 +138,11 @@ qx.Class.define("osparc.vipStore.VIPStore", {
       const resp = await fetch("https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnatomicalModels", {method:"POST"});
       const anatomicalModelsRaw = await resp.json();
       this.__anatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
+
       this.__populateModels();
     },
 
     __populateModels: function() {
-      this.__anatomicalModelsModel.removeAll();
-
       const models = [];
       this.__anatomicalModels.forEach(model => {
         const anatomicalModel = {};
@@ -152,8 +152,32 @@ qx.Class.define("osparc.vipStore.VIPStore", {
         anatomicalModel["date"] = new Date(model["Features"]["date"]);
         models.push(anatomicalModel);
       });
+
+      this.__anatomicalModelsModel.removeAll();
       models.sort((a, b) => a["name"].localeCompare(b["name"]));
       models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
+
+      this.__sortByButton.addListener("sortBy", e => {
+        const sortBy = e.getData();
+        this.__anatomicalModelsModel.removeAll();
+        models.sort((a, b) => {
+          if (sortBy["sort"] === "name") {
+            if (sortBy["orderBy"] === "down") {
+              return a["name"].localeCompare(b["name"]);
+            } else {
+              return b["name"].localeCompare(a["name"]);
+            }
+          } else if (sortBy["sort"] === "date") {
+            if (sortBy["orderBy"] === "down") {
+              return a["date"] - b["date"];
+            } else {
+              return b["date"] - a["date"];
+            }
+          }
+          return a["name"].localeCompare(b["name"]);
+        });
+        models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
+      }, this);
     },
   }
 });
