@@ -5,7 +5,9 @@ from models_library.folders import FolderID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
+from simcore_postgres_database.utils_repos import transaction_context
 
+from ..db.plugin import get_asyncpg_engine
 from ..projects import _db_v2 as projects_db
 from ..projects import _folders_db as project_to_folders_db
 from ..projects import _groups_db as project_groups_db
@@ -73,63 +75,64 @@ async def move_folder_into_workspace(
 
     # ⬆️ Here we have already guaranties that user has all the right permissions to do this operation ⬆️
 
-    # 4. Update workspace ID on the project resource
-    for project_id in project_ids:
-        await projects_db.patch_project(
-            app=app,
-            connection=None,
-            project_uuid=project_id,
-            new_partial_project_data={"workspace_id": workspace_id},
-        )
+    async with transaction_context(get_asyncpg_engine(app)) as conn:
+        # 4. Update workspace ID on the project resource
+        for project_id in project_ids:
+            await projects_db.patch_project(
+                app=app,
+                connection=conn,
+                project_uuid=project_id,
+                new_partial_project_data={"workspace_id": workspace_id},
+            )
 
-    # 5. BATCH update of folders with workspace_id
-    await _folders_db.update(
-        app,
-        connection=None,
-        folders_id_or_ids=set(folder_ids),
-        product_name=product_name,
-        workspace_id=workspace_id,  # <-- Updating workspace_id
-        user_id=user_id if workspace_id is None else None,  # <-- Updating user_id
-    )
-
-    # 6. Update source folder parent folder ID with NULL (it will appear in the root directory)
-    await _folders_db.update(
-        app,
-        connection=None,
-        folders_id_or_ids=folder_id,
-        product_name=product_name,
-        parent_folder_id=None,  # <-- Updating parent folder ID
-    )
-
-    # 7. Remove all records of project to folders that are not in the folders that we are moving
-    # (ex. If we are moving from private workspace, the same project can be in different folders for different users)
-    await project_to_folders_db.delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
-        app,
-        connection=None,
-        project_id_or_ids=set(project_ids),
-        not_in_folder_ids=set(folder_ids),
-    )
-
-    # 8. Update the user id field for the remaining folders
-    await project_to_folders_db.update_project_to_folder(
-        app,
-        connection=None,
-        folders_id_or_ids=set(folder_ids),
-        user_id=user_id if workspace_id is None else None,  # <-- Updating user_id
-    )
-
-    # 9. Remove all project permissions, leave only the user who moved the project
-    user = await get_user(app, user_id=user_id)
-    for project_id in project_ids:
-        await project_groups_db.delete_all_project_groups(
-            app, connection=None, project_id=project_id
-        )
-        await project_groups_db.update_or_insert_project_group(
+        # 5. BATCH update of folders with workspace_id
+        await _folders_db.update(
             app,
-            connection=None,
-            project_id=project_id,
-            group_id=user["primary_gid"],
-            read=True,
-            write=True,
-            delete=True,
+            connection=conn,
+            folders_id_or_ids=set(folder_ids),
+            product_name=product_name,
+            workspace_id=workspace_id,  # <-- Updating workspace_id
+            user_id=user_id if workspace_id is None else None,  # <-- Updating user_id
         )
+
+        # 6. Update source folder parent folder ID with NULL (it will appear in the root directory)
+        await _folders_db.update(
+            app,
+            connection=conn,
+            folders_id_or_ids=folder_id,
+            product_name=product_name,
+            parent_folder_id=None,  # <-- Updating parent folder ID
+        )
+
+        # 7. Remove all records of project to folders that are not in the folders that we are moving
+        # (ex. If we are moving from private workspace, the same project can be in different folders for different users)
+        await project_to_folders_db.delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
+            app,
+            connection=conn,
+            project_id_or_ids=set(project_ids),
+            not_in_folder_ids=set(folder_ids),
+        )
+
+        # 8. Update the user id field for the remaining folders
+        await project_to_folders_db.update_project_to_folder(
+            app,
+            connection=conn,
+            folders_id_or_ids=set(folder_ids),
+            user_id=user_id if workspace_id is None else None,  # <-- Updating user_id
+        )
+
+        # 9. Remove all project permissions, leave only the user who moved the project
+        user = await get_user(app, user_id=user_id)
+        for project_id in project_ids:
+            await project_groups_db.delete_all_project_groups(
+                app, connection=conn, project_id=project_id
+            )
+            await project_groups_db.update_or_insert_project_group(
+                app,
+                connection=conn,
+                project_id=project_id,
+                group_id=user["primary_gid"],
+                read=True,
+                write=True,
+                delete=True,
+            )
