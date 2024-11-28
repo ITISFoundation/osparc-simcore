@@ -40,30 +40,6 @@ def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
     )
 
 
-# @pytest.mark.parametrize(*standard_role_response(), ids=str)
-# async def test_moving_between_workspaces_user_role_permissions(
-#     client: TestClient,
-#     logged_user: UserInfoDict,
-#     user_project: ProjectDict,
-#     expected: ExpectedResponse,
-#     mock_catalog_api_get_services_for_user_in_product: MockerFixture,
-#     fake_project: ProjectDict,
-#     workspaces_clean_db: None,
-# ):
-#     # Move project from workspace to your private workspace
-#     base_url = client.app.router["replace_folder_workspace"].url_for(
-#         folder_id="1", workspace_id="null"
-#     )
-#     resp = await client.put(f"{base_url}")
-#     await assert_status(resp, expected.no_content)
-
-
-## Usecases to test:
-# 1. Private workspace -> Shared workspace
-# 2. Shared workspace -> Shared workspace
-# 3. Shared workspace -> Private workspace
-
-
 async def _setup_test(
     client: TestClient,
     logged_user: UserInfoDict,
