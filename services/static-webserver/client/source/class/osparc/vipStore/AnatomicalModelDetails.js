@@ -27,6 +27,10 @@ qx.Class.define("osparc.vipStore.AnatomicalModelDetails", {
     this.__poplulateLayout();
   },
 
+  events: {
+    "modelLeased": "qx.event.type.Event",
+  },
+
   properties: {
     anatomicalModelsData: {
       check: "Object",
@@ -166,10 +170,17 @@ qx.Class.define("osparc.vipStore.AnatomicalModelDetails", {
       });
 
 
-      const leaseModelButton = new qx.ui.form.Button().set({
+      const leaseModelButton = new osparc.ui.form.FetchButton().set({
         label: this.tr("Lease model (2 for months)"),
         appearance: "strong-button",
         center: true,
+      });
+      leaseModelButton.addListener("execute", () => {
+        leaseModelButton.setFetching(true);
+        setTimeout(() => {
+          leaseModelButton.setFetching(false);
+          this.fireDataEvent("modelLeased", this.getAnatomicalModelsData()["ID"]);
+        }, 2000);
       });
       cardLayout.add(leaseModelButton, {
         column: 0,

@@ -145,6 +145,15 @@ qx.Class.define("osparc.vipStore.VIPStore", {
         .then(anatomicalModelsRaw => {
           this.__anatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
           this.__populateModels();
+
+          anatomicModelDetails.addListener("modelLeased", e => {
+            const modelId = e.getData();
+            const found = this.__anatomicalModels.find(model => model["ID"] === modelId);
+            if (found) {
+              found["leased"] = true;
+            };
+            this.__populateModels();
+          }, this);
         })
         .catch(err => console.error(err));
     },
