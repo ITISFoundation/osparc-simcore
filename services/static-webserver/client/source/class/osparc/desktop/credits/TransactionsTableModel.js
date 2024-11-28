@@ -87,8 +87,8 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
             rawData.forEach(rawRow => {
               data.push({
                 date: osparc.utils.Utils.formatDateAndTime(new Date(rawRow.createdAt)),
-                price: rawRow.priceDollars ? rawRow.priceDollars.toFixed(2) : 0,
-                credits: rawRow.osparcCredits ? rawRow.osparcCredits.toFixed(2) * 1 : 0,
+                price: rawRow.priceDollars ? parseFloat(rawRow.priceDollars).toFixed(2) : 0,
+                credits: rawRow.osparcCredits ? parseFloat(rawRow.osparcCredits).toFixed(2) * 1 : 0,
                 status: this.__addColorTag(rawRow.completedStatus),
                 comment: rawRow.comment,
                 invoice: rawRow.invoiceUrl ? this.__createPdfIconWithLink(rawRow.walletId, rawRow.paymentId) : ""
