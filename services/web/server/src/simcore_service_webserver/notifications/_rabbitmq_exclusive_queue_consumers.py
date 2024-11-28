@@ -65,12 +65,10 @@ async def _convert_to_node_update_event(
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
-    rabbit_message: (
-        ProgressRabbitMessageNode | ProgressRabbitMessageProject
-    ) = TypeAdapter(
-        ProgressRabbitMessageNode | ProgressRabbitMessageProject
-    ).validate_json(
-        data
+    rabbit_message: ProgressRabbitMessageNode | ProgressRabbitMessageProject = (
+        TypeAdapter(
+            ProgressRabbitMessageNode | ProgressRabbitMessageProject
+        ).validate_json(data)
     )
     message: SocketMessageDict | None = None
     if isinstance(rabbit_message, ProgressRabbitMessageProject):
@@ -183,7 +181,7 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
         await logged_gather(
             *(
                 rabbit_client.unsubscribe(queue_name)
-                for queue_name in app[_APP_RABBITMQ_CONSUMERS_KEY].values()
+                for queue_name, _ in app[_APP_RABBITMQ_CONSUMERS_KEY].values()
             ),
         )
 

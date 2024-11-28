@@ -15,7 +15,7 @@ from common_library.json_serialization import (
     json_loads,
 )
 from faker import Faker
-from pydantic import Field, TypeAdapter
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, HttpUrl, TypeAdapter
 from pydantic.json import pydantic_encoder
 
 
@@ -95,3 +95,18 @@ def test_compatiblity_with_json_interface(
 
     # NOTE: cannot compare dumps directly because orjson compacts it more
     assert json_loads(orjson_dump) == json_loads(json_dump)
+
+
+def test_serialized_model_with_urls(faker: Faker):
+    # See: https://github.com/ITISFoundation/osparc-simcore/pull/6852
+    class M(BaseModel):
+        any_http_url: AnyHttpUrl
+        any_url: AnyUrl
+        http_url: HttpUrl
+
+    obj = M(
+        any_http_url=faker.url(),
+        any_url=faker.url(),
+        http_url=faker.url(),
+    )
+    json_dumps(obj)
