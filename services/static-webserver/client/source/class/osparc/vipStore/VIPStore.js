@@ -70,7 +70,7 @@ qx.Class.define("osparc.vipStore.VIPStore", {
       });
       toolbarLayout.add(sortModelsButtons);
 
-      const filter = new osparc.filter.TextFilter("name", "vipModels").set({
+      const filter = new osparc.filter.TextFilter("text", "vipModels").set({
         alignY: "middle",
         allowGrowY: false,
         minWidth: 200,
