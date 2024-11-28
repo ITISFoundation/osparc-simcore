@@ -272,7 +272,13 @@ qx.Class.define("osparc.product.Utils", {
 
     showS4LStore: function() {
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
-      if (this.isS4LProduct() && platformName !== "production") {
+      if (platformName !== "master") {
+        return false;
+      }
+      if (this.getProductName().includes("osparc")) {
+        return true;
+      }
+      if (this.isS4LProduct()) {
         return true;
       }
       return false;
