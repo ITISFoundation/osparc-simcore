@@ -103,19 +103,21 @@ async def delete_project_to_folder(
         )
 
 
+### AsyncPg
+
+
 async def delete_all_project_to_folder_by_project_id(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     project_id: ProjectID,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
-        await conn.execute(
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        await conn.stream(
             projects_to_folders.delete().where(
                 projects_to_folders.c.project_uuid == f"{project_id}"
             )
         )
-
-
-### AsyncPg
 
 
 async def update_project_to_folder(
