@@ -9,7 +9,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.utils_secrets import generate_token_secret_key
 
-from ._db import ApiKeyRepo
+from . import _db as db
 
 _PUNCTUATION_REGEX = re.compile(
     pattern="[" + re.escape(string.punctuation.replace("_", "")) + "]"
@@ -25,8 +25,9 @@ async def list_api_keys(
     user_id: UserID,
     product_name: ProductName,
 ) -> list[str]:
-    repo = ApiKeyRepo.create_from_app(app)
-    names: list[str] = await repo.list_names(user_id=user_id, product_name=product_name)
+    names: list[str] = await db.list_names(
+        app, user_id=user_id, product_name=product_name
+    )
     return names
 
 
@@ -48,8 +49,8 @@ async def create_api_key(
     api_key, api_secret = _generate_api_key_and_secret(new.display_name)
 
     # raises if name exists already!
-    repo = ApiKeyRepo.create_from_app(app)
-    await repo.create(
+    await db.create(
+        app,
         user_id=user_id,
         product_name=product_name,
         display_name=new.display_name,
@@ -68,8 +69,9 @@ async def create_api_key(
 async def get_api_key(
     app: web.Application, *, name: str, user_id: UserID, product_name: ProductName
 ) -> ApiKeyGet | None:
-    repo = ApiKeyRepo.create_from_app(app)
-    row = await repo.get(display_name=name, user_id=user_id, product_name=product_name)
+    row = await db.get(
+        app, display_name=name, user_id=user_id, product_name=product_name
+    )
     return ApiKeyGet.model_validate(row) if row else None
 
 
@@ -84,8 +86,8 @@ async def get_or_create_api_key(
 
     api_key, api_secret = _generate_api_key_and_secret(name)
 
-    repo = ApiKeyRepo.create_from_app(app)
-    row = await repo.get_or_create(
+    row = await db.get_or_create(
+        app,
         user_id=user_id,
         product_name=product_name,
         display_name=name,
@@ -105,13 +107,11 @@ async def delete_api_key(
     user_id: UserID,
     product_name: ProductName,
 ) -> None:
-    repo = ApiKeyRepo.create_from_app(app)
-    await repo.delete_by_name(
-        display_name=name, user_id=user_id, product_name=product_name
+    await db.delete_by_name(
+        app, display_name=name, user_id=user_id, product_name=product_name
     )
 
 
 async def prune_expired_api_keys(app: web.Application) -> list[str]:
-    repo = ApiKeyRepo.create_from_app(app)
-    names: list[str] = await repo.prune_expired()
+    names: list[str] = await db.prune_expired(app)
     return names

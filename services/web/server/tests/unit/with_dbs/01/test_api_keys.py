@@ -9,6 +9,7 @@ from datetime import timedelta
 from http import HTTPStatus
 
 import pytest
+import simcore_service_webserver.api_keys._db as db
 from aiohttp.test_utils import TestClient
 from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -19,7 +20,6 @@ from simcore_service_webserver.api_keys._api import (
     get_or_create_api_key,
     prune_expired_api_keys,
 )
-from simcore_service_webserver.api_keys._db import ApiKeyRepo
 from simcore_service_webserver.db.models import UserRole
 
 
@@ -31,10 +31,10 @@ async def fake_user_api_keys(
 ) -> AsyncIterable[list[str]]:
     assert client.app
     names = ["foo", "bar", "beta", "alpha"]
-    repo = ApiKeyRepo.create_from_app(app=client.app)
 
     for name in names:
-        await repo.create(
+        await db.create(
+            client.app,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
             display_name=name,
@@ -46,7 +46,8 @@ async def fake_user_api_keys(
     yield names
 
     for name in names:
-        await repo.delete_by_name(
+        await db.delete_by_name(
+            client.app,
             display_name=name,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
