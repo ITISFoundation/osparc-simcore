@@ -123,7 +123,6 @@ async def update_project_to_folder(
     connection: AsyncConnection | None = None,
     *,
     folders_id_or_ids: FolderID | set[FolderID],
-    # filter_by_user_id: UserID | None | UnSet = _unset,
     # updatable columns
     user_id: UserID | None | UnSet = _unset,
 ) -> None:
@@ -145,9 +144,6 @@ async def update_project_to_folder(
     else:
         # single-update
         query = query.where(projects_to_folders.c.folder_id == folders_id_or_ids)
-
-    # if not isinstance(filter_by_user_id, UnSet):
-    #     query = query.where(projects_to_folders.c.user_id == filter_by_user_id)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.stream(query)
