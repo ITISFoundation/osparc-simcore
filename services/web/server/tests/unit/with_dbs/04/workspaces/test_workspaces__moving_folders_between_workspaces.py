@@ -223,7 +223,6 @@ async def _move_folder_to_workspace_and_assert(
 async def test_moving_between_private_and_shared_workspaces(
     client: TestClient,
     logged_user: UserInfoDict,
-    # user_project: ProjectDict,
     expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     fake_project: ProjectDict,
