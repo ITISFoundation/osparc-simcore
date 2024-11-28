@@ -16,7 +16,7 @@ from .._constants import MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE
 from ..exceptions.backend_errors import BaseBackEndError
 from ..exceptions.log_streaming_errors import (
     LogStreamerNotRegisteredError,
-    LogStreamerRegistionConflictError,
+    LogStreamerRegistrationConflictError,
 )
 from ..models.schemas.errors import ErrorGet
 from ..models.schemas.jobs import JobID, JobLog
@@ -70,7 +70,7 @@ class LogDistributor:
 
     async def register(self, job_id: JobID, queue: Queue[JobLog]):
         if job_id in self._log_streamers:
-            raise LogStreamerRegistionConflictError(job_id=job_id)
+            raise LogStreamerRegistrationConflictError(job_id=job_id)
         self._log_streamers[job_id] = queue
         await self._rabbit_client.add_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
@@ -126,7 +126,7 @@ class LogStreamer:
                 except TimeoutError:
                     done = await self._project_done()
 
-        except (BaseBackEndError, LogStreamerRegistionConflictError) as exc:
+        except (BaseBackEndError, LogStreamerRegistrationConflictError) as exc:
             error_msg = f"{exc}"
 
             _logger.info("%s: %s", exc.code, error_msg)
