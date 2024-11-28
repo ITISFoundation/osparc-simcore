@@ -169,7 +169,18 @@ qx.Class.define("osparc.vipStore.AnatomicalModelDetails", {
         row: 2,
       });
 
-
+      const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      if (anatomicalModelsData["leased"]) {
+        const leaseModelButton = new qx.ui.form.Button().set({
+          label: this.tr("3 seats Leased (27 days left)"),
+          appearance: "strong-button",
+          center: true,
+          enabled: false,
+        });
+        buttonsLayout.add(leaseModelButton, {
+          flex: 1
+        });
+      }
       const leaseModelButton = new osparc.ui.form.FetchButton().set({
         label: this.tr("Lease model (2 for months)"),
         appearance: "strong-button",
@@ -182,7 +193,10 @@ qx.Class.define("osparc.vipStore.AnatomicalModelDetails", {
           this.fireDataEvent("modelLeased", this.getAnatomicalModelsData()["ID"]);
         }, 2000);
       });
-      cardLayout.add(leaseModelButton, {
+      buttonsLayout.add(leaseModelButton, {
+        flex: 1
+      });
+      cardLayout.add(buttonsLayout, {
         column: 0,
         row: 3,
         colSpan: 2,
