@@ -72,7 +72,7 @@ def create_exception_handler_from_http_info(
 
     async def _exception_handler(
         request: web.Request,
-        exception: BaseException,  # TODO: for different type of exceptions e.g HTTPError
+        exception: BaseException,
     ) -> web.Response:
 
         # safe formatting, i.e. does not raise
