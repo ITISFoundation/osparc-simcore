@@ -107,7 +107,10 @@ def create_exception_handler_from_http_info(
 def to_exceptions_handlers_map(
     exc_to_http_error_map: ExceptionToHttpErrorMap,
 ) -> ExceptionHandlersMap:
-    """Converts { exc_type: (status, msg), ... }  -> { exc_type: callable, ... }"""
+    """Data adapter to convert ExceptionToHttpErrorMap ot ExceptionHandlersMap, i.e.
+    - from  { exc_type: (status, msg), ... }
+    - to   { exc_type: callable, ... }
+    """
     exc_handlers_map: ExceptionHandlersMap = {
         exc_type: create_exception_handler_from_http_info(
             status_code=info.status_code, msg_template=info.msg_template
@@ -118,9 +121,9 @@ def to_exceptions_handlers_map(
     return exc_handlers_map
 
 
-def create_http_error_exception_handlers_map():
+def create_http_error_exception_handlers_map() -> ExceptionHandlersMap:
     """
-    Creates handles for all web.HTTPError
+    Auto create handlers for **all** web.HTTPError
     """
     exc_handlers_map: ExceptionHandlersMap = {
         exc_type: create_exception_handler_from_http_info(
