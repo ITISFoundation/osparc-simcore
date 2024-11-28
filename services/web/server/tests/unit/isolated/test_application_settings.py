@@ -106,7 +106,7 @@ def test_settings_to_client_statics_plugins(
 @pytest.mark.parametrize("is_dev_feature_enabled", [True, False])
 @pytest.mark.parametrize(
     "plugin_name",
-    ["WEBSERVER_META_MODELING", "WEBSERVER_VERSION_CONTROL", "WEBSERVER_CLUSTERS"]
+    ["WEBSERVER_META_MODELING", "WEBSERVER_VERSION_CONTROL"]
     # NOTE: this is the list in _enable_only_if_dev_features_allowed
 )
 def test_disabled_plugins_settings_to_client_statics(
