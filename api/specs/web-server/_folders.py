@@ -9,7 +9,7 @@
 
 from typing import Annotated
 
-from _common import EnvelopeE, as_query
+from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.folders_v2 import (
     FolderCreateBodyParams,
