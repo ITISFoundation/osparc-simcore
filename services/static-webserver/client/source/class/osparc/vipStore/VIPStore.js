@@ -163,6 +163,10 @@ qx.Class.define("osparc.vipStore.VIPStore", {
 
       this.__anatomicalModelsModel.removeAll();
       models.sort((a, b) => {
+        if (b["leased"] !== a["leased"]) {
+          return b["leased"] - a["leased"];
+        }
+        // second criteria
         return a["name"].localeCompare(b["name"]);
       });
       models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
