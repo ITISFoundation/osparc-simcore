@@ -24,8 +24,8 @@ qx.Class.define("osparc.vipStore.VIPStore", {
 
     this.set({
       layout: new qx.ui.layout.HBox(10),
-      maxWidth: this.self().MAX_WIDTH,
-      maxHeight: this.self().MAX_HEIGHT,
+      minWidth: this.self().MAX_WIDTH,
+      minHeight: this.self().MAX_HEIGHT,
       contentPadding: this.self().PADDING,
       resizable: true,
       showMaximize: false,
@@ -61,13 +61,18 @@ qx.Class.define("osparc.vipStore.VIPStore", {
       const anatomicalModelsModel = this.__anatomicalModelsModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(anatomicalModelsModel, modelsUIList, "name");
       membersCtrl.setDelegate({
-        createItem: () => new osparc.vipStore.AnatomicModelListItem(),
+        createItem: () => new osparc.vipStore.AnatomicalModelListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "modelId", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "name", null, item, id);
           ctrl.bindProperty("date", "date", null, item, id);
         },
+      });
+
+      const anatomicModelDetails = new osparc.vipStore.AnatomicalModelDetails();
+      this._add(anatomicModelDetails, {
+        flex: 1
       });
 
       // fetch data
