@@ -59,9 +59,24 @@ qx.Class.define("osparc.vipStore.VIPStore", {
 
     __buildLayout: async function() {
       const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        maxHeight: 30
+        alignY: "middle",
+        // maxHeight: 30
       });
       this._add(toolbarLayout);
+
+      const sortModelsButtons = new osparc.vipStore.SortModelsButtons().set({
+        alignY: "bottom",
+        maxHeight: 27,
+      });
+      toolbarLayout.add(sortModelsButtons);
+
+      const filter = new osparc.filter.TextFilter("name", "vipModels").set({
+        alignY: "middle",
+        allowGrowY: false,
+        minWidth: 200,
+      });
+      this.addListener("appear", () => filter.getChildControl("textfield").focus());
+      toolbarLayout.add(filter);
 
       const modelsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       this._add(modelsLayout, {
@@ -85,6 +100,9 @@ qx.Class.define("osparc.vipStore.VIPStore", {
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "name", null, item, id);
           ctrl.bindProperty("date", "date", null, item, id);
+        },
+        configureItem: item => {
+          item.subscribeToFilterGroup("vipModels");
         },
       });
 
