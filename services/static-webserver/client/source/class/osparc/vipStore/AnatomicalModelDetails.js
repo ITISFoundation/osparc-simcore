@@ -65,32 +65,21 @@ qx.Class.define("osparc.vipStore.AnatomicalModelDetails", {
 
       const features = anatomicalModelsData["Features"];
 
-      const titleLabel = new qx.ui.basic.Label().set({
-        value: anatomicalModelsData["Description"],
-        font: "text-16",
-        alignX: "center",
-        alignY: "middle",
-        allowGrowX: true,
-        allowGrowY: true,
-      });
-      cardLayout.add(titleLabel, {
-        column: 0,
-        row: 0,
-        colSpan: 2,
-      });
-
-      const nameLabel = new qx.ui.basic.Label().set({
-        value: features["name"],
-        font: "text-16",
-        alignX: "center",
-        alignY: "middle",
-        allowGrowX: true,
-        allowGrowY: true,
-      });
-      cardLayout.add(nameLabel, {
-        column: 0,
-        row: 1,
-        colSpan: 2,
+      const description = anatomicalModelsData["Description"];
+      description.split(" - ").forEach((desc, idx) => {
+        const titleLabel = new qx.ui.basic.Label().set({
+          value: desc,
+          font: "text-16",
+          alignX: "center",
+          alignY: "middle",
+          allowGrowX: true,
+          allowGrowY: true,
+        });
+        cardLayout.add(titleLabel, {
+          column: 0,
+          row: idx,
+          colSpan: 2,
+        });
       });
 
       const thumbnail = new qx.ui.basic.Image().set({
@@ -110,14 +99,13 @@ qx.Class.define("osparc.vipStore.AnatomicalModelDetails", {
       });
 
       const moreInfoGrid = new qx.ui.layout.Grid(8, 8);
-      const moreInfoLayout = new qx.ui.container.Composite(moreInfoGrid).set({
-        marginTop: 16,
-      });
+      const moreInfoLayout = new qx.ui.container.Composite(moreInfoGrid);
       let idx = 0;
       [
         "Name",
         "Version",
         "Sex",
+        "Age",
         "Weight",
         "Height",
         "Date",

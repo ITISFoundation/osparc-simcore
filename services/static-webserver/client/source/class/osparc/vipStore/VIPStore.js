@@ -24,6 +24,7 @@ qx.Class.define("osparc.vipStore.VIPStore", {
 
     this.set({
       layout: new qx.ui.layout.VBox(10),
+      width: this.self().MAX_WIDTH,
       minWidth: this.self().MAX_WIDTH,
       minHeight: this.self().MAX_HEIGHT,
       contentPadding: this.self().PADDING,
@@ -34,8 +35,6 @@ qx.Class.define("osparc.vipStore.VIPStore", {
       clickAwayClose: true,
       modal: true
     });
-    const closeBtn = this.getChildControl("close-button");
-    osparc.utils.Utils.setIdToWidget(closeBtn, "vipStoreWindowCloseBtn");
 
     this.__buildLayout();
   },
@@ -76,8 +75,6 @@ qx.Class.define("osparc.vipStore.VIPStore", {
     __anatomicalModels: null,
 
     __buildLayout: async function() {
-      this._removeAll();
-
       const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         maxHeight: 30
       });
@@ -136,17 +133,19 @@ qx.Class.define("osparc.vipStore.VIPStore", {
     },
 
     __populateModels: function() {
-      const anatomicalModelsModel = this.__anatomicalModelsModel;
-      anatomicalModelsModel.removeAll();
-        
+      this.__anatomicalModelsModel.removeAll();
+
+      const models = [];
       this.__anatomicalModels.forEach(model => {
         const anatomicalModel = {};
         anatomicalModel["id"] = model["ID"];
         anatomicalModel["thumbnail"] = model["Thumbnail"];
-        anatomicalModel["name"] = model["Features"]["name"];
+        anatomicalModel["name"] = model["Features"]["name"] + " " + model["Features"]["version"];
         anatomicalModel["date"] = new Date(model["Features"]["date"]);
-        anatomicalModelsModel.append(qx.data.marshal.Json.createModel(anatomicalModel));
+        models.push(anatomicalModel);
       });
+      models.sort((a, b) => a["name"].localeCompare(b["name"]));
+      models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
     },
   }
 });
