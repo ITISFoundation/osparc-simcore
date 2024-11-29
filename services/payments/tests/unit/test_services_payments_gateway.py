@@ -8,6 +8,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
+from httpx import ASGITransport
 from models_library.payments import UserInvoiceAddress
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from respx import MockRouter
@@ -218,7 +219,7 @@ async def test_payments_gateway_error_exception():
     async def _go():
         with _raise_as_payments_gateway_error(operation_id="foo"):
             async with httpx.AsyncClient(
-                app=FastAPI(),
+                transport=ASGITransport(app=FastAPI()),
                 base_url="http://payments.testserver.io",
             ) as client:
                 response = await client.post("/foo", params={"x": "3"}, json={"y": 12})
