@@ -29,7 +29,7 @@ qx.Class.define("osparc.data.model.Wallet", {
       thumbnail: walletData["thumbnail"] ? walletData["thumbnail"] : null,
       owner: walletData["owner"] ? walletData["owner"] : null,
       status: walletData["status"] ? walletData["status"] : "INACTIVE",
-      creditsAvailable: walletData["availableCredits"] ? walletData["availableCredits"] : 0,
+      creditsAvailable: walletData["availableCredits"] ? parseFloat(walletData["availableCredits"]) : 0,
       accessRights: walletData["accessRights"] ? walletData["accessRights"] : [],
       autoRecharge: walletData["autoRecharge"] ? walletData["autoRecharge"] : null,
       preferredWallet: osparc.Preferences.getInstance().getPreferredWalletId() === walletData["walletId"]

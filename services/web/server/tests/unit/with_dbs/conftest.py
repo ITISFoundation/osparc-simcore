@@ -15,11 +15,11 @@ import asyncio
 import random
 import sys
 import textwrap
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, AsyncIterable, Final
+from typing import Any, Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -853,7 +853,7 @@ async def all_product_prices(
 
     result = {}
     for product_name in all_products_names:
-        usd_or_none = product_price.get(product_name, None)
+        usd_or_none = product_price.get(product_name)
         if usd_or_none is not None:
             await _pre_connection.execute(
                 products_prices.insert().values(

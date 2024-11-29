@@ -32,7 +32,6 @@ def create_service_out2(**overrides):
     # https://github.com/ITISFoundation/osparc-simcore/blob/master/services/catalog/src/simcore_service_catalog/models/schemas/services.py
     #
     # docker exec -it $(docker ps --filter="ancestor=local/catalog:development" -q)
-    # python -c "from simcore_service_catalog.models.schemas.services import ServiceOut;print(ServiceOut.schema_json(indent=2))" > services/catalog/ignore-schema.json
     # put file in https://json-schema-faker.js.org/ and get fake output
     #
 
