@@ -13,8 +13,7 @@ from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
-from pydantic import BaseModel, Field, schema_of
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.port_validation import (
     PortUnitError,
@@ -132,9 +131,14 @@ async def test_port_with_array_of_object(mocker):
         i: Annotated[int, Field(gt=3)]
         b: bool = False
         s: str
-        l: list[int]
+        t: list[int]
 
-    content_schema = _resolve_refs(schema_of(list[A], title="array[A]"))
+    content_schema = _resolve_refs(
+        {
+            **TypeAdapter(list[A]).json_schema(),
+            "title": "array[A]",
+        }
+    )
 
     port_meta = {
         "label": "array_",
@@ -142,7 +146,7 @@ async def test_port_with_array_of_object(mocker):
         "type": "ref_contentSchema",
         "contentSchema": content_schema,
     }
-    sample = [{"i": 5, "s": "x", "l": [1, 2]}, {"i": 6, "s": "y", "l": [2]}]
+    sample = [{"i": 5, "s": "x", "t": [1, 2]}, {"i": 6, "s": "y", "t": [2]}]
     expected_value = [A(**i).model_dump() for i in sample]
 
     print(json.dumps(port_meta, indent=1))
