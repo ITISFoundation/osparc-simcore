@@ -8,6 +8,7 @@ from copy import deepcopy
 from pprint import pformat
 from typing import Any, Final, NamedTuple
 
+import pydantic_core
 import pytest
 from models_library.basic_types import PortInt
 from models_library.osparc_variable_identifier import (
@@ -32,7 +33,6 @@ from models_library.service_settings_nat_rule import (
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TextTemplate
 from pydantic import BaseModel, TypeAdapter, ValidationError
-from pydantic.json import pydantic_encoder
 
 
 class _Parametrization(NamedTuple):
@@ -560,7 +560,7 @@ def test_can_parse_labels_with_osparc_identifiers(
 
 def servicelib__json_serialization__json_dumps(obj: Any, **kwargs):
     # Analogous to 'models_library.utils.json_serialization.json_dumps'
-    return json.dumps(obj, default=pydantic_encoder, **kwargs)
+    return json.dumps(obj, default=pydantic_core.to_jsonable_python, **kwargs)
 
 
 def test_resolving_some_service_labels_at_load_time(
