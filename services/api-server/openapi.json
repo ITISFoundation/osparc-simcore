@@ -5332,7 +5332,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetCreditPrice"
+                  "$ref": "#/components/schemas/GetCreditPriceApiServer"
                 }
               }
             }
@@ -5563,7 +5563,7 @@
         ],
         "title": "FileUploadData"
       },
-      "GetCreditPrice": {
+      "GetCreditPriceApiServer": {
         "properties": {
           "productName": {
             "type": "string",
@@ -5602,7 +5602,7 @@
           "usdPerCredit",
           "minPaymentAmountUsd"
         ],
-        "title": "GetCreditPrice"
+        "title": "GetCreditPriceApiServer"
       },
       "Groups": {
         "properties": {
@@ -6184,18 +6184,11 @@
             "title": "Version"
           },
           "released": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "string",
-                  "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+            },
+            "type": "object",
             "title": "Released",
             "description": "Maps every route's path tag with a released version"
           },
@@ -6891,7 +6884,7 @@
             "type": "integer",
             "x_unit": "second"
           },
-          "key": "input_2",
+          "key": "f763658f-a89a-4a90-ace4-c44631290f12",
           "kind": "input"
         }
       },
@@ -7099,7 +7092,9 @@
         "required": [
           "walletId",
           "name",
+          "description",
           "owner",
+          "thumbnail",
           "status",
           "created",
           "modified",
