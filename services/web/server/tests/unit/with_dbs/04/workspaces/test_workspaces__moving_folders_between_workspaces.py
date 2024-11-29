@@ -165,7 +165,7 @@ async def _move_folder_to_workspace_and_assert(
     assert client.app
 
     # MOVE
-    url = client.app.router["replace_folder_workspace"].url_for(
+    url = client.app.router["move_folder_to_workspace"].url_for(
         folder_id=folder_id,
         workspace_id=workspace_id,
     )

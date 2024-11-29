@@ -17,14 +17,14 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.put(
-    f"/{VTAG}/folders/{{folder_id}}/workspaces/{{workspace_id}}",
-    name="replace_folder_workspace",
+@routes.post(
+    f"/{VTAG}/folders/{{folder_id}}/workspaces/{{workspace_id}}:move",
+    name="move_folder_to_workspace",
 )
 @login_required
 @permission_required("folder.update")
 @handle_plugin_requests_exceptions
-async def replace_project_workspace(request: web.Request):
+async def move_folder_to_workspace(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_FolderWorkspacesPathParams, request)
 

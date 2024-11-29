@@ -102,13 +102,13 @@ async def delete_folder(
     ...
 
 
-@router.put(
-    "/folders/{folder_id}/workspaces/{workspace_id}",
+@router.post(
+    "/folders/{folder_id}/workspaces/{workspace_id}:move",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Move folder to the workspace",
     tags=["workspaces"],
 )
-async def replace_folder_workspace(
+async def move_folder_to_workspace(
     _path: Annotated[_FolderWorkspacesPathParams, Depends()],
 ):
     ...

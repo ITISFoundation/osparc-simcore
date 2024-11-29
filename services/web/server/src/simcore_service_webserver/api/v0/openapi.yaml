@@ -2944,13 +2944,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
-  /v0/folders/{folder_id}/workspaces/{workspace_id}:
-    put:
+  /v0/folders/{folder_id}/workspaces/{workspace_id}:move:
+    post:
       tags:
       - folders
       - workspaces
       summary: Move folder to the workspace
-      operationId: replace_folder_workspace
+      operationId: move_folder_to_workspace
       parameters:
       - name: folder_id
         in: path
@@ -4759,13 +4759,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
-  /v0/projects/{project_id}/workspaces/{workspace_id}:
-    put:
+  /v0/projects/{project_id}/workspaces/{workspace_id}:move:
+    post:
       tags:
       - projects
       - workspaces
       summary: Move project to the workspace
-      operationId: replace_project_workspace
+      operationId: move_project_to_workspace
       parameters:
       - name: project_id
         in: path

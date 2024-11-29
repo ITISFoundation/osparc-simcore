@@ -55,7 +55,7 @@ async def test_moving_between_workspaces_user_role_permissions(
     workspaces_clean_db: None,
 ):
     # Move project from workspace to your private workspace
-    base_url = client.app.router["replace_project_workspace"].url_for(
+    base_url = client.app.router["move_project_to_workspace"].url_for(
         project_id=fake_project["uuid"], workspace_id="null"
     )
     resp = await client.put(f"{base_url}")
@@ -103,7 +103,7 @@ async def test_moving_between_private_and_shared_workspaces(
     assert data["workspaceId"] == added_workspace["workspaceId"]  # <-- Workspace ID
 
     # Move project from workspace to your private workspace
-    base_url = client.app.router["replace_project_workspace"].url_for(
+    base_url = client.app.router["move_project_to_workspace"].url_for(
         project_id=project["uuid"], workspace_id="null"
     )
     resp = await client.put(f"{base_url}")
@@ -116,7 +116,7 @@ async def test_moving_between_private_and_shared_workspaces(
     assert data["workspaceId"] is None  # <-- Workspace ID is None
 
     # Move project from your private workspace to shared workspace
-    base_url = client.app.router["replace_project_workspace"].url_for(
+    base_url = client.app.router["move_project_to_workspace"].url_for(
         project_id=project["uuid"], workspace_id=f"{added_workspace['workspaceId']}"
     )
     resp = await client.put(f"{base_url}")
@@ -182,7 +182,7 @@ async def test_moving_between_shared_and_shared_workspaces(
     assert data["workspaceId"] == added_workspace["workspaceId"]  # <-- Workspace ID
 
     # Move project from workspace to your private workspace
-    base_url = client.app.router["replace_project_workspace"].url_for(
+    base_url = client.app.router["move_project_to_workspace"].url_for(
         project_id=project["uuid"], workspace_id=f"{second_workspace['workspaceId']}"
     )
     resp = await client.put(f"{base_url}")
@@ -262,7 +262,7 @@ async def test_moving_between_workspaces_check_removed_from_folder(
     assert data["workspaceId"] == added_workspace["workspaceId"]  # <-- Workspace ID
 
     # Move project from workspace to your private workspace
-    base_url = client.app.router["replace_project_workspace"].url_for(
+    base_url = client.app.router["move_project_to_workspace"].url_for(
         project_id=project["uuid"], workspace_id="none"
     )
     resp = await client.put(f"{base_url}")
