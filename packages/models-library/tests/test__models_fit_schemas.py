@@ -5,7 +5,6 @@
 from collections.abc import Callable
 
 import pytest
-from common_library.json_serialization import json_loads
 from models_library.projects import Project
 from models_library.services import ServiceMetaDataPublished
 from pydantic.main import BaseModel
@@ -28,7 +27,7 @@ def test_generated_schema_same_as_original(
     # TODO: create instead a fixture that returns a Callable and do these checks
     # on separate test_* files that follow the same package submodule's hierarchy
     #
-    generated_schema = json_loads(pydantic_model.model_json_schema(), indent=2)
+    generated_schema = pydantic_model.model_json_schema()
     original_schema = json_schema_dict(original_json_schema)
 
     # NOTE: A change is considered an addition when the destination schema has become more permissive relative to the source schema. For example {"type": "string"} -> {"type": ["string", "number"]}.
