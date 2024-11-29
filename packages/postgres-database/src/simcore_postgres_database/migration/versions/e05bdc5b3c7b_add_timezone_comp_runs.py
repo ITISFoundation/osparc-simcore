@@ -25,7 +25,7 @@ def upgrade():
         existing_type=postgresql.TIMESTAMP(),
         type_=sa.DateTime(timezone=True),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default="now()",
     )
     op.alter_column(
         "comp_runs",
@@ -33,7 +33,7 @@ def upgrade():
         existing_type=postgresql.TIMESTAMP(),
         type_=sa.DateTime(timezone=True),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default="now()",
     )
     op.alter_column(
         "comp_runs",
@@ -74,7 +74,7 @@ def downgrade():
         existing_type=sa.DateTime(timezone=True),
         type_=postgresql.TIMESTAMP(),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default="now()",
     )
     op.alter_column(
         "comp_runs",
@@ -82,6 +82,6 @@ def downgrade():
         existing_type=sa.DateTime(timezone=True),
         type_=postgresql.TIMESTAMP(),
         existing_nullable=False,
-        existing_server_default=sa.text("now()"),
+        existing_server_default="now()",
     )
     # ### end Alembic commands ###
