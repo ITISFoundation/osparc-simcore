@@ -169,7 +169,7 @@ async def _move_folder_to_workspace_and_assert(
         folder_id=folder_id,
         workspace_id=workspace_id,
     )
-    resp = await client.put(f"{url}")
+    resp = await client.post(f"{url}")
     await assert_status(resp, NO_CONTENT)
 
     # ASSERT

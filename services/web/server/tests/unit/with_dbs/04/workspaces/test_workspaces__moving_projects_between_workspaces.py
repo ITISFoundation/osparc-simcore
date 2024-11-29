@@ -58,7 +58,7 @@ async def test_moving_between_workspaces_user_role_permissions(
     base_url = client.app.router["move_project_to_workspace"].url_for(
         project_id=fake_project["uuid"], workspace_id="null"
     )
-    resp = await client.put(f"{base_url}")
+    resp = await client.post(f"{base_url}")
     await assert_status(resp, expected.no_content)
 
 
@@ -106,7 +106,7 @@ async def test_moving_between_private_and_shared_workspaces(
     base_url = client.app.router["move_project_to_workspace"].url_for(
         project_id=project["uuid"], workspace_id="null"
     )
-    resp = await client.put(f"{base_url}")
+    resp = await client.post(f"{base_url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Get project in workspace
@@ -119,7 +119,7 @@ async def test_moving_between_private_and_shared_workspaces(
     base_url = client.app.router["move_project_to_workspace"].url_for(
         project_id=project["uuid"], workspace_id=f"{added_workspace['workspaceId']}"
     )
-    resp = await client.put(f"{base_url}")
+    resp = await client.post(f"{base_url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Get project in workspace
@@ -185,7 +185,7 @@ async def test_moving_between_shared_and_shared_workspaces(
     base_url = client.app.router["move_project_to_workspace"].url_for(
         project_id=project["uuid"], workspace_id=f"{second_workspace['workspaceId']}"
     )
-    resp = await client.put(f"{base_url}")
+    resp = await client.post(f"{base_url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Get project in workspace
@@ -265,7 +265,7 @@ async def test_moving_between_workspaces_check_removed_from_folder(
     base_url = client.app.router["move_project_to_workspace"].url_for(
         project_id=project["uuid"], workspace_id="none"
     )
-    resp = await client.put(f"{base_url}")
+    resp = await client.post(f"{base_url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Get project in workspace
