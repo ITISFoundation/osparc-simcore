@@ -10,7 +10,7 @@ from datetime import datetime
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import GroupID
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy import func, literal_column
@@ -33,6 +33,8 @@ class ProjectGroupGetDB(BaseModel):
     delete: bool
     created: datetime
     modified: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 ## DB API
@@ -89,7 +91,7 @@ async def list_project_groups(
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(stmt)
-        rows = await result.first() or []
+        rows = await result.all() or []
         return TypeAdapter(list[ProjectGroupGetDB]).validate_python(rows)
 
 
