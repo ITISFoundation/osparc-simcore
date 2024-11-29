@@ -2864,3 +2864,27 @@ jobs:
         env:
           TAG_PREFIX: hotfix-staging-github
         run: ./ci/deploy/dockerhub-deploy.bash -n
+
+  api-server-api-spec-backwards-compatible:
+    timeout-minutes: 5
+    name: "api-server-backwards-compatibility"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.4.x"
+          enable-cache: false
+          cache-dependency-glob: "**/service-library/requirements/ci*.txt"
+      - name: setup python .venv
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          cd services/api-server
+          make install-dev
+          make openapi-diff.md OPENAPI_JSON_BASE_URL=https://raw.githubusercontent.com/{{ github.repository }}/refs/heads/{{ github.event.pull_request.base.ref }}/services/api-server/openapi.json
