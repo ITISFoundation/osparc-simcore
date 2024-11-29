@@ -3,7 +3,7 @@ import logging
 from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
-from typing import Final, ParamSpec, TypeVar
+from typing import Any, Final, ParamSpec, TypeVar
 
 from pydantic import BaseModel, Field, NonNegativeFloat, PrivateAttr
 
@@ -73,28 +73,31 @@ class DelayedExceptionHandler(BaseModel):
 P = ParamSpec("P")
 R = TypeVar("R")
 
+F = TypeVar("F", bound=Callable[..., Any])
 
-def silence_exceptions(
-    exceptions: tuple[type[BaseException], ...]
-) -> Callable[[Callable[P, R]], Callable[P, R]]:
-    def decorator(func: Callable[..., R]) -> Callable[..., R]:
-        @wraps(func)
-        def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
+
+def silence_exceptions(exceptions: tuple[type[BaseException], ...]) -> Callable[[F], F]:
+    def _decorator(func_or_coro: F) -> F:
+
+        if inspect.iscoroutinefunction(func_or_coro):
+
+            @wraps(func_or_coro)
+            async def _async_wrapper(*args, **kwargs) -> Any:
+                try:
+                    assert inspect.iscoroutinefunction(func_or_coro)  # nosec
+                    return await func_or_coro(*args, **kwargs)
+                except exceptions:
+                    return None
+
+            return _async_wrapper  # type: ignore[return-value] # decorators typing is hard
+
+        @wraps(func_or_coro)
+        def _sync_wrapper(*args, **kwargs) -> Any:
             try:
-                return func(*args, **kwargs)
+                return func_or_coro(*args, **kwargs)
             except exceptions:
                 return None
 
-        @wraps(func)
-        async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
-            try:
-                assert inspect.iscoroutinefunction(func)  # nosec
-                return await func(*args, **kwargs)
-            except exceptions:
-                return None
+        return _sync_wrapper  # type: ignore[return-value] # decorators typing is hard
 
-        if inspect.iscoroutinefunction(func):
-            return async_wrapper  # type: ignore
-        return sync_wrapper  # type: ignore
-
-    return decorator
+    return _decorator
