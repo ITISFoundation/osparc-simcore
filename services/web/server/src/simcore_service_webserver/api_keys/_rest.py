@@ -4,9 +4,13 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.api_schemas_webserver.auth import ApiKeyCreate
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import parse_request_body_as
+from servicelib.aiohttp.requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+)
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import DatabaseError
+from simcore_service_webserver.api_keys._models import ApiKeysPathParams
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -56,26 +60,25 @@ async def create_api_key(request: web.Request):
     return envelope_json_response(data)
 
 
-@routes.delete(f"/{API_VTAG}/auth/api-keys", name="delete_api_key")
+@routes.delete(f"/{API_VTAG}/auth/api-keys/{{api_key_id}}", name="delete_api_key")
 @login_required
 @permission_required("user.apikey.*")
 async def delete_api_key(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
-
-    # NOTE: SEE https://github.com/ITISFoundation/osparc-simcore/issues/4920
-    body = await request.json()
-    name = body.get("display_name")
+    path_params = parse_request_path_parameters_as(ApiKeysPathParams, request)
 
     try:
         await _api.delete_api_key(
             request.app,
-            name=name,
+            api_key_id=path_params.api_key_id,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
         )
     except DatabaseError as err:
         _logger.warning(
-            "Failed to delete API key %s. Ignoring error", name, exc_info=err
+            "Failed to delete API key with ID: %s. Ignoring error",
+            path_params.api_key_id,
+            exc_info=err,
         )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

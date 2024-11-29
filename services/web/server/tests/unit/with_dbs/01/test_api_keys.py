@@ -11,6 +11,7 @@ from http import HTTPStatus
 import pytest
 import simcore_service_webserver.api_keys._db as db
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
@@ -28,27 +29,28 @@ async def fake_user_api_keys(
     client: TestClient,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
+    faker: Faker,
 ) -> AsyncIterable[list[str]]:
     assert client.app
-    names = ["foo", "bar", "beta", "alpha"]
+    api_key_ids = []
 
-    for name in names:
-        await db.create(
+    for _ in range(5):
+        api_key_ids += await db.create(
             client.app,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
-            display_name=name,
+            display_name=faker.pystr(),
             expiration=None,
-            api_key=f"{name}-key",
-            api_secret=f"{name}-secret",
+            api_key=faker.pystr(),
+            api_secret=faker.pystr(),
         )
 
-    yield names
+    yield api_key_ids
 
-    for name in names:
-        await db.delete_by_name(
+    for api_key_id in api_key_ids:
+        await db.delete(
             client.app,
-            display_name=name,
+            api_key_id=api_key_id,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
@@ -122,11 +124,11 @@ async def test_delete_api_keys(
     expected: HTTPStatus,
     disable_gc_manual_guest_users: None,
 ):
-    resp = await client.delete("/v0/auth/api-keys", json={"display_name": "foo"})
+    resp = await client.delete("/v0/auth/api-keys/0")
     await assert_status(resp, expected)
 
-    for name in fake_user_api_keys:
-        resp = await client.delete("/v0/auth/api-keys", json={"display_name": name})
+    for api_key_id in fake_user_api_keys:
+        resp = await client.delete(f"/v0/auth/api-keys/{api_key_id}")
         await assert_status(resp, expected)
 
 

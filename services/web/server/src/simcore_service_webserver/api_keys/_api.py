@@ -103,12 +103,12 @@ async def get_or_create_api_key(
 async def delete_api_key(
     app: web.Application,
     *,
-    name: str,
+    api_key_id: int,
     user_id: UserID,
     product_name: ProductName,
 ) -> None:
-    await db.delete_by_name(
-        app, display_name=name, user_id=user_id, product_name=product_name
+    await db.delete(
+        app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
     )
 
 

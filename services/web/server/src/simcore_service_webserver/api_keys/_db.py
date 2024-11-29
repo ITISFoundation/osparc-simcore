@@ -123,6 +123,23 @@ async def get_or_create(
         return ApiKeyInDB.model_validate(row)
 
 
+async def delete(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    api_key_id: int,
+    user_id: UserID,
+    product_name: ProductName,
+) -> None:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        stmt = api_keys.delete().where(
+            (api_keys.c.user_id == user_id)
+            & (api_keys.c.id == api_key_id)
+            & (api_keys.c.product_name == product_name)
+        )
+        await conn.execute(stmt)
+
+
 async def delete_by_name(
     app: web.Application,
     connection: AsyncConnection | None = None,
