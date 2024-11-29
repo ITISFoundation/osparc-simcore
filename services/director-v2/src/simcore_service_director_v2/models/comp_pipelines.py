@@ -4,13 +4,7 @@ from typing import cast
 import networkx as nx
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    SerializationInfo,
-    field_serializer,
-    field_validator,
-)
+from pydantic import BaseModel, ConfigDict, field_validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ..utils.db import DB_TO_RUNNING_STATE
@@ -20,13 +14,6 @@ class CompPipelineAtDB(BaseModel):
     project_id: ProjectID
     dag_adjacency_list: dict[str, list[str]]  # json serialization issue if using NodeID
     state: RunningState
-
-    @field_serializer("project_id")
-    @staticmethod
-    def _convert_uuid_to_str(v: ProjectID, info: SerializationInfo) -> str | ProjectID:
-        if info.context == "asyncpg":
-            return f"{v}"
-        return v
 
     @field_validator("state", mode="before")
     @classmethod

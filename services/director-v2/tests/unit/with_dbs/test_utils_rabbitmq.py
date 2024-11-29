@@ -101,7 +101,7 @@ async def tasks(
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
 ) -> list[CompTaskAtDB]:
     await create_pipeline(
-        project_id=project.uuid,
+        project_id=f"{project.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
     comp_tasks = await create_tasks(user, project)
