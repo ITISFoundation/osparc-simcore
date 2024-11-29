@@ -103,9 +103,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.cluster.Utils.popUpClustersDetails(), this);
           this.add(control);
           break;
-        case "store":
-          control = new qx.ui.menu.Button(this.tr("Store"));
-          control.addListener("execute", () => osparc.vipStore.StoreWindow.openWindow());
+        case "market":
+          control = new qx.ui.menu.Button(this.tr("Market"));
+          control.addListener("execute", () => osparc.vipMarket.MarketWindow.openWindow());
           this.add(control);
           break;
         case "about":
@@ -185,7 +185,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.__addAnnouncements();
 
       if (osparc.product.Utils.showS4LStore()) {
-        this.getChildControl("store");
+        this.getChildControl("market");
       }
 
       this.getChildControl("about");
@@ -253,7 +253,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.__addAnnouncements();
       
       if (osparc.product.Utils.showS4LStore()) {
-        this.getChildControl("store");
+        this.getChildControl("market");
       }
 
       this.getChildControl("about");

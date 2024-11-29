@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.vipStore.AnatomicalModelDetails", {
+qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -114,6 +114,7 @@ qx.Class.define("osparc.vipStore.AnatomicalModelDetails", {
         "Height",
         "Date",
         "Ethnicity",
+        "Functionality",
       ].forEach(key => {
         if (key.toLowerCase() in features) {
           const titleLabel = new qx.ui.basic.Label().set({
@@ -140,29 +141,27 @@ qx.Class.define("osparc.vipStore.AnatomicalModelDetails", {
         }
       });
 
-      if (anatomicalModelsData["DOI"]) {
-        const doiTitle = new qx.ui.basic.Label().set({
-          value: "DOI",
-          font: "text-14",
-          alignX: "right",
-          marginTop: 16,
-        });
-        moreInfoLayout.add(doiTitle, {
-          column: 0,
-          row: idx,
-        });
-  
-        const doiValue = new qx.ui.basic.Label().set({
-          value: anatomicalModelsData["DOI"],
-          font: "text-14",
-          alignX: "left",
-          marginTop: 16,
-        });
-        moreInfoLayout.add(doiValue, {
-          column: 1,
-          row: idx,
-        });
-      }
+      const doiTitle = new qx.ui.basic.Label().set({
+        value: "DOI",
+        font: "text-14",
+        alignX: "right",
+        marginTop: 16,
+      });
+      moreInfoLayout.add(doiTitle, {
+        column: 0,
+        row: idx,
+      });
+
+      const doiValue = new qx.ui.basic.Label().set({
+        value: anatomicalModelsData["DOI"] ? anatomicalModelsData["DOI"] : "-",
+        font: "text-14",
+        alignX: "left",
+        marginTop: 16,
+      });
+      moreInfoLayout.add(doiValue, {
+        column: 1,
+        row: idx,
+      });
 
       cardLayout.add(moreInfoLayout, {
         column: 1,

@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.vipStore.Store", {
+qx.Class.define("osparc.vipMarket.Market", {
   extend: osparc.ui.window.TabbedView,
 
   construct: function() {
@@ -26,17 +26,17 @@ qx.Class.define("osparc.vipStore.Store", {
     });
     this.addWidgetOnTopOfTheTabs(miniWallet);
 
-    this.__vipStorePage = this.__getVIPStorePage();
+    this.__vipMarketPage = this.__getVIPMarketPage();
   },
 
   members: {
-    __vipStorePage: null,
+    __vipMarketPage: null,
 
-    __getVIPStorePage: function() {
+    __getVIPMarketPage: function() {
       const title = this.tr("VIP Models");
       const iconSrc = "@FontAwesome5Solid/users/22";
-      const vipStoreView = new osparc.vipStore.VIPStore();
-      const page = this.addTab(title, iconSrc, vipStoreView);
+      const vipMarketView = new osparc.vipMarket.VIPMarket();
+      const page = this.addTab(title, iconSrc, vipMarketView);
       return page;
     },
   }

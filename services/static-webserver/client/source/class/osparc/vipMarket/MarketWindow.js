@@ -15,11 +15,11 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.vipStore.StoreWindow", {
+qx.Class.define("osparc.vipMarket.MarketWindow", {
   extend: osparc.ui.window.TabbedWindow,
 
   construct: function() {
-    this.base(arguments, "store", this.tr("Store"));
+    this.base(arguments, "store", this.tr("Market"));
 
 
     osparc.utils.Utils.setIdToWidget(this, "storeWindow");
@@ -31,13 +31,13 @@ qx.Class.define("osparc.vipStore.StoreWindow", {
       height
     })
 
-    const vipStore = this.__vipStore = new osparc.vipStore.Store();
-    this._setTabbedView(vipStore);
+    const vipMarket = this.__vipMarket = new osparc.vipMarket.Market();
+    this._setTabbedView(vipMarket);
   },
 
   statics: {
     openWindow: function() {
-      const storeWindow = new osparc.vipStore.StoreWindow();
+      const storeWindow = new osparc.vipMarket.MarketWindow();
       storeWindow.center();
       storeWindow.open();
       return storeWindow;
@@ -45,10 +45,10 @@ qx.Class.define("osparc.vipStore.StoreWindow", {
   },
 
   members: {
-    __vipStore: null,
+    __vipMarket: null,
 
-    openVIPStore: function() {
-      return this.__vipStore.openVIPStore();
+    openVIPMarket: function() {
+      return this.__vipMarket.openVIPMarket();
     },
   }
 });

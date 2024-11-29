@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.vipStore.VIPStore", {
+qx.Class.define("osparc.vipMarket.VIPMarket", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -68,7 +68,7 @@ qx.Class.define("osparc.vipStore.VIPStore", {
       });
       this._add(toolbarLayout);
 
-      const sortModelsButtons = this.__sortByButton = new osparc.vipStore.SortModelsButtons().set({
+      const sortModelsButtons = this.__sortByButton = new osparc.vipMarket.SortModelsButtons().set({
         alignY: "bottom",
         maxHeight: 27,
       });
@@ -98,7 +98,7 @@ qx.Class.define("osparc.vipStore.VIPStore", {
       const anatomicalModelsModel = this.__anatomicalModelsModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(anatomicalModelsModel, modelsUIList, "name");
       membersCtrl.setDelegate({
-        createItem: () => new osparc.vipStore.AnatomicalModelListItem(),
+        createItem: () => new osparc.vipMarket.AnatomicalModelListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "modelId", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
@@ -118,7 +118,7 @@ qx.Class.define("osparc.vipStore.VIPStore", {
       };
       this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(loadingModel));
 
-      const anatomicModelDetails = new osparc.vipStore.AnatomicalModelDetails().set({
+      const anatomicModelDetails = new osparc.vipMarket.AnatomicalModelDetails().set({
         padding: 20,
       });
       modelsLayout.add(anatomicModelDetails, {

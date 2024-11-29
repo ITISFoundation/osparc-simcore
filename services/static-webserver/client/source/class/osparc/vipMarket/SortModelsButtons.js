@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.vipStore.SortModelsButtons", {
+qx.Class.define("osparc.vipMarket.SortModelsButtons", {
   extend: qx.ui.form.MenuButton,
 
   construct: function() {
