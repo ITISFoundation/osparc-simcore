@@ -202,11 +202,9 @@ async def _move_folder_to_workspace_and_assert(
     assert len(data) == 1
 
 
-# @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_moving_between_private_and_shared_workspaces(
     client: TestClient,
     logged_user: UserInfoDict,
-    expected,
     mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     fake_project: ProjectDict,
     moving_folder_id: str,
