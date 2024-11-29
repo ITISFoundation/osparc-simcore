@@ -13,7 +13,6 @@ from fastapi import FastAPI, status
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
-from models_library.api_schemas_webserver.product import GetCreditPrice
 from models_library.api_schemas_webserver.projects import (
     ProjectCreateNew,
     ProjectGet,
@@ -63,6 +62,9 @@ from simcore_service_api_server.exceptions.backend_errors import (
     ProjectPortsNotFoundError,
     SolverOutputNotFoundError,
     WalletNotFoundError,
+)
+from simcore_service_api_server.models.schemas.backwards_compatibility import (
+    GetCreditPriceApiServer,
 )
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
@@ -573,13 +575,13 @@ class AuthSession:
     # PRODUCTS -------------------------------------------------
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: ProductPriceNotFoundError})
-    async def get_product_price(self) -> GetCreditPrice:
+    async def get_product_price(self) -> GetCreditPriceApiServer:
         response = await self.client.get(
             "/credits-price",
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[GetCreditPrice].model_validate_json(response.text).data
+        data = Envelope[GetCreditPriceApiServer].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
