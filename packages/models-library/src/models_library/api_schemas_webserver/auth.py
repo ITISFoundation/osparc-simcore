@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Annotated, Any
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, SecretStr
 
 from ..emails import LowerCaseEmailStr
 from ._base import InputSchema
@@ -80,6 +80,7 @@ class ApiKeyCreate(BaseModel):
 class ApiKeyGet(BaseModel):
     id_: Annotated[int, Field(alias="id")]
     display_name: Annotated[str, Field(..., min_length=3)]
+    base_url: HttpUrl | None = None
     api_key: str
     api_secret: str
 
