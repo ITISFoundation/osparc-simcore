@@ -6,8 +6,7 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Deque
 
-from servicelib import tracing
-
+from . import tracing
 from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
 
 logger = logging.getLogger(__name__)

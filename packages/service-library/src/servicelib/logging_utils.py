@@ -16,10 +16,10 @@ from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import Any, NotRequired, TypeAlias, TypedDict, TypeVar
 
-from servicelib.tracing import setup_log_tracing
 from settings_library.tracing import TracingSettings
 
 from .logging_utils_filtering import GeneralLogFilter, LoggerName, MessageSubstring
+from .tracing import setup_log_tracing
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
