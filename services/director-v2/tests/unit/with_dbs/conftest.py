@@ -52,10 +52,15 @@ async def create_pipeline(
             "state": StateType.NOT_STARTED,
         }
         pipeline_config.update(**pipeline_kwargs)
+        CompPipelineAtDB.model_validate(pipeline_config).model_dump(context="asyncpg")
         async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
                 comp_pipeline.insert()
-                .values(**pipeline_config)
+                .values(
+                    **CompPipelineAtDB.model_validate(pipeline_config).model_dump(
+                        context="asyncpg"
+                    )
+                )
                 .returning(sa.literal_column("*"))
             )
             assert result
