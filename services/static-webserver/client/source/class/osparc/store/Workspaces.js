@@ -46,6 +46,15 @@ qx.Class.define("osparc.store.Workspaces", {
         thumbnail,
       };
     },
+
+    curateOrderBy: function(orderBy) {
+      const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
+      if (curatedOrderBy.field !== "name") {
+        // only "modified_at" and "name" supported
+        curatedOrderBy.field = "modified_at";
+      }
+      return curatedOrderBy;
+    },
   },
 
   members: {
@@ -61,10 +70,59 @@ qx.Class.define("osparc.store.Workspaces", {
       return osparc.data.Resources.getInstance().getAllPages("workspaces")
         .then(workspacesData => {
           workspacesData.forEach(workspaceData => {
-            const workspace = new osparc.data.model.Workspace(workspaceData);
-            this.__addToCache(workspace);
+            this.__addToCache(workspaceData);
           });
           return this.workspacesCached;
+        });
+    },
+
+    fetchAllTrashedWorkspaces: function(orderBy = {
+      field: "modified_at",
+      direction: "desc"
+    }) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
+      const params = {
+        url: {
+          orderBy: JSON.stringify(curatedOrderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("workspaces", params, "getPageTrashed")
+        .then(trashedWorkspacesData => {
+          const workspaces = [];
+          trashedWorkspacesData.forEach(workspaceData => {
+            const workspace = this.__addToCache(workspaceData);
+            workspaces.push(workspace);
+          });
+          return workspaces;
+        });
+    },
+
+    searchWorkspaces: function(text) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
+      const params = {
+        url: {
+          text,
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("workspaces", params, "getPageSearch")
+        .then(workspacesData => {
+          const workspaces = [];
+          workspacesData.forEach(workspaceData => {
+            const workspace = this.__addToCache(workspaceData);
+            workspaces.push(workspace);
+          });
+          return workspaces;
         });
     },
 
@@ -74,11 +132,41 @@ qx.Class.define("osparc.store.Workspaces", {
       };
       return osparc.data.Resources.getInstance().fetch("workspaces", "post", params)
         .then(workspaceData => {
-          const newWorkspace = new osparc.data.model.Workspace(workspaceData);
-          this.__addToCache(newWorkspace);
+          const newWorkspace = this.__addToCache(workspaceData);
           this.fireDataEvent("workspaceAdded", newWorkspace);
           return newWorkspace;
         });
+    },
+
+    trashWorkspace: function(workspaceId) {
+      const params = {
+        "url": {
+          workspaceId
+        }
+      };
+      return osparc.data.Resources.getInstance().fetch("workspaces", "trash", params)
+        .then(() => {
+          const workspace = this.getWorkspace(workspaceId);
+          if (workspace) {
+            this.__deleteFromCache(workspaceId);
+            this.fireDataEvent("workspaceRemoved", workspace);
+          }
+        })
+        .catch(console.error);
+    },
+
+    untrashWorkspace: function(workspace) {
+      const params = {
+        "url": {
+          workspaceId: workspace.getWorkspaceId(),
+        }
+      };
+      return osparc.data.Resources.getInstance().fetch("workspaces", "untrash", params)
+        .then(() => {
+          this.workspacesCached.unshift(workspace);
+          this.fireDataEvent("workspaceAdded", workspace);
+        })
+        .catch(console.error);
     },
 
     deleteWorkspace: function(workspaceId) {
@@ -201,11 +289,27 @@ qx.Class.define("osparc.store.Workspaces", {
       return this.workspacesCached;
     },
 
-    __addToCache: function(workspace) {
-      const found = this.workspacesCached.find(w => w.getWorkspaceId() === workspace.getWorkspaceId());
-      if (!found) {
+    __addToCache: function(workspaceData) {
+      let workspace = this.workspacesCached.find(w => w.getWorkspaceId() === workspaceData["workspaceId"]);
+      if (workspace) {
+        const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Workspace));
+        // put
+        Object.keys(workspaceData).forEach(key => {
+          if (key === "createdAt") {
+            workspace.set("createdAt", new Date(workspaceData["createdAt"]));
+          } else if (key === "modifiedAt") {
+            workspace.set("modifiedAt", new Date(workspaceData["modifiedAt"]));
+          } else if (key === "trashedAt") {
+            workspace.set("trashedAt", new Date(workspaceData["trashedAt"]));
+          } else if (props.includes(key)) {
+            workspace.set(key, workspaceData[key]);
+          }
+        });
+      } else {
+        workspace = new osparc.data.model.Workspace(workspaceData);
         this.workspacesCached.unshift(workspace);
       }
+      return workspace;
     },
 
     __deleteFromCache: function(workspaceId) {

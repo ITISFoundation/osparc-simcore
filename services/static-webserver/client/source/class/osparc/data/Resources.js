@@ -119,6 +119,16 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user"
           },
+          getOne: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}"
+          },
+          getActive: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/active?client_session_id={tabId}"
+          },
           getPage: {
             useCache: false,
             method: "GET",
@@ -129,15 +139,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&tag_ids={tagIds}&order_by={orderBy}"
           },
-          getOne: {
+          getPageTrashed: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects/{studyId}"
-          },
-          getActive: {
-            useCache: false,
-            method: "GET",
-            url: statics.API + "/projects/active?client_session_id={tabId}"
+            url: statics.API + "/projects?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           postToTemplate: {
             method: "POST",
@@ -186,6 +191,14 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/projects/{studyId}"
+          },
+          trash: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:trash"
+          },
+          untrash: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:untrash"
           },
           delete: {
             method: "DELETE",
@@ -301,14 +314,19 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/folders/{folderId}"
+          },
           getPageSearch: {
             useCache: false,
             method: "GET",
             url: statics.API + "/folders:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}"
           },
-          getOne: {
+          getPageTrashed: {
+            useCache: false,
             method: "GET",
-            url: statics.API + "/folders/{folderId}"
+            url: statics.API + "/folders?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           post: {
             method: "POST",
@@ -326,6 +344,14 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/folders/{folderId}/folders/{workspaceId}:move"
           },
+          trash: {
+            method: "POST",
+            url: statics.API + "/folders/{folderId}:trash"
+          },
+          untrash: {
+            method: "POST",
+            url: statics.API + "/folders/{folderId}:untrash"
+          },
         }
       },
       "workspaces": {
@@ -338,6 +364,16 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/workspaces/{workspaceId}"
           },
+          getPageSearch: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/workspaces:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}"
+          },
+          getPageTrashed: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/workspaces?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
+          },
           post: {
             method: "POST",
             url: statics.API + "/workspaces"
@@ -349,6 +385,14 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/workspaces/{workspaceId}"
+          },
+          trash: {
+            method: "POST",
+            url: statics.API + "/workspaces/{workspaceId}:trash"
+          },
+          untrash: {
+            method: "POST",
+            url: statics.API + "/workspaces/{workspaceId}:untrash"
           },
           postAccessRights: {
             method: "POST",
@@ -398,6 +442,18 @@ qx.Class.define("osparc.data.Resources", {
           put: {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}/resources"
+          }
+        }
+      },
+
+      /*
+       * TRASH
+       */
+      "trash": {
+        endpoints: {
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/trash"
           }
         }
       },
