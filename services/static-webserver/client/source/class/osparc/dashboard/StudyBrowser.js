@@ -498,7 +498,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _deleteWorkspaceRequested: function(workspaceId) {
       osparc.store.Workspaces.getInstance().deleteWorkspace(workspaceId)
-        .then(() => this.__reloadWorkspaces())
+        .then(() => {
+          this.__reloadWorkspaces();
+          const msg = this.tr("Successfully deleted");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          this._resourceFilter.evaluateTrashEmpty();
+        })
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
@@ -662,7 +667,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _deleteFolderRequested: function(folderId) {
       osparc.store.Folders.getInstance().deleteFolder(folderId, this.getCurrentWorkspaceId())
-        .then(() => this.__reloadFolders())
+        .then(() => {
+          this.__reloadFolders();
+          const msg = this.tr("Successfully deleted");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          this._resourceFilter.evaluateTrashEmpty();
+        })
         .catch(err => console.error(err));
     },
     // /FOLDERS
