@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from typing import TypeAlias
 
 from opentelemetry import context as otcontext
@@ -18,14 +19,15 @@ def get_context() -> TracingContext:
     return otcontext.get_current()
 
 
-def attach_context(context: TracingContext) -> None:
+@contextmanager
+def use_tracing_context(context: TracingContext):
     if context is not None:
         otcontext.attach(context)
-
-
-def detach_context(context: TracingContext) -> None:
-    if context is not None:
-        otcontext.detach(context)
+    try:
+        yield
+    finally:
+        if context is not None:
+            otcontext.detach(context)
 
 
 def setup_log_tracing(tracing_settings: TracingSettings):

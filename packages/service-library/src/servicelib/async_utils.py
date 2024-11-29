@@ -164,19 +164,17 @@ def run_sequentially_in_context(
                     while True:
                         element = await in_q.get()
                         in_q.task_done()
-                        tracing.attach_context(element.tracing_context)
-                        # check if requested to shutdown
-                        try:
-                            do_profile = element.do_profile
-                            awaitable = element.input
-                            if awaitable is None:
-                                break
-                            with profile_context(do_profile):
-                                result = await awaitable
-                        except Exception as e:  # pylint: disable=broad-except
-                            result = e
-                        finally:
-                            tracing.detach_context(element.tracing_context)
+                        with tracing.use_tracing_context(element.tracing_context):
+                            # check if requested to shutdown
+                            try:
+                                do_profile = element.do_profile
+                                awaitable = element.input
+                                if awaitable is None:
+                                    break
+                                with profile_context(do_profile):
+                                    result = await awaitable
+                            except Exception as e:  # pylint: disable=broad-except
+                                result = e
                         await out_q.put(result)
 
                     logging.info(
