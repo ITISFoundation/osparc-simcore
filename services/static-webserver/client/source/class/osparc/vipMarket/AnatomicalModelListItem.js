@@ -35,6 +35,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       padding: 5,
       height: 48,
       alignY: "middle",
+      decorator: "rounded",
     });
 
     this.addListener("pointerover", this._onPointerOver, this);

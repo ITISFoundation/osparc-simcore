@@ -67,8 +67,6 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       const cardGrid = new qx.ui.layout.Grid(16, 16);
       const cardLayout = new qx.ui.container.Composite(cardGrid);
 
-      const features = anatomicalModelsData["Features"];
-
       const description = anatomicalModelsData["Description"];
       description.split(" - ").forEach((desc, idx) => {
         const titleLabel = new qx.ui.basic.Label().set({
@@ -102,8 +100,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         row: 2,
       });
 
-      const moreInfoGrid = new qx.ui.layout.Grid(8, 8);
-      const moreInfoLayout = new qx.ui.container.Composite(moreInfoGrid);
+      const features = anatomicalModelsData["Features"];
+      const featuresGrid = new qx.ui.layout.Grid(8, 8);
+      const featuresLayout = new qx.ui.container.Composite(featuresGrid);
       let idx = 0;
       [
         "Name",
@@ -122,7 +121,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             font: "text-14",
             alignX: "right",
           });
-          moreInfoLayout.add(titleLabel, {
+          featuresLayout.add(titleLabel, {
             column: 0,
             row: idx,
           });
@@ -132,7 +131,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             font: "text-14",
             alignX: "left",
           });
-          moreInfoLayout.add(nameLabel, {
+          featuresLayout.add(nameLabel, {
             column: 1,
             row: idx,
           });
@@ -147,7 +146,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         alignX: "right",
         marginTop: 16,
       });
-      moreInfoLayout.add(doiTitle, {
+      featuresLayout.add(doiTitle, {
         column: 0,
         row: idx,
       });
@@ -158,12 +157,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         alignX: "left",
         marginTop: 16,
       });
-      moreInfoLayout.add(doiValue, {
+      featuresLayout.add(doiValue, {
         column: 1,
         row: idx,
       });
 
-      cardLayout.add(moreInfoLayout, {
+      cardLayout.add(featuresLayout, {
         column: 1,
         row: 2,
       });

@@ -64,7 +64,6 @@ qx.Class.define("osparc.vipMarket.VIPMarket", {
     __buildLayout: function() {
       const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         alignY: "middle",
-        // maxHeight: 30
       });
       this._add(toolbarLayout);
 
