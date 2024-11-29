@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
@@ -78,15 +78,22 @@ class ApiKeyCreate(BaseModel):
 
 
 class ApiKeyGet(BaseModel):
-    display_name: str = Field(..., min_length=3)
+    id_: Annotated[int, Field(alias="id")]
+    display_name: Annotated[str, Field(..., min_length=3)]
     api_key: str
     api_secret: str
 
     model_config = ConfigDict(
+        populate_by_name=True,
         from_attributes=True,
         json_schema_extra={
             "examples": [
-                {"display_name": "myapi", "api_key": "key", "api_secret": "secret"},
+                {
+                    "id": 42,
+                    "display_name": "myapi",
+                    "api_key": "key",
+                    "api_secret": "secret",
+                },
             ]
         },
     )

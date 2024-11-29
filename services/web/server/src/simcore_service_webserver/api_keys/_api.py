@@ -49,7 +49,7 @@ async def create_api_key(
     api_key, api_secret = _generate_api_key_and_secret(new.display_name)
 
     # raises if name exists already!
-    await db.create(
+    api_key_id = await db.create(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -60,6 +60,7 @@ async def create_api_key(
     )
 
     return ApiKeyGet(
+        id_=api_key_id,
         display_name=new.display_name,
         api_key=api_key,
         api_secret=api_secret,

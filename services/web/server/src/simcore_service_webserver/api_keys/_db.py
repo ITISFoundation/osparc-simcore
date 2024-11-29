@@ -7,6 +7,7 @@ from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from models_library.basic_types import IdInt
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -44,7 +45,7 @@ async def create(
     expiration: timedelta | None,
     api_key: str,
     api_secret: str,
-) -> list[IdInt]:
+) -> IdInt:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         stmt = (
             api_keys.insert()
@@ -60,8 +61,8 @@ async def create(
         )
 
         result = await conn.stream(stmt)
-        rows = [row async for row in result]
-        return [r.id for r in rows]
+        row = await result.first()
+        return TypeAdapter(IdInt).validate_python(row.id)
 
 
 async def get(

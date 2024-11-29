@@ -30,19 +30,21 @@ async def fake_user_api_keys(
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     faker: Faker,
-) -> AsyncIterable[list[str]]:
+) -> AsyncIterable[list[int]]:
     assert client.app
-    api_key_ids = []
+    api_key_ids: list[int] = []
 
     for _ in range(5):
-        api_key_ids += await db.create(
-            client.app,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-            display_name=faker.pystr(),
-            expiration=None,
-            api_key=faker.pystr(),
-            api_secret=faker.pystr(),
+        api_key_ids.append(
+            await db.create(
+                client.app,
+                user_id=logged_user["id"],
+                product_name=osparc_product_name,
+                display_name=faker.pystr(),
+                expiration=None,
+                api_key=faker.pystr(),
+                api_secret=faker.pystr(),
+            )
         )
 
     yield api_key_ids
