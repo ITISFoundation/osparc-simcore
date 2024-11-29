@@ -35,8 +35,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       alignY: "middle",
     });
 
-    this.__spacers = [];
-
     this.initCurrentWorkspaceId();
     this.initCurrentFolderId();
 
@@ -98,8 +96,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   },
 
   members: {
-    __spacers: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -151,8 +147,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           this._addAt(control, this.self().POS.EDIT_BUTTON);
           break;
         case "share-layout":
-          this.__addSpacer();
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            maringLeft: 10,
             alignY: "middle"
           }));
           this._addAt(control, this.self().POS.SHARE_LAYOUT);
@@ -166,8 +162,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         }
         case "role-layout":
-          this.__addSpacer();
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            maringLeft: 10,
             alignY: "middle"
           }));
           this._addAt(control, this.self().POS.ROLE_LAYOUT);
@@ -269,15 +265,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       }
     },
 
-    __addSpacer: function() {
-      const spacer = new qx.ui.basic.Label("-").set({
-        font: "text-16",
-        alignY: "middle",
-      });
-      this.__spacers.push(spacer);
-      this._add(spacer);
-    },
-
     __setIcon: function(source) {
       // reset icon first
       const icon = this.getChildControl("icon");
@@ -300,10 +287,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           "background-origin": "border-box"
         });
       }
-    },
-
-    __showSpacers: function(show) {
-      this.__spacers.forEach(spacer => spacer.setVisibility(show ? "visible" : "excluded"));
     },
 
     __getShareIcon: function() {
@@ -330,11 +313,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         shareText.setValue(Object.keys(accessRights).length + " members");
         shareIcon.show();
         shareText.show();
-        this.__showSpacers(true);
       } else {
         shareIcon.exclude();
         shareText.exclude();
-        this.__showSpacers(false);
       }
     },
 
@@ -358,12 +339,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         roleText.setValue(osparc.data.Roles.WORKSPACE[val].label);
         roleText.show();
         roleIcon.show();
-        this.__showSpacers(true);
       } else {
         editButton.exclude();
         roleText.exclude();
         roleIcon.exclude();
-        this.__showSpacers(false);
       }
     },
 
