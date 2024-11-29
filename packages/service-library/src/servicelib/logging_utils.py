@@ -139,15 +139,26 @@ def config_all_loggers(
     fmt = DEFAULT_FORMATTING
     if tracing_settings is not None:
         fmt = (
-            "log_level=%(levelname)s | log_timestamp=%(asctime)s | log_source=%(name)s:%(funcName)s(%(lineno)d) | log_uid=%(log_uid)s "
-            "| trace_id=%(otelTraceID)s | span_id=%(otelSpanID)s | resource.service.name=%(otelServiceName)s | trace_sampled=%(otelTraceSampled)s] "
+            "log_level=%(levelname)s "
+            "| log_timestamp=%(asctime)s "
+            "| log_source=%(name)s:%(funcName)s(%(lineno)d) "
+            "| log_uid=%(log_uid)s "
+            "| log_oec=%(log_oec)s"
+            "| trace_id=%(otelTraceID)s "
+            "| span_id=%(otelSpanID)s "
+            "| resource.service.name=%(otelServiceName)s "
+            "| trace_sampled=%(otelTraceSampled)s] "
             "| log_msg=%(message)s"
         )
         setup_log_tracing(tracing_settings=tracing_settings)
     if log_format_local_dev_enabled:
         fmt = LOCAL_FORMATTING
         if tracing_settings is not None:
-            fmt = "%(levelname)s: [%(asctime)s/%(processName)s] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s trace_sampled=%(otelTraceSampled)s] [%(name)s:%(funcName)s(%(lineno)d)] -  %(message)s"
+            fmt = (
+                "%(levelname)s: [%(asctime)s/%(processName)s] "
+                "[trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s trace_sampled=%(otelTraceSampled)s] "
+                "[%(name)s:%(funcName)s(%(lineno)d)] -  %(message)s"
+            )
 
     for logger in loggers:
         _set_logging_handler(
