@@ -8,9 +8,9 @@ from models_library.workspaces import WorkspaceID
 from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
-from ..projects import _db_v2 as projects_db
 from ..projects import _folders_db as project_to_folders_db
 from ..projects import _groups_db as project_groups_db
+from ..projects import _projects_db as projects_db
 from ..projects._access_rights_api import check_user_project_permission
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
@@ -56,7 +56,7 @@ async def move_folder_into_workspace(
     (
         folder_ids,
         project_ids,
-    ) = await _folders_db.get_all_folders_and_projects_recursively(
+    ) = await _folders_db.get_all_folders_and_projects_ids_recursively(
         app,
         connection=None,
         folder_id=folder_id,

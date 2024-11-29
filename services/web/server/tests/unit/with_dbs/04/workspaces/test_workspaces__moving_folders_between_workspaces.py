@@ -6,7 +6,6 @@
 
 
 from copy import deepcopy
-from http import HTTPStatus
 from http.client import NO_CONTENT
 
 import pytest
@@ -19,6 +18,11 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.projects.models import ProjectDict
+
+
+@pytest.fixture
+def user_role() -> UserRole:
+    return UserRole.USER
 
 
 @pytest.fixture
@@ -40,12 +44,14 @@ def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
     )
 
 
-async def _setup_test(
+@pytest.fixture
+async def moving_folder_id(
     client: TestClient,
     logged_user: UserInfoDict,
     fake_project: ProjectDict,
 ) -> str:
     assert client.app
+    setup_db(client.app)
 
     ### Project creation
 
@@ -53,13 +59,13 @@ async def _setup_test(
     project_data = deepcopy(fake_project)
     first_project = await create_project(
         client.app,
-        project_data,
+        params_override=project_data,
         user_id=logged_user["id"],
         product_name="osparc",
     )
     second_project = await create_project(
         client.app,
-        project_data,
+        params_override=project_data,
         user_id=logged_user["id"],
         product_name="osparc",
     )
@@ -159,11 +165,11 @@ async def _move_folder_to_workspace_and_assert(
     assert client.app
 
     # MOVE
-    base_url = client.app.router["replace_folder_workspace"].url_for(
+    url = client.app.router["replace_folder_workspace"].url_for(
         folder_id=folder_id,
         workspace_id=workspace_id,
     )
-    resp = await client.put(f"{base_url}")
+    resp = await client.put(f"{url}")
     await assert_status(resp, NO_CONTENT)
 
     # ASSERT
@@ -196,19 +202,17 @@ async def _move_folder_to_workspace_and_assert(
     assert len(data) == 1
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+# @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_moving_between_private_and_shared_workspaces(
     client: TestClient,
     logged_user: UserInfoDict,
-    expected: HTTPStatus,
+    expected,
     mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     fake_project: ProjectDict,
+    moving_folder_id: str,
     workspaces_clean_db: None,
 ):
     assert client.app
-    setup_db(client.app)
-
-    moving_folder_id = await _setup_test(client, logged_user, fake_project)
 
     # We will test these scenarios of moving folders:
     # 1. Private workspace -> Shared workspace
@@ -220,45 +224,45 @@ async def test_moving_between_private_and_shared_workspaces(
     # create a new workspace
     url = client.app.router["create_workspace"].url_for()
     resp = await client.post(
-        url.path,
+        f"{url}",
         json={
             "name": "A",
             "description": "A",
             "thumbnail": None,
         },
     )
-    added_workspace, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    shared_workspace_A, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # 1. Private workspace -> Shared workspace A
     await _move_folder_to_workspace_and_assert(
         client,
         folder_id=moving_folder_id,
-        workspace_id=f"{added_workspace['workspaceId']}",
+        workspace_id=f"{shared_workspace_A['workspaceId']}",
     )
 
     # create a new workspace
     url = client.app.router["create_workspace"].url_for()
     resp = await client.post(
-        url.path,
+        f"{url}",
         json={
             "name": "B",
             "description": "B",
             "thumbnail": None,
         },
     )
-    second_workspace, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    shared_workspace_B, _ = await assert_status(resp, status.HTTP_201_CREATED)
     # 2. Shared workspace A -> Shared workspace B
     await _move_folder_to_workspace_and_assert(
         client,
         folder_id=moving_folder_id,
-        workspace_id=f"{second_workspace['workspaceId']}",
+        workspace_id=f"{shared_workspace_B['workspaceId']}",
     )
 
-    # 3. (Corner case) Shared workspace A -> Shared workspace A
+    # 3. (Corner case) Shared workspace B -> Shared workspace B
     await _move_folder_to_workspace_and_assert(
         client,
         folder_id=moving_folder_id,
-        workspace_id=f"{second_workspace['workspaceId']}",
+        workspace_id=f"{shared_workspace_B['workspaceId']}",
     )
 
     # 4. Shared workspace -> Private workspace

@@ -156,7 +156,6 @@ async def delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
     connection: AsyncConnection | None = None,
     *,
     project_id_or_ids: ProjectID | set[ProjectID],
-    # Optional filter
     not_in_folder_ids: set[FolderID],
 ) -> None:
     query = projects_to_folders.delete()

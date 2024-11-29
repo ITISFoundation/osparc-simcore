@@ -11,9 +11,9 @@ from ..db.plugin import get_asyncpg_engine
 from ..projects._access_rights_api import get_user_project_access_rights
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
-from . import _db_v2 as project_db_v2
 from . import _folders_db as project_to_folders_db
 from . import _groups_db as project_groups_db
+from . import _projects_db as project_db_v2
 from .exceptions import ProjectInvalidRightsError
 
 _logger = logging.getLogger(__name__)

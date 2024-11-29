@@ -102,9 +102,6 @@ async def delete_folder(
     ...
 
 
-### Move Folder to Workspace
-
-
 @router.put(
     "/folders/{folder_id}/workspaces/{workspace_id}",
     status_code=status.HTTP_204_NO_CONTENT,

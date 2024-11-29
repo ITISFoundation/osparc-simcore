@@ -85,7 +85,7 @@ from ._db_utils import (
     patch_workbench,
     update_workbench,
 )
-from ._db_v2 import _SELECTION_PROJECT_DB_ARGS
+from ._projects_db import _SELECTION_PROJECT_DB_ARGS
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,

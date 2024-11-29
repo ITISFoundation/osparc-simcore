@@ -463,7 +463,7 @@ async def get_projects_recursively_only_if_user_is_owner(
         return [ProjectID(row[0]) async for row in result]
 
 
-async def get_all_folders_and_projects_recursively(
+async def get_all_folders_and_projects_ids_recursively(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -504,7 +504,7 @@ async def get_all_folders_and_projects_recursively(
         final_query = select(folder_hierarchy_cte)
         result = await conn.stream(final_query)
         # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
-        folder_ids = [item[0] async for item in result]
+        folder_ids = [item.folder_id async for item in result]
 
         query = select(projects_to_folders.c.project_uuid).where(
             (projects_to_folders.c.folder_id.in_(folder_ids))
@@ -512,7 +512,7 @@ async def get_all_folders_and_projects_recursively(
         )
 
         result = await conn.stream(query)
-        project_ids = [ProjectID(row[0]) async for row in result]
+        project_ids = [ProjectID(row.project_uuid) async for row in result]
 
         return folder_ids, project_ids
 
