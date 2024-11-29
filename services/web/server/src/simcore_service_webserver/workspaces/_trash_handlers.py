@@ -8,7 +8,6 @@ from servicelib.aiohttp.requests_validation import (
 )
 
 from .._meta import API_VTAG as VTAG
-from ..application_settings_utils import requires_dev_feature_enabled
 from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
 from ..security.decorators import permission_required
@@ -23,7 +22,6 @@ routes = web.RouteTableDef()
 
 
 @routes.post(f"/{VTAG}/workspaces/{{workspace_id}}:trash", name="trash_workspace")
-@requires_dev_feature_enabled
 @login_required
 @permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
@@ -47,7 +45,6 @@ async def trash_workspace(request: web.Request):
 
 
 @routes.post(f"/{VTAG}/workspaces/{{workspace_id}}:untrash", name="untrash_workspace")
-@requires_dev_feature_enabled
 @login_required
 @permission_required("workspaces.*")
 @handle_plugin_requests_exceptions
