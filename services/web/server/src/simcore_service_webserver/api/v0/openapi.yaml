@@ -4540,7 +4540,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -6718,10 +6718,21 @@ components:
       title: ApiKeyCreate
     ApiKeyGet:
       properties:
+        id:
+          type: integer
+          title: Id
         display_name:
           type: string
           minLength: 3
           title: Display Name
+        base_url:
+          anyOf:
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Base Url
         api_key:
           type: string
           title: Api Key
@@ -6730,6 +6741,7 @@ components:
           title: Api Secret
       type: object
       required:
+      - id
       - display_name
       - api_key
       - api_secret
