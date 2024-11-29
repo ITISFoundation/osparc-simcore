@@ -103,6 +103,6 @@ def test_sync_function_with_different_exception():
         sync_function(raise_error=False, raise_another_error=True)
 
 
-async def test_sync_function_with_different_exception():
+async def test_async_function_with_different_exception():
     with pytest.raises(AnotherCustomError):
         await async_function(raise_error=False, raise_another_error=True)
