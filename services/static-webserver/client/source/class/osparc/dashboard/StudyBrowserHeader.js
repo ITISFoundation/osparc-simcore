@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Widget used for displaying a Workspace information
+ * Widget used for displaying a Study Browser's context information
  *
  */
 
@@ -35,27 +35,20 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       alignY: "middle",
     });
 
-    this.__spacers = [];
-
     this.initCurrentWorkspaceId();
     this.initCurrentFolderId();
+
+    osparc.store.Store.getInstance().addListener("changeStudyBrowserContext", () => this.__buildLayout(), this);
   },
 
   events: {
     "locationChanged": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Data",
-    "deleteWorkspaceRequested": "qx.event.type.Data"
+    "deleteWorkspaceRequested": "qx.event.type.Data",
+    "emptyTrashRequested": "qx.event.type.Event",
   },
 
   properties: {
-    currentContext: {
-      check: ["studiesAndFolders", "workspaces", "search"],
-      nullable: false,
-      init: "studiesAndFolders",
-      event: "changeCurrentContext",
-      apply: "__buildLayout"
-    },
-
     currentWorkspaceId: {
       check: "Number",
       nullable: true,
@@ -76,7 +69,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       nullable: false,
       init: {},
       event: "changeAccessRights",
-      apply: "__applyAccessRights"
+      apply: "__updateShareInfo"
     },
 
     myAccessRights: {
@@ -89,7 +82,17 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   },
 
   statics: {
-    HEIGHT: 36
+    HEIGHT: 36,
+    POS: {
+      ICON: 0,
+      TITLE: 1,
+      BREADCRUMBS: 2,
+      EDIT_BUTTON: 3,
+      SHARE_LAYOUT: 4,
+      ROLE_LAYOUT: 5,
+      DESCRIPTION: 2,
+      EMPTY_TRASH_BUTTON: 3,
+    }
   },
 
   members: {
@@ -106,26 +109,25 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
             allowGrowY: true,
             decorator: "rounded",
           });
-          this._add(control);
+          this._addAt(control, this.self().POS.ICON);
           break;
         case "title":
           control = new qx.ui.basic.Label().set({
             font: "text-16",
             alignY: "middle",
           });
-          this._add(control);
+          this._addAt(control, this.self().POS.TITLE);
           break;
         case "breadcrumbs":
           control = new osparc.dashboard.ContextBreadcrumbs();
           this.bind("currentWorkspaceId", control, "currentWorkspaceId");
           this.bind("currentFolderId", control, "currentFolderId");
-          this.bind("currentContext", control, "currentContext");
           control.bind("currentWorkspaceId", this, "currentWorkspaceId");
           control.bind("currentFolderId", this, "currentFolderId");
           control.addListener("locationChanged", e => {
             this.fireDataEvent("locationChanged", e.getData())
           });
-          this._add(control);
+          this._addAt(control, this.self().POS.BREADCRUMBS);
           break;
         case "edit-button":
           control = new qx.ui.form.MenuButton().set({
@@ -142,14 +144,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           control.getContentElement().setStyles({
             "border-radius": `${22 / 2}px`
           });
-          this._add(control);
+          this._addAt(control, this.self().POS.EDIT_BUTTON);
           break;
         case "share-layout":
-          this.__addSpacer();
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-            alignY: "middle"
-          }));
-          this._add(control);
+            alignY: "middle",
+          })).set({
+            marginLeft: 10,
+          });
+          this._addAt(control, this.self().POS.SHARE_LAYOUT);
           break;
         case "share-text": {
           control = new qx.ui.basic.Label().set({
@@ -160,11 +163,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         }
         case "role-layout":
-          this.__addSpacer();
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-            alignY: "middle"
-          }));
-          this._add(control);
+            alignY: "middle",
+          })).set({
+            marginLeft: 10,
+          });
+          this._addAt(control, this.self().POS.ROLE_LAYOUT);
           break;
         case "role-text": {
           control = new qx.ui.basic.Label().set({
@@ -178,6 +182,24 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           control = osparc.data.Roles.createRolesWorkspaceInfo(false);
           const layout = this.getChildControl("role-layout");
           layout.addAt(control, 1);
+          break;
+        }
+        case "description": {
+          control = new qx.ui.basic.Label().set({
+            font: "text-14",
+            alignY: "middle",
+          });
+          this._addAt(control, this.self().POS.DESCRIPTION);
+          break;
+        }
+        case "empty-trash-button": {
+          control = new qx.ui.form.Button(this.tr("Empty Trash"), "@FontAwesome5Solid/trash/14").set({
+            appearance: "danger-button",
+            allowGrowY: false,
+            alignY: "middle",
+          });
+          control.addListener("execute", () => this.fireEvent("emptyTrashRequested"));
+          this._addAt(control, this.self().POS.EMPTY_TRASH_BUTTON);
           break;
         }
       }
@@ -198,66 +220,82 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
     __buildLayout: function() {
       this.getChildControl("icon");
       const title = this.getChildControl("title");
-      title.resetCursor();
-      title.removeListener("tap", this.__titleTapped, this);
-      this.getChildControl("breadcrumbs");
-      this.getChildControl("edit-button").exclude();
-      this.resetAccessRights();
-      this.resetMyAccessRights();
 
-      const currentContext = this.getCurrentContext();
-      if (currentContext === "search") {
-        this.__setIcon("@FontAwesome5Solid/search/24");
-        title.set({
-          value: this.tr("Search results"),
-        });
-      } else if (currentContext === "workspaces") {
-        this.__setIcon(osparc.store.Workspaces.iconPath(32));
-        title.set({
-          value: this.tr("Shared Workspaces"),
-        })
-      } else if (currentContext === "studiesAndFolders") {
-        const workspaceId = this.getCurrentWorkspaceId();
-        title.setCursor("pointer");
-        title.addListener("tap", this.__titleTapped, this);
-        const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
-        if (workspace) {
-          const thumbnail = workspace.getThumbnail();
-          this.__setIcon(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
-          workspace.bind("name", title, "value");
-          workspace.bind("accessRights", this, "accessRights");
-          workspace.bind("myAccessRights", this, "myAccessRights");
-        } else {
-          this.__setIcon("@FontAwesome5Solid/home/30");
-          title.setValue(this.tr("My Workspace"));
+      const locationBreadcrumbs = this.getChildControl("breadcrumbs").set({
+        visibility: "excluded"
+      });
+      const editWorkspace = this.getChildControl("edit-button").set({
+        visibility: "excluded"
+      });
+      const shareWorkspaceLayout = this.getChildControl("share-layout").set({
+        visibility: "excluded"
+      });
+      const roleWorkspaceLayout = this.getChildControl("role-layout").set({
+        visibility: "excluded"
+      });
+  
+      const description = this.getChildControl("description").set({
+        visibility: "excluded"
+      });
+      // the study browser will take care of making it visible
+      this.getChildControl("empty-trash-button").set({
+        visibility: "excluded"
+      });
+
+      const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+      switch (currentContext) {
+        case "studiesAndFolders": {
+          const workspaceId = this.getCurrentWorkspaceId();
+          title.setCursor("pointer");
+          title.addListener("tap", this.__titleTapped, this);
+          locationBreadcrumbs.show();
+          const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
+          if (workspace) {
+            const thumbnail = workspace.getThumbnail();
+            this.__setIcon(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
+            workspace.bind("name", title, "value");
+            editWorkspace.show();
+            shareWorkspaceLayout.show();
+            roleWorkspaceLayout.show();
+            workspace.bind("accessRights", this, "accessRights");
+            workspace.bind("myAccessRights", this, "myAccessRights");
+          } else {
+            this.__setIcon("@FontAwesome5Solid/home/30");
+            title.setValue(this.tr("My Workspace"));
+          }
+          break;
+        }
+        case "workspaces":
+          this.__setIcon(osparc.store.Workspaces.iconPath(32));
+          title.setValue(this.tr("Shared Workspaces"));
+          break;
+        case "search":
+          this.__setIcon("@FontAwesome5Solid/search/24");
+          title.setValue(this.tr("Search results"));
+          break;
+        case "trash": {
+          this.__setIcon("@FontAwesome5Solid/trash/20");
+          title.setValue(this.tr("Trash"));
+          const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+          description.set({
+            value: this.tr(`Items in the bin will be permanently deleted after ${trashDays} days.`),
+            visibility: "visible",
+          });
+          break;
         }
       }
     },
 
-    __addSpacer: function() {
-      const spacer = new qx.ui.basic.Label("-").set({
-        font: "text-16",
-        alignY: "middle",
-      });
-      this.__spacers.push(spacer);
-      this._add(spacer);
-    },
-
-    __resetIcon: function() {
+    __setIcon: function(source) {
+      // reset icon first
       const icon = this.getChildControl("icon");
       const image = icon.getChildControl("image");
       image.resetSource();
       icon.getContentElement().setStyles({
         "background-image": "none"
       });
-    },
 
-    __setIcon: function(source) {
-      this.__resetIcon();
-
-      const icon = this.getChildControl("icon");
       if (source.includes("@")) {
-        const image = icon.getChildControl("image");
         image.set({
           source
         });
@@ -270,10 +308,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           "background-origin": "border-box"
         });
       }
-    },
-
-    __showSpacers: function(show) {
-      this.__spacers.forEach(spacer => spacer.setVisibility(show ? "visible" : "excluded"));
     },
 
     __getShareIcon: function() {
@@ -292,7 +326,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       return shareIcon;
     },
 
-    __applyAccessRights: function(accessRights) {
+    __updateShareInfo: function(accessRights) {
       const shareIcon = this.__getShareIcon();
       const shareText = this.getChildControl("share-text");
       if (accessRights && Object.keys(accessRights).length) {
@@ -300,11 +334,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         shareText.setValue(Object.keys(accessRights).length + " members");
         shareIcon.show();
         shareText.show();
-        this.__showSpacers(true);
       } else {
         shareIcon.exclude();
         shareText.exclude();
-        this.__showSpacers(false);
       }
     },
 
@@ -312,7 +344,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       const editButton = this.getChildControl("edit-button");
       const roleText = this.getChildControl("role-text");
       const roleIcon = this.getChildControl("role-icon");
-      if (value && Object.keys(value).length) {
+      const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+      if (currentContext === "studiesAndFolders" && value && Object.keys(value).length) {
         editButton.setVisibility(value["delete"] ? "visible" : "excluded");
         const menu = new qx.ui.menu.Menu().set({
           position: "bottom-right"
@@ -328,12 +361,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         roleText.setValue(osparc.data.Roles.WORKSPACE[val].label);
         roleText.show();
         roleIcon.show();
-        this.__showSpacers(true);
       } else {
         editButton.exclude();
         roleText.exclude();
         roleIcon.exclude();
-        this.__showSpacers(false);
       }
     },
 
@@ -346,6 +377,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         win.close();
         this.__buildLayout();
       }, this);
+      workspaceEditor.addListener("cancel", () => win.close());
     },
 
     __openShareWith: function() {
@@ -355,7 +387,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
       permissionsView.addListener("updateAccessRights", () => {
         win.close();
-        this.__applyAccessRights(workspace.getAccessRights());
+        this.__updateShareInfo(workspace.getAccessRights());
       }, this);
     },
   }

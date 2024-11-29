@@ -246,11 +246,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     // LAYOUT //
     _createLayout: function() {
       this._createSearchBar();
-      this._createResourcesLayout();
-      const list = this._resourcesContainer.getFlatList();
-      if (list) {
-        osparc.utils.Utils.setIdToWidget(list, "templatesList");
-      }
+      this._createResourcesLayout("templatesList");
 
       const updateAllButton = this.__createUpdateAllButton();
       if (updateAllButton) {
