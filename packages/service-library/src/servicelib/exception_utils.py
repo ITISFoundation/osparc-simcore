@@ -88,7 +88,7 @@ def silence_exceptions(
         @wraps(func)
         async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
             try:
-                assert inspect.isawaitable(func)  # nosec
+                assert inspect.iscoroutinefunction(func)  # nosec
                 return await func(*args, **kwargs)
             except exceptions:
                 return None
