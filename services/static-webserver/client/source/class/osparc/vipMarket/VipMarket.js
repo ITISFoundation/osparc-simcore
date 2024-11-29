@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.vipMarket.VIPMarket", {
+qx.Class.define("osparc.vipMarket.VipMarket", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

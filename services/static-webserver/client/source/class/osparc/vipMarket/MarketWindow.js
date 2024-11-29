@@ -47,8 +47,8 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
   members: {
     __vipMarket: null,
 
-    openVIPMarket: function() {
-      return this.__vipMarket.openVIPMarket();
+    openVipMarket: function() {
+      return this.__vipMarket.openVipMarket();
     },
   }
 });
