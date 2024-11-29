@@ -148,9 +148,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         case "share-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-            maringLeft: 10,
-            alignY: "middle"
-          }));
+            alignY: "middle",
+          })).set({
+            marginLeft: 10,
+          });
           this._addAt(control, this.self().POS.SHARE_LAYOUT);
           break;
         case "share-text": {
@@ -163,9 +164,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         }
         case "role-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-            maringLeft: 10,
-            alignY: "middle"
-          }));
+            alignY: "middle",
+          })).set({
+            marginLeft: 10,
+          });
           this._addAt(control, this.self().POS.ROLE_LAYOUT);
           break;
         case "role-text": {
@@ -216,25 +218,45 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
     },
 
     __buildLayout: function() {
-      this._removeAll();
-
-      this.__spacers = [];
-
       this.getChildControl("icon");
       const title = this.getChildControl("title");
+
+      const locationBreadcrumbs = this.getChildControl("breadcrumbs").set({
+        visibility: "excluded"
+      });
+      const editWorkspace = this.getChildControl("edit-button").set({
+        visibility: "excluded"
+      });
+      const shareWorkspaceLayout = this.getChildControl("share-layout").set({
+        visibility: "excluded"
+      });
+      const roleWorkspaceLayout = this.getChildControl("role-layout").set({
+        visibility: "excluded"
+      });
+  
+      const description = this.getChildControl("description").set({
+        visibility: "excluded"
+      });
+      // the study browser will take care of making it visible
+      this.getChildControl("empty-trash-button").set({
+        visibility: "excluded"
+      });
+
       const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       switch (currentContext) {
         case "studiesAndFolders": {
           const workspaceId = this.getCurrentWorkspaceId();
           title.setCursor("pointer");
           title.addListener("tap", this.__titleTapped, this);
-          this.getChildControl("breadcrumbs");
-          this.getChildControl("edit-button").exclude();
+          locationBreadcrumbs.show();
           const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
           if (workspace) {
             const thumbnail = workspace.getThumbnail();
             this.__setIcon(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
             workspace.bind("name", title, "value");
+            editWorkspace.show();
+            shareWorkspaceLayout.show();
+            roleWorkspaceLayout.show();
             workspace.bind("accessRights", this, "accessRights");
             workspace.bind("myAccessRights", this, "myAccessRights");
           } else {
@@ -255,11 +277,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           this.__setIcon("@FontAwesome5Solid/trash/20");
           title.setValue(this.tr("Trash"));
           const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
-          this.getChildControl("description").set({
-            value: this.tr(`Items in the bin will be permanently deleted after ${trashDays} days.`)
+          description.set({
+            value: this.tr(`Items in the bin will be permanently deleted after ${trashDays} days.`),
+            visibility: "visible",
           });
-          // the study browser will take care of making it visible
-          this.getChildControl("empty-trash-button").exclude();
           break;
         }
       }
@@ -323,7 +344,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       const editButton = this.getChildControl("edit-button");
       const roleText = this.getChildControl("role-text");
       const roleIcon = this.getChildControl("role-icon");
-      if (value && Object.keys(value).length) {
+      const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+      if (currentContext === "studiesAndFolders" && value && Object.keys(value).length) {
         editButton.setVisibility(value["delete"] ? "visible" : "excluded");
         const menu = new qx.ui.menu.Menu().set({
           position: "bottom-right"
@@ -355,6 +377,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         win.close();
         this.__buildLayout();
       }, this);
+      workspaceEditor.addListener("cancel", () => win.close());
     },
 
     __openShareWith: function() {
