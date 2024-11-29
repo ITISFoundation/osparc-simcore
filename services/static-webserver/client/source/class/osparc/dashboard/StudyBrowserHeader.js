@@ -278,21 +278,16 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       this._add(spacer);
     },
 
-    __resetIcon: function() {
+    __setIcon: function(source) {
+      // reset icon first
       const icon = this.getChildControl("icon");
       const image = icon.getChildControl("image");
       image.resetSource();
       icon.getContentElement().setStyles({
         "background-image": "none"
       });
-    },
 
-    __setIcon: function(source) {
-      this.__resetIcon();
-
-      const icon = this.getChildControl("icon");
       if (source.includes("@")) {
-        const image = icon.getChildControl("image");
         image.set({
           source
         });
