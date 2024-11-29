@@ -9,9 +9,10 @@ check some "corner cases" or critical setups with pydantic model such that:
 from typing import Any, Union, get_args, get_origin
 
 import pytest
+from common_library.json_serialization import json_dumps
 from models_library.projects_nodes import InputTypes, OutputTypes
 from models_library.projects_nodes_io import SimCoreFileLink
-from pydantic import BaseModel, Field, ValidationError, schema_json_of
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from pydantic.types import Json
 from pydantic.version import version_short
 
@@ -37,7 +38,9 @@ def test_json_type():
         data_schema: Json
 
     # notice that this is a raw string!
-    jsonschema_of_x = schema_json_of(list[int], title="schema[x]")
+    jsonschema_of_x = json_dumps(
+        {**TypeAdapter(list[int]).json_schema(), "title": "schema[x]"}
+    )
     assert isinstance(jsonschema_of_x, str)
 
     x_annotation = ArgumentAnnotation(name="x", data_schema=jsonschema_of_x)

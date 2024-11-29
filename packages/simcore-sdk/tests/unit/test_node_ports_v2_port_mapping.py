@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from models_library.services import ServiceInput
-from pydantic import Field, ValidationError, schema_of
+from pydantic import Field, TypeAdapter, ValidationError
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
@@ -74,10 +74,11 @@ def test_io_ports_are_not_aliases():
 @pytest.fixture
 def fake_port_meta() -> dict[str, Any]:
     """Service port metadata: defines a list of non-negative numbers"""
-    schema = schema_of(
-        list[Annotated[float, Field(ge=0)]],
-        title="list[non-negative number]",
-    )
+    schema = {
+        **TypeAdapter(list[Annotated[float, Field(ge=0)]]).json_schema(),
+        "title": "list[non-negative number]",
+    }
+
     schema.update(
         description="Port with an array of numbers",
         x_unit="millimeter",

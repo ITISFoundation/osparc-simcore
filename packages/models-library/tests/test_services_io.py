@@ -5,6 +5,7 @@
 from pathlib import Path
 
 import yaml
+from common_library.json_serialization import json_dumps
 from models_library.services import ServiceInput, ServiceMetaDataPublished
 from pint import Unit, UnitRegistry
 
@@ -13,7 +14,7 @@ def test_service_port_units(tests_data_dir: Path):
     ureg = UnitRegistry()
 
     data = yaml.safe_load((tests_data_dir / "metadata-sleeper-2.0.2.yaml").read_text())
-    print(ServiceMetaDataPublished.schema_json(indent=2))
+    print(json_dumps(ServiceMetaDataPublished.model_json_schema(), indent=2))
 
     service_meta = ServiceMetaDataPublished.model_validate(data)
     assert service_meta.inputs
