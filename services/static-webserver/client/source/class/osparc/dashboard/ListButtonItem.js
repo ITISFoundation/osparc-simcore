@@ -274,8 +274,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     },
 
     __itemSelected: function() {
-      // It could be blocked by IN_USE or UNKNOWN_SERVICE
-      if (this.getBlocked() === true) {
+      if (this.isItemNotClickable()) {
         this.setValue(false);
         return;
       }
