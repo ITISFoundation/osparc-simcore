@@ -19,10 +19,10 @@ from simcore_service_webserver.exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from simcore_service_webserver.exception_handling_base import (
+from simcore_service_webserver.exception_handling._base import (
     exception_handling_middleware,
 )
-from simcore_service_webserver.exception_handling_factory import (
+from simcore_service_webserver.exception_handling._factory import (
     create_http_error_exception_handlers_map,
 )
 

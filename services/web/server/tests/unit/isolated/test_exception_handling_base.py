@@ -10,7 +10,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from simcore_service_webserver.errors import WebServerBaseError
-from simcore_service_webserver.exception_handling_base import (
+from simcore_service_webserver.exception_handling._base import (
     AiohttpExceptionHandler,
     ExceptionHandlingContextManager,
     _sort_exceptions_by_specificity,

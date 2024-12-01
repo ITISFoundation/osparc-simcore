@@ -14,11 +14,11 @@ from aiohttp.test_utils import make_mocked_request
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_service_webserver.errors import WebServerBaseError
-from simcore_service_webserver.exception_handling_base import (
+from simcore_service_webserver.exception_handling._base import (
     ExceptionHandlingContextManager,
     exception_handling_decorator,
 )
-from simcore_service_webserver.exception_handling_factory import (
+from simcore_service_webserver.exception_handling._factory import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     create_exception_handler_from_http_info,
