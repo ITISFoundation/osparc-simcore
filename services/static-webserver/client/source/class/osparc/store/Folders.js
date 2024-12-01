@@ -78,6 +78,33 @@ qx.Class.define("osparc.store.Folders", {
         });
     },
 
+    fetchAllTrashedFolders: function(orderBy = {
+      field: "modified_at",
+      direction: "desc"
+    }) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
+      const params = {
+        url: {
+          orderBy: JSON.stringify(curatedOrderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("folders", params, "getPageTrashed")
+        .then(trashedFoldersData => {
+          const folders = [];
+          trashedFoldersData.forEach(folderData => {
+            const folder = this.__addToCache(folderData);
+            folders.push(folder);
+          });
+          return folders;
+        });
+    },
+
     searchFolders: function(
       text,
       orderBy = {
@@ -124,6 +151,37 @@ qx.Class.define("osparc.store.Folders", {
           this.fireDataEvent("folderAdded", folder);
           return folder;
         });
+    },
+
+    trashFolder: function(folderId, workspaceId) {
+      const params = {
+        "url": {
+          folderId
+        }
+      };
+      return osparc.data.Resources.getInstance().fetch("folders", "trash", params)
+        .then(() => {
+          const folder = this.getFolder(folderId);
+          if (folder) {
+            this.__deleteFromCache(folderId, workspaceId);
+            this.fireDataEvent("folderRemoved", folder);
+          }
+        })
+        .catch(console.error);
+    },
+
+    untrashFolder: function(folder) {
+      const params = {
+        "url": {
+          folderId: folder.getFolderId(),
+        }
+      };
+      return osparc.data.Resources.getInstance().fetch("folders", "untrash", params)
+        .then(() => {
+          this.foldersCached.unshift(folder);
+          this.fireDataEvent("folderAdded", folder);
+        })
+        .catch(console.error);
     },
 
     deleteFolder: function(folderId, workspaceId) {

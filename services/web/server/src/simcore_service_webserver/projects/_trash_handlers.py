@@ -8,7 +8,6 @@ from servicelib.aiohttp.requests_validation import (
 )
 
 from .._meta import API_VTAG as VTAG
-from ..application_settings_utils import requires_dev_feature_enabled
 from ..exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
@@ -55,7 +54,6 @@ routes = web.RouteTableDef()
 
 
 @routes.delete(f"/{VTAG}/trash", name="empty_trash")
-@requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
 @_handle_exceptions
@@ -71,7 +69,6 @@ async def empty_trash(request: web.Request):
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:trash", name="trash_project")
-@requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
 @_handle_exceptions
@@ -96,7 +93,6 @@ async def trash_project(request: web.Request):
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:untrash", name="untrash_project")
-@requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
 @_handle_exceptions

@@ -1,5 +1,5 @@
 # mypy: disable-error-code=truthy-function
-from typing import Any
+from typing import Annotated, Any
 
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.basic_types import IDStr
@@ -110,9 +110,10 @@ class AckPaymentWithPaymentMethod(_BaseAckPayment):
     # I decided to separate it for clarity in the OAS since in payments
     # w/ payment-method the field `saved` will never be provided,
 
-    payment_id: PaymentID = Field(
-        default=None, description="Payment ID from the gateway"
-    )
+    payment_id: Annotated[
+        PaymentID | None, Field(description="Payment ID from the gateway")
+    ] = None
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
