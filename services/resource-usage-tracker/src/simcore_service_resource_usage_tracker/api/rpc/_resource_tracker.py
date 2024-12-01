@@ -29,9 +29,6 @@ from servicelib.rabbitmq import RPCRouter
 
 from ...core.settings import ApplicationSettings
 from ...services import pricing_plans, pricing_units, service_runs
-from ...services.modules.db.repositories.resource_tracker import (
-    ResourceTrackerRepository,
-)
 from ...services.modules.s3 import get_s3_client
 
 router = RPCRouter()
@@ -56,7 +53,7 @@ async def get_service_run_page(
     return await service_runs.list_service_runs(
         user_id=user_id,
         product_name=product_name,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
         limit=limit,
         offset=offset,
         wallet_id=wallet_id,
@@ -87,7 +84,7 @@ async def export_service_runs(
         s3_region=s3_settings.S3_REGION,
         user_id=user_id,
         product_name=product_name,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
         wallet_id=wallet_id,
         access_all_wallet_usage=access_all_wallet_usage,
         order_by=order_by,
@@ -111,7 +108,7 @@ async def get_osparc_credits_aggregated_usages_page(
     return await service_runs.get_osparc_credits_aggregated_usages_page(
         user_id=user_id,
         product_name=product_name,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
         aggregated_by=aggregated_by,
         time_period=time_period,
         limit=limit,
@@ -134,7 +131,7 @@ async def get_pricing_plan(
     return await pricing_plans.get_pricing_plan(
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
     )
 
 
@@ -146,7 +143,7 @@ async def list_pricing_plans(
 ) -> list[PricingPlanGet]:
     return await pricing_plans.list_pricing_plans_by_product(
         product_name=product_name,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
     )
 
 
@@ -158,7 +155,7 @@ async def create_pricing_plan(
 ) -> PricingPlanGet:
     return await pricing_plans.create_pricing_plan(
         data=data,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
     )
 
 
@@ -172,7 +169,7 @@ async def update_pricing_plan(
     return await pricing_plans.update_pricing_plan(
         product_name=product_name,
         data=data,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
     )
 
 
@@ -191,7 +188,7 @@ async def get_pricing_unit(
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
         pricing_unit_id=pricing_unit_id,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
     )
 
 
@@ -205,7 +202,7 @@ async def create_pricing_unit(
     return await pricing_units.create_pricing_unit(
         product_name=product_name,
         data=data,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
     )
 
 
@@ -219,7 +216,7 @@ async def update_pricing_unit(
     return await pricing_units.update_pricing_unit(
         product_name=product_name,
         data=data,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
     )
 
 
@@ -238,7 +235,7 @@ async def list_connected_services_to_pricing_plan_by_pricing_plan(
     ] = await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
     )
     return output
 
@@ -257,5 +254,5 @@ async def connect_service_to_pricing_plan(
         pricing_plan_id=pricing_plan_id,
         service_key=service_key,
         service_version=service_version,
-        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+        db_engine=app.state.engine,
     )
