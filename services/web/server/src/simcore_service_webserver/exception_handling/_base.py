@@ -102,13 +102,15 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
 
     async def __aexit__(
         self,
-        exc_type: type[Exception] | None,
-        exc_value: Exception | None,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> bool:
         if (
             exc_value is not None
             and exc_type is not None
+            and issubclass(exc_type, Exception)
+            and isinstance(exc_value, Exception)
             and (exc_handler := self._get_exc_handler_or_none(exc_type, exc_value))
         ):
             self._response = await exc_handler(
