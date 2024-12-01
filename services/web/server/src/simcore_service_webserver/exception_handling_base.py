@@ -27,7 +27,6 @@ class AiohttpExceptionHandler(Protocol):
             request -- current request
             exception -- exception raised in web handler during this request
         """
-        ...  # pylint: disable=unnecessary-ellipsis
 
 
 ExceptionHandlersMap: TypeAlias = dict[type[BaseException], AiohttpExceptionHandler]
