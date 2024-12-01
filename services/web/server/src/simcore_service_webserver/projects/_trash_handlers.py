@@ -8,10 +8,11 @@ from servicelib.aiohttp.requests_validation import (
 )
 
 from .._meta import API_VTAG as VTAG
-from ..exceptions_handlers import (
+from ..exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    create_exception_handlers_decorator,
+    exception_handling_decorator,
+    to_exceptions_handlers_map,
 )
 from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
@@ -19,11 +20,7 @@ from ..projects._common_models import ProjectPathParams
 from ..security.decorators import permission_required
 from . import _trash_api
 from ._common_models import RemoveQueryParams
-from .exceptions import (
-    ProjectRunningConflictError,
-    ProjectStoppingError,
-    ProjectTrashError,
-)
+from .exceptions import ProjectRunningConflictError, ProjectStoppingError
 
 _logger = logging.getLogger(__name__)
 
@@ -44,9 +41,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-_handle_exceptions = create_exception_handlers_decorator(
-    exceptions_catch=ProjectTrashError, exc_to_status_map=_TO_HTTP_ERROR_MAP
+_handle_exceptions = exception_handling_decorator(
+    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
+
 
 #
 # ROUTES
