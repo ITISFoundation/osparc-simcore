@@ -109,8 +109,8 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
         if (
             exc_value is not None
             and exc_type is not None
-            and issubclass(exc_type, Exception)
             and isinstance(exc_value, Exception)
+            and issubclass(exc_type, Exception)
             and (exc_handler := self._get_exc_handler_or_none(exc_type, exc_value))
         ):
             self._response = await exc_handler(
