@@ -31,7 +31,7 @@ class HttpErrorInfo(NamedTuple):
     msg_template: str  # sets HTTPError.reason
 
 
-ExceptionToHttpErrorMap: TypeAlias = dict[type[BaseException], HttpErrorInfo]
+ExceptionToHttpErrorMap: TypeAlias = dict[type[Exception], HttpErrorInfo]
 
 
 def create_error_response(error: ErrorGet, status_code: int) -> web.Response:

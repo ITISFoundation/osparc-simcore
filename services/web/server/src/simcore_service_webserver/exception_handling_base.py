@@ -18,7 +18,7 @@ class AiohttpExceptionHandler(Protocol):
     async def __call__(
         self,
         request: web.Request,
-        exception: BaseException,
+        exception: Exception,
     ) -> web.StreamResponse:
         """
         Callback that handles an exception produced during a request and transforms it into a response
@@ -29,12 +29,12 @@ class AiohttpExceptionHandler(Protocol):
         """
 
 
-ExceptionHandlersMap: TypeAlias = dict[type[BaseException], AiohttpExceptionHandler]
+ExceptionHandlersMap: TypeAlias = dict[type[Exception], AiohttpExceptionHandler]
 
 
 def _sort_exceptions_by_specificity(
-    exceptions: Iterable[type[BaseException]], *, concrete_first: bool = True
-) -> list[type[BaseException]]:
+    exceptions: Iterable[type[Exception]], *, concrete_first: bool = True
+) -> list[type[Exception]]:
     """
     Keyword Arguments:
         concrete_first -- If True, concrete subclasses precede their superclass (default: {True}).
@@ -80,7 +80,7 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
         self._response: web.StreamResponse | None = None
 
     def _get_exc_handler_or_none(
-        self, exc_type: type[BaseException], exc_value: BaseException
+        self, exc_type: type[Exception], exc_value: Exception
     ) -> AiohttpExceptionHandler | None:
         exc_handler = self._exc_handlers_map.get(exc_type)
         if not exc_handler and (
@@ -102,8 +102,8 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
 
     async def __aexit__(
         self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
+        exc_type: type[Exception] | None,
+        exc_value: Exception | None,
         traceback: TracebackType | None,
     ) -> bool:
         if (
@@ -125,7 +125,7 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
 
 
 def exception_handling_decorator(
-    exception_handlers_map: dict[type[BaseException], AiohttpExceptionHandler]
+    exception_handlers_map: dict[type[Exception], AiohttpExceptionHandler]
 ) -> Callable[[WebHandler], WebHandler]:
     """Creates a decorator to manage exceptions raised in a given route handler.
     Ensures consistent exception management across decorated handlers.
@@ -153,7 +153,7 @@ def exception_handling_decorator(
 
 
 def exception_handling_middleware(
-    exception_handlers_map: dict[type[BaseException], AiohttpExceptionHandler]
+    exception_handlers_map: dict[type[Exception], AiohttpExceptionHandler]
 ) -> WebMiddleware:
     """Constructs middleware to handle exceptions raised across app routes
 
