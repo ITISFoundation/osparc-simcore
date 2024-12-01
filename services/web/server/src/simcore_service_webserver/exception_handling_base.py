@@ -35,6 +35,10 @@ ExceptionHandlersMap: TypeAlias = dict[type[BaseException], AiohttpExceptionHand
 def _sort_exceptions_by_specificity(
     exceptions: Iterable[type[BaseException]], *, concrete_first: bool = True
 ) -> list[type[BaseException]]:
+    """
+    Keyword Arguments:
+        concrete_first -- If True, concrete subclasses precede their superclass (default: {True}).
+    """
     return sorted(
         exceptions,
         key=lambda exc: sum(issubclass(e, exc) for e in exceptions if e is not exc),
