@@ -79,7 +79,7 @@ async def test_handling_different_exceptions_with_context(
         async with cm:
             raise OneError
 
-        response = cm.get_response()
+        response = cm.get_response_or_none()
         assert response is not None
         assert response.status == status.HTTP_400_BAD_REQUEST
         assert response.reason == exc_to_http_error_map[OneError].msg_template.format(
@@ -93,14 +93,14 @@ async def test_handling_different_exceptions_with_context(
             async with cm:
                 raise err
 
-        assert cm.get_response() is None
+        assert cm.get_response_or_none() is None
         assert err_info.value == err
 
         # handles as 5XX and logs
         async with cm:
             raise OtherError
 
-        response = cm.get_response()
+        response = cm.get_response_or_none()
         assert response is not None
         assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert response.reason == exc_to_http_error_map[OtherError].msg_template.format(

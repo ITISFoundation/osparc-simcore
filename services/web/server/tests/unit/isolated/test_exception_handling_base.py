@@ -93,11 +93,11 @@ async def test__handled_exception_context_manager():
     )
     async with cm:
         raise OneError
-    assert cm.get_response() == expected_response
+    assert cm.get_response_or_none() == expected_response
 
     async with cm:
         raise OtherError
-    assert cm.get_response() == expected_response
+    assert cm.get_response_or_none() == expected_response
 
     # reraises
     with pytest.raises(ArithmeticError):
