@@ -1,6 +1,5 @@
 from typing import Any, TypeAlias
 
-from models_library.basic_types import IDStr
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -11,12 +10,12 @@ from pydantic import (
     field_validator,
 )
 
-from ..clusters import ClusterID
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..projects_pipeline import ComputationTask
 from ..users import UserID
 from ..wallets import WalletInfo
+from .basic_types import IDStr
 
 
 class ComputationGet(ComputationTask):
@@ -54,14 +53,10 @@ class ComputationCreate(BaseModel):
     force_restart: bool | None = Field(
         default=False, description="if True will force re-running all dependent nodes"
     )
-    cluster_id: ClusterID | None = Field(
-        default=None,
-        description="the computation shall use the cluster described by its id, 0 is the default cluster",
-    )
     simcore_user_agent: str = ""
     use_on_demand_clusters: bool = Field(
         default=False,
-        description="if True, a cluster will be created as necessary (wallet_id cannot be None, and cluster_id must be None)",
+        description="if True, a cluster will be created as necessary (wallet_id cannot be None)",
         validate_default=True,
     )
     wallet_info: WalletInfo | None = Field(
@@ -76,14 +71,6 @@ class ComputationCreate(BaseModel):
     ):
         if info.data.get("start_pipeline") and v is None:
             msg = "product_name must be set if computation shall start!"
-            raise ValueError(msg)
-        return v
-
-    @field_validator("use_on_demand_clusters")
-    @classmethod
-    def _ensure_expected_options(cls, v, info: ValidationInfo):
-        if v and info.data.get("cluster_id") is not None:
-            msg = "cluster_id cannot be set if use_on_demand_clusters is set"
             raise ValueError(msg)
         return v
 
