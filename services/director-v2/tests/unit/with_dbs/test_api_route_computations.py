@@ -87,7 +87,6 @@ def minimal_configuration(
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
-    mocked_rabbit_mq_client: None,
     faker: Faker,
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
@@ -885,7 +884,7 @@ async def test_get_computation_from_empty_project(
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     # create an empty pipeline
     await create_pipeline(
-        project_id=proj.uuid,
+        project_id=f"{proj.uuid}",
     )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
@@ -997,7 +996,7 @@ async def test_get_computation_from_published_computation_task(
     user = registered_user()
     proj = await project(user, workbench=fake_workbench_without_outputs)
     await create_pipeline(
-        project_id=proj.uuid,
+        project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
     comp_tasks = await create_tasks(

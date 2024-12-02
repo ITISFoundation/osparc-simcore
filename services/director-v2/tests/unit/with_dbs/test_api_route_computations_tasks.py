@@ -126,7 +126,7 @@ async def project_id(
 
     # insert pipeline  -> comp_pipeline
     await create_pipeline(
-        project_id=proj.uuid,
+        project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
     # insert tasks -> comp_tasks
