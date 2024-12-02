@@ -162,16 +162,19 @@ class Node(BaseModel):
     )
 
     # INPUT PORTS ---
-    inputs: InputsDict | None = Field(
-        default_factory=dict, description="values of input properties"
-    )
-    inputs_required: list[InputID] = Field(
-        default_factory=list,
-        description="Defines inputs that are required in order to run the service",
-        alias="inputsRequired",
-    )
+    inputs: Annotated[
+        InputsDict | None,
+        Field(default_factory=dict, description="values of input properties"),
+    ]
+    inputs_required: Annotated[
+        list[InputID],
+        Field(
+            default_factory=list,
+            description="Defines inputs that are required in order to run the service",
+            alias="inputsRequired",
+        ),
+    ]
     inputs_units: dict[InputID, UnitStr] | None = Field(
-        default=None,
         description="Overrides default unit (if any) defined in the service for each port",
         alias="inputsUnits",
     )
@@ -180,16 +183,20 @@ class Node(BaseModel):
         description="map with key - access level pairs",
         alias="inputAccess",
     )
-    input_nodes: list[NodeID] | None = Field(
-        default_factory=list,
-        description="node IDs of where the node is connected to",
-        alias="inputNodes",
-    )
+    input_nodes: Annotated[
+        list[NodeID] | None,
+        Field(
+            default_factory=list,
+            description="node IDs of where the node is connected to",
+            alias="inputNodes",
+        ),
+    ]
 
     # OUTPUT PORTS ---
-    outputs: OutputsDict | None = Field(
-        default_factory=dict, description="values of output properties"
-    )
+    outputs: Annotated[
+        OutputsDict | None,
+        Field(default_factory=dict, description="values of output properties"),
+    ]
     output_node: bool | None = Field(default=None, deprecated=True, alias="outputNode")
     output_nodes: list[NodeID] | None = Field(
         default=None,
@@ -208,9 +215,10 @@ class Node(BaseModel):
         description="Use projects_ui.WorkbenchUI.position instead",
     )
 
-    state: NodeState | None = Field(
-        default_factory=NodeState, description="The node's state object"
-    )
+    state: Annotated[
+        NodeState | None,
+        Field(default_factory=NodeState, description="The node's state object"),
+    ]
 
     boot_options: dict[EnvVarKey, str] | None = Field(
         default=None,
@@ -224,23 +232,23 @@ class Node(BaseModel):
 
     @field_validator("thumbnail", mode="before")
     @classmethod
-    def convert_empty_str_to_none(cls, v):
+    def _convert_empty_str_to_none(cls, v):
         if isinstance(v, str) and v == "":
             return None
         return v
 
     @classmethod
-    def convert_old_enum_name(cls, v) -> RunningState:
+    def _convert_old_enum_name(cls, v) -> RunningState:
         if v == "FAILURE":
             return RunningState.FAILED
         return RunningState(v)
 
     @field_validator("state", mode="before")
     @classmethod
-    def convert_from_enum(cls, v):
+    def _convert_from_enum(cls, v):
         if isinstance(v, str):
             # the old version of state was a enum of RunningState
-            running_state_value = cls.convert_old_enum_name(v)
+            running_state_value = cls._convert_old_enum_name(v)
             return NodeState(currentStatus=running_state_value)
         return v
 

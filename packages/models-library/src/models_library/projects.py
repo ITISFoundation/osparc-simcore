@@ -144,11 +144,14 @@ class Project(BaseProjectModel):
 
     # Classification
     tags: list[int] | None = []
-    classifiers: list[ClassifierID] | None = Field(
-        default_factory=list,
-        description="Contains the reference to the project classifiers",
-        examples=["some:id:to:a:classifier"],
-    )
+    classifiers: Annotated[
+        list[ClassifierID] | None,
+        Field(
+            default_factory=list,
+            description="Contains the reference to the project classifiers",
+            examples=["some:id:to:a:classifier"],
+        ),
+    ]
 
     # Project state (SEE projects_state.py)
     state: ProjectState | None = None

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel
 
@@ -4891,7 +4891,9 @@ class SwarmInfo(BaseModel):
         description="IP address at which this node can be reached by other nodes in the\nswarm.\n",
         examples=["10.0.0.46"],
     )
-    local_node_state: LocalNodeState | None = Field(default="", alias="LocalNodeState")
+    local_node_state: LocalNodeState | None = Field(
+        default=LocalNodeState.field_, alias="LocalNodeState"
+    )
     control_available: bool | None = Field(
         default=False, alias="ControlAvailable", examples=[True]
     )
@@ -5671,21 +5673,24 @@ class SystemInfo(BaseModel):
         description="The network endpoint that the Engine advertises for the purpose of\nnode discovery. ClusterAdvertise is a `host:port` combination on which\nthe daemon is reachable by other hosts.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when using standalone Swarm\n> mode, and overlay networking using an external k/v store. Overlay\n> networks with Swarm mode enabled use the built-in raft store, and\n> this field will be empty.\n",
         examples=["node5.corp.example.com:8000"],
     )
-    runtimes: dict[str, Runtime] | None = Field(
-        default_factory=lambda: Runtime.model_validate({"runc": {"path": "runc"}}),
-        alias="Runtimes",
-        description='List of [OCI compliant](https://github.com/opencontainers/runtime-spec)\nruntimes configured on the daemon. Keys hold the "name" used to\nreference the runtime.\n\nThe Docker daemon relies on an OCI compliant runtime (invoked via the\n`containerd` daemon) as its interface to the Linux kernel namespaces,\ncgroups, and SELinux.\n\nThe default runtime is `runc`, and automatically configured. Additional\nruntimes can be configured by the user and will be listed here.\n',
-        examples=[
-            {
-                "runc": {"path": "runc"},
-                "runc-master": {"path": "/go/bin/runc"},
-                "custom": {
-                    "path": "/usr/local/bin/my-oci-runtime",
-                    "runtimeArgs": ["--debug", "--systemd-cgroup=false"],
-                },
-            }
-        ],
-    )
+    runtimes: Annotated[
+        dict[str, Runtime] | None,
+        Field(
+            default_factory=lambda: Runtime.model_validate({"runc": {"path": "runc"}}),
+            alias="Runtimes",
+            description='List of [OCI compliant](https://github.com/opencontainers/runtime-spec)\nruntimes configured on the daemon. Keys hold the "name" used to\nreference the runtime.\n\nThe Docker daemon relies on an OCI compliant runtime (invoked via the\n`containerd` daemon) as its interface to the Linux kernel namespaces,\ncgroups, and SELinux.\n\nThe default runtime is `runc`, and automatically configured. Additional\nruntimes can be configured by the user and will be listed here.\n',
+            examples=[
+                {
+                    "runc": {"path": "runc"},
+                    "runc-master": {"path": "/go/bin/runc"},
+                    "custom": {
+                        "path": "/usr/local/bin/my-oci-runtime",
+                        "runtimeArgs": ["--debug", "--systemd-cgroup=false"],
+                    },
+                }
+            ],
+        ),
+    ]
     default_runtime: str | None = Field(
         default="runc",
         alias="DefaultRuntime",

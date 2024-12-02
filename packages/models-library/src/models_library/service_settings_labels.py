@@ -503,15 +503,37 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     spec will be generated before starting the service.
     """
 
-    settings: Json[SimcoreServiceSettingsLabel] = Field(
-        default_factory=dict,
-        alias="simcore.service.settings",
-        description=(
-            "Json encoded. Contains setting like environment variables and "
-            "resource constraints which are required by the service. "
-            "Should be compatible with Docker REST API."
+    settings: Annotated[
+        Json[SimcoreServiceSettingsLabel],
+        Field(
+            default_factory=dict,
+            alias="simcore.service.settings",
+            description=(
+                "Json encoded. Contains setting like environment variables and "
+                "resource constraints which are required by the service. "
+                "Should be compatible with Docker REST API."
+            ),
         ),
-    )
+    ]
+
+    assert "json_schema_extra" in SimcoreServiceSettingLabelEntry.model_config  # nosec
+    assert isinstance(
+        SimcoreServiceSettingLabelEntry.model_config["json_schema_extra"], dict
+    )  # nosec
+
+    assert "json_schema_extra" in PathMappingsLabel.model_config  # nosec
+    assert isinstance(
+        PathMappingsLabel.model_config["json_schema_extra"], dict
+    )  # nosec
+    assert isinstance(
+        PathMappingsLabel.model_config["json_schema_extra"]["examples"], list
+    )  # nosec
+
+    assert "json_schema_extra" in CallbacksMapping.model_config  # nosec
+    assert isinstance(CallbacksMapping.model_config["json_schema_extra"], dict)  # nosec
+    assert isinstance(
+        CallbacksMapping.model_config["json_schema_extra"]["examples"], list
+    )  # nosec
 
     model_config = _BaseConfig | ConfigDict(
         extra="allow",
@@ -523,9 +545,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.model_config[
                             "json_schema_extra"
-                        ][
-                            "examples"
-                        ]  # type: ignore[index]
+                        ]["examples"]
                     )
                 },
                 # dynamic-service
@@ -533,12 +553,12 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.model_config[
                             "json_schema_extra"
-                        ][
-                            "examples"
-                        ]  # type: ignore[index]
+                        ]["examples"]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][0]  # type: ignore [index]
+                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][
+                            0
+                        ]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
                     "simcore.service.callbacks-mapping": json_dumps(
@@ -559,12 +579,12 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.model_config[
                             "json_schema_extra"
-                        ][
-                            "examples"
-                        ]  # type: ignore[index]
+                        ]["examples"]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index]
+                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][
+                            0
+                        ],
                     ),
                     "simcore.service.compose-spec": json_dumps(
                         {
@@ -592,7 +612,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.container-http-entrypoint": "rt-web",
                     "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
                     "simcore.service.callbacks-mapping": json_dumps(
-                        CallbacksMapping.model_config["json_schema_extra"]["examples"][3]  # type: ignore [index]
+                        CallbacksMapping.model_config["json_schema_extra"]["examples"][
+                            3
+                        ]
                     ),
                 },
             ]

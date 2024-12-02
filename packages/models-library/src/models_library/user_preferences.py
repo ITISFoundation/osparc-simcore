@@ -76,7 +76,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
     def get_default_value(cls) -> Any:
         return (
             cls.model_fields["value"].default_factory()
-            if cls.model_fields["value"].default_factory
+            if cls.model_fields["value"].default_factory is not None
             else cls.model_fields["value"].default
         )
 
