@@ -35,38 +35,40 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
   },
 
   members: {
+    __tagsPage: null,
+
     __addGeneralSettings: function() {
       const title = this.tr("General Settings");
-      const iconSrc = "@FontAwesome5Solid/cogs/24";
+      const iconSrc = "@FontAwesome5Solid/cogs/22";
       const generalPage = new osparc.desktop.preferences.pages.GeneralPage();
       this.addTab(title, iconSrc, generalPage);
     },
 
     __addConfirmationSettings: function() {
       const title = this.tr("Confirmation Settings");
-      const iconSrc = "@FontAwesome5Solid/question-circle/24";
+      const iconSrc = "@FontAwesome5Solid/question-circle/22";
       const confirmPage = new osparc.desktop.preferences.pages.ConfirmationsPage();
       this.addTab(title, iconSrc, confirmPage);
     },
 
     __addTokensPage: function() {
       const title = this.tr("API Keys/Tokens");
-      const iconSrc = "@FontAwesome5Solid/exchange-alt/24";
+      const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
       const tokensPage = new osparc.desktop.preferences.pages.TokensPage();
       this.addTab(title, iconSrc, tokensPage);
     },
 
     __addTagsPage: function() {
       const title = this.tr("Create/Edit Tags");
-      const iconSrc = "@FontAwesome5Solid/tags/24";
-      const tagsPage = new osparc.desktop.preferences.pages.TagsPage();
+      const iconSrc = "@FontAwesome5Solid/tags/22";
+      const tagsPage = this.__tagsPage = new osparc.desktop.preferences.pages.TagsPage();
       const page = this.addTab(title, iconSrc, tagsPage);
       osparc.utils.Utils.setIdToWidget(page.getChildControl("button"), "preferencesTagsTabBtn");
     },
 
     __addClustersPage: function() {
       const title = this.tr("Clusters");
-      const iconSrc = "@FontAwesome5Solid/server/24";
+      const iconSrc = "@FontAwesome5Solid/server/22";
       const clustersPage = new osparc.desktop.preferences.pages.ClustersPage();
       const page = this.addTab(title, iconSrc, clustersPage);
       const clustersBtn = page.getChildControl("button");
@@ -80,6 +82,13 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
             }
           })
           .catch(err => console.error(err));
+      }
+    },
+
+    openTags: function() {
+      if (this.__tagsPage) {
+        this._openPage(this.__tagsPage);
+        return true;
       }
     },
   }
