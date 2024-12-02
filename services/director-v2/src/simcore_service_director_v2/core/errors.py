@@ -35,6 +35,10 @@ class ConfigurationError(DirectorError):
     msg_template: str = "Application misconfiguration: {msg}"
 
 
+class UserNotFoundError(DirectorError):
+    msg_template: str = "user {user_id} not found"
+
+
 class ProjectNotFoundError(DirectorError):
     msg_template: str = "project {project_id} not found"
 

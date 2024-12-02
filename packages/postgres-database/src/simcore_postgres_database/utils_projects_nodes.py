@@ -102,7 +102,7 @@ class ProjectNodesRepo:
             assert result  # nosec
             rows = await result.fetchall()
             assert rows is not None  # nosec
-            return [ProjectNode.from_orm(r) for r in rows]
+            return [ProjectNode.model_validate(r) for r in rows]
         except ForeignKeyViolation as exc:
             # this happens when the project does not exist, as we first check the node exists
             raise ProjectNodesProjectNotFoundError(
@@ -128,7 +128,7 @@ class ProjectNodesRepo:
         assert result  # nosec
         rows = await result.fetchall()
         assert rows is not None  # nosec
-        return [ProjectNode.from_orm(row) for row in rows]
+        return [ProjectNode.model_validate(row) for row in rows]
 
     async def get(self, connection: SAConnection, *, node_id: uuid.UUID) -> ProjectNode:
         """get a node in the current project
@@ -154,7 +154,7 @@ class ProjectNodesRepo:
                 project_uuid=self.project_uuid, node_id=node_id
             )
         assert row  # nosec
-        return ProjectNode.from_orm(row)
+        return ProjectNode.model_validate(row)
 
     async def update(
         self, connection: SAConnection, *, node_id: uuid.UUID, **values
@@ -184,7 +184,7 @@ class ProjectNodesRepo:
                 project_uuid=self.project_uuid, node_id=node_id
             )
         assert row  # nosec
-        return ProjectNode.from_orm(row)
+        return ProjectNode.model_validate(row)
 
     async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
         """delete a node in the current project

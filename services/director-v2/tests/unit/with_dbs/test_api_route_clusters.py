@@ -4,7 +4,7 @@
 
 import random
 from collections.abc import Callable, Iterator
-from typing import Any
+from typing import Any, Awaitable
 
 import httpx
 import pytest
@@ -85,7 +85,7 @@ def clusters_cleaner(postgres_db: sa.engine.Engine) -> Iterator:
 async def test_list_clusters(
     clusters_config: None,
     registered_user: Callable[..., dict],
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
     async_client: httpx.AsyncClient,
 ):
     user_1 = registered_user()
@@ -106,7 +106,7 @@ async def test_list_clusters(
     # let's create some clusters
     NUM_CLUSTERS = 111
     for n in range(NUM_CLUSTERS):
-        cluster(user_1, name=f"pytest cluster{n:04}")
+        await create_cluster(user_1, name=f"pytest cluster{n:04}")
 
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
@@ -141,7 +141,7 @@ async def test_list_clusters(
         (CLUSTER_MANAGER_RIGHTS, "manager rights"),
         (CLUSTER_ADMIN_RIGHTS, "admin rights"),
     ]:
-        cluster(
+        await create_cluster(
             user_1,  # cluster is owned by user_1
             name=f"cluster with {name}",
             access_rights={
@@ -172,7 +172,7 @@ async def test_list_clusters(
 async def test_get_cluster(
     clusters_config: None,
     registered_user: Callable[..., dict],
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
     async_client: httpx.AsyncClient,
 ):
     user_1 = registered_user()
@@ -183,7 +183,7 @@ async def test_get_cluster(
     assert response.status_code == status.HTTP_404_NOT_FOUND
     # let's create some clusters
     a_bunch_of_clusters = [
-        cluster(user_1, name=f"pytest cluster{n:04}") for n in range(111)
+        await create_cluster(user_1, name=f"pytest cluster{n:04}") for n in range(111)
     ]
     the_cluster = random.choice(a_bunch_of_clusters)
 
@@ -213,7 +213,7 @@ async def test_get_cluster(
         (CLUSTER_MANAGER_RIGHTS, True),
         (CLUSTER_ADMIN_RIGHTS, True),
     ]:
-        a_cluster = cluster(
+        a_cluster = await create_cluster(
             user_2,  # cluster is owned by user_2
             access_rights={
                 user_2["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
@@ -243,7 +243,7 @@ async def test_get_cluster(
 async def test_get_another_cluster(
     clusters_config: None,
     registered_user: Callable[..., dict],
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
     async_client: httpx.AsyncClient,
     cluster_sharing_rights: ClusterAccessRights,
     can_use: bool,
@@ -252,7 +252,7 @@ async def test_get_another_cluster(
     user_2 = registered_user()
     # let's create some clusters
     a_bunch_of_clusters = [
-        cluster(
+        await create_cluster(
             user_1,
             name=f"pytest cluster{n:04}",
             access_rights={
@@ -349,7 +349,7 @@ async def test_create_cluster(
 async def test_update_own_cluster(
     clusters_config: None,
     registered_user: Callable[..., dict],
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
     faker: Faker,
@@ -366,7 +366,7 @@ async def test_update_own_cluster(
     assert response.status_code == status.HTTP_404_NOT_FOUND
     # let's create some clusters
     a_bunch_of_clusters = [
-        cluster(user_1, name=f"pytest cluster{n:04}") for n in range(111)
+        await create_cluster(user_1, name=f"pytest cluster{n:04}") for n in range(111)
     ]
     the_cluster = random.choice(a_bunch_of_clusters)
     # get the original one
@@ -471,7 +471,7 @@ async def test_update_own_cluster(
 async def test_update_default_cluster_fails(
     clusters_config: None,
     registered_user: Callable[..., dict],
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
     faker: Faker,
@@ -506,7 +506,7 @@ async def test_update_default_cluster_fails(
 async def test_update_another_cluster(
     clusters_config: None,
     registered_user: Callable[..., dict],
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
     faker: Faker,
@@ -522,7 +522,7 @@ async def test_update_another_cluster(
     user_2 = registered_user()
     # let's create some clusters
     a_bunch_of_clusters = [
-        cluster(
+        await create_cluster(
             user_1,
             name=f"pytest cluster{n:04}",
             access_rights={
@@ -603,13 +603,13 @@ async def test_update_another_cluster(
 async def test_delete_cluster(
     clusters_config: None,
     registered_user: Callable[..., dict],
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
     async_client: httpx.AsyncClient,
 ):
     user_1 = registered_user()
     # let's create some clusters
     a_bunch_of_clusters = [
-        cluster(
+        await create_cluster(
             user_1,
             name=f"pytest cluster{n:04}",
             access_rights={
@@ -647,7 +647,7 @@ async def test_delete_cluster(
 async def test_delete_another_cluster(
     clusters_config: None,
     registered_user: Callable[..., dict],
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
     faker: Faker,
@@ -658,7 +658,7 @@ async def test_delete_another_cluster(
     user_2 = registered_user()
     # let's create some clusters
     a_bunch_of_clusters = [
-        cluster(
+        await create_cluster(
             user_1,
             name=f"pytest cluster{n:04}",
             access_rights={
@@ -754,7 +754,7 @@ async def test_ping_cluster(
 async def test_ping_specific_cluster(
     clusters_config: None,
     registered_user: Callable[..., dict],
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
     async_client: httpx.AsyncClient,
     local_dask_gateway_server: DaskGatewayServer,
 ):
@@ -767,7 +767,7 @@ async def test_ping_specific_cluster(
 
     # let's create some clusters and ping one
     a_bunch_of_clusters = [
-        cluster(
+        await create_cluster(
             user_1,
             name=f"pytest cluster{n:04}",
             endpoint=local_dask_gateway_server.address,
