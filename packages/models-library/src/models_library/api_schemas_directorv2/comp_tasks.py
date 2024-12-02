@@ -10,12 +10,12 @@ from pydantic import (
     field_validator,
 )
 
+from ..basic_types import IDStr
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..projects_pipeline import ComputationTask
 from ..users import UserID
 from ..wallets import WalletInfo
-from .basic_types import IDStr
 
 
 class ComputationGet(ComputationTask):
