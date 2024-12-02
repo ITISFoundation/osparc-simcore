@@ -1,5 +1,6 @@
 import datetime
 from contextlib import suppress
+from typing import TypeAlias
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
@@ -37,12 +38,15 @@ class RunMetadataDict(TypedDict, total=False):
     project_metadata: ProjectMetadataDict
 
 
+Iteration: TypeAlias = PositiveInt
+
+
 class CompRunsAtDB(BaseModel):
     run_id: PositiveInt
     project_uuid: ProjectID
     user_id: UserID
     cluster_id: ClusterID | None
-    iteration: PositiveInt
+    iteration: Iteration
     result: RunningState
     created: datetime.datetime
     modified: datetime.datetime
@@ -51,6 +55,8 @@ class CompRunsAtDB(BaseModel):
     cancelled: datetime.datetime | None
     metadata: RunMetadataDict = RunMetadataDict()
     use_on_demand_clusters: bool
+    scheduled: datetime.datetime | None
+    processed: datetime.datetime | None
 
     @field_validator("result", mode="before")
     @classmethod
@@ -103,6 +109,8 @@ class CompRunsAtDB(BaseModel):
                     "modified": "2021-03-01T13:07:34.191610",
                     "cancelled": None,
                     "use_on_demand_clusters": False,
+                    "scheduled": None,
+                    "processed": None,
                 },
                 {
                     "run_id": 432,
@@ -117,6 +125,8 @@ class CompRunsAtDB(BaseModel):
                     "modified": "2021-03-01T13:07:34.191610",
                     "cancelled": None,
                     "use_on_demand_clusters": False,
+                    "scheduled": None,
+                    "processed": None,
                 },
                 {
                     "run_id": 43243,
@@ -138,6 +148,8 @@ class CompRunsAtDB(BaseModel):
                         "some-other-metadata-which-is-an-array": [1, 3, 4],
                     },
                     "use_on_demand_clusters": False,
+                    "scheduled": None,
+                    "processed": None,
                 },
                 {
                     "run_id": 43243,
@@ -153,6 +165,8 @@ class CompRunsAtDB(BaseModel):
                     "cancelled": None,
                     "metadata": None,
                     "use_on_demand_clusters": False,
+                    "scheduled": None,
+                    "processed": None,
                 },
             ]
         },

@@ -93,7 +93,7 @@ async def get(connection: SAConnection, project_uuid: uuid.UUID) -> ProjectMetad
     row: RowProxy | None = await result.first()
     if row is None:
         raise DBProjectNotFoundError(project_uuid=project_uuid)
-    return ProjectMetadata.from_orm(row)
+    return ProjectMetadata.model_validate(row)
 
 
 def _check_valid_ancestors_combination(
@@ -202,7 +202,7 @@ async def set_project_ancestors(
         result: ResultProxy = await connection.execute(upsert_stmt)
         row: RowProxy | None = await result.first()
         assert row  # nosec
-        return ProjectMetadata.from_orm(row)
+        return ProjectMetadata.model_validate(row)
 
     except ForeignKeyViolation as err:
         assert err.pgerror is not None  # nosec  # noqa: PT017
@@ -234,7 +234,7 @@ async def set_project_custom_metadata(
         result: ResultProxy = await connection.execute(upsert_stmt)
         row: RowProxy | None = await result.first()
         assert row  # nosec
-        return ProjectMetadata.from_orm(row)
+        return ProjectMetadata.model_validate(row)
 
     except ForeignKeyViolation as err:
         raise DBProjectNotFoundError(project_uuid=project_uuid) from err

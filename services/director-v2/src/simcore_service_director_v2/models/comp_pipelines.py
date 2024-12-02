@@ -17,7 +17,7 @@ class CompPipelineAtDB(BaseModel):
 
     @field_validator("state", mode="before")
     @classmethod
-    def convert_state_from_state_type_enum_if_needed(cls, v):
+    def _convert_state_from_state_type_enum_if_needed(cls, v):
         if isinstance(v, str):
             # try to convert to a StateType, if it fails the validations will continue
             # and pydantic will try to convert it to a RunninState later on
@@ -29,7 +29,7 @@ class CompPipelineAtDB(BaseModel):
 
     @field_validator("dag_adjacency_list", mode="before")
     @classmethod
-    def auto_convert_dag(cls, v):
+    def _auto_convert_dag(cls, v):
         # this enforcement is here because the serialization using json is not happy with non str Dict keys, also comparison gets funny if the lists are having sometimes UUIDs or str.
         # NOTE: this might not be necessary anymore once we have something fully defined
         return {str(key): [str(n) for n in value] for key, value in v.items()}

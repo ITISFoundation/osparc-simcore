@@ -83,7 +83,7 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             return [
-                ServiceMetaDataAtDB.from_orm(row)
+                ServiceMetaDataAtDB.model_validate(row)
                 async for row in await conn.stream(
                     list_services_stmt(
                         gids=gids,
@@ -134,7 +134,7 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             releases = [
-                ServiceMetaDataAtDB.from_orm(row)
+                ServiceMetaDataAtDB.model_validate(row)
                 async for row in await conn.stream(query)
             ]
 
@@ -163,7 +163,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.first()
         if row:
-            return ServiceMetaDataAtDB.from_orm(row)
+            return ServiceMetaDataAtDB.model_validate(row)
         return None  # mypy
 
     async def get_service(
@@ -208,7 +208,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(query)
             row = result.first()
         if row:
-            return ServiceMetaDataAtDB.from_orm(row)
+            return ServiceMetaDataAtDB.model_validate(row)
         return None  # mypy
 
     async def create_or_update_service(
@@ -234,7 +234,7 @@ class ServicesRepository(BaseRepository):
             )
             row = result.first()
             assert row  # nosec
-            created_service = ServiceMetaDataAtDB.from_orm(row)
+            created_service = ServiceMetaDataAtDB.model_validate(row)
 
             for access_rights in new_service_access_rights:
                 insert_stmt = pg_insert(services_access_rights).values(
@@ -468,7 +468,7 @@ class ServicesRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             return [
-                ServiceAccessRightsAtDB.from_orm(row)
+                ServiceAccessRightsAtDB.model_validate(row)
                 async for row in await conn.stream(query)
             ]
 
@@ -494,7 +494,7 @@ class ServicesRepository(BaseRepository):
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
                 service_to_access_rights[(row.key, row.version)].append(
-                    ServiceAccessRightsAtDB.from_orm(row)
+                    ServiceAccessRightsAtDB.model_validate(row)
                 )
         return service_to_access_rights
 
@@ -585,7 +585,7 @@ class ServicesRepository(BaseRepository):
                 try:
                     _logger.debug("found following %s", f"{row=}")
                     # validate the specs first
-                    db_service_spec = ServiceSpecificationsAtDB.from_orm(row)
+                    db_service_spec = ServiceSpecificationsAtDB.model_validate(row)
                     db_spec_version = packaging.version.parse(
                         db_service_spec.service_version
                     )
