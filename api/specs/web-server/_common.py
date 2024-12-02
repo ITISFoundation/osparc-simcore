@@ -5,13 +5,22 @@ import inspect
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import Annotated, NamedTuple, Optional, Union, get_args, get_origin
+from typing import (
+    Annotated,
+    Any,
+    Generic,
+    NamedTuple,
+    Optional,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from common_library.json_serialization import json_dumps
 from common_library.pydantic_fields_extension import get_type
 from fastapi import Query
-from models_library.basic_types import LogLevel
-from pydantic import BaseModel, ConfigDict, Field, Json, create_model
+from pydantic import BaseModel, Json, create_model
 from pydantic.fields import FieldInfo
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -78,43 +87,14 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
     return create_model(new_model_name, **fields)
 
 
-class Log(BaseModel):
-    level: LogLevel | None = Field("INFO", description="log level")
-    message: str = Field(
-        ...,
-        description="log message. If logger is USER, then it MUST be human readable",
-    )
-    logger: str | None = Field(
-        None, description="name of the logger receiving this message"
-    )
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "message": "Hi there, Mr user",
-                "level": "INFO",
-                "logger": "user-logger",
-            }
-        }
-    )
+ErrorT = TypeVar("ErrorT")
 
 
-class ErrorItem(BaseModel):
-    code: str = Field(
-        ...,
-        description="Typically the name of the exception that produced it otherwise some known error code",
-    )
-    message: str = Field(..., description="Error message specific to this item")
-    resource: str | None = Field(
-        None, description="API resource affected by this error"
-    )
-    field: str | None = Field(None, description="Specific field within the resource")
+class EnvelopeE(BaseModel, Generic[ErrorT]):
+    """Complementary to models_library.generics.Envelope just for the generators"""
 
-
-class Error(BaseModel):
-    logs: list[Log] | None = Field(None, description="log messages")
-    errors: list[ErrorItem] | None = Field(None, description="errors metadata")
-    status: int | None = Field(None, description="HTTP error code")
+    error: ErrorT | None = None
+    data: Any | None = None
 
 
 class ParamSpec(NamedTuple):

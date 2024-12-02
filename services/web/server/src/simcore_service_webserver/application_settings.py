@@ -271,18 +271,18 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_CLUSTERS: bool = False
     WEBSERVER_DB_LISTENER: bool = True
     WEBSERVER_FOLDERS: bool = True
-    WEBSERVER_WORKSPACES: bool = True
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_NOTIFICATIONS: bool = Field(default=True)
     WEBSERVER_PRODUCTS: bool = True
+    WEBSERVER_PROFILING: bool = False
     WEBSERVER_PUBLICATIONS: bool = True
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
     WEBSERVER_TAGS: bool = True
     WEBSERVER_VERSION_CONTROL: bool = True
     WEBSERVER_WALLETS: bool = True
-    WEBSERVER_PROFILING: bool = False
+    WEBSERVER_WORKSPACES: bool = True
 
     #
     WEBSERVER_SECURITY: bool = Field(
@@ -293,7 +293,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @model_validator(mode="before")
     @classmethod
-    def build_vcs_release_url_if_unset(cls, values):
+    def _build_vcs_release_url_if_unset(cls, values):
         release_url = values.get("SIMCORE_VCS_RELEASE_URL")
 
         if release_url is None and (
@@ -318,7 +318,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         mode="before",
     )
     @classmethod
-    def enable_only_if_dev_features_allowed(cls, v, info: ValidationInfo):
+    def _enable_only_if_dev_features_allowed(cls, v, info: ValidationInfo):
         """Ensures that plugins 'under development' get programatically
         disabled if WEBSERVER_DEV_FEATURES_ENABLED=False
         """
@@ -335,19 +335,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             else False
         )
 
-    @cached_property
-    def log_level(self) -> int:
-        level: int = getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
-        return level
-
     @field_validator("WEBSERVER_LOGLEVEL")
     @classmethod
-    def valid_log_level(cls, value):
+    def _valid_log_level(cls, value):
         return cls.validate_log_level(value)
 
     @field_validator("SC_HEALTHCHECK_TIMEOUT", mode="before")
     @classmethod
-    def get_healthcheck_timeout_in_seconds(cls, v):
+    def _get_healthcheck_timeout_in_seconds(cls, v):
         # Ex. HEALTHCHECK --interval=5m --timeout=3s
         if isinstance(v, str):
             factor = 1  # defaults on s
@@ -360,6 +355,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         return v
 
     # HELPERS  --------------------------------------------------------
+
+    @cached_property
+    def log_level(self) -> int:
+        level: int = getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
+        return level
 
     def is_enabled(self, field_name: str) -> bool:
         return bool(getattr(self, field_name, None))

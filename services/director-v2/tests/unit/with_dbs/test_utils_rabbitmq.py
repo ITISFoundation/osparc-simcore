@@ -93,18 +93,18 @@ async def project(
 
 
 @pytest.fixture
-def tasks(
+async def tasks(
     user: dict[str, Any],
     project: ProjectAtDB,
     fake_workbench_adjacency: dict[str, Any],
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
 ) -> list[CompTaskAtDB]:
-    pipeline(
-        project_id=project.uuid,
+    await create_pipeline(
+        project_id=f"{project.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = tasks(user, project)
+    comp_tasks = await create_tasks(user, project)
     assert len(comp_tasks) > 0
     return comp_tasks
 

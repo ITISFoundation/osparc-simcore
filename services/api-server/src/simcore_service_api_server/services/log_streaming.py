@@ -16,7 +16,7 @@ from .._constants import MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE
 from ..exceptions.backend_errors import BaseBackEndError
 from ..exceptions.log_streaming_errors import (
     LogStreamerNotRegisteredError,
-    LogStreamerRegistionConflictError,
+    LogStreamerRegistrationConflictError,
 )
 from ..models.schemas.errors import ErrorGet
 from ..models.schemas.jobs import JobID, JobLog
@@ -70,7 +70,7 @@ class LogDistributor:
 
     async def register(self, job_id: JobID, queue: Queue[JobLog]):
         if job_id in self._log_streamers:
-            raise LogStreamerRegistionConflictError(job_id=job_id)
+            raise LogStreamerRegistrationConflictError(job_id=job_id)
         self._log_streamers[job_id] = queue
         await self._rabbit_client.add_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
@@ -126,26 +126,24 @@ class LogStreamer:
                 except TimeoutError:
                     done = await self._project_done()
 
-        except BaseBackEndError as exc:
-            _logger.info("%s", f"{exc}")
-            yield ErrorGet(errors=[f"{exc}"]).model_dump_json() + _NEW_LINE
+        except (BaseBackEndError, LogStreamerRegistrationConflictError) as exc:
+            error_msg = f"{exc}"
+
+            _logger.info("%s: %s", exc.code, error_msg)
+            yield ErrorGet(errors=[error_msg]).model_dump_json() + _NEW_LINE
+
         except Exception as exc:  # pylint: disable=W0718
             error_code = create_error_code(exc)
-            user_error_msg = (
-                MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" [{error_code}]"
-            )
+            error_msg = MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" [{error_code}]"
 
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
-                    user_error_msg,
+                    error_msg,
                     error=exc,
                     error_code=error_code,
                 )
             )
-            yield ErrorGet(
-                errors=[
-                    MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" (OEC: {error_code})"
-                ]
-            ).model_dump_json() + _NEW_LINE
+            yield ErrorGet(errors=[error_msg]).model_dump_json() + _NEW_LINE
+
         finally:
             await self._log_distributor.deregister(self._job_id)

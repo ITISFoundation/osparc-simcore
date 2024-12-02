@@ -1,7 +1,6 @@
-from datetime import timedelta
+import datetime as dt
 
 from aiohttp import web
-from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from pydantic import ByteSize, Field, NonNegativeInt, TypeAdapter
 from settings_library.base import BaseCustomSettings
 
@@ -19,14 +18,11 @@ class ProjectsSettings(BaseCustomSettings):
         description="defines the number of dynamic services in a project that can be started concurrently (a value of 0 will disable it)",
     )
 
-    PROJECTS_INACTIVITY_INTERVAL: timedelta = Field(
-        default=timedelta(seconds=20),
+    PROJECTS_INACTIVITY_INTERVAL: dt.timedelta = Field(
+        default=dt.timedelta(seconds=20),
         description="interval after which services need to be idle in order to be considered inactive",
     )
 
-    _validate_projects_inactivity_interval = validate_numeric_string_as_timedelta(
-        "PROJECTS_INACTIVITY_INTERVAL"
-    )
     PROJECTS_TRASH_RETENTION_DAYS: NonNegativeInt = Field(
         default=7, description="Trashed items will be deleted after this time"
     )

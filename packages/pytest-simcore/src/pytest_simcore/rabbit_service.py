@@ -6,11 +6,12 @@
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import suppress
 
 import aio_pika
 import pytest
 import tenacity
-from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
+from servicelib.rabbitmq import QueueName, RabbitMQClient, RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -131,3 +132,23 @@ async def rabbitmq_rpc_client(
     yield _creator
     # cleanup, properly close the clients
     await asyncio.gather(*(client.close() for client in created_clients))
+
+
+@pytest.fixture
+async def ensure_parametrized_queue_is_empty(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient], queue_name: QueueName
+) -> AsyncIterator[None]:
+    rabbitmq_client = create_rabbitmq_client("pytest-purger")
+
+    async def _queue_messages_purger() -> None:
+        with suppress(aio_pika.exceptions.ChannelClosed):
+            assert rabbitmq_client._channel_pool  # noqa: SLF001
+            async with rabbitmq_client._channel_pool.acquire() as channel:  # noqa: SLF001
+                assert isinstance(channel, aio_pika.RobustChannel)
+                queue = await channel.get_queue(queue_name)
+                await queue.purge()
+
+    await _queue_messages_purger()
+    yield
+    # cleanup
+    await _queue_messages_purger()

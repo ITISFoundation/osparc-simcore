@@ -4,7 +4,7 @@ from typing import Final
 
 import pytest
 from pydantic import PositiveFloat, PositiveInt
-from servicelib.exception_utils import DelayedExceptionHandler
+from servicelib.exception_utils import DelayedExceptionHandler, silence_exceptions
 
 TOLERANCE: Final[PositiveFloat] = 0.1
 SLEEP_FOR: Final[PositiveFloat] = TOLERANCE * 0.1
@@ -49,3 +49,60 @@ def test_workflow_passes() -> None:
 def test_workflow_raises() -> None:
     with pytest.raises(TargetException):
         workflow(stop_raising_after=ITERATIONS + 1)
+
+
+# Define some custom exceptions for testing
+class CustomError(Exception):
+    pass
+
+
+class AnotherCustomError(Exception):
+    pass
+
+
+@silence_exceptions((CustomError,))
+def sync_function(*, raise_error: bool, raise_another_error: bool) -> str:
+    if raise_error:
+        raise CustomError
+    if raise_another_error:
+        raise AnotherCustomError
+    return "Success"
+
+
+@silence_exceptions((CustomError,))
+async def async_function(*, raise_error: bool, raise_another_error: bool) -> str:
+    if raise_error:
+        raise CustomError
+    if raise_another_error:
+        raise AnotherCustomError
+    return "Success"
+
+
+def test_sync_function_no_exception():
+    result = sync_function(raise_error=False, raise_another_error=False)
+    assert result == "Success"
+
+
+def test_sync_function_with_exception_is_silenced():
+    result = sync_function(raise_error=True, raise_another_error=False)
+    assert result is None
+
+
+async def test_async_function_no_exception():
+    result = await async_function(raise_error=False, raise_another_error=False)
+    assert result == "Success"
+
+
+async def test_async_function_with_exception_is_silenced():
+    result = await async_function(raise_error=True, raise_another_error=False)
+    assert result is None
+
+
+def test_sync_function_with_different_exception():
+    with pytest.raises(AnotherCustomError):
+        sync_function(raise_error=False, raise_another_error=True)
+
+
+async def test_async_function_with_different_exception():
+    with pytest.raises(AnotherCustomError):
+        await async_function(raise_error=False, raise_another_error=True)

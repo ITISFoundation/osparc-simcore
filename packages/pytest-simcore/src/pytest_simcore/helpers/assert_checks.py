@@ -82,13 +82,17 @@ def _do_assert_error(
 
     assert is_error(expected_status_code)
 
-    assert len(error["errors"]) >= 1
+    # New versions of the error models might not have this attribute
+    details = error.get("errors", [])
+
     if expected_msg:
-        messages = [detail["message"] for detail in error["errors"]]
+        assert details
+        messages = [e["message"] for e in details]
         assert expected_msg in messages
 
     if expected_error_code:
-        codes = [detail["code"] for detail in error["errors"]]
+        assert details
+        codes = [e["code"] for e in details]
         assert expected_error_code in codes
 
     return data, error

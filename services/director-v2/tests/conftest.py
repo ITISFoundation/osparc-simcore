@@ -197,23 +197,24 @@ def mock_env(
 
 
 @pytest.fixture()
-async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
-    settings = AppSettings.create_from_envs()
-    app = init_app(settings)
-    print("Application settings\n", settings.model_dump_json(indent=2))
-    # NOTE: this way we ensure the events are run in the application
-    # since it starts the app on a test server
-    with TestClient(app, raise_server_exceptions=True) as test_client:
-        yield test_client
-
-
-@pytest.fixture()
 async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     print("Application settings\n", settings.model_dump_json(indent=2))
     async with LifespanManager(app):
         yield app
+
+
+@pytest.fixture()
+async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
+    # NOTE: this way we ensure the events are run in the application
+    # since it starts the app on a test server
+    settings = AppSettings.create_from_envs()
+    app = init_app(settings)
+    # NOTE: we cannot use the initialized_app fixture here as the TestClient also creates it
+    print("Application settings\n", settings.model_dump_json(indent=2))
+    with TestClient(app, raise_server_exceptions=True) as test_client:
+        yield test_client
 
 
 @pytest.fixture()
