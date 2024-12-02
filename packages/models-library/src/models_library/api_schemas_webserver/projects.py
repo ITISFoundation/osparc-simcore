@@ -80,9 +80,9 @@ class ProjectGet(OutputSchema):
     )
     state: ProjectState | None = None
     ui: EmptyModel | StudyUI | None = None
-    quality: dict[str, Any] = Field(
-        default_factory=dict, json_schema_extra={"default": {}}
-    )
+    quality: Annotated[
+        dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
+    ]
     dev: dict | None
     permalink: ProjectPermalink | None = None
     workspace_id: WorkspaceID | None
@@ -114,16 +114,20 @@ class ProjectReplace(InputSchema):
     last_change_date: DateTimeStr
     workbench: NodesDict
     access_rights: dict[GroupIDStr, AccessRights]
-    tags: list[int] | None = Field(
-        default_factory=list, json_schema_extra={"default": []}
-    )
-    classifiers: list[ClassifierID] | None = Field(
-        default_factory=list, json_schema_extra={"default": []}
-    )
+    tags: Annotated[
+        list[int] | None, Field(default_factory=list, json_schema_extra={"default": []})
+    ]
+
+    classifiers: Annotated[
+        list[ClassifierID] | None,
+        Field(default_factory=list, json_schema_extra={"default": []}),
+    ]
+
     ui: StudyUI | None = None
-    quality: dict[str, Any] = Field(
-        default_factory=dict, json_schema_extra={"default": {}}
-    )
+
+    quality: Annotated[
+        dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
+    ]
 
 
 class ProjectPatch(InputSchema):
@@ -131,7 +135,7 @@ class ProjectPatch(InputSchema):
     description: LongTruncatedStr | None = Field(default=None)
     thumbnail: Annotated[
         HttpUrl | None, BeforeValidator(empty_str_to_none_pre_validator)
-    ] = Field(default=None)
+    ] = None
     access_rights: dict[GroupIDStr, AccessRights] | None = Field(default=None)
     classifiers: list[ClassifierID] | None = Field(default=None)
     dev: dict | None = Field(default=None)
