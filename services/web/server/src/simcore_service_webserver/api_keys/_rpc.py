@@ -32,10 +32,10 @@ async def delete_api_keys(
     *,
     product_name: ProductName,
     user_id: UserID,
-    name: str,
+    api_key_id: int,
 ) -> None:
     await _api.delete_api_key(
-        app, name=name, user_id=user_id, product_name=product_name
+        app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
     )
 
 
@@ -45,10 +45,10 @@ async def api_key_get(
     *,
     product_name: ProductName,
     user_id: UserID,
-    name: str,
+    api_key_id: int,
 ) -> ApiKeyGet | None:
     return await _api.get_api_key(
-        app, name=name, user_id=user_id, product_name=product_name
+        app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
     )
 
 
