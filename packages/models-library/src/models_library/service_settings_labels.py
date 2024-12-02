@@ -332,11 +332,14 @@ class DynamicSidecarServiceLabels(BaseModel):
         description="allow complete internet access to containers in here",
     )
 
-    callbacks_mapping: Json[CallbacksMapping] | None = Field(
-        default_factory=CallbacksMapping,  # type: ignore[arg-type] # this one ANE I am not sure about
-        alias="simcore.service.callbacks-mapping",
-        description="exposes callbacks from user services to the sidecar",
-    )
+    callbacks_mapping: Annotated[
+        Json[CallbacksMapping] | None,
+        Field(
+            default_factory=CallbacksMapping,  # type: ignore[arg-type] # this one ANE I am not sure about
+            alias="simcore.service.callbacks-mapping",
+            description="exposes callbacks from user services to the sidecar",
+        ),
+    ]
 
     @cached_property
     def needs_dynamic_sidecar(self) -> bool:

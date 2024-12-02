@@ -403,7 +403,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
 
     user_preferences_path: Path | None = None
-    callbacks_mapping: CallbacksMapping = Field(default_factory=dict)
+    callbacks_mapping: Annotated[CallbacksMapping, Field(default_factory=dict)]
 
     dynamic_sidecar_network_name: str = Field(
         ...,
@@ -438,9 +438,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ...,
         description="used as label to filter out the metrics from the cAdvisor prometheus metrics",
     )
-    proxy_service_name: str = Field(
-        default=None, description="service name given to the proxy"
-    )
+    proxy_service_name: str = Field(description="service name given to the proxy")
     proxy_admin_api_port: PortInt | None = Field(
         default=None, description="used as the admin endpoint API port"
     )
@@ -467,9 +465,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         return url
 
     product_name: str = Field(
-        None,
-        description="Current product upon which this service is scheduled. "
-        "If set to None, the current product is undefined. Mostly for backwards compatibility",
+        description="Current product upon which this service is scheduled"
     )
 
     @classmethod
