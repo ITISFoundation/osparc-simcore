@@ -6490,7 +6490,7 @@
             "$ref": "#/components/schemas/UnitExtraInfo"
           },
           "currentCostPerUnit": {
-            "type": "number",
+            "type": "string",
             "title": "Currentcostperunit"
           },
           "default": {
@@ -6891,7 +6891,7 @@
             "type": "integer",
             "x_unit": "second"
           },
-          "key": "input_2",
+          "key": "f763658f-a89a-4a90-ace4-c44631290f12",
           "kind": "input"
         }
       },
@@ -7091,7 +7091,7 @@
             "title": "Modified"
           },
           "availableCredits": {
-            "type": "number",
+            "type": "string",
             "title": "Availablecredits"
           }
         },
@@ -7099,7 +7099,9 @@
         "required": [
           "walletId",
           "name",
+          "description",
           "owner",
+          "thumbnail",
           "status",
           "created",
           "modified",
