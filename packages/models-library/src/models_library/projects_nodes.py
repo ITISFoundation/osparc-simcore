@@ -18,6 +18,7 @@ from pydantic import (
     field_validator,
 )
 
+from ._compat import Undefined
 from .basic_types import EnvVarKey, KeyIDStr
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
@@ -30,6 +31,8 @@ from .projects_nodes_io import (
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
+
+_Unset: Any = Undefined
 
 InputTypes = Union[
     # NOTE: WARNING the order in Union[*] below matters!
@@ -173,7 +176,7 @@ class Node(BaseModel):
             description="Defines inputs that are required in order to run the service",
             alias="inputsRequired",
         ),
-    ]
+    ] = _Unset
     inputs_units: dict[InputID, UnitStr] | None = Field(
         description="Overrides default unit (if any) defined in the service for each port",
         alias="inputsUnits",
@@ -190,13 +193,13 @@ class Node(BaseModel):
             description="node IDs of where the node is connected to",
             alias="inputNodes",
         ),
-    ]
+    ] = _Unset
 
     # OUTPUT PORTS ---
     outputs: Annotated[
         OutputsDict | None,
         Field(default_factory=dict, description="values of output properties"),
-    ]
+    ] = _Unset
     output_node: bool | None = Field(default=None, deprecated=True, alias="outputNode")
     output_nodes: list[NodeID] | None = Field(
         default=None,
@@ -218,7 +221,7 @@ class Node(BaseModel):
     state: Annotated[
         NodeState | None,
         Field(default_factory=NodeState, description="The node's state object"),
-    ]
+    ] = _Unset
 
     boot_options: dict[EnvVarKey, str] | None = Field(
         default=None,
