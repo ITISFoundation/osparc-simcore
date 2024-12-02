@@ -49,7 +49,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 from ...core.errors import (
-    ClusterAccessForbiddenError,
     ClusterNotFoundError,
     ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
@@ -131,20 +130,6 @@ async def _check_pipeline_startable(
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
             detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {jsonable_encoder( deprecated_tasks)}",
         )
-    if computation.cluster_id:
-        # check the cluster ID is a valid one
-        try:
-            await clusters_repo.get_cluster(computation.user_id, computation.cluster_id)
-        except ClusterNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, not found",
-            ) from exc
-        except ClusterAccessForbiddenError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, no access",
-            ) from exc
 
 
 _UNKNOWN_NODE: Final[str] = "unknown node"
@@ -245,7 +230,7 @@ async def _try_start_pipeline(
         app,
         user_id=computation.user_id,
         project_id=computation.project_id,
-        cluster_id=computation.cluster_id or DEFAULT_CLUSTER_ID,
+        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=RunMetadataDict(
             node_id_names_map={
                 NodeID(node_idstr): node_data.label
@@ -665,9 +650,9 @@ async def delete_computation(
                 before_sleep=before_sleep_log(_logger, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: list[CompTaskAtDB] = (
-                    await comp_tasks_repo.list_computational_tasks(project_id)
-                )
+                comp_tasks: list[
+                    CompTaskAtDB
+                ] = await comp_tasks_repo.list_computational_tasks(project_id)
                 pipeline_state = utils.get_pipeline_state_from_task_states(
                     comp_tasks,
                 )
