@@ -278,9 +278,9 @@ async def create_cluster(
                 .where(clusters.c.id == created_cluster.id)
             ):
                 access_rights_in_db[row.gid] = {
-                    "read": row[cluster_to_groups.c.read],
-                    "write": row[cluster_to_groups.c.write],
-                    "delete": row[cluster_to_groups.c.delete],
+                    "read": row.read,
+                    "write": row.write,
+                    "delete": row.delete,
                 }
 
             return Cluster(
