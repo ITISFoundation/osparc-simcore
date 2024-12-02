@@ -85,13 +85,12 @@ class ComputationalBackendSettings(BaseCustomSettings):
         ...,
         description="This is the cluster that will be used by default"
         " when submitting computational services (typically "
-        "tcp://dask-scheduler:8786, tls://dask-scheduler:8786 for the internal cluster, or "
-        "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
+        "tcp://dask-scheduler:8786, tls://dask-scheduler:8786 for the internal cluster",
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ClusterAuthentication = Field(
-        ...,
-        description="Empty for the internal cluster, must be one "
-        "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
+        default_factory=NoAuthentication,
+        deprecated=True,
+        description="Deprecated: must be empty",
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE: FileLinkType = Field(
         FileLinkType.S3,
