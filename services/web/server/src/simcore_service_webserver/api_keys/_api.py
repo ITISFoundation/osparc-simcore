@@ -68,10 +68,10 @@ async def create_api_key(
 
 
 async def get_api_key(
-    app: web.Application, *, name: str, user_id: UserID, product_name: ProductName
+    app: web.Application, *, api_key_id: int, user_id: UserID, product_name: ProductName
 ) -> ApiKeyGet | None:
     row = await db.get(
-        app, display_name=name, user_id=user_id, product_name=product_name
+        app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
     )
     return ApiKeyGet.model_validate(row) if row else None
 

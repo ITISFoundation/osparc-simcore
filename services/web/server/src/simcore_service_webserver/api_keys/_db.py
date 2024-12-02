@@ -69,14 +69,14 @@ async def get(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    display_name: str,
+    api_key_id: int,
     user_id: UserID,
     product_name: ProductName,
 ) -> ApiKeyInDB | None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         stmt = sa.select(api_keys).where(
             (api_keys.c.user_id == user_id)
-            & (api_keys.c.display_name == display_name)
+            & (api_keys.c.id == api_key_id)
             & (api_keys.c.product_name == product_name)
         )
 

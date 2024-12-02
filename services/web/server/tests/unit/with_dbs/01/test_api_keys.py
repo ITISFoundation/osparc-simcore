@@ -183,19 +183,21 @@ async def test_get_or_create_api_key(
         assert client.app
 
         options = {
-            "name": "repeated_name",
             "user_id": user["id"],
             "product_name": "osparc",
         }
 
         # does not exist
-        assert await get_api_key(client.app, **options) is None
+        assert await get_api_key(client.app, **options | {"api_key_id": 1}) is None
 
         # create once
-        created = await get_or_create_api_key(client.app, **options)
-        assert created.display_name == options["name"]
+        created = await get_or_create_api_key(client.app, **options | {"name": "foo"})
+        assert created.display_name == "foo"
         assert created.api_key != created.api_secret
 
         # idempottent
         for _ in range(3):
-            assert await get_or_create_api_key(client.app, **options) == created
+            assert (
+                await get_or_create_api_key(client.app, **options | {"name": "foo"})
+                == created
+            )

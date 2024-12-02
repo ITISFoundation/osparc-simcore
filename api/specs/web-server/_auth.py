@@ -287,6 +287,29 @@ async def list_api_keys():
     """lists display names of API keys by this user"""
 
 
+@router.get(
+    "/auth/api-keys/{id_}",
+    operation_id="get_api_key",
+    responses={
+        status.HTTP_200_OK: {
+            "description": "returns the api key or None",
+            "model": ApiKeyGet | None,
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "key name requested is invalid",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "requires login to get the keu",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "not enough permissions to get the keu",
+        },
+    },
+)
+async def get_api_key(id_: int):
+    """returns the key or None"""
+
+
 @router.post(
     "/auth/api-keys",
     operation_id="create_api_key",
