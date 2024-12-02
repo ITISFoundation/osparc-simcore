@@ -20,6 +20,7 @@ from ....core.errors import (
     ClusterNotFoundError,
     ComputationalRunNotFoundError,
     DirectorError,
+    ProjectNotFoundError,
     UserNotFoundError,
 )
 from ....models.comp_runs import CompRunsAtDB, RunMetadataDict
@@ -34,7 +35,7 @@ _POSTGRES_ERROR_TO_ERROR_MAP: Final[
 ] = {
     ("users", "user_id"): (UserNotFoundError, ("users", "user_id")),
     ("projects", "project_uuid"): (
-        UserNotFoundError,
+        ProjectNotFoundError,
         ("projects", "project_id"),
     ),
     ("clusters", "cluster_id"): (
