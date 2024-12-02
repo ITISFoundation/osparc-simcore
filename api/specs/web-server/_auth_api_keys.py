@@ -23,10 +23,6 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     response_model=Envelope[ApiKeyGet],
     # responses={
-    #     status.HTTP_200_OK: {
-    #         "description": "Authorization granted returning API key",
-    #         "model": ApiKeyGet,
-    #     },
     #     status.HTTP_400_BAD_REQUEST: {
     #         "description": "key name requested is invalid",
     #     },
@@ -46,11 +42,8 @@ async def create_api_key(_body: ApiKeyCreate):
     "/auth/api-keys",
     operation_id="list_display_names",
     response_model=Envelope[list[str]],
+    status_code=status.HTTP_200_OK,
     # responses={
-    #     status.HTTP_200_OK: {
-    #         "description": "returns the display names of API keys",
-    #         "model": list[str],
-    #     },
     #     status.HTTP_400_BAD_REQUEST: {
     #         "description": "key name requested is invalid",
     #     },
@@ -70,11 +63,8 @@ async def list_api_keys():
     "/auth/api-keys/{api_key_id}",
     operation_id="get_api_key",
     response_model=Envelope[ApiKeyGet],
+    status_code=status.HTTP_200_OK,
     # responses={
-    #     status.HTTP_200_OK: {
-    #         "description": "returns the api key or None",
-    #         "model": ApiKeyGet | None,
-    #     },
     #     status.HTTP_400_BAD_REQUEST: {
     #         "description": "key name requested is invalid",
     #     },
@@ -95,9 +85,6 @@ async def get_api_key(_path: Annotated[ApiKeysPathParams, Depends()]):
     operation_id="delete_api_key",
     status_code=status.HTTP_204_NO_CONTENT,
     # responses={
-    #     status.HTTP_204_NO_CONTENT: {
-    #         "description": "api key successfully deleted",
-    #     },
     #     status.HTTP_401_UNAUTHORIZED: {
     #         "description": "requires login to  delete a key",
     #     },
@@ -106,5 +93,5 @@ async def get_api_key(_path: Annotated[ApiKeysPathParams, Depends()]):
     #     },
     # },
 )
-async def delete_api_key(_body: ApiKeyCreate):
-    """deletes API key by name"""
+async def delete_api_key(_path: Annotated[ApiKeysPathParams, Depends()]):
+    """deletes API key by ID"""
