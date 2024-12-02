@@ -16,7 +16,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any, cast
+from typing import Any, Final, cast
 
 import dask.typing
 import distributed
@@ -99,7 +99,7 @@ _DASK_TASK_STATUS_DASK_CLIENT_TASK_STATE_MAP: dict[
 }
 
 
-_DASK_DEFAULT_TIMEOUT_S = 1
+_DASK_DEFAULT_TIMEOUT_S: Final[int] = 1
 
 
 _UserCallbackInSepThread = Callable[[], None]
@@ -451,9 +451,9 @@ class DaskClient:
             )
             if dask_status == "erred":
                 # find out if this was a cancellation
-                exception = await distributed.Future(job_id).exception(
-                    timeout=_DASK_DEFAULT_TIMEOUT_S
-                )
+                exception = await distributed.Future(
+                    job_id, client=self.backend.client
+                ).exception(timeout=_DASK_DEFAULT_TIMEOUT_S)
                 assert isinstance(exception, Exception)  # nosec
 
                 if isinstance(exception, TaskCancelledError):
