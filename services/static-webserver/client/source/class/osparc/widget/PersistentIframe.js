@@ -27,7 +27,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
   construct: function(source, el) {
     this.base(arguments, source);
 
-    this.__attacheIframeMessageHanders();
+    this.__attachIframeMessageHandlers();
   },
 
   statics: {
@@ -245,7 +245,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       this.__iframe.setSource(newValue);
     },
 
-    __attacheIframeMessageHanders: function() {
+    __attachIframeMessageHandlers: function() {
       // post messages
       this.postThemeSwitch = theme => {
         const iframe = this._getIframeElement();
