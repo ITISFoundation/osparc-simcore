@@ -27,27 +27,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
   construct: function(source, el) {
     this.base(arguments, source);
 
-    this.themeSwitchHandler = msg => {
-      this.postThemeSwitch(msg.getData());
-    };
-
-    this.postThemeSwitch = theme => {
-      const iframe = this._getIframeElement();
-      if (this._getIframeElement()) {
-        const iframeDomEl = iframe.getDomElement();
-        const iframeSource = iframe.getSource();
-        if (iframeDomEl && iframeSource) {
-          const msg = "osparc;theme=" + theme;
-          try {
-            iframeDomEl.contentWindow.postMessage(msg, iframeSource);
-          } catch (err) {
-            console.log(`Failed posting message ${msg} to iframe ${iframeSource}\n${err.message}`);
-          }
-        }
-      }
-    };
-
-    qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler);
+    this.__attacheIframeMessageHanders();
   },
 
   statics: {
@@ -263,6 +243,30 @@ qx.Class.define("osparc.widget.PersistentIframe", {
 
     _applySource: function(newValue) {
       this.__iframe.setSource(newValue);
+    },
+
+    __attacheIframeMessageHanders: function() {
+      // post messages
+      this.postThemeSwitch = theme => {
+        const iframe = this._getIframeElement();
+        if (iframe) {
+          const iframeDomEl = iframe.getDomElement();
+          const iframeSource = iframe.getSource();
+          if (iframeDomEl && iframeSource) {
+            const msg = "osparc;theme=" + theme;
+            try {
+              iframeDomEl.contentWindow.postMessage(msg, iframeSource);
+            } catch (err) {
+              console.log(`Failed posting message ${msg} to iframe ${iframeSource}\n${err.message}`);
+            }
+          }
+        }
+      };
+  
+      this.themeSwitchHandler = msg => {
+        this.postThemeSwitch(msg.getData());
+      };
+      qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler);
     },
 
     // override
