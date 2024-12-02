@@ -61,7 +61,7 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
     # special alias
     assert statics["stackName"] == "master-simcore"
-    assert statics["pluginsDisabled"] == ["WEBSERVER_CLUSTERS"]
+    assert statics["pluginsDisabled"] == []
 
 
 def test_settings_to_client_statics_plugins(
@@ -100,13 +100,13 @@ def test_settings_to_client_statics_plugins(
     assert statics["vcsReleaseTag"]
     assert TypeAdapter(HttpUrl).validate_python(statics["vcsReleaseUrl"])
 
-    assert set(statics["pluginsDisabled"]) == (disable_plugins | {"WEBSERVER_CLUSTERS"})
+    assert set(statics["pluginsDisabled"]) == (disable_plugins)
 
 
 @pytest.mark.parametrize("is_dev_feature_enabled", [True, False])
 @pytest.mark.parametrize(
     "plugin_name",
-    ["WEBSERVER_META_MODELING", "WEBSERVER_VERSION_CONTROL"]
+    ["WEBSERVER_META_MODELING", "WEBSERVER_VERSION_CONTROL"],
     # NOTE: this is the list in _enable_only_if_dev_features_allowed
 )
 def test_disabled_plugins_settings_to_client_statics(
