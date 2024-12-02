@@ -285,7 +285,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         layout.add(showAllButton);
       }
 
-      const editTagsButton = new qx.ui.form.Button(this.tr("Edit Tags..."), "@FontAwesome5Solid/edit/16");
+      const editTagsButton = new qx.ui.form.Button(this.tr("Edit Tags..."), "@FontAwesome5Solid/pencil-alt/14");
       editTagsButton.set({
         appearance: "filter-toggle-button"
       });
