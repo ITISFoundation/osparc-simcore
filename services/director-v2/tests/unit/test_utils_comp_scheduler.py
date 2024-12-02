@@ -10,7 +10,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.utils.comp_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler._utils import (
     COMPLETED_STATES,
     SCHEDULED_STATES,
     TASK_TO_START_STATES,
