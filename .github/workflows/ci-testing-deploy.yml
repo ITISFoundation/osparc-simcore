@@ -2866,6 +2866,7 @@ jobs:
         run: ./ci/deploy/dockerhub-deploy.bash -n
 
   api-server-api-spec-backwards-compatible:
+    if: github.event_name == 'push'
     timeout-minutes: 5
     name: "api-server-backwards-compatibility"
     runs-on: ubuntu-latest
@@ -2887,4 +2888,4 @@ jobs:
           source .venv/bin/activate
           cd services/api-server
           make install-dev
-          make openapi-diff.md OPENAPI_JSON_BASE_URL=https://raw.githubusercontent.com/{{ github.repository }}/refs/heads/{{ github.event.pull_request.base.ref }}/services/api-server/openapi.json
+          make openapi-diff.md OPENAPI_JSON_BASE_URL=https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/${{ github.event.pull_request.base.ref }}/services/api-server/openapi.json
