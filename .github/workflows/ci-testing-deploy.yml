@@ -2866,7 +2866,8 @@ jobs:
         run: ./ci/deploy/dockerhub-deploy.bash -n
 
   api-server-api-spec-backwards-compatible:
-    if: github.event_name == 'push'
+    needs: [changes]
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     timeout-minutes: 5
     name: "api-server-backwards-compatibility"
     runs-on: ubuntu-latest
