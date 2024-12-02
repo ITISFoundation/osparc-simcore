@@ -2,6 +2,10 @@ from typing import Annotated, Any
 
 from pydantic import AnyUrl, BaseModel, Field
 
+from ._compat import Undefined
+
+_Unset: Any = Undefined
+
 
 class AppStatusCheck(BaseModel):
     app_name: str = Field(..., description="Application name")
@@ -13,7 +17,7 @@ class AppStatusCheck(BaseModel):
             description="Other backend services connected from this service",
             json_schema_extra={"default": {}},
         ),
-    ]
+    ] = _Unset
 
     sessions: Annotated[
         dict[str, Any] | None,
@@ -22,13 +26,16 @@ class AppStatusCheck(BaseModel):
             description="Client sessions info. If single session per app, then is denoted as main",
             json_schema_extra={"default": {}},
         ),
-    ]
+    ] = _Unset
 
     url: AnyUrl | None = Field(
         default=None,
         description="Link to current resource",
     )
-    diagnostics_url: AnyUrl | None = Field(
-        default=None,
-        description="Link to diagnostics report sub-resource. This MIGHT take some time to compute",
-    )
+
+    diagnostics_url: Annotated[
+        AnyUrl | None,
+        Field(
+            description="Link to diagnostics report sub-resource. This MIGHT take some time to compute",
+        ),
+    ] = None
