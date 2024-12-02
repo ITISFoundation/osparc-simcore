@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from models_library.basic_types import IDStr
 from models_library.rest_base import RequestParameters, StrictRequestParameters
@@ -11,8 +12,9 @@ from models_library.rest_ordering import (
 from models_library.rest_pagination import PageQueryParameters
 from models_library.trash import RemoveQueryParams
 from models_library.users import GroupID, UserID
+from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -45,6 +47,14 @@ class WorkspacesFilters(Filters):
     trashed: bool | None = Field(
         default=False,
         description="Set to true to list trashed, false to list non-trashed (default), None to list all",
+    )
+    text: Annotated[
+        str | None, BeforeValidator(empty_str_to_none_pre_validator)
+    ] = Field(
+        default=None,
+        description="Multi column full text search",
+        max_length=100,
+        examples=["My Workspace"],
     )
 
 

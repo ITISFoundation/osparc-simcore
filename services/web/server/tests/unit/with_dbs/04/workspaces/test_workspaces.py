@@ -1,3 +1,5 @@
+from collections.abc import AsyncIterator
+
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -46,6 +48,7 @@ async def test_workspaces_user_role_permissions(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: ExpectedResponse,
+    workspaces_clean_db: AsyncIterator[None],
 ):
     assert client.app
 
@@ -60,6 +63,7 @@ async def test_workspaces_workflow(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
+    workspaces_clean_db: AsyncIterator[None],
 ):
     assert client.app
 
@@ -139,13 +143,87 @@ async def test_workspaces_workflow(
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
-async def test_project_workspace_movement_full_workflow(
+async def test_list_workspaces_with_text_search(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
+    workspaces_clean_db: AsyncIterator[None],
 ):
     assert client.app
 
-    # NOTE: MD: not yet implemented
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6778
+    # list user workspaces
+    url = client.app.router["list_workspaces"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data == []
+
+    # CREATE a new workspace
+    url = client.app.router["create_workspace"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "name": "My first workspace",
+            "description": "Custom description",
+            "thumbnail": None,
+        },
+    )
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    added_workspace = WorkspaceGet.model_validate(data)
+
+    # CREATE a new workspace
+    url = client.app.router["create_workspace"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "name": "My second workspace",
+            "description": "Sharing important projects",
+            "thumbnail": None,
+        },
+    )
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    added_workspace = WorkspaceGet.model_validate(data)
+
+    # LIST user workspaces
+    url = client.app.router["list_workspaces"].url_for()
+    resp = await client.get(f"{url}")
+    data, _, meta, links = await assert_status(
+        resp, status.HTTP_200_OK, include_meta=True, include_links=True
+    )
+    assert len(data) == 2
+
+    # LIST user workspaces
+    url = (
+        client.app.router["list_workspaces"]
+        .url_for()
+        .with_query({"filters": '{"text": "first"}'})
+    )
+    resp = await client.get(f"{url}")
+    data, _, meta, links = await assert_status(
+        resp, status.HTTP_200_OK, include_meta=True, include_links=True
+    )
+    assert len(data) == 1
+
+    # LIST user workspaces
+    url = (
+        client.app.router["list_workspaces"]
+        .url_for()
+        .with_query({"filters": '{"text": "important"}'})
+    )
+    resp = await client.get(f"{url}")
+    data, _, meta, links = await assert_status(
+        resp, status.HTTP_200_OK, include_meta=True, include_links=True
+    )
+    assert len(data) == 1
+
+    # LIST user workspaces
+    url = (
+        client.app.router["list_workspaces"]
+        .url_for()
+        .with_query({"filters": '{"text": "non-existing"}'})
+    )
+    resp = await client.get(f"{url}")
+    data, _, meta, links = await assert_status(
+        resp, status.HTTP_200_OK, include_meta=True, include_links=True
+    )
+    assert len(data) == 0
