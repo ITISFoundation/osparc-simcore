@@ -3,8 +3,9 @@
 # pylint:disable=redefined-outer-name
 
 
+from collections.abc import AsyncIterator, Callable
 from random import choice
-from typing import Any, AsyncIterator, Callable, get_args
+from typing import Any, get_args
 from unittest import mock
 
 import pytest
@@ -15,10 +16,8 @@ from models_library.clusters import (
     Cluster,
     ClusterAuthentication,
     ClusterTypeInModel,
-    JupyterHubTokenAuthentication,
-    KerberosAuthentication,
     NoAuthentication,
-    SimpleAuthentication,
+    TLSAuthentication,
 )
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -82,7 +81,7 @@ def test_dask_clients_pool_properly_setup_and_deleted(
 def fake_clusters(faker: Faker) -> Callable[[int], list[Cluster]]:
     def creator(num_clusters: int) -> list[Cluster]:
         fake_clusters = []
-        for n in range(num_clusters):
+        for _n in range(num_clusters):
             fake_clusters.append(
                 Cluster.model_validate(
                     {
@@ -94,12 +93,11 @@ def fake_clusters(faker: Faker) -> Callable[[int], list[Cluster]]:
                         "authentication": choice(
                             [
                                 NoAuthentication(),
-                                SimpleAuthentication(
-                                    username=faker.user_name(),
-                                    password=faker.password(),
+                                TLSAuthentication(
+                                    client_cert=faker.pystr(),
+                                    client_key=faker.pystr(),
+                                    ca_cert=faker.pystr(),
                                 ),
-                                KerberosAuthentication(),
-                                JupyterHubTokenAuthentication(api_token=faker.uuid4()),
                             ]
                         ),
                     }
@@ -155,6 +153,7 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
 
     clusters = fake_clusters(30)
     mocked_creation_calls = []
+    assert client.app
     for cluster in clusters:
         mocked_creation_calls.append(
             mock.call(
