@@ -64,7 +64,7 @@ async def service_details(node_id: NodeID):
         with ui.dialog() as confirm_dialog, ui.card():
 
             async def remove_from_tracking():
-                confirm_dialog.submit("Remove")
+                confirm_dialog.close()
                 await httpx.AsyncClient(timeout=10).get(
                     f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}/tracker:remove"
                 )
@@ -89,16 +89,13 @@ async def service_details(node_id: NodeID):
 
             with ui.row():
                 ui.button("Remove service", color="red", on_click=remove_from_tracking)
-                ui.button("Cancel", on_click=lambda: confirm_dialog.submit("Cancel"))
-
-        async def display_confirm_dialog():
-            await confirm_dialog
+                ui.button("Cancel", on_click=confirm_dialog.close)
 
         ui.button(
             "Remove from tracking",
             icon="remove_circle",
             color="red",
-            on_click=display_confirm_dialog,
+            on_click=confirm_dialog.open,
         ).tooltip("Removes the service form the dynamic-scheduler's internal tracking")
 
 
