@@ -1,10 +1,12 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from typing import Callable, TypeVar, cast
+from collections.abc import Callable
 from uuid import uuid4
 
+import pytest
 from fastapi import FastAPI
+from helpers import assert_contains_text, assert_not_contains_text, click_on_text
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
@@ -12,18 +14,13 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet
 from models_library.projects_nodes_io import NodeID
-from nicegui import ui
-from nicegui.testing.user import User
+from playwright.async_api import Page
 from pydantic import TypeAdapter
-from simcore_service_dynamic_scheduler.api.frontend.routes import marker_tags
 from simcore_service_dynamic_scheduler.services.service_tracker import (
     set_if_status_changed_for_service,
     set_request_as_running,
     set_request_as_stopped,
 )
-from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
-
-T = TypeVar("T")
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -35,132 +32,98 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-def get_element(user: User, expected_type: type[T], *, tag: str) -> T:
-    found_elements = list(user.find(tag).elements)
-    assert len(found_elements) == 1
-    result = found_elements[0]
-    assert isinstance(result, expected_type)
-    return result
+def _get_new_style_service_status(state: str) -> DynamicServiceGet:
+    return TypeAdapter(DynamicServiceGet).validate_python(
+        DynamicServiceGet.model_config["json_schema_extra"]["examples"][0]
+        | {"state": state}
+    )
 
 
-def get_elements(user: User, expected_type: type[T], *, tag: str) -> list[T]:
-    try:
-        found_elements = list(user.find(tag).elements)
-    except AssertionError:
-        return []
-
-    assert all(isinstance(entry, expected_type) for entry in found_elements)
-    return cast(list[expected_type], found_elements)
-
-
-def assert_count(user: User, expected_type: type[T], *, tag: str, count: int) -> None:
-    assert len(get_elements(user, expected_type, tag=tag)) == count
-
-
-async def wait_for_cards_to_render(user: User, *, count: int) -> None:
-    async for attempt in AsyncRetrying(
-        reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(2)
-    ):
-        with attempt:
-            assert_count(
-                user, ui.column, tag=marker_tags.INDEX_SERVICE_CARD, count=count
-            )
+def _get_legacy_service_status(state: str) -> NodeGet:
+    return TypeAdapter(NodeGet).validate_python(
+        NodeGet.model_config["json_schema_extra"]["examples"][0]
+        | {"service_state": state}
+    )
 
 
 async def test_index_with_elements(
-    app: FastAPI,
-    user: User,
+    app_runner: None,
+    async_page: Page,
+    server_host_port: str,
+    not_initialized_app: FastAPI,
     get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
     get_dynamic_service_stop: Callable[[NodeID], DynamicServiceStop],
 ):
-    await user.open("/")
+    await async_page.goto(server_host_port)
 
-    # 1. no tracked services
-    assert get_element(user, ui.label, tag=marker_tags.INDEX_TOTAL_SERVICES_LABEL)
-    assert (
-        get_element(
-            user, ui.label, tag=marker_tags.INDEX_TOTAL_SERVICES_COUNT_LABEL
-        ).text
-        == "0"
+    # 1. no content
+    await assert_contains_text(async_page, "Total tracked services:")
+
+    await assert_contains_text(async_page, "0")
+    reference = async_page.get_by_text("0")
+    assert await reference.text_content() == "0"
+    await assert_not_contains_text(async_page, "Details")
+
+    # 2. add elements and check
+    await set_request_as_running(
+        not_initialized_app, get_dynamic_service_start(uuid4())
     )
-    assert_count(user, ui.column, tag=marker_tags.INDEX_SERVICE_CARD, count=0)
+    await set_request_as_stopped(not_initialized_app, get_dynamic_service_stop(uuid4()))
 
-    # 2. Add 2 services one stopped and one started
-    await set_request_as_running(app, get_dynamic_service_start(uuid4()))
-    await set_request_as_stopped(app, get_dynamic_service_stop(uuid4()))
-
-    await wait_for_cards_to_render(user, count=2)
-
-    assert (
-        get_element(
-            user, ui.label, tag=marker_tags.INDEX_TOTAL_SERVICES_COUNT_LABEL
-        ).text
-        == "2"
-    )
-    assert_count(user, ui.column, tag=marker_tags.INDEX_SERVICE_CARD, count=2)
-
-    assert_count(
-        user, ui.button, tag=marker_tags.INDEX_SERVICE_CARD_DETAILS_BUTTON, count=2
-    )
-    assert_count(
-        user, ui.button, tag=marker_tags.INDEX_SERVICE_CARD_STOP_BUTTON, count=0
-    )
+    await assert_contains_text(async_page, "2")
+    await assert_contains_text(async_page, "Details", instances=2)
 
 
-async def test_index_stop_button(
-    app: FastAPI,
-    user: User,
+@pytest.mark.parametrize(
+    "service_status",
+    [
+        _get_new_style_service_status("running"),
+        _get_legacy_service_status("running"),
+    ],
+)
+async def test_main_page(
+    app_runner: None,
+    async_page: Page,
+    server_host_port: str,
+    node_id: NodeID,
+    service_status: NodeGet | DynamicServiceGet,
+    not_initialized_app: FastAPI,
     get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
 ):
-    await user.open("/")
+    await async_page.goto(server_host_port)
 
-    # insert a service
-    new_style_node_id = uuid4()
-    legacy_node_id = uuid4()
+    # 1. no content
+    await assert_contains_text(async_page, "Total tracked services:")
+    await assert_contains_text(async_page, "0")
+    await assert_not_contains_text(async_page, "Details")
 
-    await set_request_as_running(app, get_dynamic_service_start(new_style_node_id))
-    await set_request_as_running(app, get_dynamic_service_start(legacy_node_id))
-
-    # 1. No stop button rendered
-    await wait_for_cards_to_render(user, count=2)
-    assert_count(user, ui.column, tag=marker_tags.INDEX_SERVICE_CARD, count=2)
-    assert_count(
-        user, ui.button, tag=marker_tags.INDEX_SERVICE_CARD_DETAILS_BUTTON, count=2
+    # 2. start a service shows content
+    await set_request_as_running(
+        not_initialized_app, get_dynamic_service_start(node_id)
     )
-    assert_count(
-        user, ui.button, tag=marker_tags.INDEX_SERVICE_CARD_STOP_BUTTON, count=0
-    )
-
-    # 2. Stop button appears
-    # set the service status to running
     await set_if_status_changed_for_service(
-        app,
-        new_style_node_id,
-        TypeAdapter(DynamicServiceGet).validate_python(
-            DynamicServiceGet.model_config["json_schema_extra"]["examples"][0]
-        ),
+        not_initialized_app, node_id, service_status
     )
 
-    await set_if_status_changed_for_service(
-        app,
-        legacy_node_id,
-        TypeAdapter(NodeGet).validate_python(
-            NodeGet.model_config["json_schema_extra"]["examples"][0]
-            | {"service_state": "running"}
-        ),
-    )
+    await assert_contains_text(async_page, "1")
+    await assert_contains_text(async_page, "Details")
 
-    # wait for stop buttons to appear
-    async for attempt in AsyncRetrying(
-        reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(2)
-    ):
-        with attempt:
-            assert_count(
-                user,
-                ui.button,
-                tag=marker_tags.INDEX_SERVICE_CARD_DETAILS_BUTTON,
-                count=2,
-            )
-            assert_count(
-                user, ui.button, tag=marker_tags.INDEX_SERVICE_CARD_STOP_BUTTON, count=2
-            )
+    # 3. click on stop and then cancel
+    await click_on_text(async_page, "Stop Service")
+    await assert_contains_text(
+        async_page, "The service will be stopped and its data will be saved"
+    )
+    await click_on_text(async_page, "Cancel")
+
+    # 4. click on stop then confirm
+
+    await assert_not_contains_text(
+        async_page, "The service will be stopped and its data will be saved"
+    )
+    await click_on_text(async_page, "Stop Service")
+    await assert_contains_text(
+        async_page, "The service will be stopped and its data will be saved"
+    )
+    await click_on_text(async_page, "Stop Now")
+
+    # TODO: assert called on backend

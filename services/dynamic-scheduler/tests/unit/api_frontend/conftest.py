@@ -1,16 +1,23 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from typing import AsyncIterator
+import asyncio
+import subprocess
+from collections.abc import AsyncIterable
+from contextlib import suppress
 
 import pytest
-from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
-from nicegui.testing.user import User
+from fastapi import FastAPI, status
+from httpx import AsyncClient
+from hypercorn.asyncio import serve
+from hypercorn.config import Config
+from playwright.async_api import Page, async_playwright
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_service_dynamic_scheduler.core.application import create_app
+from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 
 @pytest.fixture
@@ -32,21 +39,61 @@ def app_environment(
 
 
 @pytest.fixture
-async def client(
-    app_environment: EnvVarsDict, app: FastAPI
-) -> AsyncIterator[AsyncClient]:
-    # - Needed for app to trigger start/stop event handlers
-    # - Prefer this client instead of fastapi.testclient.TestClient
-    async with AsyncClient(
-        app=app,
-        base_url="http://payments.testserver.io",
-        headers={"Content-Type": "application/json"},
-    ) as httpx_client:
-        # pylint:disable=protected-access
-        assert isinstance(httpx_client._transport, ASGITransport)  # noqa: SLF001
-        yield httpx_client
+def server_host_port() -> str:
+    return "127.0.0.1:7456"
 
 
 @pytest.fixture
-async def user(client: AsyncClient) -> User:
-    return User(client)
+def not_initialized_app(app_environment: EnvVarsDict) -> FastAPI:
+    return create_app()
+
+
+@pytest.fixture
+async def app_runner(
+    not_initialized_app: FastAPI, server_host_port: str
+) -> AsyncIterable[None]:
+
+    shutdown_event = asyncio.Event()
+
+    async def _wait_for_shutdown_event():
+        await shutdown_event.wait()
+
+    async def _run_server() -> None:
+        config = Config()
+        config.bind = [server_host_port]
+
+        with suppress(asyncio.CancelledError):
+            await serve(
+                not_initialized_app, config, shutdown_trigger=_wait_for_shutdown_event
+            )
+
+    server_task = asyncio.create_task(_run_server())
+
+    async for attempt in AsyncRetrying(
+        reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(2)
+    ):
+        with attempt:
+            async with AsyncClient(timeout=1) as client:
+                result = await client.get(f"http://{server_host_port}")
+                assert result.status_code == status.HTTP_200_OK
+
+    yield
+
+    shutdown_event.set()
+    await server_task
+
+
+@pytest.fixture
+def download_playwright_browser() -> None:
+    subprocess.run(  # noqa: S603
+        ["playwright", "install", "chromium"], check=True  # noqa: S607
+    )
+
+
+@pytest.fixture
+async def async_page(download_playwright_browser: None) -> AsyncIterable[Page]:
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page()
+        yield page
+        await browser.close()

@@ -11,7 +11,6 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from ....services.service_tracker import TrackedServiceModel, get_all_tracked_services
 from ....services.service_tracker._models import SchedulerServiceState
 from .._utils import get_parent_app
-from . import markers
 from ._render_utils import base_page, get_iso_formatted_date
 
 router = APIRouter()
@@ -49,7 +48,7 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
             ),
         )
 
-    with ui.column().classes("gap-0").mark(markers.INDEX_SERVICE_CARD):
+    with ui.column().classes("gap-0"):
         for key, (widget, value) in dict_to_render.items():
             with ui.row(align_items="baseline"):
                 ui.label(key).classes("font-bold")
@@ -63,55 +62,42 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
 
 
 def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
-    async def _display_confirm_dialog():
-        with ui.dialog() as confirm_dialog, ui.card():
-            confirm_dialog.mark(markers.INDEX_SERVICE_CARD_STOP_CONFIRM_DIALOG)
 
-            ui.markdown(f"Stop service **{node_id}**?")
-            ui.label("The service will be stopped and its data will be saved.")
-            with ui.row():
-                ui.button(
-                    "Stop",
-                    color="red",
-                    on_click=lambda: confirm_dialog.submit("Stop"),
-                )
-                ui.button("No", on_click=lambda: confirm_dialog.submit("No")).mark(
-                    markers.INDEX_SERVICE_CARD_STOP_CONFIRM_DIALOG_NO_BUTTON
+    with ui.dialog() as confirm_dialog, ui.card():
+
+        ui.markdown(f"Stop service **{node_id}**?")
+        ui.label("The service will be stopped and its data will be saved.")
+        with ui.row():
+
+            async def _stop_service() -> None:
+                confirm_dialog.close()
+                await httpx.AsyncClient(timeout=10).get(
+                    f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
                 )
 
-        click_result = await confirm_dialog
+                ui.notify(
+                    f"Submitted stop request for {node_id}. Please give the service some time to stop!"
+                )
 
-        if click_result != "Stop":
-            return
-
-        await httpx.AsyncClient(timeout=10).get(
-            f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
-        )
-
-        ui.notify(
-            f"Submitted stop request for {node_id}. Please give the service some time to stop!"
-        )
+            ui.button("Stop Now", color="red", on_click=_stop_service)
+            ui.button("Cancel", on_click=confirm_dialog.close)
 
     with ui.button_group():
         ui.button(
             "Details",
             icon="source",
             on_click=lambda: ui.navigate.to(f"/service/{node_id}:details"),
-        ).tooltip("Display more information about what the scheduler is tracking").mark(
-            markers.INDEX_SERVICE_CARD_DETAILS_BUTTON
-        )
+        ).tooltip("Display more information about what the scheduler is tracking")
 
         if service.current_state != SchedulerServiceState.RUNNING:
             return
 
         ui.button(
-            "Stop service",
+            "Stop Service",
             icon="stop",
             color="orange",
-            on_click=_display_confirm_dialog,
-        ).tooltip("Stops the service and saves the data").mark(
-            markers.INDEX_SERVICE_CARD_STOP_BUTTON
-        )
+            on_click=confirm_dialog.open,
+        ).tooltip("Stops the service and saves the data")
 
 
 def _render_card(
@@ -169,10 +155,10 @@ class CardUpdater:
 async def index():
     with base_page():
         with ui.row().classes("gap-0"):
-            ui.label("Total tracked services:").mark(markers.INDEX_TOTAL_SERVICES_LABEL)
+            ui.label("Total tracked services:")
             ui.label("").classes("w-1")
             with ui.label("0") as services_count_label:
-                services_count_label.mark(markers.INDEX_TOTAL_SERVICES_COUNT_LABEL)
+                pass
 
         card_container: Element = ui.row()
 
