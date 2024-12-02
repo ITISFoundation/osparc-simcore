@@ -8,7 +8,6 @@ from pydantic import (
     ConfigDict,
     Field,
     HttpUrl,
-    SecretStr,
     field_validator,
     model_validator,
 )
@@ -47,51 +46,6 @@ class BaseAuthentication(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
 
-class SimpleAuthentication(BaseAuthentication):
-    type: Literal["simple"] = "simple"
-    username: str
-    password: SecretStr
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "type": "simple",
-                    "username": "someuser",
-                    "password": "somepassword",
-                },
-            ]
-        }
-    )
-
-
-class KerberosAuthentication(BaseAuthentication):
-    type: Literal["kerberos"] = "kerberos"
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "type": "kerberos",
-                },
-            ]
-        }
-    )
-
-
-class JupyterHubTokenAuthentication(BaseAuthentication):
-    type: Literal["jupyterhub"] = "jupyterhub"
-    api_token: str
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {"type": "jupyterhub", "api_token": "some_jupyterhub_token"},
-            ]
-        }
-    )
-
-
 class NoAuthentication(BaseAuthentication):
     type: Literal["none"] = "none"
 
@@ -118,13 +72,7 @@ class TLSAuthentication(BaseAuthentication):
     )
 
 
-InternalClusterAuthentication: TypeAlias = NoAuthentication | TLSAuthentication
-ExternalClusterAuthentication: TypeAlias = (
-    SimpleAuthentication | KerberosAuthentication | JupyterHubTokenAuthentication
-)
-ClusterAuthentication: TypeAlias = (
-    ExternalClusterAuthentication | InternalClusterAuthentication
-)
+ClusterAuthentication: TypeAlias = NoAuthentication | TLSAuthentication
 
 
 class BaseCluster(BaseModel):

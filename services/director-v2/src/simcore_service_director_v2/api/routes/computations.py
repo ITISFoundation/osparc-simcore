@@ -63,7 +63,6 @@ from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDi
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler import run_new_pipeline, stop_pipeline
-from ...modules.db.repositories.clusters import ClustersRepository
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
@@ -114,7 +113,6 @@ async def _check_pipeline_startable(
     pipeline_dag: nx.DiGraph,
     computation: ComputationCreate,
     catalog_client: CatalogClient,
-    clusters_repo: ClustersRepository,
 ) -> None:
     assert computation.product_name  # nosec
     if deprecated_tasks := await utils.find_deprecated_tasks(
@@ -290,9 +288,6 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
     comp_runs_repo: Annotated[
         CompRunsRepository, Depends(get_repository(CompRunsRepository))
     ],
-    clusters_repo: Annotated[
-        ClustersRepository, Depends(get_repository(ClustersRepository))
-    ],
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
     projects_metadata_repo: Annotated[
         ProjectsMetadataRepository, Depends(get_repository(ProjectsMetadataRepository))
@@ -327,7 +322,7 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
 
         if computation.start_pipeline:
             await _check_pipeline_startable(
-                minimal_computational_dag, computation, catalog_client, clusters_repo
+                minimal_computational_dag, computation, catalog_client
             )
 
         # ok so put the tasks in the db

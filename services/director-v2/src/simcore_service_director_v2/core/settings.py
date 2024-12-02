@@ -88,9 +88,8 @@ class ComputationalBackendSettings(BaseCustomSettings):
         "tcp://dask-scheduler:8786, tls://dask-scheduler:8786 for the internal cluster",
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ClusterAuthentication = Field(
-        default_factory=NoAuthentication,
-        deprecated=True,
-        description="Deprecated: must be empty",
+        default_factory=...,
+        description="this is the cluster authentication that will be used by default",
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE: FileLinkType = Field(
         FileLinkType.S3,

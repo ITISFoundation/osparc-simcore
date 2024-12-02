@@ -21,7 +21,6 @@ from dask_task_models_library.container_tasks.protocol import (
 )
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
-from models_library.clusters import ClusterID
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID, ProjectIDStr
@@ -564,7 +563,6 @@ def check_if_cluster_is_able_to_run_pipeline(
     scheduler_info: dict[str, Any],
     task_resources: dict[str, Any],
     node_image: Image,
-    cluster_id: ClusterID,
 ) -> None:
 
     _logger.debug(
@@ -583,8 +581,7 @@ def check_if_cluster_is_able_to_run_pipeline(
     all_available_resources_in_cluster = dict(cluster_resources_counter)
 
     _logger.debug(
-        "Dask scheduler total available resources in cluster %s: %s, task needed resources %s",
-        cluster_id,
+        "Dask scheduler total available resources in cluster: %s, task needed resources %s",
         json_dumps(all_available_resources_in_cluster, indent=2),
         json_dumps(task_resources, indent=2),
     )
@@ -607,7 +604,6 @@ def check_if_cluster_is_able_to_run_pipeline(
             node_id=node_id,
             service_name=node_image.name,
             service_version=node_image.tag,
-            cluster_id=cluster_id,
             task_resources=task_resources,
             cluster_resources=cluster_resources,
         )
@@ -619,7 +615,6 @@ def check_if_cluster_is_able_to_run_pipeline(
         service_name=node_image.name,
         service_version=node_image.tag,
         service_requested_resources=_to_human_readable_resource_values(task_resources),
-        cluster_id=cluster_id,
         cluster_available_resources=[
             _to_human_readable_resource_values(worker.get("resources", None))
             for worker in workers.values()

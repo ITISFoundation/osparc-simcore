@@ -43,7 +43,7 @@ from dask_task_models_library.resource_constraints import (
 from distributed.scheduler import TaskStateState as DaskSchedulerTaskState
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.clusters import ClusterDetails, Scheduler
-from models_library.clusters import ClusterAuthentication, ClusterID, ClusterTypeInModel
+from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
@@ -285,7 +285,6 @@ class DaskClient:
         *,
         user_id: UserID,
         project_id: ProjectID,
-        cluster_id: ClusterID,
         tasks: dict[NodeID, Image],
         callback: _UserCallbackInSepThread,
         remote_fct: ContainerRemoteFct | None = None,
@@ -341,7 +340,6 @@ class DaskClient:
                     scheduler_info=self.backend.client.scheduler_info(),
                     task_resources=dask_resources,
                     node_image=node_image,
-                    cluster_id=cluster_id,
                 )
 
             s3_settings = None
