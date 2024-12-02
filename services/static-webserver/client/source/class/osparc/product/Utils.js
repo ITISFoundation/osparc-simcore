@@ -242,13 +242,6 @@ qx.Class.define("osparc.product.Utils", {
       return true;
     },
 
-    showClusters: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
-        return false;
-      }
-      return true;
-    },
-
     showDisableServiceAutoStart: function() {
       if (this.isProduct("s4llite")) {
         return false;
