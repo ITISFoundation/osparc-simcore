@@ -99,6 +99,7 @@ def main():
     # .yaml
     oas_path = webserver_resources.get_path("api/v0/openapi.yaml").resolve()
     if not oas_path.exists():
+        oas_path.parent.mkdir(parents=True)
         oas_path.write_text("")
     print(f"Writing {oas_path}...", end=None)
     with oas_path.open("wt") as fh:
