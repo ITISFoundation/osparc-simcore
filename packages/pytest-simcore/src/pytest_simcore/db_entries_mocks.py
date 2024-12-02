@@ -93,7 +93,7 @@ async def project(
                 .returning(sa.literal_column("*"))
             )
 
-            inserted_project = ProjectAtDB.from_orm(await result.first())
+            inserted_project = ProjectAtDB.model_validate(await result.first())
             project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
             # NOTE: currently no resources is passed until it becomes necessary
             default_node_config = {"required_resources": {}}

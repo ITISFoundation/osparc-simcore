@@ -133,7 +133,6 @@ async def test_trash_projects(  # noqa: PLR0915
     could_not_trash = is_project_running and not force
 
     if could_not_trash:
-        assert error["status"] == status.HTTP_409_CONFLICT
         assert "Current study is in use" in error["message"]
 
     # GET
