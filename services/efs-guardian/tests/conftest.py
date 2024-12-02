@@ -72,7 +72,6 @@ def app_environment(
             "EFS_DNS_NAME": "fs-xxx.efs.us-east-1.amazonaws.com",
             "EFS_MOUNTED_PATH": "/tmp/efs",
             "EFS_PROJECT_SPECIFIC_DATA_DIRECTORY": "project-specific-data",
-            "EFS_ONLY_ENABLED_FOR_USERIDS": "[]",
             "EFS_GUARDIAN_TRACING": "null",
             "SC_USER_ID": "8004",
             "SC_USER_NAME": "scu",
