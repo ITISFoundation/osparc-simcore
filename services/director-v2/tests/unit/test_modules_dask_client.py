@@ -40,7 +40,7 @@ from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
-from models_library.clusters import ClusterID, ClusterTypeInModel, NoAuthentication
+from models_library.clusters import ClusterTypeInModel, NoAuthentication
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -433,7 +433,6 @@ async def test_send_computation_task(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    cluster_id: ClusterID,
     image_params: ImageParams,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
@@ -481,7 +480,6 @@ async def test_send_computation_task(
     node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        cluster_id=cluster_id,
         tasks=image_params.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=functools.partial(
@@ -552,7 +550,6 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     image_params: ImageParams,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
@@ -589,7 +586,6 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        cluster_id=cluster_id,
         tasks=image_params.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=fake_sidecar_fct,
@@ -639,7 +635,6 @@ async def test_abort_computation_tasks(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     image_params: ImageParams,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
@@ -680,7 +675,6 @@ async def test_abort_computation_tasks(
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        cluster_id=cluster_id,
         tasks=image_params.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=fake_remote_fct,
@@ -731,7 +725,6 @@ async def test_failed_task_returns_exceptions(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     gpu_image: ImageParams,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
@@ -753,7 +746,6 @@ async def test_failed_task_returns_exceptions(
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        cluster_id=cluster_id,
         tasks=gpu_image.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=fake_failing_sidecar_fct,
@@ -795,7 +787,6 @@ async def test_send_computation_task_with_missing_resources_raises(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     image_params: ImageParams,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
@@ -823,7 +814,6 @@ async def test_send_computation_task_with_missing_resources_raises(
         await dask_client.send_computation_tasks(
             user_id=user_id,
             project_id=project_id,
-            cluster_id=cluster_id,
             tasks=image_params.fake_tasks,
             callback=mocked_user_completed_cb,
             remote_fct=None,
@@ -841,7 +831,6 @@ async def test_send_computation_task_with_hardware_info_raises(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     image_params: ImageParams,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
@@ -854,7 +843,6 @@ async def test_send_computation_task_with_hardware_info_raises(
         await dask_client.send_computation_tasks(
             user_id=user_id,
             project_id=project_id,
-            cluster_id=cluster_id,
             tasks=image_params.fake_tasks,
             callback=mocked_user_completed_cb,
             remote_fct=None,
@@ -872,7 +860,6 @@ async def test_too_many_resources_send_computation_task(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    cluster_id: ClusterID,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
@@ -896,7 +883,6 @@ async def test_too_many_resources_send_computation_task(
         await dask_client.send_computation_tasks(
             user_id=user_id,
             project_id=project_id,
-            cluster_id=cluster_id,
             tasks=fake_task,
             callback=mocked_user_completed_cb,
             remote_fct=None,
@@ -912,7 +898,6 @@ async def test_disconnected_backend_raises_exception(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     cpu_image: ImageParams,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
@@ -926,7 +911,6 @@ async def test_disconnected_backend_raises_exception(
         await dask_client.send_computation_tasks(
             user_id=user_id,
             project_id=project_id,
-            cluster_id=cluster_id,
             tasks=cpu_image.fake_tasks,
             callback=mocked_user_completed_cb,
             remote_fct=None,
@@ -944,7 +928,6 @@ async def test_changed_scheduler_raises_exception(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     cpu_image: ImageParams,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
@@ -976,7 +959,6 @@ async def test_changed_scheduler_raises_exception(
             await dask_client.send_computation_tasks(
                 user_id=user_id,
                 project_id=project_id,
-                cluster_id=cluster_id,
                 tasks=cpu_image.fake_tasks,
                 callback=mocked_user_completed_cb,
                 remote_fct=None,
@@ -991,7 +973,6 @@ async def test_get_tasks_status(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     cpu_image: ImageParams,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
@@ -1022,7 +1003,6 @@ async def test_get_tasks_status(
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        cluster_id=cluster_id,
         tasks=cpu_image.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=fake_remote_fct,
@@ -1082,7 +1062,6 @@ async def test_dask_sub_handlers(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     cpu_image: ImageParams,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
@@ -1114,7 +1093,6 @@ async def test_dask_sub_handlers(
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        cluster_id=cluster_id,
         tasks=cpu_image.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=fake_remote_fct,
@@ -1153,7 +1131,6 @@ async def test_get_cluster_details(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     image_params: ImageParams,
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
@@ -1190,7 +1167,6 @@ async def test_get_cluster_details(
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
-        cluster_id=cluster_id,
         tasks=image_params.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=functools.partial(
