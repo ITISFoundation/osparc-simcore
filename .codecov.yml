@@ -94,9 +94,6 @@ component_management:
     - component_id: invitations
       paths:
         - services/invitations/**
-    - component_id: osparc_gateway_server
-      paths:
-        - services/osparc-gateway-server/**
     - component_id: payments
       paths:
         - services/payments/**
