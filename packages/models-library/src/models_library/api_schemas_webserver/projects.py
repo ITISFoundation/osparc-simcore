@@ -149,7 +149,9 @@ class ProjectPatch(InputSchema):
         StudyUI | None,
         BeforeValidator(empty_str_to_none_pre_validator),
         PlainSerializer(
-            lambda obj: jsonable_encoder(obj, exclude_unset=True, by_alias=False)
+            lambda obj: jsonable_encoder(
+                obj, exclude_unset=True, by_alias=False
+            )  # For the sake of backward compatibility
         ),
     ] = Field(default=None)
     quality: dict[str, Any] | None = Field(default=None)
