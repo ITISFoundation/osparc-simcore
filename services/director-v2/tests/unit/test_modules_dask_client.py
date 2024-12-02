@@ -9,7 +9,8 @@ import functools
 import traceback
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from dataclasses import dataclass
-from typing import Any, NoReturn
+from inspect import isawaitable
+from typing import Any, NoReturn, cast
 from unittest import mock
 from uuid import uuid4
 
@@ -364,7 +365,9 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
 async def test_dask_does_not_report_base_exception_in_task(dask_client: DaskClient):
     def fct_that_raise_base_exception() -> NoReturn:
         err_msg = "task triggers a base exception, but dask does not care..."
-        raise BaseException(err_msg)  # pylint: disable=broad-exception-raised
+        raise BaseException(  # pylint: disable=broad-exception-raised  # noqa: TRY002
+            err_msg
+        )
 
     future = dask_client.backend.client.submit(fct_that_raise_base_exception)
     # NOTE: Since asyncio.CancelledError is derived from BaseException and the worker code checks Exception only
@@ -402,7 +405,7 @@ def comp_run_metadata(faker: Faker) -> RunMetadataDict:
     return RunMetadataDict(
         product_name=faker.pystr(),
         simcore_user_agent=faker.pystr(),
-    ) | faker.pydict(allowed_types=(str,))
+    ) | cast(dict[str, str], faker.pydict(allowed_types=(str,)))
 
 
 @pytest.fixture
@@ -418,6 +421,9 @@ def task_labels(comp_run_metadata: RunMetadataDict) -> ContainerLabelsDict:
 
 @pytest.fixture
 def hardware_info() -> HardwareInfo:
+    assert "json_schema_extra" in HardwareInfo.model_config
+    assert isinstance(HardwareInfo.model_config["json_schema_extra"], dict)
+    assert isinstance(HardwareInfo.model_config["json_schema_extra"]["examples"], list)
     return HardwareInfo.model_validate(
         HardwareInfo.model_config["json_schema_extra"]["examples"][0]
     )
@@ -476,7 +482,9 @@ async def test_send_computation_task(
     assert node_params.node_requirements.ram
     assert "product_name" in comp_run_metadata
     assert "simcore_user_agent" in comp_run_metadata
-    assert image_params.fake_tasks[node_id].node_requirements is not None
+    node_requirements = image_params.fake_tasks[node_id].node_requirements
+    assert node_requirements
+
     node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
@@ -491,8 +499,8 @@ async def test_send_computation_task(
                 f"{to_simcore_runtime_docker_label_key('user-id')}": f"{user_id}",
                 f"{to_simcore_runtime_docker_label_key('project-id')}": f"{project_id}",
                 f"{to_simcore_runtime_docker_label_key('node-id')}": f"{node_id}",
-                f"{to_simcore_runtime_docker_label_key('cpu-limit')}": f"{image_params.fake_tasks[node_id].node_requirements.cpu}",
-                f"{to_simcore_runtime_docker_label_key('memory-limit')}": f"{image_params.fake_tasks[node_id].node_requirements.ram}",
+                f"{to_simcore_runtime_docker_label_key('cpu-limit')}": f"{node_requirements.cpu}",
+                f"{to_simcore_runtime_docker_label_key('memory-limit')}": f"{node_requirements.ram}",
                 f"{to_simcore_runtime_docker_label_key('product-name')}": f"{comp_run_metadata['product_name']}",
                 f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": f"{comp_run_metadata['simcore_user_agent']}",
                 f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": "undefined-label",
@@ -1103,9 +1111,13 @@ async def test_dask_sub_handlers(
     assert len(published_computation_task) == 1
 
     assert published_computation_task[0].node_id in cpu_image.fake_tasks
-    computation_future = distributed.Future(published_computation_task[0].job_id)
+    computation_future = distributed.Future(
+        published_computation_task[0].job_id, client=dask_client.backend.client
+    )
     print("--> waiting for job to finish...")
-    await distributed.wait(computation_future, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
+    await distributed.wait(
+        computation_future, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
+    )
     assert computation_future.done()
     print("job finished, now checking that we received the publications...")
 
