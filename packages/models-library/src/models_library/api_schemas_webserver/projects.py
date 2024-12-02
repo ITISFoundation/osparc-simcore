@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Annotated, Any, Literal, TypeAlias
 
 from models_library.folders import FolderID
+from models_library.utils._original_fastapi_encoders import jsonable_encoder
 from models_library.workspaces import WorkspaceID
 from pydantic import (
     BeforeValidator,
@@ -144,7 +145,13 @@ class ProjectPatch(InputSchema):
     access_rights: dict[GroupIDStr, AccessRights] | None = Field(default=None)
     classifiers: list[ClassifierID] | None = Field(default=None)
     dev: dict | None = Field(default=None)
-    ui: StudyUI | None = Field(default=None)
+    ui: Annotated[
+        StudyUI | None,
+        BeforeValidator(empty_str_to_none_pre_validator),
+        PlainSerializer(
+            lambda obj: jsonable_encoder(obj, exclude_unset=True, by_alias=False)
+        ),
+    ] = Field(default=None)
     quality: dict[str, Any] | None = Field(default=None)
 
 
