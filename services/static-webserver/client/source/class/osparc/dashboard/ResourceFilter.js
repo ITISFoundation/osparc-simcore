@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __serviceTypeButtons: null,
 
     __buildLayout: function() {
-      if (this.__resourceType === "study" && osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+      if (this.__resourceType === "study") {
         this._add(this.__createWorkspacesAndFoldersTree());
         this._add(this.__createTrashBin());
       } else {
