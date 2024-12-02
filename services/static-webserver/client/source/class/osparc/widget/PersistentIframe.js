@@ -267,6 +267,41 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         this.postThemeSwitch(msg.getData());
       };
       qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler);
+      
+      // listen to messages
+      this.__iframe.addListener("load", () => {
+        const iframe = this._getIframeElement();
+        if (iframe) {
+          const iframeDomEl = iframe.getDomElement();
+          if (iframeDomEl) {
+            const iframeWindow = iframe.getDomElement().contentWindow;
+            window.addEventListener('message', message => {
+              if (message.source === iframeWindow) {
+                const data = message.data;
+                if (data) {
+                  this.__handleIframeMessage(data);
+                }
+              }
+            });
+          }
+        }
+      }, this);
+    },
+
+    __handleIframeMessage: function(data) {
+      // switch theme driven by the iframe
+      if (data["type"] && data["type"] === "theme") {
+        const message = data["message"];
+        console.log(message);
+        if (message.includes("osparc;theme=")) {
+          const themeName = message.replace("osparc;theme=", "");
+          const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
+          const themeFound = validThemes.find(theme => theme.basename === themeName);
+          if (themeFound) {
+            qx.theme.manager.Meta.getInstance().setTheme(themeFound);
+          }
+        }
+      }
     },
 
     // override
