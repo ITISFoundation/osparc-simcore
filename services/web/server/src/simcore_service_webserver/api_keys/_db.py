@@ -18,7 +18,7 @@ from ..db.plugin import get_asyncpg_engine
 _logger = logging.getLogger(__name__)
 
 
-async def list_names(
+async def list_display_names(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,

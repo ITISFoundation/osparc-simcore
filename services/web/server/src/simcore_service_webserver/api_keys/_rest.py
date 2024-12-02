@@ -11,6 +11,9 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import DatabaseError
+from simcore_service_webserver.api_keys._exceptions_handlers import (
+    handle_plugin_requests_exceptions,
+)
 from simcore_service_webserver.api_keys._models import ApiKeysPathParams
 
 from .._meta import API_VTAG
@@ -29,6 +32,7 @@ routes = RouteTableDef()
 @routes.get(f"/{API_VTAG}/auth/api-keys", name="list_api_keys")
 @login_required
 @permission_required("user.apikey.*")
+@handle_plugin_requests_exceptions
 async def list_api_keys(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     api_keys_names = await _api.list_api_keys(
@@ -42,6 +46,7 @@ async def list_api_keys(request: web.Request):
 @routes.get(f"/{API_VTAG}/auth/api-keys/{{api_key_id}}", name="api_key_get")
 @login_required
 @permission_required("user.apikey.*")
+@handle_plugin_requests_exceptions
 async def api_key_get(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ApiKeysPathParams, request)
@@ -57,6 +62,7 @@ async def api_key_get(request: web.Request):
 @routes.post(f"/{API_VTAG}/auth/api-keys", name="create_api_key")
 @login_required
 @permission_required("user.apikey.*")
+@handle_plugin_requests_exceptions
 async def create_api_key(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     new = await parse_request_body_as(ApiKeyCreate, request)
@@ -80,6 +86,7 @@ async def create_api_key(request: web.Request):
 @routes.delete(f"/{API_VTAG}/auth/api-keys/{{api_key_id}}", name="delete_api_key")
 @login_required
 @permission_required("user.apikey.*")
+@handle_plugin_requests_exceptions
 async def delete_api_key(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ApiKeysPathParams, request)
