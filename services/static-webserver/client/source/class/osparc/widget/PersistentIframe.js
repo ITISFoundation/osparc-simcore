@@ -297,8 +297,9 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           const themeName = message.replace("osparc;theme=", "");
           const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
           const themeFound = validThemes.find(theme => theme.basename === themeName);
-          if (themeFound) {
-            qx.theme.manager.Meta.getInstance().setTheme(themeFound);
+          const themeManager = qx.theme.manager.Meta.getInstance();
+          if (themeFound !== themeManager.getTheme()) {
+            themeManager.setTheme(themeFound);
           }
         }
       }
