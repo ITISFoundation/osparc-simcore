@@ -2868,11 +2868,10 @@ jobs:
   api-server-api-spec-backwards-compatible:
     needs: [changes]
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 5
-    name: "api-server-backwards-compatibility"
+    timeout-minutes: 10
+    name: "api-specs-backwards-compatibility"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - name: setup python environment
         uses: actions/setup-python@v5
         with:
@@ -2883,10 +2882,23 @@ jobs:
           version: "0.4.x"
           enable-cache: false
           cache-dependency-glob: "**/service-library/requirements/ci*.txt"
-      - name: setup python .venv
+      - name: checkout source branch
+        uses: actions/checkout@v4
+        with:
+          path: source
+      - name: checkout target branch
+        uses: actions/checkout@v4
+        with:
+          path: target
+          repository: github.event.pull_request.base.repo.full_name
+          ref: github.event.pull_request.base.ref
+      - name: Generate target openapi specs
         run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          cd services/api-server
-          make install-dev
-          make openapi-diff.md OPENAPI_JSON_BASE_URL=https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/${{ github.event.pull_request.base.ref }}/services/api-server/openapi.json
+          cd target
+          uv venv .venv && source .venv/bin/activate
+          make openapi-specs
+      - name: Generate source openapi-specs and compare
+        run: |
+          cd source
+          uv venv .venv && source .venv/bin/activate
+          make openapi-specs
