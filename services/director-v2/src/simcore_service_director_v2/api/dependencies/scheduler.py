@@ -1,15 +1,9 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI
 
 from ...core.settings import ComputationalBackendSettings
-from ...modules.comp_scheduler import BaseCompScheduler
 from . import get_app
-
-
-def get_scheduler(request: Request) -> BaseCompScheduler:
-    scheduler: BaseCompScheduler = request.app.state.scheduler
-    return scheduler
 
 
 def get_scheduler_settings(
