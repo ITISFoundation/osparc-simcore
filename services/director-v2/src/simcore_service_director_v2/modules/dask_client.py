@@ -331,7 +331,6 @@ class DaskClient:
             )
             dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
             dask_utils.check_scheduler_status(self.backend.client)
-            await dask_utils.check_maximize_workers(self.backend.gateway_cluster)
             # NOTE: in case it's a gateway or it is an on-demand cluster
             # we do not check a priori if the task
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)

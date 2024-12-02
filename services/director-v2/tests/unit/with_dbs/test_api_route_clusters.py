@@ -3,13 +3,12 @@
 # pylint:disable=redefined-outer-name
 
 import random
-from collections.abc import Callable, Iterator
-from typing import Any, Awaitable
+from collections.abc import Awaitable, Callable, Iterator
+from typing import Any
 
 import httpx
 import pytest
 import sqlalchemy as sa
-from _dask_helpers import DaskGatewayServer
 from common_library.serialization import model_dump_with_secrets
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
@@ -30,7 +29,7 @@ from models_library.clusters import (
     ClusterAuthentication,
     SimpleAuthentication,
 )
-from pydantic import AnyHttpUrl, SecretStr, TypeAdapter
+from pydantic import SecretStr, TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from starlette import status
@@ -728,19 +727,13 @@ async def test_ping_invalid_cluster_raises_422(
 
 
 async def test_ping_cluster(
-    clusters_config: None,
-    async_client: httpx.AsyncClient,
-    local_dask_gateway_server: DaskGatewayServer,
+    clusters_config: None, async_client: httpx.AsyncClient, faker: Faker
 ):
     valid_cluster = ClusterPing(
-        endpoint=TypeAdapter(AnyHttpUrl).validate_python(
-            local_dask_gateway_server.address
-        ),
+        endpoint=faker.uri(),
         authentication=SimpleAuthentication(
             username="pytest_user",
-            password=TypeAdapter(SecretStr).validate_python(
-                local_dask_gateway_server.password
-            ),
+            password=TypeAdapter(SecretStr).validate_python(faker.password()),
         ),
     )
     response = await async_client.post(
@@ -756,7 +749,7 @@ async def test_ping_specific_cluster(
     registered_user: Callable[..., dict],
     create_cluster: Callable[..., Awaitable[Cluster]],
     async_client: httpx.AsyncClient,
-    local_dask_gateway_server: DaskGatewayServer,
+    faker: Faker,
 ):
     user_1 = registered_user()
     # try to ping one that does not exist
@@ -770,12 +763,10 @@ async def test_ping_specific_cluster(
         await create_cluster(
             user_1,
             name=f"pytest cluster{n:04}",
-            endpoint=local_dask_gateway_server.address,
+            endpoint=faker.uri(),
             authentication=SimpleAuthentication(
                 username="pytest_user",
-                password=TypeAdapter(SecretStr).validate_python(
-                    local_dask_gateway_server.password
-                ),
+                password=TypeAdapter(SecretStr).validate_python(faker.password()),
             ),
         )
         for n in range(111)

@@ -200,9 +200,7 @@ async def test_cluster_connection(
     cluster_auth: ClusterPing,
 ):
     try:
-        return await test_scheduler_endpoint(
-            endpoint=cluster_auth.endpoint, authentication=cluster_auth.authentication
-        )
+        return await test_scheduler_endpoint(endpoint=cluster_auth.endpoint)
 
     except ConfigurationError as e:
         raise HTTPException(
@@ -220,9 +218,7 @@ async def test_default_cluster_connection(
     settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
 ):
     cluster = settings.default_cluster
-    return await test_scheduler_endpoint(
-        endpoint=cluster.endpoint, authentication=cluster.authentication
-    )
+    return await test_scheduler_endpoint(endpoint=cluster.endpoint)
 
 
 @router.post(
@@ -237,6 +233,4 @@ async def test_specific_cluster_connection(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
 ):
     cluster = await clusters_repo.get_cluster(user_id, cluster_id)
-    return await test_scheduler_endpoint(
-        endpoint=cluster.endpoint, authentication=cluster.authentication
-    )
+    return await test_scheduler_endpoint(endpoint=cluster.endpoint)

@@ -8,9 +8,6 @@ from typing import Any, AsyncIterator, Callable, get_args
 from unittest import mock
 
 import pytest
-from _dask_helpers import DaskGatewayServer
-from common_library.json_serialization import json_dumps
-from common_library.serialization import model_dump_with_secrets
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from models_library.clusters import (
@@ -23,7 +20,6 @@ from models_library.clusters import (
     NoAuthentication,
     SimpleAuthentication,
 )
-from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.clusters import ClusterType
@@ -115,33 +111,6 @@ def fake_clusters(faker: Faker) -> Callable[[int], list[Cluster]]:
 
 
 @pytest.fixture()
-def default_scheduler_set_as_osparc_gateway(
-    local_dask_gateway_server: DaskGatewayServer,
-    monkeypatch: pytest.MonkeyPatch,
-    faker: Faker,
-) -> Callable:
-    def creator():
-        monkeypatch.setenv(
-            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
-            local_dask_gateway_server.proxy_address,
-        )
-        monkeypatch.setenv(
-            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH",
-            json_dumps(
-                model_dump_with_secrets(
-                    SimpleAuthentication(
-                        username=faker.user_name(),
-                        password=SecretStr(local_dask_gateway_server.password),
-                    ),
-                    show_secrets=True,
-                )
-            ),
-        )
-
-    return creator
-
-
-@pytest.fixture()
 def default_scheduler_set_as_dask_scheduler(
     dask_spec_local_cluster: SpecCluster, monkeypatch: pytest.MonkeyPatch
 ) -> Callable:
@@ -157,17 +126,14 @@ def default_scheduler_set_as_dask_scheduler(
 @pytest.fixture(
     params=[
         "default_scheduler_set_as_dask_scheduler",
-        "default_scheduler_set_as_osparc_gateway",
     ]
 )
 def default_scheduler(
     default_scheduler_set_as_dask_scheduler,
-    default_scheduler_set_as_osparc_gateway,
     request,
 ):
     {
         "default_scheduler_set_as_dask_scheduler": default_scheduler_set_as_dask_scheduler,
-        "default_scheduler_set_as_osparc_gateway": default_scheduler_set_as_osparc_gateway,
     }[request.param]()
 
 

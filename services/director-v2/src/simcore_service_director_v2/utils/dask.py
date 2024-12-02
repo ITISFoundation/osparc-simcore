@@ -5,7 +5,6 @@ from collections.abc import Awaitable, Callable, Coroutine, Generator
 from typing import Any, Final, NoReturn, ParamSpec, TypeVar, cast
 from uuid import uuid4
 
-import dask_gateway  # type: ignore[import-untyped]
 import distributed
 from aiopg.sa.engine import Engine
 from common_library.json_serialization import json_dumps
@@ -513,14 +512,6 @@ def check_scheduler_status(client: distributed.Client):
             "The computational backend is not connected!",
         )
         raise ComputationalBackendNotConnectedError
-
-
-_LARGE_NUMBER_OF_WORKERS: Final[int] = 10000
-
-
-async def check_maximize_workers(cluster: dask_gateway.GatewayCluster | None) -> None:
-    if cluster:
-        await cluster.scale(_LARGE_NUMBER_OF_WORKERS)
 
 
 def _can_task_run_on_worker(
