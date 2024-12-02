@@ -286,9 +286,9 @@ async def patch_project(
         }
         user: dict = await get_user(app, project_db.prj_owner)
         _prj_owner_primary_group = f'{user["primary_gid"]}'
-        if _prj_owner_primary_group not in new_prj_access_rights:
+        if _prj_owner_primary_group not in new_prj_access_rights:  # type: ignore
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
-        if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:
+        if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:  # type: ignore
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
 
     # 4. Patch the project
