@@ -1,6 +1,9 @@
+import inspect
 import logging
+from collections.abc import Callable
 from datetime import datetime
-from typing import Final
+from functools import wraps
+from typing import Any, Final, ParamSpec, TypeVar
 
 from pydantic import BaseModel, Field, NonNegativeFloat, PrivateAttr
 
@@ -65,3 +68,36 @@ class DelayedExceptionHandler(BaseModel):
         """error no longer occurs reset tracking"""
         self._first_exception_skip = None
         self._failure_counter = 0
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def silence_exceptions(exceptions: tuple[type[BaseException], ...]) -> Callable[[F], F]:
+    def _decorator(func_or_coro: F) -> F:
+
+        if inspect.iscoroutinefunction(func_or_coro):
+
+            @wraps(func_or_coro)
+            async def _async_wrapper(*args, **kwargs) -> Any:
+                try:
+                    assert inspect.iscoroutinefunction(func_or_coro)  # nosec
+                    return await func_or_coro(*args, **kwargs)
+                except exceptions:
+                    return None
+
+            return _async_wrapper  # type: ignore[return-value] # decorators typing is hard
+
+        @wraps(func_or_coro)
+        def _sync_wrapper(*args, **kwargs) -> Any:
+            try:
+                return func_or_coro(*args, **kwargs)
+            except exceptions:
+                return None
+
+        return _sync_wrapper  # type: ignore[return-value] # decorators typing is hard
+
+    return _decorator

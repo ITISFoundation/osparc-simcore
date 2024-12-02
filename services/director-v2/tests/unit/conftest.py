@@ -185,6 +185,11 @@ def fake_s3_settings(faker: Faker) -> S3Settings:
 
 
 @pytest.fixture
+def fake_s3_envs(fake_s3_settings: S3Settings) -> EnvVarsDict:
+    return fake_s3_settings.model_dump()
+
+
+@pytest.fixture
 def mocked_storage_service_api(
     fake_s3_settings: S3Settings,
 ) -> Iterator[respx.MockRouter]:
