@@ -20,6 +20,60 @@ from ._render_utils import base_page
 router = APIRouter()
 
 
+def _render_remove_from_tracking(node_id):
+    with ui.dialog() as confirm_dialog, ui.card():
+
+        async def remove_from_tracking():
+            confirm_dialog.close()
+            await httpx.AsyncClient(timeout=10).get(
+                f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}/tracker:remove"
+            )
+
+            ui.notify(f"Service {node_id} removed from tracking")
+            ui.navigate.to("/")
+
+        ui.markdown(f"Remove the service **{node_id}** form the tracker?")
+        ui.label(
+            "This action will result in the removal of the service form the internal tracker. "
+            "This action should be used whn you are facing issues and the service is not "
+            "automatically removed."
+        )
+        ui.label(
+            "NOTE 1: the system normally cleans up services but it might take a few minutes. "
+            "Only use this option when you have observed enough time passing without any change."
+        ).classes("text-red-600")
+        ui.label(
+            "NOTE 2: This will break the fronted for the user! If the user has the service opened, "
+            "it will no longer receive an status updates."
+        ).classes("text-red-600")
+
+        with ui.row():
+            ui.button("Remove service", color="red", on_click=remove_from_tracking)
+            ui.button("Cancel", on_click=confirm_dialog.close)
+
+    ui.button(
+        "Remove from tracking",
+        icon="remove_circle",
+        color="red",
+        on_click=confirm_dialog.open,
+    ).tooltip("Removes the service form the dynamic-scheduler's internal tracking")
+
+
+def _render_danger_zone(node_id: NodeID) -> None:
+    ui.separator()
+
+    ui.markdown("**Danger Zone, beware!**").classes("text-2xl text-red-700")
+    ui.label(
+        "Do not use these actions if you do not know what they are doing."
+    ).classes("text-red-700")
+
+    ui.label(
+        "They are reserved as means of recovering the system form a failing state."
+    ).classes("text-red-700")
+
+    _render_remove_from_tracking(node_id)
+
+
 @router.page("/service/{node_id}:details")
 async def service_details(node_id: NodeID):
     with base_page(title=f"{node_id} details"):
@@ -50,53 +104,7 @@ async def service_details(node_id: NodeID):
         ui.markdown("**Raw serialized data (the one used to render the above**")
         ui.code(service_model.model_dump_json(indent=2), language="json")
 
-        ui.separator()
-
-        ui.markdown("**Danger Zone, beware!**").classes("text-2xl text-red-700")
-        ui.label(
-            "Do not use these actions if you do not know what they are doing."
-        ).classes("text-red-700")
-
-        ui.label(
-            "They are reserved as means of recovering the system form a failing state."
-        ).classes("text-red-700")
-
-        with ui.dialog() as confirm_dialog, ui.card():
-
-            async def remove_from_tracking():
-                confirm_dialog.close()
-                await httpx.AsyncClient(timeout=10).get(
-                    f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}/tracker:remove"
-                )
-
-                ui.notify(f"Service {node_id} removed from tracking")
-                ui.navigate.to("/")
-
-            ui.markdown(f"Remove the service **{node_id}** form the tracker?")
-            ui.label(
-                "This action will result in the removal of the service form the internal tracker. "
-                "This action should be used whn you are facing issues and the service is not "
-                "automatically removed."
-            )
-            ui.label(
-                "NOTE 1: the system normally cleans up services but it might take a few minutes. "
-                "Only use this option when you have observed enough time passing without any change."
-            ).classes("text-red-600")
-            ui.label(
-                "NOTE 2: This will break the fronted for the user! If the user has the service opened, "
-                "it will no longer receive an status updates."
-            ).classes("text-red-600")
-
-            with ui.row():
-                ui.button("Remove service", color="red", on_click=remove_from_tracking)
-                ui.button("Cancel", on_click=confirm_dialog.close)
-
-        ui.button(
-            "Remove from tracking",
-            icon="remove_circle",
-            color="red",
-            on_click=confirm_dialog.open,
-        ).tooltip("Removes the service form the dynamic-scheduler's internal tracking")
+        _render_danger_zone(node_id)
 
 
 @router.page("/service/{node_id}:stop")
