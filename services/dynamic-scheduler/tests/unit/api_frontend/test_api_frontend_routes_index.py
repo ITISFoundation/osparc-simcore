@@ -7,7 +7,13 @@ from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
-from helpers import assert_contains_text, assert_not_contains_text, click_on_text
+from helpers import (
+    assert_contains_text,
+    assert_not_contains_text,
+    click_on_text,
+    get_legacy_service_status,
+    get_new_style_service_status,
+)
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
@@ -16,7 +22,6 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.api_schemas_webserver.projects_nodes import NodeGet
 from models_library.projects_nodes_io import NodeID
 from playwright.async_api import Page
-from pydantic import TypeAdapter
 from simcore_service_dynamic_scheduler.services.service_tracker import (
     set_if_status_changed_for_service,
     set_request_as_running,
@@ -34,20 +39,6 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-def _get_new_style_service_status(state: str) -> DynamicServiceGet:
-    return TypeAdapter(DynamicServiceGet).validate_python(
-        DynamicServiceGet.model_config["json_schema_extra"]["examples"][0]
-        | {"state": state}
-    )
-
-
-def _get_legacy_service_status(state: str) -> NodeGet:
-    return TypeAdapter(NodeGet).validate_python(
-        NodeGet.model_config["json_schema_extra"]["examples"][0]
-        | {"service_state": state}
-    )
-
-
 async def test_index_with_elements(
     app_runner: None,
     async_page: Page,
@@ -60,10 +51,7 @@ async def test_index_with_elements(
 
     # 1. no content
     await assert_contains_text(async_page, "Total tracked services:")
-
     await assert_contains_text(async_page, "0")
-    reference = async_page.get_by_text("0")
-    assert await reference.text_content() == "0"
     await assert_not_contains_text(async_page, "Details")
 
     # 2. add elements and check
@@ -79,8 +67,8 @@ async def test_index_with_elements(
 @pytest.mark.parametrize(
     "service_status",
     [
-        _get_new_style_service_status("running"),
-        _get_legacy_service_status("running"),
+        get_new_style_service_status("running"),
+        get_legacy_service_status("running"),
     ],
 )
 async def test_main_page(

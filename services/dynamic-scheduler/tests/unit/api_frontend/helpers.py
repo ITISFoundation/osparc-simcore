@@ -8,8 +8,10 @@ from pathlib import Path
 from typing import Final
 from uuid import uuid4
 
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_webserver.projects_nodes import NodeGet
 from playwright.async_api import Locator, Page
-from pydantic import NonNegativeFloat, NonNegativeInt
+from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 _HERE: Final[Path] = (
@@ -86,3 +88,17 @@ async def assert_not_contains_text(
             with attempt:
                 locator = async_page.get_by_text(text)
                 assert await locator.count() < 1, f"found text='{text}' in body"
+
+
+def get_new_style_service_status(state: str) -> DynamicServiceGet:
+    return TypeAdapter(DynamicServiceGet).validate_python(
+        DynamicServiceGet.model_config["json_schema_extra"]["examples"][0]
+        | {"state": state}
+    )
+
+
+def get_legacy_service_status(state: str) -> NodeGet:
+    return TypeAdapter(NodeGet).validate_python(
+        NodeGet.model_config["json_schema_extra"]["examples"][0]
+        | {"service_state": state}
+    )

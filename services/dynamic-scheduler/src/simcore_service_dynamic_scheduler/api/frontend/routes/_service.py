@@ -71,7 +71,7 @@ async def service_details(node_id: NodeID):
                 ui.notify(f"Service {node_id} removed from tracking")
                 ui.navigate.to("/")
 
-            ui.markdown(f"Remove service **{node_id}** form tracker?")
+            ui.markdown(f"Remove the service **{node_id}** form the tracker?")
             ui.label(
                 "This action will result in the removal of the service form the internal tracker. "
                 "This action should be used whn you are facing issues and the service is not "
@@ -87,8 +87,8 @@ async def service_details(node_id: NodeID):
             ).classes("text-red-600")
 
             with ui.row():
-                ui.button("Remove", color="red", on_click=remove_from_tracking)
-                ui.button("No", on_click=lambda: confirm_dialog.submit("No"))
+                ui.button("Remove service", color="red", on_click=remove_from_tracking)
+                ui.button("Cancel", on_click=lambda: confirm_dialog.submit("Cancel"))
 
         async def display_confirm_dialog():
             await confirm_dialog
