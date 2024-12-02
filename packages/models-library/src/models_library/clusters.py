@@ -113,27 +113,16 @@ class Cluster(BaseCluster):
         json_schema_extra={
             "examples": [
                 {
-                    "id": DEFAULT_CLUSTER_ID,
-                    "name": "The default cluster",
-                    "type": ClusterTypeInModel.ON_PREMISE,
-                    "owner": 1456,
-                    "endpoint": "tcp://default-dask-scheduler:8786",
-                    "authentication": {
-                        "type": "simple",
-                        "username": "someuser",
-                        "password": "somepassword",
-                    },
-                },
-                {
                     "id": 432,
                     "name": "My awesome cluster",
                     "type": ClusterTypeInModel.ON_PREMISE,
                     "owner": 12,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
-                        "type": "simple",
-                        "username": "someuser",
-                        "password": "somepassword",
+                        "type": "tls",
+                        "tls_ca_file": "/path/to/ca_file",
+                        "tls_client_cert": "/path/to/cert_file",
+                        "tls_client_key": "/path/to/key_file",
                     },
                 },
                 {
@@ -143,7 +132,12 @@ class Cluster(BaseCluster):
                     "type": ClusterTypeInModel.AWS,
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
-                    "authentication": {"type": "kerberos"},
+                    "authentication": {
+                        "type": "tls",
+                        "tls_ca_file": "/path/to/ca_file",
+                        "tls_client_cert": "/path/to/cert_file",
+                        "tls_client_key": "/path/to/key_file",
+                    },
                     "access_rights": {
                         154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
                         12: CLUSTER_MANAGER_RIGHTS,  # type: ignore[dict-item]
@@ -158,8 +152,10 @@ class Cluster(BaseCluster):
                     "owner": 2321,
                     "endpoint": "https://registry.osparc-development.fake2.dev",
                     "authentication": {
-                        "type": "jupyterhub",
-                        "api_token": "some_fake_token",
+                        "type": "tls",
+                        "tls_ca_file": "/path/to/ca_file",
+                        "tls_client_cert": "/path/to/cert_file",
+                        "tls_client_key": "/path/to/key_file",
                     },
                     "access_rights": {
                         154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
