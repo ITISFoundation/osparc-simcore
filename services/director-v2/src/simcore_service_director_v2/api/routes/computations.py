@@ -21,7 +21,7 @@ import logging
 from typing import Annotated, Any, Final
 
 import networkx as nx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationCreate,
     ComputationDelete,
@@ -63,7 +63,7 @@ from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
-from ...modules.comp_scheduler import BaseCompScheduler
+from ...modules.comp_scheduler import run_new_pipeline, stop_pipeline
 from ...modules.db.repositories.clusters import ClustersRepository
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
@@ -89,7 +89,6 @@ from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
-from ..dependencies.scheduler import get_scheduler
 from .computations_tasks import analyze_pipeline
 
 _PIPELINE_ABORT_TIMEOUT_S: Final[int] = 10
@@ -212,12 +211,12 @@ async def _get_project_metadata(
 
 
 async def _try_start_pipeline(
+    app: FastAPI,
     *,
     project_repo: ProjectsRepository,
     computation: ComputationCreate,
     complete_dag: nx.DiGraph,
     minimal_dag: nx.DiGraph,
-    scheduler: BaseCompScheduler,
     project: ProjectAtDB,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
@@ -242,11 +241,12 @@ async def _try_start_pipeline(
         wallet_id = computation.wallet_info.wallet_id
         wallet_name = computation.wallet_info.wallet_name
 
-    await scheduler.run_new_pipeline(
-        computation.user_id,
-        computation.project_id,
-        computation.cluster_id or DEFAULT_CLUSTER_ID,
-        RunMetadataDict(
+    await run_new_pipeline(
+        app,
+        user_id=computation.user_id,
+        project_id=computation.project_id,
+        cluster_id=computation.cluster_id or DEFAULT_CLUSTER_ID,
+        run_metadata=RunMetadataDict(
             node_id_names_map={
                 NodeID(node_idstr): node_data.label
                 for node_idstr, node_data in project.workbench.items()
@@ -313,7 +313,6 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
         ProjectsMetadataRepository, Depends(get_repository(ProjectsMetadataRepository))
     ],
     director_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
-    scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
     rpc_client: Annotated[RabbitMQRPCClient, Depends(rabbitmq_rpc_client)],
@@ -370,11 +369,11 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
 
         if computation.start_pipeline:
             await _try_start_pipeline(
+                request.app,
                 project_repo=project_repo,
                 computation=computation,
                 complete_dag=complete_dag,
                 minimal_dag=minimal_computational_dag,
-                scheduler=scheduler,
                 project=project,
                 users_repo=users_repo,
                 projects_metadata_repo=projects_metadata_repo,
@@ -549,7 +548,6 @@ async def stop_computation(
     comp_runs_repo: Annotated[
         CompRunsRepository, Depends(get_repository(CompRunsRepository))
     ],
-    scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
 ) -> ComputationGet:
     _logger.debug(
         "User %s stopping computation for project %s",
@@ -575,7 +573,9 @@ async def stop_computation(
         pipeline_state = utils.get_pipeline_state_from_task_states(filtered_tasks)
 
         if utils.is_pipeline_running(pipeline_state):
-            await scheduler.stop_pipeline(computation_stop.user_id, project_id)
+            await stop_pipeline(
+                request.app, user_id=computation_stop.user_id, project_id=project_id
+            )
 
         # get run details if any
         last_run: CompRunsAtDB | None = None
@@ -615,6 +615,7 @@ async def stop_computation(
 async def delete_computation(
     computation_stop: ComputationDelete,
     project_id: ProjectID,
+    request: Request,
     project_repo: Annotated[
         ProjectsRepository, Depends(get_repository(ProjectsRepository))
     ],
@@ -624,7 +625,6 @@ async def delete_computation(
     comp_tasks_repo: Annotated[
         CompTasksRepository, Depends(get_repository(CompTasksRepository))
     ],
-    scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
 ) -> None:
     try:
         # get the project
@@ -642,7 +642,9 @@ async def delete_computation(
                 )
             # abort the pipeline first
             try:
-                await scheduler.stop_pipeline(computation_stop.user_id, project_id)
+                await stop_pipeline(
+                    request.app, user_id=computation_stop.user_id, project_id=project_id
+                )
             except ComputationalSchedulerError as e:
                 _logger.warning(
                     "Project %s could not be stopped properly.\n reason: %s",
@@ -663,9 +665,9 @@ async def delete_computation(
                 before_sleep=before_sleep_log(_logger, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: list[
-                    CompTaskAtDB
-                ] = await comp_tasks_repo.list_computational_tasks(project_id)
+                comp_tasks: list[CompTaskAtDB] = (
+                    await comp_tasks_repo.list_computational_tasks(project_id)
+                )
                 pipeline_state = utils.get_pipeline_state_from_task_states(
                     comp_tasks,
                 )

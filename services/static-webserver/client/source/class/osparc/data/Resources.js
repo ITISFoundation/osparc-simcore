@@ -98,6 +98,7 @@ qx.Class.define("osparc.data.Resources", {
        * added by oSPARC as compilation vars
        */
       "appSummary": {
+        useCache: false,
         endpoints: {
           get: {
             method: "GET",
