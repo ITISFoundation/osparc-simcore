@@ -225,7 +225,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       osparc.utils.Utils.setIdToWidget(layout, this.__resourceType + "-tagsFilter");
 
       this.__populateTags(layout, []);
-      osparc.store.Store.getInstance().addListener("changeTags", () => {
+      osparc.store.Tags.getInstance().addListener("tagsChanged", () => {
         this.__populateTags(layout, this.__getSelectedTagIds());
       }, this);
 
