@@ -613,7 +613,9 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     )
     assert published_computation_task[0].node_id in image_params.fake_tasks
     # creating a new future shows that it is not done????
-    assert not distributed.Future(published_computation_task[0].job_id).done()
+    assert not distributed.Future(
+        published_computation_task[0].job_id, client=dask_client.backend.client
+    ).done()
 
     # as the task is published on the dask-scheduler when sending, it shall still be published on the dask scheduler
     list_of_persisted_datasets = await dask_client.backend.client.list_datasets()  # type: ignore
@@ -636,7 +638,9 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     assert isinstance(task_result, TaskOutputData)
     assert task_result.get("some_output_key") == 123
     # try to create another future and this one is already done
-    assert distributed.Future(published_computation_task[0].job_id).done()
+    assert distributed.Future(
+        published_computation_task[0].job_id, client=dask_client.backend.client
+    ).done()
 
 
 async def test_abort_computation_tasks(
@@ -1022,7 +1026,9 @@ async def test_get_tasks_status(
 
     assert published_computation_task[0].node_id in cpu_image.fake_tasks
     # let's get a dask future for the task here so dask will not remove the task from the scheduler at the end
-    computation_future = distributed.Future(key=published_computation_task[0].job_id)
+    computation_future = distributed.Future(
+        key=published_computation_task[0].job_id, client=dask_client.backend.client
+    )
     assert computation_future
 
     await _assert_wait_for_task_status(
