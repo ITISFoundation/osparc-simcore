@@ -35,6 +35,32 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
+async def test_service_details_no_status_present(
+    app_runner: None,
+    async_page: Page,
+    server_host_port: str,
+    node_id: NodeID,
+    not_initialized_app: FastAPI,
+    get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
+):
+    await set_request_as_running(
+        not_initialized_app, get_dynamic_service_start(node_id)
+    )
+
+    await async_page.goto(server_host_port)
+
+    # 1. one service is tracked
+    await assert_contains_text(async_page, "Total tracked services:")
+    await assert_contains_text(async_page, "1")
+    await assert_contains_text(async_page, "Details", instances=1)
+
+    # 2. open details page
+    await click_on_text(async_page, "Details")
+    # NOTE: if something is wrong with the page the bottom to remove from tracking
+    # will not be present
+    await assert_contains_text(async_page, "Remove from tracking", instances=1)
+
+
 @pytest.mark.parametrize(
     "service_status",
     [

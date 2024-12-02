@@ -34,7 +34,8 @@ async def service_details(node_id: NodeID):
             return
 
         scheduler_internals = service_model.model_dump(mode="json")
-        service_status = json.loads(scheduler_internals.pop("service_status"))
+        service_status = scheduler_internals.pop("service_status", "null")
+        service_status = json.loads("null" if service_status == "" else service_status)
         dynamic_service_start = scheduler_internals.pop("dynamic_service_start")
 
         ui.markdown("**Service Status**")
