@@ -29,7 +29,7 @@ from helpers.shared_comp_utils import (
     assert_computation_task_out_obj,
 )
 from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
-from models_library.clusters import DEFAULT_CLUSTER_ID, InternalClusterAuthentication
+from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterAuthentication
 from models_library.projects import (
     Node,
     NodesDict,
@@ -360,7 +360,7 @@ def mock_env(
     network_name: str,
     dev_feature_r_clone_enabled: str,
     dask_scheduler_service: str,
-    dask_scheduler_auth: InternalClusterAuthentication,
+    dask_scheduler_auth: ClusterAuthentication,
     minimal_configuration: None,
     patch_storage_setup: None,
 ) -> None:
