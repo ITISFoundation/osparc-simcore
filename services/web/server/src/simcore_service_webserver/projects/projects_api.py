@@ -253,12 +253,10 @@ async def patch_project(
     project_patch: ProjectPatch | ProjectPatchExtended,
     product_name: ProductName,
 ):
-    _project_patch_exclude_unset = {
-        key: value
-        if not isinstance(value, datetime.datetime)
-        else value  # NOTE: Asyncpg needs to have datetime type
-        for key, value in project_patch.dict(exclude_unset=True, by_alias=False).items()
-    }
+    _project_patch_exclude_unset = project_patch.model_dump(
+        exclude_unset=True, by_alias=False
+    )
+
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # 1. Get project

@@ -10,7 +10,14 @@ from typing import Annotated, Any, Literal, TypeAlias
 
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
-from pydantic import BeforeValidator, ConfigDict, Field, HttpUrl, field_validator
+from pydantic import (
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    PlainSerializer,
+    field_validator,
+)
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import LongTruncatedStr, ShortTruncatedStr
@@ -130,7 +137,9 @@ class ProjectPatch(InputSchema):
     name: ShortTruncatedStr | None = Field(default=None)
     description: LongTruncatedStr | None = Field(default=None)
     thumbnail: Annotated[
-        HttpUrl | None, BeforeValidator(empty_str_to_none_pre_validator)
+        HttpUrl | None,
+        BeforeValidator(empty_str_to_none_pre_validator),
+        PlainSerializer(str),
     ] = Field(default=None)
     access_rights: dict[GroupIDStr, AccessRights] | None = Field(default=None)
     classifiers: list[ClassifierID] | None = Field(default=None)
