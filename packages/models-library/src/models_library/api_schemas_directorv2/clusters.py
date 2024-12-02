@@ -63,3 +63,13 @@ class Scheduler(BaseModel):
         if v is None:
             return {}
         return v
+
+
+class ClusterDetails(BaseModel):
+    scheduler: Scheduler = Field(
+        ...,
+        description="This contains dask scheduler information given by the underlying dask library",
+    )
+    dashboard_link: AnyUrl = Field(
+        ..., description="Link to this scheduler's dashboard"
+    )
