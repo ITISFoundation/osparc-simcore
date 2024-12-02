@@ -61,8 +61,8 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
     __addTagsPage: function() {
       const title = this.tr("Create/Edit Tags");
       const iconSrc = "@FontAwesome5Solid/tags/22";
-      const tagsPage = this.__tagsPage = new osparc.desktop.preferences.pages.TagsPage();
-      const page = this.addTab(title, iconSrc, tagsPage);
+      const tagsPage = new osparc.desktop.preferences.pages.TagsPage();
+      const page = this.__tagsPage = this.addTab(title, iconSrc, tagsPage);
       osparc.utils.Utils.setIdToWidget(page.getChildControl("button"), "preferencesTagsTabBtn");
     },
 
