@@ -143,7 +143,9 @@ class CompRunsRepository(BaseRepository):
             return [
                 CompRunsAtDB.model_validate(row)
                 async for row in conn.execute(
-                    sa.select(comp_runs).where(sa.and_(*conditions))
+                    sa.select(comp_runs).where(
+                        sa.and_(True, *conditions)  # noqa: FBT003
+                    )
                 )
             ]
 
