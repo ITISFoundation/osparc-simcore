@@ -436,6 +436,36 @@ paths:
           description: requires login to  delete a key
         '403':
           description: not enough permissions to delete a key
+  /v0/auth/api-keys/{api_key_id}:
+    get:
+      tags:
+      - auth
+      summary: Get Api Key
+      description: returns the key or None
+      operationId: get_api_key
+      parameters:
+      - name: api_key_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Api Key Id
+      responses:
+        '200':
+          description: returns the api key or None
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiKeyGet'
+                - type: 'null'
+                title: Response 200 Get Api Key
+        '400':
+          description: key name requested is invalid
+        '401':
+          description: requires login to get the keu
+        '403':
+          description: not enough permissions to get the keu
   /v0/auth/captcha:
     get:
       tags:

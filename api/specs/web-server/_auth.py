@@ -288,7 +288,7 @@ async def list_api_keys():
 
 
 @router.get(
-    "/auth/api-keys/{id_}",
+    "/auth/api-keys/{api_key_id}",
     operation_id="get_api_key",
     responses={
         status.HTTP_200_OK: {
@@ -306,7 +306,7 @@ async def list_api_keys():
         },
     },
 )
-async def get_api_key(id_: int):
+async def get_api_key(api_key_id: int):
     """returns the key or None"""
 
 
