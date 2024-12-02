@@ -310,7 +310,7 @@ psutil==6.0.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   distributed
-pydantic==2.9.2
+pydantic==2.10.2
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -351,7 +351,7 @@ pydantic==2.9.2
     #   fast-depends
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.23.4
+pydantic-core==2.27.1
     # via pydantic
 pydantic-extra-types==2.9.0
     # via
@@ -436,7 +436,6 @@ redis==5.0.4
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 referencing==0.29.3
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 repro-zipfile==0.3.1
@@ -491,7 +490,7 @@ typer==0.12.3
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 types-python-dateutil==2.9.0.20240316
     # via arrow
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   aiodebug
     #   aiodocker
@@ -535,6 +534,7 @@ xyzservices==2024.4.0
     # via bokeh
 yarl==1.9.4
     # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq
