@@ -61,6 +61,14 @@ async def test_service_details_no_status_present(
     await assert_contains_text(async_page, "Remove from tracking", instances=1)
 
 
+async def test_service_details_renders_friendly_404(
+    app_runner: None, async_page: Page, server_host_port: str, node_id: NodeID
+):
+    # node was not started
+    await async_page.goto(f"{server_host_port}/service/{node_id}:details")
+    await assert_contains_text(async_page, "Sorry could not find any details for")
+
+
 @pytest.mark.parametrize(
     "service_status",
     [

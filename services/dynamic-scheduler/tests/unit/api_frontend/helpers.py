@@ -21,7 +21,7 @@ _DEFAULT_TIMEOUT: Final[NonNegativeFloat] = 10
 
 
 @asynccontextmanager
-async def _take_screenshot_on_error(
+async def take_screenshot_on_error(
     async_page: Page,
 ) -> AsyncIterator[None]:
     try:
@@ -41,7 +41,7 @@ async def _get_locator(
     instances: NonNegativeInt | None,
     timeout: float,  # noqa: ASYNC109
 ) -> Locator:
-    async with _take_screenshot_on_error(async_page):
+    async with take_screenshot_on_error(async_page):
         async for attempt in AsyncRetrying(
             reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(timeout)
         ):
@@ -81,7 +81,7 @@ async def assert_not_contains_text(
     text: str,
     timeout: float = _DEFAULT_TIMEOUT,  # noqa: ASYNC109
 ) -> None:
-    async with _take_screenshot_on_error(async_page):
+    async with take_screenshot_on_error(async_page):
         async for attempt in AsyncRetrying(
             reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(timeout)
         ):
