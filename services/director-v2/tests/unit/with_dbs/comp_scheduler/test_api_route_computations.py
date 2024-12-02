@@ -88,6 +88,8 @@ def minimal_configuration(
     redis_service: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
