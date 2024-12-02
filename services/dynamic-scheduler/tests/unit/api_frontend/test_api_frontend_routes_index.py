@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 
 from collections.abc import Callable
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -21,6 +22,7 @@ from simcore_service_dynamic_scheduler.services.service_tracker import (
     set_request_as_running,
     set_request_as_stopped,
 )
+from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -89,6 +91,7 @@ async def test_main_page(
     service_status: NodeGet | DynamicServiceGet,
     not_initialized_app: FastAPI,
     get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
+    mock_stop_dynamic_service: AsyncMock,
 ):
     await async_page.goto(server_host_port)
 
@@ -124,6 +127,11 @@ async def test_main_page(
     await assert_contains_text(
         async_page, "The service will be stopped and its data will be saved"
     )
-    await click_on_text(async_page, "Stop Now")
 
-    # TODO: assert called on backend
+    mock_stop_dynamic_service.assert_not_awaited()
+    await click_on_text(async_page, "Stop Now")
+    async for attempt in AsyncRetrying(
+        reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(3)
+    ):
+        with attempt:
+            mock_stop_dynamic_service.assert_awaited_once()

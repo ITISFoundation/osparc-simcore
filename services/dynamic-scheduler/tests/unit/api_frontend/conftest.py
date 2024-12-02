@@ -5,6 +5,8 @@ import asyncio
 import subprocess
 from collections.abc import AsyncIterable
 from contextlib import suppress
+from typing import Final
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import FastAPI, status
@@ -16,15 +18,36 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_service_dynamic_scheduler.core.application import create_app
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
+
+_MODULE: Final["str"] = "simcore_service_dynamic_scheduler"
 
 
 @pytest.fixture
 def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_dynamic_scheduler.services.status_monitor._monitor.Monitor._worker_check_services_require_status_update"
+        f"{_MODULE}.services.status_monitor._monitor.Monitor._worker_check_services_require_status_update"
     )
+
+
+@pytest.fixture
+def mock_stop_dynamic_service(mocker: MockerFixture) -> AsyncMock:
+    async_mock = AsyncMock()
+    mocker.patch(
+        f"{_MODULE}.api.frontend.routes._service.stop_dynamic_service", async_mock
+    )
+    return async_mock
+
+
+@pytest.fixture
+def mock_remove_tracked_service(mocker: MockerFixture) -> AsyncMock:
+    async_mock = AsyncMock()
+    mocker.patch(
+        f"{_MODULE}.api.frontend.routes._service.remove_tracked_service", async_mock
+    )
+    return async_mock
 
 
 @pytest.fixture
@@ -40,7 +63,7 @@ def app_environment(
 
 @pytest.fixture
 def server_host_port() -> str:
-    return "127.0.0.1:7456"
+    return f"127.0.0.1:{DEFAULT_FASTAPI_PORT}"
 
 
 @pytest.fixture
