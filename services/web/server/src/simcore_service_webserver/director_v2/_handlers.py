@@ -9,7 +9,6 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
-from pydantic.types import NonNegativeInt
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
 from servicelib.aiohttp.web_exceptions_extension import get_http_error_class_or_none
@@ -69,7 +68,6 @@ async def start_computation(request: web.Request) -> web.Response:
 
         subgraph: set[str] = set()
         force_restart: bool = False  # NOTE: deprecate this entry
-        cluster_id: NonNegativeInt = 0
 
         if request.can_read_body:
             body = await request.json()
@@ -79,7 +77,6 @@ async def start_computation(request: web.Request) -> web.Response:
 
             subgraph = body.get("subgraph", [])
             force_restart = bool(body.get("force_restart", force_restart))
-            cluster_id = body.get("cluster_id")
 
         simcore_user_agent = request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -106,9 +103,6 @@ async def start_computation(request: web.Request) -> web.Response:
             "start_pipeline": True,
             "subgraph": list(subgraph),  # sets are not natively json serializable
             "force_restart": force_restart,
-            "cluster_id": (
-                None if group_properties.use_on_demand_clusters else cluster_id
-            ),
             "simcore_user_agent": simcore_user_agent,
             "use_on_demand_clusters": group_properties.use_on_demand_clusters,
             "wallet_info": wallet_info,
