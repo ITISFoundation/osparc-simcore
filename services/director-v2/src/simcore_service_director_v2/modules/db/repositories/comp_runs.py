@@ -30,19 +30,23 @@ from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
 
-_POSTGRES_ERROR_TO_ERROR_MAP: Final[
-    dict[tuple[str, ...], tuple[type[DirectorError], tuple[str, ...]]]
+_POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[
+    dict[sa.Column, tuple[type[DirectorError], tuple[str, ...]]]
 ] = {
-    ("users", "user_id"): (UserNotFoundError, ("users", "user_id")),
-    ("projects", "project_uuid"): (
+    comp_runs.c.user_id: (UserNotFoundError, ("users", "user_id")),
+    comp_runs.c.project_uuid: (
         ProjectNotFoundError,
         ("projects", "project_id"),
     ),
-    ("clusters", "cluster_id"): (
+    comp_runs.c.cluster_id: (
         ClusterNotFoundError,
         ("clusters", "cluster_id"),
     ),
 }
+_DEFAULT_FK_CONSTRAINT_TO_ERROR: Final[tuple[type[DirectorError], tuple]] = (
+    DirectorError,
+    (),
+)
 
 
 class CompRunsRepository(BaseRepository):
@@ -186,10 +190,13 @@ class CompRunsRepository(BaseRepository):
                 row = await result.first()
                 return CompRunsAtDB.model_validate(row)
         except ForeignKeyViolation as exc:
-            message = exc.args[0]
-
-            for pg_keys, (exc_type, exc_keys) in _POSTGRES_ERROR_TO_ERROR_MAP.items():
-                if all(k in message for k in pg_keys):
+            assert exc.diag.constraint_name  # nosec  # noqa: PT017
+            for foreign_key in comp_runs.foreign_keys:
+                if exc.diag.constraint_name == foreign_key.name:
+                    assert foreign_key.parent is not None  # nosec
+                    exc_type, exc_keys = _POSTGRES_FK_COLUMN_TO_ERROR_MAP[
+                        foreign_key.parent
+                    ]
                     raise exc_type(
                         **{f"{k}": locals().get(k) for k in exc_keys}
                     ) from exc

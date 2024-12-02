@@ -927,7 +927,7 @@ async def test_get_computation_from_not_started_computation_task(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"
     )
     await create_pipeline(
-        project_id=proj.uuid,
+        project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
     # create no task this should trigger an exception
