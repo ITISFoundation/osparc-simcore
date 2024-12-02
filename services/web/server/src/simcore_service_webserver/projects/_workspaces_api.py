@@ -13,7 +13,7 @@ from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_db as project_to_folders_db
 from . import _groups_db as project_groups_db
-from . import _projects_db as project_db_v2
+from . import _projects_db
 from .exceptions import ProjectInvalidRightsError
 
 _logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ async def move_project_into_workspace(
         )
 
         # 4. Update workspace ID on the project resource
-        await project_db_v2.patch_project(
+        await _projects_db.patch_project(
             app=app,
             connection=conn,
             project_uuid=project_id,
