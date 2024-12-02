@@ -132,6 +132,12 @@ test_python_version: ## Check Python version, throw error if compilation would f
 	@.venv/bin/python ./scripts/test_python_version.py
 
 
+.PHONY: _check_venv_active
+_check_venv_active:
+	# Checking whether virtual environment was activated
+	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
+
+
 ## DOCKER BUILD -------------------------------
 #
 # - all builds are immediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
@@ -573,9 +579,9 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 
 
 .PHONY: openapi-specs
-openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
-	echo "$(MAKEFILES_WITH_OPENAPI_SPECS)"
-	for makefile in $(MAKEFILES_WITH_OPENAPI_SPECS); do \
+openapi-specs: .env _check_venv_active ## bundles and validates openapi specifications and schemas of ALL service's API
+	@for makefile in $(MAKEFILES_WITH_OPENAPI_SPECS); do \
+		echo "Generating openapi-specs using $${makefile}"; \
 		$(MAKE_C) $$(dirname $${makefile}) install-dev; \
 		$(MAKE_C) $$(dirname $${makefile}) openapi-specs; \
 	done
