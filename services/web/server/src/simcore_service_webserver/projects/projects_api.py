@@ -256,7 +256,6 @@ async def patch_project(
     _project_patch_exclude_unset = project_patch.model_dump(
         exclude_unset=True, by_alias=False
     )
-
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # 1. Get project
@@ -284,9 +283,9 @@ async def patch_project(
         }
         user: dict = await get_user(app, project_db.prj_owner)
         _prj_owner_primary_group = f'{user["primary_gid"]}'
-        if _prj_owner_primary_group not in new_prj_access_rights:  # type: ignore
+        if _prj_owner_primary_group not in new_prj_access_rights:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
-        if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:  # type: ignore
+        if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
 
     # 4. Patch the project
