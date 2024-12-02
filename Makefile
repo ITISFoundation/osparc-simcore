@@ -85,7 +85,7 @@ export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
-
+MAKEFILES_WITH_OPENAPI_SPECS := $(shell find . -type f -name 'Makefile' -not -path '*/.*' -exec dirname {} \;)
 
 get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
@@ -574,8 +574,7 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 
 .PHONY: openapi-specs
 openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
-	@$(MAKE_C) services/web/server $@
-	@$(MAKE_C) services/storage $@
+	$(foreach directory, $(MAKEFILES_WITH_OPENAPI_SPECS), $(shell ./scripts/openapi-specs.bash $(directory)))
 
 
 .PHONY: settings-schema.json
