@@ -58,10 +58,15 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # LOGGING
-    LOG_LEVEL: LogLevel = Field(
-        default=LogLevel.INFO.value,
-        validation_alias=AliasChoices("API_SERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
-    )
+    LOG_LEVEL: Annotated[
+        LogLevel,
+        Field(
+            validation_alias=AliasChoices(
+                "API_SERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+            ),
+        ),
+    ] = LogLevel.INFO
+
     API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         validation_alias=AliasChoices(

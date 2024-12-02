@@ -1,4 +1,4 @@
-from typing import Self
+from typing import Annotated, Self
 
 from pydantic import (
     AliasChoices,
@@ -24,10 +24,12 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     STORAGE_HOST: str = "0.0.0.0"  # nosec
     STORAGE_PORT: PortInt = TypeAdapter(PortInt).validate_python(8080)
 
-    LOG_LEVEL: LogLevel = Field(
-        "INFO",
-        validation_alias=AliasChoices("STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
-    )
+    LOG_LEVEL: Annotated[
+        LogLevel,
+        Field(
+            validation_alias=AliasChoices("STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
+        ),
+    ] = LogLevel.INFO
 
     STORAGE_MAX_WORKERS: PositiveInt = Field(
         8,
