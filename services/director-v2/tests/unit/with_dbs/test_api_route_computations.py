@@ -588,11 +588,7 @@ async def test_create_computation_with_wallet(
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [
-        PricingPlanGet.model_construct(
-            **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]
-        )
-    ],
+    [PricingPlanGet(**PricingPlanGet.model_config["json_schema_extra"]["examples"][0])],
 )
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_422(
     minimal_configuration: None,
@@ -631,7 +627,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
 @pytest.mark.parametrize(
     "default_pricing_plan",
     [
-        PricingPlanGet.model_construct(
+        PricingPlanGet(
             **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]  # type: ignore
         )
     ],
