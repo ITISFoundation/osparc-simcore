@@ -21,7 +21,7 @@ from helpers.shared_comp_utils import (
     assert_computation_task_out_obj,
 )
 from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
-from models_library.clusters import DEFAULT_CLUSTER_ID, InternalClusterAuthentication
+from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterAuthentication
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
@@ -58,7 +58,7 @@ def mock_env(
     monkeypatch: pytest.MonkeyPatch,
     dynamic_sidecar_docker_image_name: str,
     dask_scheduler_service: str,
-    dask_scheduler_auth: InternalClusterAuthentication,
+    dask_scheduler_auth: ClusterAuthentication,
 ) -> None:
     # used by the client fixture
     setenvs_from_dict(
