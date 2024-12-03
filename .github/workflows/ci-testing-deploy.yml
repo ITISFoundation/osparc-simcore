@@ -2912,23 +2912,10 @@ jobs:
           version: "0.4.x"
           enable-cache: false
           cache-dependency-glob: "**/service-library/requirements/ci*.txt"
-      - name: checkout source branch
+      - name: checkout
         uses: actions/checkout@v4
-        with:
-          path: source
-      - name: checkout target branch
-        uses: actions/checkout@v4
-        with:
-          path: target
-          repository: ${{ github.event.pull_request.base.repo.full_name }}
-          ref: ${{ github.event.pull_request.base.ref }}
-      - name: Generate source openapi-specs
+      - name: Check openapi-specs backwards compatibility
         run: |
           cd source
-          uv venv .venv && source .venv/bin/activate
-          make openapi-specs
-      - name: Generate target openapi specs
-        run: |
-          cd target
           uv venv .venv && source .venv/bin/activate
           make openapi-specs
