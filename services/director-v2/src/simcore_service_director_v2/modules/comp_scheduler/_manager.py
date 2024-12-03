@@ -38,9 +38,7 @@ async def run_new_pipeline(
     run_metadata: RunMetadataDict,
     use_on_demand_clusters: bool,
 ) -> None:
-    """Sets a new pipeline to be scheduled on the computational resources.
-    Passing cluster_id=0 will use the default cluster. Passing an existing ID will instruct
-    the scheduler to run the tasks on the defined cluster"""
+    """Sets a new pipeline to be scheduled on the computational resources."""
     # ensure the pipeline exists and is populated with something
     db_engine = get_db_engine(app)
     dag = await _get_pipeline_dag(project_id, db_engine)

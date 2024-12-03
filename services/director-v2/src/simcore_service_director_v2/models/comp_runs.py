@@ -148,7 +148,7 @@ class CompRunsAtDB(BaseModel):
                     "run_id": 43243,
                     "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "user_id": 132,
-                    "cluster_id": 123,
+                    "cluster_id": None,
                     "iteration": 12,
                     "result": "SUCCESS",
                     "created": "2021-03-01T13:07:34.191610",
