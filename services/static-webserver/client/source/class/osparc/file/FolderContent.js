@@ -63,13 +63,14 @@ qx.Class.define("osparc.file.FolderContent", {
         iconPosition: "top",
         width: 100,
         height: 80,
-        padding: 3
+        padding: 2
       });
       item.getChildControl("label").set({
+        font: "text-12",
         rich: true,
         textAlign: "center",
         maxWidth: 100,
-        maxHeight: 31
+        maxHeight: 33 // two lines
       });
       osparc.utils.Utils.setIdToWidget(item, "FolderViewerItem");
       return item;
