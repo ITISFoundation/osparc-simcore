@@ -257,7 +257,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       }
 
       this.getChildControl("about");
-      if (!osparc.product.Utils.isProduct("osparc")) {
+      if (osparc.product.Utils.showAboutProduct()) {
         this.getChildControl("about-product");
       }
       this.getChildControl("license");

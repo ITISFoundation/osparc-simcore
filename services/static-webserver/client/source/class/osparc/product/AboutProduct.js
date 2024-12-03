@@ -57,6 +57,10 @@ qx.Class.define("osparc.product.AboutProduct", {
         case "s4llite":
           this.__buildS4LLiteLayout();
           break;
+        case "tis":
+        case "tiplite":
+          this.__buildTIPLayout();
+          break;
         default: {
           const noInfoText = this.tr("Information not available");
           const noInfoLabel = osparc.product.quickStart.Utils.createLabel(noInfoText);
@@ -127,6 +131,29 @@ qx.Class.define("osparc.product.AboutProduct", {
       });
 
       this.__addCopyright();
+    },
+
+    __buildTIPLayout: function() {
+      osparc.store.Support.getLicenseURL()
+        .then(licenseUrl => {
+          const text = this.tr(`
+            TIP (TI Planning Tool) is an innovative online platform designed to optimize targeted neurostimulation protocols using \
+            temporal interference (TI) stimulation. Developed by IT'IS Foundation, TIP simplifies the complex process of planning deep \
+            brain stimulation.
+            <br><br>
+            Powered by o<sup>2</sup>S<sup>2</sup>PARC technology, TIP utilizes sophisticated electromagnetic simulations, detailed anatomical head models, \
+            and automated optimization to generate comprehensive reports with quantitative and visual information. This tool is \
+            invaluable for neuroscientists and brain stimulation experts, especially those with limited computational modeling experience, \
+            enabling them to create effective and safe stimulation protocols for their research. \
+            <br><br>
+            For more information about TIP, please visit ${osparc.utils.Utils.createHTMLLink("itis.swiss", "href='https://itis.swiss/tools-and-systems/ti-planning/overview")}.
+            <br><br>
+            To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
+          `);
+
+          const label = osparc.product.quickStart.Utils.createLabel(text);
+          this.add(label);
+        });
     },
 
     __addCopyright: function() {
