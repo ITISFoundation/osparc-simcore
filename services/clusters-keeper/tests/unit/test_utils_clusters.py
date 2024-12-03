@@ -19,7 +19,7 @@ from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.api_schemas_clusters_keeper.clusters import ClusterState
 from models_library.clusters import (
-    InternalClusterAuthentication,
+    ClusterAuthentication,
     NoAuthentication,
     TLSAuthentication,
 )
@@ -55,7 +55,7 @@ def ec2_boot_specs(app_settings: ApplicationSettings) -> EC2InstanceBootSpecific
 @pytest.fixture(params=[TLSAuthentication, NoAuthentication])
 def backend_cluster_auth(
     request: pytest.FixtureRequest,
-) -> InternalClusterAuthentication:
+) -> ClusterAuthentication:
     return request.param
 
 
@@ -63,7 +63,7 @@ def backend_cluster_auth(
 def app_environment(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    backend_cluster_auth: InternalClusterAuthentication,
+    backend_cluster_auth: ClusterAuthentication,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
@@ -295,7 +295,7 @@ def test_create_cluster_from_ec2_instance(
     faker: Faker,
     ec2_state: InstanceStateNameType,
     expected_cluster_state: ClusterState,
-    authentication: InternalClusterAuthentication,
+    authentication: ClusterAuthentication,
 ):
     instance_data = fake_ec2_instance_data(state=ec2_state)
     cluster_instance = create_cluster_from_ec2_instance(

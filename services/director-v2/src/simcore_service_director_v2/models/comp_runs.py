@@ -2,7 +2,7 @@ import datetime
 from contextlib import suppress
 from typing import TypeAlias
 
-from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
+from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -70,13 +70,6 @@ class CompRunsAtDB(BaseModel):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
         return v
 
-    @field_validator("cluster_id", mode="before")
-    @classmethod
-    def convert_null_to_default_cluster_id(cls, v):
-        if v is None:
-            v = DEFAULT_CLUSTER_ID
-        return v
-
     @field_validator("created", "modified", "started", "ended")
     @classmethod
     def ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
@@ -100,7 +93,7 @@ class CompRunsAtDB(BaseModel):
                     "run_id": 432,
                     "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "user_id": 132,
-                    "cluster_id": 0,
+                    "cluster_id": None,
                     "iteration": 42,
                     "result": "UNKNOWN",
                     "started": None,
@@ -116,7 +109,7 @@ class CompRunsAtDB(BaseModel):
                     "run_id": 432,
                     "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "user_id": 132,
-                    "cluster_id": None,  # this default to DEFAULT_CLUSTER_ID
+                    "cluster_id": None,
                     "iteration": 42,
                     "result": "NOT_STARTED",
                     "started": None,
@@ -132,7 +125,7 @@ class CompRunsAtDB(BaseModel):
                     "run_id": 43243,
                     "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "user_id": 132,
-                    "cluster_id": 123,
+                    "cluster_id": None,
                     "iteration": 12,
                     "result": "SUCCESS",
                     "created": "2021-03-01T13:07:34.191610",
@@ -155,7 +148,7 @@ class CompRunsAtDB(BaseModel):
                     "run_id": 43243,
                     "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "user_id": 132,
-                    "cluster_id": 123,
+                    "cluster_id": None,
                     "iteration": 12,
                     "result": "SUCCESS",
                     "created": "2021-03-01T13:07:34.191610",
