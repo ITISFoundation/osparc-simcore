@@ -33,7 +33,6 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
     PricingUnitGet,
 )
-from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import PipelineDetails
@@ -846,7 +845,6 @@ async def test_get_computation_from_empty_project(
         stop_url=None,
         result=None,
         iteration=None,
-        cluster_id=None,
         started=None,
         stopped=None,
         submitted=None,
@@ -912,7 +910,6 @@ async def test_get_computation_from_not_started_computation_task(
         stop_url=None,
         result=None,
         iteration=None,
-        cluster_id=None,
         started=None,
         stopped=None,
         submitted=None,
@@ -989,7 +986,6 @@ async def test_get_computation_from_published_computation_task(
         stop_url=TypeAdapter(AnyHttpUrl).validate_python(f"{expected_stop_url}"),
         result=None,
         iteration=1,
-        cluster_id=DEFAULT_CLUSTER_ID,
         started=None,
         stopped=None,
         submitted=None,
