@@ -2888,11 +2888,8 @@ jobs:
         run: |
           uv venv .venv && source .venv/bin/activate
           make openapi-specs
-          changed_files=$(git diff --name-only)
-          echo "${changed_files}"
-          if echo ${changed_files} | grep -qE '^(openapi\.json|openapi\.yaml)$'; then
-            echo "Run make openapi-specs and commit changes" && exit 1
-          fi
+          changed_files=$(git diff --name-only | awk '{$1=$1};1')
+          [ -z "${changed_files}" ] && echo "${changed_files}" && exit 1
 
 
   api-spec-backwards-compatible:
