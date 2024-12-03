@@ -9,6 +9,7 @@
 import asyncio
 import datetime
 import logging
+import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
@@ -1236,6 +1237,7 @@ async def test_cluster_adapts_machines_on_the_fly(
     osparc_docker_label_keys: StandardSimcoreDockerLabels,
     ec2_instance_custom_tags: dict[str, str],
     instance_type_filters: Sequence[FilterTypeDef],
+    async_docker_client: aiodocker.Docker,
     scale_up_params1: _ScaleUpParams,
     scale_up_params2: _ScaleUpParams,
 ):
@@ -1252,7 +1254,7 @@ async def test_cluster_adapts_machines_on_the_fly(
 
     #
     # 1. create the first batch of services requiring the initial machines
-    await asyncio.gather(
+    first_batch_services = await asyncio.gather(
         *(
             create_service(
                 task_template
@@ -1313,8 +1315,8 @@ async def test_cluster_adapts_machines_on_the_fly(
             for _ in range(scale_up_params2.num_services)
         )
     )
+    # scaling will do nothing since we have hit the maximum number of machines
     for _ in range(3):
-        # scaling will do nothing since we have hit the maximum number of machines
         await auto_scale_cluster(
             app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
         )
@@ -1327,6 +1329,46 @@ async def test_cluster_adapts_machines_on_the_fly(
             expected_additional_tag_keys=list(ec2_instance_custom_tags),
             instance_filters=instance_type_filters,
         )
+
+    # now we simulate that some of the services in the 1st batch have completed and that we are 1 below the max
+    # a machine should switch off and another type should be started
+    completed_services_to_stop = random.sample(
+        first_batch_services,
+        scale_up_params1.num_services
+        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+        + 1,
+    )
+    await asyncio.gather(
+        *(
+            async_docker_client.services.delete(s.id)
+            for s in completed_services_to_stop
+            if s.id
+        )
+    )
+
+    for _ in range(3):
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+        )
+        all_instances = await ec2_client.describe_instances()
+        assert len(all_instances["Reservations"]) == 2, "there should be 2 Reservations"
+        reservation1 = all_instances["Reservations"][0]
+        assert "Instances" in reservation1
+        assert len(reservation1["Instances"]) == (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES - 1
+        ), f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES-1} EC2 instances, found {len(reservation1['Instances'])}"
+        for instance in reservation1["Instances"]:
+            assert "InstanceType" in instance
+            assert instance["InstanceType"] == scale_up_params1.expected_instance_type
+
+        reservation2 = all_instances["Reservations"][0]
+        assert "Instances" in reservation2
+        assert len(reservation2["Instances"]) == (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES - 1
+        ), f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES-1} EC2 instances, found {len(reservation2['Instances'])}"
+        for instance in reservation2["Instances"]:
+            assert "InstanceType" in instance
+            assert instance["InstanceType"] == scale_up_params2.expected_instance_type
 
 
 @pytest.mark.parametrize(
