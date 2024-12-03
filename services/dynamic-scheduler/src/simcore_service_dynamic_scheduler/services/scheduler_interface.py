@@ -7,9 +7,9 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 
-from ...core.settings import ApplicationSettings, SchedulingMode
-from ...services.director_v2 import DirectorV2Client
-from ...services.service_tracker import set_request_as_running, set_request_as_stopped
+from ..core.settings import ApplicationSettings, SchedulingMode
+from .director_v2 import DirectorV2Client
+from .service_tracker import set_request_as_running, set_request_as_stopped
 
 
 async def get_service_status(

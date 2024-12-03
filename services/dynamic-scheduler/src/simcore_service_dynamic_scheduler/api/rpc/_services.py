@@ -12,7 +12,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWasNotFoundError,
 )
 
-from ...services import scheduler
+from ...services import scheduler_interface
 
 router = RPCRouter()
 
@@ -21,14 +21,14 @@ router = RPCRouter()
 async def get_service_status(
     app: FastAPI, *, node_id: NodeID
 ) -> NodeGet | DynamicServiceGet | NodeGetIdle:
-    return await scheduler.get_service_status(app, node_id=node_id)
+    return await scheduler_interface.get_service_status(app, node_id=node_id)
 
 
 @router.expose()
 async def run_dynamic_service(
     app: FastAPI, *, dynamic_service_start: DynamicServiceStart
 ) -> NodeGet | DynamicServiceGet:
-    return await scheduler.run_dynamic_service(
+    return await scheduler_interface.run_dynamic_service(
         app, dynamic_service_start=dynamic_service_start
     )
 
@@ -42,6 +42,6 @@ async def run_dynamic_service(
 async def stop_dynamic_service(
     app: FastAPI, *, dynamic_service_stop: DynamicServiceStop
 ) -> None:
-    return await scheduler.stop_dynamic_service(
+    return await scheduler_interface.stop_dynamic_service(
         app, dynamic_service_stop=dynamic_service_stop
     )
