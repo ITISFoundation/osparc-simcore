@@ -209,13 +209,15 @@ qx.Class.define("osparc.Application", {
     },
 
     __updateTabName: function() {
+      let newName = "";
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       if (osparc.utils.Utils.isInZ43()) {
-        document.title += " Z43";
+        newName += " Z43";
       }
       if (platformName) {
-        document.title += ` (${platformName})`;
+        newName += ` (${platformName})`;
       }
+      osparc.utils.Utils.updateTabName(newName);
     },
 
 
