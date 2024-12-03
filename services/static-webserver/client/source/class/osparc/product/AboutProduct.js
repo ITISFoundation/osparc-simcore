@@ -83,6 +83,8 @@ qx.Class.define("osparc.product.AboutProduct", {
             For more information about Sim4Life, please visit ${osparc.utils.Utils.createHTMLLink("sim4life.swiss", "https://sim4life.swiss/")}.
             <br><br>
             To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
+            <br><br>
+            Send us an email ${this.__getMailTo()}
           `);
 
           const label = osparc.product.quickStart.Utils.createLabel(text);
@@ -103,6 +105,8 @@ qx.Class.define("osparc.product.AboutProduct", {
             For more information about Sim4Life, please visit ${osparc.utils.Utils.createHTMLLink("sim4life.swiss", "href='https://sim4life.swiss/")}.
             <br><br>
             To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
+            <br><br>
+            Send us an email ${this.__getMailTo()}
           `);
 
           const label = osparc.product.quickStart.Utils.createLabel(text);
@@ -121,10 +125,13 @@ qx.Class.define("osparc.product.AboutProduct", {
       const moreInfoUrl = "https://zmt.swiss/";
       const moreInfoText = `For more information about Sim4Life.lite, visit ${osparc.utils.Utils.createHTMLLink("our website", moreInfoUrl)}.`;
 
+      const emailText = `Send us an email ${this.__getMailTo()}`;
+
       [
         introText,
         licenseText,
-        moreInfoText
+        moreInfoText,
+        emailText,
       ].forEach(text => {
         const label = osparc.product.quickStart.Utils.createLabel(text);
         this.add(label);
@@ -146,7 +153,7 @@ qx.Class.define("osparc.product.AboutProduct", {
             invaluable for neuroscientists and brain stimulation experts, especially those with limited computational modeling experience, \
             enabling them to create effective and safe stimulation protocols for their research. \
             <br><br>
-            For more information about TIP, please visit ${osparc.utils.Utils.createHTMLLink("itis.swiss", "href='https://itis.swiss/tools-and-systems/ti-planning/overview")}.
+            For more information about TIP, please visit ${osparc.utils.Utils.createHTMLLink("itis.swiss", "https://itis.swiss/tools-and-systems/ti-planning/overview")}.
             <br><br>
             To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
             <br><br>
