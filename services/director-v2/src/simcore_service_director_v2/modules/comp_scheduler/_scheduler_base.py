@@ -540,11 +540,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         iteration: Iteration,
     ) -> None:
-        """schedules a pipeline for a given user, project and iteration.
-
-        Arguments:
-            wake_up_callback -- a callback function that is called in a separate thread everytime a pipeline node is completed
-        """
+        """apply the scheduling of a pipeline for a given user, project and iteration."""
         with log_context(
             _logger,
             level=logging.INFO,

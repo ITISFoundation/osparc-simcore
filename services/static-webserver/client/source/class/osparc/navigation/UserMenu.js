@@ -115,8 +115,8 @@ qx.Class.define("osparc.navigation.UserMenu", {
         case "license":
           control = new qx.ui.menu.Button(this.tr("License"));
           osparc.utils.Utils.setIdToWidget(control, "userMenuLicenseBtn");
-          osparc.store.Support.getLicenseURL()
-            .then(licenseURL => control.addListener("execute", () => window.open(licenseURL)));
+          const licenseURL = osparc.store.Support.getLicenseURL();
+          control.addListener("execute", () => window.open(licenseURL));
           this.add(control);
           break;
         case "tip-lite-button":
@@ -243,7 +243,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       }
 
       this.getChildControl("about");
-      if (!osparc.product.Utils.isProduct("osparc")) {
+      if (osparc.product.Utils.showAboutProduct()) {
         this.getChildControl("about-product");
       }
       this.getChildControl("license");
