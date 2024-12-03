@@ -1,14 +1,15 @@
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 
 from models_library import projects, projects_nodes_io
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from simcore_service_api_server.models._utils_pydantic import UriSchema
 
 from .. import api_resources
 from . import solvers
 
 StudyID: TypeAlias = projects.ProjectID
 NodeName: TypeAlias = str
-DownloadLink: TypeAlias = HttpUrl
+DownloadLink: TypeAlias = Annotated[HttpUrl, UriSchema()]
 
 
 class Study(BaseModel):

@@ -23,6 +23,8 @@ from pydantic import (
 )
 from servicelib.file_utils import create_sha256_checksum
 
+from .._utils_pydantic import UriSchema
+
 _NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 
 
@@ -167,7 +169,7 @@ class UploadLinks(BaseModel):
 
 class FileUploadData(BaseModel):
     chunk_size: NonNegativeInt
-    urls: list[HttpUrl]
+    urls: list[Annotated[HttpUrl, UriSchema()]]
     links: UploadLinks
 
 
