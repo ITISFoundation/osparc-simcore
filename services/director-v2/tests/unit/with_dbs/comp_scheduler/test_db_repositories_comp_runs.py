@@ -15,7 +15,7 @@ import arrow
 import pytest
 from _helpers import PublishedProject
 from faker import Faker
-from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster
+from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
@@ -260,7 +260,6 @@ async def test_create(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
-    create_cluster: Callable[..., Awaitable[Cluster]],
 ):
     with pytest.raises(ProjectNotFoundError):
         await CompRunsRepository(aiopg_engine).create(
@@ -324,15 +323,6 @@ async def test_create(
             metadata=run_metadata,
             use_on_demand_clusters=faker.pybool(),
         )
-    cluster = await create_cluster(published_project.user)
-    await CompRunsRepository(aiopg_engine).create(
-        user_id=published_project.user["id"],
-        project_id=published_project.project.uuid,
-        cluster_id=cluster.id,
-        iteration=None,
-        metadata=run_metadata,
-        use_on_demand_clusters=faker.pybool(),
-    )
 
 
 async def test_update(

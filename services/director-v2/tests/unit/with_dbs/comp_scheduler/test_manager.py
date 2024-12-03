@@ -156,7 +156,6 @@ async def test_schedule_all_pipelines(
         initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
@@ -260,7 +259,6 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
         initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
@@ -345,7 +343,6 @@ async def test_empty_pipeline_is_not_scheduled(
             initialized_app,
             user_id=user["id"],
             project_id=empty_project.uuid,
-            cluster_id=DEFAULT_CLUSTER_ID,
             run_metadata=run_metadata,
             use_on_demand_clusters=False,
         )
@@ -361,7 +358,6 @@ async def test_empty_pipeline_is_not_scheduled(
             initialized_app,
             user_id=user["id"],
             project_id=empty_project.uuid,
-            cluster_id=DEFAULT_CLUSTER_ID,
             run_metadata=run_metadata,
             use_on_demand_clusters=False,
         )
