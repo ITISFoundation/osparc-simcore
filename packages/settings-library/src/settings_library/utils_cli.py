@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 from collections.abc import Callable
@@ -44,7 +43,7 @@ def print_as_envfile(
 
         if isinstance(value, BaseSettings):
             if compact:
-                value = json.dumps(
+                value = json_dumps(
                     model_dump_with_secrets(
                         value, show_secrets=show_secrets, **pydantic_export_options
                     )
