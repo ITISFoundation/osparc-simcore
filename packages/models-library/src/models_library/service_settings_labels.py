@@ -19,6 +19,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic.config import JsonDict
 
 from .callbacks_mapping import CallbacksMapping
 from .generics import ListModel
@@ -490,57 +491,29 @@ class DynamicSidecarServiceLabels(BaseModel):
     model_config = _BaseConfig
 
 
-class SimcoreServiceLabels(DynamicSidecarServiceLabels):
-    """
-    Validate all the simcores.services.* labels on a service.
-
-    When no other fields expect `settings` are present
-    the service will be started as legacy by director-v0.
-
-    If `paths_mapping` is present the service will be started
-    via dynamic-sidecar by director-v2.
-
-    When starting via dynamic-sidecar, if `compose_spec` is
-    present, also `container_http_entry` must be present.
-    When both of these fields are missing a docker-compose
-    spec will be generated before starting the service.
-    """
-
-    settings: Annotated[
-        Json[SimcoreServiceSettingsLabel],
-        Field(
-            default_factory=dict,
-            alias="simcore.service.settings",
-            description=(
-                "Json encoded. Contains setting like environment variables and "
-                "resource constraints which are required by the service. "
-                "Should be compatible with Docker REST API."
-            ),
-        ),
-    ]
+def _simcore_service_labels_json_schema_extra(json_schema_extra: JsonDict):
 
     assert "json_schema_extra" in SimcoreServiceSettingLabelEntry.model_config  # nosec
-    assert isinstance(
+    assert isinstance(  # nosec
         SimcoreServiceSettingLabelEntry.model_config["json_schema_extra"], dict
-    )  # nosec
+    )
 
     assert "json_schema_extra" in PathMappingsLabel.model_config  # nosec
-    assert isinstance(
+    assert isinstance(  # nosec
         PathMappingsLabel.model_config["json_schema_extra"], dict
-    )  # nosec
-    assert isinstance(
+    )
+    assert isinstance(  # nosec
         PathMappingsLabel.model_config["json_schema_extra"]["examples"], list
-    )  # nosec
+    )
 
     assert "json_schema_extra" in CallbacksMapping.model_config  # nosec
     assert isinstance(CallbacksMapping.model_config["json_schema_extra"], dict)  # nosec
-    assert isinstance(
+    assert isinstance(  # nosec
         CallbacksMapping.model_config["json_schema_extra"]["examples"], list
-    )  # nosec
+    )
 
-    model_config = _BaseConfig | ConfigDict(
-        extra="allow",
-        json_schema_extra={
+    json_schema_extra.update(
+        {
             "examples": [
                 # WARNING: do not change order. Used in tests!
                 # legacy service
@@ -622,4 +595,39 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                 },
             ]
         },
+    )
+
+
+class SimcoreServiceLabels(DynamicSidecarServiceLabels):
+    """
+    Validate all the simcores.services.* labels on a service.
+
+    When no other fields expect `settings` are present
+    the service will be started as legacy by director-v0.
+
+    If `paths_mapping` is present the service will be started
+    via dynamic-sidecar by director-v2.
+
+    When starting via dynamic-sidecar, if `compose_spec` is
+    present, also `container_http_entry` must be present.
+    When both of these fields are missing a docker-compose
+    spec will be generated before starting the service.
+    """
+
+    settings: Annotated[
+        Json[SimcoreServiceSettingsLabel],
+        Field(
+            default_factory=dict,
+            alias="simcore.service.settings",
+            description=(
+                "Json encoded. Contains setting like environment variables and "
+                "resource constraints which are required by the service. "
+                "Should be compatible with Docker REST API."
+            ),
+        ),
+    ]
+
+    model_config = _BaseConfig | ConfigDict(
+        extra="allow",
+        json_schema_extra=_simcore_service_labels_json_schema_extra,
     )

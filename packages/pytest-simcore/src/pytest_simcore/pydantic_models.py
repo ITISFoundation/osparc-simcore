@@ -98,22 +98,29 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
             (model_config := model_cls.model_config)
             and isinstance(model_config, dict)
             and (json_schema_extra := model_config.get("json_schema_extra", {}))
-            and isinstance(json_schema_extra, dict)
         ):
-            if "example" in json_schema_extra:
-                yield ModelExample(
-                    model_cls=model_cls,
-                    example_name="example",
-                    example_data=json_schema_extra["example"],
-                )
+            processed_schema_extra = {}
 
-            elif "examples" in json_schema_extra:
-                for index, example in enumerate(json_schema_extra["examples"]):
+            if callable(json_schema_extra):
+                json_schema_extra(processed_schema_extra)
+            else:
+                processed_schema_extra = json_schema_extra
+
+            if isinstance(processed_schema_extra, dict):
+                if "example" in processed_schema_extra:
                     yield ModelExample(
                         model_cls=model_cls,
-                        example_name=f"examples_{index}",
-                        example_data=example,
+                        example_name="example",
+                        example_data=processed_schema_extra["example"],
                     )
+
+                elif "examples" in processed_schema_extra:
+                    for index, example in enumerate(processed_schema_extra["examples"]):
+                        yield ModelExample(
+                            model_cls=model_cls,
+                            example_name=f"examples_{index}",
+                            example_data=example,
+                        )
 
 
 ## PYDANTIC MODELS & SCHEMAS -----------------------------------------------------

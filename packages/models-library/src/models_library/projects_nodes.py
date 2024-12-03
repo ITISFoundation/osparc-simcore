@@ -2,7 +2,6 @@
     Models Node as a central element in a project's pipeline
 """
 
-from copy import deepcopy
 from typing import Annotated, Any, TypeAlias, Union
 
 from common_library.basic_types import Undefined
@@ -114,16 +113,6 @@ class NodeState(BaseModel):
             ]
         },
     )
-
-
-def _patch_json_schema_extra(schema: dict) -> None:
-    # NOTE: exporting without this trick does not make runHash as nullable.
-    # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
-    for prop_name in ["parent", "runHash"]:
-        if prop_name in schema.get("properties", {}):
-            prop = deepcopy(schema["properties"][prop_name])
-            prop["nullable"] = True
-            schema["properties"][prop_name] = prop
 
 
 class Node(BaseModel):
@@ -285,6 +274,5 @@ class Node(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra=_patch_json_schema_extra,
         populate_by_name=True,
     )
