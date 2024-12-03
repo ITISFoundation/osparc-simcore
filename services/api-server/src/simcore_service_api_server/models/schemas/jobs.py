@@ -8,10 +8,10 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import (
-    AnyHttpUrl,
     BaseModel,
     ConfigDict,
     Field,
+    HttpUrl,
     PositiveInt,
     StrictBool,
     StrictFloat,
@@ -153,7 +153,7 @@ class JobMetadata(BaseModel):
     metadata: dict[str, MetaValueType] = Field(..., description="Custom key-value map")
 
     # Links
-    url: Annotated[AnyHttpUrl, UriSchema()] | None = Field(
+    url: Annotated[HttpUrl, UriSchema()] | None = Field(
         ..., description="Link to get this resource (self)"
     )
 
@@ -201,13 +201,13 @@ class Job(BaseModel):
     )
 
     # Get links to other resources
-    url: Annotated[AnyHttpUrl, UriSchema()] | None = Field(
+    url: Annotated[HttpUrl, UriSchema()] | None = Field(
         ..., description="Link to get this resource (self)"
     )
-    runner_url: Annotated[AnyHttpUrl, UriSchema()] | None = Field(
+    runner_url: Annotated[HttpUrl, UriSchema()] | None = Field(
         ..., description="Link to the solver's job (parent collection)"
     )
-    outputs_url: Annotated[AnyHttpUrl, UriSchema()] | None = Field(
+    outputs_url: Annotated[HttpUrl, UriSchema()] | None = Field(
         ..., description="Link to the job outputs (sub-collection)"
     )
 
