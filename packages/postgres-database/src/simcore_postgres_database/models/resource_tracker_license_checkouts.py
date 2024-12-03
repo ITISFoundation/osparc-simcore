@@ -17,14 +17,14 @@ resource_tracker_license_checkouts = sa.Table(
     metadata,
     sa.Column(
         "license_checkout_id",
-        sa.BigInteger,
+        sa.String,
         nullable=False,
         primary_key=True,
         default=_custom_id_generator,
     ),
     sa.Column(
         "license_package_id",
-        sa.BigInteger,
+        sa.String,
         nullable=True,
     ),
     sa.Column(
@@ -47,12 +47,6 @@ resource_tracker_license_checkouts = sa.Table(
     sa.Column(
         "service_run_id",
         sa.String,
-        sa.ForeignKey(
-            "resource_tracker_service_runs.service_run_id",
-            name="fk_resource_tracker_license_checkouts_service_run_id",
-            onupdate=RefActions.CASCADE,
-            ondelete=RefActions.RESTRICT,
-        ),
         nullable=True,
     ),
     sa.Column(
@@ -73,6 +67,17 @@ resource_tracker_license_checkouts = sa.Table(
         nullable=False,
     ),
     column_modified_datetime(timezone=True),
+    # ---------------------------
+    sa.ForeignKeyConstraint(
+        ["product_name", "service_run_id"],
+        [
+            "resource_tracker_service_runs.product_name",
+            "resource_tracker_service_runs.service_run_id",
+        ],
+        name="resource_tracker_license_checkouts_service_run_id_fkey",
+        onupdate=RefActions.CASCADE,
+        ondelete=RefActions.RESTRICT,
+    ),
 )
 
 # We define the partial index

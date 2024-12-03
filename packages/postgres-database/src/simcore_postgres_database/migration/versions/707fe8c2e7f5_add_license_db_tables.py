@@ -1,15 +1,15 @@
 """add license db tables
 
-Revision ID: dd0d2a5a993b
+Revision ID: 707fe8c2e7f5
 Revises: e05bdc5b3c7b
-Create Date: 2024-12-03 14:55:22.308786+00:00
+Create Date: 2024-12-03 15:32:02.797511+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "dd0d2a5a993b"
+revision = "707fe8c2e7f5"
 down_revision = "e05bdc5b3c7b"
 branch_labels = None
 depends_on = None
@@ -52,8 +52,8 @@ def upgrade():
     )
     op.create_table(
         "resource_tracker_license_checkouts",
-        sa.Column("license_checkout_id", sa.BigInteger(), nullable=False),
-        sa.Column("license_package_id", sa.BigInteger(), nullable=True),
+        sa.Column("license_checkout_id", sa.String(), nullable=False),
+        sa.Column("license_package_id", sa.String(), nullable=True),
         sa.Column("wallet_id", sa.BigInteger(), nullable=False),
         sa.Column("user_id", sa.BigInteger(), nullable=False),
         sa.Column("user_email", sa.String(), nullable=True),
@@ -69,9 +69,12 @@ def upgrade():
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
-            ["service_run_id"],
-            ["resource_tracker_service_runs.service_run_id"],
-            name="fk_resource_tracker_license_checkouts_service_run_id",
+            ["product_name", "service_run_id"],
+            [
+                "resource_tracker_service_runs.product_name",
+                "resource_tracker_service_runs.service_run_id",
+            ],
+            name="resource_tracker_license_checkouts_service_run_id_fkey",
             onupdate="CASCADE",
             ondelete="RESTRICT",
         ),
