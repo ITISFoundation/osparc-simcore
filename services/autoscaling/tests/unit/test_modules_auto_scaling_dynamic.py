@@ -1214,6 +1214,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     ],
 )
 async def test_cluster_adapts_machines_on_the_fly(
+    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     ec2_client: EC2Client,
     initialized_app: FastAPI,
