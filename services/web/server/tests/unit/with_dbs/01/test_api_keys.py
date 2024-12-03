@@ -18,7 +18,6 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.api_keys._api import (
-    get_api_key,
     get_or_create_api_key,
     prune_expired_api_keys,
 )
@@ -184,31 +183,26 @@ async def test_get_or_create_api_key(
         assert client.app
 
         options = {
+            "name": "foo",
             "user_id": user["id"],
             "product_name": "osparc",
         }
 
-        # does not exist
-        assert await get_api_key(client.app, **options | {"api_key_id": 1}) is None
-
         # create once
-        created = await get_or_create_api_key(client.app, **options | {"name": "foo"})
+        created = await get_or_create_api_key(client.app, **options)
         assert created.display_name == "foo"
         assert created.api_key != created.api_secret
 
-        # idempottent
+        # idempotent
         for _ in range(3):
-            assert (
-                await get_or_create_api_key(client.app, **options | {"name": "foo"})
-                == created
-            )
+            assert await get_or_create_api_key(client.app, **options) == created
 
 
 @pytest.mark.parametrize(
     "user_role,expected",
     _get_user_access_parametrizations(status.HTTP_404_NOT_FOUND),
 )
-async def test_api_key_does_not_exists(
+async def test_get_not_existing_api_key(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
