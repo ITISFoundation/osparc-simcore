@@ -155,15 +155,15 @@ def test_compare_pydantic_vs_fastapi_schemas(
 def test_differences_between_new_pydantic_url_types():
     # SEE https://docs.pydantic.dev/2.10/api/networks/
 
-    # | **URL**                       | **AnyUrl**  | **AnyHttpUrl**  | **HttpUrl**  |
-    # |-------------------------------|-------------|--------------|-----------------|
-    # | `http://example.com`          | ✅          | ✅           | ✅              |
-    # | `https://example.com/resource`| ✅          | ✅           | ✅              |
-    # | `ftp://example.com`           | ✅          | ❌           | ❌              |
-    # | `http://localhost`            | ✅          | ✅           | ✅              |
-    # | `http://127.0.0.1`            | ✅          | ✅           | ✅              |
-    # | `http://127.0.0.1:8080`       | ✅          | ✅           | ✅              |
-    # | `customscheme://example.com`  | ✅          | ❌           | ❌              |
+    # | **URL**                       | **AnyUrl**  | **AnyHttpUrl**  | **HttpUrl**     |
+    # |-------------------------------|-------------|-----------------|-----------------|
+    # | `http://example.com`          | ✅          | ✅              | ✅              |
+    # | `https://example.com/resource`| ✅          | ✅              | ✅              |
+    # | `ftp://example.com`           | ✅          | ❌              | ❌              |
+    # | `http://localhost`            | ✅          | ✅              | ✅              |
+    # | `http://127.0.0.1`            | ✅          | ✅              | ✅              |
+    # | `http://127.0.0.1:8080`       | ✅          | ✅              | ✅              |
+    # | `customscheme://example.com`  | ✅          | ❌              | ❌              |
 
     url = "http://example.com"
     TypeAdapter(AnyUrl).validate_python(url)
@@ -202,4 +202,13 @@ def test_differences_between_new_pydantic_url_types():
     with pytest.raises(ValidationError):
         TypeAdapter(HttpUrl).validate_python(url)
     with pytest.raises(ValidationError):
+        TypeAdapter(AnyHttpUrl).validate_python(url)
+
+    # examples taken from docker API
+    for url in (
+        "https://hub-mirror.corp.example.com:5000/",
+        "https://[2001:db8:a0b:12f0::1]/",
+    ):
+        TypeAdapter(AnyUrl).validate_python(url)
+        TypeAdapter(HttpUrl).validate_python(url)
         TypeAdapter(AnyHttpUrl).validate_python(url)
