@@ -130,33 +130,45 @@ qx.Class.define("osparc.file.FolderContent", {
     },
 
     __convertEntries: function(content) {
+      const datas = [];
+      content.forEach(entry => {
+        const data = {
+          icon: entry.getIcon ? entry.getIcon() : this.__getIcon(entry),
+          label: entry.getLabel(),
+          lastModified: entry.getLastModified ? osparc.utils.Utils.formatDateAndTime(new Date(entry.getLastModified())) : "",
+          size: entry.getSize ? osparc.utils.Utils.bytesToSize(entry.getSize()) : "",
+          itemId: entry.getItemId ? entry.getItemId() : null,
+          entry: entry,
+        };
+        datas.push(data);
+      });
       const items = [];
       if (this.getMode() === "list") {
-        content.forEach(entry => {
+        datas.forEach(data => {
           const row = [];
-          row.push(entry.getIcon ? entry.getIcon() : this.__getIcon(entry));
-          row.push(entry.getLabel());
-          row.push(entry.getLastModified ? osparc.utils.Utils.formatDateAndTime(new Date(entry.getLastModified())) : "");
-          row.push(entry.getSize ? osparc.utils.Utils.bytesToSize(entry.getSize()) : "");
-          if (entry.getItemId) {
-            row.push(entry.getItemId());
+          row.push(data["icon"]);
+          row.push(data["label"]);
+          row.push(data["lastModified"]);
+          row.push(data["size"]);
+          if (data["itemId"]) {
+            row.push(data["itemId"]);
           }
-          row.entry = entry;
+          row.entry = data["entry"];
           items.push(row);
         });
       } else if (this.getMode() === "icons") {
-        content.forEach(entry => {
-          let tt = entry.getLabel();
-          if (entry.getSize) {
-            tt += "<br>" + osparc.utils.Utils.bytesToSize(entry.getSize());
+        datas.forEach(data => {
+          let toolTip = data["label"];
+          if (data["size"]) {
+            toolTip += "<br>" + data["size"];
           }
-          if (entry.getLastModified) {
-            tt += "<br>" + osparc.utils.Utils.formatDateAndTime(new Date(entry.getLastModified()));
+          if (data["lastModified"]) {
+            toolTip += "<br>" + data["lastModified"];
           }
           const item = this.self().getItemButton().set({
-            label: entry.getLabel(),
-            icon: entry.getIcon ? entry.getIcon() : this.__getIcon(entry),
-            toolTipText: tt
+            label: data["label"],
+            icon: data["icon"],
+            toolTipText: toolTip
           });
           const icon = item.getChildControl("icon", true);
           if (icon.getSource() === "@FontAwesome5Solid/circle-notch/12") {
@@ -164,10 +176,9 @@ qx.Class.define("osparc.file.FolderContent", {
             icon.setMarginRight(4);
             icon.getContentElement().addClass("rotate");
           }
-
-          if (entry.getItemId) {
-            item.itemId = entry.getItemId();
-            this.__attachListenersToItems(item, entry);
+          if (data["itemId"]) {
+            item.itemId = data["itemId"];
+            this.__attachListenersToItems(item, data["entry"]);
           }
           items.push(item);
         });
