@@ -64,7 +64,7 @@ from simcore_service_api_server.exceptions.backend_errors import (
     WalletNotFoundError,
 )
 from simcore_service_api_server.models.schemas.backwards_compatibility import (
-    GetCreditPriceApiServer,
+    GetCreditPrice,
 )
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
@@ -575,13 +575,13 @@ class AuthSession:
     # PRODUCTS -------------------------------------------------
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: ProductPriceNotFoundError})
-    async def get_product_price(self) -> GetCreditPriceApiServer:
+    async def get_product_price(self) -> GetCreditPrice:
         response = await self.client.get(
             "/credits-price",
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[GetCreditPriceApiServer].model_validate_json(response.text).data
+        data = Envelope[GetCreditPrice].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
