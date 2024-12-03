@@ -5332,7 +5332,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetCreditPriceApiServer"
+                  "$ref": "#/components/schemas/GetCreditPrice"
                 }
               }
             }
@@ -5563,7 +5563,7 @@
         ],
         "title": "FileUploadData"
       },
-      "GetCreditPriceApiServer": {
+      "GetCreditPrice": {
         "properties": {
           "productName": {
             "type": "string",
@@ -5602,7 +5602,7 @@
           "usdPerCredit",
           "minPaymentAmountUsd"
         ],
-        "title": "GetCreditPriceApiServer"
+        "title": "GetCreditPrice"
       },
       "Groups": {
         "properties": {
