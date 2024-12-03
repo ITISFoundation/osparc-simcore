@@ -288,8 +288,8 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects/{studyId}/folders/{folderId}"
           },
           moveToWorkspace: {
-            method: "PUT",
-            url: statics.API + "/projects/{studyId}/workspaces/{workspaceId}"
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/workspaces/{workspaceId}:move"
           },
         }
       },
@@ -342,8 +342,8 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/folders/{folderId}"
           },
           moveToWorkspace: {
-            method: "PUT",
-            url: statics.API + "/folders/{folderId}/folders/{workspaceId}"
+            method: "POST",
+            url: statics.API + "/folders/{folderId}/folders/{workspaceId}:move"
           },
           trash: {
             method: "POST",
