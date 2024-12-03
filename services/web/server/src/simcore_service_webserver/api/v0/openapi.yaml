@@ -2368,7 +2368,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ComputationTaskGet_'
+                $ref: '#/components/schemas/Envelope_ComputationGet_'
   /v0/computations/{project_id}:start:
     post:
       tags:
@@ -4444,7 +4444,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -7141,17 +7141,89 @@ components:
       required:
       - version
       title: CompatibleService
+    ComputationGet:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+          description: the id of the computation task
+        state:
+          $ref: '#/components/schemas/RunningState'
+          description: the state of the computational task
+        result:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result
+          description: the result of the computational task
+        pipeline_details:
+          $ref: '#/components/schemas/PipelineDetails'
+          description: the details of the generated pipeline
+        iteration:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Iteration
+          description: the iteration id of the computation task (none if no task ran
+            yet)
+        started:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Started
+          description: the timestamp when the computation was started or None if not
+            started yet
+        stopped:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Stopped
+          description: the timestamp when the computation was stopped or None if not
+            started nor stopped yet
+        submitted:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Submitted
+          description: task last modification timestamp or None if the there is no
+            task
+        url:
+          type: string
+          minLength: 1
+          format: uri
+          title: Url
+          description: the link where to get the status of the task
+        stop_url:
+          anyOf:
+          - type: string
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Stop Url
+          description: the link where to stop the task
+      type: object
+      required:
+      - id
+      - state
+      - pipeline_details
+      - iteration
+      - started
+      - stopped
+      - submitted
+      - url
+      title: ComputationGet
     ComputationStart:
       properties:
         force_restart:
           type: boolean
           title: Force Restart
           default: false
-        cluster_id:
-          type: integer
-          minimum: 0
-          title: Cluster Id
-          default: 0
         subgraph:
           items:
             type: string
@@ -7161,18 +7233,6 @@ components:
           default: []
       type: object
       title: ComputationStart
-    ComputationTaskGet:
-      properties:
-        cluster_id:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
-          title: Cluster Id
-      type: object
-      required:
-      - cluster_id
-      title: ComputationTaskGet
     ConnectServiceToPricingPlanBodyParams:
       properties:
         serviceKey:
@@ -7442,11 +7502,11 @@ components:
           title: Error
       type: object
       title: Envelope[CheckpointApiModel]
-    Envelope_ComputationTaskGet_:
+    Envelope_ComputationGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/ComputationTaskGet'
+          - $ref: '#/components/schemas/ComputationGet'
           - type: 'null'
         error:
           anyOf:
@@ -7454,7 +7514,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[ComputationTaskGet]
+      title: Envelope[ComputationGet]
     Envelope_FileMetaDataGet_:
       properties:
         data:
@@ -11017,6 +11077,39 @@ components:
       - phone
       - code
       title: PhoneConfirmationBody
+    PipelineDetails:
+      properties:
+        adjacency_list:
+          additionalProperties:
+            items:
+              type: string
+              format: uuid
+            type: array
+          type: object
+          title: Adjacency List
+          description: 'The adjacency list of the current pipeline in terms of {NodeID:
+            [successor NodeID]}'
+        progress:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
+          title: Progress
+          description: the progress of the pipeline (None if there are no computational
+            tasks)
+        node_states:
+          additionalProperties:
+            $ref: '#/components/schemas/NodeState'
+          type: object
+          title: Node States
+          description: The states of each of the computational nodes in the pipeline
+      type: object
+      required:
+      - adjacency_list
+      - progress
+      - node_states
+      title: PipelineDetails
     PortLink:
       properties:
         nodeUuid:
