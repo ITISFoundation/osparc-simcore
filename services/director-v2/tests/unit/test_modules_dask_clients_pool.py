@@ -14,8 +14,7 @@ from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
 from models_library.clusters import (
-    DEFAULT_CLUSTER_ID,
-    Cluster,
+    BaseCluster,
     ClusterAuthentication,
     ClusterTypeInModel,
     NoAuthentication,
@@ -80,10 +79,10 @@ def test_dask_clients_pool_properly_setup_and_deleted(
 
 
 @pytest.fixture
-def fake_clusters(faker: Faker) -> Callable[[int], list[Cluster]]:
-    def creator(num_clusters: int) -> list[Cluster]:
+def fake_clusters(faker: Faker) -> Callable[[int], list[BaseCluster]]:
+    def creator(num_clusters: int) -> list[BaseCluster]:
         return [
-            Cluster.model_validate(
+            BaseCluster.model_validate(
                 {
                     "id": faker.pyint(),
                     "name": faker.name(),
@@ -139,7 +138,7 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
     minimal_dask_config: None,
     mocker: MockerFixture,
     client: TestClient,
-    fake_clusters: Callable[[int], list[Cluster]],
+    fake_clusters: Callable[[int], list[BaseCluster]],
 ):
     assert client.app
     the_app = cast(FastAPI, client.app)
@@ -184,7 +183,7 @@ async def test_acquiring_wrong_cluster_raises_exception(
     minimal_dask_config: None,
     mocker: MockerFixture,
     client: TestClient,
-    fake_clusters: Callable[[int], list[Cluster]],
+    fake_clusters: Callable[[int], list[BaseCluster]],
 ):
     assert client.app
     the_app = cast(FastAPI, client.app)
@@ -215,7 +214,6 @@ def test_default_cluster_correctly_initialized(
         == dask_scheduler_settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL
     )
 
-    assert default_cluster.id == DEFAULT_CLUSTER_ID
     assert isinstance(default_cluster.authentication, get_args(ClusterAuthentication))
 
 
