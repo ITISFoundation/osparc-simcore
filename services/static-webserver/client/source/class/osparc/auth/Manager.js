@@ -257,15 +257,6 @@ qx.Class.define("osparc.auth.Manager", {
       this.updateProfile(profile);
       const role = profile.role.toLowerCase();
       osparc.data.Permissions.getInstance().setRole(role);
-
-      this.__fetchStartUpResources();
-    },
-
-    __fetchStartUpResources: function() {
-      const isDisabled = osparc.utils.DisabledPlugins.isClustersDisabled();
-      if (isDisabled === false) {
-        osparc.data.Resources.get("clusters");
-      }
     },
 
     __logoutUser: function() {
