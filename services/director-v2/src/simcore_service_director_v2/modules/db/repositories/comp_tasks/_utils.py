@@ -6,6 +6,7 @@ from typing import Any, Final, cast
 import aiopg.sa
 import arrow
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
+from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.services import (
     NodeRequirements,
@@ -89,7 +90,7 @@ async def _get_service_details(
         node.version,
         product_name,
     )
-    obj: ServiceMetaDataPublished = ServiceMetaDataPublished(**service_details)
+    obj: ServiceMetaDataPublished = ServiceGet(**service_details)
     return obj
 
 

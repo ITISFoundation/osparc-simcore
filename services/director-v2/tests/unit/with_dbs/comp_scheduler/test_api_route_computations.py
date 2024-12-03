@@ -186,15 +186,29 @@ def mocked_catalog_service_fcts(
     def _mocked_services_details(
         request, service_key: str, service_version: str
     ) -> httpx.Response:
+        assert "json_schema_extra" in ServiceGet.model_config
+        assert isinstance(ServiceGet.model_config["json_schema_extra"], dict)
+        assert isinstance(
+            ServiceGet.model_config["json_schema_extra"]["examples"], list
+        )
+        assert isinstance(
+            ServiceGet.model_config["json_schema_extra"]["examples"][0], dict
+        )
+        data_published = fake_service_details.model_copy(
+            update={
+                "key": urllib.parse.unquote(service_key),
+                "version": service_version,
+            }
+        ).model_dump(by_alias=True)
+        data = {
+            **ServiceGet.model_config["json_schema_extra"]["examples"][0],
+            **data_published,
+        }
+        payload = ServiceGet.model_validate(data)
         return httpx.Response(
             200,
             json=jsonable_encoder(
-                fake_service_details.model_copy(
-                    update={
-                        "key": urllib.parse.unquote(service_key),
-                        "version": service_version,
-                    }
-                ),
+                payload,
                 by_alias=True,
             ),
         )
