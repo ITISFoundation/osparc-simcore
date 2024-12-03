@@ -144,31 +144,39 @@ class Node(BaseModel):
     label: str = Field(
         ..., description="The short name of the node", examples=["JupyterLab"]
     )
-    progress: float | None = Field(
-        default=None,
-        ge=0,
-        le=100,
-        description="the node progress value (deprecated in DB, still used for API only)",
-        deprecated=True,
-    )
-    thumbnail: Annotated[str, HttpUrl] | None = Field(
-        default=None,
-        description="url of the latest screenshot of the node",
-        examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
-    )
+    progress: Annotated[
+        float | None,
+        Field(
+            ge=0,
+            le=100,
+            description="the node progress value (deprecated in DB, still used for API only)",
+            deprecated=True,
+        ),
+    ] = None
+
+    thumbnail: Annotated[
+        str | HttpUrl | None,
+        Field(
+            description="url of the latest screenshot of the node",
+            examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+        ),
+    ] = None
 
     # RUN HASH
-    run_hash: str | None = Field(
-        default=None,
-        description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
-        alias="runHash",
-    )
+    run_hash: Annotated[
+        str | None,
+        Field(
+            description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
+            alias="runHash",
+        ),
+    ] = None
 
     # INPUT PORTS ---
     inputs: Annotated[
         InputsDict | None,
         Field(default_factory=dict, description="values of input properties"),
-    ]
+    ] = _Unset
+
     inputs_required: Annotated[
         list[InputID],
         Field(
@@ -177,15 +185,23 @@ class Node(BaseModel):
             alias="inputsRequired",
         ),
     ] = _Unset
-    inputs_units: dict[InputID, UnitStr] | None = Field(
-        description="Overrides default unit (if any) defined in the service for each port",
-        alias="inputsUnits",
-    )
-    input_access: dict[InputID, AccessEnum] | None = Field(
-        default=None,
-        description="map with key - access level pairs",
-        alias="inputAccess",
-    )
+
+    inputs_units: Annotated[
+        dict[InputID, UnitStr] | None,
+        Field(
+            description="Overrides default unit (if any) defined in the service for each port",
+            alias="inputsUnits",
+        ),
+    ] = None
+
+    input_access: Annotated[
+        dict[InputID, AccessEnum] | None,
+        Field(
+            description="map with key - access level pairs",
+            alias="inputAccess",
+        ),
+    ] = None
+
     input_nodes: Annotated[
         list[NodeID] | None,
         Field(
@@ -200,38 +216,50 @@ class Node(BaseModel):
         OutputsDict | None,
         Field(default_factory=dict, description="values of output properties"),
     ] = _Unset
-    output_node: bool | None = Field(default=None, deprecated=True, alias="outputNode")
-    output_nodes: list[NodeID] | None = Field(
-        default=None,
-        description="Used in group-nodes. Node IDs of those connected to the output",
-        alias="outputNodes",
-    )
 
-    parent: NodeID | None = Field(
-        default=None,
-        description="Parent's (group-nodes') node ID s. Used to group",
-    )
+    output_node: Annotated[
+        bool | None, Field(deprecated=True, alias="outputNode")
+    ] = None
 
-    position: Position | None = Field(
-        default=None,
-        deprecated=True,
-        description="Use projects_ui.WorkbenchUI.position instead",
-    )
+    output_nodes: Annotated[
+        list[NodeID] | None,
+        Field(
+            description="Used in group-nodes. Node IDs of those connected to the output",
+            alias="outputNodes",
+        ),
+    ] = None
+
+    parent: Annotated[
+        NodeID | None,
+        Field(
+            description="Parent's (group-nodes') node ID s. Used to group",
+        ),
+    ] = None
+
+    position: Annotated[
+        Position | None,
+        Field(
+            deprecated=True,
+            description="Use projects_ui.WorkbenchUI.position instead",
+        ),
+    ] = None
 
     state: Annotated[
         NodeState | None,
         Field(default_factory=NodeState, description="The node's state object"),
     ] = _Unset
 
-    boot_options: dict[EnvVarKey, str] | None = Field(
-        default=None,
-        alias="bootOptions",
-        description=(
-            "Some services provide alternative parameters to be injected at boot time. "
-            "The user selection should be stored here, and it will overwrite the "
-            "services's defaults."
+    boot_options: Annotated[
+        dict[EnvVarKey, str] | None,
+        Field(
+            alias="bootOptions",
+            description=(
+                "Some services provide alternative parameters to be injected at boot time. "
+                "The user selection should be stored here, and it will overwrite the "
+                "services's defaults."
+            ),
         ),
-    )
+    ] = None
 
     @field_validator("thumbnail", mode="before")
     @classmethod
@@ -258,4 +286,5 @@ class Node(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         json_schema_extra=_patch_json_schema_extra,
+        populate_by_name=True,
     )

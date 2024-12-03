@@ -1,12 +1,10 @@
-from typing import Annotated
-
 from models_library.api_schemas__common.meta import BaseMeta
-from pydantic import AnyHttpUrl, ConfigDict, StringConstraints
+from pydantic import AnyHttpUrl, ConfigDict
 
 
 class Meta(BaseMeta):
-    docs_url: Annotated[AnyHttpUrl, StringConstraints(max_length=65536)]
-    docs_dev_url: Annotated[AnyHttpUrl, StringConstraints(max_length=65536)]
+    docs_url: AnyHttpUrl
+    docs_dev_url: AnyHttpUrl
     model_config = ConfigDict(
         json_schema_extra={
             "example": {

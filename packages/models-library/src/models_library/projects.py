@@ -12,6 +12,7 @@ from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
+from ._compat import Undefined
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .emails import LowerCaseEmailStr
 from .projects_access import AccessRights, GroupIDStr
@@ -23,6 +24,9 @@ from .utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
 )
+
+_Unset: Any = Undefined
+
 
 ProjectID: TypeAlias = UUID
 ClassifierID: TypeAlias = str
@@ -151,7 +155,7 @@ class Project(BaseProjectModel):
             description="Contains the reference to the project classifiers",
             examples=["some:id:to:a:classifier"],
         ),
-    ]
+    ] = _Unset
 
     # Project state (SEE projects_state.py)
     state: ProjectState | None = None
