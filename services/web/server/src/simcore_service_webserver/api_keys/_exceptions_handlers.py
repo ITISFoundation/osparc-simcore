@@ -1,12 +1,11 @@
 from servicelib.aiohttp import status
-from simcore_service_webserver.api_keys.errors import (
-    ApiKeyNotFoundError,
-    ApiKeysValueError,
-)
-from simcore_service_webserver.exceptions_handlers import (
+from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
+
+from ..exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    create_exception_handlers_decorator,
+    exception_handling_decorator,
+    to_exceptions_handlers_map,
 )
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
@@ -17,7 +16,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-handle_plugin_requests_exceptions = create_exception_handlers_decorator(
-    exceptions_catch=(ApiKeysValueError,),
-    exc_to_status_map=_TO_HTTP_ERROR_MAP,
+handle_plugin_requests_exceptions = exception_handling_decorator(
+    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
+# this is one decorator with a single exception handler
