@@ -1,8 +1,7 @@
 from typing import Annotated, Any
 
+from common_library.basic_types import Undefined
 from pydantic import AnyUrl, BaseModel, Field
-
-from ._compat import Undefined
 
 _Unset: Any = Undefined
 

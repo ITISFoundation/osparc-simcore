@@ -7,12 +7,12 @@ from enum import Enum
 from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
+from common_library.basic_types import Undefined
 from models_library.basic_types import ConstrainedStr
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
-from ._compat import Undefined
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .emails import LowerCaseEmailStr
 from .projects_access import AccessRights, GroupIDStr

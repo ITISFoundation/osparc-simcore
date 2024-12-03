@@ -5,6 +5,7 @@
 from copy import deepcopy
 from typing import Annotated, Any, TypeAlias, Union
 
+from common_library.basic_types import Undefined
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -18,7 +19,6 @@ from pydantic import (
     field_validator,
 )
 
-from ._compat import Undefined
 from .basic_types import EnvVarKey, KeyIDStr
 from .projects_access import AccessEnum
 from .projects_nodes_io import (

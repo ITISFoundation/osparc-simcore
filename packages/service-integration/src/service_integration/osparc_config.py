@@ -16,7 +16,7 @@ import logging
 from pathlib import Path
 from typing import Annotated, Any, Final, Literal
 
-from models_library._compat import Undefined
+from common_library.basic_types import Undefined
 from models_library.basic_types import SHA256Str
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.service_settings_labels import (
