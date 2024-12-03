@@ -120,7 +120,7 @@ from ..users.preferences_api import (
 from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_db as workspaces_db
-from . import _crud_api_delete, _nodes_api
+from . import _crud_api_delete, _nodes_api, _projects_db
 from ._access_rights_api import (
     check_user_project_permission,
     has_user_project_access_rights,
@@ -253,8 +253,8 @@ async def patch_project(
     project_patch: ProjectPatch | ProjectPatchExtended,
     product_name: ProductName,
 ):
-    _project_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
-        project_patch, exclude_unset=True, by_alias=False
+    _project_patch_exclude_unset = project_patch.model_dump(
+        exclude_unset=True, by_alias=False
     )
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
@@ -289,7 +289,8 @@ async def patch_project(
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
 
     # 4. Patch the project
-    await db.patch_project(
+    await _projects_db.patch_project(
+        app=app,
         project_uuid=project_uuid,
         new_partial_project_data=_project_patch_exclude_unset,
     )
