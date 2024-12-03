@@ -9,24 +9,14 @@ from typing import Any
 from uuid import UUID
 
 from aiohttp import web
-from common_library.serialization import model_dump_with_secrets
-from models_library.api_schemas_directorv2.clusters import (
-    ClusterCreate,
-    ClusterDetails,
-    ClusterGet,
-    ClusterPatch,
-    ClusterPing,
-)
 from models_library.api_schemas_directorv2.comp_tasks import (
     TasksOutputs,
     TasksSelection,
 )
-from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
@@ -34,14 +24,7 @@ from servicelib.logging_utils import log_decorator
 from ..products.api import get_product
 from ._api_utils import get_wallet_info
 from ._core_base import DataType, request_director_v2
-from .exceptions import (
-    ClusterAccessForbidden,
-    ClusterDefinedPingError,
-    ClusterNotFoundError,
-    ClusterPingError,
-    ComputationNotFoundError,
-    DirectorServiceError,
-)
+from .exceptions import ComputationNotFoundError, DirectorServiceError
 from .settings import DirectorV2Settings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -225,200 +208,6 @@ async def delete_pipeline(
         data={
             "user_id": user_id,
             "force": force,
-        },
-    )
-
-
-#
-# CLUSTER RESOURCE ----------------------
-#
-
-
-@log_decorator(logger=_logger)
-async def create_cluster(
-    app: web.Application, user_id: UserID, new_cluster: ClusterCreate
-) -> DataType:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    cluster = await request_director_v2(
-        app,
-        "POST",
-        url=(settings.base_url / "clusters").update_query(user_id=int(user_id)),
-        expected_status=web.HTTPCreated,
-        data=model_dump_with_secrets(
-            new_cluster, show_secrets=True, by_alias=True, exclude_unset=True
-        ),
-    )
-    assert isinstance(cluster, dict)  # nosec
-    assert ClusterGet.model_validate(cluster) is not None  # nosec
-    return cluster
-
-
-async def list_clusters(app: web.Application, user_id: UserID) -> list[DataType]:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    clusters = await request_director_v2(
-        app,
-        "GET",
-        url=(settings.base_url / "clusters").update_query(user_id=int(user_id)),
-        expected_status=web.HTTPOk,
-    )
-
-    assert isinstance(clusters, list)  # nosec
-    assert TypeAdapter(list[ClusterGet]).validate_python(clusters) is not None  # nosec
-    return clusters
-
-
-async def get_cluster(
-    app: web.Application, user_id: UserID, cluster_id: ClusterID
-) -> DataType:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    cluster = await request_director_v2(
-        app,
-        "GET",
-        url=(settings.base_url / f"clusters/{cluster_id}").update_query(
-            user_id=int(user_id)
-        ),
-        expected_status=web.HTTPOk,
-        on_error={
-            status.HTTP_404_NOT_FOUND: (
-                ClusterNotFoundError,
-                {"cluster_id": cluster_id},
-            ),
-            status.HTTP_403_FORBIDDEN: (
-                ClusterAccessForbidden,
-                {"cluster_id": cluster_id},
-            ),
-        },
-    )
-
-    assert isinstance(cluster, dict)  # nosec
-    assert ClusterGet.model_validate(cluster) is not None  # nosec
-    return cluster
-
-
-async def get_cluster_details(
-    app: web.Application, user_id: UserID, cluster_id: ClusterID
-) -> DataType:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-
-    cluster = await request_director_v2(
-        app,
-        "GET",
-        url=(settings.base_url / f"clusters/{cluster_id}/details").update_query(
-            user_id=int(user_id)
-        ),
-        expected_status=web.HTTPOk,
-        on_error={
-            status.HTTP_404_NOT_FOUND: (
-                ClusterNotFoundError,
-                {"cluster_id": cluster_id},
-            ),
-            status.HTTP_403_FORBIDDEN: (
-                ClusterAccessForbidden,
-                {"cluster_id": cluster_id},
-            ),
-        },
-    )
-    assert isinstance(cluster, dict)  # nosec
-    assert ClusterDetails.model_validate(cluster) is not None  # nosec
-    return cluster
-
-
-async def update_cluster(
-    app: web.Application,
-    user_id: UserID,
-    cluster_id: ClusterID,
-    cluster_patch: ClusterPatch,
-) -> DataType:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    cluster = await request_director_v2(
-        app,
-        "PATCH",
-        url=(settings.base_url / f"clusters/{cluster_id}").update_query(
-            user_id=int(user_id)
-        ),
-        expected_status=web.HTTPOk,
-        data=model_dump_with_secrets(
-            cluster_patch, show_secrets=True, by_alias=True, exclude_none=True
-        ),
-        on_error={
-            status.HTTP_404_NOT_FOUND: (
-                ClusterNotFoundError,
-                {"cluster_id": cluster_id},
-            ),
-            status.HTTP_403_FORBIDDEN: (
-                ClusterAccessForbidden,
-                {"cluster_id": cluster_id},
-            ),
-        },
-    )
-
-    assert isinstance(cluster, dict)  # nosec
-    assert ClusterGet.model_validate(cluster) is not None  # nosec
-    return cluster
-
-
-async def delete_cluster(
-    app: web.Application, user_id: UserID, cluster_id: ClusterID
-) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    await request_director_v2(
-        app,
-        "DELETE",
-        url=(settings.base_url / f"clusters/{cluster_id}").update_query(
-            user_id=int(user_id)
-        ),
-        expected_status=web.HTTPNoContent,
-        on_error={
-            status.HTTP_404_NOT_FOUND: (
-                ClusterNotFoundError,
-                {"cluster_id": cluster_id},
-            ),
-            status.HTTP_403_FORBIDDEN: (
-                ClusterAccessForbidden,
-                {"cluster_id": cluster_id},
-            ),
-        },
-    )
-
-
-async def ping_cluster(app: web.Application, cluster_ping: ClusterPing) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    await request_director_v2(
-        app,
-        "POST",
-        url=settings.base_url / "clusters:ping",
-        expected_status=web.HTTPNoContent,
-        data=model_dump_with_secrets(
-            cluster_ping,
-            show_secrets=True,
-            by_alias=True,
-            exclude_unset=True,
-        ),
-        on_error={
-            status.HTTP_422_UNPROCESSABLE_ENTITY: (
-                ClusterPingError,
-                {"endpoint": f"{cluster_ping.endpoint}"},
-            )
-        },
-    )
-
-
-async def ping_specific_cluster(
-    app: web.Application, user_id: UserID, cluster_id: ClusterID
-) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    await request_director_v2(
-        app,
-        "POST",
-        url=(settings.base_url / f"clusters/{cluster_id}:ping").update_query(
-            user_id=int(user_id)
-        ),
-        expected_status=web.HTTPNoContent,
-        on_error={
-            status.HTTP_422_UNPROCESSABLE_ENTITY: (
-                ClusterDefinedPingError,
-                {"cluster_id": f"{cluster_id}"},
-            )
         },
     )
 

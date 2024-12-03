@@ -44,7 +44,6 @@ SERVICES_NAMES_TO_BUILD := \
 	efs-guardian \
 	invitations \
   migration \
-	osparc-gateway-server \
 	payments \
 	resource-usage-tracker \
 	dynamic-scheduler \
