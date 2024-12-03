@@ -4,6 +4,7 @@
 
 import asyncio
 import dataclasses
+import datetime
 from collections.abc import Awaitable, Callable
 from typing import Final
 from unittest.mock import MagicMock
@@ -36,7 +37,9 @@ def wallet_id(faker: Faker, request: pytest.FixtureRequest) -> WalletID | None:
     return faker.pyint(min_value=1) if request.param == "with_wallet" else None
 
 
-_FAST_TIME_BEFORE_TERMINATION_SECONDS: Final[int] = 10
+_FAST_TIME_BEFORE_TERMINATION_SECONDS: Final[datetime.timedelta] = datetime.timedelta(
+    seconds=10
+)
 
 
 @pytest.fixture
@@ -149,7 +152,7 @@ async def test_cluster_management_core_properly_removes_unused_instances(
     mocked_dask_ping_scheduler.is_scheduler_busy.reset_mock()
 
     # running the cluster management task after the heartbeat came in shall not remove anything
-    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS + 1)
+    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
     await cluster_heartbeat(initialized_app, user_id=user_id, wallet_id=wallet_id)
     await check_clusters(initialized_app)
     await _assert_cluster_exist_and_state(
@@ -161,7 +164,7 @@ async def test_cluster_management_core_properly_removes_unused_instances(
     mocked_dask_ping_scheduler.is_scheduler_busy.reset_mock()
 
     # after waiting the termination time, running the task shall remove the cluster
-    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS + 1)
+    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
     await check_clusters(initialized_app)
     await _assert_cluster_exist_and_state(
         ec2_client, instances=created_clusters, state="terminated"
@@ -201,7 +204,7 @@ async def test_cluster_management_core_properly_removes_workers_on_shutdown(
         ec2_client, instance_ids=worker_instance_ids, state="running"
     )
     # after waiting the termination time, running the task shall remove the cluster
-    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS + 1)
+    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
     await check_clusters(initialized_app)
     await _assert_cluster_exist_and_state(
         ec2_client, instances=created_clusters, state="terminated"
@@ -314,7 +317,7 @@ async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
     mocked_dask_ping_scheduler.is_scheduler_busy.reset_mock()
 
     # waiting for the termination time will now terminate the cluster
-    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS + 1)
+    await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
     await check_clusters(initialized_app)
     await _assert_cluster_exist_and_state(
         ec2_client, instances=created_clusters, state="terminated"
