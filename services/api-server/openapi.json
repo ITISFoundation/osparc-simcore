@@ -5679,6 +5679,8 @@
             "anyOf": [
               {
                 "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
                 "format": "uri"
               },
               {
@@ -5692,6 +5694,8 @@
             "anyOf": [
               {
                 "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
                 "format": "uri"
               },
               {
@@ -5705,6 +5709,8 @@
             "anyOf": [
               {
                 "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
                 "format": "uri"
               },
               {
@@ -5886,6 +5892,8 @@
             "anyOf": [
               {
                 "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
                 "format": "uri"
               },
               {
@@ -6189,11 +6197,15 @@
           },
           "docs_url": {
             "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
             "format": "uri",
             "title": "Docs Url"
           },
           "docs_dev_url": {
             "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
             "format": "uri",
             "title": "Docs Dev Url"
           }
@@ -6717,6 +6729,8 @@
             "anyOf": [
               {
                 "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
                 "format": "uri"
               },
               {
