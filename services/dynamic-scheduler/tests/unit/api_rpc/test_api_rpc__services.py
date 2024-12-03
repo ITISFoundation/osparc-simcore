@@ -148,19 +148,19 @@ def scheduling_mode(request: pytest.FixtureRequest) -> SchedulingMode:
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     scheduling_mode: SchedulingMode,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    return setenvs_from_dict(
+    setenvs_from_dict(
         monkeypatch,
         {
-            **app_environment,
             "DYNAMIC_SCHEDULER_SCHEDULING_MODE": scheduling_mode,
         },
     )
+    return app_environment
 
 
 @pytest.fixture
