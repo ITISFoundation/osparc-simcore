@@ -141,7 +141,7 @@ async def get_or_create(
         return ApiKey(
             id=row.id,
             display_name=row.display_name,
-            expiration=row.expiration,
+            expiration=row.expires_at,
             api_key=row.api_key,
             api_secret=row.api_secret,
         )
