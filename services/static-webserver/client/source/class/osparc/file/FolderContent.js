@@ -41,6 +41,14 @@ qx.Class.define("osparc.file.FolderContent", {
       event: "changeMode",
       apply: "__reloadFolderContent"
     },
+
+    multiSelect: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeMultiSelect",
+      apply: "__reloadFolderContent"
+    },
   },
 
   events: {

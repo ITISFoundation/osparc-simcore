@@ -32,6 +32,7 @@ qx.Class.define("osparc.file.FolderViewer", {
     const folderUpBtn = this.getChildControl("folder-up");
     folderUpBtn.addListener("execute", () => this.fireDataEvent("folderUp", this.getFolder()), this);
     this.getChildControl("folder-path");
+    const multiSelectButton = this.getChildControl("multi-select-button");
     const iconsButton = this.getChildControl("view-options-icons");
     const listButton = this.getChildControl("view-options-list");
     const folderContent = this.getChildControl("folder-content");
@@ -46,6 +47,7 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     this.bind("folder", folderContent, "folder");
 
+    multiSelectButton.addListener("changeValue", e => folderContent.setMultiSelect(e.getData()));
     iconsButton.addListener("execute", () => folderContent.setMode("icons"));
     listButton.addListener("execute", () => folderContent.setMode("list"));
 
@@ -100,6 +102,14 @@ qx.Class.define("osparc.file.FolderViewer", {
           });
           break;
         }
+        case "multi-select-button":
+          control = new qx.ui.form.ToggleButton(this.tr("Multiselect")).set({
+            value: false,
+            marginRight: 10,
+          });
+          const header = this.getChildControl("header");
+          header.addAt(control, 2);
+          break;
         case "view-options-rgroup":
           control = new qx.ui.form.RadioGroup();
           break;
@@ -108,7 +118,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           const group = this.getChildControl("view-options-rgroup");
           group.add(control);
           const header = this.getChildControl("header");
-          header.addAt(control, 2);
+          header.addAt(control, 3);
           break;
         }
         case "view-options-list": {
@@ -116,7 +126,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           const group = this.getChildControl("view-options-rgroup");
           group.add(control);
           const header = this.getChildControl("header");
-          header.addAt(control, 3);
+          header.addAt(control, 4);
           break;
         }
         case "folder-content": {
