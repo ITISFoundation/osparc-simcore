@@ -4,7 +4,7 @@ from typing import Final
 import networkx as nx
 from aiopg.sa import Engine
 from fastapi import FastAPI
-from models_library.clusters import ClusterID
+from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.background_task import start_periodic_task, stop_periodic_task
@@ -36,7 +36,6 @@ async def run_new_pipeline(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     run_metadata: RunMetadataDict,
     use_on_demand_clusters: bool,
 ) -> None:
@@ -56,7 +55,7 @@ async def run_new_pipeline(
     new_run = await CompRunsRepository.instance(db_engine).create(
         user_id=user_id,
         project_id=project_id,
-        cluster_id=cluster_id,
+        cluster_id=DEFAULT_CLUSTER_ID,
         metadata=run_metadata,
         use_on_demand_clusters=use_on_demand_clusters,
     )

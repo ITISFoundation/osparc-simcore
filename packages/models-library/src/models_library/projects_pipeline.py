@@ -4,7 +4,6 @@ from uuid import UUID
 import arrow
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
-from .clusters import ClusterID
 from .projects_nodes import NodeState
 from .projects_nodes_io import NodeID
 from .projects_state import RunningState
@@ -39,10 +38,6 @@ class ComputationTask(BaseModel):
     iteration: PositiveInt | None = Field(
         ...,
         description="the iteration id of the computation task (none if no task ran yet)",
-    )
-    cluster_id: ClusterID | None = Field(
-        ...,
-        description="the cluster on which the computaional task runs/ran (none if no task ran yet)",
     )
     started: datetime.datetime | None = Field(
         ...,

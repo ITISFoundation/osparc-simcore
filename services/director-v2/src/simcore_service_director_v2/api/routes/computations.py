@@ -28,9 +28,8 @@ from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationGet,
     ComputationStop,
 )
-from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
@@ -155,7 +154,7 @@ async def _get_project_metadata(
             project_uuid: ProjectID, node_id: NodeID
         ) -> tuple[str, str]:
             prj = await project_repo.get_project(project_uuid)
-            node_id_str = NodeIDStr(f"{node_id}")
+            node_id_str = f"{node_id}"
             if node_id_str not in prj.workbench:
                 _logger.error(
                     "%s not found in %s. it is an ancestor of %s. Please check!",
@@ -228,7 +227,6 @@ async def _try_start_pipeline(
         app,
         user_id=computation.user_id,
         project_id=computation.project_id,
-        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=RunMetadataDict(
             node_id_names_map={
                 NodeID(node_idstr): node_data.label
@@ -391,7 +389,6 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
                 else None
             ),
             iteration=last_run.iteration if last_run else None,
-            cluster_id=last_run.cluster_id if last_run else None,
             result=None,
             started=compute_pipeline_started_timestamp(
                 minimal_computational_dag, comp_tasks
@@ -498,7 +495,6 @@ async def get_computation(
             else None
         ),
         iteration=last_run.iteration if last_run else None,
-        cluster_id=last_run.cluster_id if last_run else None,
         result=None,
         started=compute_pipeline_started_timestamp(pipeline_dag, all_tasks),
         stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
@@ -573,7 +569,6 @@ async def stop_computation(
             url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
             stop_url=None,
             iteration=last_run.iteration if last_run else None,
-            cluster_id=last_run.cluster_id if last_run else None,
             result=None,
             started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
             stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),

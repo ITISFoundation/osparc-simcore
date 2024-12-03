@@ -165,14 +165,6 @@ class ClusterNotFoundError(ComputationalSchedulerError):
     msg_template = "The cluster '{cluster_id}' not found"
 
 
-class ClusterAccessForbiddenError(ComputationalSchedulerError):
-    msg_template = "Insufficient rights to access cluster '{cluster_id}'"
-
-
-class ClusterInvalidOperationError(ComputationalSchedulerError):
-    msg_template = "Invalid operation on cluster '{cluster_id}'"
-
-
 #
 # SCHEDULER/CLIENT ERRORS
 #
