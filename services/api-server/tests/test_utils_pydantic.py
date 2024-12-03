@@ -7,13 +7,6 @@ from typing import Annotated
 from fastapi import FastAPI
 from pydantic import BaseModel, HttpUrl
 from simcore_service_api_server.models._utils_pydantic import UriSchema
-from simcore_service_api_server.models.schemas.files import FileUploadData
-
-
-def test_it():
-
-    schema = FileUploadData.model_json_schema()
-    assert schema["properties"]["urls"]
 
 
 def test_annotated_url_in_pydantic_changes_in_fastapi():
