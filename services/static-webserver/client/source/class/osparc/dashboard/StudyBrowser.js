@@ -168,7 +168,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
         !osparc.utils.DisabledPlugins.isFoldersEnabled() ||
         this.getCurrentContext() === "studiesAndFolders" ||
-        this.getCurrentContext() === "search" || // not yet implemented for workspaces
         this.__loadingWorkspaces
       ) {
         return;
@@ -179,7 +178,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case "search": {
           const filterData = this._searchBarFilter.getFilterData();
           const text = filterData.text ? encodeURIComponent(filterData.text) : "";
-          request = osparc.store.Workspaces.getInstance().searchWorkspaces(text);
+          request = osparc.store.Workspaces.getInstance().searchWorkspaces(text, this.getOrderBy());
           break;
         }
         case "workspaces": {
