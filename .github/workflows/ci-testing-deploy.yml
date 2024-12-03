@@ -2886,7 +2886,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Regenerate specs and check
         run: |
-          cd ${{ github.event.repository.name }}
           uv venv .venv && source .venv/bin/activate
           make openapi-specs
           changed_files=$(git diff --name-only)
