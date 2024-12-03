@@ -29,7 +29,7 @@ from helpers.shared_comp_utils import (
     assert_computation_task_out_obj,
 )
 from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
-from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterAuthentication
+from models_library.clusters import ClusterAuthentication
 from models_library.projects import (
     Node,
     NodesDict,
@@ -983,7 +983,6 @@ async def test_nodeports_integration(
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=PipelineDetails.model_validate(fake_dy_success),
         iteration=1,
-        cluster_id=DEFAULT_CLUSTER_ID,
     )
     update_project_workbench_with_comp_tasks(str(current_study.uuid))
 
