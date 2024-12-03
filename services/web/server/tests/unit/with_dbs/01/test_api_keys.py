@@ -7,6 +7,7 @@ import asyncio
 from collections.abc import AsyncIterable
 from datetime import timedelta
 from http import HTTPStatus
+from http.client import HTTPException
 
 import pytest
 import simcore_service_webserver.api_keys._db as db
@@ -201,3 +202,21 @@ async def test_get_or_create_api_key(
                 await get_or_create_api_key(client.app, **options | {"name": "foo"})
                 == created
             )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    _get_user_access_parametrizations(status.HTTP_404_NOT_FOUND),
+)
+async def test_api_key_does_not_exists(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    expected: HTTPException,
+    disable_gc_manual_guest_users: None,
+):
+    resp = await client.get("/v0/auth/api-keys/42")
+    data, errors = await assert_status(resp, expected)
+
+    if not errors:
+        assert data is None

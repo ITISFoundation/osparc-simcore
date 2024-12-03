@@ -10,6 +10,7 @@ from models_library.users import UserID
 from servicelib.utils_secrets import generate_token_secret_key
 
 from . import _db
+from .errors import ApiKeyNotFoundError
 
 _PUNCTUATION_REGEX = re.compile(
     pattern="[" + re.escape(string.punctuation.replace("_", "")) + "]"
@@ -69,11 +70,14 @@ async def create_api_key(
 
 async def get_api_key(
     app: web.Application, *, api_key_id: int, user_id: UserID, product_name: ProductName
-) -> ApiKeyGet | None:
-    row = await _db.get(
+) -> ApiKeyGet:
+    api_key = await _db.get(
         app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
     )
-    return ApiKeyGet.model_validate(row) if row else None
+    if api_key is not None:
+        return ApiKeyGet.model_validate(api_key) if api_key else None
+
+    raise ApiKeyNotFoundError(api_key_id=api_key_id)
 
 
 async def get_or_create_api_key(
