@@ -1188,6 +1188,92 @@ async def test_cluster_scaling_up_starts_multiple_instances(
 
 
 @pytest.mark.parametrize(
+    "scale_up_params1, scale_up_params2",
+    [
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                service_resources=Resources(
+                    cpus=5, ram=TypeAdapter(ByteSize).validate_python("30Gib")
+                ),
+                num_services=10,
+                expected_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                expected_num_instances=4,
+            ),
+            _ScaleUpParams(
+                imposed_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
+                service_resources=Resources(
+                    cpus=5, ram=TypeAdapter(ByteSize).validate_python("20480MB")
+                ),
+                num_services=7,
+                expected_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
+                expected_num_instances=2,
+            ),
+            id="Two different instance types are needed",
+        ),
+    ],
+)
+async def test_cluster_adapts_machines_on_the_fly(
+    minimal_configuration: None,
+    ec2_client: EC2Client,
+    initialized_app: FastAPI,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    service_monitored_labels: dict[DockerLabelKey, str],
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+    ec2_instance_custom_tags: dict[str, str],
+    instance_type_filters: Sequence[FilterTypeDef],
+    scale_up_params1: _ScaleUpParams,
+    scale_up_params2: _ScaleUpParams,
+):
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+    # create several tasks that needs more power
+    await asyncio.gather(
+        *(
+            create_service(
+                task_template
+                | create_task_reservations(
+                    int(scale_up_params1.service_resources.cpus),
+                    scale_up_params1.service_resources.ram,
+                ),
+                service_monitored_labels
+                | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
+                "pending",
+                (
+                    [
+                        f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params1.imposed_instance_type}"
+                    ]
+                    if scale_up_params1.imposed_instance_type
+                    else []
+                ),
+            )
+            for _ in range(scale_up_params1.num_services)
+        )
+    )
+
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+
+    # check the instances were started
+    await assert_autoscaled_dynamic_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params1.expected_num_instances,
+        expected_instance_type=scale_up_params1.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+
+
+@pytest.mark.parametrize(
     "docker_service_imposed_ec2_type, docker_service_ram, expected_ec2_type",
     [
         pytest.param(
