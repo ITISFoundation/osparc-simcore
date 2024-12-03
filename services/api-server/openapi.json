@@ -7099,9 +7099,7 @@
         "required": [
           "walletId",
           "name",
-          "description",
           "owner",
-          "thumbnail",
           "status",
           "created",
           "modified",
