@@ -1630,7 +1630,7 @@ async def run_project_dynamic_services(
     # first get the services if they already exist
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
     running_services_uuids: list[NodeIDStr] = [
-        f"{d.node_uuid}"
+        TypeAdapter(NodeIDStr).validate_python(d.node_uuid)
         for d in await dynamic_scheduler_api.list_dynamic_services(
             request.app, user_id=user_id, project_id=ProjectID(project["uuid"])
         )
