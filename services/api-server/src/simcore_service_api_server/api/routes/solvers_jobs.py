@@ -197,7 +197,7 @@ async def start_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    cluster_id: Annotated[  # pytest: disable=unused-argument  # noqa: ARG001
+    cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
         ClusterID | None, Query(deprecated=True)
     ] = None,
 ):
