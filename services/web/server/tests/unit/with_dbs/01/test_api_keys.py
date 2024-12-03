@@ -10,17 +10,18 @@ from http import HTTPStatus
 from http.client import HTTPException
 
 import pytest
-import simcore_service_webserver.api_keys._db as db
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
+from simcore_service_webserver.api_keys import _db
 from simcore_service_webserver.api_keys._api import (
     get_or_create_api_key,
     prune_expired_api_keys,
 )
+from simcore_service_webserver.api_keys._models import ApiKey
 from simcore_service_webserver.db.models import UserRole
 
 
@@ -32,8 +33,8 @@ async def fake_user_api_keys(
     faker: Faker,
 ) -> AsyncIterable[list[int]]:
     assert client.app
-    api_key_ids: list[int] = [
-        await db.create(
+    api_keys: list[ApiKey] = [
+        await _db.create(
             client.app,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -45,12 +46,12 @@ async def fake_user_api_keys(
         for _ in range(5)
     ]
 
-    yield api_key_ids
+    yield api_keys
 
-    for api_key_id in api_key_ids:
-        await db.delete(
+    for api_key in api_keys:
+        await _db.delete(
             client.app,
-            api_key_id=api_key_id,
+            api_key_id=api_key.id,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
@@ -127,8 +128,8 @@ async def test_delete_api_keys(
     resp = await client.delete("/v0/auth/api-keys/0")
     await assert_status(resp, expected)
 
-    for api_key_id in fake_user_api_keys:
-        resp = await client.delete(f"/v0/auth/api-keys/{api_key_id}")
+    for api_key in fake_user_api_keys:
+        resp = await client.delete(f"/v0/auth/api-keys/{api_key.id}")
         await assert_status(resp, expected)
 
 

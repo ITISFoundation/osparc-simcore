@@ -6,7 +6,7 @@ from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.api_keys._exceptions_handlers import _TO_HTTP_ERROR_MAP
-from simcore_service_webserver.api_keys._models import ApiKeysPathParams
+from simcore_service_webserver.api_keys._rest import ApiKeysPathParams
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -22,17 +22,6 @@ router = APIRouter(
     operation_id="create_api_key",
     status_code=status.HTTP_201_CREATED,
     response_model=Envelope[ApiKeyGet],
-    # responses={
-    #     status.HTTP_400_BAD_REQUEST: {
-    #         "description": "key name requested is invalid",
-    #     },
-    #     status.HTTP_401_UNAUTHORIZED: {
-    #         "description": "requires login to  list keys",
-    #     },
-    #     status.HTTP_403_FORBIDDEN: {
-    #         "description": "not enough permissions to list keys",
-    #     },
-    # },
 )
 async def create_api_key(_body: ApiKeyCreate):
     """creates API keys to access public API"""
@@ -43,17 +32,6 @@ async def create_api_key(_body: ApiKeyCreate):
     operation_id="list_display_names",
     response_model=Envelope[list[str]],
     status_code=status.HTTP_200_OK,
-    # responses={
-    #     status.HTTP_400_BAD_REQUEST: {
-    #         "description": "key name requested is invalid",
-    #     },
-    #     status.HTTP_401_UNAUTHORIZED: {
-    #         "description": "requires login to  list keys",
-    #     },
-    #     status.HTTP_403_FORBIDDEN: {
-    #         "description": "not enough permissions to list keys",
-    #     },
-    # },
 )
 async def list_api_keys():
     """lists display names of API keys by this user"""
@@ -64,17 +42,6 @@ async def list_api_keys():
     operation_id="get_api_key",
     response_model=Envelope[ApiKeyGet],
     status_code=status.HTTP_200_OK,
-    # responses={
-    #     status.HTTP_400_BAD_REQUEST: {
-    #         "description": "key name requested is invalid",
-    #     },
-    #     status.HTTP_401_UNAUTHORIZED: {
-    #         "description": "requires login to get the keu",
-    #     },
-    #     status.HTTP_403_FORBIDDEN: {
-    #         "description": "not enough permissions to get the keu",
-    #     },
-    # },
 )
 async def get_api_key(_path: Annotated[ApiKeysPathParams, Depends()]):
     """returns the key or None"""
@@ -84,14 +51,6 @@ async def get_api_key(_path: Annotated[ApiKeysPathParams, Depends()]):
     "/auth/api-keys",
     operation_id="delete_api_key",
     status_code=status.HTTP_204_NO_CONTENT,
-    # responses={
-    #     status.HTTP_401_UNAUTHORIZED: {
-    #         "description": "requires login to  delete a key",
-    #     },
-    #     status.HTTP_403_FORBIDDEN: {
-    #         "description": "not enough permissions to delete a key",
-    #     },
-    # },
 )
 async def delete_api_key(_path: Annotated[ApiKeysPathParams, Depends()]):
     """deletes API key by ID"""

@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
+from models_library.rest_base import StrictRequestParameters
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -13,7 +14,6 @@ from simcore_postgres_database.errors import DatabaseError
 from simcore_service_webserver.api_keys._exceptions_handlers import (
     handle_plugin_requests_exceptions,
 )
-from simcore_service_webserver.api_keys._models import ApiKeysPathParams
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -26,6 +26,10 @@ _logger = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
+
+
+class ApiKeysPathParams(StrictRequestParameters):
+    api_key_id: int
 
 
 @routes.get(f"/{API_VTAG}/auth/api-keys", name="list_api_keys")
@@ -64,22 +68,25 @@ async def api_key_get(request: web.Request):
 @handle_plugin_requests_exceptions
 async def create_api_key(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
-    new = await parse_request_body_as(ApiKeyCreate, request)
+    new_api_key = await parse_request_body_as(ApiKeyCreate, request)
     try:
-        resp: ApiKeyGet = await _api.create_api_key(
+        created_api_key = await _api.create_api_key(
             request.app,
-            new=new,
+            display_name=new_api_key.display_name,
+            expiration=new_api_key.expiration,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
         )
-        # resp.api_base_url = TODO: https://github.com/ITISFoundation/osparc-simcore/issues/6340
+
+        api_key = ApiKeyGet.model_validate(created_api_key)
+        # api_key.api_base_url = TODO: https://github.com/ITISFoundation/osparc-simcore/issues/6340
     except DatabaseError as err:
         raise web.HTTPBadRequest(
             reason="Invalid API key name: already exists",
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
-    return envelope_json_response(resp)
+    return envelope_json_response(api_key)
 
 
 @routes.delete(f"/{API_VTAG}/auth/api-keys/{{api_key_id}}", name="delete_api_key")

@@ -4,10 +4,11 @@ import string
 from typing import Final
 
 from aiohttp import web
-from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
+from models_library.api_schemas_webserver.auth import ApiKeyGet
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.utils_secrets import generate_token_secret_key
+from simcore_service_webserver.api_keys._models import ApiKey
 
 from . import _db
 from .errors import ApiKeyNotFoundError
@@ -42,27 +43,20 @@ def _generate_api_key_and_secret(name: str):
 async def create_api_key(
     app: web.Application,
     *,
-    new: ApiKeyCreate,
+    display_name=str,
+    expiration=dt.timedelta,
     user_id: UserID,
     product_name: ProductName,
-) -> ApiKeyGet:
+) -> ApiKey:
     # generate key and secret
-    api_key, api_secret = _generate_api_key_and_secret(new.display_name)
+    api_key, api_secret = _generate_api_key_and_secret(display_name)
 
-    # raises if name exists already!
-    api_key_id = await _db.create(
+    return await _db.create(
         app,
         user_id=user_id,
         product_name=product_name,
-        display_name=new.display_name,
-        expiration=new.expiration,
-        api_key=api_key,
-        api_secret=api_secret,
-    )
-
-    return ApiKeyGet(
-        id_=api_key_id,
-        display_name=new.display_name,
+        display_name=display_name,
+        expiration=expiration,
         api_key=api_key,
         api_secret=api_secret,
     )

@@ -4,12 +4,11 @@ from datetime import timedelta
 import sqlalchemy as sa
 from aiohttp import web
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
-from models_library.basic_types import IdInt
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import TypeAdapter
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.utils_repos import transaction_context
+from simcore_service_webserver.api_keys._models import ApiKey
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -45,7 +44,7 @@ async def create(
     expiration: timedelta | None,
     api_key: str,
     api_secret: str,
-) -> IdInt:
+) -> ApiKey:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         stmt = (
             api_keys.insert()
@@ -62,7 +61,14 @@ async def create(
 
         result = await conn.stream(stmt)
         row = await result.first()
-        return TypeAdapter(IdInt).validate_python(row.id)
+
+        return ApiKey(
+            id=row.id,
+            display_name=display_name,
+            expiration=expiration,
+            api_key=api_key,
+            api_secret=api_secret,
+        )
 
 
 async def get(

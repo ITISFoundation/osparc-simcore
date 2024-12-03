@@ -1,5 +1,11 @@
-from models_library.rest_base import StrictRequestParameters
+import datetime as dt
+from dataclasses import dataclass
 
 
-class ApiKeysPathParams(StrictRequestParameters):
-    api_key_id: int
+@dataclass
+class ApiKey:
+    id: str
+    display_name: str
+    expiration: dt.timedelta
+    api_key: str
+    api_secret: str
