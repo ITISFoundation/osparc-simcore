@@ -1188,6 +1188,14 @@ async def test_cluster_scaling_up_starts_multiple_instances(
 
 
 @pytest.mark.parametrize(
+    "with_docker_join_drained", ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"], indirect=True
+)
+@pytest.mark.parametrize(
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "scale_up_params1, scale_up_params2",
     [
         pytest.param(
