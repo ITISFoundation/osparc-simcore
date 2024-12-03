@@ -3,7 +3,6 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
-from pydantic import HttpUrl, TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -73,8 +72,7 @@ async def create_api_key(request: web.Request):
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
         )
-        api_base_url = request.url.with_host(f"api.{request.url.host}").with_path("")
-        resp.api_base_url = TypeAdapter(HttpUrl).validate_python(f"{api_base_url}")
+        # resp.api_base_url = TODO: https://github.com/ITISFoundation/osparc-simcore/issues/6340
     except DatabaseError as err:
         raise web.HTTPBadRequest(
             reason="Invalid API key name: already exists",
