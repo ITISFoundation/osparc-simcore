@@ -20,6 +20,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
@@ -29,6 +30,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_service_dynamic_scheduler.core.settings import SchedulingMode
 
 pytest_simcore_core_services_selection = [
     "redis",
@@ -133,13 +135,32 @@ def mock_director_v2_service_state(
         yield None
 
 
+@pytest.fixture(
+    params=[
+        SchedulingMode.VIA_DIRECTOR_V2,
+        # NOTE: enable below when INTERNAL scheduler is impelmented
+        #   SchedulingMode.INTERNAL,
+    ]
+)
+def scheduling_mode(request: pytest.FixtureRequest) -> SchedulingMode:
+    return request.param
+
+
 @pytest.fixture
 def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
+    scheduling_mode: SchedulingMode,
 ) -> EnvVarsDict:
-    return app_environment
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            "DYNAMIC_SCHEDULER_SCHEDULING_MODE": scheduling_mode,
+        },
+    )
 
 
 @pytest.fixture
