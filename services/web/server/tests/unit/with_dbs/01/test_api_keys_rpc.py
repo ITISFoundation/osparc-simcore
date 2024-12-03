@@ -21,6 +21,7 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
 from simcore_service_webserver.application_settings import ApplicationSettings
 
 pytest_simcore_core_services_selection = [
@@ -156,12 +157,12 @@ async def test_api_keys_workflow(
     )
     assert delete_key_result is None
 
-    # key no longer present
-    query_missing_query = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("api_key_get"),
-        product_name=osparc_product_name,
-        user_id=logged_user["id"],
-        api_key_id=created_api_key.id_,
-    )
-    assert query_missing_query is None
+    with pytest.raises(ApiKeyNotFoundError):
+        # key no longer present
+        await rpc_client.request(
+            WEBSERVER_RPC_NAMESPACE,
+            TypeAdapter(RPCMethodName).validate_python("api_key_get"),
+            product_name=osparc_product_name,
+            user_id=logged_user["id"],
+            api_key_id=created_api_key.id_,
+        )

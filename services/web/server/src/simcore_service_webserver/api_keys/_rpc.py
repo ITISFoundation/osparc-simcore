@@ -6,6 +6,7 @@ from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
+from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
 
 from ..rabbitmq import get_rabbitmq_rpc_server
 from . import _api
@@ -39,7 +40,7 @@ async def delete_api_keys(
     )
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(ApiKeyNotFoundError,))
 async def api_key_get(
     app: web.Application,
     *,
