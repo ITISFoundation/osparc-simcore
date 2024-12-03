@@ -2884,8 +2884,6 @@ jobs:
           cache-dependency-glob: "**/service-library/requirements/ci*.txt"
       - name: checkout source branch
         uses: actions/checkout@v4
-        with:
-          path: source
       - name: Regenerate specs and check
         run: |
           cd ${{ github.event.repository.name }}
