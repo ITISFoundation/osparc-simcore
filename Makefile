@@ -10,7 +10,7 @@
 .DEFAULT_GOAL := help
 
 SHELL := /bin/bash
-#.SHELLFLAGS := -e -o pipefail -c
+.SHELLFLAGS := -e -o pipefail -c
 MAKE_C := $(MAKE) --no-print-directory --directory
 
 # Operating system
