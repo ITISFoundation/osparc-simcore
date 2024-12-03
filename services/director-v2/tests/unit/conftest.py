@@ -51,8 +51,11 @@ def simcore_services_network_name() -> str:
 
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
+    json_schema_extra = {}
+    SimcoreServiceLabels.model_config["json_schema_extra"](json_schema_extra)
+
     simcore_service_labels = SimcoreServiceLabels.model_validate(
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][1]
+        json_schema_extra["examples"][1]
     )
     simcore_service_labels.callbacks_mapping = CallbacksMapping.model_validate({})
     return simcore_service_labels
