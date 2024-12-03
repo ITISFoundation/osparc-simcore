@@ -225,7 +225,12 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showAboutProduct: function() {
-      return (this.isS4LProduct() || this.isProduct("s4llite"));
+      return (
+        this.isS4LProduct() ||
+        this.isProduct("s4llite") ||
+        this.isProduct("tis") ||
+        this.isProduct("tiplite")
+      );
     },
 
     showPreferencesTokens: function() {
