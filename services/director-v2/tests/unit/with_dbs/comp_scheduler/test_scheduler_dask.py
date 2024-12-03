@@ -1606,7 +1606,9 @@ async def test_handling_cancellation_of_jobs_after_reboot(
 @pytest.fixture
 def with_fast_service_heartbeat_s(monkeypatch: pytest.MonkeyPatch) -> int:
     seconds = 1
-    monkeypatch.setenv("SERVICE_TRACKING_HEARTBEAT", f"{seconds}")
+    monkeypatch.setenv(
+        "SERVICE_TRACKING_HEARTBEAT", f"{datetime.timedelta(seconds=seconds)}"
+    )
     return seconds
 
 

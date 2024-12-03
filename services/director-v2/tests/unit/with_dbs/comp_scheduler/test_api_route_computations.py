@@ -88,6 +88,8 @@ def minimal_configuration(
     redis_service: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
@@ -184,15 +186,29 @@ def mocked_catalog_service_fcts(
     def _mocked_services_details(
         request, service_key: str, service_version: str
     ) -> httpx.Response:
+        assert "json_schema_extra" in ServiceGet.model_config
+        assert isinstance(ServiceGet.model_config["json_schema_extra"], dict)
+        assert isinstance(
+            ServiceGet.model_config["json_schema_extra"]["examples"], list
+        )
+        assert isinstance(
+            ServiceGet.model_config["json_schema_extra"]["examples"][0], dict
+        )
+        data_published = fake_service_details.model_copy(
+            update={
+                "key": urllib.parse.unquote(service_key),
+                "version": service_version,
+            }
+        ).model_dump(by_alias=True)
+        data = {
+            **ServiceGet.model_config["json_schema_extra"]["examples"][0],
+            **data_published,
+        }
+        payload = ServiceGet.model_validate(data)
         return httpx.Response(
             200,
             json=jsonable_encoder(
-                fake_service_details.model_copy(
-                    update={
-                        "key": urllib.parse.unquote(service_key),
-                        "version": service_version,
-                    }
-                ),
+                payload,
                 by_alias=True,
             ),
         )
@@ -588,11 +604,7 @@ async def test_create_computation_with_wallet(
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [
-        PricingPlanGet.model_construct(
-            **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]
-        )
-    ],
+    [PricingPlanGet(**PricingPlanGet.model_config["json_schema_extra"]["examples"][0])],
 )
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_422(
     minimal_configuration: None,
@@ -631,7 +643,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
 @pytest.mark.parametrize(
     "default_pricing_plan",
     [
-        PricingPlanGet.model_construct(
+        PricingPlanGet(
             **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]  # type: ignore
         )
     ],
