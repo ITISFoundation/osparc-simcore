@@ -149,11 +149,19 @@ qx.Class.define("osparc.product.AboutProduct", {
             For more information about TIP, please visit ${osparc.utils.Utils.createHTMLLink("itis.swiss", "href='https://itis.swiss/tools-and-systems/ti-planning/overview")}.
             <br><br>
             To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
+            <br><br>
+            Send us an email ${this.__getMailTo()}
           `);
 
           const label = osparc.product.quickStart.Utils.createLabel(text);
           this.add(label);
         });
+    },
+
+    __getMailTo: function() {
+      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const productName = osparc.store.StaticInfo.getInstance().getDisplayName();
+      return osparc.store.Support.mailToText(supportEmail, "Support " + productName, false);
     },
 
     __addCopyright: function() {
@@ -168,6 +176,6 @@ qx.Class.define("osparc.product.AboutProduct", {
         });
       }
       this.add(copyrightLink);
-    }
+    },
   }
 });
