@@ -2888,10 +2888,9 @@ jobs:
         run: |
           uv venv .venv && source .venv/bin/activate
           make openapi-specs
-          changed_files=$(git diff --name-only)
+          changed_files=$(git diff --name-only | tee /dev/tty)
           if echo ${changed_files} | grep -qE '^(openapi\.json|openapi\.yaml)$'; then
-            echo "${changed_files}" && echo "Run make openapi-specs and commit changes"
-            exit 1
+            echo "Run make openapi-specs and commit changes" && exit 1
           fi
 
 

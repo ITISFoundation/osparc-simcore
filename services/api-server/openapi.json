@@ -7,13 +7,6 @@
   },
   "paths": {
     "/v0/meta": {
-      "get": {
-        "tags": [
-          "meta"
-        ],
-        "summary": "Get Service Metadata",
-        "operationId": "get_service_metadata",
-        "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
