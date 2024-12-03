@@ -30,7 +30,6 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from simcore_service_dynamic_scheduler.core.settings import SchedulingMode
 
 pytest_simcore_core_services_selection = [
     "redis",
@@ -137,12 +136,12 @@ def mock_director_v2_service_state(
 
 @pytest.fixture(
     params=[
-        SchedulingMode.VIA_DIRECTOR_V2,
-        # NOTE: enable below when INTERNAL scheduler is impelmented
-        #   SchedulingMode.INTERNAL,
+        False,
+        # NOTE: enable below when INTERNAL scheduler is implemented
+        #   True,
     ]
 )
-def scheduling_mode(request: pytest.FixtureRequest) -> SchedulingMode:
+def use_internal_scheduler(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
@@ -151,13 +150,13 @@ def app_environment(
     app_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
-    scheduling_mode: SchedulingMode,
+    use_internal_scheduler: bool,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     setenvs_from_dict(
         monkeypatch,
         {
-            "DYNAMIC_SCHEDULER_SCHEDULING_MODE": scheduling_mode,
+            "DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER": f"{use_internal_scheduler}",
         },
     )
     return app_environment

@@ -1,5 +1,4 @@
 import datetime
-from enum import StrEnum
 from typing import Annotated
 
 from pydantic import AliasChoices, Field, TypeAdapter, field_validator
@@ -13,11 +12,6 @@ from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
-
-
-class SchedulingMode(StrEnum):
-    INTERNAL = "INTERNAL"
-    VIA_DIRECTOR_V2 = "VIA_DIRECTOR_V2"
 
 
 class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -74,8 +68,8 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     )
 
-    DYNAMIC_SCHEDULER_SCHEDULING_MODE: SchedulingMode = Field(
-        SchedulingMode.VIA_DIRECTOR_V2,
+    DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER: bool = Field(
+        default=False,
         description=(
             "this is a way to switch between different dynamic schedulers for the new style services"
             # NOTE: this option should be removed when the scheduling will be done via this service

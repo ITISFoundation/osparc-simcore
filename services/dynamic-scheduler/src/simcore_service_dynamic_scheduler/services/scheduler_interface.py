@@ -7,7 +7,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 
-from ..core.settings import ApplicationSettings, SchedulingMode
+from ..core.settings import ApplicationSettings
 from .director_v2 import DirectorV2Client
 from .service_tracker import set_request_as_running, set_request_as_stopped
 
@@ -16,7 +16,7 @@ async def get_service_status(
     app: FastAPI, *, node_id: NodeID
 ) -> NodeGet | DynamicServiceGet | NodeGetIdle:
     settings: ApplicationSettings = app.state.settings
-    if settings.DYNAMIC_SCHEDULER_SCHEDULING_MODE == SchedulingMode.INTERNAL:
+    if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
         raise NotImplementedError
 
     director_v2_client = DirectorV2Client.get_from_app_state(app)
@@ -30,7 +30,7 @@ async def run_dynamic_service(
     app: FastAPI, *, dynamic_service_start: DynamicServiceStart
 ) -> NodeGet | DynamicServiceGet:
     settings: ApplicationSettings = app.state.settings
-    if settings.DYNAMIC_SCHEDULER_SCHEDULING_MODE == SchedulingMode.INTERNAL:
+    if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
         raise NotImplementedError
 
     director_v2_client = DirectorV2Client.get_from_app_state(app)
@@ -46,7 +46,7 @@ async def stop_dynamic_service(
     app: FastAPI, *, dynamic_service_stop: DynamicServiceStop
 ) -> None:
     settings: ApplicationSettings = app.state.settings
-    if settings.DYNAMIC_SCHEDULER_SCHEDULING_MODE == SchedulingMode.INTERNAL:
+    if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
         raise NotImplementedError
 
     director_v2_client = DirectorV2Client.get_from_app_state(app)
