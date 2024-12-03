@@ -187,7 +187,7 @@ RUN chmod +x services/dynamic-sidecar/docker/*.sh
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
-  --start-period=60s \
+  --start-period=180s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/health"]
