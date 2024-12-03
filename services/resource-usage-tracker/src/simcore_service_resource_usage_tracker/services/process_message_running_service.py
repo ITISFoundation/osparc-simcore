@@ -21,6 +21,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceType
 from pydantic import TypeAdapter
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..models.credit_transactions import (
     CreditTransactionCreate,
@@ -32,7 +33,7 @@ from ..models.service_runs import (
     ServiceRunLastHeartbeatUpdate,
     ServiceRunStoppedAtUpdate,
 )
-from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from .modules.db import credit_transactions_db, pricing_plans_db, service_runs_db
 from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client
 from .utils import (
     compute_service_run_credit_costs,
@@ -53,24 +54,22 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
         rabbit_message.message_type,
         rabbit_message.service_run_id,
     )
-    resource_tracker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
-        db_engine=app.state.engine
-    )
+    _db_engine = app.state.engine
     rabbitmq_client = get_rabbitmq_client(app)
 
     await RABBIT_MSG_TYPE_TO_PROCESS_HANDLER[rabbit_message.message_type](
-        resource_tracker_repo, rabbit_message, rabbitmq_client
+        _db_engine, rabbit_message, rabbitmq_client
     )
     return True
 
 
 async def _process_start_event(
-    resource_tracker_repo: ResourceTrackerRepository,
+    db_engine: AsyncEngine,
     msg: RabbitResourceTrackingStartedMessage,
     rabbitmq_client: RabbitMQClient,
 ):
-    service_run_db = await resource_tracker_repo.get_service_run_by_id(
-        service_run_id=msg.service_run_id
+    service_run_db = await service_runs_db.get_service_run_by_id(
+        db_engine, service_run_id=msg.service_run_id
     )
     if service_run_db:
         # NOTE: After we find out why sometimes RUT recieves multiple start events and fix it, we can change it to log level `error`
@@ -90,8 +89,8 @@ async def _process_start_event(
     )
     pricing_unit_cost = None
     if msg.pricing_unit_cost_id:
-        pricing_unit_cost_db = await resource_tracker_repo.get_pricing_unit_cost_by_id(
-            pricing_unit_cost_id=msg.pricing_unit_cost_id
+        pricing_unit_cost_db = await pricing_plans_db.get_pricing_unit_cost_by_id(
+            db_engine, pricing_unit_cost_id=msg.pricing_unit_cost_id
         )
         pricing_unit_cost = pricing_unit_cost_db.cost_per_unit
 
@@ -125,7 +124,9 @@ async def _process_start_event(
         service_run_status=ServiceRunStatus.RUNNING,
         last_heartbeat_at=msg.created_at,
     )
-    service_run_id = await resource_tracker_repo.create_service_run(create_service_run)
+    service_run_id = await service_runs_db.create_service_run(
+        db_engine, data=create_service_run
+    )
 
     if msg.wallet_id and msg.wallet_name:
         transaction_create = CreditTransactionCreate(
@@ -145,21 +146,23 @@ async def _process_start_event(
             created_at=msg.created_at,
             last_heartbeat_at=msg.created_at,
         )
-        await resource_tracker_repo.create_credit_transaction(transaction_create)
+        await credit_transactions_db.create_credit_transaction(
+            db_engine, data=transaction_create
+        )
 
         # Publish wallet total credits to RabbitMQ
         await sum_credit_transactions_and_publish_to_rabbitmq(
-            resource_tracker_repo, rabbitmq_client, msg.product_name, msg.wallet_id
+            db_engine, rabbitmq_client, msg.product_name, msg.wallet_id
         )
 
 
 async def _process_heartbeat_event(
-    resource_tracker_repo: ResourceTrackerRepository,
+    db_engine: AsyncEngine,
     msg: RabbitResourceTrackingHeartbeatMessage,
     rabbitmq_client: RabbitMQClient,
 ):
-    service_run_db = await resource_tracker_repo.get_service_run_by_id(
-        service_run_id=msg.service_run_id
+    service_run_db = await service_runs_db.get_service_run_by_id(
+        db_engine, service_run_id=msg.service_run_id
     )
     if not service_run_db:
         _logger.error(
@@ -181,8 +184,8 @@ async def _process_heartbeat_event(
     update_service_run_last_heartbeat = ServiceRunLastHeartbeatUpdate(
         service_run_id=msg.service_run_id, last_heartbeat_at=msg.created_at
     )
-    running_service = await resource_tracker_repo.update_service_run_last_heartbeat(
-        update_service_run_last_heartbeat
+    running_service = await service_runs_db.update_service_run_last_heartbeat(
+        db_engine, data=update_service_run_last_heartbeat
     )
     if running_service is None:
         _logger.info("Nothing to update: %s", msg)
@@ -201,19 +204,19 @@ async def _process_heartbeat_event(
             osparc_credits=make_negative(computed_credits),
             last_heartbeat_at=msg.created_at,
         )
-        await resource_tracker_repo.update_credit_transaction_credits(
-            update_credit_transaction
+        await credit_transactions_db.update_credit_transaction_credits(
+            db_engine, data=update_credit_transaction
         )
         # Publish wallet total credits to RabbitMQ
         wallet_total_credits = await sum_credit_transactions_and_publish_to_rabbitmq(
-            resource_tracker_repo,
+            db_engine,
             rabbitmq_client,
             running_service.product_name,
             running_service.wallet_id,
         )
         if wallet_total_credits.available_osparc_credits < CreditsLimit.OUT_OF_CREDITS:
             await publish_to_rabbitmq_wallet_credits_limit_reached(
-                resource_tracker_repo,
+                db_engine,
                 rabbitmq_client,
                 product_name=running_service.product_name,
                 wallet_id=running_service.wallet_id,
@@ -223,12 +226,12 @@ async def _process_heartbeat_event(
 
 
 async def _process_stop_event(
-    resource_tracker_repo: ResourceTrackerRepository,
+    db_engine: AsyncEngine,
     msg: RabbitResourceTrackingStoppedMessage,
     rabbitmq_client: RabbitMQClient,
 ):
-    service_run_db = await resource_tracker_repo.get_service_run_by_id(
-        service_run_id=msg.service_run_id
+    service_run_db = await service_runs_db.get_service_run_by_id(
+        db_engine, service_run_id=msg.service_run_id
     )
     if not service_run_db:
         # NOTE: ANE/MD discussed. When the RUT receives a stop event and has not received before any start or heartbeat event, it probably means that
@@ -262,8 +265,8 @@ async def _process_stop_event(
         service_run_status_msg=_run_status_msg,
     )
 
-    running_service = await resource_tracker_repo.update_service_run_stopped_at(
-        update_service_run_stopped_at
+    running_service = await service_runs_db.update_service_run_stopped_at(
+        db_engine, data=update_service_run_stopped_at
     )
 
     if running_service is None:
@@ -287,12 +290,12 @@ async def _process_stop_event(
                 else CreditTransactionStatus.NOT_BILLED
             ),
         )
-        await resource_tracker_repo.update_credit_transaction_credits_and_status(
-            update_credit_transaction
+        await credit_transactions_db.update_credit_transaction_credits_and_status(
+            db_engine, data=update_credit_transaction
         )
         # Publish wallet total credits to RabbitMQ
         await sum_credit_transactions_and_publish_to_rabbitmq(
-            resource_tracker_repo,
+            db_engine,
             rabbitmq_client,
             running_service.product_name,
             running_service.wallet_id,

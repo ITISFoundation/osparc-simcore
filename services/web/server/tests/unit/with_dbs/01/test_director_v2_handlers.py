@@ -111,9 +111,11 @@ async def test_stop_computation(
     rsp = await client.post(f"{url}")
     await assert_status(
         rsp,
-        status.HTTP_204_NO_CONTENT
-        if user_role == UserRole.GUEST
-        else expected.no_content,
+        (
+            status.HTTP_204_NO_CONTENT
+            if user_role == UserRole.GUEST
+            else expected.no_content
+        ),
     )
 
 

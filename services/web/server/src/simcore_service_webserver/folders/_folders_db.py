@@ -6,7 +6,7 @@
 
 import logging
 from datetime import datetime
-from typing import Any, Final, cast
+from typing import Final, cast
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -33,6 +33,7 @@ from simcore_postgres_database.utils_repos import (
 from simcore_postgres_database.utils_workspaces_sql import (
     create_my_workspace_access_rights_subquery,
 )
+from simcore_service_webserver.utils import UnSet, as_dict_exclude_unset
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.orm import aliased
@@ -43,16 +44,7 @@ from .errors import FolderAccessForbiddenError, FolderNotFoundError
 
 _logger = logging.getLogger(__name__)
 
-
-class UnSet:
-    ...
-
-
 _unset: Final = UnSet()
-
-
-def as_dict_exclude_unset(**params) -> dict[str, Any]:
-    return {k: v for k, v in params.items() if not isinstance(v, UnSet)}
 
 
 _SELECTION_ARGS = (
@@ -324,6 +316,8 @@ async def update(
     parent_folder_id: FolderID | None | UnSet = _unset,
     trashed_at: datetime | None | UnSet = _unset,
     trashed_explicitly: bool | UnSet = _unset,
+    workspace_id: WorkspaceID | None | UnSet = _unset,
+    user_id: UserID | None | UnSet = _unset,
 ) -> FolderDB:
     """
     Batch/single patch of folder/s
@@ -334,6 +328,8 @@ async def update(
         parent_folder_id=parent_folder_id,
         trashed_at=trashed_at,
         trashed_explicitly=trashed_explicitly,
+        workspace_id=workspace_id,
+        user_id=user_id,
     )
 
     query = (
@@ -465,6 +461,60 @@ async def get_projects_recursively_only_if_user_is_owner(
 
         result = await conn.stream(query)
         return [ProjectID(row[0]) async for row in result]
+
+
+async def get_all_folders_and_projects_ids_recursively(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    folder_id: FolderID,
+    private_workspace_user_id_or_none: UserID | None,
+    product_name: ProductName,
+) -> tuple[list[FolderID], list[ProjectID]]:
+    """
+    The purpose of this function is to retrieve all projects within the provided folder ID.
+    """
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+
+        # Step 1: Define the base case for the recursive CTE
+        base_query = select(
+            folders_v2.c.folder_id, folders_v2.c.parent_folder_id
+        ).where(
+            (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
+            & (folders_v2.c.product_name == product_name)
+        )
+        folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
+
+        # Step 2: Define the recursive case
+        folder_alias = aliased(folders_v2)
+        recursive_query = select(
+            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
+        ).select_from(
+            folder_alias.join(
+                folder_hierarchy_cte,
+                folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
+            )
+        )
+
+        # Step 3: Combine base and recursive cases into a CTE
+        folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
+
+        # Step 4: Execute the query to get all descendants
+        final_query = select(folder_hierarchy_cte)
+        result = await conn.stream(final_query)
+        # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
+        folder_ids = [item.folder_id async for item in result]
+
+        query = select(projects_to_folders.c.project_uuid).where(
+            (projects_to_folders.c.folder_id.in_(folder_ids))
+            & (projects_to_folders.c.user_id == private_workspace_user_id_or_none)
+        )
+
+        result = await conn.stream(query)
+        project_ids = [ProjectID(row.project_uuid) async for row in result]
+
+        return folder_ids, project_ids
 
 
 async def get_folders_recursively(

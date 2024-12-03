@@ -237,7 +237,7 @@ async def new_project(
         for group_id, permissions in access_rights.items():
             await update_or_insert_project_group(
                 client.app,
-                project["uuid"],
+                project_id=project["uuid"],
                 group_id=int(group_id),
                 read=permissions["read"],
                 write=permissions["write"],

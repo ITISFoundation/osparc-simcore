@@ -14,12 +14,13 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import TypeAdapter
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..api.rest.dependencies import get_repository
+from ..api.rest.dependencies import get_resource_tracker_db_engine
 from ..exceptions.errors import PricingPlanNotFoundForServiceError
 from ..models.pricing_plans import PricingPlansDB, PricingPlanToServiceDB
 from ..models.pricing_units import PricingUnitsDB
-from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from .modules.db import pricing_plans_db
 
 
 async def _create_pricing_plan_get(
@@ -52,12 +53,15 @@ async def get_service_default_pricing_plan(
     product_name: ProductName,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    resource_tracker_repo: Annotated[
-        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
-    ],
+    db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ) -> PricingPlanGet:
-    active_service_pricing_plans = await resource_tracker_repo.list_active_service_pricing_plans_by_product_and_service(
-        product_name, service_key, service_version
+    active_service_pricing_plans = (
+        await pricing_plans_db.list_active_service_pricing_plans_by_product_and_service(
+            db_engine,
+            product_name=product_name,
+            service_key=service_key,
+            service_version=service_version,
+        )
     )
 
     default_pricing_plan = None
@@ -71,10 +75,8 @@ async def get_service_default_pricing_plan(
             service_key=service_key, service_version=service_version
         )
 
-    pricing_plan_unit_db = (
-        await resource_tracker_repo.list_pricing_units_by_pricing_plan(
-            pricing_plan_id=default_pricing_plan.pricing_plan_id
-        )
+    pricing_plan_unit_db = await pricing_plans_db.list_pricing_units_by_pricing_plan(
+        db_engine, pricing_plan_id=default_pricing_plan.pricing_plan_id
     )
 
     return await _create_pricing_plan_get(default_pricing_plan, pricing_plan_unit_db)
@@ -83,14 +85,12 @@ async def get_service_default_pricing_plan(
 async def list_connected_services_to_pricing_plan_by_pricing_plan(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
-    resource_tracker_repo: Annotated[
-        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
-    ],
+    db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ):
     output_list: list[
         PricingPlanToServiceDB
-    ] = await resource_tracker_repo.list_connected_services_to_pricing_plan_by_pricing_plan(
-        product_name=product_name, pricing_plan_id=pricing_plan_id
+    ] = await pricing_plans_db.list_connected_services_to_pricing_plan_by_pricing_plan(
+        db_engine, product_name=product_name, pricing_plan_id=pricing_plan_id
     )
     return [
         TypeAdapter(PricingPlanToServiceGet).validate_python(item.model_dump())
@@ -103,12 +103,11 @@ async def connect_service_to_pricing_plan(
     pricing_plan_id: PricingPlanId,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    resource_tracker_repo: Annotated[
-        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
-    ],
+    db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ) -> PricingPlanToServiceGet:
     output: PricingPlanToServiceDB = (
-        await resource_tracker_repo.upsert_service_to_pricing_plan(
+        await pricing_plans_db.upsert_service_to_pricing_plan(
+            db_engine,
             product_name=product_name,
             pricing_plan_id=pricing_plan_id,
             service_key=service_key,
@@ -120,14 +119,12 @@ async def connect_service_to_pricing_plan(
 
 async def list_pricing_plans_by_product(
     product_name: ProductName,
-    resource_tracker_repo: Annotated[
-        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
-    ],
+    db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ) -> list[PricingPlanGet]:
     pricing_plans_list_db: list[
         PricingPlansDB
-    ] = await resource_tracker_repo.list_pricing_plans_by_product(
-        product_name=product_name
+    ] = await pricing_plans_db.list_pricing_plans_by_product(
+        db_engine, product_name=product_name
     )
     return [
         PricingPlanGet(
@@ -147,32 +144,24 @@ async def list_pricing_plans_by_product(
 async def get_pricing_plan(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
-    resource_tracker_repo: Annotated[
-        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
-    ],
+    db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ) -> PricingPlanGet:
-    pricing_plan_db = await resource_tracker_repo.get_pricing_plan(
-        product_name=product_name, pricing_plan_id=pricing_plan_id
+    pricing_plan_db = await pricing_plans_db.get_pricing_plan(
+        db_engine, product_name=product_name, pricing_plan_id=pricing_plan_id
     )
-    pricing_plan_unit_db = (
-        await resource_tracker_repo.list_pricing_units_by_pricing_plan(
-            pricing_plan_id=pricing_plan_db.pricing_plan_id
-        )
+    pricing_plan_unit_db = await pricing_plans_db.list_pricing_units_by_pricing_plan(
+        db_engine, pricing_plan_id=pricing_plan_db.pricing_plan_id
     )
     return await _create_pricing_plan_get(pricing_plan_db, pricing_plan_unit_db)
 
 
 async def create_pricing_plan(
     data: PricingPlanCreate,
-    resource_tracker_repo: Annotated[
-        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
-    ],
+    db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ) -> PricingPlanGet:
-    pricing_plan_db = await resource_tracker_repo.create_pricing_plan(data=data)
-    pricing_plan_unit_db = (
-        await resource_tracker_repo.list_pricing_units_by_pricing_plan(
-            pricing_plan_id=pricing_plan_db.pricing_plan_id
-        )
+    pricing_plan_db = await pricing_plans_db.create_pricing_plan(db_engine, data=data)
+    pricing_plan_unit_db = await pricing_plans_db.list_pricing_units_by_pricing_plan(
+        db_engine, pricing_plan_id=pricing_plan_db.pricing_plan_id
     )
     return await _create_pricing_plan_get(pricing_plan_db, pricing_plan_unit_db)
 
@@ -180,24 +169,20 @@ async def create_pricing_plan(
 async def update_pricing_plan(
     product_name: ProductName,
     data: PricingPlanUpdate,
-    resource_tracker_repo: Annotated[
-        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
-    ],
+    db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ) -> PricingPlanGet:
     # Check whether pricing plan exists
-    pricing_plan_db = await resource_tracker_repo.get_pricing_plan(
-        product_name=product_name, pricing_plan_id=data.pricing_plan_id
+    pricing_plan_db = await pricing_plans_db.get_pricing_plan(
+        db_engine, product_name=product_name, pricing_plan_id=data.pricing_plan_id
     )
     # Update pricing plan
-    pricing_plan_updated_db = await resource_tracker_repo.update_pricing_plan(
-        product_name=product_name, data=data
+    pricing_plan_updated_db = await pricing_plans_db.update_pricing_plan(
+        db_engine, product_name=product_name, data=data
     )
     if pricing_plan_updated_db:
         pricing_plan_db = pricing_plan_updated_db
 
-    pricing_plan_unit_db = (
-        await resource_tracker_repo.list_pricing_units_by_pricing_plan(
-            pricing_plan_id=pricing_plan_db.pricing_plan_id
-        )
+    pricing_plan_unit_db = await pricing_plans_db.list_pricing_units_by_pricing_plan(
+        db_engine, pricing_plan_id=pricing_plan_db.pricing_plan_id
     )
     return await _create_pricing_plan_get(pricing_plan_db, pricing_plan_unit_db)
