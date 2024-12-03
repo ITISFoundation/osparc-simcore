@@ -2460,7 +2460,7 @@ jobs:
 
   integration-tests:
     # NOTE: this is a github required status check!
-    if: ${{ !cancelled() }}
+    if: ${{ always() }}
     needs:
       [
         integration-test-director-v2-01,
@@ -2792,7 +2792,7 @@ jobs:
 
   system-tests:
     # NOTE: this is a github required status check!
-    if: ${{ !cancelled() }}
+    if: ${{ always() }}
     needs:
       [
         system-test-e2e,
