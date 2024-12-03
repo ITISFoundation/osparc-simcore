@@ -491,50 +491,28 @@ class DynamicSidecarServiceLabels(BaseModel):
     model_config = _BaseConfig
 
 
-def _simcore_service_labels_json_schema_extra(json_schema_extra: JsonDict):
+def _simcore_service_labels_json_schema_extra(schema: JsonDict):
+    #
+    # NOTE: this will be automatically called with SimcoreServiceLabels.model_json_schema
+    #
 
-    assert "json_schema_extra" in SimcoreServiceSettingLabelEntry.model_config  # nosec
-    assert isinstance(  # nosec
-        SimcoreServiceSettingLabelEntry.model_config["json_schema_extra"], dict
-    )
-
-    assert "json_schema_extra" in PathMappingsLabel.model_config  # nosec
-    assert isinstance(  # nosec
-        PathMappingsLabel.model_config["json_schema_extra"], dict
-    )
-    assert isinstance(  # nosec
-        PathMappingsLabel.model_config["json_schema_extra"]["examples"], list
-    )
-
-    assert "json_schema_extra" in CallbacksMapping.model_config  # nosec
-    assert isinstance(CallbacksMapping.model_config["json_schema_extra"], dict)  # nosec
-    assert isinstance(  # nosec
-        CallbacksMapping.model_config["json_schema_extra"]["examples"], list
-    )
-
-    json_schema_extra.update(
+    schema.update(
         {
             "examples": [
                 # WARNING: do not change order. Used in tests!
                 # legacy service
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.model_config[
-                            "json_schema_extra"
-                        ]["examples"]
+                        SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
                     )
                 },
                 # dynamic-service
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.model_config[
-                            "json_schema_extra"
-                        ]["examples"]
+                        SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][
-                            0
-                        ]
+                        PathMappingsLabel.model_json_schema()["examples"][0]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
                     "simcore.service.callbacks-mapping": json_dumps(
@@ -553,14 +531,10 @@ def _simcore_service_labels_json_schema_extra(json_schema_extra: JsonDict):
                 # dynamic-service with compose spec
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.model_config[
-                            "json_schema_extra"
-                        ]["examples"]
+                        SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][
-                            0
-                        ],
+                        PathMappingsLabel.model_json_schema()["examples"][0],
                     ),
                     "simcore.service.compose-spec": json_dumps(
                         {
@@ -588,9 +562,7 @@ def _simcore_service_labels_json_schema_extra(json_schema_extra: JsonDict):
                     "simcore.service.container-http-entrypoint": "rt-web",
                     "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
                     "simcore.service.callbacks-mapping": json_dumps(
-                        CallbacksMapping.model_config["json_schema_extra"]["examples"][
-                            3
-                        ]
+                        CallbacksMapping.model_json_schema()["examples"][3]
                     ),
                 },
             ]

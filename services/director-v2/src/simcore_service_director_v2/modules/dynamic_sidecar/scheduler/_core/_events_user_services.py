@@ -74,8 +74,8 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
 
     groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
     assert (
-        scheduler_data.product_name is not None
-    ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
+        scheduler_data.product_name is not None  # nosec
+    ), "ONLY for legacy. This function should not be called with product_name==None"
     allow_internet_access: bool = await groups_extra_properties.has_internet_access(
         user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
     )
@@ -119,6 +119,10 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
 async def create_user_services(  # pylint: disable=too-many-statements
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
+    assert (
+        scheduler_data.product_name is not None  # nosec
+    ), "ONLY for legacy. This function should not be called with product_name==None"
+
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )

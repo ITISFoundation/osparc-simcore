@@ -43,17 +43,17 @@ class _Parametrization(NamedTuple):
 
 SIMCORE_SERVICE_EXAMPLES = {
     "legacy": _Parametrization(
-        example=SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][0],
+        example=SimcoreServiceLabels.model_json_schema()["examples"][0],
         items=1,
         uses_dynamic_sidecar=False,
     ),
     "dynamic-service": _Parametrization(
-        example=SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][1],
+        example=SimcoreServiceLabels.model_json_schema()["examples"][1],
         items=5,
         uses_dynamic_sidecar=True,
     ),
     "dynamic-service-with-compose-spec": _Parametrization(
-        example=SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2],
+        example=SimcoreServiceLabels.model_json_schema()["examples"][2],
         items=6,
         uses_dynamic_sidecar=True,
     ),
@@ -104,7 +104,7 @@ def test_correctly_detect_dynamic_sidecar_boot(
 
 def test_raises_error_if_http_entrypoint_is_missing():
     simcore_service_labels: dict[str, Any] = deepcopy(
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
+        SimcoreServiceLabels.model_json_schema()["examples"][2]
     )
     del simcore_service_labels["simcore.service.container-http-entrypoint"]
 
@@ -133,7 +133,7 @@ def test_path_mappings_json_encoding():
 
 def test_simcore_services_labels_compose_spec_null_container_http_entry_provided():
     sample_data: dict[str, Any] = deepcopy(
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
+        SimcoreServiceLabels.model_json_schema()["examples"][2]
     )
 
     assert sample_data["simcore.service.container-http-entrypoint"]
@@ -145,7 +145,7 @@ def test_simcore_services_labels_compose_spec_null_container_http_entry_provided
 
 def test_raises_error_wrong_restart_policy():
     simcore_service_labels: dict[str, Any] = deepcopy(
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
+        SimcoreServiceLabels.model_json_schema()["examples"][2]
     )
     simcore_service_labels["simcore.service.restart-policy"] = "__not_a_valid_policy__"
 

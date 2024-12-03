@@ -93,34 +93,22 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
     assert inspect.ismodule(module)
 
     for model_name, model_cls in inspect.getmembers(module, _is_model_cls):
-        assert model_name  # nosec
-        if (
-            (model_config := model_cls.model_config)
-            and isinstance(model_config, dict)
-            and (json_schema_extra := model_config.get("json_schema_extra", {}))
-        ):
-            processed_schema_extra = {}
+        schema = model_cls.model_json_schema()
 
-            if callable(json_schema_extra):
-                json_schema_extra(processed_schema_extra)
-            else:
-                processed_schema_extra = json_schema_extra
+        if example := schema.get("example"):
+            yield ModelExample(
+                model_cls=model_cls,
+                example_name=f"{model_name}_example",
+                example_data=example,
+            )
 
-            if isinstance(processed_schema_extra, dict):
-                if "example" in processed_schema_extra:
-                    yield ModelExample(
-                        model_cls=model_cls,
-                        example_name="example",
-                        example_data=processed_schema_extra["example"],
-                    )
-
-                elif "examples" in processed_schema_extra:
-                    for index, example in enumerate(processed_schema_extra["examples"]):
-                        yield ModelExample(
-                            model_cls=model_cls,
-                            example_name=f"examples_{index}",
-                            example_data=example,
-                        )
+        if many_examples := schema.get("examples"):
+            for index, example in enumerate(many_examples):
+                yield ModelExample(
+                    model_cls=model_cls,
+                    example_name=f"{model_name}_examples_{index}",
+                    example_data=example,
+                )
 
 
 ## PYDANTIC MODELS & SCHEMAS -----------------------------------------------------
@@ -139,10 +127,10 @@ def model_cls_examples(model_cls: type[BaseModel]) -> dict[str, dict[str, Any]]:
         "SEE https://pydantic-docs.helpmanual.io/usage/schema/#schema-customization"
     )
 
-    json_schema_extra: dict = model_cls.model_config.get("json_schema_extra", {})
+    json_schema: dict = model_cls.model_json_schema()
 
     # checks exampleS setup in schema_extra
-    examples_list = copy.deepcopy(json_schema_extra.get("examples", []))
+    examples_list = copy.deepcopy(json_schema.get("examples", []))
     assert isinstance(examples_list, list), (
         "OpenAPI and json-schema differ regarding the format for exampleS."
         "The former is a dict and the latter an array. "
@@ -156,7 +144,7 @@ def model_cls_examples(model_cls: type[BaseModel]) -> dict[str, dict[str, Any]]:
         f"{model_cls.__name__}.example[{index}]": example_
         for index, example_ in enumerate(examples_list)
     }
-    if example := copy.deepcopy(json_schema_extra.get("example")):
+    if example := copy.deepcopy(json_schema.get("example")):
         examples[f"{model_cls.__name__}.example"] = example
 
     return examples
