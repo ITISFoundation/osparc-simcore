@@ -12,10 +12,8 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
-from simcore_service_api_server.exceptions.backend_errors import (
-    ProjectAlreadyStartedError,
-)
 
+from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
@@ -199,7 +197,9 @@ async def start_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    cluster_id: Annotated[ClusterID | None, Query(deprecated=True)] = None,
+    cluster_id: Annotated[  # pytest: disable=unused-argument  # noqa: ARG001
+        ClusterID | None, Query(deprecated=True)
+    ] = None,
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)

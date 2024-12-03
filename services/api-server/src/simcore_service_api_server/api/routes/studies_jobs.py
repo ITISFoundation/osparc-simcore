@@ -15,14 +15,11 @@ from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.api.routes.solvers_jobs import JOBS_STATUS_CODES
-from simcore_service_api_server.exceptions.backend_errors import (
-    ProjectAlreadyStartedError,
-)
 
 from ...api.dependencies.authentication import get_current_user_id
 from ...api.dependencies.services import get_api_client
 from ...api.dependencies.webserver import get_webserver_session
+from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
@@ -53,6 +50,7 @@ from ...services.webserver import AuthSession
 from ..dependencies.application import get_reverse_url_mapper
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import FMSG_CHANGELOG_CHANGED_IN_VERSION, FMSG_CHANGELOG_NEW_IN_VERSION
+from .solvers_jobs import JOBS_STATUS_CODES
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -222,7 +220,9 @@ async def start_study_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-    cluster_id: Annotated[ClusterID | None, Query(deprecated=True)] = None,
+    cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
+        ClusterID | None, Query(deprecated=True)
+    ] = None,
 ):
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):
