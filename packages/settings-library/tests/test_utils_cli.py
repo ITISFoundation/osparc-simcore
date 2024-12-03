@@ -243,8 +243,8 @@ def test_cli_compact_settings_envs(
         assert mocked_envs_2 == {
             "APP_HOST": "localhost",
             "APP_PORT": "80",
-            "APP_OPTIONAL_ADDON": '{"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42}',
-            "APP_REQUIRED_PLUGIN": '{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, "POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "secret", "POSTGRES_DB": "foodb", "POSTGRES_MINSIZE": 1, "POSTGRES_MAXSIZE": 50, "POSTGRES_CLIENT_NAME": null}',
+            "APP_OPTIONAL_ADDON": '{"MODULE_VALUE":10,"MODULE_VALUE_DEFAULT":42}',
+            "APP_REQUIRED_PLUGIN": '{"POSTGRES_HOST":"localhost","POSTGRES_PORT":5432,"POSTGRES_USER":"foo","POSTGRES_PASSWORD":"secret","POSTGRES_DB":"foodb","POSTGRES_MINSIZE":1,"POSTGRES_MAXSIZE":50,"POSTGRES_CLIENT_NAME":null}',
         }
 
         settings_2 = fake_settings_class()
