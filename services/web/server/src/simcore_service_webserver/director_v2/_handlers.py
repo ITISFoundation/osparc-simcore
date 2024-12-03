@@ -4,10 +4,9 @@ from typing import Any
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
+from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
 from models_library.api_schemas_webserver.computations import ComputationStart
-from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
-from models_library.users import UserID
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
@@ -206,10 +205,6 @@ async def stop_computation(request: web.Request) -> web.Response:
         )
 
 
-class ComputationTaskGet(BaseModel):
-    cluster_id: ClusterID | None
-
-
 @routes.get(f"/{VTAG}/computations/{{project_id}}", name="get_computation")
 @login_required
 @permission_required("services.pipeline.*")
@@ -219,7 +214,7 @@ async def get_computation(request: web.Request) -> web.Response:
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
-    user_id = UserID(request[RQT_USERID_KEY])
+    user_id = request[RQT_USERID_KEY]
     project_id = ProjectID(request.match_info["project_id"])
 
     try:
@@ -227,7 +222,7 @@ async def get_computation(request: web.Request) -> web.Response:
             request, project_id
         )
         _logger.debug("Project %s will get %d variants", project_id, len(project_ids))
-        list_computation_tasks = TypeAdapter(list[ComputationTaskGet]).validate_python(
+        list_computation_tasks = TypeAdapter(list[ComputationGet]).validate_python(
             await asyncio.gather(
                 *[
                     computations.get(project_id=pid, user_id=user_id)
@@ -236,12 +231,7 @@ async def get_computation(request: web.Request) -> web.Response:
             ),
         )
         assert len(list_computation_tasks) == len(project_ids)  # nosec
-        # NOTE: until changed all the versions of a meta project shall use the same cluster
-        # this should fail the day that changes
-        assert all(
-            c.cluster_id == list_computation_tasks[0].cluster_id
-            for c in list_computation_tasks
-        )
+
         return web.json_response(
             data={"data": list_computation_tasks[0].model_dump(by_alias=True)},
             dumps=json_dumps,

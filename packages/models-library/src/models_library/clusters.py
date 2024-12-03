@@ -113,7 +113,7 @@ class Cluster(BaseCluster):
         json_schema_extra={
             "examples": [
                 {
-                    "id": 432,
+                    "id": DEFAULT_CLUSTER_ID,
                     "name": "My awesome cluster",
                     "type": ClusterTypeInModel.ON_PREMISE,
                     "owner": 12,
@@ -126,31 +126,12 @@ class Cluster(BaseCluster):
                     },
                 },
                 {
-                    "id": 432546,
+                    "id": DEFAULT_CLUSTER_ID,
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
                     "type": ClusterTypeInModel.AWS,
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
-                    "authentication": {
-                        "type": "tls",
-                        "tls_ca_file": "/path/to/ca_file",
-                        "tls_client_cert": "/path/to/cert_file",
-                        "tls_client_key": "/path/to/key_file",
-                    },
-                    "access_rights": {
-                        154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
-                        12: CLUSTER_MANAGER_RIGHTS,  # type: ignore[dict-item]
-                        7899: CLUSTER_USER_RIGHTS,  # type: ignore[dict-item]
-                    },
-                },
-                {
-                    "id": 325436,
-                    "name": "My AWS cluster",
-                    "description": "a AWS cluster administered by me",
-                    "type": ClusterTypeInModel.AWS,
-                    "owner": 2321,
-                    "endpoint": "https://registry.osparc-development.fake2.dev",
                     "authentication": {
                         "type": "tls",
                         "tls_ca_file": "/path/to/ca_file",

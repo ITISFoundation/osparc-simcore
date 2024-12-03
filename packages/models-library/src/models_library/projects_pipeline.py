@@ -82,7 +82,6 @@ class ComputationTask(BaseModel):
                         "progress": 0.0,
                     },
                     "iteration": None,
-                    "cluster_id": None,
                     "started": arrow.utcnow().shift(minutes=-50).datetime,  # type: ignore[dict-item]
                     "stopped": None,
                     "submitted": arrow.utcnow().shift(hours=-1).datetime,  # type: ignore[dict-item]
@@ -114,7 +113,6 @@ class ComputationTask(BaseModel):
                         "progress": 1.0,
                     },
                     "iteration": 2,
-                    "cluster_id": 0,
                     "started": arrow.utcnow().shift(minutes=-50).datetime,  # type: ignore[dict-item]
                     "stopped": arrow.utcnow().shift(minutes=-20).datetime,  # type: ignore[dict-item]
                     "submitted": arrow.utcnow().shift(hours=-1).datetime,  # type: ignore[dict-item]
