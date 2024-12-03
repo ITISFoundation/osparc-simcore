@@ -300,7 +300,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             if (response.status < 400) {
               this.__serviceReadyIn(srvUrl);
             } else {
-              console.log(`Connecting: ${srvUrl} is not reachable. Status: ${response.status}`);
+              console.error(`Connecting: ${srvUrl} is not reachable. Status: ${response.status}`);
               retry();
             }
           })

@@ -2,7 +2,7 @@ import mimetypes
 from copy import deepcopy
 from typing import Any, Literal
 
-from pydantic import schema_of
+from pydantic import TypeAdapter
 
 from ..services import ServiceInput, ServiceOutput
 from ..services_regex import PROPERTY_TYPE_TO_PYTHON_TYPE_MAP
@@ -10,8 +10,12 @@ from ..services_regex import PROPERTY_TYPE_TO_PYTHON_TYPE_MAP
 PortKindStr = Literal["input", "output"]
 JsonSchemaDict = dict[str, Any]
 
+
 _PROPERTY_TYPE_TO_SCHEMAS = {
-    property_type: schema_of(python_type, title=property_type.capitalize())
+    property_type: {
+        **TypeAdapter(python_type).json_schema(),
+        "title": property_type.capitalize(),
+    }
     for property_type, python_type in PROPERTY_TYPE_TO_PYTHON_TYPE_MAP.items()
 }
 

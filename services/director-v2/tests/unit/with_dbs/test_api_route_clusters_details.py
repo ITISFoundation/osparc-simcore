@@ -4,7 +4,7 @@
 
 import json
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Awaitable
 
 import httpx
 import pytest
@@ -142,14 +142,14 @@ async def test_get_cluster_details(
     registered_user: Callable[..., dict[str, Any]],
     async_client: httpx.AsyncClient,
     local_dask_gateway_server: DaskGatewayServer,
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
     dask_gateway_cluster: GatewayCluster,
     dask_gateway_cluster_client: DaskClient,
     gateway_username: str,
 ):
     user_1 = registered_user()
     # define the cluster in the DB
-    some_cluster = cluster(
+    some_cluster = await create_cluster(
         user_1,
         endpoint=local_dask_gateway_server.address,
         authentication=SimpleAuthentication(

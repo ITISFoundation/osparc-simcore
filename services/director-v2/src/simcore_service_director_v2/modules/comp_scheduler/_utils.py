@@ -1,5 +1,6 @@
-from typing import TypeAlias
+from typing import Callable
 
+from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -10,9 +11,12 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
-from pydantic import PositiveInt
+from servicelib.redis import RedisClientSDK
+from settings_library.redis import RedisDatabase
+from simcore_service_director_v2.modules.redis import get_redis_client_manager
 
-from ..models.comp_tasks import CompTaskAtDB
+from ...models.comp_runs import Iteration
+from ...models.comp_tasks import CompTaskAtDB
 
 SCHEDULED_STATES: set[RunningState] = {
     RunningState.PUBLISHED,
@@ -51,9 +55,6 @@ COMPLETED_STATES: set[RunningState] = {
 }
 
 
-Iteration: TypeAlias = PositiveInt
-
-
 def get_resource_tracking_run_id(
     user_id: UserID, project_id: ProjectID, node_id: NodeID, iteration: Iteration
 ) -> str:
@@ -73,3 +74,34 @@ def create_service_resources_from_task(task: CompTaskAtDB) -> ServiceResourcesDi
         },
         [task.image.boot_mode],
     )
+
+
+def _get_app_from_args(*args, **kwargs) -> FastAPI:
+    assert kwargs is not None  # nosec
+    if args:
+        app = args[0]
+    else:
+        assert "app" in kwargs  # nosec
+        app = kwargs["app"]
+    assert isinstance(app, FastAPI)  # nosec
+    return app
+
+
+def get_redis_client_from_app(*args, **kwargs) -> RedisClientSDK:
+    app = _get_app_from_args(*args, **kwargs)
+    return get_redis_client_manager(app).client(RedisDatabase.LOCKS)
+
+
+def get_redis_lock_key(
+    suffix: str, *, unique_lock_key_builder: Callable[..., str] | None
+) -> Callable[..., str]:
+    def _(*args, **kwargs) -> str:
+        app = _get_app_from_args(*args, **kwargs)
+        unique_lock_part = (
+            unique_lock_key_builder(*args, **kwargs) if unique_lock_key_builder else ""
+        )
+        if unique_lock_part:
+            unique_lock_part = f"-{unique_lock_part}"
+        return f"{app.title}-{suffix}{unique_lock_part}"
+
+    return _

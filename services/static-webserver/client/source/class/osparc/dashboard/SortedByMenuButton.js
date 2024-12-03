@@ -65,6 +65,7 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       field: "last_change_date",
       direction: "desc"
     },
+
     getSortByOptions: function() {
       return [{
         id: "name",
