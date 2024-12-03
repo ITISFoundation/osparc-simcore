@@ -2865,7 +2865,39 @@ jobs:
           TAG_PREFIX: hotfix-staging-github
         run: ./ci/deploy/dockerhub-deploy.bash -n
 
-  api-server-api-spec-backwards-compatible:
+  check-api-specs-updated:
+    needs: [changes]
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 10
+    name: Check api-specs are up to date
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.4.x"
+          enable-cache: false
+          cache-dependency-glob: "**/service-library/requirements/ci*.txt"
+      - name: checkout source branch
+        uses: actions/checkout@v4
+        with:
+          path: source
+      - name: Regenerate specs and check
+        run: |
+          uv venv .venv && source .venv/bin/activate
+          make openapi-specs
+          changed_files=$(git diff --name-only)
+          if echo ${changed_files} | grep -qE '^(openapi\.json|openapi\.yaml)$'; then
+            echo "${changed_files}" && echo "Run make openapi-specs and commit changes"
+            exit 1
+          fi
+
+
+  api-spec-backwards-compatible:
     needs: [changes]
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     timeout-minutes: 10
@@ -2892,13 +2924,13 @@ jobs:
           path: target
           repository: ${{ github.event.pull_request.base.repo.full_name }}
           ref: ${{ github.event.pull_request.base.ref }}
+      - name: Generate source openapi-specs
+        run: |
+          cd source
+          uv venv .venv && source .venv/bin/activate
+          make openapi-specs
       - name: Generate target openapi specs
         run: |
           cd target
-          uv venv .venv && source .venv/bin/activate
-          make openapi-specs
-      - name: Generate source openapi-specs and compare
-        run: |
-          cd source
           uv venv .venv && source .venv/bin/activate
           make openapi-specs
