@@ -24,6 +24,8 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
     this._setLayout(new qx.ui.layout.HBox(5).set({
       alignY: "middle"
     }));
+
+    osparc.store.Store.getInstance().addListener("changeStudyBrowserContext", () => this.__rebuild(), this);
   },
 
   events: {
@@ -31,14 +33,6 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
   },
 
   properties: {
-    currentContext: {
-      check: ["studiesAndFolders", "workspaces", "search"],
-      nullable: false,
-      init: "studiesAndFolders",
-      event: "changeCurrentContext",
-      apply: "__rebuild"
-    },
-
     currentWorkspaceId: {
       check: "Number",
       nullable: true,
@@ -60,7 +54,8 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
     __rebuild: function() {
       this._removeAll();
 
-      if (this.getCurrentContext() !== "studiesAndFolders") {
+      const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+      if (currentContext !== "studiesAndFolders") {
         return;
       }
 

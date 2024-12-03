@@ -8,11 +8,11 @@ from servicelib.aiohttp.requests_validation import (
 )
 
 from .._meta import API_VTAG as VTAG
-from ..application_settings_utils import requires_dev_feature_enabled
-from ..exceptions_handlers import (
+from ..exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    create_exception_handlers_decorator,
+    exception_handling_decorator,
+    to_exceptions_handlers_map,
 )
 from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
@@ -20,11 +20,7 @@ from ..projects._common_models import ProjectPathParams
 from ..security.decorators import permission_required
 from . import _trash_api
 from ._common_models import RemoveQueryParams
-from .exceptions import (
-    ProjectRunningConflictError,
-    ProjectStoppingError,
-    ProjectTrashError,
-)
+from .exceptions import ProjectRunningConflictError, ProjectStoppingError
 
 _logger = logging.getLogger(__name__)
 
@@ -45,9 +41,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-_handle_exceptions = create_exception_handlers_decorator(
-    exceptions_catch=ProjectTrashError, exc_to_status_map=_TO_HTTP_ERROR_MAP
+_handle_exceptions = exception_handling_decorator(
+    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
+
 
 #
 # ROUTES
@@ -57,7 +54,6 @@ routes = web.RouteTableDef()
 
 
 @routes.delete(f"/{VTAG}/trash", name="empty_trash")
-@requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
 @_handle_exceptions
@@ -73,7 +69,6 @@ async def empty_trash(request: web.Request):
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:trash", name="trash_project")
-@requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
 @_handle_exceptions
@@ -98,7 +93,6 @@ async def trash_project(request: web.Request):
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:untrash", name="untrash_project")
-@requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
 @_handle_exceptions

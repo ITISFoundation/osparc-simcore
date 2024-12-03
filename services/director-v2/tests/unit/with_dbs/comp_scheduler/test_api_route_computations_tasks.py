@@ -9,7 +9,6 @@ from unittest import mock
 from uuid import uuid4
 
 import httpx
-from pydantic import TypeAdapter
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
@@ -22,6 +21,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.core.settings import AppSettings
@@ -116,21 +116,21 @@ async def project_id(
     fake_workbench_adjacency: dict[str, Any],
     user: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
-):
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+) -> ProjectID:
     """project uuid of a saved project (w/ tasks up-to-date)"""
 
     # insert project -> db
     proj = await project(user, workbench=fake_workbench_without_outputs)
 
     # insert pipeline  -> comp_pipeline
-    pipeline(
-        project_id=proj.uuid,
+    await create_pipeline(
+        project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
     # insert tasks -> comp_tasks
-    comp_tasks = tasks(user=user, project=proj)
+    comp_tasks = await create_tasks(user=user, project=proj)
 
     return proj.uuid
 

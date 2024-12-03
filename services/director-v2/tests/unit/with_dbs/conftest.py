@@ -6,7 +6,7 @@
 
 
 import datetime
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, cast
 from uuid import uuid4
 
@@ -36,23 +36,24 @@ from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
 from simcore_service_director_v2.utils.db import to_clusters_db
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
-def pipeline(
-    postgres_db: sa.engine.Engine,
-) -> Iterator[Callable[..., CompPipelineAtDB]]:
+async def create_pipeline(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[CompPipelineAtDB]]]:
     created_pipeline_ids: list[str] = []
 
-    def creator(**pipeline_kwargs) -> CompPipelineAtDB:
+    async def _(**pipeline_kwargs) -> CompPipelineAtDB:
         pipeline_config = {
             "project_id": f"{uuid4()}",
             "dag_adjacency_list": {},
             "state": StateType.NOT_STARTED,
         }
         pipeline_config.update(**pipeline_kwargs)
-        with postgres_db.begin() as conn:
-            result = conn.execute(
+        async with sqlalchemy_async_engine.begin() as conn:
+            result = await conn.execute(
                 comp_pipeline.insert()
                 .values(**pipeline_config)
                 .returning(sa.literal_column("*"))
@@ -63,11 +64,11 @@ def pipeline(
             created_pipeline_ids.append(f"{new_pipeline.project_id}")
             return new_pipeline
 
-    yield creator
+    yield _
 
     # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
             comp_pipeline.delete().where(
                 comp_pipeline.c.project_id.in_(created_pipeline_ids)
             )
@@ -75,12 +76,12 @@ def pipeline(
 
 
 @pytest.fixture
-def tasks(
-    postgres_db: sa.engine.Engine,
-) -> Iterator[Callable[..., list[CompTaskAtDB]]]:
+async def create_tasks(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[list[CompTaskAtDB]]]]:
     created_task_ids: list[int] = []
 
-    def creator(
+    async def _(
         user: dict[str, Any], project: ProjectAtDB, **overrides_kwargs
     ) -> list[CompTaskAtDB]:
         created_tasks: list[CompTaskAtDB] = []
@@ -122,7 +123,7 @@ def tasks(
                 ),
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
-                "submit": datetime.datetime.now(tz=datetime.UTC),
+                "submit": datetime.datetime.now(datetime.UTC),
                 "job_id": generate_dask_job_id(
                     service_key=node_data.key,
                     service_version=node_data.version,
@@ -132,8 +133,8 @@ def tasks(
                 ),
             }
             task_config.update(**overrides_kwargs)
-            with postgres_db.connect() as conn:
-                result = conn.execute(
+            async with sqlalchemy_async_engine.begin() as conn:
+                result = await conn.execute(
                     comp_tasks.insert()
                     .values(**task_config)
                     .returning(sa.literal_column("*"))
@@ -143,11 +144,11 @@ def tasks(
             created_task_ids.extend([t.task_id for t in created_tasks if t.task_id])
         return created_tasks
 
-    yield creator
+    yield _
 
     # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
             comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
         )
 
@@ -186,64 +187,74 @@ def run_metadata(
 
 
 @pytest.fixture
-def runs(
-    postgres_db: sa.engine.Engine, run_metadata: RunMetadataDict
-) -> Iterator[Callable[..., CompRunsAtDB]]:
+async def create_comp_run(
+    sqlalchemy_async_engine: AsyncEngine, run_metadata: RunMetadataDict
+) -> AsyncIterator[Callable[..., Awaitable[CompRunsAtDB]]]:
     created_run_ids: list[int] = []
 
-    def creator(
+    async def _(
         user: dict[str, Any], project: ProjectAtDB, **run_kwargs
     ) -> CompRunsAtDB:
         run_config = {
             "project_uuid": f"{project.uuid}",
-            "user_id": f"{user['id']}",
+            "user_id": user["id"],
             "iteration": 1,
             "result": StateType.NOT_STARTED,
-            "metadata": run_metadata,
+            "metadata": jsonable_encoder(run_metadata),
             "use_on_demand_clusters": False,
         }
         run_config.update(**run_kwargs)
-        with postgres_db.connect() as conn:
-            result = conn.execute(
+        async with sqlalchemy_async_engine.begin() as conn:
+            result = await conn.execute(
                 comp_runs.insert()
-                .values(**jsonable_encoder(run_config))
+                .values(**run_config)
                 .returning(sa.literal_column("*"))
             )
             new_run = CompRunsAtDB.model_validate(result.first())
             created_run_ids.append(new_run.run_id)
             return new_run
 
-    yield creator
+    yield _
 
     # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids)))
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids))
+        )
 
 
 @pytest.fixture
-def cluster(
-    postgres_db: sa.engine.Engine,
-) -> Iterator[Callable[..., Cluster]]:
+async def create_cluster(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[Cluster]]]:
     created_cluster_ids: list[str] = []
 
-    def creator(user: dict[str, Any], **cluster_kwargs) -> Cluster:
+    async def _(user: dict[str, Any], **cluster_kwargs) -> Cluster:
+        assert "json_schema_extra" in Cluster.model_config
+        assert isinstance(Cluster.model_config["json_schema_extra"], dict)
+        assert isinstance(Cluster.model_config["json_schema_extra"]["examples"], list)
+        assert isinstance(
+            Cluster.model_config["json_schema_extra"]["examples"][1], dict
+        )
         cluster_config = Cluster.model_config["json_schema_extra"]["examples"][1]
         cluster_config["owner"] = user["primary_gid"]
         cluster_config.update(**cluster_kwargs)
         new_cluster = Cluster.model_validate(cluster_config)
         assert new_cluster
 
-        with postgres_db.connect() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             # insert basic cluster
-            created_cluster = conn.execute(
-                sa.insert(clusters)
-                .values(to_clusters_db(new_cluster, only_update=False))
-                .returning(sa.literal_column("*"))
+            created_cluster = (
+                await conn.execute(
+                    sa.insert(clusters)
+                    .values(to_clusters_db(new_cluster, only_update=False))
+                    .returning(sa.literal_column("*"))
+                )
             ).one()
             created_cluster_ids.append(created_cluster.id)
             if "access_rights" in cluster_kwargs:
                 for gid, rights in cluster_kwargs["access_rights"].items():
-                    conn.execute(
+                    await conn.execute(
                         pg_insert(cluster_to_groups)
                         .values(
                             cluster_id=created_cluster.id,
@@ -256,7 +267,7 @@ def cluster(
                         )
                     )
             access_rights_in_db = {}
-            for row in conn.execute(
+            for row in await conn.execute(
                 sa.select(
                     cluster_to_groups.c.gid,
                     cluster_to_groups.c.read,
@@ -267,9 +278,9 @@ def cluster(
                 .where(clusters.c.id == created_cluster.id)
             ):
                 access_rights_in_db[row.gid] = {
-                    "read": row[cluster_to_groups.c.read],
-                    "write": row[cluster_to_groups.c.write],
-                    "delete": row[cluster_to_groups.c.delete],
+                    "read": row.read,
+                    "write": row.write,
+                    "delete": row.delete,
                 }
 
             return Cluster(
@@ -284,44 +295,57 @@ def cluster(
                 thumbnail=None,
             )
 
-    yield creator
+    yield _
 
     # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(
-            # pylint: disable=no-value-for-parameter
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
             clusters.delete().where(clusters.c.id.in_(created_cluster_ids))
         )
 
 
 @pytest.fixture
-async def published_project(
+async def publish_project(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
-) -> PublishedProject:
+) -> Callable[[], Awaitable[PublishedProject]]:
     user = registered_user()
-    created_project = await project(user, workbench=fake_workbench_without_outputs)
-    return PublishedProject(
-        project=created_project,
-        pipeline=pipeline(
-            project_id=f"{created_project.uuid}",
-            dag_adjacency_list=fake_workbench_adjacency,
-        ),
-        tasks=tasks(user=user, project=created_project, state=StateType.PUBLISHED),
-    )
+
+    async def _() -> PublishedProject:
+        created_project = await project(user, workbench=fake_workbench_without_outputs)
+        return PublishedProject(
+            user=user,
+            project=created_project,
+            pipeline=await create_pipeline(
+                project_id=f"{created_project.uuid}",
+                dag_adjacency_list=fake_workbench_adjacency,
+            ),
+            tasks=await create_tasks(
+                user=user, project=created_project, state=StateType.PUBLISHED
+            ),
+        )
+
+    return _
+
+
+@pytest.fixture
+async def published_project(
+    publish_project: Callable[[], Awaitable[PublishedProject]]
+) -> PublishedProject:
+    return await publish_project()
 
 
 @pytest.fixture
 async def running_project(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
-    runs: Callable[..., CompRunsAtDB],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
@@ -329,24 +353,26 @@ async def running_project(
     created_project = await project(user, workbench=fake_workbench_without_outputs)
     now_time = arrow.utcnow().datetime
     return RunningProject(
+        user=user,
         project=created_project,
-        pipeline=pipeline(
+        pipeline=await create_pipeline(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=tasks(
+        tasks=await create_tasks(
             user=user,
             project=created_project,
             state=StateType.RUNNING,
             progress=0.0,
             start=now_time,
         ),
-        runs=runs(
+        runs=await create_comp_run(
             user=user,
             project=created_project,
             started=now_time,
             result=StateType.RUNNING,
         ),
+        task_to_callback_mapping={},
     )
 
 
@@ -354,9 +380,9 @@ async def running_project(
 async def running_project_mark_for_cancellation(
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
-    runs: Callable[..., CompRunsAtDB],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
@@ -364,25 +390,27 @@ async def running_project_mark_for_cancellation(
     created_project = await project(user, workbench=fake_workbench_without_outputs)
     now_time = arrow.utcnow().datetime
     return RunningProject(
+        user=user,
         project=created_project,
-        pipeline=pipeline(
+        pipeline=await create_pipeline(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=tasks(
+        tasks=await create_tasks(
             user=user,
             project=created_project,
             state=StateType.RUNNING,
             progress=0.0,
             start=now_time,
         ),
-        runs=runs(
+        runs=await create_comp_run(
             user=user,
             project=created_project,
             result=StateType.RUNNING,
             started=now_time,
             cancelled=now_time + datetime.timedelta(seconds=5),
         ),
+        task_to_callback_mapping={},
     )
 
 
