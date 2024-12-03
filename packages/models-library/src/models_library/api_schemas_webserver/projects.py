@@ -140,7 +140,7 @@ class ProjectPatch(InputSchema):
     thumbnail: Annotated[
         HttpUrl | None,
         BeforeValidator(empty_str_to_none_pre_validator),
-        PlainSerializer(str),
+        PlainSerializer(lambda x: str(x) if x is not None else None),
     ] = Field(default=None)
     access_rights: dict[GroupIDStr, AccessRights] | None = Field(default=None)
     classifiers: list[ClassifierID] | None = Field(default=None)
