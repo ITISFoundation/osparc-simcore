@@ -105,7 +105,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         return log_level
 
     @model_validator(mode="after")
-    def ensure_settings_consistency(self) -> Self:
+    def _ensure_settings_consistency(self) -> Self:
         if self.STORAGE_CLEANER_INTERVAL_S is not None and not self.STORAGE_REDIS:
             msg = (
                 "STORAGE_CLEANER_INTERVAL_S cleaner cannot be set without STORAGE_REDIS! "
