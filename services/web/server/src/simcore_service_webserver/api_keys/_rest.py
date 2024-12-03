@@ -73,7 +73,8 @@ async def create_api_key(request: web.Request):
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
         )
-        resp.base_url = TypeAdapter(HttpUrl).validate_python(f"{request.url}")
+        api_base_url = request.url.with_host(f"api.{request.url.host}").with_path("")
+        resp.api_base_url = TypeAdapter(HttpUrl).validate_python(f"{api_base_url}")
     except DatabaseError as err:
         raise web.HTTPBadRequest(
             reason="Invalid API key name: already exists",
