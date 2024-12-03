@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Recursively checks if all openapi specs within a local osparc-simcore clone are backwards compatible with a remote clone
+# Recursively checks if all openapi specs within a local osparc-simcore revision are backwards compatible with a remote base
 # Example: bash osparc-simcore/ci/github/helpers/openapi-specs-backwards-compatibility.bash \
 #    https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master
 #    ./osparc-simcore/
