@@ -5544,8 +5544,6 @@
           "urls": {
             "items": {
               "type": "string",
-              "maxLength": 2083,
-              "minLength": 1,
               "format": "uri"
             },
             "type": "array",
@@ -5681,8 +5679,6 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
                 "format": "uri"
               },
               {
@@ -5696,8 +5692,6 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
                 "format": "uri"
               },
               {
@@ -5711,8 +5705,6 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
                 "format": "uri"
               },
               {
@@ -5894,8 +5886,6 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
                 "format": "uri"
               },
               {
@@ -6159,8 +6149,6 @@
           },
           "download_link": {
             "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
             "format": "uri",
             "title": "Download Link"
           }
@@ -6201,15 +6189,11 @@
           },
           "docs_url": {
             "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
             "format": "uri",
             "title": "Docs Url"
           },
           "docs_dev_url": {
             "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
             "format": "uri",
             "title": "Docs Dev Url"
           }
@@ -6733,8 +6717,6 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
                 "format": "uri"
               },
               {

@@ -1,13 +1,13 @@
 from typing import Annotated
 
 from models_library.api_schemas__common.meta import BaseMeta
-from pydantic import ConfigDict, HttpUrl
+from pydantic import AnyHttpUrl, ConfigDict
 from simcore_service_api_server.models._utils_pydantic import UriSchema
 
 
 class Meta(BaseMeta):
-    docs_url: Annotated[HttpUrl, UriSchema()]
-    docs_dev_url: Annotated[HttpUrl, UriSchema()]
+    docs_url: Annotated[AnyHttpUrl, UriSchema()]
+    docs_dev_url: Annotated[AnyHttpUrl, UriSchema()]
     model_config = ConfigDict(
         json_schema_extra={
             "example": {

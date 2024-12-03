@@ -1,7 +1,7 @@
 from typing import Annotated, TypeAlias
 
 from models_library import projects, projects_nodes_io
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field
 from simcore_service_api_server.models._utils_pydantic import UriSchema
 
 from .. import api_resources
@@ -9,7 +9,7 @@ from . import solvers
 
 StudyID: TypeAlias = projects.ProjectID
 NodeName: TypeAlias = str
-DownloadLink: TypeAlias = Annotated[HttpUrl, UriSchema()]
+DownloadLink: TypeAlias = Annotated[AnyHttpUrl, UriSchema()]
 
 
 class Study(BaseModel):

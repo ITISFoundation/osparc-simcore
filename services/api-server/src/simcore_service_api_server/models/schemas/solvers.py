@@ -6,7 +6,7 @@ from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from packaging.version import Version
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, StringConstraints
 from simcore_service_api_server.models._utils_pydantic import UriSchema
 
 from ..api_resources import compose_resource_name
@@ -54,7 +54,7 @@ class Solver(BaseModel):
 
     # Get links to other resources
     url: Annotated[
-        Annotated[HttpUrl, UriSchema()] | None,
+        Annotated[AnyHttpUrl, UriSchema()] | None,
         Field(..., description="Link to get this resource"),
     ]
 
