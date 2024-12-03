@@ -335,7 +335,7 @@ class DynamicSidecarServiceLabels(BaseModel):
     callbacks_mapping: Annotated[
         Json[CallbacksMapping] | None,
         Field(
-            default_factory=CallbacksMapping,  # this one ANE I am not sure about
+            default_factory=CallbacksMapping,  # NOTE: PC->ANE I still think this could be an issue
             alias="simcore.service.callbacks-mapping",
             description="exposes callbacks from user services to the sidecar",
         ),
