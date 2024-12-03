@@ -4,7 +4,6 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
 from models_library.api_schemas_webserver.projects import ProjectGet
-from models_library.clusters import ClusterID
 from pydantic import HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 
@@ -41,7 +40,6 @@ async def start_project(
     job_id: JobID,
     expected_job_name: str,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    cluster_id: ClusterID | None = None,
 ) -> None:
     if pricing_spec := JobPricingSpecification.create_from_headers(request.headers):
         with log_context(_logger, logging.DEBUG, "Set pricing plan and unit"):
@@ -56,7 +54,7 @@ async def start_project(
                 pricing_unit=pricing_spec.pricing_unit,
             )
     with log_context(_logger, logging.DEBUG, "Starting job"):
-        await webserver_api.start_project(project_id=job_id, cluster_id=cluster_id)
+        await webserver_api.start_project(project_id=job_id)
 
 
 async def stop_project(

@@ -1,586 +1,585 @@
 [
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:30004/v0/projects?from_study=e9f34992-436c-11ef-a15d-0242ac14000c&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=e9f34992-436c-11ef-a15d-0242ac14000c&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De9f34992-436c-11ef-a15d-0242ac14000c%26hidden%3Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
-    "task_name": "POST /v0/projects?from_study=e9f34992-436c-11ef-a15d-0242ac14000c&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
-    "result_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3/result",
-    "abort_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
-  "description": "<Request('GET', 'http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De9f34992-436c-11ef-a15d-0242ac14000c%26hidden%3Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
-     "message": "Checking study access rights...",
-     "percent": 0.0
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:30004/v0/projects?from_study=e9f34992-436c-11ef-a15d-0242ac14000c&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
     },
-    "done": false,
-    "started": "2024-07-16T12:56:51.900041"
-   }
-  }
- },
- {
-  "name": "GET http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
-  "description": "<Request('GET', 'http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De9f34992-436c-11ef-a15d-0242ac14000c%26hidden%3Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
-     "message": "Checking study access rights...",
-     "percent": 0.0
-    },
-    "done": false,
-    "started": "2024-07-16T12:56:51.900041"
-   }
-  }
- },
- {
-  "name": "GET http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
-  "description": "<Request('GET', 'http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De9f34992-436c-11ef-a15d-0242ac14000c%26hidden%3Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2024-07-16T12:56:51.900041"
-   }
-  }
- },
- {
-  "name": "GET http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3/result",
-  "description": "<Request('GET', 'http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "uuid": "df0b67b6-4372-11ef-a15d-0242ac14000c",
-    "name": "teststudy (Copy)",
-    "description": "",
-    "thumbnail": "",
-    "creationDate": "2024-07-16T12:56:51.922Z",
-    "lastChangeDate": "2024-07-16T12:56:51.922Z",
-    "workspaceId": 5,
-    "folderId": 2,
-    "trashedAt": null,
-    "workbench": {
-     "dd875b4f-7663-529f-bd7f-3716b19e28af": {
-      "key": "simcore/services/comp/itis/sleeper",
-      "version": "2.0.2",
-      "label": "sleeper",
-      "progress": 0.0,
-      "inputs": {
-       "input_1": {
-        "nodeUuid": "cda9d480-d3ad-55c8-b9ce-c50eb1bab818",
-        "output": "outFile"
-       },
-       "input_2": 2,
-       "input_3": false
-      },
-      "inputsRequired": [],
-      "inputNodes": [
-       "cda9d480-d3ad-55c8-b9ce-c50eb1bab818"
-      ],
-      "state": {
-       "modified": true,
-       "dependencies": [],
-       "currentStatus": "NOT_STARTED",
-       "progress": null
+    "query": "from_study=e9f34992-436c-11ef-a15d-0242ac14000c&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De9f34992-436c-11ef-a15d-0242ac14000c%26hidden%3Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
+        "task_name": "POST /v0/projects?from_study=e9f34992-436c-11ef-a15d-0242ac14000c&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
+        "result_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3/result",
+        "abort_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3"
       }
-     },
-     "cda9d480-d3ad-55c8-b9ce-c50eb1bab818": {
-      "key": "simcore/services/frontend/file-picker",
-      "version": "1.0.0",
-      "label": "inputfile",
-      "inputs": {},
-      "inputsRequired": [],
-      "inputNodes": []
-     },
-     "c784a033-36c7-558b-9cc5-448321de01f8": {
-      "key": "simcore/services/frontend/iterator-consumer/probe/file",
-      "version": "1.0.0",
-      "label": "outputfile",
-      "inputs": {
-       "in_1": {
-        "nodeUuid": "dd875b4f-7663-529f-bd7f-3716b19e28af",
-        "output": "output_1"
-       }
-      },
-      "inputsRequired": [],
-      "inputNodes": [
-       "dd875b4f-7663-529f-bd7f-3716b19e28af"
+    },
+    "status_code": 202
+  },
+  {
+    "name": "GET http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
+    "description": "<Request('GET', 'http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks"
+        }
       ]
-     }
     },
-    "prjOwner": "bisgaard@itis.swiss",
-    "accessRights": {
-     "3": {
-      "read": true,
-      "write": true,
-      "delete": true
-     }
-    },
-    "tags": [],
-    "classifiers": [],
-    "state": {
-     "locked": {
-      "value": false,
-      "status": "CLOSED"
-     },
-     "state": {
-      "value": "NOT_STARTED"
-     }
-    },
-    "ui": {
-     "workbench": {
-      "c784a033-36c7-558b-9cc5-448321de01f8": {
-       "position": {
-        "x": 1175,
-        "y": 467
-       }
-      },
-      "cda9d480-d3ad-55c8-b9ce-c50eb1bab818": {
-       "position": {
-        "x": 586,
-        "y": 471
-       }
-      },
-      "dd875b4f-7663-529f-bd7f-3716b19e28af": {
-       "position": {
-        "x": 860,
-        "y": 440
-       }
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De9f34992-436c-11ef-a15d-0242ac14000c%26hidden%3Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
+          "message": "Checking study access rights...",
+          "percent": 0.0
+        },
+        "done": false,
+        "started": "2024-07-16T12:56:51.900041"
       }
-     },
-     "slideshow": {},
-     "currentNodeId": "b448cfb0-436c-11ef-a15d-0242ac14000c",
-     "mode": "workbench"
+    }
+  },
+  {
+    "name": "GET http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
+    "description": "<Request('GET', 'http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks"
+        }
+      ]
     },
-    "quality": {
-     "enabled": true,
-     "tsr_target": {
-      "r01": {
-       "level": 4,
-       "references": ""
-      },
-      "r02": {
-       "level": 4,
-       "references": ""
-      },
-      "r03": {
-       "level": 4,
-       "references": ""
-      },
-      "r04": {
-       "level": 4,
-       "references": ""
-      },
-      "r05": {
-       "level": 4,
-       "references": ""
-      },
-      "r06": {
-       "level": 4,
-       "references": ""
-      },
-      "r07": {
-       "level": 4,
-       "references": ""
-      },
-      "r08": {
-       "level": 4,
-       "references": ""
-      },
-      "r09": {
-       "level": 4,
-       "references": ""
-      },
-      "r10": {
-       "level": 4,
-       "references": ""
-      },
-      "r03b": {
-       "references": ""
-      },
-      "r03c": {
-       "references": ""
-      },
-      "r07b": {
-       "references": ""
-      },
-      "r07c": {
-       "references": ""
-      },
-      "r07d": {
-       "references": ""
-      },
-      "r07e": {
-       "references": ""
-      },
-      "r08b": {
-       "references": ""
-      },
-      "r10b": {
-       "references": ""
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De9f34992-436c-11ef-a15d-0242ac14000c%26hidden%3Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
+          "message": "Checking study access rights...",
+          "percent": 0.0
+        },
+        "done": false,
+        "started": "2024-07-16T12:56:51.900041"
       }
-     },
-     "tsr_current": {
-      "r01": {
-       "level": 0,
-       "references": ""
-      },
-      "r02": {
-       "level": 0,
-       "references": ""
-      },
-      "r03": {
-       "level": 0,
-       "references": ""
-      },
-      "r04": {
-       "level": 0,
-       "references": ""
-      },
-      "r05": {
-       "level": 0,
-       "references": ""
-      },
-      "r06": {
-       "level": 0,
-       "references": ""
-      },
-      "r07": {
-       "level": 0,
-       "references": ""
-      },
-      "r08": {
-       "level": 0,
-       "references": ""
-      },
-      "r09": {
-       "level": 0,
-       "references": ""
-      },
-      "r10": {
-       "level": 0,
-       "references": ""
-      },
-      "r03b": {
-       "references": ""
-      },
-      "r03c": {
-       "references": ""
-      },
-      "r07b": {
-       "references": ""
-      },
-      "r07c": {
-       "references": ""
-      },
-      "r07d": {
-       "references": ""
-      },
-      "r07e": {
-       "references": ""
-      },
-      "r08b": {
-       "references": ""
-      },
-      "r10b": {
-       "references": ""
+    }
+  },
+  {
+    "name": "GET http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
+    "description": "<Request('GET', 'http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De9f34992-436c-11ef-a15d-0242ac14000c%26hidden%3Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2024-07-16T12:56:51.900041"
       }
-     }
+    }
+  },
+  {
+    "name": "GET http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3/result",
+    "description": "<Request('GET', 'http://webserver:30004/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De9f34992-436c-11ef-a15d-0242ac14000c%2526hidden%253Dtrue.419d55ef-8ab6-4d2e-8654-1dd29fac18c3/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks"
+        }
+      ]
     },
-    "dev": {}
-   }
-  },
-  "status_code": 201
- },
- {
-  "name": "PATCH /projects/df0b67b6-4372-11ef-a15d-0242ac14000c",
-  "description": "<Request('PATCH', 'http://webserver:30004/v0/projects/df0b67b6-4372-11ef-a15d-0242ac14000c')>",
-  "method": "PATCH",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "projects"
-    }
-   ]
-  },
-  "request_payload": {
-   "name": "studies/e9f34992-436c-11ef-a15d-0242ac14000c/jobs/df0b67b6-4372-11ef-a15d-0242ac14000c"
-  },
-  "status_code": 204
- },
- {
-  "name": "GET /projects/df0b67b6-4372-11ef-a15d-0242ac14000c/inputs",
-  "description": "<Request('GET', 'http://webserver:30004/v0/projects/df0b67b6-4372-11ef-a15d-0242ac14000c/inputs')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}/inputs",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "projects"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {}
-  }
- },
- {
-  "name": "PATCH /projects/df0b67b6-4372-11ef-a15d-0242ac14000c/nodes/cda9d480-d3ad-55c8-b9ce-c50eb1bab818/outputs",
-  "description": "<Request('PATCH', 'http://webserver:30004/v0/projects/df0b67b6-4372-11ef-a15d-0242ac14000c/nodes/cda9d480-d3ad-55c8-b9ce-c50eb1bab818/outputs')>",
-  "method": "PATCH",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}/nodes/{node_id}/outputs",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str"
-     },
-     "response_value": "projects"
+    "response_body": {
+      "data": {
+        "uuid": "df0b67b6-4372-11ef-a15d-0242ac14000c",
+        "name": "teststudy (Copy)",
+        "description": "",
+        "thumbnail": "",
+        "creationDate": "2024-07-16T12:56:51.922Z",
+        "lastChangeDate": "2024-07-16T12:56:51.922Z",
+        "workspaceId": 5,
+        "folderId": 2,
+        "trashedAt": null,
+        "workbench": {
+          "dd875b4f-7663-529f-bd7f-3716b19e28af": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.0.2",
+            "label": "sleeper",
+            "progress": 0.0,
+            "inputs": {
+              "input_1": {
+                "nodeUuid": "cda9d480-d3ad-55c8-b9ce-c50eb1bab818",
+                "output": "outFile"
+              },
+              "input_2": 2,
+              "input_3": false
+            },
+            "inputsRequired": [],
+            "inputNodes": [
+              "cda9d480-d3ad-55c8-b9ce-c50eb1bab818"
+            ],
+            "state": {
+              "modified": true,
+              "dependencies": [],
+              "currentStatus": "NOT_STARTED",
+              "progress": null
+            }
+          },
+          "cda9d480-d3ad-55c8-b9ce-c50eb1bab818": {
+            "key": "simcore/services/frontend/file-picker",
+            "version": "1.0.0",
+            "label": "inputfile",
+            "inputs": {},
+            "inputsRequired": [],
+            "inputNodes": []
+          },
+          "c784a033-36c7-558b-9cc5-448321de01f8": {
+            "key": "simcore/services/frontend/iterator-consumer/probe/file",
+            "version": "1.0.0",
+            "label": "outputfile",
+            "inputs": {
+              "in_1": {
+                "nodeUuid": "dd875b4f-7663-529f-bd7f-3716b19e28af",
+                "output": "output_1"
+              }
+            },
+            "inputsRequired": [],
+            "inputNodes": [
+              "dd875b4f-7663-529f-bd7f-3716b19e28af"
+            ]
+          }
+        },
+        "prjOwner": "bisgaard@itis.swiss",
+        "accessRights": {
+          "3": {
+            "read": true,
+            "write": true,
+            "delete": true
+          }
+        },
+        "tags": [],
+        "classifiers": [],
+        "state": {
+          "locked": {
+            "value": false,
+            "status": "CLOSED"
+          },
+          "state": {
+            "value": "NOT_STARTED"
+          }
+        },
+        "ui": {
+          "workbench": {
+            "c784a033-36c7-558b-9cc5-448321de01f8": {
+              "position": {
+                "x": 1175,
+                "y": 467
+              }
+            },
+            "cda9d480-d3ad-55c8-b9ce-c50eb1bab818": {
+              "position": {
+                "x": 586,
+                "y": 471
+              }
+            },
+            "dd875b4f-7663-529f-bd7f-3716b19e28af": {
+              "position": {
+                "x": 860,
+                "y": 440
+              }
+            }
+          },
+          "slideshow": {},
+          "currentNodeId": "b448cfb0-436c-11ef-a15d-0242ac14000c",
+          "mode": "workbench"
+        },
+        "quality": {
+          "enabled": true,
+          "tsr_target": {
+            "r01": {
+              "level": 4,
+              "references": ""
+            },
+            "r02": {
+              "level": 4,
+              "references": ""
+            },
+            "r03": {
+              "level": 4,
+              "references": ""
+            },
+            "r04": {
+              "level": 4,
+              "references": ""
+            },
+            "r05": {
+              "level": 4,
+              "references": ""
+            },
+            "r06": {
+              "level": 4,
+              "references": ""
+            },
+            "r07": {
+              "level": 4,
+              "references": ""
+            },
+            "r08": {
+              "level": 4,
+              "references": ""
+            },
+            "r09": {
+              "level": 4,
+              "references": ""
+            },
+            "r10": {
+              "level": 4,
+              "references": ""
+            },
+            "r03b": {
+              "references": ""
+            },
+            "r03c": {
+              "references": ""
+            },
+            "r07b": {
+              "references": ""
+            },
+            "r07c": {
+              "references": ""
+            },
+            "r07d": {
+              "references": ""
+            },
+            "r07e": {
+              "references": ""
+            },
+            "r08b": {
+              "references": ""
+            },
+            "r10b": {
+              "references": ""
+            }
+          },
+          "tsr_current": {
+            "r01": {
+              "level": 0,
+              "references": ""
+            },
+            "r02": {
+              "level": 0,
+              "references": ""
+            },
+            "r03": {
+              "level": 0,
+              "references": ""
+            },
+            "r04": {
+              "level": 0,
+              "references": ""
+            },
+            "r05": {
+              "level": 0,
+              "references": ""
+            },
+            "r06": {
+              "level": 0,
+              "references": ""
+            },
+            "r07": {
+              "level": 0,
+              "references": ""
+            },
+            "r08": {
+              "level": 0,
+              "references": ""
+            },
+            "r09": {
+              "level": 0,
+              "references": ""
+            },
+            "r10": {
+              "level": 0,
+              "references": ""
+            },
+            "r03b": {
+              "references": ""
+            },
+            "r03c": {
+              "references": ""
+            },
+            "r07b": {
+              "references": ""
+            },
+            "r07c": {
+              "references": ""
+            },
+            "r07d": {
+              "references": ""
+            },
+            "r07e": {
+              "references": ""
+            },
+            "r08b": {
+              "references": ""
+            },
+            "r10b": {
+              "references": ""
+            }
+          }
+        },
+        "dev": {}
+      }
     },
-    {
-     "in": "path",
-     "name": "node_id",
-     "required": true,
-     "schema": {
-      "title": "Node Id",
-      "type": "str"
-     },
-     "response_value": "nodes"
-    }
-   ]
+    "status_code": 201
   },
-  "request_payload": {
-   "outputs": {
-    "outFile": {
-     "store": 0,
-     "path": "api/c1dcde67-6434-31c3-95ee-bf5fe1e9422d/inputfile",
-     "label": "inputfile",
-     "eTag": null,
-     "dataset": null
-    }
-   }
-  },
-  "status_code": 204
- },
- {
-  "name": "POST /computations/df0b67b6-4372-11ef-a15d-0242ac14000c:start",
-  "description": "<Request('POST', 'http://webserver:30004/v0/computations/df0b67b6-4372-11ef-a15d-0242ac14000c:start')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/computations/{project_id}:start",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "computations"
-    }
-   ]
-  },
-  "request_payload": {},
-  "response_body": {
-   "data": {
-    "pipeline_id": "df0b67b6-4372-11ef-a15d-0242ac14000c"
-   }
-  },
-  "status_code": 201
- },
- {
-  "name": "GET /v2/computations/df0b67b6-4372-11ef-a15d-0242ac14000c",
-  "description": "<Request('GET', 'http://director-v2:30009/v2/computations/df0b67b6-4372-11ef-a15d-0242ac14000c?user_id=1')>",
-  "method": "GET",
-  "host": "director-v2",
-  "path": {
-   "path": "/v2/computations/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "computations"
-    }
-   ]
-  },
-  "query": "user_id=1",
-  "response_body": {
-   "id": "df0b67b6-4372-11ef-a15d-0242ac14000c",
-   "state": "STARTED",
-   "result": null,
-   "pipeline_details": {
-    "adjacency_list": {
-     "dd875b4f-7663-529f-bd7f-3716b19e28af": []
+  {
+    "name": "PATCH /projects/df0b67b6-4372-11ef-a15d-0242ac14000c",
+    "description": "<Request('PATCH', 'http://webserver:30004/v0/projects/df0b67b6-4372-11ef-a15d-0242ac14000c')>",
+    "method": "PATCH",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "projects"
+        }
+      ]
     },
-    "progress": 0.0,
-    "node_states": {
-     "dd875b4f-7663-529f-bd7f-3716b19e28af": {
-      "modified": true,
-      "dependencies": [],
-      "currentStatus": "STARTED",
-      "progress": 0.0
-     }
-    }
-   },
-   "iteration": 1,
-   "cluster_id": 0,
-   "started": "2024-07-16T12:56:57.553331+00:00",
-   "stopped": null,
-   "submitted": "2024-07-16T12:56:57.454372+00:00",
-   "url": "http://10.43.103.193:30009/v2/computations/df0b67b6-4372-11ef-a15d-0242ac14000c?user_id=1",
-   "stop_url": "http://10.43.103.193:30009/v2/computations/df0b67b6-4372-11ef-a15d-0242ac14000c:stop?user_id=1"
-  }
- },
- {
-  "name": "GET /projects/df0b67b6-4372-11ef-a15d-0242ac14000c/outputs",
-  "description": "<Request('GET', 'http://webserver:30004/v0/projects/df0b67b6-4372-11ef-a15d-0242ac14000c/outputs')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}/outputs",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "projects"
-    }
-   ]
+    "request_payload": {
+      "name": "studies/e9f34992-436c-11ef-a15d-0242ac14000c/jobs/df0b67b6-4372-11ef-a15d-0242ac14000c"
+    },
+    "status_code": 204
   },
-  "response_body": {
-   "data": {
-    "c784a033-36c7-558b-9cc5-448321de01f8": {
-     "key": "c784a033-36c7-558b-9cc5-448321de01f8",
-     "value": null,
-     "label": "outputfile"
+  {
+    "name": "GET /projects/df0b67b6-4372-11ef-a15d-0242ac14000c/inputs",
+    "description": "<Request('GET', 'http://webserver:30004/v0/projects/df0b67b6-4372-11ef-a15d-0242ac14000c/inputs')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}/inputs",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {}
     }
-   }
+  },
+  {
+    "name": "PATCH /projects/df0b67b6-4372-11ef-a15d-0242ac14000c/nodes/cda9d480-d3ad-55c8-b9ce-c50eb1bab818/outputs",
+    "description": "<Request('PATCH', 'http://webserver:30004/v0/projects/df0b67b6-4372-11ef-a15d-0242ac14000c/nodes/cda9d480-d3ad-55c8-b9ce-c50eb1bab818/outputs')>",
+    "method": "PATCH",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}/nodes/{node_id}/outputs",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str"
+          },
+          "response_value": "projects"
+        },
+        {
+          "in": "path",
+          "name": "node_id",
+          "required": true,
+          "schema": {
+            "title": "Node Id",
+            "type": "str"
+          },
+          "response_value": "nodes"
+        }
+      ]
+    },
+    "request_payload": {
+      "outputs": {
+        "outFile": {
+          "store": 0,
+          "path": "api/c1dcde67-6434-31c3-95ee-bf5fe1e9422d/inputfile",
+          "label": "inputfile",
+          "eTag": null,
+          "dataset": null
+        }
+      }
+    },
+    "status_code": 204
+  },
+  {
+    "name": "POST /computations/df0b67b6-4372-11ef-a15d-0242ac14000c:start",
+    "description": "<Request('POST', 'http://webserver:30004/v0/computations/df0b67b6-4372-11ef-a15d-0242ac14000c:start')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/computations/{project_id}:start",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "computations"
+        }
+      ]
+    },
+    "request_payload": {},
+    "response_body": {
+      "data": {
+        "pipeline_id": "df0b67b6-4372-11ef-a15d-0242ac14000c"
+      }
+    },
+    "status_code": 201
+  },
+  {
+    "name": "GET /v2/computations/df0b67b6-4372-11ef-a15d-0242ac14000c",
+    "description": "<Request('GET', 'http://director-v2:30009/v2/computations/df0b67b6-4372-11ef-a15d-0242ac14000c?user_id=1')>",
+    "method": "GET",
+    "host": "director-v2",
+    "path": {
+      "path": "/v2/computations/{project_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "computations"
+        }
+      ]
+    },
+    "query": "user_id=1",
+    "response_body": {
+      "id": "df0b67b6-4372-11ef-a15d-0242ac14000c",
+      "state": "STARTED",
+      "result": null,
+      "pipeline_details": {
+        "adjacency_list": {
+          "dd875b4f-7663-529f-bd7f-3716b19e28af": []
+        },
+        "progress": 0.0,
+        "node_states": {
+          "dd875b4f-7663-529f-bd7f-3716b19e28af": {
+            "modified": true,
+            "dependencies": [],
+            "currentStatus": "STARTED",
+            "progress": 0.0
+          }
+        }
+      },
+      "iteration": 1,
+      "started": "2024-07-16T12:56:57.553331+00:00",
+      "stopped": null,
+      "submitted": "2024-07-16T12:56:57.454372+00:00",
+      "url": "http://10.43.103.193:30009/v2/computations/df0b67b6-4372-11ef-a15d-0242ac14000c?user_id=1",
+      "stop_url": "http://10.43.103.193:30009/v2/computations/df0b67b6-4372-11ef-a15d-0242ac14000c:stop?user_id=1"
+    }
+  },
+  {
+    "name": "GET /projects/df0b67b6-4372-11ef-a15d-0242ac14000c/outputs",
+    "description": "<Request('GET', 'http://webserver:30004/v0/projects/df0b67b6-4372-11ef-a15d-0242ac14000c/outputs')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}/outputs",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "c784a033-36c7-558b-9cc5-448321de01f8": {
+          "key": "c784a033-36c7-558b-9cc5-448321de01f8",
+          "value": null,
+          "label": "outputfile"
+        }
+      }
+    }
   }
- }
 ]

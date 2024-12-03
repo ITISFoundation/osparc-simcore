@@ -21,7 +21,7 @@ from helpers.shared_comp_utils import (
     assert_computation_task_out_obj,
 )
 from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
-from models_library.clusters import DEFAULT_CLUSTER_ID, InternalClusterAuthentication
+from models_library.clusters import ClusterAuthentication
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
@@ -58,7 +58,7 @@ def mock_env(
     monkeypatch: pytest.MonkeyPatch,
     dynamic_sidecar_docker_image_name: str,
     dask_scheduler_service: str,
-    dask_scheduler_auth: InternalClusterAuthentication,
+    dask_scheduler_auth: ClusterAuthentication,
 ) -> None:
     # used by the client fixture
     setenvs_from_dict(
@@ -463,7 +463,6 @@ async def test_run_partial_computation(
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details,
         iteration=1,
-        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # now wait for the computation to finish
@@ -479,7 +478,6 @@ async def test_run_partial_computation(
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=expected_pipeline_details_after_run,
         iteration=1,
-        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # run it a second time. the tasks are all up-to-date, nothing should be run
@@ -531,7 +529,6 @@ async def test_run_partial_computation(
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details_forced,
         iteration=2,
-        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # now wait for the computation to finish
@@ -572,7 +569,6 @@ async def test_run_computation(
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
-        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # wait for the computation to start
@@ -595,7 +591,6 @@ async def test_run_computation(
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
         iteration=1,
-        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
@@ -642,7 +637,6 @@ async def test_run_computation(
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
         iteration=2,
-        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # wait for the computation to finish
@@ -655,7 +649,6 @@ async def test_run_computation(
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
         iteration=2,
-        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
 
@@ -692,7 +685,6 @@ async def test_abort_computation(
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
-        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # wait until the pipeline is started
@@ -765,7 +757,6 @@ async def test_update_and_delete_computation(
         exp_task_state=RunningState.NOT_STARTED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
-        cluster_id=None,
     )
 
     # update the pipeline
@@ -784,7 +775,6 @@ async def test_update_and_delete_computation(
         exp_task_state=RunningState.NOT_STARTED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
-        cluster_id=None,
     )
 
     # update the pipeline
@@ -803,7 +793,6 @@ async def test_update_and_delete_computation(
         exp_task_state=RunningState.NOT_STARTED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
-        cluster_id=None,
     )
 
     # start it now
@@ -821,7 +810,6 @@ async def test_update_and_delete_computation(
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
-        cluster_id=DEFAULT_CLUSTER_ID,
     )
 
     # wait until the pipeline is started
