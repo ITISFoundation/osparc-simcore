@@ -27,7 +27,6 @@ from ._core_computations import (
 )
 from ._core_dynamic_services import (
     get_project_inactivity,
-    list_dynamic_services,
     request_retrieve_dyn_service,
     restart_dynamic_service,
     retrieve,
@@ -59,7 +58,6 @@ __all__: tuple[str, ...] = (
     "is_healthy",
     "is_pipeline_running",
     "list_clusters",
-    "list_dynamic_services",
     "ping_cluster",
     "ping_specific_cluster",
     "request_retrieve_dyn_service",
