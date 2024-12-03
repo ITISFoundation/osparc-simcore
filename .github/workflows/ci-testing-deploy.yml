@@ -2889,7 +2889,8 @@ jobs:
           uv venv .venv && source .venv/bin/activate
           make openapi-specs
           changed_files=$(git diff --name-only | awk '{$1=$1};1')
-          [ -z "${changed_files}" ] && echo "${changed_files}" && exit 1
+          echo "files which changed: ${changed_files}"
+          [ -z "${changed_files}" ] && exit 1
 
 
   api-spec-backwards-compatible:
