@@ -5695,7 +5695,7 @@ class SwarmInfo(BaseModel):
     ] = ""
     local_node_state: Annotated[
         LocalNodeState | None, Field(alias="LocalNodeState")
-    ] = ""  # type: ignore[dict-item]
+    ] = ""  # type: ignore[assignment]
     control_available: Annotated[
         bool | None, Field(alias="ControlAvailable", examples=[True])
     ] = False
@@ -6724,8 +6724,8 @@ class SystemInfo(BaseModel):
             ],
         ),
     ] = {
-        "runc": {"path": "runc"}
-    }  # type: ignore[dict-item]
+        "runc": {"path": "runc"}  # type: ignore[dict-item]
+    }
     default_runtime: Annotated[
         str | None,
         Field(
