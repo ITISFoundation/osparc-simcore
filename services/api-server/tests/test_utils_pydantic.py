@@ -149,14 +149,14 @@ def test_compare_pydantic_vs_fastapi_schemas(
 ):
 
     # NOTE @all: I cannot understand this?!
-    assert fastapi_schema["properties"] != pydantic_schema["properties"]
+    assert fastapi_schema["properties"] == pydantic_schema["properties"]
 
 
 def test_differences_between_new_pydantic_url_types():
     # SEE https://docs.pydantic.dev/2.10/api/networks/
 
-    # | **URL**                       | **AnyUrl** | **HttpUrl** | **AnyHttpUrl** |
-    # |-------------------------------|------------|-------------|----------------|
+    # | **URL**                       | **AnyUrl**  | **AnyHttpUrl**  | **HttpUrl**  |
+    # |-------------------------------|-------------|--------------|-----------------|
     # | `http://example.com`          | ✅          | ✅           | ✅              |
     # | `https://example.com/resource`| ✅          | ✅           | ✅              |
     # | `ftp://example.com`           | ✅          | ❌           | ❌              |
