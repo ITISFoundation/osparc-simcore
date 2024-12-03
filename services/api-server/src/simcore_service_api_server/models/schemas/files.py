@@ -11,10 +11,10 @@ from models_library.api_schemas_storage import ETag
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import (
-    AnyUrl,
     BaseModel,
     ConfigDict,
     Field,
+    HttpUrl,
     NonNegativeInt,
     StringConstraints,
     TypeAdapter,
@@ -167,9 +167,7 @@ class UploadLinks(BaseModel):
 
 class FileUploadData(BaseModel):
     chunk_size: NonNegativeInt
-    urls: list[
-        Annotated[AnyUrl, StringConstraints(max_length=65536)]
-    ]  # maxlength added for backwards compatibility
+    urls: list[HttpUrl]
     links: UploadLinks
 
 
