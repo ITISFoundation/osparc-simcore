@@ -109,7 +109,7 @@ async def stop_dynamic_services_in_project(
 ) -> None:
     """Stops all dynamic services in the project"""
     running_dynamic_services = await list_dynamic_services(
-        app, user_id=user_id, project_id=project_id
+        app, user_id=user_id, project_id=ProjectID(project_id)
     )
 
     async with AsyncExitStack() as stack:
