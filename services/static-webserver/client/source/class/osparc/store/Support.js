@@ -4,18 +4,15 @@ qx.Class.define("osparc.store.Support", {
 
   statics: {
     getLicenseURL: function() {
-      return new Promise(resolve => {
-        const vendor = osparc.store.VendorInfo.getInstance().getVendor();
-        if (vendor) {
-          if ("license_url" in vendor) {
-            resolve(vendor["license_url"]);
-          } else if ("url" in vendor) {
-            resolve(vendor["url"]);
-          } else {
-            resolve("");
-          }
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      if (vendor) {
+        if ("license_url" in vendor) {
+          return vendor["license_url"];
+        } else if ("url" in vendor) {
+          return vendor["url"];
         }
-      });
+      }
+      return "";
     },
 
     getManuals: function() {

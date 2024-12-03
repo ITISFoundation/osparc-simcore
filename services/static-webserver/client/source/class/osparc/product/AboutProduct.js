@@ -71,47 +71,43 @@ qx.Class.define("osparc.product.AboutProduct", {
     },
 
     __buildS4LLayout: function() {
-      osparc.store.Support.getLicenseURL()
-        .then(licenseUrl => {
-          const text = this.tr(`
-            sim4life.io is a native implementation of the most advanced simulation platform, Sim4Life, in the cloud. \
-            The platform empowers users to simulate, analyze, and predict complex, multifaceted, and dynamic biological interactions within the full anatomical complexity of the human body. \
-            It provides the ability to set up and run complex simulations directly within any browser, utilizing cloud technology.
-            <br><br>
-            sim4life.io makes use of technologies developed by our research partner for the o<sup>2</sup>S<sup>2</sup>PARC platform, the IT’IS Foundation, and co-funded by the U.S. National Institutes of Health’s SPARC initiative.\
-            <br><br>
-            For more information about Sim4Life, please visit ${osparc.utils.Utils.createHTMLLink("sim4life.swiss", "https://sim4life.swiss/")}.
-            <br><br>
-            To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
-            <br><br>
-            Send us an email ${this.__getMailTo()}
-          `);
+      const licenseUrl = osparc.store.Support.getLicenseURL();
+      const text = this.tr(`
+        sim4life.io is a native implementation of the most advanced simulation platform, Sim4Life, in the cloud. \
+        The platform empowers users to simulate, analyze, and predict complex, multifaceted, and dynamic biological interactions within the full anatomical complexity of the human body. \
+        It provides the ability to set up and run complex simulations directly within any browser, utilizing cloud technology.
+        <br><br>
+        sim4life.io makes use of technologies developed by our research partner for the o<sup>2</sup>S<sup>2</sup>PARC platform, the IT’IS Foundation, and co-funded by the U.S. National Institutes of Health’s SPARC initiative.\
+        <br><br>
+        For more information about Sim4Life, please visit ${osparc.utils.Utils.createHTMLLink("sim4life.swiss", "https://sim4life.swiss/")}.
+        <br><br>
+        To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
+        <br><br>
+        Send us an email ${this.__getMailTo()}
+      `);
 
-          const label = osparc.product.quickStart.Utils.createLabel(text);
-          this.add(label);
-        });
+      const label = osparc.product.quickStart.Utils.createLabel(text);
+      this.add(label);
     },
 
     __buildS4LAcademicLayout: function() {
-      osparc.store.Support.getLicenseURL()
-        .then(licenseUrl => {
-          const text = this.tr(`
-            sim4life.science is a native implementation of the most advanced simulation platform, Sim4Life, in the cloud. \
-            The platform empowers users to simulate, analyze, and predict complex, multifaceted, and dynamic biological interactions within the full anatomical complexity of the human body. \
-            It provides the ability to set up and run complex simulations directly within any browser, utilizing cloud technology.
-            <br><br>
-            sim4life.science makes use of technologies developed by our research partner for the o<sup>2</sup>S<sup>2</sup>PARC platform, the IT’IS Foundation, and co-funded by the U.S. National Institutes of Health’s SPARC initiative.\
-            <br><br>
-            For more information about Sim4Life, please visit ${osparc.utils.Utils.createHTMLLink("sim4life.swiss", "href='https://sim4life.swiss/")}.
-            <br><br>
-            To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
-            <br><br>
-            Send us an email ${this.__getMailTo()}
-          `);
+      const licenseUrl = osparc.store.Support.getLicenseURL();
+      const text = this.tr(`
+        sim4life.science is a native implementation of the most advanced simulation platform, Sim4Life, in the cloud. \
+        The platform empowers users to simulate, analyze, and predict complex, multifaceted, and dynamic biological interactions within the full anatomical complexity of the human body. \
+        It provides the ability to set up and run complex simulations directly within any browser, utilizing cloud technology.
+        <br><br>
+        sim4life.science makes use of technologies developed by our research partner for the o<sup>2</sup>S<sup>2</sup>PARC platform, the IT’IS Foundation, and co-funded by the U.S. National Institutes of Health’s SPARC initiative.\
+        <br><br>
+        For more information about Sim4Life, please visit ${osparc.utils.Utils.createHTMLLink("sim4life.swiss", "href='https://sim4life.swiss/")}.
+        <br><br>
+        To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
+        <br><br>
+        Send us an email ${this.__getMailTo()}
+      `);
 
-          const label = osparc.product.quickStart.Utils.createLabel(text);
-          this.add(label);
-        });
+      const label = osparc.product.quickStart.Utils.createLabel(text);
+      this.add(label);
     },
 
     __buildS4LLiteLayout: function() {
@@ -141,28 +137,26 @@ qx.Class.define("osparc.product.AboutProduct", {
     },
 
     __buildTIPLayout: function() {
-      osparc.store.Support.getLicenseURL()
-        .then(licenseUrl => {
-          const text = this.tr(`
-            TIP (TI Planning Tool) is an innovative online platform designed to optimize targeted neurostimulation protocols using \
-            temporal interference (TI) stimulation. Developed by IT'IS Foundation, TIP simplifies the complex process of planning deep \
-            brain stimulation.
-            <br><br>
-            Powered by o<sup>2</sup>S<sup>2</sup>PARC technology, TIP utilizes sophisticated electromagnetic simulations, detailed anatomical head models, \
-            and automated optimization to generate comprehensive reports with quantitative and visual information. This tool is \
-            invaluable for neuroscientists and brain stimulation experts, especially those with limited computational modeling experience, \
-            enabling them to create effective and safe stimulation protocols for their research. \
-            <br><br>
-            For more information about TIP, please visit ${osparc.utils.Utils.createHTMLLink("itis.swiss", "https://itis.swiss/tools-and-systems/ti-planning/overview")}.
-            <br><br>
-            To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
-            <br><br>
-            Send us an email ${this.__getMailTo()}
-          `);
+      const licenseUrl = osparc.store.Support.getLicenseURL();
+      const text = this.tr(`
+        TIP (TI Planning Tool) is an innovative online platform designed to optimize targeted neurostimulation protocols using \
+        temporal interference (TI) stimulation. Developed by IT'IS Foundation, TIP simplifies the complex process of planning deep \
+        brain stimulation.
+        <br><br>
+        Powered by o<sup>2</sup>S<sup>2</sup>PARC technology, TIP utilizes sophisticated electromagnetic simulations, detailed anatomical head models, \
+        and automated optimization to generate comprehensive reports with quantitative and visual information. This tool is \
+        invaluable for neuroscientists and brain stimulation experts, especially those with limited computational modeling experience, \
+        enabling them to create effective and safe stimulation protocols for their research. \
+        <br><br>
+        For more information about TIP, please visit ${osparc.utils.Utils.createHTMLLink("itis.swiss", "https://itis.swiss/tools-and-systems/ti-planning/overview")}.
+        <br><br>
+        To review license agreements, click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)}.
+        <br><br>
+        Send us an email ${this.__getMailTo()}
+      `);
 
-          const label = osparc.product.quickStart.Utils.createLabel(text);
-          this.add(label);
-        });
+      const label = osparc.product.quickStart.Utils.createLabel(text);
+      this.add(label);
     },
 
     __getMailTo: function() {
