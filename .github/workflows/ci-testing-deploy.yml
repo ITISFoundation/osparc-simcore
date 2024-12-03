@@ -2869,7 +2869,7 @@ jobs:
     needs: [changes]
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     timeout-minutes: 10
-    name: Check api-specs are up to date
+    name: check api-specs are up to date
     runs-on: ubuntu-latest
     steps:
       - name: setup python environment
@@ -2888,7 +2888,8 @@ jobs:
         run: |
           uv venv .venv && source .venv/bin/activate
           make openapi-specs
-          changed_files=$(git diff --name-only | tee /dev/tty)
+          changed_files=$(git diff --name-only)
+          echo "${changed_files}"
           if echo ${changed_files} | grep -qE '^(openapi\.json|openapi\.yaml)$'; then
             echo "Run make openapi-specs and commit changes" && exit 1
           fi
