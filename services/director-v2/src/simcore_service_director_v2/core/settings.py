@@ -10,8 +10,7 @@ from common_library.pydantic_validators import validate_numeric_string_as_timede
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.clusters import (
-    DEFAULT_CLUSTER_ID,
-    Cluster,
+    BaseCluster,
     ClusterAuthentication,
     ClusterTypeInModel,
     NoAuthentication,
@@ -105,15 +104,13 @@ class ComputationalBackendSettings(BaseCustomSettings):
     )
 
     @cached_property
-    def default_cluster(self) -> Cluster:
-        return Cluster(
-            id=DEFAULT_CLUSTER_ID,
+    def default_cluster(self) -> BaseCluster:
+        return BaseCluster(
             name="Default cluster",
             endpoint=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
             authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
             owner=1,  # NOTE: currently this is a soft hack (the group of everyone is the group 1)
             type=ClusterTypeInModel.ON_PREMISE,
-            access_rights={},
         )
 
     @field_validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", mode="before")
