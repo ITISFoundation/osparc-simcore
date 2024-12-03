@@ -19,8 +19,9 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
 from servicelib.rabbitmq import RabbitMQClient
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from .modules.db import credit_transactions_db, service_runs_db
 
 _logger = logging.getLogger(__name__)
 
@@ -30,15 +31,16 @@ def make_negative(n):
 
 
 async def sum_credit_transactions_and_publish_to_rabbitmq(
-    resource_tracker_repo: ResourceTrackerRepository,
+    db_engine: AsyncEngine,
     rabbitmq_client: RabbitMQClient,
     product_name: ProductName,
     wallet_id: WalletID,
 ) -> WalletTotalCredits:
     wallet_total_credits = (
-        await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
-            product_name,
-            wallet_id,
+        await credit_transactions_db.sum_credit_transactions_by_product_and_wallet(
+            db_engine,
+            product_name=product_name,
+            wallet_id=wallet_id,
         )
     )
     publish_message = WalletCreditsMessage.model_construct(
@@ -77,7 +79,7 @@ async def _publish_to_rabbitmq_wallet_credits_limit_reached(
 
 
 async def publish_to_rabbitmq_wallet_credits_limit_reached(
-    resource_tracker_repo: ResourceTrackerRepository,
+    db_engine: AsyncEngine,
     rabbitmq_client: RabbitMQClient,
     product_name: ProductName,
     wallet_id: WalletID,
@@ -86,8 +88,9 @@ async def publish_to_rabbitmq_wallet_credits_limit_reached(
 ):
     # Get all current running services for that wallet
     total_count: PositiveInt = (
-        await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(
-            product_name,
+        await service_runs_db.total_service_runs_by_product_and_user_and_wallet(
+            db_engine,
+            product_name=product_name,
             user_id=None,
             wallet_id=wallet_id,
             service_run_status=ServiceRunStatus.RUNNING,
@@ -95,13 +98,16 @@ async def publish_to_rabbitmq_wallet_credits_limit_reached(
     )
 
     for offset in range(0, total_count, _BATCH_SIZE):
-        batch_services = await resource_tracker_repo.list_service_runs_by_product_and_user_and_wallet(
-            product_name,
-            user_id=None,
-            wallet_id=wallet_id,
-            offset=offset,
-            limit=_BATCH_SIZE,
-            service_run_status=ServiceRunStatus.RUNNING,
+        batch_services = (
+            await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
+                db_engine,
+                product_name=product_name,
+                user_id=None,
+                wallet_id=wallet_id,
+                offset=offset,
+                limit=_BATCH_SIZE,
+                service_run_status=ServiceRunStatus.RUNNING,
+            )
         )
 
         await asyncio.gather(
