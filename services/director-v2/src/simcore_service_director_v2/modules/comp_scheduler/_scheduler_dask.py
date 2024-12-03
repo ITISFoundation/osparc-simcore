@@ -1,10 +1,9 @@
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Callable
 
 import arrow
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -28,10 +27,9 @@ from ...core.errors import (
     ComputationalBackendOnDemandNotReadyError,
     TaskSchedulingError,
 )
-from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
+from ...models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...models.dask_subsystem import DaskClientTaskState
-from ...utils.comp_scheduler import Iteration, get_resource_tracking_run_id
 from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
     parse_dask_job_id,
@@ -50,7 +48,8 @@ from ..dask_clients_pool import DaskClientsPool
 from ..db.repositories.clusters import ClustersRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
-from ._base_scheduler import BaseCompScheduler
+from ._scheduler_base import BaseCompScheduler
+from ._utils import get_resource_tracking_run_id
 
 _logger = logging.getLogger(__name__)
 

@@ -37,7 +37,7 @@ class GroupsRepository(BaseRepository):
             raise UninitializedGroupError(
                 group=GroupType.EVERYONE, repo_cls=GroupsRepository
             )
-        return GroupAtDB.from_orm(row)
+        return GroupAtDB.model_validate(row)
 
     async def get_user_gid_from_email(
         self, user_email: LowerCaseEmailStr

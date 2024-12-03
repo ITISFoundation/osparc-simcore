@@ -87,8 +87,9 @@ def minimal_configuration(
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
-    mocked_rabbit_mq_client: None,
     faker: Faker,
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
@@ -589,11 +590,7 @@ async def test_create_computation_with_wallet(
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [
-        PricingPlanGet.model_construct(
-            **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]
-        )
-    ],
+    [PricingPlanGet(**PricingPlanGet.model_config["json_schema_extra"]["examples"][0])],
 )
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_422(
     minimal_configuration: None,
@@ -632,7 +629,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
 @pytest.mark.parametrize(
     "default_pricing_plan",
     [
-        PricingPlanGet.model_construct(
+        PricingPlanGet(
             **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]  # type: ignore
         )
     ],
@@ -789,12 +786,12 @@ async def test_start_computation_with_deprecated_services_raises_406(
 
 
 @pytest.fixture
-def unusable_cluster(
+async def unusable_cluster(
     registered_user: Callable[..., dict[str, Any]],
-    cluster: Callable[..., Cluster],
+    create_cluster: Callable[..., Awaitable[Cluster]],
 ) -> ClusterID:
     user = registered_user()
-    created_cluster = cluster(user)
+    created_cluster = await create_cluster(user)
     return created_cluster.id
 
 
@@ -865,7 +862,7 @@ async def test_get_computation_from_empty_project(
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     faker: Faker,
     async_client: httpx.AsyncClient,
 ):
@@ -884,8 +881,8 @@ async def test_get_computation_from_empty_project(
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     # create an empty pipeline
-    pipeline(
-        project_id=proj.uuid,
+    await create_pipeline(
+        project_id=f"{proj.uuid}",
     )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
@@ -917,8 +914,8 @@ async def test_get_computation_from_not_started_computation_task(
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
@@ -926,8 +923,8 @@ async def test_get_computation_from_not_started_computation_task(
     get_computation_url = httpx.URL(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"
     )
-    pipeline(
-        project_id=proj.uuid,
+    await create_pipeline(
+        project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
     # create no task this should trigger an exception
@@ -935,7 +932,7 @@ async def test_get_computation_from_not_started_computation_task(
     assert response.status_code == status.HTTP_409_CONFLICT, response.text
 
     # now create the expected tasks and the state is good again
-    comp_tasks = tasks(user=user, project=proj)
+    comp_tasks = await create_tasks(user=user, project=proj)
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
     returned_computation = ComputationGet.model_validate(response.json())
@@ -989,19 +986,23 @@ async def test_get_computation_from_published_computation_task(
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
-    runs: Callable[..., CompRunsAtDB],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
     proj = await project(user, workbench=fake_workbench_without_outputs)
-    pipeline(
-        project_id=proj.uuid,
+    await create_pipeline(
+        project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = tasks(user=user, project=proj, state=StateType.PUBLISHED, progress=0)
-    comp_runs = runs(user=user, project=proj, result=StateType.PUBLISHED)
+    comp_tasks = await create_tasks(
+        user=user, project=proj, state=StateType.PUBLISHED, progress=0
+    )
+    comp_runs = await create_comp_run(
+        user=user, project=proj, result=StateType.PUBLISHED
+    )
     assert comp_runs
     get_computation_url = httpx.URL(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"

@@ -34,7 +34,7 @@ NodeID = UUID
 
 UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
 
-NodeIDStr = UUIDStr
+NodeIDStr: TypeAlias = UUIDStr
 
 LocationID = int
 LocationName = str

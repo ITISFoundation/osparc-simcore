@@ -103,6 +103,11 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.cluster.Utils.popUpClustersDetails(), this);
           this.add(control);
           break;
+        case "market":
+          control = new qx.ui.menu.Button(this.tr("Market"));
+          control.addListener("execute", () => osparc.vipMarket.MarketWindow.openWindow());
+          this.add(control);
+          break;
         case "about":
           control = new qx.ui.menu.Button(this.tr("About oSPARC"));
           osparc.utils.Utils.setIdToWidget(control, "userMenuAboutBtn");
@@ -178,6 +183,11 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.addSeparator();
 
       this.__addAnnouncements();
+
+      if (osparc.product.Utils.showS4LStore()) {
+        this.getChildControl("market");
+      }
+
       this.getChildControl("about");
       if (osparc.product.Utils.showAboutProduct()) {
         this.getChildControl("about-product");
@@ -241,6 +251,11 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.addSeparator();
 
       this.__addAnnouncements();
+      
+      if (osparc.product.Utils.showS4LStore()) {
+        this.getChildControl("market");
+      }
+
       this.getChildControl("about");
       if (!osparc.product.Utils.isProduct("osparc")) {
         this.getChildControl("about-product");
