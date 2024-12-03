@@ -210,6 +210,9 @@ async def delete_study_job(
     },
     description=FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
         "0.6.0", "Now responds with a 202 when successfully starting a computation"
+    )
+    + FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
+        "0.8", "query parameter `cluster_id` deprecated"
     ),
 )
 async def start_study_job(
@@ -219,7 +222,7 @@ async def start_study_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-    cluster_id: ClusterID | None = None,
+    cluster_id: Annotated[ClusterID | None, Query(deprecated=True)] = None,
 ):
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):
@@ -229,7 +232,6 @@ async def start_study_job(
                 job_id=job_id,
                 expected_job_name=job_name,
                 webserver_api=webserver_api,
-                cluster_id=cluster_id,
             )
         except ProjectAlreadyStartedError:
             job_status: JobStatus = await inspect_study_job(
