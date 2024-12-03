@@ -1,16 +1,8 @@
 from enum import auto
 from pathlib import Path
-from typing import Annotated, Final, Literal, Self, TypeAlias
+from typing import Literal, TypeAlias
 
-from pydantic import (
-    AnyUrl,
-    BaseModel,
-    ConfigDict,
-    Field,
-    HttpUrl,
-    field_validator,
-    model_validator,
-)
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from pydantic.types import NonNegativeInt
 
 from .users import GroupID
@@ -26,33 +18,19 @@ class ClusterTypeInModel(StrAutoEnum):
     ON_DEMAND = auto()
 
 
-class ClusterAccessRights(BaseModel):
-    read: bool = Field(..., description="allows to run pipelines on that cluster")
-    write: bool = Field(..., description="allows to modify the cluster")
-    delete: bool = Field(..., description="allows to delete a cluster")
-
-    model_config = ConfigDict(extra="forbid")
-
-
-CLUSTER_ADMIN_RIGHTS = ClusterAccessRights(read=True, write=True, delete=True)
-CLUSTER_MANAGER_RIGHTS = ClusterAccessRights(read=True, write=True, delete=False)
-CLUSTER_USER_RIGHTS = ClusterAccessRights(read=True, write=False, delete=False)
-CLUSTER_NO_RIGHTS = ClusterAccessRights(read=False, write=False, delete=False)
-
-
-class BaseAuthentication(BaseModel):
+class _AuthenticationBase(BaseModel):
     type: str
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
 
-class NoAuthentication(BaseAuthentication):
+class NoAuthentication(_AuthenticationBase):
     type: Literal["none"] = "none"
 
     model_config = ConfigDict(json_schema_extra={"examples": [{"type": "none"}]})
 
 
-class TLSAuthentication(BaseAuthentication):
+class TLSAuthentication(_AuthenticationBase):
     type: Literal["tls"] = "tls"
     tls_ca_file: Path
     tls_client_cert: Path
@@ -77,7 +55,6 @@ ClusterAuthentication: TypeAlias = NoAuthentication | TLSAuthentication
 
 class BaseCluster(BaseModel):
     name: str = Field(..., description="The human readable name of the cluster")
-    description: str | None = None
     type: ClusterTypeInModel
     owner: GroupID
     thumbnail: HttpUrl | None = Field(
@@ -90,30 +67,15 @@ class BaseCluster(BaseModel):
     authentication: ClusterAuthentication = Field(
         ..., description="Dask gateway authentication", discriminator="type"
     )
-    access_rights: Annotated[
-        dict[GroupID, ClusterAccessRights], Field(default_factory=dict)
-    ]
-
     _from_equivalent_enums = field_validator("type", mode="before")(
         create_enums_pre_validator(ClusterTypeInModel)
     )
 
-    model_config = ConfigDict(extra="forbid", use_enum_values=True)
-
-
-ClusterID: TypeAlias = NonNegativeInt
-DEFAULT_CLUSTER_ID: Final[ClusterID] = 0
-
-
-class Cluster(BaseCluster):
-    id: ClusterID = Field(..., description="The cluster ID")
-
     model_config = ConfigDict(
-        extra="allow",
+        use_enum_values=True,
         json_schema_extra={
             "examples": [
                 {
-                    "id": DEFAULT_CLUSTER_ID,
                     "name": "My awesome cluster",
                     "type": ClusterTypeInModel.ON_PREMISE,
                     "owner": 12,
@@ -126,9 +88,7 @@ class Cluster(BaseCluster):
                     },
                 },
                 {
-                    "id": DEFAULT_CLUSTER_ID,
                     "name": "My AWS cluster",
-                    "description": "a AWS cluster administered by me",
                     "type": ClusterTypeInModel.AWS,
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
@@ -138,33 +98,10 @@ class Cluster(BaseCluster):
                         "tls_client_cert": "/path/to/cert_file",
                         "tls_client_key": "/path/to/key_file",
                     },
-                    "access_rights": {
-                        154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
-                        12: CLUSTER_MANAGER_RIGHTS,  # type: ignore[dict-item]
-                        7899: CLUSTER_USER_RIGHTS,  # type: ignore[dict-item]
-                    },
                 },
             ]
         },
     )
 
-    @model_validator(mode="after")
-    def check_owner_has_access_rights(self: Self) -> Self:
-        is_default_cluster = bool(self.id == DEFAULT_CLUSTER_ID)
-        owner_gid = self.owner
 
-        # check owner is in the access rights, if not add it
-        access_rights = self.access_rights.copy()
-        if owner_gid not in access_rights:
-            access_rights[owner_gid] = (
-                CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
-            )
-        # check owner has the expected access
-        if access_rights[owner_gid] != (
-            CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
-        ):
-            msg = f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
-            raise ValueError(msg)
-        # NOTE: overcomes frozen configuration (far fetched in ClusterGet model of webserver)
-        object.__setattr__(self, "access_rights", access_rights)
-        return self
+ClusterID: TypeAlias = NonNegativeInt
