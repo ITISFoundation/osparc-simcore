@@ -5,7 +5,6 @@ from typing import Any, Final
 import arrow
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
-from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
@@ -43,10 +42,6 @@ _POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[
         ("clusters", "cluster_id"),
     ),
 }
-_DEFAULT_FK_CONSTRAINT_TO_ERROR: Final[tuple[type[DirectorError], tuple]] = (
-    DirectorError,
-    (),
-)
 
 
 class CompRunsRepository(BaseRepository):
@@ -154,7 +149,6 @@ class CompRunsRepository(BaseRepository):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        cluster_id: ClusterID,
         iteration: PositiveInt | None = None,
         metadata: RunMetadataDict,
         use_on_demand_clusters: bool,
@@ -178,9 +172,7 @@ class CompRunsRepository(BaseRepository):
                     .values(
                         user_id=user_id,
                         project_uuid=f"{project_id}",
-                        cluster_id=(
-                            cluster_id if cluster_id != DEFAULT_CLUSTER_ID else None
-                        ),
+                        cluster_id=None,
                         iteration=iteration,
                         result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                         started=datetime.datetime.now(tz=datetime.UTC),

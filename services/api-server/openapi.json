@@ -2598,7 +2598,7 @@
           "solvers"
         ],
         "summary": "Start Job",
-        "description": "Starts job job_id created with the solver solver_key:version\n\nAdded in *version 0.4.3*: query parameter `cluster_id`\nAdded in *version 0.6*: responds with a 202 when successfully starting a computation",
+        "description": "Starts job job_id created with the solver solver_key:version\n\nAdded in *version 0.4.3*: query parameter `cluster_id`\nAdded in *version 0.6*: responds with a 202 when successfully starting a computation\nChanged in *version 0.8*: query parameter `cluster_id` deprecated",
         "operationId": "start_job",
         "security": [
           {
@@ -2651,7 +2651,8 @@
                 }
               ],
               "title": "Cluster Id"
-            }
+            },
+            "deprecated": true
           }
         ],
         "responses": {
@@ -4585,7 +4586,7 @@
           "studies"
         ],
         "summary": "Start Study Job",
-        "description": "Changed in *version 0.6.0*: Now responds with a 202 when successfully starting a computation",
+        "description": "Changed in *version 0.6.0*: Now responds with a 202 when successfully starting a computation\nChanged in *version 0.8*: query parameter `cluster_id` deprecated",
         "operationId": "start_study_job",
         "security": [
           {
@@ -4628,7 +4629,8 @@
                 }
               ],
               "title": "Cluster Id"
-            }
+            },
+            "deprecated": true
           }
         ],
         "responses": {
@@ -7094,7 +7096,9 @@
         "required": [
           "walletId",
           "name",
+          "description",
           "owner",
+          "thumbnail",
           "status",
           "created",
           "modified",

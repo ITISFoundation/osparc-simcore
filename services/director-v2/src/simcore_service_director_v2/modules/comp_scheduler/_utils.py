@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
@@ -13,10 +13,10 @@ from models_library.services_resources import (
 from models_library.users import UserID
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
-from simcore_service_director_v2.modules.redis import get_redis_client_manager
 
 from ...models.comp_runs import Iteration
 from ...models.comp_tasks import CompTaskAtDB
+from ..redis import get_redis_client_manager
 
 SCHEDULED_STATES: set[RunningState] = {
     RunningState.PUBLISHED,
