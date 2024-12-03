@@ -587,7 +587,9 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
     project = await user_project_with_num_dynamic_services(num_of_dyn_services)
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(num_of_dyn_services):
-        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
+        mocked_director_v2_api[
+            "dynamic_scheduler.api.list_dynamic_services"
+        ].return_value = [
             {"service_uuid": all_service_uuids[service_id]}
             for service_id in range(num_service_already_running)
         ]
@@ -817,10 +819,12 @@ async def test_close_project(
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
         )
-        mocked_director_v2_api["director_v2.api.list_dynamic_services"].assert_any_call(
-            client.app, user_id, user_project["uuid"]
-        )
-        mocked_director_v2_api["director_v2.api.list_dynamic_services"].reset_mock()
+        mocked_director_v2_api[
+            "dynamic_scheduler.api.list_dynamic_services"
+        ].assert_any_call(client.app, user_id, user_project["uuid"])
+        mocked_director_v2_api[
+            "dynamic_scheduler.api.list_dynamic_services"
+        ].reset_mock()
     else:
         mocked_notifications_plugin["subscribe"].assert_not_called()
 
