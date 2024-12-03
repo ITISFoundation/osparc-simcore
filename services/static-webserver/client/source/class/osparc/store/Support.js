@@ -4,18 +4,15 @@ qx.Class.define("osparc.store.Support", {
 
   statics: {
     getLicenseURL: function() {
-      return new Promise(resolve => {
-        const vendor = osparc.store.VendorInfo.getInstance().getVendor();
-        if (vendor) {
-          if ("license_url" in vendor) {
-            resolve(vendor["license_url"]);
-          } else if ("url" in vendor) {
-            resolve(vendor["url"]);
-          } else {
-            resolve("");
-          }
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      if (vendor) {
+        if ("license_url" in vendor) {
+          return vendor["license_url"];
+        } else if ("url" in vendor) {
+          return vendor["url"];
         }
-      });
+      }
+      return "";
     },
 
     getManuals: function() {
@@ -135,9 +132,12 @@ qx.Class.define("osparc.store.Support", {
       });
     },
 
-    mailToText: function(email, subject) {
+    mailToText: function(email, subject, centered = true) {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
-      const textLink = `<center><a href="mailto:${email}?subject=${subject}" style='color: ${color}' target='_blank'>${email}</a>&nbsp&nbsp<center>`;
+      let textLink = `<a href="mailto:${email}?subject=${subject}" style='color: ${color}' target='_blank'>${email}</a>&nbsp&nbsp`;
+      if (centered) {
+        textLink = `<center>${textLink}</center>`
+      }
       return textLink;
     },
 
