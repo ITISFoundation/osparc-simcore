@@ -5,7 +5,9 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
@@ -20,14 +22,21 @@ router = RPCRouter()
 
 
 @router.expose()
+async def list_tracked_dynamic_services(
+    app: FastAPI, *, user_id: UserID | None = None, project_id: ProjectID | None = None
+) -> list[DynamicServiceGet]:
+    director_v2_client = DirectorV2Client.get_from_app_state(app)
+    return await director_v2_client.list_tracked_dynamic_services(
+        user_id=user_id, project_id=project_id
+    )
+
+
+@router.expose()
 async def get_service_status(
     app: FastAPI, *, node_id: NodeID
 ) -> NodeGet | DynamicServiceGet | NodeGetIdle:
     director_v2_client = DirectorV2Client.get_from_app_state(app)
-    response: NodeGet | DynamicServiceGet | NodeGetIdle = (
-        await director_v2_client.get_status(node_id)
-    )
-    return response
+    return await director_v2_client.get_status(node_id)
 
 
 @router.expose()
