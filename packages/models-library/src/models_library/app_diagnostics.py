@@ -1,9 +1,7 @@
 from typing import Annotated, Any
 
-from common_library.basic_types import Undefined
+from common_library.basic_types import UNSET
 from pydantic import AnyUrl, BaseModel, Field
-
-_Unset: Any = Undefined
 
 
 class AppStatusCheck(BaseModel):
@@ -16,7 +14,7 @@ class AppStatusCheck(BaseModel):
             description="Other backend services connected from this service",
             json_schema_extra={"default": {}},
         ),
-    ] = _Unset
+    ] = UNSET
 
     sessions: Annotated[
         dict[str, Any] | None,
@@ -25,7 +23,7 @@ class AppStatusCheck(BaseModel):
             description="Client sessions info. If single session per app, then is denoted as main",
             json_schema_extra={"default": {}},
         ),
-    ] = _Unset
+    ] = UNSET
 
     url: AnyUrl | None = Field(
         default=None,

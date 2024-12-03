@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
-from common_library.basic_types import Undefined
+from common_library.basic_types import UNSET
 from models_library.basic_types import ConstrainedStr
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
@@ -24,9 +24,6 @@ from .utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
 )
-
-_Unset: Any = Undefined
-
 
 ProjectID: TypeAlias = UUID
 ClassifierID: TypeAlias = str
@@ -155,7 +152,7 @@ class Project(BaseProjectModel):
             description="Contains the reference to the project classifiers",
             examples=["some:id:to:a:classifier"],
         ),
-    ] = _Unset
+    ] = UNSET
 
     # Project state (SEE projects_state.py)
     state: ProjectState | None = None
