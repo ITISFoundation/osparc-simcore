@@ -22,7 +22,7 @@
 qx.Class.define("osparc.file.FolderViewer", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(allowMultiselection = true) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -32,7 +32,10 @@ qx.Class.define("osparc.file.FolderViewer", {
     const folderUpBtn = this.getChildControl("folder-up");
     folderUpBtn.addListener("execute", () => this.fireDataEvent("folderUp", this.getFolder()), this);
     this.getChildControl("folder-path");
-    const multiSelectButton = this.getChildControl("multi-select-button");
+    let multiSelectButton = null;
+    if (allowMultiselection) {
+      multiSelectButton = this.getChildControl("multi-select-button");
+    }
     const iconsButton = this.getChildControl("view-options-icons");
     const listButton = this.getChildControl("view-options-list");
     const folderContent = this.getChildControl("folder-content");
@@ -47,7 +50,9 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     this.bind("folder", folderContent, "folder");
 
-    multiSelectButton.addListener("changeValue", e => folderContent.setMultiSelect(e.getData()));
+    if (allowMultiselection) {
+      multiSelectButton.addListener("changeValue", e => folderContent.setMultiSelect(e.getData()));
+    }
     iconsButton.addListener("execute", () => folderContent.setMode("icons"));
     listButton.addListener("execute", () => folderContent.setMode("list"));
 

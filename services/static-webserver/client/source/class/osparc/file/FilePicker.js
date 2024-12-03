@@ -545,7 +545,8 @@ qx.Class.define("osparc.file.FilePicker", {
         flex: 1
       });
       treeFolderLayout.add(treeLayout, 0);
-      const folderViewer = new osparc.file.FolderViewer();
+      const allowMultiselection = false;
+      const folderViewer = new osparc.file.FolderViewer(allowMultiselection);
       treeFolderLayout.add(folderViewer, 1);
 
       filesTree.addListener("selectionChanged", () => {
