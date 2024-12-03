@@ -99,9 +99,8 @@ def _get_dynamic_service_get_legacy_with(
     _add_to_dict(
         dict_data,
         [
-            ("state", state),
-            ("uuid", f"{node_id}"),
-            ("node_uuid", f"{node_id}"),
+            ("service_state", state),
+            ("service_uuid", f"{node_id}"),
         ],
     )
     return TypeAdapter(DynamicServiceGet).validate_python(dict_data)
@@ -116,9 +115,8 @@ def _get_dynamic_service_get_new_style_with(
     _add_to_dict(
         dict_data,
         [
-            ("state", state),
-            ("uuid", f"{node_id}"),
-            ("node_uuid", f"{node_id}"),
+            ("service_state", state),
+            ("service_uuid", f"{node_id}"),
         ],
     )
     return TypeAdapter(DynamicServiceGet).validate_python(dict_data)
