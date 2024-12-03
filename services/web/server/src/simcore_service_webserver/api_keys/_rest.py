@@ -14,6 +14,7 @@ from simcore_postgres_database.errors import DatabaseError
 from simcore_service_webserver.api_keys._exceptions_handlers import (
     handle_plugin_requests_exceptions,
 )
+from simcore_service_webserver.api_keys._models import ApiKey
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -53,13 +54,13 @@ async def list_api_keys(request: web.Request):
 async def api_key_get(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ApiKeysPathParams, request)
-    key = await _api.get_api_key(
+    api_key: ApiKey = await _api.get_api_key(
         request.app,
         api_key_id=path_params.api_key_id,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
     )
-    return envelope_json_response(key)
+    return envelope_json_response(ApiKeyGet.model_validate(api_key))
 
 
 @routes.post(f"/{API_VTAG}/auth/api-keys", name="create_api_key")
@@ -70,7 +71,7 @@ async def create_api_key(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     new_api_key = await parse_request_body_as(ApiKeyCreate, request)
     try:
-        created_api_key = await _api.create_api_key(
+        created_api_key: ApiKey = await _api.create_api_key(
             request.app,
             display_name=new_api_key.display_name,
             expiration=new_api_key.expiration,

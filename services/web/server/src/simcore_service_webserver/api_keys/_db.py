@@ -3,7 +3,6 @@ from datetime import timedelta
 
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.models.api_keys import api_keys
@@ -78,7 +77,7 @@ async def get(
     api_key_id: int,
     user_id: UserID,
     product_name: ProductName,
-) -> ApiKeyInDB | None:
+) -> ApiKey | None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         stmt = sa.select(api_keys).where(
             (api_keys.c.user_id == user_id)
@@ -88,7 +87,18 @@ async def get(
 
         result = await conn.stream(stmt)
         row = await result.first()
-        return ApiKeyInDB.model_validate(row) if row else None
+
+        return (
+            ApiKey(
+                id=row.id,
+                display_name=row.display_name,
+                expiration=row.expires_at,
+                api_key=row.api_key,
+                api_secret=row.api_secret,
+            )
+            if row
+            else None
+        )
 
 
 async def get_or_create(
@@ -101,7 +111,7 @@ async def get_or_create(
     expiration: timedelta | None,
     api_key: str,
     api_secret: str,
-) -> ApiKeyInDB:
+) -> ApiKey:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         # Implemented as "create or get"
         insert_stmt = (
@@ -127,21 +137,28 @@ async def get_or_create(
         result = await conn.stream(insert_stmt)
         row = await result.first()
         assert row  # nosec
-        return ApiKeyInDB.model_validate(row)
+
+        return ApiKey(
+            id=row.id,
+            display_name=row.display_name,
+            expiration=row.expiration,
+            api_key=row.api_key,
+            api_secret=row.api_secret,
+        )
 
 
 async def delete(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    api_key_id: int,
     user_id: UserID,
     product_name: ProductName,
+    api_key_id: int,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         stmt = api_keys.delete().where(
-            (api_keys.c.user_id == user_id)
-            & (api_keys.c.id == api_key_id)
+            (api_keys.c.id == api_key_id)
+            & (api_keys.c.user_id == user_id)
             & (api_keys.c.product_name == product_name)
         )
         await conn.execute(stmt)
