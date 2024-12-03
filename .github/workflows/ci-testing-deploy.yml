@@ -2889,8 +2889,7 @@ jobs:
           uv venv .venv && source .venv/bin/activate
           make openapi-specs
           changed_files=$(git diff --name-only | awk '{$1=$1};1')
-          echo -e "Run 'make openapi-specs' to update the following specs: \n${changed_files}"
-          [[ -z "${changed_files}" ]] && exit 1
+          [[ -n "${changed_files}" ]] && echo -e "Run 'make openapi-specs' to update the following specs: \n${changed_files}" && exit 1
 
 
   api-spec-backwards-compatible:
