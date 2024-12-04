@@ -29,10 +29,7 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
-from models_library.api_schemas_webserver.wallets import (
-    WalletGet,
-    WalletGetWithAvailableCredits,
-)
+from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -77,7 +74,10 @@ from ..exceptions.service_errors_utils import (
 )
 from ..models.basic_types import VersionStr
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-from ..models.schemas.backwards_compatibility import PricingUnitGet
+from ..models.schemas.backwards_compatibility import (
+    PricingUnitGet,
+    WalletGetWithAvailableCredits,
+)
 from ..models.schemas.jobs import MetaValueType
 from ..models.schemas.profiles import Profile, ProfileUpdate
 from ..models.schemas.solvers import SolverKeyId

@@ -10,12 +10,14 @@ import httpx
 import pytest
 from fastapi import status
 from httpx import AsyncClient
-from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
 )
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.models.schemas.backwards_compatibility import (
+    WalletGetWithAvailableCredits,
+)
 
 
 @pytest.mark.parametrize(

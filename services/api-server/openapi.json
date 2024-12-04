@@ -7052,7 +7052,8 @@
             "title": "Modified"
           },
           "availableCredits": {
-            "type": "string",
+            "type": "number",
+            "minimum": 0.0,
             "title": "Availablecredits"
           }
         },
