@@ -21,6 +21,7 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.api_keys._models import ApiKey
 from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
 from simcore_service_webserver.application_settings import ApplicationSettings
 
@@ -59,15 +60,16 @@ def user_role() -> UserRole:
 
 
 @pytest.fixture
-async def fake_user_api_ids(
+async def fake_user_api_keys(
     user_role: UserRole,
     web_server: TestServer,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     faker: Faker,
-) -> AsyncIterable[list[int]]:
+) -> AsyncIterable[list[ApiKey]]:
     assert web_server.app
-    api_key_ids: list[int] = [
+
+    api_keys: list[ApiKey] = [
         await db.create(
             web_server.app,
             user_id=logged_user["id"],
@@ -80,12 +82,12 @@ async def fake_user_api_ids(
         for _ in range(5)
     ]
 
-    yield api_key_ids
+    yield api_keys
 
-    for api_key_id in api_key_ids:
+    for api_key in api_keys:
         await db.delete(
             web_server.app,
-            api_key_id=api_key_id,
+            api_key_id=api_key.id,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
@@ -99,21 +101,21 @@ async def rpc_client(
     return await rabbitmq_rpc_client("client")
 
 
-async def test_api_key_get(
-    fake_user_api_ids: list[int],
+async def test_get_api_key(
+    fake_user_api_keys: list[ApiKey],
     rpc_client: RabbitMQRPCClient,
     osparc_product_name: ProductName,
     logged_user: UserInfoDict,
 ):
-    for api_key_id in fake_user_api_ids:
+    for api_key in fake_user_api_keys:
         result = await rpc_client.request(
             WEBSERVER_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("api_key_get"),
+            TypeAdapter(RPCMethodName).validate_python("get_api_key"),
             product_name=osparc_product_name,
             user_id=logged_user["id"],
-            api_key_id=api_key_id,
+            api_key_id=api_key.id,
         )
-        assert result.id_ == api_key_id
+        assert result.id == api_key.id
 
 
 async def test_api_keys_workflow(
@@ -128,20 +130,20 @@ async def test_api_keys_workflow(
     # creating a key
     created_api_key = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("create_api_keys"),
+        TypeAdapter(RPCMethodName).validate_python("create_api_key"),
         product_name=osparc_product_name,
         user_id=logged_user["id"],
-        new=ApiKeyCreate(display_name=key_name, expiration=None),
+        api_key=ApiKeyCreate(display_name=key_name, expiration=None),
     )
     assert created_api_key.display_name == key_name
 
     # query the key is still present
     queried_api_key = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("api_key_get"),
+        TypeAdapter(RPCMethodName).validate_python("get_api_key"),
         product_name=osparc_product_name,
         user_id=logged_user["id"],
-        api_key_id=created_api_key.id_,
+        api_key_id=created_api_key.id,
     )
     assert queried_api_key.display_name == key_name
 
@@ -150,10 +152,10 @@ async def test_api_keys_workflow(
     # remove the key
     delete_key_result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("delete_api_keys"),
+        TypeAdapter(RPCMethodName).validate_python("delete_api_key"),
         product_name=osparc_product_name,
         user_id=logged_user["id"],
-        api_key_id=created_api_key.id_,
+        api_key_id=created_api_key.id,
     )
     assert delete_key_result is None
 
@@ -161,8 +163,8 @@ async def test_api_keys_workflow(
         # key no longer present
         await rpc_client.request(
             WEBSERVER_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("api_key_get"),
+            TypeAdapter(RPCMethodName).validate_python("get_api_key"),
             product_name=osparc_product_name,
             user_id=logged_user["id"],
-            api_key_id=created_api_key.id_,
+            api_key_id=created_api_key.id,
         )

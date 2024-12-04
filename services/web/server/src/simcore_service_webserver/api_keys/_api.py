@@ -42,10 +42,10 @@ def _generate_api_key_and_secret(name: str):
 async def create_api_key(
     app: web.Application,
     *,
-    display_name=str,
-    expiration=dt.timedelta,
     user_id: UserID,
     product_name: ProductName,
+    display_name=str,
+    expiration=dt.timedelta,
 ) -> ApiKey:
     # generate key and secret
     api_key, api_secret = _generate_api_key_and_secret(display_name)
@@ -80,19 +80,19 @@ async def get_api_key(
 async def get_or_create_api_key(
     app: web.Application,
     *,
-    name: str,
     user_id: UserID,
     product_name: ProductName,
+    display_name: str,
     expiration: dt.timedelta | None = None,
 ) -> ApiKey:
 
-    api_key, api_secret = _generate_api_key_and_secret(name)
+    api_key, api_secret = _generate_api_key_and_secret(display_name)
 
     return await _db.get_or_create(
         app,
         user_id=user_id,
         product_name=product_name,
-        display_name=name,
+        display_name=display_name,
         expiration=expiration,
         api_key=api_key,
         api_secret=api_secret,
@@ -107,7 +107,10 @@ async def delete_api_key(
     product_name: ProductName,
 ) -> None:
     await _db.delete(
-        app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
+        app,
+        api_key_id=api_key_id,
+        user_id=user_id,
+        product_name=product_name,
     )
 
 

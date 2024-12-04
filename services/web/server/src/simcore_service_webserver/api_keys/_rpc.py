@@ -15,59 +15,69 @@ router = RPCRouter()
 
 
 @router.expose()
-async def create_api_keys(
+async def create_api_key(
     app: web.Application,
     *,
-    product_name: ProductName,
     user_id: UserID,
-    new: ApiKeyCreate,
+    product_name: ProductName,
+    api_key: ApiKeyCreate,
 ) -> ApiKeyGet:
     return await _api.create_api_key(
-        app, new=new, user_id=user_id, product_name=product_name
-    )
-
-
-@router.expose()
-async def delete_api_keys(
-    app: web.Application,
-    *,
-    product_name: ProductName,
-    user_id: UserID,
-    api_key_id: int,
-) -> None:
-    await _api.delete_api_key(
-        app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        display_name=api_key.display_name,
+        expiration=api_key.expiration,
     )
 
 
 @router.expose(reraise_if_error_type=(ApiKeyNotFoundError,))
-async def api_key_get(
+async def get_api_key(
     app: web.Application,
     *,
-    product_name: ProductName,
     user_id: UserID,
+    product_name: ProductName,
     api_key_id: int,
 ) -> ApiKeyGet | None:
     return await _api.get_api_key(
-        app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        api_key_id=api_key_id,
     )
 
 
 @router.expose()
-async def get_or_create_api_keys(
+async def get_or_create_api_key(
     app: web.Application,
     *,
-    product_name: ProductName,
     user_id: UserID,
-    name: str,
+    product_name: ProductName,
+    display_name: str,
     expiration: timedelta | None = None,
 ) -> ApiKeyGet:
     return await _api.get_or_create_api_key(
         app,
-        name=name,
         user_id=user_id,
         product_name=product_name,
+        display_name=display_name,
         expiration=expiration,
+    )
+
+
+@router.expose()
+async def delete_api_key(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    api_key_id: int,
+) -> None:
+    await _api.delete_api_key(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        api_key_id=api_key_id,
     )
 
 

@@ -91,7 +91,7 @@ async def test_list_api_keys(
     "user_role,expected",
     _get_user_access_parametrizations(status.HTTP_200_OK),
 )
-async def test_create_api_keys(
+async def test_create_api_key(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
@@ -184,9 +184,9 @@ async def test_get_or_create_api_key(
         assert client.app
 
         options = {
-            "name": "foo",
             "user_id": user["id"],
             "product_name": "osparc",
+            "display_name": "foo",
         }
 
         # create once

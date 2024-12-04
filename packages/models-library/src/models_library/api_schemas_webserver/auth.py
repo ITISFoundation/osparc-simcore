@@ -78,7 +78,7 @@ class ApiKeyCreate(BaseModel):
 
 
 class ApiKeyGet(BaseModel):
-    id_: Annotated[int, Field(alias="id")]
+    id: int
     display_name: Annotated[str, Field(..., min_length=3)]
     api_base_url: HttpUrl | None = None
     api_key: str
