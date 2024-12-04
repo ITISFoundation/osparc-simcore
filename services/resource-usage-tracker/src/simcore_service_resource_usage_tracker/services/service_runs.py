@@ -19,9 +19,10 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import AnyUrl, PositiveInt, TypeAdapter
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..models.service_runs import ServiceRunWithCreditsDB
-from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from .modules.db import service_runs_db
 
 _PRESIGNED_LINK_EXPIRATION_SEC = 7200
 
@@ -29,7 +30,7 @@ _PRESIGNED_LINK_EXPIRATION_SEC = 7200
 async def list_service_runs(
     user_id: UserID,
     product_name: ProductName,
-    resource_tracker_repo: ResourceTrackerRepository,
+    db_engine: AsyncEngine,
     limit: int = 20,
     offset: int = 0,
     wallet_id: WalletID | None = None,
@@ -45,17 +46,21 @@ async def list_service_runs(
 
     # Situation when we want to see all usage of a specific user (ex. for Non billable product)
     if wallet_id is None and access_all_wallet_usage is False:
-        total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(
-            product_name,
-            user_id=user_id,
-            wallet_id=None,
-            started_from=started_from,
-            started_until=started_until,
+        total_service_runs: PositiveInt = (
+            await service_runs_db.total_service_runs_by_product_and_user_and_wallet(
+                db_engine,
+                product_name=product_name,
+                user_id=user_id,
+                wallet_id=None,
+                started_from=started_from,
+                started_until=started_until,
+            )
         )
         service_runs_db_model: list[
             ServiceRunWithCreditsDB
-        ] = await resource_tracker_repo.list_service_runs_by_product_and_user_and_wallet(
-            product_name,
+        ] = await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
+            db_engine,
+            product_name=product_name,
             user_id=user_id,
             wallet_id=None,
             offset=offset,
@@ -66,8 +71,9 @@ async def list_service_runs(
         )
     # Situation when accountant user can see all users usage of the wallet
     elif wallet_id and access_all_wallet_usage is True:
-        total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
-            product_name,
+        total_service_runs: PositiveInt = await service_runs_db.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
+            db_engine,
+            product_name=product_name,
             user_id=None,
             wallet_id=wallet_id,
             started_from=started_from,
@@ -75,8 +81,9 @@ async def list_service_runs(
         )
         service_runs_db_model: list[  # type: ignore[no-redef]
             ServiceRunWithCreditsDB
-        ] = await resource_tracker_repo.list_service_runs_by_product_and_user_and_wallet(
-            product_name,
+        ] = await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
+            db_engine,
+            product_name=product_name,
             user_id=None,
             wallet_id=wallet_id,
             offset=offset,
@@ -87,8 +94,9 @@ async def list_service_runs(
         )
     # Situation when regular user can see only his usage of the wallet
     elif wallet_id and access_all_wallet_usage is False:
-        total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
-            product_name,
+        total_service_runs: PositiveInt = await service_runs_db.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
+            db_engine,
+            product_name=product_name,
             user_id=user_id,
             wallet_id=wallet_id,
             started_from=started_from,
@@ -96,8 +104,9 @@ async def list_service_runs(
         )
         service_runs_db_model: list[  # type: ignore[no-redef]
             ServiceRunWithCreditsDB
-        ] = await resource_tracker_repo.list_service_runs_by_product_and_user_and_wallet(
-            product_name,
+        ] = await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
+            db_engine,
+            product_name=product_name,
             user_id=user_id,
             wallet_id=wallet_id,
             offset=offset,
@@ -147,7 +156,7 @@ async def export_service_runs(
     s3_region: str,
     user_id: UserID,
     product_name: ProductName,
-    resource_tracker_repo: ResourceTrackerRepository,
+    db_engine: AsyncEngine,
     wallet_id: WalletID | None = None,
     access_all_wallet_usage: bool = False,
     order_by: OrderBy | None = None,
@@ -165,7 +174,8 @@ async def export_service_runs(
     )
 
     # Export CSV to S3
-    await resource_tracker_repo.export_service_runs_table_to_s3(
+    await service_runs_db.export_service_runs_table_to_s3(
+        db_engine,
         product_name=product_name,
         s3_bucket_name=s3_bucket_name,
         s3_key=s3_object_key,
@@ -188,7 +198,7 @@ async def export_service_runs(
 async def get_osparc_credits_aggregated_usages_page(
     user_id: UserID,
     product_name: ProductName,
-    resource_tracker_repo: ResourceTrackerRepository,
+    db_engine: AsyncEngine,
     aggregated_by: ServicesAggregatedUsagesType,
     time_period: ServicesAggregatedUsagesTimePeriod,
     wallet_id: WalletID,
@@ -204,7 +214,8 @@ async def get_osparc_credits_aggregated_usages_page(
     (
         count_output_list_db,
         output_list_db,
-    ) = await resource_tracker_repo.get_osparc_credits_aggregated_by_service(
+    ) = await service_runs_db.get_osparc_credits_aggregated_by_service(
+        db_engine,
         product_name=product_name,
         user_id=user_id if access_all_wallet_usage is False else None,
         wallet_id=wallet_id,

@@ -14,10 +14,6 @@ class AwsEfsSettings(BaseCustomSettings):
     EFS_MOUNTED_PATH: Path = Field(
         description="This is the path where EFS is mounted to the EC2 machine",
     )
-    EFS_ONLY_ENABLED_FOR_USERIDS: list[int] = Field(
-        description="This is temporary solution so we can enable it for specific users for testing purpose",
-        examples=[[1]],
-    )
 
 
 NFS_PROTOCOL = "4.1"

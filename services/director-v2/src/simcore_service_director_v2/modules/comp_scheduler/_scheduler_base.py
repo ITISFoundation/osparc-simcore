@@ -540,11 +540,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         iteration: Iteration,
     ) -> None:
-        """schedules a pipeline for a given user, project and iteration.
-
-        Arguments:
-            wake_up_callback -- a callback function that is called in a separate thread everytime a pipeline node is completed
-        """
+        """apply the scheduling of a pipeline for a given user, project and iteration."""
         with log_context(
             _logger,
             level=logging.INFO,
@@ -787,9 +783,9 @@ class BaseCompScheduler(ABC):
         except Exception:
             _logger.exception(
                 "Unexpected error for %s with %s on %s happened when scheduling %s:",
-                f"{user_id=}",
-                f"{project_id=}",
-                f"{comp_run.cluster_id=}",
+                f"{comp_run.user_id=}",
+                f"{comp_run.project_uuid=}",
+                f"{comp_run.use_on_demand_clusters=}",
                 f"{tasks_ready_to_start.keys()=}",
             )
             await CompTasksRepository.instance(

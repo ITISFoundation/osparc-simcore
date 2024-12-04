@@ -28,9 +28,8 @@ from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationGet,
     ComputationStop,
 )
-from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
@@ -49,7 +48,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 from ...core.errors import (
-    ClusterAccessForbiddenError,
     ClusterNotFoundError,
     ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
@@ -64,7 +62,6 @@ from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDi
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler import run_new_pipeline, stop_pipeline
-from ...modules.db.repositories.clusters import ClustersRepository
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
@@ -115,7 +112,6 @@ async def _check_pipeline_startable(
     pipeline_dag: nx.DiGraph,
     computation: ComputationCreate,
     catalog_client: CatalogClient,
-    clusters_repo: ClustersRepository,
 ) -> None:
     assert computation.product_name  # nosec
     if deprecated_tasks := await utils.find_deprecated_tasks(
@@ -131,20 +127,6 @@ async def _check_pipeline_startable(
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
             detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {jsonable_encoder( deprecated_tasks)}",
         )
-    if computation.cluster_id:
-        # check the cluster ID is a valid one
-        try:
-            await clusters_repo.get_cluster(computation.user_id, computation.cluster_id)
-        except ClusterNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, not found",
-            ) from exc
-        except ClusterAccessForbiddenError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, no access",
-            ) from exc
 
 
 _UNKNOWN_NODE: Final[str] = "unknown node"
@@ -172,7 +154,7 @@ async def _get_project_metadata(
             project_uuid: ProjectID, node_id: NodeID
         ) -> tuple[str, str]:
             prj = await project_repo.get_project(project_uuid)
-            node_id_str = NodeIDStr(f"{node_id}")
+            node_id_str = f"{node_id}"
             if node_id_str not in prj.workbench:
                 _logger.error(
                     "%s not found in %s. it is an ancestor of %s. Please check!",
@@ -245,7 +227,6 @@ async def _try_start_pipeline(
         app,
         user_id=computation.user_id,
         project_id=computation.project_id,
-        cluster_id=computation.cluster_id or DEFAULT_CLUSTER_ID,
         run_metadata=RunMetadataDict(
             node_id_names_map={
                 NodeID(node_idstr): node_data.label
@@ -305,9 +286,6 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
     comp_runs_repo: Annotated[
         CompRunsRepository, Depends(get_repository(CompRunsRepository))
     ],
-    clusters_repo: Annotated[
-        ClustersRepository, Depends(get_repository(ClustersRepository))
-    ],
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
     projects_metadata_repo: Annotated[
         ProjectsMetadataRepository, Depends(get_repository(ProjectsMetadataRepository))
@@ -342,7 +320,7 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
 
         if computation.start_pipeline:
             await _check_pipeline_startable(
-                minimal_computational_dag, computation, catalog_client, clusters_repo
+                minimal_computational_dag, computation, catalog_client
             )
 
         # ok so put the tasks in the db
@@ -411,7 +389,6 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
                 else None
             ),
             iteration=last_run.iteration if last_run else None,
-            cluster_id=last_run.cluster_id if last_run else None,
             result=None,
             started=compute_pipeline_started_timestamp(
                 minimal_computational_dag, comp_tasks
@@ -518,7 +495,6 @@ async def get_computation(
             else None
         ),
         iteration=last_run.iteration if last_run else None,
-        cluster_id=last_run.cluster_id if last_run else None,
         result=None,
         started=compute_pipeline_started_timestamp(pipeline_dag, all_tasks),
         stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
@@ -593,7 +569,6 @@ async def stop_computation(
             url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
             stop_url=None,
             iteration=last_run.iteration if last_run else None,
-            cluster_id=last_run.cluster_id if last_run else None,
             result=None,
             started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
             stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
@@ -665,9 +640,9 @@ async def delete_computation(
                 before_sleep=before_sleep_log(_logger, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: list[CompTaskAtDB] = (
-                    await comp_tasks_repo.list_computational_tasks(project_id)
-                )
+                comp_tasks: list[
+                    CompTaskAtDB
+                ] = await comp_tasks_repo.list_computational_tasks(project_id)
                 pipeline_state = utils.get_pipeline_state_from_task_states(
                     comp_tasks,
                 )

@@ -225,7 +225,12 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showAboutProduct: function() {
-      return (this.isS4LProduct() || this.isProduct("s4llite"));
+      return (
+        this.isS4LProduct() ||
+        this.isProduct("s4llite") ||
+        this.isProduct("tis") ||
+        this.isProduct("tiplite")
+      );
     },
 
     showPreferencesTokens: function() {
@@ -236,13 +241,6 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showPreferencesExperimental: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
-        return false;
-      }
-      return true;
-    },
-
-    showClusters: function() {
       if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
         return false;
       }

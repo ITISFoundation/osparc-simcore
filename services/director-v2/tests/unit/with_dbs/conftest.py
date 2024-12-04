@@ -16,12 +16,9 @@ import sqlalchemy as sa
 from _helpers import PublishedProject, RunningProject
 from faker import Faker
 from fastapi.encoders import jsonable_encoder
-from models_library.clusters import Cluster
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.main import BaseModel
-from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
-from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -34,8 +31,6 @@ from simcore_service_director_v2.models.comp_runs import (
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
-from simcore_service_director_v2.utils.db import to_clusters_db
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -220,87 +215,6 @@ async def create_comp_run(
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids))
-        )
-
-
-@pytest.fixture
-async def create_cluster(
-    sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[Callable[..., Awaitable[Cluster]]]:
-    created_cluster_ids: list[str] = []
-
-    async def _(user: dict[str, Any], **cluster_kwargs) -> Cluster:
-        assert "json_schema_extra" in Cluster.model_config
-        assert isinstance(Cluster.model_config["json_schema_extra"], dict)
-        assert isinstance(Cluster.model_config["json_schema_extra"]["examples"], list)
-        assert isinstance(
-            Cluster.model_config["json_schema_extra"]["examples"][1], dict
-        )
-        cluster_config = Cluster.model_config["json_schema_extra"]["examples"][1]
-        cluster_config["owner"] = user["primary_gid"]
-        cluster_config.update(**cluster_kwargs)
-        new_cluster = Cluster.model_validate(cluster_config)
-        assert new_cluster
-
-        async with sqlalchemy_async_engine.begin() as conn:
-            # insert basic cluster
-            created_cluster = (
-                await conn.execute(
-                    sa.insert(clusters)
-                    .values(to_clusters_db(new_cluster, only_update=False))
-                    .returning(sa.literal_column("*"))
-                )
-            ).one()
-            created_cluster_ids.append(created_cluster.id)
-            if "access_rights" in cluster_kwargs:
-                for gid, rights in cluster_kwargs["access_rights"].items():
-                    await conn.execute(
-                        pg_insert(cluster_to_groups)
-                        .values(
-                            cluster_id=created_cluster.id,
-                            gid=gid,
-                            **rights.model_dump(),
-                        )
-                        .on_conflict_do_update(
-                            index_elements=["gid", "cluster_id"],
-                            set_=rights.model_dump(),
-                        )
-                    )
-            access_rights_in_db = {}
-            for row in await conn.execute(
-                sa.select(
-                    cluster_to_groups.c.gid,
-                    cluster_to_groups.c.read,
-                    cluster_to_groups.c.write,
-                    cluster_to_groups.c.delete,
-                )
-                .select_from(clusters.join(cluster_to_groups))
-                .where(clusters.c.id == created_cluster.id)
-            ):
-                access_rights_in_db[row.gid] = {
-                    "read": row[cluster_to_groups.c.read],
-                    "write": row[cluster_to_groups.c.write],
-                    "delete": row[cluster_to_groups.c.delete],
-                }
-
-            return Cluster(
-                id=created_cluster.id,
-                name=created_cluster.name,
-                description=created_cluster.description,
-                type=created_cluster.type,
-                owner=created_cluster.owner,
-                endpoint=created_cluster.endpoint,
-                authentication=created_cluster.authentication,
-                access_rights=access_rights_in_db,
-                thumbnail=None,
-            )
-
-    yield _
-
-    # cleanup
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            clusters.delete().where(clusters.c.id.in_(created_cluster_ids))
         )
 
 
