@@ -134,7 +134,7 @@ cloudpickle==3.1.0
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-dask==2024.11.2
+dask==2024.12.0
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   -r requirements/_base.in
@@ -145,7 +145,7 @@ deprecated==1.2.14
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-semantic-conventions
-distributed==2024.11.2
+distributed==2024.12.0
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
