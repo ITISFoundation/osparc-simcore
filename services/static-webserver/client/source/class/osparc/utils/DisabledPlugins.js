@@ -28,11 +28,6 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     SCICRUNCH: "WEBSERVER_SCICRUNCH",
     VERSION_CONTROL: "WEBSERVER_VERSION_CONTROL",
     META_MODELING: "WEBSERVER_META_MODELING",
-    FOLDERS: "WEBSERVER_FOLDERS",
-
-    isFoldersEnabled: function() {
-      return !this.__isPluginDisabled(this.FOLDERS);
-    },
 
     isExportDisabled: function() {
       return this.__isPluginDisabled(this.EXPORT);

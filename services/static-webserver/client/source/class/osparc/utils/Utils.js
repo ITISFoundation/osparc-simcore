@@ -91,6 +91,22 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 110000,
 
+    updateTabName: function(name) {
+      document.title = name;
+    },
+
+    composeTabName: function() {
+      let newName = osparc.store.StaticInfo.getInstance().getDisplayName();
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      if (osparc.utils.Utils.isInZ43()) {
+        newName += " Z43";
+      }
+      if (platformName) {
+        newName += ` (${platformName})`;
+      }
+      return newName;
+    },
+
     replaceTokens: function(str, key, value) {
       // `str` might be a a localized string, get the string first
       str = str.toString ? str.toString() : str;
