@@ -10,7 +10,7 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from models_library.clusters import InternalClusterAuthentication
+from models_library.clusters import ClusterAuthentication
 from pydantic import (
     AliasChoices,
     Field,
@@ -347,7 +347,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: (
-        InternalClusterAuthentication
+        ClusterAuthentication
     ) = Field(
         ...,
         description="defines the authentication of the clusters created via clusters-keeper (can be None or TLS)",

@@ -157,7 +157,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
                 app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_VTAG", None
             ),
         },
-        "clusters": {"enabled": app_settings.WEBSERVER_CLUSTERS},
         "computation": {"enabled": app_settings.is_enabled("WEBSERVER_NOTIFICATIONS")},
         "diagnostics": {"enabled": app_settings.is_enabled("WEBSERVER_DIAGNOSTICS")},
         "director-v2": {"enabled": app_settings.is_enabled("WEBSERVER_DIRECTOR_V2")},
@@ -310,7 +309,6 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
         _set_if_disabled("WEBSERVER_STATICWEB", section)
 
     for settings_name in (
-        "WEBSERVER_CLUSTERS",
         "WEBSERVER_GARBAGE_COLLECTOR",
         "WEBSERVER_GROUPS",
         "WEBSERVER_META_MODELING",
