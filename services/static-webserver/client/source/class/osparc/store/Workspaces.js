@@ -103,16 +103,24 @@ qx.Class.define("osparc.store.Workspaces", {
         });
     },
 
-    searchWorkspaces: function(text) {
+    searchWorkspaces: function(
+      text,
+      orderBy = {
+        field: "modified_at",
+        direction: "desc"
+      },
+    ) {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
           resolve([]);
         });
       }
 
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
       const params = {
         url: {
-          text,
+          filters: JSON.stringify({text: text}),
+          orderBy: JSON.stringify(curatedOrderBy),
         }
       };
       return osparc.data.Resources.getInstance().getAllPages("workspaces", params, "getPageSearch")
