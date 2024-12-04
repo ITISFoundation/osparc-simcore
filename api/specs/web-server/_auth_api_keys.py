@@ -29,8 +29,8 @@ async def create_api_key(_body: ApiKeyCreate):
 
 @router.get(
     "/auth/api-keys",
-    operation_id="list_display_names",
-    response_model=Envelope[list[str]],
+    operation_id="list_api_keys",
+    response_model=Envelope[list[ApiKeyGet]],
     status_code=status.HTTP_200_OK,
 )
 async def list_api_keys():

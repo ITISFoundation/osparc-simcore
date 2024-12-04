@@ -52,7 +52,7 @@ class UnregisterCheck(InputSchema):
 
 
 class ApiKeyCreate(BaseModel):
-    display_name: str = Field(..., min_length=3)
+    display_name: Annotated[str, Field(..., min_length=3)]
     expiration: timedelta | None = Field(
         None,
         description="Time delta from creation time to expiration. If None, then it does not expire.",
@@ -81,8 +81,8 @@ class ApiKeyGet(BaseModel):
     id: int
     display_name: Annotated[str, Field(..., min_length=3)]
     api_base_url: HttpUrl | None = None
-    api_key: str
-    api_secret: str
+    api_key: str | None = None
+    api_secret: str | None = None
 
     model_config = ConfigDict(
         populate_by_name=True,

@@ -4,6 +4,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
 from models_library.rest_base import StrictRequestParameters
+from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -33,36 +34,6 @@ class ApiKeysPathParams(StrictRequestParameters):
     api_key_id: int
 
 
-@routes.get(f"/{API_VTAG}/auth/api-keys", name="list_api_keys")
-@login_required
-@permission_required("user.apikey.*")
-@handle_plugin_requests_exceptions
-async def list_api_keys(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
-    api_keys_names = await _api.list_api_keys(
-        request.app,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
-    )
-    return envelope_json_response(api_keys_names)
-
-
-@routes.get(f"/{API_VTAG}/auth/api-keys/{{api_key_id}}", name="get_api_key")
-@login_required
-@permission_required("user.apikey.*")
-@handle_plugin_requests_exceptions
-async def get_api_key(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(ApiKeysPathParams, request)
-    api_key: ApiKey = await _api.get_api_key(
-        request.app,
-        api_key_id=path_params.api_key_id,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
-    )
-    return envelope_json_response(ApiKeyGet.model_validate(api_key))
-
-
 @routes.post(f"/{API_VTAG}/auth/api-keys", name="create_api_key")
 @login_required
 @permission_required("user.apikey.*")
@@ -88,6 +59,38 @@ async def create_api_key(request: web.Request):
         ) from err
 
     return envelope_json_response(api_key)
+
+
+@routes.get(f"/{API_VTAG}/auth/api-keys", name="get_api_keys")
+@login_required
+@permission_required("user.apikey.*")
+@handle_plugin_requests_exceptions
+async def get_api_keys(request: web.Request):
+    req_ctx = RequestContext.model_validate(request)
+    api_keys = await _api.get_api_keys(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+    )
+    return envelope_json_response(
+        TypeAdapter(list[ApiKeyGet]).validate_python(api_keys)
+    )
+
+
+@routes.get(f"/{API_VTAG}/auth/api-keys/{{api_key_id}}", name="get_api_key")
+@login_required
+@permission_required("user.apikey.*")
+@handle_plugin_requests_exceptions
+async def get_api_key(request: web.Request):
+    req_ctx = RequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(ApiKeysPathParams, request)
+    api_key: ApiKey = await _api.get_api_key(
+        request.app,
+        api_key_id=path_params.api_key_id,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+    )
+    return envelope_json_response(ApiKeyGet.model_validate(api_key))
 
 
 @routes.delete(f"/{API_VTAG}/auth/api-keys/{{api_key_id}}", name="delete_api_key")

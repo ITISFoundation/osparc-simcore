@@ -110,7 +110,7 @@ async def test_create_api_key(
 
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
-        assert sorted(data) == [display_name]
+        assert [d["display_name"] for d in data] == [display_name]
 
 
 @pytest.mark.parametrize(
@@ -162,7 +162,7 @@ async def test_create_api_key_with_expiration(
         # list created api-key
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
-        assert data == ["foo"]
+        assert [d["display_name"] for d in data] == ["foo"]
 
         # wait for api-key for it to expire and force-run scheduled task
         await asyncio.sleep(expiration_interval.seconds)

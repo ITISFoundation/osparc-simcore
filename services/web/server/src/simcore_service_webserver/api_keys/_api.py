@@ -20,18 +20,6 @@ _KEY_LEN: Final = 10
 _SECRET_LEN: Final = 20
 
 
-async def list_api_keys(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    product_name: ProductName,
-) -> list[str]:
-    names: list[str] = await _db.list_display_names(
-        app, user_id=user_id, product_name=product_name
-    )
-    return names
-
-
 def _generate_api_key_and_secret(name: str):
     prefix = _PUNCTUATION_REGEX.sub("_", name[:5])
     api_key = f"{prefix}_{generate_token_secret_key(_KEY_LEN)}"
@@ -61,6 +49,18 @@ async def create_api_key(
     )
 
 
+async def get_api_keys(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> list[ApiKey]:
+    api_keys: list[ApiKey] = await _db.get_all(
+        app, user_id=user_id, product_name=product_name
+    )
+    return api_keys
+
+
 async def get_api_key(
     app: web.Application,
     *,
@@ -68,7 +68,7 @@ async def get_api_key(
     user_id: UserID,
     product_name: ProductName,
 ) -> ApiKey:
-    api_key = await _db.get(
+    api_key: ApiKey | None = await _db.get(
         app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
     )
     if api_key is not None:
@@ -86,17 +86,19 @@ async def get_or_create_api_key(
     expiration: dt.timedelta | None = None,
 ) -> ApiKey:
 
-    api_key, api_secret = _generate_api_key_and_secret(display_name)
+    key, secret = _generate_api_key_and_secret(display_name)
 
-    return await _db.get_or_create(
+    api_key: ApiKey = await _db.get_or_create(
         app,
         user_id=user_id,
         product_name=product_name,
         display_name=display_name,
         expiration=expiration,
-        api_key=api_key,
-        api_secret=api_secret,
+        api_key=key,
+        api_secret=secret,
     )
+
+    return api_key
 
 
 async def delete_api_key(
