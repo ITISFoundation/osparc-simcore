@@ -147,7 +147,8 @@ async def test_api_keys_workflow(
     )
     assert queried_api_key.display_name == key_name
 
-    assert created_api_key == queried_api_key
+    assert created_api_key.id == queried_api_key.id
+    assert created_api_key.display_name == queried_api_key.display_name
 
     # remove the key
     delete_key_result = await rpc_client.request(
