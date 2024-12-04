@@ -9,7 +9,6 @@ import functools
 import traceback
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from dataclasses import dataclass
-from inspect import isawaitable
 from typing import Any, NoReturn, cast
 from unittest import mock
 from uuid import uuid4
