@@ -1,6 +1,7 @@
 """ Main application
 
 """
+
 import logging
 from pprint import pformat
 from typing import Any
@@ -14,7 +15,6 @@ from .announcements.plugin import setup_announcements
 from .api_keys.plugin import setup_api_keys
 from .application_settings import get_application_settings, setup_settings
 from .catalog.plugin import setup_catalog
-from .clusters.plugin import setup_clusters
 from .db.plugin import setup_db
 from .db_listener.plugin import setup_db_listener
 from .diagnostics.plugin import setup_diagnostics, setup_profiling_middleware
@@ -147,7 +147,6 @@ def create_application() -> web.Application:
     setup_publications(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
-    setup_clusters(app)
 
     # NOTE: *last* events
     app.on_startup.append(_welcome_banner)

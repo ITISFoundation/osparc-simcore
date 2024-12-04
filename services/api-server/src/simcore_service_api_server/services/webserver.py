@@ -2,9 +2,10 @@
 
 import logging
 import urllib.parse
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Mapping
+from typing import Any
 from uuid import UUID
 
 import httpx
@@ -35,7 +36,6 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletGetWithAvailableCredits,
 )
-from models_library.clusters import ClusterID
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -446,11 +446,12 @@ class AuthSession:
         }
     )
     async def start_project(
-        self, *, project_id: UUID, cluster_id: ClusterID | None = None
+        self,
+        *,
+        project_id: UUID,
     ) -> None:
         body_input: dict[str, Any] = {}
-        if cluster_id:
-            body_input["cluster_id"] = cluster_id
+
         body: ComputationStart = ComputationStart(**body_input)
         response = await self.client.post(
             f"/computations/{project_id}:start",

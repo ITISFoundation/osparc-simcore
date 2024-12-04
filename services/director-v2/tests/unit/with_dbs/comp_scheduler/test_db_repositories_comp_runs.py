@@ -15,12 +15,10 @@ import arrow
 import pytest
 from _helpers import PublishedProject
 from faker import Faker
-from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from simcore_service_director_v2.core.errors import (
-    ClusterNotFoundError,
     ComputationalRunNotFoundError,
     ProjectNotFoundError,
     UserNotFoundError,
@@ -89,7 +87,6 @@ async def test_list(
     created = await CompRunsRepository(aiopg_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
@@ -101,7 +98,6 @@ async def test_list(
             CompRunsRepository(aiopg_engine).create(
                 user_id=published_project.user["id"],
                 project_id=published_project.project.uuid,
-                cluster_id=DEFAULT_CLUSTER_ID,
                 iteration=created.iteration + n + 1,
                 metadata=run_metadata,
                 use_on_demand_clusters=faker.pybool(),
@@ -260,13 +256,11 @@ async def test_create(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
-    create_cluster: Callable[..., Awaitable[Cluster]],
 ):
     with pytest.raises(ProjectNotFoundError):
         await CompRunsRepository(aiopg_engine).create(
             user_id=fake_user_id,
             project_id=fake_project_id,
-            cluster_id=DEFAULT_CLUSTER_ID,
             iteration=None,
             metadata=run_metadata,
             use_on_demand_clusters=faker.pybool(),
@@ -276,7 +270,6 @@ async def test_create(
         await CompRunsRepository(aiopg_engine).create(
             user_id=fake_user_id,
             project_id=published_project.project.uuid,
-            cluster_id=DEFAULT_CLUSTER_ID,
             iteration=None,
             metadata=run_metadata,
             use_on_demand_clusters=faker.pybool(),
@@ -285,7 +278,6 @@ async def test_create(
     created = await CompRunsRepository(aiopg_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
@@ -300,7 +292,6 @@ async def test_create(
     created = await CompRunsRepository(aiopg_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
@@ -314,25 +305,6 @@ async def test_create(
         project_id=published_project.project.uuid,
     )
     assert created == got
-
-    with pytest.raises(ClusterNotFoundError):
-        await CompRunsRepository(aiopg_engine).create(
-            user_id=published_project.user["id"],
-            project_id=published_project.project.uuid,
-            cluster_id=faker.pyint(min_value=1),
-            iteration=None,
-            metadata=run_metadata,
-            use_on_demand_clusters=faker.pybool(),
-        )
-    cluster = await create_cluster(published_project.user)
-    await CompRunsRepository(aiopg_engine).create(
-        user_id=published_project.user["id"],
-        project_id=published_project.project.uuid,
-        cluster_id=cluster.id,
-        iteration=None,
-        metadata=run_metadata,
-        use_on_demand_clusters=faker.pybool(),
-    )
 
 
 async def test_update(
@@ -353,7 +325,6 @@ async def test_update(
     created = await CompRunsRepository(aiopg_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
@@ -387,7 +358,6 @@ async def test_set_run_result(
     created = await CompRunsRepository(aiopg_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
@@ -435,7 +405,6 @@ async def test_mark_for_cancellation(
     created = await CompRunsRepository(aiopg_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
@@ -467,7 +436,6 @@ async def test_mark_for_scheduling(
     created = await CompRunsRepository(aiopg_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
@@ -501,7 +469,6 @@ async def test_mark_scheduling_done(
     created = await CompRunsRepository(aiopg_engine).create(
         user_id=published_project.user["id"],
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         iteration=None,
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),

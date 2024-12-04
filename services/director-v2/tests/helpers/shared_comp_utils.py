@@ -4,7 +4,6 @@ from uuid import UUID
 
 import httpx
 from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
-from models_library.clusters import ClusterID
 from models_library.projects import ProjectAtDB
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
@@ -26,8 +25,7 @@ async def assert_computation_task_out_obj(
     exp_task_state: RunningState,
     exp_pipeline_details: PipelineDetails,
     iteration: PositiveInt | None,
-    cluster_id: ClusterID | None,
-):
+) -> None:
     assert task_out.id == project.uuid
     assert task_out.state == exp_task_state
     assert task_out.url.path == f"/v2/computations/{project.uuid}"
@@ -41,7 +39,6 @@ async def assert_computation_task_out_obj(
     else:
         assert task_out.stop_url is None
     assert task_out.iteration == iteration
-    assert task_out.cluster_id == cluster_id
     # check pipeline details contents
     received_task_out_pipeline = task_out.pipeline_details.model_dump()
     expected_task_out_pipeline = exp_pipeline_details.model_dump()

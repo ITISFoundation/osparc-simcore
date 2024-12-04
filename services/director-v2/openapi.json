@@ -855,7 +855,7 @@
     "/v2/clusters": {
       "post": {
         "tags": [
-          "clusters"
+          "dynamic scheduler"
         ],
         "summary": "Create a new cluster for a user",
         "operationId": "create_cluster_v2_clusters_post",
@@ -892,6 +892,11 @@
                 }
               }
             }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -907,7 +912,7 @@
       },
       "get": {
         "tags": [
-          "clusters"
+          "dynamic scheduler"
         ],
         "summary": "Lists clusters for user",
         "operationId": "list_clusters_v2_clusters_get",
@@ -939,6 +944,9 @@
               }
             }
           },
+          "409": {
+            "description": "Task already running, cannot start a new one"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -952,34 +960,13 @@
         }
       }
     },
-    "/v2/clusters/default": {
+    "/v2/dynamic_scheduler/services/{node_uuid}/state": {
       "get": {
         "tags": [
-          "clusters"
+          "dynamic scheduler"
         ],
-        "summary": "Returns the default cluster",
-        "operationId": "get_default_cluster_v2_clusters_default_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClusterGet"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v2/clusters/{cluster_id}": {
-      "get": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Get one cluster for user",
-        "operationId": "get_cluster_v2_clusters__cluster_id__get",
+        "summary": "Returns the internals of the scheduler for the given service",
+        "operationId": "get_service_state_v2_dynamic_scheduler_services__node_uuid__state_get",
         "parameters": [
           {
             "name": "cluster_id",
@@ -1009,7 +996,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClusterGet"
+                  "$ref": "#/components/schemas/SchedulerData"
                 }
               }
             }
@@ -1028,7 +1015,7 @@
       },
       "patch": {
         "tags": [
-          "clusters"
+          "dynamic scheduler"
         ],
         "summary": "Modify a cluster for user",
         "operationId": "update_cluster_v2_clusters__cluster_id__patch",
@@ -2114,19 +2101,29 @@
           "authentication": {
             "oneOf": [
               {
-                "$ref": "#/components/schemas/SimpleAuthentication"
+                "$ref": "#/components/schemas/UserServiceCommand"
               },
               {
-                "$ref": "#/components/schemas/KerberosAuthentication"
+                "type": "null"
+              }
+            ],
+            "description": "command to recover prometheus metrics from a specific user service"
+          },
+          "before_shutdown": {
+            "items": {
+              "$ref": "#/components/schemas/UserServiceCommand"
+            },
+            "type": "array",
+            "title": "Before Shutdown",
+            "description": "commands to run before shutting down the user servicescommands get executed first to last, multiple commands for the sameuser services are allowed"
+          },
+          "inactivity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserServiceCommand"
               },
               {
-                "$ref": "#/components/schemas/JupyterHubTokenAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/NoAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/TLSAuthentication"
+                "type": "null"
               }
             ],
             "title": "Authentication",
@@ -2143,6 +2140,7 @@
             }
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "endpoint",
@@ -2239,7 +2237,7 @@
           "use_on_demand_clusters": {
             "type": "boolean",
             "title": "Use On Demand Clusters",
-            "description": "if True, a cluster will be created as necessary (wallet_id cannot be None, and cluster_id must be None)",
+            "description": "if True, a cluster will be created as necessary (wallet_id cannot be None)",
             "default": false
           },
           "wallet_info": {
@@ -2412,7 +2410,6 @@
           "state",
           "pipeline_details",
           "iteration",
-          "cluster_id",
           "started",
           "stopped",
           "submitted",
@@ -4265,14 +4262,6 @@
         ],
         "title": "TasksSelection"
       },
-      "UsedResources": {
-        "additionalProperties": {
-          "type": "number",
-          "minimum": 0.0
-        },
-        "type": "object",
-        "title": "UsedResources"
-      },
       "UserServiceCommand": {
         "properties": {
           "service": {
@@ -4439,21 +4428,15 @@
       },
       "WorkerMetrics": {
         "properties": {
-          "cpu": {
-            "type": "number",
-            "title": "Cpu",
-            "description": "consumed % of cpus"
-          },
-          "memory": {
+          "wallet_id": {
             "type": "integer",
             "minimum": 0,
             "title": "Memory",
             "description": "consumed memory"
           },
-          "num_fds": {
-            "type": "integer",
-            "title": "Num Fds",
-            "description": "consumed file descriptors"
+          "wallet_name": {
+            "type": "string",
+            "title": "Wallet Name"
           },
           "task_counts": {
             "$ref": "#/components/schemas/TaskCounts",
@@ -4462,12 +4445,11 @@
         },
         "type": "object",
         "required": [
-          "cpu",
-          "memory",
-          "num_fds",
-          "task_counts"
+          "wallet_id",
+          "wallet_name",
+          "wallet_credit_amount"
         ],
-        "title": "WorkerMetrics"
+        "title": "WalletInfo"
       },
       "_PortRange": {
         "properties": {
