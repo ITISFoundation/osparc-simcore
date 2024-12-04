@@ -163,7 +163,7 @@ async def update(
         return LicenseGoodDB.model_validate(row)
 
 
-async def delete_workspace(
+async def delete(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,

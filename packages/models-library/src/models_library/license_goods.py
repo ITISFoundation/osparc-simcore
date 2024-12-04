@@ -40,4 +40,4 @@ class LicenseGoodDB(BaseModel):
 
 class LicenseGoodUpdateDB(BaseModel):
     name: str | None = None
-    pricing_plan_id: PricingPlanId
+    pricing_plan_id: PricingPlanId | None = None
