@@ -31,7 +31,7 @@ _USER_ID = 1
 @pytest.fixture
 async def mocked_export(mocker: MockerFixture) -> AsyncMock:
     return mocker.patch(
-        "simcore_service_resource_usage_tracker.services.service_runs.ResourceTrackerRepository.export_service_runs_table_to_s3",
+        "simcore_service_resource_usage_tracker.services.service_runs.service_runs_db.export_service_runs_table_to_s3",
         autospec=True,
     )
 

@@ -132,6 +132,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
           });
           break;
       }
+      control.set({
+        anonymous: true, // pass the tap action over
+      });
 
       return control || this.base(arguments, id);
     },

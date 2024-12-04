@@ -23,9 +23,6 @@ from simcore_service_resource_usage_tracker.models.service_runs import ServiceRu
 from simcore_service_resource_usage_tracker.services.background_task_periodic_heartbeat_check import (
     periodic_check_of_running_services_task,
 )
-from simcore_service_resource_usage_tracker.services.modules.db.repositories.resource_tracker import (
-    ResourceTrackerRepository,
-)
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [
@@ -132,9 +129,6 @@ async def test_process_event_functions(
 ):
     engine = initialized_app.state.engine
     app_settings: ApplicationSettings = initialized_app.state.settings
-    resource_tracker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
-        db_engine=engine
-    )
 
     for _ in range(app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL):
         await periodic_check_of_running_services_task(initialized_app)
