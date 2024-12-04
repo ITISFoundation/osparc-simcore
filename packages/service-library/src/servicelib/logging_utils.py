@@ -144,10 +144,10 @@ def config_all_loggers(
             "| log_source=%(name)s:%(funcName)s(%(lineno)d) "
             "| log_uid=%(log_uid)s "
             "| log_oec=%(log_oec)s"
-            "| trace_id=%(otelTraceID)s "
-            "| span_id=%(otelSpanID)s "
-            "| resource.service.name=%(otelServiceName)s "
-            "| trace_sampled=%(otelTraceSampled)s] "
+            "| log_trace_id=%(otelTraceID)s "
+            "| log_span_id=%(otelSpanID)s "
+            "| log_resource.service.name=%(otelServiceName)s "
+            "| log_trace_sampled=%(otelTraceSampled)s] "
             "| log_msg=%(message)s"
         )
         setup_log_tracing(tracing_settings=tracing_settings)
@@ -156,7 +156,7 @@ def config_all_loggers(
         if tracing_settings is not None:
             fmt = (
                 "%(levelname)s: [%(asctime)s/%(processName)s] "
-                "[trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s trace_sampled=%(otelTraceSampled)s] "
+                "[log_trace_id=%(otelTraceID)s log_span_id=%(otelSpanID)s log_resource.service.name=%(otelServiceName)s log_trace_sampled=%(otelTraceSampled)s] "
                 "[%(name)s:%(funcName)s(%(lineno)d)] -  %(message)s"
             )
 
