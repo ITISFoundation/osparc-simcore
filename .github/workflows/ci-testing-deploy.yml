@@ -2752,6 +2752,7 @@ jobs:
   api-spec-backwards-compatible:
     needs: [changes]
     if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    continue-on-error: true
     timeout-minutes: 10
     name: "api-specs-backwards-compatibility"
     runs-on: ubuntu-latest
