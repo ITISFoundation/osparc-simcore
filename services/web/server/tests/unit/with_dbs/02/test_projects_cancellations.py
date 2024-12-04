@@ -89,7 +89,7 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
-    mocked_director_v2_api: dict[str, MagicMock],
+    mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
     catalog_subsystem_mock([user_project])
@@ -142,7 +142,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
-    mocked_director_v2_api: dict[str, MagicMock],
+    mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
     catalog_subsystem_mock([user_project])

@@ -267,7 +267,7 @@ async def test_trash_folder_with_content(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mocked_catalog: None,
-    mocked_director_v2_api: dict[str, MagicMock],
+    mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
     project_uuid = UUID(user_project["uuid"])
