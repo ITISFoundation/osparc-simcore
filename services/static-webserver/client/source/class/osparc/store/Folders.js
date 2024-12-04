@@ -223,6 +223,47 @@ qx.Class.define("osparc.store.Folders", {
         .catch(console.error);
     },
 
+    moveFolderToFolder: function(folderId, destFolderId) {
+      if (folderId === destFolderId) {
+        // resolve right away
+        return new Promise(resolve => resolve());
+      }
+
+      const folder = this.getFolder(folderId);
+      const updatedData = {
+        name: folder.getName(),
+        parentFolderId: destFolderId,
+      };
+      return this.putFolder(folderId, updatedData)
+        .then(() => folder.setParentFolderId(destFolderId))
+        .catch(err => console.error(err));
+    },
+
+    moveFolderToWorkspace: function(folderId, destWorkspaceId) {
+      const folder = this.getFolder(folderId);
+      if (folder.getWorkspaceId() === destWorkspaceId) {
+        // resolve right away
+        return new Promise(resolve => resolve());
+      }
+
+      const oldParentFolderId = folder.getParentFolderId();
+      const params = {
+        url: {
+          folderId,
+          workspaceId: destWorkspaceId,
+        }
+      };
+      return osparc.data.Resources.fetch("folders", "moveToWorkspace", params)
+        .then(() => {
+          folder.setWorkspaceId(destWorkspaceId);
+          this.fireDataEvent("folderMoved", {
+            folder,
+            oldParentFolderId,
+          });
+        })
+        .catch(err => console.error(err));
+    },
+
     getFolder: function(folderId = null) {
       return this.foldersCached.find(f => f.getFolderId() === folderId);
     },
