@@ -4,7 +4,6 @@ from typing import Final
 import networkx as nx
 from aiopg.sa import Engine
 from fastapi import FastAPI
-from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.background_task import start_periodic_task, stop_periodic_task
@@ -36,13 +35,10 @@ async def run_new_pipeline(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    cluster_id: ClusterID,
     run_metadata: RunMetadataDict,
     use_on_demand_clusters: bool,
 ) -> None:
-    """Sets a new pipeline to be scheduled on the computational resources.
-    Passing cluster_id=0 will use the default cluster. Passing an existing ID will instruct
-    the scheduler to run the tasks on the defined cluster"""
+    """Sets a new pipeline to be scheduled on the computational resources."""
     # ensure the pipeline exists and is populated with something
     db_engine = get_db_engine(app)
     dag = await _get_pipeline_dag(project_id, db_engine)
@@ -56,7 +52,6 @@ async def run_new_pipeline(
     new_run = await CompRunsRepository.instance(db_engine).create(
         user_id=user_id,
         project_id=project_id,
-        cluster_id=cluster_id,
         metadata=run_metadata,
         use_on_demand_clusters=use_on_demand_clusters,
     )

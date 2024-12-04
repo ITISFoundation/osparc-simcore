@@ -12,7 +12,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
-from models_library.clusters import DEFAULT_CLUSTER_ID, BaseCluster, ClusterID
+from models_library.clusters import BaseCluster
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -45,7 +45,6 @@ from ...utils.rabbitmq import (
 from ..clusters_keeper import get_or_create_on_demand_cluster
 from ..dask_client import DaskClient, PublishedComputationTask
 from ..dask_clients_pool import DaskClientsPool
-from ..db.repositories.clusters import ClustersRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._scheduler_base import BaseCompScheduler
@@ -72,7 +71,6 @@ async def _cluster_dask_client(
     scheduler: "DaskScheduler",
     *,
     use_on_demand_clusters: bool,
-    cluster_id: ClusterID,
     run_metadata: RunMetadataDict,
 ) -> AsyncIterator[DaskClient]:
     cluster: BaseCluster = scheduler.settings.default_cluster
@@ -82,9 +80,6 @@ async def _cluster_dask_client(
             user_id=user_id,
             wallet_id=run_metadata.get("wallet_id"),
         )
-    if cluster_id != DEFAULT_CLUSTER_ID:
-        clusters_repo = ClustersRepository.instance(scheduler.db_engine)
-        cluster = await clusters_repo.get_cluster(user_id, cluster_id)
     async with scheduler.dask_clients_pool.acquire(cluster) as client:
         yield client
 
@@ -115,11 +110,6 @@ class DaskScheduler(BaseCompScheduler):
             user_id,
             self,
             use_on_demand_clusters=comp_run.use_on_demand_clusters,
-            cluster_id=(
-                comp_run.cluster_id
-                if comp_run.cluster_id is not None
-                else DEFAULT_CLUSTER_ID
-            ),
             run_metadata=comp_run.metadata,
         ) as client:
             # Change the tasks state to PENDING
@@ -135,11 +125,6 @@ class DaskScheduler(BaseCompScheduler):
                     client.send_computation_tasks(
                         user_id=user_id,
                         project_id=project_id,
-                        cluster_id=(
-                            comp_run.cluster_id
-                            if comp_run.cluster_id is not None
-                            else DEFAULT_CLUSTER_ID
-                        ),
                         tasks={node_id: task.image},
                         hardware_info=task.hardware_info,
                         callback=wake_up_callback,
@@ -171,11 +156,6 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
-                cluster_id=(
-                    comp_run.cluster_id
-                    if comp_run.cluster_id is not None
-                    else DEFAULT_CLUSTER_ID
-                ),
                 run_metadata=comp_run.metadata,
             ) as client:
                 tasks_statuses = await client.get_tasks_status(
@@ -213,11 +193,6 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
-                cluster_id=(
-                    comp_run.cluster_id
-                    if comp_run.cluster_id is not None
-                    else DEFAULT_CLUSTER_ID
-                ),
                 run_metadata=comp_run.metadata,
             ) as client:
                 await asyncio.gather(
@@ -251,11 +226,6 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
-                cluster_id=(
-                    comp_run.cluster_id
-                    if comp_run.cluster_id is not None
-                    else DEFAULT_CLUSTER_ID
-                ),
                 run_metadata=comp_run.metadata,
             ) as client:
                 tasks_results = await asyncio.gather(
@@ -275,11 +245,6 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
-                cluster_id=(
-                    comp_run.cluster_id
-                    if comp_run.cluster_id is not None
-                    else DEFAULT_CLUSTER_ID
-                ),
                 run_metadata=comp_run.metadata,
             ) as client:
                 await asyncio.gather(

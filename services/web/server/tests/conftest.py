@@ -358,7 +358,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             for group_id, permissions in _access_rights.items():
                 await update_or_insert_project_group(
                     client.app,
-                    data["uuid"],
+                    project_id=data["uuid"],
                     group_id=int(group_id),
                     read=permissions["read"],
                     write=permissions["write"],

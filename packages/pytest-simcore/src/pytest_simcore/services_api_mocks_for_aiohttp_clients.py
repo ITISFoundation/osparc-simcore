@@ -2,8 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
-import random
 import re
 from pathlib import Path
 from typing import Any
@@ -13,6 +11,7 @@ import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
 from faker import Faker
+from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -23,7 +22,6 @@ from models_library.api_schemas_storage import (
     LinkType,
     PresignedLink,
 )
-from models_library.clusters import Cluster
 from models_library.generics import Envelope
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
@@ -81,7 +79,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
         assert param in body, f"{param} is missing from body: {body}"
     state = (
         RunningState.PUBLISHED
-        if "start_pipeline" in body and body["start_pipeline"]
+        if body.get("start_pipeline")
         else RunningState.NOT_STARTED
     )
     pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
@@ -131,8 +129,13 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     state = RunningState.NOT_STARTED
     pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
-    returned_computation = ComputationTask.model_validate(
-        ComputationTask.model_config["json_schema_extra"]["examples"][0]
+    assert "json_schema_extra" in ComputationGet.model_config
+    assert isinstance(ComputationGet.model_config["json_schema_extra"], dict)
+    assert isinstance(
+        ComputationGet.model_config["json_schema_extra"]["examples"], list
+    )
+    returned_computation = ComputationGet.model_validate(
+        ComputationGet.model_config["json_schema_extra"]["examples"][0]
     ).model_copy(
         update={
             "id": Path(url.path).name,
@@ -148,85 +151,6 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     return CallbackResult(
         status=200,
         payload=jsonable_encoder(returned_computation),
-    )
-
-
-def create_cluster_cb(url, **kwargs) -> CallbackResult:
-    assert "json" in kwargs, f"missing body in call to {url}"
-    assert url.query.get("user_id")
-    random_cluster = Cluster.model_validate(
-        random.choice(Cluster.model_config["json_schema_extra"]["examples"])
-    )
-    return CallbackResult(
-        status=201, payload=json.loads(random_cluster.model_dump_json(by_alias=True))
-    )
-
-
-def list_clusters_cb(url, **kwargs) -> CallbackResult:
-    assert url.query.get("user_id")
-    return CallbackResult(
-        status=200,
-        body=json.dumps(
-            [
-                json.loads(
-                    Cluster.model_validate(
-                        random.choice(
-                            Cluster.model_config["json_schema_extra"]["examples"]
-                        )
-                    ).model_dump_json(by_alias=True)
-                )
-                for _ in range(3)
-            ]
-        ),
-    )
-
-
-def get_cluster_cb(url, **kwargs) -> CallbackResult:
-    assert url.query.get("user_id")
-    cluster_id = url.path.split("/")[-1]
-    return CallbackResult(
-        status=200,
-        payload=json.loads(
-            Cluster.model_validate(
-                {
-                    **random.choice(
-                        Cluster.model_config["json_schema_extra"]["examples"]
-                    ),
-                    **{"id": cluster_id},
-                }
-            ).model_dump_json(by_alias=True)
-        ),
-    )
-
-
-def get_cluster_details_cb(url, **kwargs) -> CallbackResult:
-    assert url.query.get("user_id")
-    cluster_id = url.path.split("/")[-1]
-    assert cluster_id
-    return CallbackResult(
-        status=200,
-        payload={
-            "scheduler": {"status": "RUNNING"},
-            "dashboard_link": "https://dashboard.link.com",
-        },
-    )
-
-
-def patch_cluster_cb(url, **kwargs) -> CallbackResult:
-    assert url.query.get("user_id")
-    cluster_id = url.path.split("/")[-1]
-    return CallbackResult(
-        status=200,
-        payload=json.loads(
-            Cluster.model_validate(
-                {
-                    **random.choice(
-                        Cluster.model_config["json_schema_extra"]["examples"]
-                    ),
-                    **{"id": cluster_id},
-                }
-            ).model_dump_json(by_alias=True)
-        ),
     )
 
 
@@ -279,73 +203,6 @@ async def director_v2_service_mock(
     )
     aioresponses_mocker.delete(delete_computation_pattern, status=204, repeat=True)
     aioresponses_mocker.patch(projects_networks_pattern, status=204, repeat=True)
-
-    # clusters
-    aioresponses_mocker.post(
-        re.compile(
-            r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters\?(\w+(?:=\w+)?\&?){1,}$"
-        ),
-        callback=create_cluster_cb,
-        status=status.HTTP_201_CREATED,
-        repeat=True,
-    )
-
-    aioresponses_mocker.get(
-        re.compile(
-            r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters\?(\w+(?:=\w+)?\&?){1,}$"
-        ),
-        callback=list_clusters_cb,
-        status=status.HTTP_201_CREATED,
-        repeat=True,
-    )
-
-    aioresponses_mocker.get(
-        re.compile(
-            r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters(/[0-9]+)\?(\w+(?:=\w+)?\&?){1,}$"
-        ),
-        callback=get_cluster_cb,
-        status=status.HTTP_201_CREATED,
-        repeat=True,
-    )
-
-    aioresponses_mocker.get(
-        re.compile(
-            r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters/[0-9]+/details\?(\w+(?:=\w+)?\&?){1,}$"
-        ),
-        callback=get_cluster_details_cb,
-        status=status.HTTP_201_CREATED,
-        repeat=True,
-    )
-
-    aioresponses_mocker.patch(
-        re.compile(
-            r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters(/[0-9]+)\?(\w+(?:=\w+)?\&?){1,}$"
-        ),
-        callback=patch_cluster_cb,
-        status=status.HTTP_201_CREATED,
-        repeat=True,
-    )
-    aioresponses_mocker.delete(
-        re.compile(
-            r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters(/[0-9]+)\?(\w+(?:=\w+)?\&?){1,}$"
-        ),
-        status=status.HTTP_204_NO_CONTENT,
-        repeat=True,
-    )
-
-    aioresponses_mocker.post(
-        re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters:ping$"),
-        status=status.HTTP_204_NO_CONTENT,
-        repeat=True,
-    )
-
-    aioresponses_mocker.post(
-        re.compile(
-            r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters(/[0-9]+):ping\?(\w+(?:=\w+)?\&?){1,}$"
-        ),
-        status=status.HTTP_204_NO_CONTENT,
-        repeat=True,
-    )
 
     return aioresponses_mocker
 

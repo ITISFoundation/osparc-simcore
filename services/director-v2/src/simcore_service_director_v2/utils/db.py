@@ -1,9 +1,6 @@
 import logging
-from typing import Any
 
-from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
-from models_library.clusters import BaseCluster
 from models_library.projects_state import RunningState
 from simcore_postgres_database.models.comp_pipeline import StateType
 
@@ -26,18 +23,6 @@ RUNNING_STATE_TO_DB = {v: k for k, v in DB_TO_RUNNING_STATE.items()} | {
 }
 
 _logger = logging.getLogger(__name__)
-
-
-def to_clusters_db(cluster: BaseCluster, *, only_update: bool) -> dict[str, Any]:
-    db_model: dict[str, Any] = model_dump_with_secrets(
-        cluster,
-        show_secrets=True,
-        by_alias=True,
-        exclude={"id", "access_rights"},
-        exclude_unset=only_update,
-        exclude_none=only_update,
-    )
-    return db_model
 
 
 def get_repository(app: FastAPI, repo_type: type[RepoType]) -> RepoType:

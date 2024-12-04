@@ -3,27 +3,23 @@
 # pylint:disable=redefined-outer-name
 
 
+from collections.abc import AsyncIterator, Callable
+from pathlib import Path
 from random import choice
-from typing import Any, AsyncIterator, Callable, get_args
+from typing import Any, cast, get_args
 from unittest import mock
 
 import pytest
-from _dask_helpers import DaskGatewayServer
-from common_library.json_serialization import json_dumps
-from common_library.serialization import model_dump_with_secrets
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
+from fastapi import FastAPI
 from models_library.clusters import (
-    DEFAULT_CLUSTER_ID,
-    Cluster,
+    BaseCluster,
     ClusterAuthentication,
     ClusterTypeInModel,
-    JupyterHubTokenAuthentication,
-    KerberosAuthentication,
     NoAuthentication,
-    SimpleAuthentication,
+    TLSAuthentication,
 )
-from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.clusters import ClusterType
@@ -61,9 +57,9 @@ def test_dask_clients_pool_missing_raises_configuration_error(
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
 
-    with TestClient(app, raise_server_exceptions=True) as client:
+    with TestClient(app, raise_server_exceptions=True):  # noqa: SIM117
         with pytest.raises(ConfigurationError):
-            DaskClientsPool.instance(client.app)
+            DaskClientsPool.instance(app)
 
 
 def test_dask_clients_pool_properly_setup_and_deleted(
@@ -77,66 +73,36 @@ def test_dask_clients_pool_properly_setup_and_deleted(
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
 
-    with TestClient(app, raise_server_exceptions=True) as client:
+    with TestClient(app, raise_server_exceptions=True):
         mocked_dask_clients_pool.create.assert_called_once()
     mocked_dask_clients_pool.delete.assert_called_once()
 
 
 @pytest.fixture
-def fake_clusters(faker: Faker) -> Callable[[int], list[Cluster]]:
-    def creator(num_clusters: int) -> list[Cluster]:
-        fake_clusters = []
-        for n in range(num_clusters):
-            fake_clusters.append(
-                Cluster.model_validate(
-                    {
-                        "id": faker.pyint(),
-                        "name": faker.name(),
-                        "type": ClusterType.ON_PREMISE,
-                        "owner": faker.pyint(),
-                        "endpoint": faker.uri(),
-                        "authentication": choice(
-                            [
-                                NoAuthentication(),
-                                SimpleAuthentication(
-                                    username=faker.user_name(),
-                                    password=faker.password(),
-                                ),
-                                KerberosAuthentication(),
-                                JupyterHubTokenAuthentication(api_token=faker.uuid4()),
-                            ]
-                        ),
-                    }
-                )
-            )
-        return fake_clusters
-
-    return creator
-
-
-@pytest.fixture()
-def default_scheduler_set_as_osparc_gateway(
-    local_dask_gateway_server: DaskGatewayServer,
-    monkeypatch: pytest.MonkeyPatch,
-    faker: Faker,
-) -> Callable:
-    def creator():
-        monkeypatch.setenv(
-            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
-            local_dask_gateway_server.proxy_address,
-        )
-        monkeypatch.setenv(
-            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH",
-            json_dumps(
-                model_dump_with_secrets(
-                    SimpleAuthentication(
-                        username=faker.user_name(),
-                        password=SecretStr(local_dask_gateway_server.password),
+def fake_clusters(faker: Faker) -> Callable[[int], list[BaseCluster]]:
+    def creator(num_clusters: int) -> list[BaseCluster]:
+        return [
+            BaseCluster.model_validate(
+                {
+                    "id": faker.pyint(),
+                    "name": faker.name(),
+                    "type": ClusterType.ON_PREMISE,
+                    "owner": faker.pyint(),
+                    "endpoint": faker.uri(),
+                    "authentication": choice(  # noqa: S311
+                        [
+                            NoAuthentication(),
+                            TLSAuthentication(
+                                tls_client_cert=Path(faker.file_path()),
+                                tls_client_key=Path(faker.file_path()),
+                                tls_ca_file=Path(faker.file_path()),
+                            ),
+                        ]
                     ),
-                    show_secrets=True,
-                )
-            ),
-        )
+                }
+            )
+            for _n in range(num_clusters)
+        ]
 
     return creator
 
@@ -157,17 +123,14 @@ def default_scheduler_set_as_dask_scheduler(
 @pytest.fixture(
     params=[
         "default_scheduler_set_as_dask_scheduler",
-        "default_scheduler_set_as_osparc_gateway",
     ]
 )
 def default_scheduler(
     default_scheduler_set_as_dask_scheduler,
-    default_scheduler_set_as_osparc_gateway,
     request,
 ):
     {
         "default_scheduler_set_as_dask_scheduler": default_scheduler_set_as_dask_scheduler,
-        "default_scheduler_set_as_osparc_gateway": default_scheduler_set_as_osparc_gateway,
     }[request.param]()
 
 
@@ -175,28 +138,30 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
     minimal_dask_config: None,
     mocker: MockerFixture,
     client: TestClient,
-    fake_clusters: Callable[[int], list[Cluster]],
+    fake_clusters: Callable[[int], list[BaseCluster]],
 ):
     assert client.app
+    the_app = cast(FastAPI, client.app)
     mocked_dask_client = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
         autospec=True,
     )
     mocked_dask_client.create.return_value = mocked_dask_client
-    clients_pool = DaskClientsPool.instance(client.app)
+    clients_pool = DaskClientsPool.instance(the_app)
     mocked_dask_client.create.assert_not_called()
     mocked_dask_client.register_handlers.assert_not_called()
 
     clusters = fake_clusters(30)
     mocked_creation_calls = []
+    assert isinstance(the_app.state.settings, AppSettings)
     for cluster in clusters:
         mocked_creation_calls.append(
             mock.call(
                 app=client.app,
-                settings=client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
+                settings=the_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
                 authentication=cluster.authentication,
                 endpoint=cluster.endpoint,
-                tasks_file_link_type=client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
+                tasks_file_link_type=the_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE,
                 cluster_type=ClusterTypeInModel.ON_PREMISE,
             )
         )
@@ -218,14 +183,16 @@ async def test_acquiring_wrong_cluster_raises_exception(
     minimal_dask_config: None,
     mocker: MockerFixture,
     client: TestClient,
-    fake_clusters: Callable[[int], list[Cluster]],
+    fake_clusters: Callable[[int], list[BaseCluster]],
 ):
+    assert client.app
+    the_app = cast(FastAPI, client.app)
     mocked_dask_client = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
         autospec=True,
     )
     mocked_dask_client.create.side_effect = Exception
-    clients_pool = DaskClientsPool.instance(client.app)
+    clients_pool = DaskClientsPool.instance(the_app)
     mocked_dask_client.assert_not_called()
 
     non_existing_cluster = fake_clusters(1)[0]
@@ -237,9 +204,9 @@ async def test_acquiring_wrong_cluster_raises_exception(
 def test_default_cluster_correctly_initialized(
     minimal_dask_config: None, default_scheduler: None, client: TestClient
 ):
-    dask_scheduler_settings = (
-        client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
-    )
+    assert client.app
+    the_app = cast(FastAPI, client.app)
+    dask_scheduler_settings = the_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
     default_cluster = dask_scheduler_settings.default_cluster
     assert default_cluster
     assert (
@@ -247,7 +214,6 @@ def test_default_cluster_correctly_initialized(
         == dask_scheduler_settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL
     )
 
-    assert default_cluster.id == DEFAULT_CLUSTER_ID
     assert isinstance(default_cluster.authentication, get_args(ClusterAuthentication))
 
 
@@ -257,7 +223,9 @@ async def dask_clients_pool(
     default_scheduler,
     client: TestClient,
 ) -> AsyncIterator[DaskClientsPool]:
-    clients_pool = DaskClientsPool.instance(client.app)
+    assert client.app
+    the_app = cast(FastAPI, client.app)
+    clients_pool = DaskClientsPool.instance(the_app)
     assert clients_pool
     yield clients_pool
     await clients_pool.delete()
@@ -268,9 +236,8 @@ async def test_acquire_default_cluster(
     client: TestClient,
 ):
     assert client.app
-    dask_scheduler_settings = (
-        client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
-    )
+    the_app = cast(FastAPI, client.app)
+    dask_scheduler_settings = the_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
     default_cluster = dask_scheduler_settings.default_cluster
     assert default_cluster
     async with dask_clients_pool.acquire(default_cluster) as dask_client:
@@ -280,7 +247,7 @@ async def test_acquire_default_cluster(
 
         assert (
             dask_client.tasks_file_link_type
-            == client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
+            == the_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
         )
         future = dask_client.backend.client.submit(just_a_quick_fct, 12, 23)
         assert future
