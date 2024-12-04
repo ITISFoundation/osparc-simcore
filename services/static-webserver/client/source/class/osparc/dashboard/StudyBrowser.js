@@ -577,7 +577,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const destFolderId = data["folderId"];
         const moveFolder = () => {
           this.__moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
-            .then(this.__moveFolderToFolder(folderId, destFolderId)) // then move to folder
+            .then(() => this.__moveFolderToFolder(folderId, destFolderId)) // then move to folder
             .then(() => this.__reloadFolders())
             .catch(err => console.error(err));
         }
