@@ -149,16 +149,14 @@ async def test_inject_resource_limits_and_reservations(
             assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
 
 
-_json_schema_extra = {}
-SimcoreServiceLabels.model_json_schema()(_json_schema_extra)
-
-
 @pytest.mark.parametrize(
     "compose_spec, storage_opt_count",
     [
         pytest.param(
             json.loads(
-                _json_schema_extra["examples"][2]["simcore.service.compose-spec"]
+                SimcoreServiceLabels.model_json_schema()["examples"][2][
+                    "simcore.service.compose-spec"
+                ]
             ),
             2,
             id="two_storage_opt_entries",
