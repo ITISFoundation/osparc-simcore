@@ -45,6 +45,7 @@ qx.Class.define("osparc.store.Tags", {
           tagsData.forEach(tagData => {
             const tag = this.__addToCache(tagData);
             tags.push(tag);
+            this.fetchAccessRights(tag);
           });
           return tags;
         });
@@ -52,6 +53,10 @@ qx.Class.define("osparc.store.Tags", {
 
     getTags: function() {
       return this.tagsCached;
+    },
+
+    getTag: function(tagId = null) {
+      return this.tagsCached.find(f => f.getTagId() === tagId);
     },
 
     postTag: function(newTagData) {
@@ -97,8 +102,15 @@ qx.Class.define("osparc.store.Tags", {
         .catch(console.error);
     },
 
-    getTag: function(tagId = null) {
-      return this.tagsCached.find(f => f.getTagId() === tagId);
+    fetchAccessRights: function(tag) {
+      const params = {
+        url: {
+          "tagId": tag.getTagId()
+        }
+      };
+      osparc.data.Resources.fetch("tags", "getAccessRights", params)
+        .then(accessRights => tag.setAccessRights(accessRights))
+        .catch(err => console.error(err));
     },
 
     __addToCache: function(tagData) {
