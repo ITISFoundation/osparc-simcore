@@ -68,7 +68,10 @@ async def get_api_key(
     product_name: ProductName,
 ) -> ApiKey:
     api_key: ApiKey | None = await _repository.get_api_key(
-        app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
+        app,
+        api_key_id=api_key_id,
+        user_id=user_id,
+        product_name=product_name,
     )
     if api_key is not None:
         return api_key

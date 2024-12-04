@@ -146,6 +146,8 @@ async def get_api_key(
                 id=f"{row.id}",  # NOTE: remove after migration to str
                 display_name=row.display_name,
                 expiration=row.expires_at,
+                api_key=row.api_key,
+                api_secret=row.api_secret,
             )
             if row
             else None
