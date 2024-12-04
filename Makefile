@@ -582,7 +582,8 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 openapi-specs: .env _check_venv_active ## generates and validates openapi specifications and schemas of ALL service's API
 	@for makefile in $(MAKEFILES_WITH_OPENAPI_SPECS); do \
 		echo "Generating openapi-specs using $${makefile}"; \
-		$(MAKE_C) $$(dirname $${makefile}) install-dev && $(MAKE_C) $$(dirname $${makefile}) $@; \
+		$(MAKE_C) $$(dirname $${makefile}) install-dev; \
+		$(MAKE_C) $$(dirname $${makefile}) $@; \
 		printf "%0.s=" {1..100} && printf "\n"; \
 	done
 
