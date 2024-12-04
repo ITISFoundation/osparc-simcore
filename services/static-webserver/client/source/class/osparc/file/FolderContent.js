@@ -53,6 +53,7 @@ qx.Class.define("osparc.file.FolderContent", {
 
   events: {
     "selectionChanged": "qx.event.type.Data", // tap
+    "multiSelectionChanged": "qx.event.type.Data", // tap
     "itemSelected": "qx.event.type.Data", // dbltap
     "requestDatasetFiles": "qx.event.type.Data",
   },
@@ -229,7 +230,9 @@ qx.Class.define("osparc.file.FolderContent", {
           allowEmptySelection: true
         });
         entries.forEach(entry => {
-          iconsGroup.add(entry);
+          if (!this.isMultiSelect()) {
+            iconsGroup.add(entry);
+          }
           iconsLayout.add(entry);
         });
       }
@@ -237,7 +240,11 @@ qx.Class.define("osparc.file.FolderContent", {
     },
 
     __itemTapped: function(item) {
-      this.fireDataEvent("selectionChanged", item);
+      if (this.isMultiSelect()) {
+        this.fireDataEvent("multiSelectionChanged", item);
+      } else {
+        this.fireDataEvent("selectionChanged", item);
+      }
     },
 
     __itemDblTapped: function(item) {
