@@ -369,103 +369,6 @@ paths:
                 $ref: '#/components/schemas/Envelope_Log_'
         3XX:
           description: redirection to specific ui application page
-  /v0/auth/api-keys:
-    get:
-      tags:
-      - auth
-      summary: List Api Keys
-      description: lists display names of API keys by this user
-      operationId: list_api_keys
-      responses:
-        '200':
-          description: returns the display names of API keys
-          content:
-            application/json:
-              schema:
-                items:
-                  type: string
-                type: array
-                title: Response 200 List Api Keys
-        '400':
-          description: key name requested is invalid
-        '401':
-          description: requires login to  list keys
-        '403':
-          description: not enough permissions to list keys
-    post:
-      tags:
-      - auth
-      summary: Create Api Key
-      description: creates API keys to access public API
-      operationId: create_api_key
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiKeyCreate'
-        required: true
-      responses:
-        '200':
-          description: Authorization granted returning API key
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiKeyGet'
-        '400':
-          description: key name requested is invalid
-        '401':
-          description: requires login to  list keys
-        '403':
-          description: not enough permissions to list keys
-    delete:
-      tags:
-      - auth
-      summary: Delete Api Key
-      description: deletes API key by name
-      operationId: delete_api_key
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiKeyCreate'
-        required: true
-      responses:
-        '204':
-          description: api key successfully deleted
-        '401':
-          description: requires login to  delete a key
-        '403':
-          description: not enough permissions to delete a key
-  /v0/auth/api-keys/{api_key_id}:
-    get:
-      tags:
-      - auth
-      summary: Get Api Key
-      description: returns the key or None
-      operationId: get_api_key
-      parameters:
-      - name: api_key_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Api Key Id
-      responses:
-        '200':
-          description: returns the api key or None
-          content:
-            application/json:
-              schema:
-                anyOf:
-                - $ref: '#/components/schemas/ApiKeyGet'
-                - type: 'null'
-                title: Response 200 Get Api Key
-        '400':
-          description: key name requested is invalid
-        '401':
-          description: requires login to get the keu
-        '403':
-          description: not enough permissions to get the keu
   /v0/auth/captcha:
     get:
       tags:
@@ -479,6 +382,100 @@ paths:
             application/json:
               schema: {}
             image/png: {}
+  /v0/auth/api-keys:
+    get:
+      tags:
+      - auth
+      summary: List Api Keys
+      description: lists API keys by this user
+      operationId: list_api_keys
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_ApiKeyGet__'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+    post:
+      tags:
+      - auth
+      summary: Create Api Key
+      description: creates API keys to access public API
+      operationId: create_api_key
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ApiKeyGet_'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+  /v0/auth/api-keys/{api_key_id}:
+    get:
+      tags:
+      - auth
+      summary: Get Api Key
+      description: returns the API Key with the given ID
+      operationId: get_api_key
+      parameters:
+      - name: api_key_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Api Key Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ApiKeyGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+    delete:
+      tags:
+      - auth
+      summary: Delete Api Key
+      description: deletes the API key with the given ID
+      operationId: delete_api_key
+      parameters:
+      - name: api_key_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Api Key Id
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
   /v0/groups:
     get:
       tags:
@@ -4474,7 +4471,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -6659,26 +6656,28 @@ components:
           type: string
           minLength: 3
           title: Display Name
-        base_url:
+        api_base_url:
           anyOf:
           - type: string
             maxLength: 2083
             minLength: 1
             format: uri
           - type: 'null'
-          title: Base Url
+          title: Api Base Url
         api_key:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Api Key
         api_secret:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Api Secret
       type: object
       required:
       - id
       - display_name
-      - api_key
-      - api_secret
       title: ApiKeyGet
     AppStatusCheck:
       properties:
@@ -7505,6 +7504,19 @@ components:
       additionalProperties: false
       type: object
       title: EmptyModel
+    Envelope_ApiKeyGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ApiKeyGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ApiKeyGet]
     Envelope_AppStatusCheck_:
       properties:
         data:
@@ -8461,6 +8473,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[Announcement]]
+    Envelope_list_ApiKeyGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ApiKeyGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[ApiKeyGet]]
     Envelope_list_DatasetMetaData__:
       properties:
         data:

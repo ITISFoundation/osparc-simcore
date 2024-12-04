@@ -34,7 +34,7 @@ async def create_api_key(_body: ApiKeyCreate):
     status_code=status.HTTP_200_OK,
 )
 async def list_api_keys():
-    """lists display names of API keys by this user"""
+    """lists API keys by this user"""
 
 
 @router.get(
@@ -44,13 +44,13 @@ async def list_api_keys():
     status_code=status.HTTP_200_OK,
 )
 async def get_api_key(_path: Annotated[ApiKeysPathParams, Depends()]):
-    """returns the key or None"""
+    """returns the API Key with the given ID"""
 
 
 @router.delete(
-    "/auth/api-keys",
+    "/auth/api-keys/{api_key_id}",
     operation_id="delete_api_key",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_api_key(_path: Annotated[ApiKeysPathParams, Depends()]):
-    """deletes API key by ID"""
+    """deletes the API key with the given ID"""
