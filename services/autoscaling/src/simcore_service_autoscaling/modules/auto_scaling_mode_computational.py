@@ -4,7 +4,7 @@ from typing import cast
 
 from aws_library.ec2 import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
-from models_library.clusters import InternalClusterAuthentication
+from models_library.clusters import ClusterAuthentication
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerLabelKey,
@@ -37,7 +37,7 @@ def _scheduler_url(app: FastAPI) -> AnyUrl:
     return app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL
 
 
-def _scheduler_auth(app: FastAPI) -> InternalClusterAuthentication:
+def _scheduler_auth(app: FastAPI) -> ClusterAuthentication:
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_DASK  # nosec
     return app_settings.AUTOSCALING_DASK.DASK_SCHEDULER_AUTH

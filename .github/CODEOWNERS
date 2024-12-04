@@ -33,7 +33,6 @@ Makefile                                  @pcrespov @sanderegg
 /services/efs-guardian/                   @matusdrobuliak66
 /services/invitations/                    @pcrespov
 /services/migration/                      @pcrespov
-/services/osparc-gateway-server/          @sanderegg
 /services/payments/                       @pcrespov @matusdrobuliak66
 /services/resource-usage-tracker/         @matusdrobuliak66
 /services/static-webserver/               @GitHK

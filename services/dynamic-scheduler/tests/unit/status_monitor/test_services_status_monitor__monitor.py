@@ -404,7 +404,7 @@ async def test_expected_calls_to_notify_frontend(  # pylint:disable=too-many-arg
         ):
             with attempt:
                 # pylint:disable=protected-access
-                await monitor._worker_start_get_status_requests()  # noqa: SLF001
+                await monitor._worker_check_services_require_status_update()  # noqa: SLF001
                 for method in ("start", "on_created", "on_result"):
                     await _assert_call_to(
                         deferred_status_spies, method=method, count=i + 1
@@ -428,7 +428,7 @@ async def test_expected_calls_to_notify_frontend(  # pylint:disable=too-many-arg
     ):
         with attempt:
             # pylint:disable=protected-access
-            await monitor._worker_start_get_status_requests()  # noqa: SLF001
+            await monitor._worker_check_services_require_status_update()  # noqa: SLF001
             assert remove_tracked_spy.call_count == remove_tracked_count
 
 
