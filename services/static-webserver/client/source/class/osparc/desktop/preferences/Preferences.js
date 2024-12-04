@@ -29,9 +29,6 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
     if (osparc.data.Permissions.getInstance().canDo("user.tag")) {
       this.__addTagsPage();
     }
-    if (osparc.product.Utils.showClusters()) {
-      this.__addClustersPage();
-    }
   },
 
   members: {
@@ -62,25 +59,6 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
       const tagsPage = new osparc.desktop.preferences.pages.TagsPage();
       const page = this.addTab(title, iconSrc, tagsPage);
       osparc.utils.Utils.setIdToWidget(page.getChildControl("button"), "preferencesTagsTabBtn");
-    },
-
-    __addClustersPage: function() {
-      const title = this.tr("Clusters");
-      const iconSrc = "@FontAwesome5Solid/server/24";
-      const clustersPage = new osparc.desktop.preferences.pages.ClustersPage();
-      const page = this.addTab(title, iconSrc, clustersPage);
-      const clustersBtn = page.getChildControl("button");
-      clustersBtn.exclude();
-      const isDisabled = osparc.utils.DisabledPlugins.isClustersDisabled();
-      if (isDisabled === false) {
-        osparc.data.Resources.get("clusters")
-          .then(clusters => {
-            if (clusters.length || osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
-              clustersBtn.show();
-            }
-          })
-          .catch(err => console.error(err));
-      }
     },
   }
 });

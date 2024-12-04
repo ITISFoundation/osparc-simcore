@@ -231,7 +231,6 @@ async def test_run_solver_job(
         "result",
         "pipeline_details",
         "iteration",
-        "cluster_id",
         "url",
         "stop_url",
         "submitted",
@@ -269,7 +268,6 @@ async def test_run_solver_job(
                         "progress": 0.0,
                     },
                     "iteration": 1,
-                    "cluster_id": 0,
                     "url": "http://test.com",
                     "stop_url": "http://test.com",
                     "started": None,
@@ -365,7 +363,6 @@ async def test_run_solver_job(
     resp = await client.post(
         f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}:start",
         auth=auth,
-        params={"cluster_id": 1},
     )
     assert resp.status_code == status.HTTP_202_ACCEPTED
     assert mocked_directorv2_service_api["inspect_computation"].called

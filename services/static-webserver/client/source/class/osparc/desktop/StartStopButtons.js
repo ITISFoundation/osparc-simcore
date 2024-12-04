@@ -64,31 +64,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "cluster-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-            alignY: "middle"
-          }));
-          this._add(control);
-          break;
-        case "cluster-selector": {
-          control = new qx.ui.form.SelectBox().set({
-            maxHeight: 32
-          });
-          this.getChildControl("cluster-layout").add(control);
-          const store = osparc.store.Store.getInstance();
-          store.addListener("changeClusters", () => this.__populateClustersSelectBox(), this);
-          break;
-        }
-        case "cluster-mini-view":
-          control = new osparc.cluster.ClusterMiniView();
-          this.getChildControl("cluster-layout").add(control);
-          this.getChildControl("cluster-selector").addListener("changeSelection", e => {
-            const selection = e.getData();
-            if (selection.length) {
-              control.setClusterId(selection[0].id);
-            }
-          }, this);
-          break;
         case "dynamics-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
@@ -140,9 +115,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("cluster-selector");
-      this.getChildControl("cluster-mini-view");
-
       this.getChildControl("start-service-button");
       this.getChildControl("stop-service-button");
 
@@ -209,24 +181,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       ];
     },
 
-    __populateClustersSelectBox: function() {
-      osparc.cluster.Utils.populateClustersSelectBox(this.getChildControl("cluster-selector"));
-      const clusters = osparc.store.Store.getInstance().getClusters();
-      this.getChildControl("cluster-layout").setVisibility(Object.keys(clusters).length ? "visible" : "excluded");
-    },
-
-    getClusterId: function() {
-      if (this.getChildControl("cluster-layout").isVisible()) {
-        return this.getChildControl("cluster-selector").getSelection()[0].id;
-      }
-      return null;
-    },
-
     __applyStudy: async function(study) {
       study.getWorkbench().addListener("pipelineChanged", this.__checkButtonsVisible, this);
       study.addListener("changePipelineRunning", this.__updateRunButtonsStatus, this);
-      this.__populateClustersSelectBox();
-      this.__getComputations();
       this.__checkButtonsVisible();
       this.__updateRunButtonsStatus();
     },
@@ -250,34 +207,5 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         this.__setRunning(study.isPipelineRunning());
       }
     },
-
-    __getComputations: function() {
-      const studyId = this.getStudy().getUuid();
-      const url = "/computations/" + encodeURIComponent(studyId);
-      const req = new osparc.io.request.ApiRequest(url, "GET");
-      req.addListener("success", e => {
-        const res = e.getTarget().getResponse();
-        if (res && res.data && "cluster_id" in res.data) {
-          const clusterId = res.data["cluster_id"];
-          if (clusterId) {
-            const clustersBox = this.getChildControl("cluster-selector");
-            if (clustersBox.isVisible()) {
-              clustersBox.getSelectables().forEach(selectable => {
-                if (selectable.id === clusterId) {
-                  clustersBox.setSelection([selectable]);
-                }
-              });
-            }
-          }
-        }
-      }, this);
-      req.addListener("fail", e => {
-        const res = e.getTarget().getResponse();
-        if (res && res.error) {
-          console.error(res.error);
-        }
-      });
-      req.send();
-    }
   }
 });

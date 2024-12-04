@@ -13,7 +13,7 @@ from arrow import utcnow
 from aws_library.ec2 import Resources
 from faker import Faker
 from models_library.clusters import (
-    InternalClusterAuthentication,
+    ClusterAuthentication,
     NoAuthentication,
     TLSAuthentication,
 )
@@ -52,7 +52,7 @@ _authentication_types = [
     "authentication", _authentication_types, ids=lambda p: f"authentication-{p.type}"
 )
 async def test__scheduler_client_with_wrong_url(
-    faker: Faker, authentication: InternalClusterAuthentication
+    faker: Faker, authentication: ClusterAuthentication
 ):
     with pytest.raises(DaskSchedulerNotFoundError):
         async with _scheduler_client(
@@ -72,7 +72,7 @@ def scheduler_url(dask_spec_local_cluster: distributed.SpecCluster) -> AnyUrl:
 
 
 @pytest.fixture
-def scheduler_authentication() -> InternalClusterAuthentication:
+def scheduler_authentication() -> ClusterAuthentication:
     return NoAuthentication()
 
 
@@ -92,7 +92,7 @@ def dask_workers_config() -> dict[str, Any]:
 
 
 async def test__scheduler_client(
-    scheduler_url: AnyUrl, scheduler_authentication: InternalClusterAuthentication
+    scheduler_url: AnyUrl, scheduler_authentication: ClusterAuthentication
 ):
     async with _scheduler_client(scheduler_url, scheduler_authentication):
         ...
@@ -109,7 +109,7 @@ async def test_list_unrunnable_tasks_with_no_workers(
 
 async def test_list_unrunnable_tasks(
     scheduler_url: AnyUrl,
-    scheduler_authentication: InternalClusterAuthentication,
+    scheduler_authentication: ClusterAuthentication,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
 ):
     # we have nothing running now
@@ -131,7 +131,7 @@ _REMOTE_FCT_SLEEP_TIME_S: Final[int] = 3
 
 async def test_list_processing_tasks(
     scheduler_url: AnyUrl,
-    scheduler_authentication: InternalClusterAuthentication,
+    scheduler_authentication: ClusterAuthentication,
     dask_spec_cluster_client: distributed.Client,
 ):
     def _add_fct(x: int, y: int) -> int:
@@ -190,7 +190,7 @@ def fake_ec2_instance_data_with_invalid_ec2_name(
 
 async def test_get_worker_still_has_results_in_memory_with_invalid_ec2_name_raises(
     scheduler_url: AnyUrl,
-    scheduler_authentication: InternalClusterAuthentication,
+    scheduler_authentication: ClusterAuthentication,
     fake_ec2_instance_data_with_invalid_ec2_name: EC2InstanceData,
 ):
     with pytest.raises(Ec2InvalidDnsNameError):
@@ -216,7 +216,7 @@ async def test_get_worker_still_has_results_in_memory_with_no_workers_raises(
 
 async def test_get_worker_still_has_results_in_memory_with_invalid_worker_host_raises(
     scheduler_url: AnyUrl,
-    scheduler_authentication: InternalClusterAuthentication,
+    scheduler_authentication: ClusterAuthentication,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     ec2_instance_data = fake_ec2_instance_data()
@@ -229,7 +229,7 @@ async def test_get_worker_still_has_results_in_memory_with_invalid_worker_host_r
 @pytest.mark.parametrize("fct_shall_err", [True, False], ids=str)
 async def test_get_worker_still_has_results_in_memory(
     scheduler_url: AnyUrl,
-    scheduler_authentication: InternalClusterAuthentication,
+    scheduler_authentication: ClusterAuthentication,
     dask_spec_cluster_client: distributed.Client,
     fake_localhost_ec2_instance_data: EC2InstanceData,
     fct_shall_err: bool,
@@ -291,7 +291,7 @@ async def test_get_worker_still_has_results_in_memory(
 
 async def test_worker_used_resources_with_invalid_ec2_name_raises(
     scheduler_url: AnyUrl,
-    scheduler_authentication: InternalClusterAuthentication,
+    scheduler_authentication: ClusterAuthentication,
     fake_ec2_instance_data_with_invalid_ec2_name: EC2InstanceData,
 ):
     with pytest.raises(Ec2InvalidDnsNameError):
@@ -317,7 +317,7 @@ async def test_worker_used_resources_with_no_workers_raises(
 
 async def test_worker_used_resources_with_invalid_worker_host_raises(
     scheduler_url: AnyUrl,
-    scheduler_authentication: InternalClusterAuthentication,
+    scheduler_authentication: ClusterAuthentication,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     ec2_instance_data = fake_ec2_instance_data()
@@ -329,7 +329,7 @@ async def test_worker_used_resources_with_invalid_worker_host_raises(
 
 async def test_worker_used_resources(
     scheduler_url: AnyUrl,
-    scheduler_authentication: InternalClusterAuthentication,
+    scheduler_authentication: ClusterAuthentication,
     dask_spec_cluster_client: distributed.Client,
     fake_localhost_ec2_instance_data: EC2InstanceData,
 ):

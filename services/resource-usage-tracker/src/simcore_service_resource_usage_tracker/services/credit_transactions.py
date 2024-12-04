@@ -13,19 +13,18 @@ from models_library.resource_tracker import (
 )
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RabbitMQClient
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..api.rest.dependencies import get_repository
+from ..api.rest.dependencies import get_resource_tracker_db_engine
 from ..models.credit_transactions import CreditTransactionCreate
-from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from .modules.db import credit_transactions_db
 from .modules.rabbitmq import get_rabbitmq_client_from_request
 from .utils import sum_credit_transactions_and_publish_to_rabbitmq
 
 
 async def create_credit_transaction(
     credit_transaction_create_body: CreditTransactionCreateBody,
-    resource_tracker_repo: Annotated[
-        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
-    ],
+    db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
     rabbitmq_client: Annotated[
         RabbitMQClient, Depends(get_rabbitmq_client_from_request)
     ],
@@ -47,12 +46,12 @@ async def create_credit_transaction(
         created_at=credit_transaction_create_body.created_at,
         last_heartbeat_at=credit_transaction_create_body.created_at,
     )
-    transaction_id = await resource_tracker_repo.create_credit_transaction(
-        transaction_create
+    transaction_id = await credit_transactions_db.create_credit_transaction(
+        db_engine, data=transaction_create
     )
 
     await sum_credit_transactions_and_publish_to_rabbitmq(
-        resource_tracker_repo,
+        db_engine,
         rabbitmq_client,
         credit_transaction_create_body.product_name,
         credit_transaction_create_body.wallet_id,
@@ -64,10 +63,8 @@ async def create_credit_transaction(
 async def sum_credit_transactions_by_product_and_wallet(
     product_name: ProductName,
     wallet_id: WalletID,
-    resource_tracker_repo: Annotated[
-        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
-    ],
+    db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ) -> WalletTotalCredits:
-    return await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
-        product_name, wallet_id
+    return await credit_transactions_db.sum_credit_transactions_by_product_and_wallet(
+        db_engine, product_name=product_name, wallet_id=wallet_id
     )
