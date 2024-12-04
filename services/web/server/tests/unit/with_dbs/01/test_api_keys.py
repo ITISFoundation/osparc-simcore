@@ -119,7 +119,7 @@ async def test_create_api_key(
 )
 async def test_delete_api_keys(
     client: TestClient,
-    fake_user_api_keys: list[str],
+    fake_user_api_keys: list[ApiKey],
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPStatus,
