@@ -6487,7 +6487,7 @@
             "$ref": "#/components/schemas/UnitExtraInfo"
           },
           "currentCostPerUnit": {
-            "type": "number",
+            "type": "string",
             "title": "Currentcostperunit"
           },
           "default": {
@@ -7088,7 +7088,7 @@
             "title": "Modified"
           },
           "availableCredits": {
-            "type": "number",
+            "type": "string",
             "title": "Availablecredits"
           }
         },
