@@ -11424,7 +11424,7 @@ components:
         unitExtraInfo:
           $ref: '#/components/schemas/UnitExtraInfo-Output'
         currentCostPerUnit:
-          type: number
+          type: string
           title: Currentcostperunit
         default:
           type: boolean
@@ -11468,7 +11468,7 @@ components:
         unitExtraInfo:
           $ref: '#/components/schemas/UnitExtraInfo-Output'
         currentCostPerUnit:
-          type: number
+          type: string
           title: Currentcostperunit
         default:
           type: boolean
@@ -14189,7 +14189,7 @@ components:
           format: date-time
           title: Modified
         availableCredits:
-          type: number
+          type: string
           title: Availablecredits
       type: object
       required:
