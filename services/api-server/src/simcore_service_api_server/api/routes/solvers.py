@@ -276,6 +276,11 @@ async def get_solver_pricing_plan(
 ):
     assert user_id
     assert product_name
-    return await webserver_api.get_service_pricing_plan(
+    pricing_plan_or_none = await webserver_api.get_service_pricing_plan(
         solver_key=solver_key, version=version
     )
+
+    # TODO: raise if None!! Check with MB
+    assert pricing_plan_or_none
+
+    return pricing_plan_or_none
