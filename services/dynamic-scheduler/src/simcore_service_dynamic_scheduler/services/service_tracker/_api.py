@@ -184,7 +184,7 @@ async def should_notify_frontend_for_service(
     )
 
 
-async def set_frontned_notified_for_service(app: FastAPI, node_id: NodeID) -> None:
+async def set_frontend_notified_for_service(app: FastAPI, node_id: NodeID) -> None:
     tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:

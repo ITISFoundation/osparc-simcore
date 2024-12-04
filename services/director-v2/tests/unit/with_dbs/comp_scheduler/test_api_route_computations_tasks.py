@@ -30,6 +30,8 @@ from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 
 pytest_simcore_core_services_selection = [
     "postgres",
+    "rabbit",
+    "redis",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",

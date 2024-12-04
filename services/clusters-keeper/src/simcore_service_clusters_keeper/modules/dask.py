@@ -3,7 +3,7 @@ from collections.abc import Coroutine
 from typing import Any, Final
 
 import distributed
-from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
+from models_library.clusters import ClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl
 
 _logger = logging.getLogger(__name__)
@@ -21,9 +21,7 @@ async def _wrap_client_async_routine(
 _CONNECTION_TIMEOUT: Final[str] = "5"
 
 
-async def ping_scheduler(
-    url: AnyUrl, authentication: InternalClusterAuthentication
-) -> bool:
+async def ping_scheduler(url: AnyUrl, authentication: ClusterAuthentication) -> bool:
     try:
         security = distributed.Security()
         if isinstance(authentication, TLSAuthentication):
@@ -47,9 +45,7 @@ async def ping_scheduler(
     return False
 
 
-async def is_scheduler_busy(
-    url: AnyUrl, authentication: InternalClusterAuthentication
-) -> bool:
+async def is_scheduler_busy(url: AnyUrl, authentication: ClusterAuthentication) -> bool:
     security = distributed.Security()
     if isinstance(authentication, TLSAuthentication):
         security = distributed.Security(

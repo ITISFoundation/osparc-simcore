@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint:disable=too-many-positional-arguments
+# pylint: disable=too-many-positional-arguments
 
 import datetime as dt
 import json
@@ -34,10 +34,8 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
     PricingUnitGet,
 )
-from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
-from models_library.projects_nodes_io import NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.service_settings_labels import SimcoreServiceLabels
@@ -49,7 +47,7 @@ from models_library.services_resources import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
-from pydantic import AnyHttpUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
+from pydantic import AnyHttpUrl, ByteSize, PositiveInt, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
@@ -186,15 +184,29 @@ def mocked_catalog_service_fcts(
     def _mocked_services_details(
         request, service_key: str, service_version: str
     ) -> httpx.Response:
+        assert "json_schema_extra" in ServiceGet.model_config
+        assert isinstance(ServiceGet.model_config["json_schema_extra"], dict)
+        assert isinstance(
+            ServiceGet.model_config["json_schema_extra"]["examples"], list
+        )
+        assert isinstance(
+            ServiceGet.model_config["json_schema_extra"]["examples"][0], dict
+        )
+        data_published = fake_service_details.model_copy(
+            update={
+                "key": urllib.parse.unquote(service_key),
+                "version": service_version,
+            }
+        ).model_dump(by_alias=True)
+        data = {
+            **ServiceGet.model_config["json_schema_extra"]["examples"][0],
+            **data_published,
+        }
+        payload = ServiceGet.model_validate(data)
         return httpx.Response(
             200,
             json=jsonable_encoder(
-                fake_service_details.model_copy(
-                    update={
-                        "key": urllib.parse.unquote(service_key),
-                        "version": service_version,
-                    }
-                ),
+                payload,
                 by_alias=True,
             ),
         )
@@ -274,6 +286,11 @@ def mocked_catalog_service_fcts_deprecated(
         yield respx_mock
 
 
+assert "json_schema_extra" in PricingPlanGet.model_config
+assert isinstance(PricingPlanGet.model_config["json_schema_extra"], dict)
+assert isinstance(PricingPlanGet.model_config["json_schema_extra"]["examples"], list)
+
+
 @pytest.fixture(
     params=PricingPlanGet.model_config["json_schema_extra"]["examples"],
     ids=["with ec2 restriction", "without"],
@@ -286,6 +303,7 @@ def default_pricing_plan(request: pytest.FixtureRequest) -> PricingPlanGet:
 def default_pricing_plan_aws_ec2_type(
     default_pricing_plan: PricingPlanGet,
 ) -> str | None:
+    assert default_pricing_plan.pricing_units
     for p in default_pricing_plan.pricing_units:
         if p.default:
             if p.specific_info.aws_ec2_instances:
@@ -313,6 +331,11 @@ def mocked_resource_usage_tracker_service_fcts(
         )
 
     def _mocked_get_pricing_unit(request, pricing_plan_id: int) -> httpx.Response:
+        assert "json_schema_extra" in PricingUnitGet.model_config
+        assert isinstance(PricingUnitGet.model_config["json_schema_extra"], dict)
+        assert isinstance(
+            PricingUnitGet.model_config["json_schema_extra"]["examples"], list
+        )
         return httpx.Response(
             200,
             json=jsonable_encoder(
@@ -360,30 +383,6 @@ async def test_computation_create_validators(
 ):
     user = registered_user()
     proj = await project(user, workbench=fake_workbench_without_outputs)
-    # cluster id and use_on_demand raises
-    with pytest.raises(ValidationError, match=r"cluster_id cannot be set.+"):
-        ComputationCreate(
-            user_id=user["id"],
-            project_id=proj.uuid,
-            product_name=faker.pystr(),
-            use_on_demand_clusters=True,
-            cluster_id=faker.pyint(),
-        )
-    # this should not raise
-    ComputationCreate(
-        user_id=user["id"],
-        project_id=proj.uuid,
-        product_name=faker.pystr(),
-        use_on_demand_clusters=True,
-        cluster_id=None,
-    )
-    ComputationCreate(
-        user_id=user["id"],
-        project_id=proj.uuid,
-        product_name=faker.pystr(),
-        use_on_demand_clusters=False,
-        cluster_id=faker.pyint(),
-    )
     ComputationCreate(
         user_id=user["id"],
         project_id=proj.uuid,
@@ -479,6 +478,13 @@ def mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name(
     )
 
 
+assert "json_schema_extra" in ServiceResourcesDictHelpers.model_config
+assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"], dict)
+assert isinstance(
+    ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"], list
+)
+
+
 @pytest.fixture(
     params=ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"]
 )
@@ -545,7 +551,7 @@ async def test_create_computation_with_wallet(
             project_nodes_repo = ProjectNodesRepo(project_uuid=proj.uuid)
             for node in await project_nodes_repo.list(connection):
                 if (
-                    to_node_class(proj.workbench[NodeIDStr(f"{node.node_id}")].key)
+                    to_node_class(proj.workbench[f"{node.node_id}"].key)
                     != NodeClass.FRONTEND
                 ):
                     assert node.required_resources
@@ -590,7 +596,11 @@ async def test_create_computation_with_wallet(
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [PricingPlanGet(**PricingPlanGet.model_config["json_schema_extra"]["examples"][0])],
+    [
+        PricingPlanGet.model_validate(
+            PricingPlanGet.model_config["json_schema_extra"]["examples"][0]
+        )
+    ],
 )
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_422(
     minimal_configuration: None,
@@ -730,6 +740,13 @@ async def test_start_computation_with_project_node_resources_defined(
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
+    assert "json_schema_extra" in ServiceResourcesDictHelpers.model_config
+    assert isinstance(
+        ServiceResourcesDictHelpers.model_config["json_schema_extra"], dict
+    )
+    assert isinstance(
+        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"], list
+    )
     proj = await project(
         user,
         project_nodes_overrides={
@@ -785,77 +802,6 @@ async def test_start_computation_with_deprecated_services_raises_406(
     assert response.status_code == status.HTTP_406_NOT_ACCEPTABLE, response.text
 
 
-@pytest.fixture
-async def unusable_cluster(
-    registered_user: Callable[..., dict[str, Any]],
-    create_cluster: Callable[..., Awaitable[Cluster]],
-) -> ClusterID:
-    user = registered_user()
-    created_cluster = await create_cluster(user)
-    return created_cluster.id
-
-
-async def test_start_computation_with_forbidden_cluster_raises_403(
-    minimal_configuration: None,
-    mocked_director_service_fcts,
-    mocked_catalog_service_fcts,
-    product_name: str,
-    fake_workbench_without_outputs: dict[str, Any],
-    registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
-    unusable_cluster: ClusterID,
-):
-    user = registered_user()
-    proj = await project(user, workbench=fake_workbench_without_outputs)
-    create_computation_url = httpx.URL("/v2/computations")
-    response = await async_client.post(
-        create_computation_url,
-        json=jsonable_encoder(
-            ComputationCreate(
-                user_id=user["id"],
-                project_id=proj.uuid,
-                start_pipeline=True,
-                product_name=product_name,
-                cluster_id=unusable_cluster,
-            )
-        ),
-    )
-    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
-    assert f"cluster {unusable_cluster}" in response.text
-
-
-async def test_start_computation_with_unknown_cluster_raises_406(
-    minimal_configuration: None,
-    mocked_director_service_fcts,
-    mocked_catalog_service_fcts,
-    product_name: str,
-    fake_workbench_without_outputs: dict[str, Any],
-    registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
-    faker: Faker,
-):
-    user = registered_user()
-    proj = await project(user, workbench=fake_workbench_without_outputs)
-    create_computation_url = httpx.URL("/v2/computations")
-    unknown_cluster_id = faker.pyint(1, 10000)
-    response = await async_client.post(
-        create_computation_url,
-        json=jsonable_encoder(
-            ComputationCreate(
-                user_id=user["id"],
-                project_id=proj.uuid,
-                start_pipeline=True,
-                product_name=product_name,
-                cluster_id=unknown_cluster_id,
-            )
-        ),
-    )
-    assert response.status_code == status.HTTP_406_NOT_ACCEPTABLE, response.text
-    assert f"cluster {unknown_cluster_id}" in response.text
-
-
 async def test_get_computation_from_empty_project(
     minimal_configuration: None,
     fake_workbench_without_outputs: dict[str, Any],
@@ -900,7 +846,6 @@ async def test_get_computation_from_empty_project(
         stop_url=None,
         result=None,
         iteration=None,
-        cluster_id=None,
         started=None,
         stopped=None,
         submitted=None,
@@ -966,7 +911,6 @@ async def test_get_computation_from_not_started_computation_task(
         stop_url=None,
         result=None,
         iteration=None,
-        cluster_id=None,
         started=None,
         stopped=None,
         submitted=None,
@@ -1043,7 +987,6 @@ async def test_get_computation_from_published_computation_task(
         stop_url=TypeAdapter(AnyHttpUrl).validate_python(f"{expected_stop_url}"),
         result=None,
         iteration=1,
-        cluster_id=DEFAULT_CLUSTER_ID,
         started=None,
         stopped=None,
         submitted=None,
