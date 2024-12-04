@@ -212,13 +212,22 @@ qx.Class.define("osparc.store.Folders", {
       };
       return osparc.data.Resources.getInstance().fetch("folders", "update", params)
         .then(folderData => {
-          this.__addToCache(folderData);
+          const folderMoved = updateData.parentFolderId !== oldParentFolderId;
+          if (folderMoved) {
+            this.fireDataEvent("folderRemoved", folder);
+          }
+          this.__addToCache(folderData); // it will update the folder model
+          if (folderMoved) {
+            this.fireDataEvent("folderAdded", folder);
+          }
+          /*
           if (updateData.parentFolderId !== oldParentFolderId) {
             this.fireDataEvent("folderMoved", {
               folder,
               oldParentFolderId,
             });
           }
+          */
         })
         .catch(console.error);
     },
@@ -255,11 +264,15 @@ qx.Class.define("osparc.store.Folders", {
       };
       return osparc.data.Resources.fetch("folders", "moveToWorkspace", params)
         .then(() => {
+          this.fireDataEvent("folderRemoved", folder);
           folder.setWorkspaceId(destWorkspaceId);
+          this.fireDataEvent("folderAdded", folder);
+          /*
           this.fireDataEvent("folderMoved", {
             folder,
             oldParentFolderId,
           });
+          */
         })
         .catch(err => console.error(err));
     },

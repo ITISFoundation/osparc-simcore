@@ -303,7 +303,8 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       // eslint-disable-next-line no-negated-condition
       const parentModel = this.__getModel(folder.getWorkspaceId(), oldParentFolderId !== undefined ? oldParentFolderId : folder.getParentFolderId());
       if (parentModel) {
-        const idx = parentModel.getChildren().toArray().findIndex(c => folder.getWorkspaceId() === c.getWorkspaceId() && folder.getFolderId() === c.getFolderId());
+        console.log("folder removed: children", parentModel.getChildren().toArray());
+        const idx = parentModel.getChildren().toArray().findIndex(c => "getWorkspaceId" in c && folder.getWorkspaceId() === c.getWorkspaceId() && folder.getFolderId() === c.getFolderId());
         if (idx > -1) {
           parentModel.getChildren().removeAt(idx);
         }
