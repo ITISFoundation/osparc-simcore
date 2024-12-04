@@ -59,70 +59,22 @@ def app_environment(
     "user_role,expected",
     [
         (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
+        *((r, status.HTTP_200_OK) for r in UserRole if r >= UserRole.GUEST),
     ],
 )
-async def test_get_profile(
+async def test_access_rights_on_get_profile(
+    user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role: UserRole,
     expected: HTTPStatus,
-    primary_group: dict[str, Any],
-    standard_groups: list[dict[str, Any]],
-    all_group: dict[str, str],
 ):
     assert client.app
 
     url = client.app.router["get_my_profile"].url_for()
     assert url.path == "/v0/me"
 
-    resp = await client.get(url.path)
-    data, error = await assert_status(resp, expected)
-
-    # check enveloped
-    e = Envelope[ProfileGet].model_validate(await resp.json())
-    assert e.error == error
-    assert (
-        e.data.model_dump(**RESPONSE_MODEL_POLICY, mode="json") == data
-        if e.data
-        else e.data == data
-    )
-
-    if not error:
-        profile = ProfileGet.model_validate(data)
-
-        product_group = {
-            "accessRights": {"delete": False, "read": False, "write": False},
-            "description": "osparc product group",
-            "gid": 2,
-            "inclusionRules": {},
-            "label": "osparc",
-            "thumbnail": None,
-        }
-
-        assert profile.login == logged_user["email"]
-        assert profile.gravatar_id
-        assert profile.first_name == logged_user.get("first_name", None)
-        assert profile.last_name == logged_user.get("last_name", None)
-        assert profile.role == user_role.name
-        assert profile.groups
-
-        got_profile_groups = profile.groups.model_dump(
-            **RESPONSE_MODEL_POLICY, mode="json"
-        )
-        assert got_profile_groups["me"] == primary_group
-        assert got_profile_groups["all"] == all_group
-
-        sorted_by_group_id = functools.partial(sorted, key=lambda d: d["gid"])
-        assert sorted_by_group_id(
-            got_profile_groups["organizations"]
-        ) == sorted_by_group_id([*standard_groups, product_group])
-
-        assert profile.preferences == await get_frontend_user_preferences_aggregation(
-            client.app, user_id=logged_user["id"], product_name="osparc"
-        )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, expected)
 
 
 @pytest.mark.parametrize(
@@ -130,11 +82,10 @@ async def test_get_profile(
     [
         (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
         (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
-        (UserRole.USER, status.HTTP_204_NO_CONTENT),
-        (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
+        *((r, status.HTTP_204_NO_CONTENT) for r in UserRole if r >= UserRole.USER),
     ],
 )
-async def test_update_profile(
+async def test_access_update_profile(
     logged_user: UserInfoDict,
     client: TestClient,
     user_role: UserRole,
@@ -145,17 +96,91 @@ async def test_update_profile(
     url = client.app.router["update_my_profile"].url_for()
     assert url.path == "/v0/me"
 
-    resp = await client.put(url.path, json={"last_name": "Foo"})
-    _, error = await assert_status(resp, expected)
+    resp = await client.put(f"{url}", json={"last_name": "Foo"})
+    await assert_status(resp, expected)
 
-    if not error:
-        resp = await client.get(f"{url}")
-        data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-        # This is a PUT! i.e. full replace of profile variable fields!
-        assert data["first_name"] == ProfileUpdate.model_fields["first_name"].default
-        assert data["last_name"] == "Foo"
-        assert data["role"] == user_role.name
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_profile(
+    logged_user: UserInfoDict,
+    client: TestClient,
+    user_role: UserRole,
+    primary_group: dict[str, Any],
+    standard_groups: list[dict[str, Any]],
+    all_group: dict[str, str],
+):
+    assert client.app
+
+    url = client.app.router["get_my_profile"].url_for()
+    assert url.path == "/v0/me"
+
+    resp = await client.get(f"{url}")
+    data, error = await assert_status(resp, status.HTTP_200_OK)
+
+    resp_model = Envelope[ProfileGet].model_validate(await resp.json())
+
+    assert resp_model.data.model_dump(**RESPONSE_MODEL_POLICY, mode="json") == data
+    assert resp_model.error is None
+
+    profile = resp_model.data
+
+    product_group = {
+        "accessRights": {"delete": False, "read": False, "write": False},
+        "description": "osparc product group",
+        "gid": 2,
+        "inclusionRules": {},
+        "label": "osparc",
+        "thumbnail": None,
+    }
+
+    assert profile.login == logged_user["email"]
+    assert profile.gravatar_id
+    assert profile.first_name == logged_user.get("first_name", None)
+    assert profile.last_name == logged_user.get("last_name", None)
+    assert profile.role == user_role.name
+    assert profile.groups
+
+    got_profile_groups = profile.groups.model_dump(**RESPONSE_MODEL_POLICY, mode="json")
+    assert got_profile_groups["me"] == primary_group
+    assert got_profile_groups["all"] == all_group
+
+    sorted_by_group_id = functools.partial(sorted, key=lambda d: d["gid"])
+    assert sorted_by_group_id(
+        got_profile_groups["organizations"]
+    ) == sorted_by_group_id([*standard_groups, product_group])
+
+    assert profile.preferences == await get_frontend_user_preferences_aggregation(
+        client.app, user_id=logged_user["id"], product_name="osparc"
+    )
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_update_profile(
+    logged_user: UserInfoDict,
+    client: TestClient,
+    user_role: UserRole,
+):
+    assert client.app
+
+    url = client.app.router["update_my_profile"].url_for()
+    assert url.path == "/v0/me"
+    resp = await client.put(f"{url}", json={"last_name": "Foo"})
+    _, error = await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    assert not error
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # This is a PUT! i.e. full replace of profile variable fields!
+    assert data["first_name"] == ProfileUpdate.model_fields["first_name"].default
+    assert data["last_name"] == "Foo"
+    assert data["role"] == user_role.name
 
 
 @pytest.fixture
@@ -219,7 +244,7 @@ async def test_get_profile_with_failing_db_connection(
         (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
     ],
 )
-async def test_only_product_owners_can_access_users_api(
+async def test_access_rights_on_search_users_only_product_owners_can_access(
     client: TestClient,
     logged_user: UserInfoDict,
     expected: HTTPStatus,
