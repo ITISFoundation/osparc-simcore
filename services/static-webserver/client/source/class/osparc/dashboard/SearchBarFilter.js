@@ -242,8 +242,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     __addClassifiers: function(menuButton) {
       const classifiers = osparc.store.Store.getInstance().getClassifiers();
-      menuButton.setVisibility(classifiers.length ? "visible" : "excluded");
-      if (classifiers.length) {
+      menuButton.setVisibility(classifiers && classifiers.length ? "visible" : "excluded");
+      if (classifiers && classifiers.length) {
         const classifiersMenu = new qx.ui.menu.Menu();
         classifiers.forEach(classifier => {
           const classifierButton = new qx.ui.menu.Button(classifier.display_name);
