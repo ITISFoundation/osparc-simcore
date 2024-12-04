@@ -38,7 +38,7 @@ async def create_api_key(
     # generate key and secret
     api_key, api_secret = _generate_api_key_and_secret(display_name)
 
-    return await _db.create(
+    return await _db.create_api_key(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -55,7 +55,7 @@ async def get_api_keys(
     user_id: UserID,
     product_name: ProductName,
 ) -> list[ApiKey]:
-    api_keys: list[ApiKey] = await _db.get_all(
+    api_keys: list[ApiKey] = await _db.list_api_keys(
         app, user_id=user_id, product_name=product_name
     )
     return api_keys
@@ -68,7 +68,7 @@ async def get_api_key(
     user_id: UserID,
     product_name: ProductName,
 ) -> ApiKey:
-    api_key: ApiKey | None = await _db.get(
+    api_key: ApiKey | None = await _db.get_api_key(
         app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
     )
     if api_key is not None:
@@ -88,7 +88,7 @@ async def get_or_create_api_key(
 
     key, secret = _generate_api_key_and_secret(display_name)
 
-    api_key: ApiKey = await _db.get_or_create(
+    api_key: ApiKey = await _db.get_or_create_api_key(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -108,7 +108,7 @@ async def delete_api_key(
     user_id: UserID,
     product_name: ProductName,
 ) -> None:
-    await _db.delete(
+    await _db.delete_api_key(
         app,
         api_key_id=api_key_id,
         user_id=user_id,

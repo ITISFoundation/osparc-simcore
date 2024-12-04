@@ -34,7 +34,7 @@ async def fake_user_api_keys(
 ) -> AsyncIterable[list[int]]:
     assert client.app
     api_keys: list[ApiKey] = [
-        await _db.create(
+        await _db.create_api_key(
             client.app,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -49,7 +49,7 @@ async def fake_user_api_keys(
     yield api_keys
 
     for api_key in api_keys:
-        await _db.delete(
+        await _db.delete_api_key(
             client.app,
             api_key_id=api_key.id,
             user_id=logged_user["id"],

@@ -16,7 +16,7 @@ from ..db.plugin import get_asyncpg_engine
 _logger = logging.getLogger(__name__)
 
 
-async def create(
+async def create_api_key(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -53,7 +53,7 @@ async def create(
         )
 
 
-async def get_or_create(
+async def get_or_create_api_key(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -99,7 +99,7 @@ async def get_or_create(
         )
 
 
-async def get_all(
+async def list_api_keys(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -123,7 +123,7 @@ async def get_all(
         ]
 
 
-async def get(
+async def get_api_key(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -152,7 +152,7 @@ async def get(
         )
 
 
-async def delete(
+async def delete_api_key(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
