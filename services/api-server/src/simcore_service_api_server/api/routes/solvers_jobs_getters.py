@@ -11,7 +11,6 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
-from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
@@ -25,6 +24,7 @@ from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletE
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams
+from ...models.schemas.backwards_compatibility import PricingUnitGet
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import File
 from ...models.schemas.jobs import (
