@@ -2,6 +2,7 @@ import copy
 import importlib
 import inspect
 import itertools
+import json
 import pkgutil
 from collections.abc import Iterator
 from contextlib import suppress
@@ -9,7 +10,7 @@ from types import ModuleType
 from typing import Any, NamedTuple
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
 def is_strict_inner(outer_cls: type, inner_cls: type) -> bool:
@@ -93,6 +94,7 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
     assert inspect.ismodule(module)
 
     for model_name, model_cls in inspect.getmembers(module, _is_model_cls):
+
         schema = model_cls.model_json_schema()
 
         if example := schema.get("example"):
@@ -109,6 +111,19 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
                     example_name=f"{model_name}_examples_{index}",
                     example_data=example,
                 )
+
+
+def assert_validation_model(
+    model_cls: type[BaseModel], example_name: int, example_data: Any
+):
+    try:
+        assert model_cls.model_validate(example_data) is not None
+    except ValidationError as err:
+        pytest.fail(
+            f"{example_name} is invalid {model_cls.__module__}.{model_cls.__name__}:"
+            f"\n{json.dumps(example_data, indent=1)}"
+            f"\nError: {err}"
+        )
 
 
 ## PYDANTIC MODELS & SCHEMAS -----------------------------------------------------
