@@ -181,7 +181,7 @@ qx.Class.define("osparc.file.FolderContent", {
           if (data["itemId"]) {
             item.itemId = data["itemId"];
           }
-          this.__attachListenersToItems(item, data["entry"]);
+          this.__attachListenersToGridItem(item, data["entry"]);
           items.push(item);
         });
       }
@@ -222,7 +222,7 @@ qx.Class.define("osparc.file.FolderContent", {
       if (this.getMode() === "list") {
         const table = this.getChildControl("table");
         table.setData(entries);
-        this.__attachListenersTotable(table);
+        this.__attachListenersToTableItem(table);
       } else if (this.getMode() === "icons") {
         const iconsLayout = this.getChildControl("icons-layout");
         iconsLayout.removeAll();
@@ -239,22 +239,22 @@ qx.Class.define("osparc.file.FolderContent", {
       this.setSelection([this.getSelectables()[this.getMode() === "icons" ? 0 : 1]]);
     },
 
-    __itemTapped: function(item) {
+    __itemTapped: function(entry) {
       if (this.isMultiSelect()) {
-        this.fireDataEvent("multiSelectionChanged", item);
+        this.fireDataEvent("multiSelectionChanged", entry);
       } else {
-        this.fireDataEvent("selectionChanged", item);
+        this.fireDataEvent("selectionChanged", entry);
       }
     },
 
-    __itemDblTapped: function(item) {
-      this.fireDataEvent("itemSelected", item);
-      if (osparc.file.FilesTree.isDir(item)) {
-        this.setFolder(item);
+    __itemDblTapped: function(entry) {
+      this.fireDataEvent("itemSelected", entry);
+      if (osparc.file.FilesTree.isDir(entry)) {
+        this.setFolder(entry);
       }
     },
 
-    __attachListenersToItems: function(btn, entry) {
+    __attachListenersToGridItem: function(btn, entry) {
       btn.addListener("tap", () => {
         this.__itemTapped(entry);
       }, this);
@@ -263,7 +263,7 @@ qx.Class.define("osparc.file.FolderContent", {
       }, this);
     },
 
-    __attachListenersTotable: function(table) {
+    __attachListenersToTableItem: function(table) {
       table.addListener("cellTap", e => {
         const selectedRow = e.getRow();
         const rowData = table.getTableModel().getRowData(selectedRow);
