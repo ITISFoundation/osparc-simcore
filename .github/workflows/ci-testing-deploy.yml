@@ -2742,11 +2742,9 @@ jobs:
         run: |
           uv venv .venv && source .venv/bin/activate
           make openapi-specs
-          changed_files=$(git diff --name-only | awk '{$1=$1};1')
-          if [[ -n "${changed_files}" ]]; then
-            echo -e "Run 'make openapi-specs' to update the following specs: \n${changed_files}"
-            exit 1
-          fi
+          ./ci/github/helpers/openapi-specs-backwards-compatibility.bash diff \
+            https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/${{ github.ref }} \
+            .
 
 
   api-spec-backwards-compatible:
@@ -2770,6 +2768,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Check openapi-specs backwards compatibility
         run: |
-          bash ci/github/helpers/openapi-specs-backwards-compatibility.bash \
+          ./ci/github/helpers/openapi-specs-backwards-compatibility.bash breaking \
             https://raw.githubusercontent.com/${{ github.event.pull_request.base.repo.full_name }}/refs/heads/${{ github.event.pull_request.base.ref }} \
             .
