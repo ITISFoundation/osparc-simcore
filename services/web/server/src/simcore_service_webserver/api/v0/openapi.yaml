@@ -2969,10 +2969,8 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: true
+          type: string
           title: License Good Id
-          minimum: 0
       responses:
         '200':
           description: Successful Response
@@ -2996,10 +2994,8 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
-          exclusiveMinimum: true
+          type: string
           title: License Good Id
-          minimum: 0
       requestBody:
         required: true
         content:
@@ -4544,7 +4540,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -10010,10 +10006,8 @@ components:
     LicenseGoodGet:
       properties:
         licenseGoodId:
-          type: integer
-          exclusiveMinimum: true
+          type: string
           title: Licensegoodid
-          minimum: 0
         name:
           type: string
           title: Name

@@ -17,10 +17,45 @@ from models_library.license_goods import (
 from models_library.rest_ordering import OrderBy
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from simcore_postgres_database.models.resource_tracker_pricing_plans import (
+    resource_tracker_pricing_plans,
+)
+from simcore_postgres_database.utils_repos import transaction_context
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.licenses import _license_goods_db
 from simcore_service_webserver.licenses.errors import LicenseGoodNotFoundError
 from simcore_service_webserver.projects.models import ProjectDict
+
+
+@pytest.fixture
+async def pricing_plan_id(
+    client: TestClient,
+    osparc_product_name: str,
+) -> AsyncIterator[int]:
+    assert client.app
+
+    async with transaction_context(get_asyncpg_engine(client.app)) as conn:
+        result = await conn.execute(
+            resource_tracker_pricing_plans.insert()
+            .values(
+                product_name=osparc_product_name,
+                display_name="ISolve Thermal",
+                description="",
+                classification="TIER",
+                is_active=True,
+                pricing_plan_key="isolve-thermal",
+            )
+            .returning(resource_tracker_pricing_plans.c.pricing_plan_id)
+        )
+        row = result.first()
+
+    assert row
+
+    yield int(row[0])
+
+    async with transaction_context(get_asyncpg_engine(client.app)) as conn:
+        result = await conn.execute(resource_tracker_pricing_plans.delete())
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
@@ -30,7 +65,7 @@ async def test_license_goods_db_crud(
     user_project: ProjectDict,
     osparc_product_name: str,
     expected: HTTPStatus,
-    workspaces_clean_db: AsyncIterator[None],
+    pricing_plan_id: int,
 ):
     assert client.app
 
@@ -48,7 +83,7 @@ async def test_license_goods_db_crud(
         product_name=osparc_product_name,
         name="Model A",
         license_resource_type=LicenseResourceType.VIP_MODEL,
-        pricing_plan_id=1,
+        pricing_plan_id=pricing_plan_id,
     )
     _license_good_id = license_good_db.license_good_id
 

@@ -2,13 +2,13 @@ from datetime import datetime
 from enum import auto
 from typing import TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field
 
 from .products import ProductName
 from .resource_tracker import PricingPlanId
 from .utils.enums import StrAutoEnum
 
-LicenseGoodID: TypeAlias = PositiveInt
+LicenseGoodID: TypeAlias = str
 
 
 class LicenseResourceType(StrAutoEnum):
