@@ -10,6 +10,10 @@ from models_library.api_schemas_webserver.product import (
 from models_library.api_schemas_webserver.resource_usage import (
     PricingUnitGet as _PricingUnitGet,
 )
+from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.api_schemas_webserver.wallets import (
+    WalletGetWithAvailableCredits as _WalletGetWithAvailableCredits,
+)
 from models_library.basic_types import NonNegativeDecimal
 from models_library.resource_tracker import PricingUnitId, UnitExtraInfo
 from pydantic import Field, NonNegativeFloat, NonNegativeInt, PlainSerializer
@@ -49,4 +53,15 @@ class PricingUnitGet(OutputSchema):
 
 assert set(PricingUnitGet.model_fields.keys()) == set(
     _PricingUnitGet.model_fields.keys()
+)
+
+
+class WalletGetWithAvailableCredits(WalletGet):
+    available_credits: Annotated[
+        Decimal, PlainSerializer(float, return_type=NonNegativeFloat, when_used="json")
+    ]
+
+
+assert set(WalletGetWithAvailableCredits.model_fields.keys()) == set(
+    _WalletGetWithAvailableCredits.model_fields.keys()
 )
