@@ -69,7 +69,9 @@ pyyaml==6.0.2
 ruff==0.8.1
     # via -r requirements/../../../requirements/devenv.txt
 setuptools==75.6.0
-    # via pip-tools
+    # via
+    #   -c requirements/_base.txt
+    #   pip-tools
 tomlkit==0.13.2
     # via pylint
 typing-extensions==4.12.2

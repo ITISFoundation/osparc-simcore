@@ -388,7 +388,6 @@ redis==5.2.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 referencing==0.29.3
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 repro-zipfile==0.3.1
@@ -501,6 +500,7 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-redis
 yarl==1.17.1
     # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq
