@@ -42,7 +42,7 @@ class AckPaymentMethod(_BaseAck):
 
 
 class SavedPaymentMethod(AckPaymentMethod):
-    payment_method_id: PaymentMethodID
+    payment_method_id: PaymentMethodID | None = None
 
 
 #
@@ -83,11 +83,14 @@ _EXAMPLES: list[dict[str, Any]] = [
 
 class AckPayment(_BaseAckPayment):
 
-    saved: SavedPaymentMethod | None = Field(
-        default=None,
-        description="Gets the payment-method if user opted to save it during payment."
-        "If used did not opt to save of payment-method was already saved, then it defaults to None",
-    )
+    saved: Annotated[
+        SavedPaymentMethod | None,
+        Field(
+            description="Gets the payment-method if user opted to save it during payment."
+            "If used did not opt to save of payment-method was already saved, then it defaults to None",
+        ),
+    ] = None
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": _EXAMPLES[1].copy(),  # shown in openapi.json

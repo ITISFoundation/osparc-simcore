@@ -77,18 +77,23 @@ async def acknowledge_payment(
     )
 
     if ack.saved:
-        inserted = await payments_methods.insert_payment_method(
-            repo=repo_methods,
-            payment_method_id=ack.saved.payment_method_id,
-            user_id=transaction.user_id,
-            wallet_id=transaction.wallet_id,
-            ack=ack.saved,
-        )
-        background_tasks.add_task(
-            payments_methods.on_payment_method_completed,
-            payment_method=inserted,
-            notifier=notifier,
-        )
+        if ack.saved.payment_method_id is None:
+            _logger.error("Failed to ")  # failed to save create-card
+            # TODO: notify failure to save !
+        else:
+            inserted = await payments_methods.insert_payment_method(
+                repo=repo_methods,
+                payment_method_id=ack.saved.payment_method_id,
+                user_id=transaction.user_id,
+                wallet_id=transaction.wallet_id,
+                ack=ack.saved,
+            )
+
+            background_tasks.add_task(
+                payments_methods.on_payment_method_completed,
+                payment_method=inserted,
+                notifier=notifier,
+            )
 
 
 @router.post("/payments-methods/{payment_method_id}:ack")
