@@ -16,8 +16,10 @@ cd "${revision_local}" || exit 1 # required to mount correct dir for diff tool
 exit_status=0
 for spec in ${openapi_specs}; do
   echo "Comparing ${spec}"
-  "${repo_base_dir}/scripts/openapi-diff.bash" breaking --fail-on ERR "${base_remote}/${spec}" "/specs/${spec}"
-  exit_status=$(("${exit_status}" + $?))
+  if ! "${repo_base_dir}/scripts/openapi-diff.bash" breaking --fail-on ERR "${base_remote}/${spec}" "/specs/${spec}"; then
+    echo "::warning file=${spec}::Is not backwards compatible"
+    exit_status=$(("${exit_status}" + "1"))
+  fi
   printf "%0.s=" {1..100} && printf "\n"
 done
 
