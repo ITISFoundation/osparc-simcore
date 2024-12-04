@@ -42,7 +42,7 @@ class AckPaymentMethod(_BaseAck):
 
 
 class SavedPaymentMethod(AckPaymentMethod):
-    payment_method_id: PaymentMethodID = IDStr("UNDEFINED")
+    payment_method_id: PaymentMethodID
 
 
 #
