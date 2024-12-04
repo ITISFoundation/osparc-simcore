@@ -11520,6 +11520,12 @@ components:
           exclusiveMinimum: true
           title: Id
           minimum: 0
+        userName:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Username
+          description: Unique username identifier
         first_name:
           anyOf:
           - type: string
@@ -11571,6 +11577,7 @@ components:
       type: object
       required:
       - id
+      - userName
       - login
       - role
       - preferences
