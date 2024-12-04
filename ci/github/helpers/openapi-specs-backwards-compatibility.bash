@@ -17,7 +17,7 @@ exit_status=0
 for spec in ${openapi_specs}; do
   echo "Comparing ${spec}"
   if ! "${repo_base_dir}/scripts/openapi-diff.bash" breaking --fail-on ERR "${base_remote}/${spec}" "/specs/${spec}"; then
-    echo "::warning file=${spec}::Is not backwards compatible"
+    echo "::error file=${spec}::${spec} is not backwards compatible with ${base_remote}/${spec}"
     exit_status=$(("${exit_status}" + "1"))
   fi
   printf "%0.s=" {1..100} && printf "\n"
