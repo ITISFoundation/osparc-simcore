@@ -55,7 +55,7 @@ platformdirs==4.3.6
     #   virtualenv
 pre-commit==4.0.1
     # via -r requirements/../../../requirements/devenv.txt
-pylint==3.3.1
+pylint==3.3.2
     # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.2.0
     # via

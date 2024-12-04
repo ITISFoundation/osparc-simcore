@@ -15,11 +15,11 @@ cloudpickle==3.1.0
     # via
     #   dask
     #   distributed
-dask==2024.11.2
+dask==2024.12.0
     # via
     #   -r requirements/_base.in
     #   distributed
-distributed==2024.11.2
+distributed==2024.12.0
     # via dask
 dnspython==2.7.0
     # via email-validator
@@ -76,7 +76,7 @@ partd==1.4.2
     # via dask
 psutil==6.1.0
     # via distributed
-pydantic==2.10.2
+pydantic==2.10.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -128,7 +128,7 @@ rich==13.9.4
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.21.0
+rpds-py==0.22.1
     # via
     #   jsonschema
     #   referencing
@@ -147,7 +147,7 @@ toolz==1.0.0
     #   partd
 tornado==6.4.2
     # via distributed
-typer==0.14.0
+typer==0.15.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 types-python-dateutil==2.9.0.20241003
     # via arrow
