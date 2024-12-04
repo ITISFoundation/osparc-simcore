@@ -42,7 +42,7 @@ class AckPaymentMethod(_BaseAck):
 
 
 class SavedPaymentMethod(AckPaymentMethod):
-    payment_method_id: PaymentMethodID
+    payment_method_id: PaymentMethodID = IDStr("UNDEFINED")
 
 
 #
@@ -97,7 +97,7 @@ class AckPayment(_BaseAckPayment):
 
     @field_validator("invoice_url")
     @classmethod
-    def success_requires_invoice(cls, v, info: ValidationInfo):
+    def _success_requires_invoice(cls, v, info: ValidationInfo):
         success = info.data.get("success")
         if success and not v:
             msg = "Invoice required on successful payments"
