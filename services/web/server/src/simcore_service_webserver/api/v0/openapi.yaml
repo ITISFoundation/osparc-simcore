@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.46.0
+  version: 0.47.0
 servers:
 - url: ''
   description: webserver
@@ -11314,7 +11314,7 @@ components:
         unitExtraInfo:
           $ref: '#/components/schemas/UnitExtraInfo-Output'
         currentCostPerUnit:
-          type: number
+          type: string
           title: Currentcostperunit
         default:
           type: boolean
@@ -11358,7 +11358,7 @@ components:
         unitExtraInfo:
           $ref: '#/components/schemas/UnitExtraInfo-Output'
         currentCostPerUnit:
-          type: number
+          type: string
           title: Currentcostperunit
         default:
           type: boolean
@@ -14079,7 +14079,7 @@ components:
           format: date-time
           title: Modified
         availableCredits:
-          type: number
+          type: string
           title: Availablecredits
       type: object
       required:
