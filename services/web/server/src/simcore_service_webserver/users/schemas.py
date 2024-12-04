@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from simcore_postgres_database.models.users import UserRole
 
 from ..utils import gravatar_hash
+from ._models import ProfilePrivacyGet, ProfilePrivacyUpdate
 
 
 #
@@ -66,6 +67,7 @@ class ProfileGet(BaseModel):
         alias="expirationDate",
     )
 
+    privacy: ProfilePrivacyGet = ProfilePrivacyGet(hide_fullname=True, hide_email=True)
     preferences: AggregatedPreferences
 
     model_config = ConfigDict(
@@ -74,6 +76,7 @@ class ProfileGet(BaseModel):
         populate_by_name=True,
         json_schema_extra={
             "examples": [
+                # 1. with gravatar
                 {
                     "id": 1,
                     "login": "bla@foo.com",
@@ -82,6 +85,7 @@ class ProfileGet(BaseModel):
                     "gravatar_id": "205e460b479e2e5b48aec07710c08d50",
                     "preferences": {},
                 },
+                # 2. with expiration date
                 {
                     "id": 42,
                     "login": "bla@foo.com",
@@ -116,6 +120,8 @@ class ProfileGet(BaseModel):
 class ProfileUpdate(BaseModel):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
+
+    privacy: ProfilePrivacyUpdate | None = None
 
     model_config = ConfigDict(
         json_schema_extra={

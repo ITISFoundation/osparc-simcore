@@ -65,7 +65,9 @@ async def get_user_profile(
                 sa.join(
                     users,
                     sa.join(
-                        user_to_groups, groups, user_to_groups.c.gid == groups.c.gid
+                        user_to_groups,
+                        groups,
+                        user_to_groups.c.gid == groups.c.gid,
                     ),
                     users.c.id == user_to_groups.c.uid,
                 )
