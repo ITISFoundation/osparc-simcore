@@ -2919,8 +2919,8 @@ paths:
     get:
       tags:
       - licenses
-      summary: List Workspaces
-      operationId: list_workspaces
+      summary: List License Goods
+      operationId: list_license_goods
       parameters:
       - name: order_by
         in: query
@@ -2962,8 +2962,8 @@ paths:
     get:
       tags:
       - licenses
-      summary: Get Workspace
-      operationId: get_workspace
+      summary: Get License Good
+      operationId: get_license_good
       parameters:
       - name: license_good_id
         in: path
@@ -2987,8 +2987,8 @@ paths:
     post:
       tags:
       - licenses
-      summary: Create Workspace Group
-      operationId: create_workspace_group
+      summary: Purchase License Good
+      operationId: purchase_license_good
       parameters:
       - name: license_good_id
         in: path
@@ -4540,7 +4540,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -14213,9 +14213,7 @@ components:
       required:
       - walletId
       - name
-      - description
       - owner
-      - thumbnail
       - status
       - created
       - modified
@@ -14264,9 +14262,7 @@ components:
       required:
       - walletId
       - name
-      - description
       - owner
-      - thumbnail
       - status
       - created
       - modified
