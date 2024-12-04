@@ -130,7 +130,6 @@ qx.Class.define("osparc.data.Permissions", {
           "services.all.read",
           "services.all.reupdate",
           "services.filePicker.read.all",
-          "user.clusters.create",
           "user.wallets.create",
           "study.everyone.share",
           "study.snapshot.read",

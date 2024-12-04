@@ -12,7 +12,7 @@ import distributed.scheduler
 from aws_library.ec2 import EC2InstanceData, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
 from distributed.core import Status
-from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
+from models_library.clusters import ClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 
 from ..core.errors import (
@@ -43,7 +43,7 @@ _DASK_SCHEDULER_CONNECT_TIMEOUT_S: Final[int] = 5
 
 @contextlib.asynccontextmanager
 async def _scheduler_client(
-    url: AnyUrl, authentication: InternalClusterAuthentication
+    url: AnyUrl, authentication: ClusterAuthentication
 ) -> AsyncIterator[distributed.Client]:
     """
     Raises:
@@ -116,7 +116,7 @@ def _dask_worker_from_ec2_instance(
 
 async def is_worker_connected(
     scheduler_url: AnyUrl,
-    authentication: InternalClusterAuthentication,
+    authentication: ClusterAuthentication,
     worker_ec2_instance: EC2InstanceData,
 ) -> bool:
     with contextlib.suppress(DaskNoWorkersError, DaskWorkerNotFoundError):
@@ -130,7 +130,7 @@ async def is_worker_connected(
 
 async def is_worker_retired(
     scheduler_url: AnyUrl,
-    authentication: InternalClusterAuthentication,
+    authentication: ClusterAuthentication,
     worker_ec2_instance: EC2InstanceData,
 ) -> bool:
     with contextlib.suppress(DaskNoWorkersError, DaskWorkerNotFoundError):
@@ -156,7 +156,7 @@ def _dask_key_to_dask_task_id(key: dask.typing.Key) -> DaskTaskId:
 
 async def list_unrunnable_tasks(
     scheduler_url: AnyUrl,
-    authentication: InternalClusterAuthentication,
+    authentication: ClusterAuthentication,
 ) -> list[DaskTask]:
     """
     Raises:
@@ -188,7 +188,7 @@ async def list_unrunnable_tasks(
 
 async def list_processing_tasks_per_worker(
     scheduler_url: AnyUrl,
-    authentication: InternalClusterAuthentication,
+    authentication: ClusterAuthentication,
 ) -> dict[DaskWorkerUrl, list[DaskTask]]:
     """
     Raises:
@@ -227,7 +227,7 @@ async def list_processing_tasks_per_worker(
 
 async def get_worker_still_has_results_in_memory(
     scheduler_url: AnyUrl,
-    authentication: InternalClusterAuthentication,
+    authentication: ClusterAuthentication,
     ec2_instance: EC2InstanceData,
 ) -> int:
     """
@@ -246,7 +246,7 @@ async def get_worker_still_has_results_in_memory(
 
 async def get_worker_used_resources(
     scheduler_url: AnyUrl,
-    authentication: InternalClusterAuthentication,
+    authentication: ClusterAuthentication,
     ec2_instance: EC2InstanceData,
 ) -> Resources:
     """
@@ -299,7 +299,7 @@ async def get_worker_used_resources(
 
 async def compute_cluster_total_resources(
     scheduler_url: AnyUrl,
-    authentication: InternalClusterAuthentication,
+    authentication: ClusterAuthentication,
     instances: list[AssociatedInstance],
 ) -> Resources:
     if not instances:
@@ -320,7 +320,7 @@ async def compute_cluster_total_resources(
 
 
 async def try_retire_nodes(
-    scheduler_url: AnyUrl, authentication: InternalClusterAuthentication
+    scheduler_url: AnyUrl, authentication: ClusterAuthentication
 ) -> None:
     async with _scheduler_client(scheduler_url, authentication) as client:
         await _wrap_client_async_routine(

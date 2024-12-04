@@ -91,18 +91,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
           this.add(control);
           break;
-        case "clusters":
-          control = new qx.ui.menu.Button(this.tr("Clusters"));
-          control.exclude();
-          if (osparc.product.Utils.showClusters()) {
-            const isDisabled = osparc.utils.DisabledPlugins.isClustersDisabled();
-            if (isDisabled === false) {
-              control.show();
-            }
-          }
-          control.addListener("execute", () => osparc.cluster.Utils.popUpClustersDetails(), this);
-          this.add(control);
-          break;
         case "market":
           control = new qx.ui.menu.Button(this.tr("Market"));
           control.addListener("execute", () => osparc.vipMarket.MarketWindow.openWindow());
@@ -127,8 +115,8 @@ qx.Class.define("osparc.navigation.UserMenu", {
         case "license":
           control = new qx.ui.menu.Button(this.tr("License"));
           osparc.utils.Utils.setIdToWidget(control, "userMenuLicenseBtn");
-          osparc.store.Support.getLicenseURL()
-            .then(licenseURL => control.addListener("execute", () => window.open(licenseURL)));
+          const licenseURL = osparc.store.Support.getLicenseURL();
+          control.addListener("execute", () => window.open(licenseURL));
           this.add(control);
           break;
         case "tip-lite-button":
@@ -175,7 +163,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
         }
         this.getChildControl("preferences");
         this.getChildControl("organizations");
-        this.getChildControl("clusters");
       }
       this.addSeparator();
 
@@ -231,7 +218,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
         }
         this.getChildControl("preferences");
         this.getChildControl("organizations");
-        this.getChildControl("clusters");
       }
       this.addSeparator();
 
@@ -257,7 +243,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       }
 
       this.getChildControl("about");
-      if (!osparc.product.Utils.isProduct("osparc")) {
+      if (osparc.product.Utils.showAboutProduct()) {
         this.getChildControl("about-product");
       }
       this.getChildControl("license");
