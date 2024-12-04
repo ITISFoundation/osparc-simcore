@@ -16,12 +16,12 @@ from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
-from simcore_service_webserver.api_keys import _db
-from simcore_service_webserver.api_keys._api import (
+from simcore_service_webserver.api_keys import _repository as repo
+from simcore_service_webserver.api_keys._models import ApiKey
+from simcore_service_webserver.api_keys._service import (
     get_or_create_api_key,
     prune_expired_api_keys,
 )
-from simcore_service_webserver.api_keys._models import ApiKey
 from simcore_service_webserver.db.models import UserRole
 
 
@@ -34,7 +34,7 @@ async def fake_user_api_keys(
 ) -> AsyncIterable[list[int]]:
     assert client.app
     api_keys: list[ApiKey] = [
-        await _db.create_api_key(
+        await repo.create_api_key(
             client.app,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -49,7 +49,7 @@ async def fake_user_api_keys(
     yield api_keys
 
     for api_key in api_keys:
-        await _db.delete_api_key(
+        await repo.delete_api_key(
             client.app,
             api_key_id=api_key.id,
             user_id=logged_user["id"],

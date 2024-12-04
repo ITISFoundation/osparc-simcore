@@ -6,11 +6,10 @@ from models_library.api_schemas_webserver.auth import ApiKeyCreateRequest, ApiKe
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
+from simcore_service_webserver.api_keys import _service
 from simcore_service_webserver.api_keys._models import ApiKey
 from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
-
-from ..rabbitmq import get_rabbitmq_rpc_server
-from . import _api
+from simcore_service_webserver.rabbitmq import get_rabbitmq_rpc_server
 
 router = RPCRouter()
 
@@ -23,7 +22,7 @@ async def create_api_key(
     product_name: ProductName,
     api_key: ApiKeyCreateRequest,
 ) -> ApiKeyGet:
-    created_api_key: ApiKey = await _api.create_api_key(
+    created_api_key: ApiKey = await _service.create_api_key(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -42,7 +41,7 @@ async def get_api_key(
     product_name: ProductName,
     api_key_id: int,
 ) -> ApiKeyGet:
-    api_key: ApiKey = await _api.get_api_key(
+    api_key: ApiKey = await _service.get_api_key(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -60,7 +59,7 @@ async def get_or_create_api_key(
     display_name: str,
     expiration: timedelta | None = None,
 ) -> ApiKeyGet:
-    api_key: ApiKey = await _api.get_or_create_api_key(
+    api_key: ApiKey = await _service.get_or_create_api_key(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -78,7 +77,7 @@ async def delete_api_key(
     product_name: ProductName,
     api_key_id: int,
 ) -> None:
-    await _api.delete_api_key(
+    await _service.delete_api_key(
         app,
         user_id=user_id,
         product_name=product_name,

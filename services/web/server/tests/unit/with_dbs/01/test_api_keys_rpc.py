@@ -6,7 +6,6 @@
 from collections.abc import AsyncIterable, Awaitable, Callable
 
 import pytest
-import simcore_service_webserver.api_keys._db as db
 from aiohttp.test_utils import TestServer
 from faker import Faker
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
@@ -20,6 +19,7 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.api_keys import _repository as repo
 from simcore_service_webserver.api_keys._models import ApiKey
 from simcore_service_webserver.api_keys._rest import ApiKeyCreateRequest
 from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
@@ -70,7 +70,7 @@ async def fake_user_api_keys(
     assert web_server.app
 
     api_keys: list[ApiKey] = [
-        await db.create_api_key(
+        await repo.create_api_key(
             web_server.app,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -85,7 +85,7 @@ async def fake_user_api_keys(
     yield api_keys
 
     for api_key in api_keys:
-        await db.delete_api_key(
+        await repo.delete_api_key(
             web_server.app,
             api_key_id=api_key.id,
             user_id=logged_user["id"],

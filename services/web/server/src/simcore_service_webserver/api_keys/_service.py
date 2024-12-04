@@ -7,10 +7,9 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.utils_secrets import generate_token_secret_key
+from simcore_service_webserver.api_keys import _repository
 from simcore_service_webserver.api_keys._models import ApiKey
-
-from . import _db
-from .errors import ApiKeyNotFoundError
+from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
 
 _PUNCTUATION_REGEX = re.compile(
     pattern="[" + re.escape(string.punctuation.replace("_", "")) + "]"
@@ -38,7 +37,7 @@ async def create_api_key(
     # generate key and secret
     api_key, api_secret = _generate_api_key_and_secret(display_name)
 
-    return await _db.create_api_key(
+    return await _repository.create_api_key(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -55,7 +54,7 @@ async def get_api_keys(
     user_id: UserID,
     product_name: ProductName,
 ) -> list[ApiKey]:
-    api_keys: list[ApiKey] = await _db.list_api_keys(
+    api_keys: list[ApiKey] = await _repository.list_api_keys(
         app, user_id=user_id, product_name=product_name
     )
     return api_keys
@@ -68,7 +67,7 @@ async def get_api_key(
     user_id: UserID,
     product_name: ProductName,
 ) -> ApiKey:
-    api_key: ApiKey | None = await _db.get_api_key(
+    api_key: ApiKey | None = await _repository.get_api_key(
         app, api_key_id=api_key_id, user_id=user_id, product_name=product_name
     )
     if api_key is not None:
@@ -88,7 +87,7 @@ async def get_or_create_api_key(
 
     key, secret = _generate_api_key_and_secret(display_name)
 
-    api_key: ApiKey = await _db.get_or_create_api_key(
+    api_key: ApiKey = await _repository.get_or_create_api_key(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -108,7 +107,7 @@ async def delete_api_key(
     user_id: UserID,
     product_name: ProductName,
 ) -> None:
-    await _db.delete_api_key(
+    await _repository.delete_api_key(
         app,
         api_key_id=api_key_id,
         user_id=user_id,
@@ -117,5 +116,5 @@ async def delete_api_key(
 
 
 async def prune_expired_api_keys(app: web.Application) -> list[str]:
-    names: list[str] = await _db.prune_expired(app)
+    names: list[str] = await _repository.prune_expired(app)
     return names

@@ -85,6 +85,37 @@ class ApiKeyCreateResponse(ApiKeyCreateRequest):
     api_key: str
     api_secret: str
 
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": "42",
+                    "display_name": "test-api-forever",
+                    "api_base_url": "http://localhost:8000/v0",
+                    "api_key": "key",
+                    "api_secret": "secret",
+                },
+                {
+                    "id": "48",
+                    "display_name": "test-api-for-one-day",
+                    "expiration": 60 * 60 * 24,
+                    "api_base_url": "http://localhost:8000/v0",
+                    "api_key": "key",
+                    "api_secret": "secret",
+                },
+                {
+                    "id": "54",
+                    "display_name": "test-api-for-another-day",
+                    "expiration": "24:00:00",
+                    "api_base_url": "http://localhost:8000/v0",
+                    "api_key": "key",
+                    "api_secret": "secret",
+                },
+            ]
+        },
+    )
+
 
 class ApiKeyGet(BaseModel):
     id: IDStr

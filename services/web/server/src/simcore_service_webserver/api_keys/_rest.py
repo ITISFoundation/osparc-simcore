@@ -16,6 +16,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
+from simcore_service_webserver.api_keys import _service
 from simcore_service_webserver.api_keys._exceptions_handlers import (
     handle_plugin_requests_exceptions,
 )
@@ -26,7 +27,6 @@ from ..login.decorators import login_required
 from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _api
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ async def create_api_key(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     new_api_key = await parse_request_body_as(ApiKeyCreateRequest, request)
 
-    created_api_key: ApiKey = await _api.create_api_key(
+    created_api_key: ApiKey = await _service.create_api_key(
         request.app,
         display_name=new_api_key.display_name,
         expiration=new_api_key.expiration,
@@ -70,7 +70,7 @@ async def create_api_key(request: web.Request):
 @handle_plugin_requests_exceptions
 async def get_api_keys(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
-    api_keys = await _api.get_api_keys(
+    api_keys = await _service.get_api_keys(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -87,7 +87,7 @@ async def get_api_keys(request: web.Request):
 async def get_api_key(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ApiKeysPathParams, request)
-    api_key: ApiKey = await _api.get_api_key(
+    api_key: ApiKey = await _service.get_api_key(
         request.app,
         api_key_id=path_params.api_key_id,
         user_id=req_ctx.user_id,
@@ -104,7 +104,7 @@ async def delete_api_key(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ApiKeysPathParams, request)
 
-    await _api.delete_api_key(
+    await _service.delete_api_key(
         request.app,
         api_key_id=path_params.api_key_id,
         user_id=req_ctx.user_id,
