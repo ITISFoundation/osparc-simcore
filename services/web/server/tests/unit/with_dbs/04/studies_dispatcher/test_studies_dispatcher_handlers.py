@@ -12,6 +12,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
+import simcore_service_webserver.studies_dispatcher
 import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
