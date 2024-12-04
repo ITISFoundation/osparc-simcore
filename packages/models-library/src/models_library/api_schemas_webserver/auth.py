@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import Annotated, Any
 
+from models_library.basic_types import IDStr
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, SecretStr
 
 from ..emails import LowerCaseEmailStr
@@ -51,7 +52,7 @@ class UnregisterCheck(InputSchema):
 #
 
 
-class ApiKeyCreate(BaseModel):
+class ApiKeyCreateRequest(BaseModel):
     display_name: Annotated[str, Field(..., min_length=3)]
     expiration: timedelta | None = Field(
         None,
@@ -59,6 +60,7 @@ class ApiKeyCreate(BaseModel):
     )
 
     model_config = ConfigDict(
+        from_attributes=True,
         json_schema_extra={
             "examples": [
                 {
@@ -73,27 +75,28 @@ class ApiKeyCreate(BaseModel):
                     "expiration": "24:00:00",
                 },
             ]
-        }
+        },
     )
 
 
+class ApiKeyCreateResponse(ApiKeyCreateRequest):
+    id: IDStr
+    api_base_url: HttpUrl
+    api_key: str
+    api_secret: str
+
+
 class ApiKeyGet(BaseModel):
-    id: int
+    id: IDStr
     display_name: Annotated[str, Field(..., min_length=3)]
-    api_base_url: HttpUrl | None = None
-    api_key: str | None = None
-    api_secret: str | None = None
 
     model_config = ConfigDict(
-        populate_by_name=True,
         from_attributes=True,
         json_schema_extra={
             "examples": [
                 {
-                    "id": 42,
+                    "id": "42",
                     "display_name": "myapi",
-                    "api_key": "key",
-                    "api_secret": "secret",
                 },
             ]
         },

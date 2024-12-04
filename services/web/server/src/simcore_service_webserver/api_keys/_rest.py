@@ -1,8 +1,14 @@
 import logging
+from dataclasses import asdict
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
+from models_library.api_schemas_webserver.auth import (
+    ApiKeyCreateRequest,
+    ApiKeyCreateResponse,
+    ApiKeyGet,
+)
+from models_library.basic_types import IDStr
 from models_library.rest_base import StrictRequestParameters
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
@@ -29,7 +35,7 @@ routes = RouteTableDef()
 
 
 class ApiKeysPathParams(StrictRequestParameters):
-    api_key_id: int
+    api_key_id: IDStr
 
 
 @routes.post(f"/{API_VTAG}/auth/api-keys", name="create_api_key")
@@ -38,7 +44,7 @@ class ApiKeysPathParams(StrictRequestParameters):
 @handle_plugin_requests_exceptions
 async def create_api_key(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
-    new_api_key = await parse_request_body_as(ApiKeyCreate, request)
+    new_api_key = await parse_request_body_as(ApiKeyCreateRequest, request)
 
     created_api_key: ApiKey = await _api.create_api_key(
         request.app,
@@ -48,8 +54,12 @@ async def create_api_key(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    api_key = ApiKeyGet.model_validate(created_api_key)
-    # api_key.api_base_url = TODO: https://github.com/ITISFoundation/osparc-simcore/issues/6340 # @pcrespov
+    api_key = ApiKeyCreateResponse.model_validate(
+        {
+            **asdict(created_api_key),
+            "api_base_url": "http://localhost:8000",
+        }  # TODO: https://github.com/ITISFoundation/osparc-simcore/issues/6340 # @pcrespov
+    )
 
     return envelope_json_response(api_key)
 

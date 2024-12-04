@@ -10,7 +10,6 @@ import simcore_service_webserver.api_keys._db as db
 from aiohttp.test_utils import TestServer
 from faker import Faker
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.api_schemas_webserver.auth import ApiKeyCreate
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter
@@ -22,6 +21,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.api_keys._models import ApiKey
+from simcore_service_webserver.api_keys._rest import ApiKeyCreateRequest
 from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
 from simcore_service_webserver.application_settings import ApplicationSettings
 
@@ -133,7 +133,7 @@ async def test_api_keys_workflow(
         TypeAdapter(RPCMethodName).validate_python("create_api_key"),
         product_name=osparc_product_name,
         user_id=logged_user["id"],
-        api_key=ApiKeyCreate(display_name=key_name, expiration=None),
+        api_key=ApiKeyCreateRequest(display_name=key_name, expiration=None),
     )
     assert created_api_key.display_name == key_name
 

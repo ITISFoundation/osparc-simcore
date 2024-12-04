@@ -64,7 +64,7 @@ async def get_api_keys(
 async def get_api_key(
     app: web.Application,
     *,
-    api_key_id: int,
+    api_key_id: str,
     user_id: UserID,
     product_name: ProductName,
 ) -> ApiKey:
@@ -104,7 +104,7 @@ async def get_or_create_api_key(
 async def delete_api_key(
     app: web.Application,
     *,
-    api_key_id: int,
+    api_key_id: str,
     user_id: UserID,
     product_name: ProductName,
 ) -> None:

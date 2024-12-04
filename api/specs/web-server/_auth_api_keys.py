@@ -1,7 +1,11 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
-from models_library.api_schemas_webserver.auth import ApiKeyCreate, ApiKeyGet
+from models_library.api_schemas_webserver.auth import (
+    ApiKeyCreateRequest,
+    ApiKeyCreateResponse,
+    ApiKeyGet,
+)
 from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError
 from simcore_service_webserver._meta import API_VTAG
@@ -21,9 +25,9 @@ router = APIRouter(
     "/auth/api-keys",
     operation_id="create_api_key",
     status_code=status.HTTP_201_CREATED,
-    response_model=Envelope[ApiKeyGet],
+    response_model=Envelope[ApiKeyCreateResponse],
 )
-async def create_api_key(_body: ApiKeyCreate):
+async def create_api_key(_body: ApiKeyCreateRequest):
     """creates API keys to access public API"""
 
 

@@ -412,7 +412,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApiKeyCreate'
+              $ref: '#/components/schemas/ApiKeyCreateRequest'
         required: true
       responses:
         '201':
@@ -420,7 +420,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ApiKeyGet_'
+                $ref: '#/components/schemas/Envelope_ApiKeyCreateResponse_'
         '404':
           description: Not Found
           content:
@@ -439,7 +439,9 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
+          type: string
+          minLength: 1
+          maxLength: 100
           title: Api Key Id
       responses:
         '200':
@@ -465,7 +467,9 @@ paths:
         in: path
         required: true
         schema:
-          type: integer
+          type: string
+          minLength: 1
+          maxLength: 100
           title: Api Key Id
       responses:
         '204':
@@ -6629,7 +6633,7 @@ components:
       - link
       - widgets
       title: Announcement
-    ApiKeyCreate:
+    ApiKeyCreateRequest:
       properties:
         display_name:
           type: string
@@ -6646,34 +6650,57 @@ components:
       type: object
       required:
       - display_name
-      title: ApiKeyCreate
+      title: ApiKeyCreateRequest
+    ApiKeyCreateResponse:
+      properties:
+        display_name:
+          type: string
+          minLength: 3
+          title: Display Name
+        expiration:
+          anyOf:
+          - type: string
+            format: duration
+          - type: 'null'
+          title: Expiration
+          description: Time delta from creation time to expiration. If None, then
+            it does not expire.
+        id:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Id
+        api_base_url:
+          type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
+          title: Api Base Url
+        api_key:
+          type: string
+          title: Api Key
+        api_secret:
+          type: string
+          title: Api Secret
+      type: object
+      required:
+      - display_name
+      - id
+      - api_base_url
+      - api_key
+      - api_secret
+      title: ApiKeyCreateResponse
     ApiKeyGet:
       properties:
         id:
-          type: integer
+          type: string
+          maxLength: 100
+          minLength: 1
           title: Id
         display_name:
           type: string
           minLength: 3
           title: Display Name
-        api_base_url:
-          anyOf:
-          - type: string
-            maxLength: 2083
-            minLength: 1
-            format: uri
-          - type: 'null'
-          title: Api Base Url
-        api_key:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Api Key
-        api_secret:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Api Secret
       type: object
       required:
       - id
@@ -7504,6 +7531,19 @@ components:
       additionalProperties: false
       type: object
       title: EmptyModel
+    Envelope_ApiKeyCreateResponse_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ApiKeyCreateResponse'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ApiKeyCreateResponse]
     Envelope_ApiKeyGet_:
       properties:
         data:
