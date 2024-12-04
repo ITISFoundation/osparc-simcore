@@ -11,18 +11,18 @@ from .base import metadata
 
 
 def _custom_id_generator():
-    return f"lpa_{shortuuid.uuid()}"
+    return f"lgo_{shortuuid.uuid()}"
 
 
 class LicenseResourceType(str, enum.Enum):
     VIP_MODEL = "VIP_MODEL"
 
 
-license_packages = sa.Table(
-    "license_packages",
+license_goods = sa.Table(
+    "license_goods",
     metadata,
     sa.Column(
-        "license_package_id",
+        "license_good_id",
         sa.String,
         nullable=False,
         primary_key=True,

@@ -11,6 +11,9 @@ _logger = logging.getLogger(__name__)
 async def pass_or_acquire_connection(
     engine: AsyncEngine, connection: AsyncConnection | None = None
 ) -> AsyncIterator[AsyncConnection]:
+    """
+    When to use: For READ operations only!
+    """
     # NOTE: When connection is passed, the engine is actually not needed
     # NOTE: Creator is responsible of closing connection
     is_connection_created = connection is None
@@ -30,6 +33,9 @@ async def pass_or_acquire_connection(
 async def transaction_context(
     engine: AsyncEngine, connection: AsyncConnection | None = None
 ):
+    """
+    When to use: For WRITE operations only!
+    """
     async with pass_or_acquire_connection(engine, connection) as conn:
         if conn.in_transaction():
             async with conn.begin_nested():  # inner transaction (savepoint)

@@ -30,7 +30,7 @@ resource_tracker_license_purchases = sa.Table(
         doc="Product name",
     ),
     sa.Column(
-        "license_package_id",
+        "license_good_id",
         sa.BigInteger,
         nullable=False,
     ),
