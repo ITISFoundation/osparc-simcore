@@ -14034,9 +14034,7 @@ components:
       required:
       - walletId
       - name
-      - description
       - owner
-      - thumbnail
       - status
       - created
       - modified
@@ -14085,9 +14083,7 @@ components:
       required:
       - walletId
       - name
-      - description
       - owner
-      - thumbnail
       - status
       - created
       - modified
