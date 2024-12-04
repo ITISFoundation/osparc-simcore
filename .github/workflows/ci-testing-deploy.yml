@@ -2726,7 +2726,7 @@ jobs:
     needs: [changes]
     if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 10
-    name: check api-specs are up to date
+    name: "[sys] check api-specs are up to date"
     runs-on: ubuntu-latest
     steps:
       - name: setup python environment
