@@ -147,6 +147,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         allowGrowX: false,
         enabled: true
       });
+      const preferences = osparc.Preferences.getInstance();
       preferences.bind("lowDiskSpaceThreshold", diskUsageSpinner, "value");
 
       diskUsageSpinner.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
