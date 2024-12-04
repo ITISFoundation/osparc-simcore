@@ -35,6 +35,7 @@ openapi_modules = [
         "_exporter",
         "_folders",
         "_long_running_tasks",
+        "_license_goods",
         "_metamodeling",
         "_nih_sparc",
         "_nih_sparc_redirections",

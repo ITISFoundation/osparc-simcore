@@ -2915,6 +2915,106 @@ paths:
           content:
             application/json:
               schema: {}
+  /v0/license-goods:
+    get:
+      tags:
+      - licenses
+      summary: List Workspaces
+      operationId: list_workspaces
+      parameters:
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"modified","direction":"desc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_LicenseGoodGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+  /v0/license-goods/{license_good_id}:
+    get:
+      tags:
+      - licenses
+      summary: Get Workspace
+      operationId: get_workspace
+      parameters:
+      - name: license_good_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: License Good Id
+          minimum: 0
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_LicenseGoodGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+    post:
+      tags:
+      - licenses
+      summary: Create Workspace Group
+      operationId: create_workspace_group
+      parameters:
+      - name: license_good_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: License Good Id
+          minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseGoodsBodyParams'
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
   /v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations:
     get:
       tags:
@@ -7710,6 +7810,19 @@ components:
           title: Error
       type: object
       title: Envelope[InvitationInfo]
+    Envelope_LicenseGoodGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/LicenseGoodGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[LicenseGoodGet]
     Envelope_Log_:
       properties:
         data:
@@ -8483,6 +8596,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[GroupUserGet]]
+    Envelope_list_LicenseGoodGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/LicenseGoodGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[LicenseGoodGet]]
     Envelope_list_OsparcCreditsAggregatedByServiceGet__:
       properties:
         data:
@@ -9878,6 +10007,62 @@ components:
       additionalProperties: false
       type: object
       title: InvitationInfo
+    LicenseGoodGet:
+      properties:
+        licenseGoodId:
+          type: integer
+          exclusiveMinimum: true
+          title: Licensegoodid
+          minimum: 0
+        name:
+          type: string
+          title: Name
+        licenseResourceType:
+          $ref: '#/components/schemas/LicenseResourceType'
+        pricingPlanId:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricingplanid
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+        modifiedAt:
+          type: string
+          format: date-time
+          title: Modifiedat
+      type: object
+      required:
+      - licenseGoodId
+      - name
+      - licenseResourceType
+      - pricingPlanId
+      - createdAt
+      - modifiedAt
+      title: LicenseGoodGet
+    LicenseGoodsBodyParams:
+      properties:
+        wallet_id:
+          type: integer
+          exclusiveMinimum: true
+          title: Wallet Id
+          minimum: 0
+        num_of_seeds:
+          type: integer
+          title: Num Of Seeds
+      additionalProperties: false
+      type: object
+      required:
+      - wallet_id
+      - num_of_seeds
+      title: LicenseGoodsBodyParams
+    LicenseResourceType:
+      type: string
+      enum:
+      - VIP_MODEL
+      const: VIP_MODEL
+      title: LicenseResourceType
     Limits:
       properties:
         cpus:
