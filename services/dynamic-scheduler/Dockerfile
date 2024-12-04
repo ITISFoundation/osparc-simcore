@@ -146,7 +146,7 @@ HEALTHCHECK --interval=30s \
   --timeout=20s \
   --start-period=30s \
   --retries=3 \
-  CMD ["python3", "services/dynamic-scheduler/docker/healthcheck.py", "http://localhost:8000/"]
+  CMD ["python3", "services/dynamic-scheduler/docker/healthcheck.py", "http://localhost:8000/health"]
 
 ENTRYPOINT [ "/bin/sh", "services/dynamic-scheduler/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/dynamic-scheduler/docker/boot.sh"]

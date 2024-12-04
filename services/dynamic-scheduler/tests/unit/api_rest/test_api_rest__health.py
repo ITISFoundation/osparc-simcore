@@ -68,9 +68,9 @@ def app_environment(
 )
 async def test_health(client: AsyncClient, is_ok: bool):
     if is_ok:
-        response = await client.get("/")
+        response = await client.get("/health")
         assert response.status_code == status.HTTP_200_OK
         assert datetime.fromisoformat(response.text.split("@")[1])
     else:
         with pytest.raises(HealthCheckError):
-            await client.get("/")
+            await client.get("/health")

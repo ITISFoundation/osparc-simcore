@@ -31,7 +31,6 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
-from models_library.clusters import ClusterID
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
@@ -100,7 +99,9 @@ async def mocked_node_ports_filemanager_fcts(
                     ],
                     chunk_size=TypeAdapter(ByteSize).validate_python("5GiB"),
                     links=FileUploadLinks(
-                        abort_upload=TypeAdapter(AnyUrl).validate_python("https://www.fakeabort.com"),
+                        abort_upload=TypeAdapter(AnyUrl).validate_python(
+                            "https://www.fakeabort.com"
+                        ),
                         complete_upload=TypeAdapter(AnyUrl).validate_python(
                             "https://www.fakecomplete.com"
                         ),
@@ -425,7 +426,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
     published_project: PublishedProject,
     mocked_node_ports_filemanager_fcts: dict[str, mock.MagicMock],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    entry_exists_returns: bool,  # noqa: FBT001
+    entry_exists_returns: bool,
     fake_io_schema: dict[str, dict[str, str]],
     faker: Faker,
 ):
@@ -528,11 +529,6 @@ def test__to_human_readable_resource_values(
 
 
 @pytest.fixture
-def cluster_id(faker: Faker) -> ClusterID:
-    return faker.pyint(min_value=0)
-
-
-@pytest.fixture
 def _app_config_with_dask_client(
     _app_config_with_db: None,
     dask_spec_local_cluster: SpecCluster,
@@ -549,7 +545,6 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
     _app_config_with_dask_client: None,
     project_id: ProjectID,
     node_id: NodeID,
-    cluster_id: ClusterID,
     published_project: PublishedProject,
     initialized_app: FastAPI,
 ):
@@ -563,7 +558,6 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
         check_if_cluster_is_able_to_run_pipeline(
             project_id=project_id,
             node_id=node_id,
-            cluster_id=cluster_id,
             node_image=sleeper_task.image,
             scheduler_info=dask_client.backend.client.scheduler_info(),
             task_resources={},
