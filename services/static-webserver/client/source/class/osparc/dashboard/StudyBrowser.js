@@ -576,10 +576,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const destWorkspaceId = data["workspaceId"];
         const destFolderId = data["folderId"];
         const moveFolder = () => {
-          Promise.all([
-            this.__moveFolderToWorkspace(folderId, destWorkspaceId),
-            this.__moveFolderToFolder(folderId, destFolderId),
-          ])
+          this.__moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
+            .then(this.__moveFolderToFolder(folderId, destFolderId)) // then move to folder
             .then(() => this.__reloadFolders())
             .catch(err => console.error(err));
         }
@@ -1243,10 +1241,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const selection = this._resourcesContainer.getSelection();
             selection.forEach(button => {
               const studyData = button.getResourceData();
-              Promise.all([
-                this.__moveStudyToWorkspace(studyData, destWorkspaceId),
-                this.__moveStudyToFolder(studyData, destFolderId),
-              ])
+              this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
+                .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
                 .then(() => this.__removeFromStudyList(studyData["uuid"]))
                 .catch(err => {
                   console.error(err);
