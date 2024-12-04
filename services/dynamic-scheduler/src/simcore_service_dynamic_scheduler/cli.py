@@ -52,6 +52,10 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True):
                 ),
             ),
         ),
+        DYNAMIC_SCHEDULER_UI_STORAGE_SECRET=os.environ.get(
+            "DYNAMIC_SCHEDULER_UI_STORAGE_SECRET",
+            "replace-with-ui-storage-secret",
+        ),
     )
 
     print_as_envfile(
