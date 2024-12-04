@@ -35,11 +35,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     if (resourceType === "study") {
       const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.ToggleButtonContainer();
       this._add(workspacesContainer);
-      workspacesContainer.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
 
       const foldersContainer = this.__foldersContainer = new osparc.dashboard.ToggleButtonContainer();
       this._add(foldersContainer);
-      foldersContainer.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
     }
 
     const nonGroupedContainer = this.__nonGroupedContainer = this.__createFlatList();

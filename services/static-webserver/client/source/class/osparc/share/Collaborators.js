@@ -22,7 +22,7 @@ qx.Class.define("osparc.share.Collaborators", {
   /**
     * @param serializedDataCopy {Object} Object containing the Serialized Data
     */
-  construct: function(serializedDataCopy, initCollabs = []) {
+  construct: function(serializedDataCopy) {
     this.base(arguments);
 
     this._serializedDataCopy = serializedDataCopy;
@@ -365,7 +365,11 @@ qx.Class.define("osparc.share.Collaborators", {
           win.open();
           win.addListener("close", () => {
             if (win.getConfirmed()) {
-              this._deleteMember({gid: myGid})
+              const collaborator = {
+                gid: myGid,
+                name: osparc.store.Groups.getInstance().getGroupMe().getLabel(),
+              }
+              this._deleteMember(collaborator)
                 .then(() => {
                   qx.event.message.Bus.dispatchByName("reloadStudies");
                 });
