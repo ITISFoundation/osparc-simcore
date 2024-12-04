@@ -10,7 +10,7 @@
 .DEFAULT_GOAL := help
 
 SHELL := /bin/bash
-.SHELLFLAGS := -e -o pipefail -c
+.SHELLFLAGS := -o errexit -o pipefail -c
 MAKE_C := $(MAKE) --no-print-directory --directory
 
 # Operating system
@@ -579,7 +579,7 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 
 
 .PHONY: openapi-specs
-openapi-specs: .env _check_venv_active ## bundles and validates openapi specifications and schemas of ALL service's API
+openapi-specs: .env _check_venv_active ## generates and validates openapi specifications and schemas of ALL service's API
 	@for makefile in $(MAKEFILES_WITH_OPENAPI_SPECS); do \
 		echo "Generating openapi-specs using $${makefile}"; \
 		$(MAKE_C) $$(dirname $${makefile}) install-dev && $(MAKE_C) $$(dirname $${makefile}) $@; \
