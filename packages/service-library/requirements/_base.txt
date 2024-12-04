@@ -160,7 +160,7 @@ protobuf==4.25.5
     #   opentelemetry-proto
 psutil==6.0.0
     # via -r requirements/_base.in
-pydantic==2.10.2
+pydantic==2.10.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

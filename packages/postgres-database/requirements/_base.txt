@@ -43,7 +43,7 @@ orjson==3.10.11
     #   -r requirements/../../../packages/common-library/requirements/_base.in
 psycopg2-binary==2.9.9
     # via sqlalchemy
-pydantic==2.10.2
+pydantic==2.10.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt

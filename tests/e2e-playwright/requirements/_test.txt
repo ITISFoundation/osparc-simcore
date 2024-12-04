@@ -47,7 +47,7 @@ playwright==1.47.0
     # via pytest-playwright
 pluggy==1.5.0
     # via pytest
-pydantic==2.10.2
+pydantic==2.10.3
     # via -r requirements/_test.in
 pydantic-core==2.27.1
     # via pydantic
