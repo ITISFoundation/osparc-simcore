@@ -279,7 +279,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         if (iframe) {
           const iframeDomEl = iframe.getDomElement();
           if (iframeDomEl) {
-            window.addEventListener('message', message => {
+            window.addEventListener("message", message => {
               const data = message.data;
               if (data) {
                 this.__handleIframeMessage(data);
