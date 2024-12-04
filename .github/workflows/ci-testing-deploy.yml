@@ -2749,7 +2749,7 @@ jobs:
             .
 
   system-backwards-compatibility:
-    needs: [changes]
+    needs: [changes, system-api-specs]
     if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 10
     name: "[sys] api-server backwards compatibility"
@@ -2773,7 +2773,7 @@ jobs:
             /specs/services/api-server/openapi.json
 
   api-spec-backwards-compatibility:
-    needs: [changes]
+    needs: [changes, system-api-specs]
     if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     continue-on-error: true
     timeout-minutes: 10
