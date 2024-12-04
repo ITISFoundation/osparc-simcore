@@ -1,10 +1,11 @@
 from datetime import date
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.groups import MyGroupsGet
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
+from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import FirstNameStr, LastNameStr, UserID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -62,17 +63,23 @@ class ProfileUpdate(BaseModel):
 
 class ProfileGet(BaseModel):
     id: UserID
+    user_name: Annotated[
+        IDStr, Field(description="Unique username identifier", alias="userName")
+    ]
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     login: LowerCaseEmailStr
+
     role: Literal["ANONYMOUS", "GUEST", "USER", "TESTER", "PRODUCT_OWNER", "ADMIN"]
     groups: MyGroupsGet | None = None
     gravatar_id: str | None = None
+
     expiration_date: date | None = Field(
         default=None,
         description="If user has a trial account, it sets the expiration date, otherwise None",
         alias="expirationDate",
     )
+
     preferences: AggregatedPreferences
 
     model_config = ConfigDict(
@@ -84,6 +91,7 @@ class ProfileGet(BaseModel):
                 {
                     "id": 1,
                     "login": "bla@foo.com",
+                    "userName": "bla123",
                     "role": "Admin",
                     "gravatar_id": "205e460b479e2e5b48aec07710c08d50",
                     "preferences": {},
@@ -91,6 +99,7 @@ class ProfileGet(BaseModel):
                 {
                     "id": 42,
                     "login": "bla@foo.com",
+                    "userName": "bla123",
                     "role": UserRole.ADMIN.value,
                     "expirationDate": "2022-09-14",
                     "preferences": {},

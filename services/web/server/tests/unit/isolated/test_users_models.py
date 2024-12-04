@@ -42,9 +42,12 @@ def test_user_models_examples(
 def test_profile_get_expiration_date(faker: Faker):
     fake_expiration = datetime.now(UTC)
 
+    fake_profile: dict[str, Any] = faker.simple_profile()
+
     profile = ProfileGet(
-        id=1,
-        login=faker.email(),
+        id=faker.pyint(),
+        user_name=fake_profile["username"],
+        login=fake_profile["mail"],
         role=UserRole.ADMIN,
         expiration_date=fake_expiration.date(),
         preferences={},
@@ -58,11 +61,15 @@ def test_profile_get_expiration_date(faker: Faker):
 
 def test_auto_compute_gravatar(faker: Faker):
 
+    fake_profile: dict[str, Any] = faker.simple_profile()
+    first_name, last_name = fake_profile["name"].rsplit(maxsplit=1)
+
     profile = ProfileGet(
         id=faker.pyint(),
-        first_name=faker.first_name(),
-        last_name=faker.last_name(),
-        login=faker.email(),
+        user_name=fake_profile["username"],
+        first_name=first_name,
+        last_name=last_name,
+        login=fake_profile["mail"],
         role="USER",
         preferences={},
     )
@@ -81,7 +88,7 @@ def test_auto_compute_gravatar(faker: Faker):
 
 @pytest.mark.parametrize("user_role", [u.name for u in UserRole])
 def test_profile_get_role(user_role: str):
-    for example in ProfileGet.model_config["json_schema_extra"]["examples"]:
+    for example in ProfileGet.model_json_schema()["examples"]:
         data = deepcopy(example)
         data["role"] = user_role
         m1 = ProfileGet(**data)
@@ -95,6 +102,7 @@ def test_parsing_output_of_get_user_profile():
     result_from_db_query_and_composition = {
         "id": 1,
         "login": "PtN5Ab0uv@guest-at-osparc.io",
+        "userName": "PtN5Ab0uv",
         "first_name": "PtN5Ab0uv",
         "last_name": "",
         "role": "Guest",

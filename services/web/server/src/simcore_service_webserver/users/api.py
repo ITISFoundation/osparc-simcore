@@ -77,6 +77,7 @@ async def get_user_profile(
             if not user_profile:
                 user_profile = {
                     "id": row.users_id,
+                    "user_name": row.name,
                     "first_name": row.users_first_name,
                     "last_name": row.users_last_name,
                     "login": row.users_email,
@@ -128,6 +129,7 @@ async def get_user_profile(
 
     return ProfileGet(
         id=user_profile["id"],
+        user_name=user_profile["user_name"],
         first_name=user_profile["first_name"],
         last_name=user_profile["last_name"],
         login=user_profile["login"],
