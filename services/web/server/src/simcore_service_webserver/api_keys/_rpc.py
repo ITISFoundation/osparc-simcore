@@ -31,7 +31,7 @@ async def create_api_key(
         expiration=api_key.expiration,
     )
 
-    return created_api_key
+    return ApiKeyGet.model_validate(created_api_key)
 
 
 @router.expose(reraise_if_error_type=(ApiKeyNotFoundError,))
@@ -40,7 +40,7 @@ async def get_api_key(
     *,
     user_id: UserID,
     product_name: ProductName,
-    api_key_id: int,
+    api_key_id: str,
 ) -> ApiKeyGet:
     api_key: ApiKey = await _service.get_api_key(
         app,
@@ -76,7 +76,7 @@ async def delete_api_key(
     *,
     user_id: UserID,
     product_name: ProductName,
-    api_key_id: int,
+    api_key_id: str,
 ) -> None:
     await _service.delete_api_key(
         app,

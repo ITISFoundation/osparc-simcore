@@ -127,7 +127,7 @@ async def get_api_key(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    api_key_id: int,
+    api_key_id: str,
     user_id: UserID,
     product_name: ProductName,
 ) -> ApiKey | None:
