@@ -2881,7 +2881,6 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: false
-          cache-dependency-glob: "**/service-library/requirements/ci*.txt"
       - name: checkout source branch
         uses: actions/checkout@v4
       - name: Regenerate specs and check
@@ -2911,7 +2910,6 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: false
-          cache-dependency-glob: "**/service-library/requirements/ci*.txt"
       - name: checkout
         uses: actions/checkout@v4
       - name: Check openapi-specs backwards compatibility
