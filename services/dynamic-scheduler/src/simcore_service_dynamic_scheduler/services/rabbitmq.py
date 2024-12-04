@@ -21,6 +21,9 @@ def setup_rabbitmq(app: FastAPI) -> None:
         app.state.rabbitmq_client = RabbitMQClient(
             client_name="dynamic_scheduler", settings=settings
         )
+        app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
+            client_name="dynamic_scheduler_rpc_client", settings=settings
+        )
         app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
             client_name="dynamic_scheduler_rpc_server", settings=settings
         )
@@ -28,6 +31,8 @@ def setup_rabbitmq(app: FastAPI) -> None:
     async def _on_shutdown() -> None:
         if app.state.rabbitmq_client:
             await app.state.rabbitmq_client.close()
+        if app.state.rabbitmq_rpc_client:
+            await app.state.rabbitmq_rpc_client.close()
         if app.state.rabbitmq_rpc_server:
             await app.state.rabbitmq_rpc_server.close()
 
@@ -38,6 +43,11 @@ def setup_rabbitmq(app: FastAPI) -> None:
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     assert app.state.rabbitmq_client  # nosec
     return cast(RabbitMQClient, app.state.rabbitmq_client)
+
+
+def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
+    assert app.state.rabbitmq_rpc_client
+    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
 
 
 def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:

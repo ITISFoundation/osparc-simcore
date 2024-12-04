@@ -15,6 +15,7 @@ from .._meta import (
     PROJECT_NAME,
     SUMMARY,
 )
+from ..api.frontend import setup_frontend
 from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..services.deferred_manager import setup_deferred_manager
@@ -74,6 +75,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     setup_status_monitor(app)
 
     setup_rest_api(app)
+    setup_frontend(app)
 
     # ERROR HANDLERS
     # ... add here ...
