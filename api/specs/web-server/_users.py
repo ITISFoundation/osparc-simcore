@@ -41,7 +41,7 @@ async def get_my_profile():
     ...
 
 
-@router.put(
+@router.patch(
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
 )
