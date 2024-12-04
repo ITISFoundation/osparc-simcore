@@ -4,8 +4,8 @@ from uuid import uuid5
 
 from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.auth import ApiKeyGet
 from models_library.products import ProductName
+from models_library.rpc_auth_api_keys import ApiKeyGet
 from models_library.users import UserID
 
 from ._api_auth_rpc import get_or_create_api_key_and_secret

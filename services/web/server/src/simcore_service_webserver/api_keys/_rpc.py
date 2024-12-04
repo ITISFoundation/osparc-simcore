@@ -2,8 +2,9 @@ from datetime import timedelta
 
 from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.api_schemas_webserver.auth import ApiKeyCreateRequest, ApiKeyGet
+from models_library.api_schemas_webserver.auth import ApiKeyCreateRequest
 from models_library.products import ProductName
+from models_library.rpc_auth_api_keys import ApiKeyGet
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 from simcore_service_webserver.api_keys import _service
