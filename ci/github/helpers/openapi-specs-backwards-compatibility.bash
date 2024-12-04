@@ -22,5 +22,3 @@ for spec in ${openapi_specs}; do
   fi
   printf "%0.s=" {1..100} && printf "\n"
 done
-
-exit "${exit_status}"
