@@ -30,10 +30,13 @@ async def _get_or_create_for(
     product_name: ProductName,
     user_id: UserID,
 ) -> ApiKeyGet:
-
-    name = create_unique_api_name_for(product_name, user_id)
+    display_name = create_unique_api_name_for(product_name, user_id)
     return await get_or_create_api_key_and_secret(
-        app, product_name=product_name, user_id=user_id, name=name, expiration=None
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        display_name=display_name,
+        expiration=None,
     )
 
 
