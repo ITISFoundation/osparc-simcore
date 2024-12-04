@@ -88,7 +88,7 @@ async def test_trash_projects(  # noqa: PLR0915
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._trash_api.director_v2_api.list_dynamic_services",
+        "simcore_service_webserver.projects._trash_api.dynamic_scheduler_api.list_dynamic_services",
         return_value=[mocker.MagicMock()] if is_project_running else [],
         autospec=True,
     )

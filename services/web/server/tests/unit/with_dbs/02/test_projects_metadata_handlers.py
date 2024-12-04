@@ -6,12 +6,12 @@
 import json
 import random
 from collections.abc import Awaitable, Callable
+from unittest.mock import MagicMock
 
 import aiopg
 import aiopg.sa
 import pytest
 from aiohttp.test_utils import TestClient
-from conftest import MagicMock
 from faker import Faker
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,

@@ -821,7 +821,9 @@ async def test_close_project(
         )
         mocked_director_v2_api[
             "dynamic_scheduler.api.list_dynamic_services"
-        ].assert_any_call(client.app, user_id, user_project["uuid"])
+        ].assert_any_call(
+            client.app, user_id=user_id, project_id=ProjectID(user_project["uuid"])
+        )
         mocked_director_v2_api[
             "dynamic_scheduler.api.list_dynamic_services"
         ].reset_mock()
@@ -844,7 +846,7 @@ async def test_close_project(
             call(
                 client.app,
                 user_id=user_id,
-                project_id=user_project["uuid"],
+                project_id=ProjectID(user_project["uuid"]),
             ),
         ]
         mocked_director_v2_api[
