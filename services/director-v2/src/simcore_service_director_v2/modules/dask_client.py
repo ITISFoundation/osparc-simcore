@@ -450,23 +450,30 @@ class DaskClient:
                 DaskSchedulerTaskState | None, task_statuses.get(job_id, "lost")
             )
             if dask_status == "erred":
-                # find out if this was a cancellation
-                exception = await distributed.Future(
-                    job_id, client=self.backend.client
-                ).exception(timeout=_DASK_DEFAULT_TIMEOUT_S)
-                assert isinstance(exception, Exception)  # nosec
+                try:
+                    # find out if this was a cancellation
+                    exception = await distributed.Future(
+                        job_id, client=self.backend.client
+                    ).exception(timeout=_DASK_DEFAULT_TIMEOUT_S)
+                    assert isinstance(exception, Exception)  # nosec
 
-                if isinstance(exception, TaskCancelledError):
-                    running_states.append(DaskClientTaskState.ABORTED)
-                else:
-                    assert exception  # nosec
+                    if isinstance(exception, TaskCancelledError):
+                        running_states.append(DaskClientTaskState.ABORTED)
+                    else:
+                        assert exception  # nosec
+                        _logger.warning(
+                            "Task  %s completed in error:\n%s\nTrace:\n%s",
+                            job_id,
+                            exception,
+                            "".join(traceback.format_exception(exception)),
+                        )
+                        running_states.append(DaskClientTaskState.ERRED)
+                except TimeoutError:
                     _logger.warning(
-                        "Task  %s completed in error:\n%s\nTrace:\n%s",
-                        job_id,
-                        exception,
-                        "".join(traceback.format_exception(exception)),
+                        "Task %s completed in error but was lost from dask-scheduler since then."
+                        "TIP: This can happen when the future just disappeared from the dask-scheduler when this call was done."
                     )
-                    running_states.append(DaskClientTaskState.ERRED)
+                    running_states.append(DaskClientTaskState.LOST)
             elif dask_status is None:
                 running_states.append(DaskClientTaskState.LOST)
             else:
