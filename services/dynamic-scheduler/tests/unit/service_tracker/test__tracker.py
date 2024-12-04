@@ -28,7 +28,7 @@ pytest_simcore_core_services_selection = [
 @pytest.fixture
 def disable_monitor_task(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_dynamic_scheduler.services.status_monitor._monitor.Monitor._worker_start_get_status_requests",
+        "simcore_service_dynamic_scheduler.services.status_monitor._monitor.Monitor._worker_check_services_require_status_update",
         autospec=True,
     )
 
