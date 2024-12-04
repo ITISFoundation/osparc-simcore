@@ -12,10 +12,8 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
-from simcore_service_api_server.exceptions.backend_errors import (
-    ProjectAlreadyStartedError,
-)
 
+from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
@@ -40,7 +38,11 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ._constants import FMSG_CHANGELOG_ADDED_IN_VERSION, FMSG_CHANGELOG_NEW_IN_VERSION
+from ._constants import (
+    FMSG_CHANGELOG_ADDED_IN_VERSION,
+    FMSG_CHANGELOG_CHANGED_IN_VERSION,
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -182,6 +184,9 @@ async def delete_job(
     + FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.4.3", "query parameter `cluster_id`")
     + FMSG_CHANGELOG_ADDED_IN_VERSION.format(
         "0.6", "responds with a 202 when successfully starting a computation"
+    )
+    + FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
+        "0.8", "query parameter `cluster_id` deprecated"
     ),
 )
 async def start_job(
@@ -192,7 +197,9 @@ async def start_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    cluster_id: ClusterID | None = None,
+    cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
+        ClusterID | None, Query(deprecated=True)
+    ] = None,
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
@@ -203,7 +210,6 @@ async def start_job(
             job_id=job_id,
             expected_job_name=job_name,
             webserver_api=webserver_api,
-            cluster_id=cluster_id,
         )
     except ProjectAlreadyStartedError:
         job_status = await inspect_job(

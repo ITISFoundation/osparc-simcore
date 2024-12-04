@@ -220,10 +220,17 @@ qx.Class.define("osparc.snapshots.SnapshotsView", {
           studyData["ui"] = data["ui"];
           const study = new osparc.data.model.Study(studyData);
           study.setReadOnly(true);
-          this.__snapshotPreview.set({
-            study: study
-          });
-          this.__snapshotPreview.loadModel(study.getWorkbench());
+          this.__snapshotPreview.setStudy(study);
+          // this.__snapshotPreview.loadModel(study.getWorkbench());
+          if (study.getWorkbench().isDeserialized()) {
+            this.__snapshotPreview.loadModel(study.getWorkbench())
+          } else {
+            study.getWorkbench().addListener("changeDeserialized", e => {
+              if (e.getData()) {
+                this.__snapshotPreview.loadModel(study.getWorkbench())
+              }
+            }, this);
+          }
         });
     }
   }

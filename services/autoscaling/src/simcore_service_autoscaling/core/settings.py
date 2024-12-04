@@ -11,7 +11,7 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from models_library.clusters import InternalClusterAuthentication
+from models_library.clusters import ClusterAuthentication
 from models_library.docker import DockerLabelKey
 from pydantic import (
     AliasChoices,
@@ -193,9 +193,9 @@ class NodesMonitoringSettings(BaseCustomSettings):
 
 class DaskMonitoringSettings(BaseCustomSettings):
     DASK_MONITORING_URL: AnyUrl = Field(
-        ..., description="the url to the osparc-dask-scheduler"
+        ..., description="the url to the dask-scheduler"
     )
-    DASK_SCHEDULER_AUTH: InternalClusterAuthentication = Field(
+    DASK_SCHEDULER_AUTH: ClusterAuthentication = Field(
         ...,
         description="defines the authentication of the clusters created via clusters-keeper (can be None or TLS)",
     )

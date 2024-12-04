@@ -14,7 +14,6 @@ from unittest import mock
 import pytest
 from _helpers import PublishedProject
 from fastapi import FastAPI
-from models_library.clusters import DEFAULT_CLUSTER_ID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -66,7 +65,6 @@ async def test_worker_properly_autocalls_scheduler_api(
         initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
@@ -123,7 +121,6 @@ async def test_worker_scheduling_parallelism(
             initialized_app,
             user_id=published_project.project.prj_owner,
             project_id=published_project.project.uuid,
-            cluster_id=DEFAULT_CLUSTER_ID,
             run_metadata=run_metadata,
             use_on_demand_clusters=False,
         )

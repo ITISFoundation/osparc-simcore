@@ -125,12 +125,12 @@ qx.Class.define("osparc.product.quickStart.s4lacad.Welcome", {
         textAlign: "center",
         rich : true
       });
-      osparc.store.Support.getLicenseURL()
-        .then(licenseUrl => {
-          const link = osparc.utils.Utils.createHTMLLink("Licensing", licenseUrl);
-          licenseLink.setValue(link);
-          licenseLink.show();
-        });
+      const licenseUrl = osparc.store.Support.getLicenseURL();
+      if (licenseUrl) {
+        const link = osparc.utils.Utils.createHTMLLink("Licensing", licenseUrl);
+        licenseLink.setValue(link);
+        licenseLink.show();
+      }
       footerItems.push(licenseLink);
 
       const dontShowCB = osparc.product.quickStart.Utils.createDontShowAgain("s4lDontShowQuickStart");

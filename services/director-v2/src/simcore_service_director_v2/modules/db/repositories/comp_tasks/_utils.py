@@ -6,6 +6,7 @@ from typing import Any, Final, cast
 import aiopg.sa
 import arrow
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
+from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.services import (
     NodeRequirements,
@@ -89,9 +90,7 @@ async def _get_service_details(
         node.version,
         product_name,
     )
-    obj: ServiceMetaDataPublished = ServiceMetaDataPublished.model_construct(
-        **service_details
-    )
+    obj: ServiceMetaDataPublished = ServiceGet(**service_details)
     return obj
 
 
@@ -105,7 +104,7 @@ def _compute_node_requirements(
             node_defined_resources[resource_name] = node_defined_resources.get(
                 resource_name, 0
             ) + min(resource_value.limit, resource_value.reservation)
-    return NodeRequirements.model_validate(node_defined_resources)
+    return NodeRequirements(**node_defined_resources)
 
 
 def _compute_node_boot_mode(node_resources: ServiceResourcesDict) -> BootMode:
@@ -189,7 +188,7 @@ async def _generate_task_image(
         data.update(envs=_compute_node_envs(node_labels))
     if node_extras and node_extras.container_spec:
         data.update(command=node_extras.container_spec.command)
-    return Image.model_validate(data)
+    return Image(**data)
 
 
 async def _get_pricing_and_hardware_infos(
@@ -347,7 +346,7 @@ async def generate_tasks_list_from_project(
     list_comp_tasks = []
 
     unique_service_key_versions: set[ServiceKeyVersion] = {
-        ServiceKeyVersion.model_construct(
+        ServiceKeyVersion(
             key=node.key, version=node.version
         )  # the service key version is frozen
         for node in project.workbench.values()
@@ -366,9 +365,7 @@ async def generate_tasks_list_from_project(
 
     for internal_id, node_id in enumerate(project.workbench, 1):
         node: Node = project.workbench[node_id]
-        node_key_version = ServiceKeyVersion.model_construct(
-            key=node.key, version=node.version
-        )
+        node_key_version = ServiceKeyVersion(key=node.key, version=node.version)
         node_details, node_extras, node_labels = key_version_to_node_infos.get(
             node_key_version,
             (None, None, None),
@@ -434,8 +431,8 @@ async def generate_tasks_list_from_project(
         task_db = CompTaskAtDB(
             project_id=project.uuid,
             node_id=NodeID(node_id),
-            schema=NodeSchema.model_validate(
-                node_details.model_dump(
+            schema=NodeSchema(
+                **node_details.model_dump(
                     exclude_unset=True, by_alias=True, include={"inputs", "outputs"}
                 )
             ),

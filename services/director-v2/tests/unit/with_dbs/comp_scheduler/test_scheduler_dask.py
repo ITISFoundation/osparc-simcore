@@ -30,7 +30,6 @@ from dask_task_models_library.container_tasks.io import TaskOutputData
 from dask_task_models_library.container_tasks.protocol import TaskOwner
 from faker import Faker
 from fastapi.applications import FastAPI
-from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -169,7 +168,6 @@ async def _assert_start_pipeline(
         app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
@@ -253,7 +251,6 @@ async def _assert_publish_in_dask_backend(
             mock.call(
                 user_id=published_project.project.prj_owner,
                 project_id=published_project.project.uuid,
-                cluster_id=DEFAULT_CLUSTER_ID,
                 tasks={f"{p.node_id}": p.image},
                 callback=mock.ANY,
                 metadata=mock.ANY,
@@ -651,7 +648,6 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_dask_client.send_computation_tasks.assert_called_once_with(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         tasks={
             f"{next_pending_task.node_id}": next_pending_task.image,
         },
@@ -1115,7 +1111,6 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
         initialized_app,
         user_id=user["id"],
         project_id=sleepers_project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
@@ -1241,7 +1236,6 @@ async def test_handling_of_disconnected_scheduler_dask(
         initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
@@ -1606,7 +1600,9 @@ async def test_handling_cancellation_of_jobs_after_reboot(
 @pytest.fixture
 def with_fast_service_heartbeat_s(monkeypatch: pytest.MonkeyPatch) -> int:
     seconds = 1
-    monkeypatch.setenv("SERVICE_TRACKING_HEARTBEAT", f"{seconds}")
+    monkeypatch.setenv(
+        "SERVICE_TRACKING_HEARTBEAT", f"{datetime.timedelta(seconds=seconds)}"
+    )
     return seconds
 
 
@@ -1747,7 +1743,6 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=True,
     )
@@ -1852,7 +1847,6 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
         initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=True,
     )

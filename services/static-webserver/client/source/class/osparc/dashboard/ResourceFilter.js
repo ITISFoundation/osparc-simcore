@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __serviceTypeButtons: null,
 
     __buildLayout: function() {
-      if (this.__resourceType === "study" && osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+      if (this.__resourceType === "study") {
         this._add(this.__createWorkspacesAndFoldersTree());
         this._add(this.__createTrashBin());
       } else {
@@ -104,7 +104,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         value: false,
         appearance: "filter-toggle-button",
         label: this.tr("Trash"),
-        icon: "@FontAwesome5Solid/trash/18",
+        icon: "@FontAwesome5Solid/trash/16",
+        paddingLeft: 10, // align it with the context
       });
       trashButton.addListener("changeValue", e => {
         const trashEnabled = e.getData();
@@ -221,11 +222,11 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     /* TAGS */
     __createTagsFilterLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
       osparc.utils.Utils.setIdToWidget(layout, this.__resourceType + "-tagsFilter");
 
       this.__populateTags(layout, []);
-      osparc.store.Store.getInstance().addListener("changeTags", () => {
+      osparc.store.Tags.getInstance().addListener("tagsChanged", () => {
         this.__populateTags(layout, this.__getSelectedTagIds());
       }, this);
 
@@ -242,7 +243,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       this.__tagButtons = [];
       layout.removeAll();
       osparc.store.Tags.getInstance().getTags().forEach((tag, idx) => {
-        const button = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/tag/18");
+        const button = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/tag/16");
         button.id = tag.getTagId();
         tag.bind("name", button, "label");
         tag.bind("color", button.getChildControl("icon"), "textColor");
@@ -266,7 +267,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
 
       if (this.__tagButtons.length > maxTags) {
-        const showAllButton = new qx.ui.form.Button(this.tr("All Tags..."), "@FontAwesome5Solid/tags/20");
+        const showAllButton = new qx.ui.form.Button(this.tr("All Tags..."), "@FontAwesome5Solid/tags/16");
         showAllButton.set({
           appearance: "filter-toggle-button"
         });
@@ -283,6 +284,20 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           }
         });
         layout.add(showAllButton);
+      }
+
+      const editTagsButton = new qx.ui.form.Button(this.tr("Edit Tags..."), "@FontAwesome5Solid/pencil-alt/14");
+      editTagsButton.set({
+        appearance: "filter-toggle-button"
+      });
+      editTagsButton.addListener("execute", () => {
+        const preferencesWindow = osparc.desktop.preferences.PreferencesWindow.openWindow();
+        preferencesWindow.openTags();
+      });
+      layout.add(editTagsButton);
+
+      if (this.__resourceType === "study") {
+        layout.getChildren().forEach(item => item.setPaddingLeft(10)); // align them with the context
       }
     },
     /* /TAGS */
