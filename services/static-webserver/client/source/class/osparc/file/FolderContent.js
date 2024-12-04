@@ -179,8 +179,8 @@ qx.Class.define("osparc.file.FolderContent", {
           }
           if (data["itemId"]) {
             item.itemId = data["itemId"];
-            this.__attachListenersToItems(item, data["entry"]);
           }
+          this.__attachListenersToItems(item, data["entry"]);
           items.push(item);
         });
       }
