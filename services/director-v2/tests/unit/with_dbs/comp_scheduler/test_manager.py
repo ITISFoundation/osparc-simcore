@@ -18,7 +18,6 @@ from unittest import mock
 import pytest
 from _helpers import PublishedProject, assert_comp_runs, assert_comp_runs_empty
 from fastapi import FastAPI
-from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_state import RunningState
 from pytest_mock.plugin import MockerFixture
@@ -156,7 +155,6 @@ async def test_schedule_all_pipelines(
         initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
@@ -174,7 +172,7 @@ async def test_schedule_all_pipelines(
     assert comp_run.user_id == published_project.project.prj_owner
     assert comp_run.iteration == 1
     assert comp_run.cancelled is None
-    assert comp_run.cluster_id == DEFAULT_CLUSTER_ID
+    assert comp_run.cluster_id is None
     assert comp_run.metadata == run_metadata
     assert comp_run.result is RunningState.PUBLISHED
     assert comp_run.scheduled is not None
@@ -260,7 +258,6 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
         initialized_app,
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
     )
@@ -278,7 +275,7 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
     assert comp_run.user_id == published_project.project.prj_owner
     assert comp_run.iteration == 1
     assert comp_run.cancelled is None
-    assert comp_run.cluster_id == DEFAULT_CLUSTER_ID
+    assert comp_run.cluster_id is None
     assert comp_run.metadata == run_metadata
     assert comp_run.result is RunningState.PUBLISHED
     assert comp_run.scheduled is not None
@@ -345,7 +342,6 @@ async def test_empty_pipeline_is_not_scheduled(
             initialized_app,
             user_id=user["id"],
             project_id=empty_project.uuid,
-            cluster_id=DEFAULT_CLUSTER_ID,
             run_metadata=run_metadata,
             use_on_demand_clusters=False,
         )
@@ -361,7 +357,6 @@ async def test_empty_pipeline_is_not_scheduled(
             initialized_app,
             user_id=user["id"],
             project_id=empty_project.uuid,
-            cluster_id=DEFAULT_CLUSTER_ID,
             run_metadata=run_metadata,
             use_on_demand_clusters=False,
         )

@@ -619,10 +619,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         "subgraph": partialPipeline,
         "force_restart": forceRestart
       };
-      const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
-      if (startStopButtonsWB.getClusterId() !== null) {
-        requestData["cluster_id"] = startStopButtonsWB.getClusterId();
-      }
       req.setRequestData(requestData);
       req.send();
       if (partialPipeline.length) {
@@ -910,10 +906,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (this.getStudy()) {
         this.getStudy().stopStudy();
         this.__closeStudy();
-      }
-      const clusterMiniView = this.__workbenchView.getStartStopButtons().getChildControl("cluster-mini-view");
-      if (clusterMiniView) {
-        clusterMiniView.setClusterId(null);
       }
       osparc.utils.Utils.closeHangingWindows();
     },
