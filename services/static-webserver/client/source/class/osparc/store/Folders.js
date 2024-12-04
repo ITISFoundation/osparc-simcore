@@ -28,7 +28,6 @@ qx.Class.define("osparc.store.Folders", {
   events: {
     "folderAdded": "qx.event.type.Data",
     "folderRemoved": "qx.event.type.Data",
-    "folderMoved": "qx.event.type.Data",
   },
 
   statics: {
@@ -220,14 +219,6 @@ qx.Class.define("osparc.store.Folders", {
           if (folderMoved) {
             this.fireDataEvent("folderAdded", folder);
           }
-          /*
-          if (updateData.parentFolderId !== oldParentFolderId) {
-            this.fireDataEvent("folderMoved", {
-              folder,
-              oldParentFolderId,
-            });
-          }
-          */
         })
         .catch(console.error);
     },
@@ -255,7 +246,6 @@ qx.Class.define("osparc.store.Folders", {
         return new Promise(resolve => resolve());
       }
 
-      const oldParentFolderId = folder.getParentFolderId();
       const params = {
         url: {
           folderId,
@@ -267,12 +257,6 @@ qx.Class.define("osparc.store.Folders", {
           this.fireDataEvent("folderRemoved", folder);
           folder.setWorkspaceId(destWorkspaceId);
           this.fireDataEvent("folderAdded", folder);
-          /*
-          this.fireDataEvent("folderMoved", {
-            folder,
-            oldParentFolderId,
-          });
-          */
         })
         .catch(err => console.error(err));
     },
