@@ -47,20 +47,6 @@ class TokenCreate(ThirdPartyToken):
 #
 
 
-class ProfileUpdate(BaseModel):
-    first_name: FirstNameStr | None = None
-    last_name: LastNameStr | None = None
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "first_name": "Pedro",
-                "last_name": "Crespo",
-            }
-        }
-    )
-
-
 class ProfileGet(BaseModel):
     id: UserID
     user_name: Annotated[
@@ -125,6 +111,20 @@ class ProfileGet(BaseModel):
         if isinstance(v, UserRole):
             return v.name.upper()
         return v
+
+
+class ProfileUpdate(BaseModel):
+    first_name: FirstNameStr | None = None
+    last_name: LastNameStr | None = None
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "first_name": "Pedro",
+                "last_name": "Crespo",
+            }
+        }
+    )
 
 
 #
