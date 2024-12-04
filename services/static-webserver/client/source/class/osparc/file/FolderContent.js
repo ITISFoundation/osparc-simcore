@@ -257,6 +257,10 @@ qx.Class.define("osparc.file.FolderContent", {
     __attachListenersToGridItem: function(btn, entry) {
       btn.addListener("tap", () => {
         this.__itemTapped(entry);
+        // folders can't be selected
+        if (osparc.file.FilesTree.isDir(entry)) {
+          btn.setValue(false);
+        }
       }, this);
       btn.addListener("dbltap", () => {
         this.__itemDblTapped(entry);
