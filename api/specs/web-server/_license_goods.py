@@ -36,7 +36,7 @@ router = APIRouter(
     "/license-goods",
     response_model=Envelope[list[LicenseGoodGet]],
 )
-async def list_workspaces(
+async def list_license_goods(
     _query: Annotated[as_query(LicenseGoodsListQueryParams), Depends()],
 ):
     ...
@@ -46,14 +46,14 @@ async def list_workspaces(
     "/license-goods/{license_good_id}",
     response_model=Envelope[LicenseGoodGet],
 )
-async def get_workspace(
+async def get_license_good(
     _path: Annotated[LicenseGoodsPathParams, Depends()],
 ):
     ...
 
 
 @router.post("/license-goods/{license_good_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def create_workspace_group(
+async def purchase_license_good(
     _path: Annotated[LicenseGoodsPathParams, Depends()],
     _body: LicenseGoodsBodyParams,
 ):
