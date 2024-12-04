@@ -209,16 +209,9 @@ qx.Class.define("osparc.Application", {
     },
 
     __updateTabName: function() {
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
-      if (osparc.utils.Utils.isInZ43()) {
-        document.title += " Z43";
-      }
-      if (platformName) {
-        document.title += ` (${platformName})`;
-      }
+      const newName = osparc.utils.Utils.composeTabName();
+      osparc.utils.Utils.updateTabName(newName);
     },
-
-
 
     __setDeviceSpecificIcons: function() {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;

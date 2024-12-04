@@ -189,7 +189,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         };
       }
 
-      if (osparc.utils.DisabledPlugins.isFoldersEnabled() && !this.__isTemplate) {
+      if (!this.__isTemplate) {
         const pathLabel = new qx.ui.basic.Label();
         pathLabel.setValue(this.getStudy().getLocationString());
         extraInfo["LOCATION"] = {
