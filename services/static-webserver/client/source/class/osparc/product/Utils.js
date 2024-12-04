@@ -225,7 +225,12 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showAboutProduct: function() {
-      return (this.isS4LProduct() || this.isProduct("s4llite"));
+      return (
+        this.isS4LProduct() ||
+        this.isProduct("s4llite") ||
+        this.isProduct("tis") ||
+        this.isProduct("tiplite")
+      );
     },
 
     showPreferencesTokens: function() {
@@ -236,13 +241,6 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showPreferencesExperimental: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
-        return false;
-      }
-      return true;
-    },
-
-    showClusters: function() {
       if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
         return false;
       }
@@ -268,6 +266,14 @@ qx.Class.define("osparc.product.Utils", {
         return false;
       }
       return true;
+    },
+
+    showS4LStore: function() {
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      if (platformName !== "master") {
+        return false;
+      }
+      return this.isS4LProduct();
     },
 
     getProductThumbUrl: function(asset = "Default.png") {

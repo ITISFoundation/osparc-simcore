@@ -76,7 +76,7 @@ repo_dir = current_dir.parent.parent
 
 
 def _skip_not_useful_docker_composes(p) -> bool:
-    result = "osparc-gateway-server" not in f"{p}" and "manual" not in f"{p}"
+    result = "manual" not in f"{p}"
     result &= "tests/performance" not in f"{p}"
     return result
 

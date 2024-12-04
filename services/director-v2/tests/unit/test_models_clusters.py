@@ -1,50 +1,14 @@
-from pprint import pformat
-from typing import Any
-
-import pytest
 from faker import Faker
 from models_library.api_schemas_directorv2.clusters import (
     AvailableResources,
-    ClusterCreate,
-    ClusterPatch,
     Scheduler,
     UsedResources,
     Worker,
     WorkerMetrics,
 )
 from models_library.clusters import ClusterTypeInModel
-from pydantic import BaseModel, ByteSize, TypeAdapter
+from pydantic import ByteSize, TypeAdapter
 from simcore_postgres_database.models.clusters import ClusterType
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    [ClusterCreate, ClusterPatch],
-)
-def test_clusters_model_examples(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
-):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    [
-        ClusterCreate,
-    ],
-)
-def test_cluster_creation_brings_default_thumbail(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
-):
-    for example in model_cls_examples.values():
-        if "thumbnail" in example:
-            example.pop("thumbnail")
-        instance = model_cls(**example)
-        assert instance
-        assert instance.thumbnail
 
 
 def test_scheduler_constructor_with_default_has_correct_dict(faker: Faker):

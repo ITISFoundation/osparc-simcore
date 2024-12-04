@@ -67,7 +67,7 @@ qx.Class.define("osparc.store.Store", {
       nullable: true
     },
     studyBrowserContext: {
-      check: ["studiesAndFolders", "workspaces", "search"],
+      check: ["studiesAndFolders", "workspaces", "search", "trash"],
       init: "studiesAndFolders",
       nullable: false,
       event: "changeStudyBrowserContext",
@@ -173,11 +173,6 @@ qx.Class.define("osparc.store.Store", {
     tokens: {
       check: "Array",
       init: []
-    },
-    clusters: {
-      check: "Array",
-      init: [],
-      event: "changeClusters"
     },
     services: {
       check: "Array",
@@ -411,6 +406,43 @@ qx.Class.define("osparc.store.Store", {
       if (idx !== -1) {
         templatesWStateCache[idx]["state"] = state;
       }
+    },
+
+    trashStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.fetch("studies", "trash", params)
+          .then(() => {
+            this.remove("studies", "uuid", studyId);
+            resolve();
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
+    },
+
+    untrashStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.fetch("studies", "untrash", params)
+          .then(() => {
+            resolve();
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
     },
 
     getTemplate: function(templateId) {

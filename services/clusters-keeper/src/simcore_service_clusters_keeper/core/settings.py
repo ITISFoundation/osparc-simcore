@@ -10,7 +10,7 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from models_library.clusters import InternalClusterAuthentication
+from models_library.clusters import ClusterAuthentication
 from pydantic import (
     AliasChoices,
     Field,
@@ -347,7 +347,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: (
-        InternalClusterAuthentication
+        ClusterAuthentication
     ) = Field(
         ...,
         description="defines the authentication of the clusters created via clusters-keeper (can be None or TLS)",
@@ -380,15 +380,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def _valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
-
-    @field_validator("SERVICE_TRACKING_HEARTBEAT", mode="before")
-    @classmethod
-    def _validate_interval(
-        cls, value: str | datetime.timedelta
-    ) -> int | datetime.timedelta:
-        if isinstance(value, str):
-            return int(value)
-        return value
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:

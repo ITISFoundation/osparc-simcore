@@ -1,6 +1,7 @@
 """ Computational Tasks Table
 
 """
+
 import enum
 
 import sqlalchemy as sa
@@ -77,9 +78,15 @@ comp_tasks = sa.Table(
         doc="current progress of the task if available",
     ),
     # utc timestamps for submission/start/end
-    sa.Column("submit", sa.DateTime, doc="UTC timestamp for task submission"),
-    sa.Column("start", sa.DateTime, doc="UTC timestamp when task started"),
-    sa.Column("end", sa.DateTime, doc="UTC timestamp for task completion"),
+    sa.Column(
+        "submit", sa.DateTime(timezone=True), doc="UTC timestamp for task submission"
+    ),
+    sa.Column(
+        "start", sa.DateTime(timezone=True), doc="UTC timestamp when task started"
+    ),
+    sa.Column(
+        "end", sa.DateTime(timezone=True), doc="UTC timestamp for task completion"
+    ),
     sa.Column(
         "last_heartbeat",
         sa.DateTime(timezone=True),

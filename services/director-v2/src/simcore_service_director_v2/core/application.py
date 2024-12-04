@@ -35,7 +35,6 @@ from ..modules import (
 )
 from ..modules.osparc_variables import substitutions
 from .errors import (
-    ClusterAccessForbiddenError,
     ClusterNotFoundError,
     PipelineNotFoundError,
     ProjectNetworkNotFoundError,
@@ -73,12 +72,6 @@ def _set_exception_handlers(app: FastAPI):
         ClusterNotFoundError,
         make_http_error_handler_for_exception(
             status.HTTP_404_NOT_FOUND, ClusterNotFoundError
-        ),
-    )
-    app.add_exception_handler(
-        ClusterAccessForbiddenError,
-        make_http_error_handler_for_exception(
-            status.HTTP_403_FORBIDDEN, ClusterAccessForbiddenError
         ),
     )
 

@@ -4,13 +4,13 @@
 
 import datetime
 from functools import cached_property
-from typing import Annotated
+from typing import Annotated, cast
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
+from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.clusters import (
-    DEFAULT_CLUSTER_ID,
-    Cluster,
+    BaseCluster,
     ClusterAuthentication,
     ClusterTypeInModel,
     NoAuthentication,
@@ -21,6 +21,7 @@ from pydantic import (
     AnyUrl,
     Field,
     NonNegativeInt,
+    PositiveInt,
     field_validator,
 )
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
@@ -72,6 +73,10 @@ class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_ENABLED: bool = Field(
         default=True,
     )
+    COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY: PositiveInt = Field(
+        default=50,
+        description="defines how many pipelines the application can schedule concurrently",
+    )
     COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED: bool = Field(
         default=True,
     )
@@ -79,13 +84,11 @@ class ComputationalBackendSettings(BaseCustomSettings):
         ...,
         description="This is the cluster that will be used by default"
         " when submitting computational services (typically "
-        "tcp://dask-scheduler:8786, tls://dask-scheduler:8786 for the internal cluster, or "
-        "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
+        "tcp://dask-scheduler:8786, tls://dask-scheduler:8786 for the internal cluster",
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ClusterAuthentication = Field(
-        ...,
-        description="Empty for the internal cluster, must be one "
-        "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
+        default=...,
+        description="this is the cluster authentication that will be used by default",
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE: FileLinkType = Field(
         FileLinkType.S3,
@@ -101,15 +104,13 @@ class ComputationalBackendSettings(BaseCustomSettings):
     )
 
     @cached_property
-    def default_cluster(self) -> Cluster:
-        return Cluster(
-            id=DEFAULT_CLUSTER_ID,
+    def default_cluster(self) -> BaseCluster:
+        return BaseCluster(
             name="Default cluster",
             endpoint=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
             authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
             owner=1,  # NOTE: currently this is a soft hack (the group of everyone is the group 1)
             type=ClusterTypeInModel.ON_PREMISE,
-            access_rights={},
         )
 
     @field_validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", mode="before")
@@ -263,3 +264,7 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
     _validate_service_tracking_heartbeat = validate_numeric_string_as_timedelta(
         "SERVICE_TRACKING_HEARTBEAT"
     )
+
+
+def get_application_settings(app: FastAPI) -> AppSettings:
+    return cast(AppSettings, app.state.settings)

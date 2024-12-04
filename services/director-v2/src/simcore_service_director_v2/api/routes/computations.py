@@ -21,16 +21,15 @@ import logging
 from typing import Annotated, Any, Final
 
 import networkx as nx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationCreate,
     ComputationDelete,
     ComputationGet,
     ComputationStop,
 )
-from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
@@ -49,7 +48,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 from ...core.errors import (
-    ClusterAccessForbiddenError,
     ClusterNotFoundError,
     ClustersKeeperNotAvailableError,
     ComputationalRunNotFoundError,
@@ -63,8 +61,7 @@ from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
-from ...modules.comp_scheduler import BaseCompScheduler
-from ...modules.db.repositories.clusters import ClustersRepository
+from ...modules.comp_scheduler import run_new_pipeline, stop_pipeline
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
@@ -89,7 +86,6 @@ from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
-from ..dependencies.scheduler import get_scheduler
 from .computations_tasks import analyze_pipeline
 
 _PIPELINE_ABORT_TIMEOUT_S: Final[int] = 10
@@ -116,7 +112,6 @@ async def _check_pipeline_startable(
     pipeline_dag: nx.DiGraph,
     computation: ComputationCreate,
     catalog_client: CatalogClient,
-    clusters_repo: ClustersRepository,
 ) -> None:
     assert computation.product_name  # nosec
     if deprecated_tasks := await utils.find_deprecated_tasks(
@@ -132,20 +127,6 @@ async def _check_pipeline_startable(
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
             detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {jsonable_encoder( deprecated_tasks)}",
         )
-    if computation.cluster_id:
-        # check the cluster ID is a valid one
-        try:
-            await clusters_repo.get_cluster(computation.user_id, computation.cluster_id)
-        except ClusterNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, not found",
-            ) from exc
-        except ClusterAccessForbiddenError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, no access",
-            ) from exc
 
 
 _UNKNOWN_NODE: Final[str] = "unknown node"
@@ -173,7 +154,7 @@ async def _get_project_metadata(
             project_uuid: ProjectID, node_id: NodeID
         ) -> tuple[str, str]:
             prj = await project_repo.get_project(project_uuid)
-            node_id_str = NodeIDStr(f"{node_id}")
+            node_id_str = f"{node_id}"
             if node_id_str not in prj.workbench:
                 _logger.error(
                     "%s not found in %s. it is an ancestor of %s. Please check!",
@@ -212,12 +193,12 @@ async def _get_project_metadata(
 
 
 async def _try_start_pipeline(
+    app: FastAPI,
     *,
     project_repo: ProjectsRepository,
     computation: ComputationCreate,
     complete_dag: nx.DiGraph,
     minimal_dag: nx.DiGraph,
-    scheduler: BaseCompScheduler,
     project: ProjectAtDB,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
@@ -242,11 +223,11 @@ async def _try_start_pipeline(
         wallet_id = computation.wallet_info.wallet_id
         wallet_name = computation.wallet_info.wallet_name
 
-    await scheduler.run_new_pipeline(
-        computation.user_id,
-        computation.project_id,
-        computation.cluster_id or DEFAULT_CLUSTER_ID,
-        RunMetadataDict(
+    await run_new_pipeline(
+        app,
+        user_id=computation.user_id,
+        project_id=computation.project_id,
+        run_metadata=RunMetadataDict(
             node_id_names_map={
                 NodeID(node_idstr): node_data.label
                 for node_idstr, node_data in project.workbench.items()
@@ -305,15 +286,11 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
     comp_runs_repo: Annotated[
         CompRunsRepository, Depends(get_repository(CompRunsRepository))
     ],
-    clusters_repo: Annotated[
-        ClustersRepository, Depends(get_repository(ClustersRepository))
-    ],
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
     projects_metadata_repo: Annotated[
         ProjectsMetadataRepository, Depends(get_repository(ProjectsMetadataRepository))
     ],
     director_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
-    scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
     rpc_client: Annotated[RabbitMQRPCClient, Depends(rabbitmq_rpc_client)],
@@ -343,7 +320,7 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
 
         if computation.start_pipeline:
             await _check_pipeline_startable(
-                minimal_computational_dag, computation, catalog_client, clusters_repo
+                minimal_computational_dag, computation, catalog_client
             )
 
         # ok so put the tasks in the db
@@ -370,11 +347,11 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
 
         if computation.start_pipeline:
             await _try_start_pipeline(
+                request.app,
                 project_repo=project_repo,
                 computation=computation,
                 complete_dag=complete_dag,
                 minimal_dag=minimal_computational_dag,
-                scheduler=scheduler,
                 project=project,
                 users_repo=users_repo,
                 projects_metadata_repo=projects_metadata_repo,
@@ -412,7 +389,6 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
                 else None
             ),
             iteration=last_run.iteration if last_run else None,
-            cluster_id=last_run.cluster_id if last_run else None,
             result=None,
             started=compute_pipeline_started_timestamp(
                 minimal_computational_dag, comp_tasks
@@ -519,7 +495,6 @@ async def get_computation(
             else None
         ),
         iteration=last_run.iteration if last_run else None,
-        cluster_id=last_run.cluster_id if last_run else None,
         result=None,
         started=compute_pipeline_started_timestamp(pipeline_dag, all_tasks),
         stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
@@ -549,7 +524,6 @@ async def stop_computation(
     comp_runs_repo: Annotated[
         CompRunsRepository, Depends(get_repository(CompRunsRepository))
     ],
-    scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
 ) -> ComputationGet:
     _logger.debug(
         "User %s stopping computation for project %s",
@@ -575,7 +549,9 @@ async def stop_computation(
         pipeline_state = utils.get_pipeline_state_from_task_states(filtered_tasks)
 
         if utils.is_pipeline_running(pipeline_state):
-            await scheduler.stop_pipeline(computation_stop.user_id, project_id)
+            await stop_pipeline(
+                request.app, user_id=computation_stop.user_id, project_id=project_id
+            )
 
         # get run details if any
         last_run: CompRunsAtDB | None = None
@@ -593,7 +569,6 @@ async def stop_computation(
             url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
             stop_url=None,
             iteration=last_run.iteration if last_run else None,
-            cluster_id=last_run.cluster_id if last_run else None,
             result=None,
             started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
             stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
@@ -615,6 +590,7 @@ async def stop_computation(
 async def delete_computation(
     computation_stop: ComputationDelete,
     project_id: ProjectID,
+    request: Request,
     project_repo: Annotated[
         ProjectsRepository, Depends(get_repository(ProjectsRepository))
     ],
@@ -624,7 +600,6 @@ async def delete_computation(
     comp_tasks_repo: Annotated[
         CompTasksRepository, Depends(get_repository(CompTasksRepository))
     ],
-    scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
 ) -> None:
     try:
         # get the project
@@ -642,7 +617,9 @@ async def delete_computation(
                 )
             # abort the pipeline first
             try:
-                await scheduler.stop_pipeline(computation_stop.user_id, project_id)
+                await stop_pipeline(
+                    request.app, user_id=computation_stop.user_id, project_id=project_id
+                )
             except ComputationalSchedulerError as e:
                 _logger.warning(
                     "Project %s could not be stopped properly.\n reason: %s",

@@ -51,19 +51,21 @@ routes = web.RouteTableDef()
 
 class _ProjectWorkspacesPathParams(BaseModel):
     project_id: ProjectID
-    workspace_id: Annotated[WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)] = Field(default=None)
+    workspace_id: Annotated[
+        WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)
+    ] = Field(default=None)
 
     model_config = ConfigDict(extra="forbid")
 
 
-@routes.put(
-    f"/{VTAG}/projects/{{project_id}}/workspaces/{{workspace_id}}",
-    name="replace_project_workspace",
+@routes.post(
+    f"/{VTAG}/projects/{{project_id}}/workspaces/{{workspace_id}}:move",
+    name="move_project_to_workspace",
 )
 @login_required
 @permission_required("project.workspaces.*")
 @_handle_projects_workspaces_exceptions
-async def replace_project_workspace(request: web.Request):
+async def move_project_to_workspace(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectWorkspacesPathParams, request
