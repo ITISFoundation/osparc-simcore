@@ -111,7 +111,9 @@ def mock_director_v2_service_state(
         mock.get("/dynamic_services").respond(
             status.HTTP_200_OK,
             text=json.dumps(
-                DynamicServiceGet.model_config["json_schema_extra"]["examples"]
+                jsonable_encoder(
+                    DynamicServiceGet.model_config["json_schema_extra"]["examples"]
+                )
             ),
         )
 
