@@ -102,7 +102,7 @@ class DirectorV2Client(
 
             raise
 
-    async def retrieve_data_on_ports(
+    async def retrieve_inputs(
         self,
         *,
         node_id: NodeID,

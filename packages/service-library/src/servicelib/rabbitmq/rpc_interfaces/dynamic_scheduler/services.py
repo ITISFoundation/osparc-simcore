@@ -80,7 +80,7 @@ async def stop_dynamic_service(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def retrieve_data_on_ports(
+async def retrieve_inputs(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -89,7 +89,7 @@ async def retrieve_data_on_ports(
 ) -> RetrieveDataOutEnveloped:
     result = await rabbitmq_rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("retrieve_data_on_ports"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("retrieve_inputs"),
         node_id=node_id,
         port_keys=port_keys,
         timeout_s=timeout_s,

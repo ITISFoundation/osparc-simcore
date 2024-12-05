@@ -64,7 +64,7 @@ async def stop_dynamic_service(
     await set_request_as_stopped(app, dynamic_service_stop)
 
 
-async def retrieve_data_on_ports(
+async def retrieve_inputs(
     app: FastAPI, *, node_id: NodeID, port_keys: list[ServicePortKey]
 ) -> RetrieveDataOutEnveloped:
     settings: ApplicationSettings = app.state.settings
@@ -72,7 +72,7 @@ async def retrieve_data_on_ports(
         raise NotImplementedError
 
     director_v2_client = DirectorV2Client.get_from_app_state(app)
-    return await director_v2_client.retrieve_data_on_ports(
+    return await director_v2_client.retrieve_inputs(
         node_id=node_id,
         port_keys=port_keys,
         timeout=settings.DYNAMIC_SCHEDULER_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT,

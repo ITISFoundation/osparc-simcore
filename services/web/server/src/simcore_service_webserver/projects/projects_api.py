@@ -1129,7 +1129,7 @@ async def _safe_retrieve(
     app: web.Application, node_id: NodeID, port_keys: list[str]
 ) -> None:
     try:
-        await dynamic_scheduler_api.retrieve(app, node_id, port_keys)
+        await dynamic_scheduler_api.retrieve_inputs(app, node_id, port_keys)
     except RPCServerError as exc:
         log.warning(
             "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s]",

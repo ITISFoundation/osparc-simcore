@@ -139,12 +139,11 @@ async def stop_dynamic_services_in_project(
         await logged_gather(*services_to_stop)
 
 
-# NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191
-async def retrieve(
+async def retrieve_inputs(
     app: web.Application, node_id: NodeID, port_keys: list[ServicePortKey]
 ) -> RetrieveDataOutEnveloped:
     settings: DynamicSchedulerSettings = get_plugin_settings(app)
-    return await services.retrieve_data_on_ports(
+    return await services.retrieve_inputs(
         get_rabbitmq_rpc_client(app),
         node_id=node_id,
         port_keys=port_keys,
