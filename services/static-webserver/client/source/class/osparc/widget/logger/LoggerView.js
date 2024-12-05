@@ -275,14 +275,16 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       // alwaysUpdateCells
       osparc.utils.Utils.setIdToWidget(table, "logsViewer");
       const colModel = table.getTableColumnModel();
-      colModel.setDataCellRenderer(this.self().POS.TIMESTAMP, new osparc.ui.table.cellrenderer.Html().set({
+      colModel.setDataCellRenderer(this.self().POS.LOG_LEVEL, new qx.ui.table.cellrenderer.Image());
+      // colModel.setDataCellRenderer(this.self().POS.LOG_LEVEL, new qx.ui.table.cellrenderer.String());
         defaultCellStyle: "user-select: text"
       }));
       colModel.setDataCellRenderer(this.self().POS.ORIGIN, new qx.ui.table.cellrenderer.Html());
       colModel.setDataCellRenderer(this.self().POS.MESSAGE, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text; text-wrap: wrap"
       }));
-      let resizeBehavior = colModel.getBehavior();
+      const resizeBehavior = colModel.getBehavior();
+      resizeBehavior.setWidth(this.self().POS.LOG_LEVEL, 20);
       resizeBehavior.setWidth(this.self().POS.TIMESTAMP, 80);
       resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
 
