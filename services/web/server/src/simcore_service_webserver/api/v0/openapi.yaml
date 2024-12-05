@@ -11561,6 +11561,7 @@ components:
           - type: string
           - type: 'null'
           title: Gravatar Id
+          deprecated: true
         expirationDate:
           anyOf:
           - type: string
@@ -11626,6 +11627,13 @@ components:
             maxLength: 255
           - type: 'null'
           title: Last Name
+        user_name:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: User Name
         privacy:
           anyOf:
           - $ref: '#/components/schemas/ProfilePrivacyUpdate'
