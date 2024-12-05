@@ -82,9 +82,10 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
 
   statics: {
     POS: {
-      TIMESTAMP: 0,
-      ORIGIN: 1,
-      MESSAGE: 2
+      LOG_LEVEL: 0,
+      TIMESTAMP: 1,
+      ORIGIN: 2,
+      MESSAGE: 3,
     },
 
     LOG_LEVELS: {
@@ -277,10 +278,11 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       const colModel = table.getTableColumnModel();
       colModel.setDataCellRenderer(this.self().POS.LOG_LEVEL, new qx.ui.table.cellrenderer.Image());
       // colModel.setDataCellRenderer(this.self().POS.LOG_LEVEL, new qx.ui.table.cellrenderer.String());
+      colModel.setDataCellRenderer(this.self().POS.TIMESTAMP, new osparc.ui.table.cellrenderer.String().set({
         defaultCellStyle: "user-select: text"
       }));
-      colModel.setDataCellRenderer(this.self().POS.ORIGIN, new qx.ui.table.cellrenderer.Html());
-      colModel.setDataCellRenderer(this.self().POS.MESSAGE, new osparc.ui.table.cellrenderer.Html().set({
+      colModel.setDataCellRenderer(this.self().POS.ORIGIN, new qx.ui.table.cellrenderer.String());
+      colModel.setDataCellRenderer(this.self().POS.MESSAGE, new osparc.ui.table.cellrenderer.String().set({
         defaultCellStyle: "user-select: text; text-wrap: wrap"
       }));
       const resizeBehavior = colModel.getBehavior();

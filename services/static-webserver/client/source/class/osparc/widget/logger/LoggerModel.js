@@ -61,9 +61,6 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
     ]);
 
     this.__rawData = [];
-
-    const themeManager = qx.theme.manager.Meta.getInstance();
-    themeManager.addListener("changeTheme", () => this.__themeChanged());
   },
 
   properties: {
@@ -81,22 +78,24 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
   },
 
   statics: {
-    addColorTag: function(msg, color) {
-      return ("<font color=" + color +">" + msg + "</font>");
-    },
-
-    getLevelColor: function(logLevel) {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      let logColor = null;
+    getLevelIcon: function(logLevel) {
       const logLevels = osparc.widget.logger.LoggerView.LOG_LEVELS;
-      Object.keys(logLevels).forEach(logLevelKey => {
-        const logString = logLevelKey.toLowerCase();
-        const logNumber = logLevels[logLevelKey];
-        if (logNumber === logLevel) {
-          logColor = colorManager.resolve("logger-"+logString+"-message");
-        }
-      });
-      return logColor ? logColor : colorManager.resolve("logger-info-message");
+      let iconSource = "";
+      switch (logLevel) {
+        case logLevels.DEBUG:
+          iconSource = "@FontAwesome5Solid/info/12";
+          break;
+        case logLevels.INFO:
+          iconSource = "@FontAwesome5Solid/info/12";
+          break;
+        case logLevels.WARNING:
+          iconSource = "@FontAwesome5Solid/exclamation-triangle/12";
+          break;
+        case logLevels.ERROR:
+          iconSource = "@FontAwesome5Solid/exclamation-circle/12";
+          break;
+      }
+      return iconSource;
     }
   },
 
@@ -117,7 +116,7 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
         newRow["level"] = this.self().getLevelIcon(newRow.logLevel);
         newRow["time"] = osparc.utils.Utils.formatTime(newRow.timeStamp, true);
         newRow["who"] = newRow.label;
-        newRow["msgRich"] = this.self().addColorTag(newRow.msg, levelColor);
+        newRow["msgRich"] = newRow.msg;
         this.__rawData.push(newRow);
       });
     },
@@ -128,15 +127,6 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
           row.label = newLabel;
           row["who"] = row.label;
         }
-      });
-    },
-
-    __themeChanged: function() {
-      this.__rawData.forEach(row => {
-        const levelColor = this.self().getLevelColor(row.logLevel);
-        row["time"] = osparc.utils.Utils.formatTime(row.timeStamp, true);
-        row["who"] = row.label;
-        row["msgRich"] = this.self().addColorTag(row.msg, levelColor);
       });
     },
 
