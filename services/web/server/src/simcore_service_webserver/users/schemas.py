@@ -104,7 +104,8 @@ class ProfileGet(BaseModel):
 class ProfileUpdate(BaseModel):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
-    user_name: IDStr | None = None
+    user_name: Annotated[IDStr | None, Field(alias="userName")] = None
+
     privacy: ProfilePrivacyUpdate | None = None
 
     model_config = ConfigDict(

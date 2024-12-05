@@ -30,6 +30,7 @@ from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _db
 from ._api import get_user_credentials, get_user_invoice_address, set_user_as_deleted
+from ._models import ToUserUpdateDB
 from ._preferences_api import get_frontend_user_preferences_aggregation
 from .exceptions import MissingGroupExtraPropertiesForProductError, UserNotFoundError
 from .schemas import ProfileGet, ProfileUpdate
@@ -159,26 +160,12 @@ async def update_user_profile(
         UserNotFoundError
     """
     user_id = _parse_as_user(user_id)
-    async with get_database_engine(app).acquire() as conn:
-        updated_values = update.model_dump(
-            include={
-                "first_name": True,
-                "last_name": True,
-                "user_name": True,
-                "privacy": {
-                    "hide_email",
-                    "hide_fullname",
-                },
-            },
-            exclude_unset=True,
-        )
-        # flatten dict
-        if privacy := updated_values.pop("privacy", None):
-            updated_values |= {f"privacy_{k}": v for k, v in privacy.items()}
 
-        query = users.update().where(users.c.id == user_id).values(**updated_values)
-        resp = await conn.execute(query)
-        assert resp.rowcount == 1  # nosec
+    if updated_values := ToUserUpdateDB.from_api(update).to_columns():
+        async with get_database_engine(app).acquire() as conn:
+            query = users.update().where(users.c.id == user_id).values(**updated_values)
+            resp = await conn.execute(query)
+            assert resp.rowcount == 1  # nosec
 
 
 async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:

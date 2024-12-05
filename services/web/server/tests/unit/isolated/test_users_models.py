@@ -15,8 +15,12 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.users._models import ProfilePrivacyGet
-from simcore_service_webserver.users.schemas import ProfileGet, ThirdPartyToken
+from simcore_service_webserver.users._models import ProfilePrivacyGet, ToUserUpdateDB
+from simcore_service_webserver.users.schemas import (
+    ProfileGet,
+    ProfileUpdate,
+    ThirdPartyToken,
+)
 
 
 @pytest.mark.parametrize(
@@ -152,3 +156,25 @@ def test_parsing_output_of_get_user_profile():
 
     profile = ProfileGet.model_validate(result_from_db_query_and_composition)
     assert "password" not in profile.model_dump(exclude_unset=True)
+
+
+def test_mapping_update_models_from_rest_to_db():
+
+    profile_update = ProfileUpdate.model_validate(
+        # input in rest
+        {
+            "first_name": "foo",
+            "userName": "foo1234",
+            "privacy": {"hide_fullname": False},
+        }
+    )
+
+    # to db
+    profile_update_db = ToUserUpdateDB.from_api(profile_update)
+
+    # expected
+    assert profile_update_db.to_columns() == {
+        "first_name": "foo",
+        "name": "foo1234",
+        "privacy_hide_fullname": False,
+    }
