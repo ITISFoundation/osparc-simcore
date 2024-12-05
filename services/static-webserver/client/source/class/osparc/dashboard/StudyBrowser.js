@@ -576,10 +576,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const destWorkspaceId = data["workspaceId"];
         const destFolderId = data["folderId"];
         const moveFolder = () => {
-          Promise.all([
-            this.__moveFolderToWorkspace(folderId, destWorkspaceId),
-            this.__moveFolderToFolder(folderId, destFolderId),
-          ])
+          osparc.store.Folders.getInstance().moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
+            .then(() => osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)) // then move to folder
             .then(() => this.__reloadFolders())
             .catch(err => console.error(err));
         }
@@ -595,38 +593,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       });
       moveFolderTo.addListener("cancel", () => win.close());
-    },
-
-    __moveFolderToWorkspace: function(folderId, destWorkspaceId) {
-      const folder = osparc.store.Folders.getInstance().getFolder(folderId);
-      if (folder.getWorkspaceId() === destWorkspaceId) {
-        // resolve right away
-        return new Promise(resolve => resolve());
-      }
-      const params = {
-        url: {
-          folderId,
-          workspaceId: destWorkspaceId,
-        }
-      };
-      return osparc.data.Resources.fetch("folders", "moveToWorkspace", params)
-        .then(() => folder.setWorkspaceId(destWorkspaceId))
-        .catch(err => console.error(err));
-    },
-
-    __moveFolderToFolder: function(folderId, destFolderId) {
-      if (folderId === destFolderId) {
-        // resolve right away
-        return new Promise(resolve => resolve());
-      }
-      const folder = osparc.store.Folders.getInstance().getFolder(folderId);
-      const updatedData = {
-        name: folder.getName(),
-        parentFolderId: destFolderId,
-      };
-      return osparc.store.Folders.getInstance().putFolder(folderId, updatedData)
-        .then(() => folder.setParentFolderId(destFolderId))
-        .catch(err => console.error(err));
     },
 
     _trashFolderRequested: function(folderId) {
@@ -1243,10 +1209,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const selection = this._resourcesContainer.getSelection();
             selection.forEach(button => {
               const studyData = button.getResourceData();
-              Promise.all([
-                this.__moveStudyToWorkspace(studyData, destWorkspaceId),
-                this.__moveStudyToFolder(studyData, destFolderId),
-              ])
+              this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
+                .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
                 .then(() => this.__removeFromStudyList(studyData["uuid"]))
                 .catch(err => {
                   console.error(err);
@@ -1667,10 +1631,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const destWorkspaceId = data["workspaceId"];
           const destFolderId = data["folderId"];
           const moveStudy = () => {
-            Promise.all([
-              this.__moveStudyToWorkspace(studyData, destWorkspaceId),
-              this.__moveStudyToFolder(studyData, destFolderId),
-            ])
+            this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
+              .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
               .then(() => this.__removeFromStudyList(studyData["uuid"]))
               .catch(err => {
                 console.error(err);
