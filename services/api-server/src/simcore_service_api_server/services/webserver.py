@@ -57,7 +57,7 @@ from simcore_service_api_server.exceptions.backend_errors import (
     SolverOutputNotFoundError,
     WalletNotFoundError,
 )
-from simcore_service_api_server.models.schemas.model_adapter import GetCreditPrice
+from simcore_service_api_server.models.schemas.model_adapter import GetCreditPriceLegacy
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -73,7 +73,10 @@ from ..exceptions.service_errors_utils import (
 from ..models.basic_types import VersionStr
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
-from ..models.schemas.model_adapter import PricingUnitGet, WalletGetWithAvailableCredits
+from ..models.schemas.model_adapter import (
+    PricingUnitGetLegacy,
+    WalletGetWithAvailableCreditsLegacy,
+)
 from ..models.schemas.profiles import Profile, ProfileUpdate
 from ..models.schemas.solvers import SolverKeyId
 from ..models.schemas.studies import StudyPort
@@ -404,14 +407,14 @@ class AuthSession:
     @_exception_mapper({status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
     async def get_project_node_pricing_unit(
         self, *, project_id: UUID, node_id: UUID
-    ) -> PricingUnitGet:
+    ) -> PricingUnitGetLegacy:
         response = await self.client.get(
             f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
             cookies=self.session_cookies,
         )
 
         response.raise_for_status()
-        data = Envelope[PricingUnitGet].model_validate_json(response.text).data
+        data = Envelope[PricingUnitGetLegacy].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -526,14 +529,14 @@ class AuthSession:
     # WALLETS -------------------------------------------------
 
     @_exception_mapper(_WALLET_STATUS_MAP)
-    async def get_default_wallet(self) -> WalletGetWithAvailableCredits:
+    async def get_default_wallet(self) -> WalletGetWithAvailableCreditsLegacy:
         response = await self.client.get(
             "/wallets/default",
             cookies=self.session_cookies,
         )
         response.raise_for_status()
         data = (
-            Envelope[WalletGetWithAvailableCredits]
+            Envelope[WalletGetWithAvailableCreditsLegacy]
             .model_validate_json(response.text)
             .data
         )
@@ -541,14 +544,16 @@ class AuthSession:
         return data
 
     @_exception_mapper(_WALLET_STATUS_MAP)
-    async def get_wallet(self, *, wallet_id: int) -> WalletGetWithAvailableCredits:
+    async def get_wallet(
+        self, *, wallet_id: int
+    ) -> WalletGetWithAvailableCreditsLegacy:
         response = await self.client.get(
             f"/wallets/{wallet_id}",
             cookies=self.session_cookies,
         )
         response.raise_for_status()
         data = (
-            Envelope[WalletGetWithAvailableCredits]
+            Envelope[WalletGetWithAvailableCreditsLegacy]
             .model_validate_json(response.text)
             .data
         )
@@ -569,13 +574,13 @@ class AuthSession:
     # PRODUCTS -------------------------------------------------
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: ProductPriceNotFoundError})
-    async def get_product_price(self) -> GetCreditPrice:
+    async def get_product_price(self) -> GetCreditPriceLegacy:
         response = await self.client.get(
             "/credits-price",
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[GetCreditPrice].model_validate_json(response.text).data
+        data = Envelope[GetCreditPriceLegacy].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 

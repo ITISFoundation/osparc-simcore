@@ -16,7 +16,7 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
 )
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.model_adapter import (
-    WalletGetWithAvailableCredits,
+    WalletGetWithAvailableCreditsLegacy,
 )
 
 
@@ -54,8 +54,8 @@ async def test_get_wallet(
     response = await client.get(f"{API_VTAG}/wallets/{wallet_id}", auth=auth)
     if "success" in capture:
         assert response.status_code == 200
-        wallet: WalletGetWithAvailableCredits = (
-            WalletGetWithAvailableCredits.model_validate(response.json())
+        wallet: WalletGetWithAvailableCreditsLegacy = (
+            WalletGetWithAvailableCreditsLegacy.model_validate(response.json())
         )
         assert wallet.wallet_id == wallet_id
     elif "failure" in capture:
@@ -79,4 +79,4 @@ async def test_get_default_wallet(
 
     response = await client.get(f"{API_VTAG}/wallets/default", auth=auth)
     assert response.status_code == status.HTTP_200_OK
-    _ = WalletGetWithAvailableCredits.model_validate(response.json())
+    _ = WalletGetWithAvailableCreditsLegacy.model_validate(response.json())

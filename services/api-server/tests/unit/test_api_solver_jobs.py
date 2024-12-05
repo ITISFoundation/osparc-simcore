@@ -24,8 +24,8 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobStatus
 from simcore_service_api_server.models.schemas.model_adapter import (
-    PricingUnitGet,
-    WalletGetWithAvailableCredits,
+    PricingUnitGetLegacy,
+    WalletGetWithAvailableCreditsLegacy,
 )
 from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.services.director_v2 import ComputationTaskGet
@@ -184,7 +184,7 @@ async def test_get_solver_job_pricing_unit(
     )
     if capture_file == "get_job_pricing_unit_success.json":
         assert response.status_code == status.HTTP_200_OK
-        _ = TypeAdapter(PricingUnitGet).validate_python(response.json())
+        _ = TypeAdapter(PricingUnitGetLegacy).validate_python(response.json())
     elif capture_file == "get_job_pricing_unit_invalid_job.json":
         assert response.status_code == status.HTTP_404_NOT_FOUND
     elif capture_file == "get_job_pricing_unit_invalid_solver.json":
@@ -419,7 +419,7 @@ async def test_get_solver_job_outputs(
         capture: HttpApiCallCaptureModel,
     ):
         wallet = (
-            TypeAdapter(Envelope[WalletGetWithAvailableCredits])
+            TypeAdapter(Envelope[WalletGetWithAvailableCreditsLegacy])
             .validate_python(capture.response_body)
             .data
         )
@@ -427,7 +427,7 @@ async def test_get_solver_job_outputs(
         wallet.available_credits = (
             Decimal(10.0) if sufficient_credits else Decimal(-10.0)
         )
-        envelope = Envelope[WalletGetWithAvailableCredits]()
+        envelope = Envelope[WalletGetWithAvailableCreditsLegacy]()
         envelope.data = wallet
         return jsonable_encoder(envelope)
 
