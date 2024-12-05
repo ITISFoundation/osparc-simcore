@@ -183,6 +183,46 @@ async def test_update_profile(
     assert data["role"] == user_role.name
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_profile_workflow(
+    logged_user: UserInfoDict,
+    client: TestClient,
+    user_role: UserRole,
+):
+    assert client.app
+
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    my_profile = ProfileGet.model_validate(data)
+
+    url = client.app.router["update_my_profile"].url_for()
+    resp = await client.patch(
+        f"{url}",
+        json={
+            "first_name": "Odei",
+            "privacy": {"hide_fullname": False},
+        },
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    updated_profile = ProfileGet.model_validate(data)
+
+    assert updated_profile.first_name != my_profile.first_name
+    assert updated_profile.last_name == my_profile.last_name
+    assert updated_profile.login == my_profile.login
+
+    assert updated_profile.privacy != my_profile.privacy
+    assert updated_profile.privacy.hide_email == my_profile.privacy.hide_email
+    assert updated_profile.privacy.hide_fullname != my_profile.privacy.hide_fullname
+
+
 @pytest.fixture
 def mock_failing_database_connection(mocker: Mock) -> MagicMock:
     """
