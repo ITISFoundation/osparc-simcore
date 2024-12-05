@@ -491,7 +491,7 @@ class DynamicSidecarServiceLabels(BaseModel):
     model_config = _BaseConfig
 
 
-def _simcore_service_labels_json_schema_extra(schema: JsonDict):
+def _update_json_schema_extra(schema: JsonDict) -> None:
     #
     # NOTE: this will be automatically called with SimcoreServiceLabels.model_json_schema
     #
@@ -601,5 +601,5 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
 
     model_config = _BaseConfig | ConfigDict(
         extra="allow",
-        json_schema_extra=_simcore_service_labels_json_schema_extra,
+        json_schema_extra=_update_json_schema_extra,
     )
