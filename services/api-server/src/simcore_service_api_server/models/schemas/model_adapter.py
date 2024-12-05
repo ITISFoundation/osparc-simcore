@@ -25,10 +25,20 @@ from models_library.resource_tracker import (
 )
 from models_library.users import GroupID
 from models_library.wallets import WalletID, WalletStatus
-from pydantic import BaseModel, Field, NonNegativeFloat, NonNegativeInt, PlainSerializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    NonNegativeFloat,
+    NonNegativeInt,
+    PlainSerializer,
+)
 
 
 class GetCreditPriceLegacy(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
     product_name: str = Field(alias="productName")
     usd_per_credit: (
         Annotated[
@@ -56,6 +66,9 @@ assert set(GetCreditPriceLegacy.model_fields.keys()) == set(
 
 
 class PricingUnitGetLegacy(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
     pricing_unit_id: PricingUnitId = Field(alias="pricingUnitId")
     unit_name: str = Field(alias="unitName")
     unit_extra_info: UnitExtraInfo = Field(alias="unitExtraInfo")
@@ -71,6 +84,9 @@ assert set(PricingUnitGetLegacy.model_fields.keys()) == set(
 
 
 class WalletGetWithAvailableCreditsLegacy(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
     wallet_id: WalletID = Field(alias="walletId")
     name: IDStr
     description: str | None = None
@@ -90,6 +106,9 @@ assert set(WalletGetWithAvailableCreditsLegacy.model_fields.keys()) == set(
 
 
 class ServicePricingPlanGetLegacy(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
     pricing_plan_id: PricingPlanId = Field(alias="pricingPlanId")
     display_name: str = Field(alias="displayName")
     description: str
