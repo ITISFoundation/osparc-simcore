@@ -80,9 +80,9 @@ class ProfileGet(BaseModel):
                 {
                     "id": 42,
                     "login": "bla@foo.com",
-                    "userName": "bla123",
-                    "role": UserRole.ADMIN.value,
-                    "expirationDate": "2022-09-14",
+                    "userName": "bla42",
+                    "role": "admin",  # pre
+                    "expirationDate": "2022-09-14",  # optional
                     "preferences": {},
                     "privacy": {"hide_fullname": 0, "hide_email": 1},
                 },
