@@ -124,7 +124,7 @@ async def update_project_to_folder(
     *,
     folders_id_or_ids: FolderID | set[FolderID],
     # updatable columns
-    user_id: UserID | None | UnSet = UnSet.INSTANCE,
+    user_id: UserID | None | UnSet = UnSet.VALUE,
 ) -> None:
     """
     Batch/single patch of project to folders

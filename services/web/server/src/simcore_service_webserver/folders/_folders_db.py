@@ -312,12 +312,12 @@ async def update(
     folders_id_or_ids: FolderID | set[FolderID],
     product_name: ProductName,
     # updatable columns
-    name: str | UnSet = UnSet.INSTANCE,
-    parent_folder_id: FolderID | None | UnSet = UnSet.INSTANCE,
-    trashed_at: datetime | None | UnSet = UnSet.INSTANCE,
-    trashed_explicitly: bool | UnSet = UnSet.INSTANCE,
-    workspace_id: WorkspaceID | None | UnSet = UnSet.INSTANCE,
-    user_id: UserID | None | UnSet = UnSet.INSTANCE,
+    name: str | UnSet = UnSet.VALUE,
+    parent_folder_id: FolderID | None | UnSet = UnSet.VALUE,
+    trashed_at: datetime | None | UnSet = UnSet.VALUE,
+    trashed_explicitly: bool | UnSet = UnSet.VALUE,
+    workspace_id: WorkspaceID | None | UnSet = UnSet.VALUE,
+    user_id: UserID | None | UnSet = UnSet.VALUE,
 ) -> FolderDB:
     """
     Batch/single patch of folder/s

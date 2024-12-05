@@ -2,10 +2,10 @@ from typing import Any
 
 
 class UnSet:
-    INSTANCE: "UnSet"
+    VALUE: "UnSet"
 
 
-UnSet.INSTANCE = UnSet()
+UnSet.VALUE = UnSet()
 
 
 def as_dict_exclude_unset(**params) -> dict[str, Any]:

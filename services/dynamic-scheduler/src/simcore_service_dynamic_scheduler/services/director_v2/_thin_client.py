@@ -117,8 +117,8 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
     async def get_dynamic_services(
         self,
         *,
-        user_id: UserID | None | UnSet = UnSet.INSTANCE,
-        project_id: ProjectID | None | UnSet = UnSet.INSTANCE,
+        user_id: UserID | None | UnSet = UnSet.VALUE,
+        project_id: ProjectID | None | UnSet = UnSet.VALUE,
     ) -> Response:
         return await self.client.get(
             "/dynamic_services",
