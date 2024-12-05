@@ -75,7 +75,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
     return envelope_json_response(profile)
 
 
-@routes.put(f"/{API_VTAG}/me", name="update_my_profile")
+@routes.patch(f"/{API_VTAG}/me", name="update_my_profile")
 @login_required
 @permission_required("user.profile.update")
 @_handle_users_exceptions

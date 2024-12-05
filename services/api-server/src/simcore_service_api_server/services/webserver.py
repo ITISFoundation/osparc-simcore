@@ -251,7 +251,7 @@ class AuthSession:
 
     @_exception_mapper(_PROFILE_STATUS_MAP)
     async def update_me(self, *, profile_update: ProfileUpdate) -> Profile:
-        response = await self.client.put(
+        response = await self.client.patch(
             "/me",
             json=profile_update.model_dump(exclude_none=True),
             cookies=self.session_cookies,

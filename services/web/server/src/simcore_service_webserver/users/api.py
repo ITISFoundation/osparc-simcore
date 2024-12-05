@@ -164,10 +164,7 @@ async def update_user_profile(
 
     async with get_database_engine(app).acquire() as conn:
         to_update = update.model_dump(
-            include={
-                "first_name",
-                "last_name",
-            },
+            include={"first_name", "last_name"},
             exclude_unset=as_patch,
         )
         resp = await conn.execute(

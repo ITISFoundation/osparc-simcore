@@ -96,7 +96,7 @@ async def test_access_update_profile(
     url = client.app.router["update_my_profile"].url_for()
     assert url.path == "/v0/me"
 
-    resp = await client.put(f"{url}", json={"last_name": "Foo"})
+    resp = await client.patch(f"{url}", json={"last_name": "Foo"})
     await assert_status(resp, expected)
 
 
@@ -170,7 +170,7 @@ async def test_update_profile(
 
     url = client.app.router["update_my_profile"].url_for()
     assert url.path == "/v0/me"
-    resp = await client.put(f"{url}", json={"last_name": "Foo"})
+    resp = await client.patch(f"{url}", json={"last_name": "Foo"})
     _, error = await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     assert not error
