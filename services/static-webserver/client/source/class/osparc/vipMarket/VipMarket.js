@@ -21,7 +21,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.HBox(10));
 
     this.__buildLayout();
   },
@@ -63,10 +63,15 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     __sortByButton: null,
 
     __buildLayout: function() {
+      const leftSide = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        alignY: "middle",
+      });
+      this._add(leftSide);
+
       const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         alignY: "middle",
       });
-      this._add(toolbarLayout);
+      leftSide.add(toolbarLayout)
 
       const sortModelsButtons = this.__sortByButton = new osparc.vipMarket.SortModelsButtons().set({
         alignY: "bottom",
@@ -77,13 +82,10 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const filter = new osparc.filter.TextFilter("text", "vipModels").set({
         alignY: "middle",
         allowGrowY: false,
-        minWidth: 170,
+        minWidth: 165,
       });
       this.addListener("appear", () => filter.getChildControl("textfield").focus());
-      toolbarLayout.add(filter);
-
-      const modelsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      this._add(modelsLayout, {
+      toolbarLayout.add(filter, {
         flex: 1
       });
 
@@ -93,8 +95,16 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         minWidth: 250,
         maxWidth: 250
       });
-      modelsLayout.add(modelsUIList)
+      leftSide.add(modelsUIList, {
+        flex: 1
+      });
 
+      const rightSide = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        alignY: "middle",
+      });
+      this._add(rightSide, {
+        flex: 1
+      });
       const anatomicalModelsModel = this.__anatomicalModelsModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(anatomicalModelsModel, modelsUIList, "name");
       membersCtrl.setDelegate({
@@ -123,7 +133,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const anatomicModelDetails = new osparc.vipMarket.AnatomicalModelDetails().set({
         padding: 20,
       });
-      modelsLayout.add(anatomicModelDetails, {
+      rightSide.add(anatomicModelDetails, {
         flex: 1
       });
 
