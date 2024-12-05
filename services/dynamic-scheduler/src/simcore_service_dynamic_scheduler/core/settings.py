@@ -87,6 +87,10 @@ class ApplicationSettings(_BaseApplicationSettings):
             "Enables the full set of features to be used for NiceUI"
         ),
     )
+    DYNAMIC_SCHEDULER_UI_MOUNT_PATH: str = Field(
+        "/dynamic-scheduler",
+        description="path on the URL where the dashboard is mounted",
+    )
 
     DYNAMIC_SCHEDULER_RABBITMQ: RabbitSettings = Field(
         json_schema_extra={"auto_default_from_env": True},

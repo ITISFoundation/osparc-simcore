@@ -19,6 +19,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
+from simcore_service_dynamic_scheduler.api.frontend._utils import get_settings
 from simcore_service_dynamic_scheduler.core.application import create_app
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
@@ -97,8 +98,10 @@ async def app_runner(
     ):
         with attempt:
             async with AsyncClient(timeout=1) as client:
-                result = await client.get(f"http://{server_host_port}")
-                assert result.status_code == status.HTTP_200_OK
+                response = await client.get(
+                    f"http://{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}/"
+                )
+                assert response.status_code == status.HTTP_200_OK
 
     yield
 
