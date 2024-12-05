@@ -4540,7 +4540,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -11588,29 +11588,29 @@ components:
       title: ProfileGet
     ProfilePrivacyGet:
       properties:
-        hide_fullname:
+        hideFullname:
           type: boolean
-          title: Hide Fullname
-        hide_email:
+          title: Hidefullname
+        hideEmail:
           type: boolean
-          title: Hide Email
+          title: Hideemail
       type: object
       required:
-      - hide_fullname
-      - hide_email
+      - hideFullname
+      - hideEmail
       title: ProfilePrivacyGet
     ProfilePrivacyUpdate:
       properties:
-        hide_fullname:
+        hideFullname:
           anyOf:
           - type: boolean
           - type: 'null'
-          title: Hide Fullname
-        hide_email:
+          title: Hidefullname
+        hideEmail:
           anyOf:
           - type: boolean
           - type: 'null'
-          title: Hide Email
+          title: Hideemail
       type: object
       title: ProfilePrivacyUpdate
     ProfileUpdate:
@@ -11627,13 +11627,13 @@ components:
             maxLength: 255
           - type: 'null'
           title: Last Name
-        user_name:
+        userName:
           anyOf:
           - type: string
             maxLength: 100
             minLength: 1
           - type: 'null'
-          title: User Name
+          title: Username
         privacy:
           anyOf:
           - $ref: '#/components/schemas/ProfilePrivacyUpdate'
