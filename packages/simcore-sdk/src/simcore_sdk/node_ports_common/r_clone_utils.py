@@ -52,14 +52,14 @@ class SyncProgressLogParser(BaseLogParser):
 
 
     This command:
-    rclone --use-mmap --buffer-size 0M --transfers 5 sync mys3:simcore/5cfdef88-013b-11ef-910e-0242ac14003e/2d544003-9eb8-47e4-bcf7-95a8c31845f7/workspace ./tests3 --progress
+    rclone --buffer-size 0M --transfers 5 sync mys3:simcore/5cfdef88-013b-11ef-910e-0242ac14003e/2d544003-9eb8-47e4-bcf7-95a8c31845f7/workspace ./tests3 --progress
     generates this but the rclone modifies the terminal printed lines which python does not like so much
     Transferred:        4.666 GiB / 4.666 GiB, 100%, 530.870 MiB/s, ETA 0s
     Transferred:            4 / 4, 100%
     Elapsed time:         9.6s
 
     This other command:
-    rclone --use-mmap --buffer-size 0M --transfers 5 --use-json-log --stats-log-level INFO -v --stats 500ms sync mys3:simcore/5cfdef88-013b-11ef-910e-0242ac14003e/2d544003-9eb8-47e4-bcf7-95a8c31845f7/workspace ./tests3
+    rclone --buffer-size 0M --transfers 5 --use-json-log --stats-log-level INFO -v --stats 500ms sync mys3:simcore/5cfdef88-013b-11ef-910e-0242ac14003e/2d544003-9eb8-47e4-bcf7-95a8c31845f7/workspace ./tests3
     prints stuff such as:
     {"level":"info","msg":"Copied (new)","object":"README.ipynb","objectType":"*s3.Object","size":5123,"source":"operations/copy.go:360","time":"2024-04-23T14:05:10.408277+00:00"}
     {"level":"info","msg":"Copied (new)","object":".hidden_do_not_remove","objectType":"*s3.Object","size":219,"source":"operations/copy.go:360","time":"2024-04-23T14:05:10.408246+00:00"}
