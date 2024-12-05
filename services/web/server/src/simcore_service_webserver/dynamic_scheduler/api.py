@@ -37,6 +37,10 @@ async def list_dynamic_services(
     user_id: UserID | None = None,
     project_id: ProjectID | None = None,
 ) -> list[DynamicServiceGet]:
+    """
+    Returns:
+        list of currently running dynamic services
+    """
     return await services.list_tracked_dynamic_services(
         get_rabbitmq_rpc_client(app), user_id=user_id, project_id=project_id
     )
