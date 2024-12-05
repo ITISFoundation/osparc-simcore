@@ -137,8 +137,12 @@ def mock_director_v2_service_state(
 @pytest.fixture(
     params=[
         False,
-        # NOTE: enable below when INTERNAL scheduler is implemented
-        #   True,
+        pytest.param(
+            True,
+            marks=pytest.mark.xfail(
+                reason="INTERNAL scheduler implementation is missing"
+            ),
+        ),
     ]
 )
 def use_internal_scheduler(request: pytest.FixtureRequest) -> bool:
