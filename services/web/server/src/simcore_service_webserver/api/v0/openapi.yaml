@@ -10033,7 +10033,6 @@ components:
       type: string
       enum:
       - VIP_MODEL
-      const: VIP_MODEL
       title: LicensedResourceType
     Limits:
       properties:
