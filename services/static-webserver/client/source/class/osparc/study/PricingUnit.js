@@ -58,9 +58,16 @@ qx.Class.define("osparc.study.PricingUnit", {
 
     showEditButton: {
       check: "Boolean",
-      init: null,
+      init: false,
       nullable: true,
       event: "changeShowEditButton"
+    },
+
+    showRentButton: {
+      check: "Boolean",
+      init: false,
+      nullable: true,
+      event: "changeShowRentButton"
     },
   },
 
@@ -95,6 +102,13 @@ qx.Class.define("osparc.study.PricingUnit", {
           break;
         case "edit-button":
           control = new qx.ui.form.Button(qx.locale.Manager.tr("Edit"));
+          this._add(control);
+          break;
+        case "rent-button":
+          control = new qx.ui.form.Button(qx.locale.Manager.tr("Rent")).set({
+            appearance: "strong-button",
+            center: true,
+          });
           this._add(control);
           break;
       }
@@ -134,7 +148,7 @@ qx.Class.define("osparc.study.PricingUnit", {
       unitExtraInfo.setValue(text);
       this.bind("showUnitExtraInfo", unitExtraInfo, "visibility", {
         converter: show => show ? "visible" : "excluded"
-      })
+      });
 
       // add edit button
       const editButton = this.getChildControl("edit-button");
@@ -142,6 +156,13 @@ qx.Class.define("osparc.study.PricingUnit", {
         converter: show => show ? "visible" : "excluded"
       })
       editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
+
+      // add rent button
+      const rentButton = this.getChildControl("rent-button");
+      this.bind("showRentButton", rentButton, "visibility", {
+        converter: show => show ? "visible" : "excluded"
+      })
+      rentButton.addListener("execute", () => this.fireEvent("rentPricingUnit"));
     }
   }
 });

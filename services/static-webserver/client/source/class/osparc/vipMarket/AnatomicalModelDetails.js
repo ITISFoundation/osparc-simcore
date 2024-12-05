@@ -21,7 +21,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.VBox(10);
+    const layout = new qx.ui.layout.VBox(20);
     this._setLayout(layout);
 
     this.__poplulateLayout();
@@ -172,7 +172,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
     __createPricingUnits: function(anatomicalModelsData) {
       console.log(anatomicalModelsData);
-      const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignX: "center"
+      }));
 
       const params = {
         url: {
@@ -187,6 +189,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
               showAwsSpecificInfo: false,
               showUnitExtraInfo: false,
               showEditButton: false,
+              showRentButton: true,
               allowGrowY: false
             });
             pricingUnitsLayout.add(pUnit);
