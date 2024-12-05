@@ -120,7 +120,7 @@ certifi==2024.8.30
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   requests

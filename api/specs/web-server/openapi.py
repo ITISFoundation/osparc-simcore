@@ -31,6 +31,7 @@ openapi_modules = [
         "_announcements",
         "_catalog",
         "_catalog_tags",  # MUST BE after _catalog
+        "_catalog_licensed_items",
         "_computations",
         "_exporter",
         "_folders",
