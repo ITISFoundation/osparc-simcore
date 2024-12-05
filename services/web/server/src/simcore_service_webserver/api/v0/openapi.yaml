@@ -2347,6 +2347,108 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
+  /v0/catalog/licensed-items:
+    get:
+      tags:
+      - licenses
+      - catalog
+      summary: List Licensed Items
+      operationId: list_licensed_items
+      parameters:
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"modified","direction":"desc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_LicensedItemGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+  /v0/catalog/licensed-items/{licensed_item_id}:
+    get:
+      tags:
+      - licenses
+      - catalog
+      summary: Get Licensed Item
+      operationId: get_licensed_item
+      parameters:
+      - name: licensed_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Licensed Item Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_LicensedItemGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+  /v0/catalog/licensed-items/{licensed_item_id}:purchase:
+    post:
+      tags:
+      - licenses
+      - catalog
+      summary: Purchase Licensed Item
+      operationId: purchase_licensed_item
+      parameters:
+      - name: licensed_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Licensed Item Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicensedItemsBodyParams'
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
   /v0/computations/{project_id}:
     get:
       tags:
@@ -7710,6 +7812,19 @@ components:
           title: Error
       type: object
       title: Envelope[InvitationInfo]
+    Envelope_LicensedItemGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/LicensedItemGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[LicensedItemGet]
     Envelope_Log_:
       properties:
         data:
@@ -8483,6 +8598,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[GroupUserGet]]
+    Envelope_list_LicensedItemGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/LicensedItemGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[LicensedItemGet]]
     Envelope_list_OsparcCreditsAggregatedByServiceGet__:
       properties:
         data:
@@ -9878,6 +10009,61 @@ components:
       additionalProperties: false
       type: object
       title: InvitationInfo
+    LicensedItemGet:
+      properties:
+        licensedItemId:
+          type: string
+          format: uuid
+          title: Licenseditemid
+        name:
+          type: string
+          title: Name
+        licensedResourceType:
+          $ref: '#/components/schemas/LicensedResourceType'
+        pricingPlanId:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricingplanid
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+        modifiedAt:
+          type: string
+          format: date-time
+          title: Modifiedat
+      type: object
+      required:
+      - licensedItemId
+      - name
+      - licensedResourceType
+      - pricingPlanId
+      - createdAt
+      - modifiedAt
+      title: LicensedItemGet
+    LicensedItemsBodyParams:
+      properties:
+        wallet_id:
+          type: integer
+          exclusiveMinimum: true
+          title: Wallet Id
+          minimum: 0
+        num_of_seeds:
+          type: integer
+          title: Num Of Seeds
+      additionalProperties: false
+      type: object
+      required:
+      - wallet_id
+      - num_of_seeds
+      title: LicensedItemsBodyParams
+    LicensedResourceType:
+      type: string
+      enum:
+      - VIP_MODEL
+      const: VIP_MODEL
+      title: LicensedResourceType
     Limits:
       properties:
         cpus:
@@ -14034,9 +14220,7 @@ components:
       required:
       - walletId
       - name
-      - description
       - owner
-      - thumbnail
       - status
       - created
       - modified
@@ -14085,9 +14269,7 @@ components:
       required:
       - walletId
       - name
-      - description
       - owner
-      - thumbnail
       - status
       - created
       - modified
