@@ -14,6 +14,11 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
+from models_library.api_schemas_webserver.users import (
+    ProfileGet,
+    ProfilePrivacyGet,
+    ProfileUpdate,
+)
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
@@ -23,7 +28,6 @@ from simcore_postgres_database.models.users import UserRole, users
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
 )
-from simcore_service_webserver.users._models import ProfilePrivacyGet
 
 from ..db.plugin import get_database_engine
 from ..groups.models import convert_groups_db_to_schema
@@ -38,7 +42,6 @@ from .exceptions import (
     UserNameDuplicateError,
     UserNotFoundError,
 )
-from .schemas import ProfileGet, ProfileUpdate
 
 _logger = logging.getLogger(__name__)
 
@@ -167,7 +170,7 @@ async def update_user_profile(
     """
     user_id = _parse_as_user(user_id)
 
-    if updated_values := ToUserUpdateDB.from_api(update).to_columns():
+    if updated_values := ToUserUpdateDB.from_api(update).to_db():
         async with get_database_engine(app).acquire() as conn:
             query = users.update().where(users.c.id == user_id).values(**updated_values)
 

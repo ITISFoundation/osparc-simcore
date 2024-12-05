@@ -10,17 +10,18 @@ from typing import Any
 
 import pytest
 from faker import Faker
+from models_library.api_schemas_webserver.users import (
+    ProfileGet,
+    ProfilePrivacyGet,
+    ProfileUpdate,
+)
 from models_library.generics import Envelope
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.users._models import ProfilePrivacyGet, ToUserUpdateDB
-from simcore_service_webserver.users.schemas import (
-    ProfileGet,
-    ProfileUpdate,
-    ThirdPartyToken,
-)
+from simcore_service_webserver.users._models import ToUserUpdateDB
+from simcore_service_webserver.users.schemas import ThirdPartyToken
 
 
 @pytest.mark.parametrize(
@@ -161,11 +162,11 @@ def test_parsing_output_of_get_user_profile():
 def test_mapping_update_models_from_rest_to_db():
 
     profile_update = ProfileUpdate.model_validate(
-        # input in rest
+        # request payload
         {
             "first_name": "foo",
             "userName": "foo1234",
-            "privacy": {"hide_fullname": False},
+            "privacy": {"hideFullname": False},
         }
     )
 
@@ -173,7 +174,7 @@ def test_mapping_update_models_from_rest_to_db():
     profile_update_db = ToUserUpdateDB.from_api(profile_update)
 
     # expected
-    assert profile_update_db.to_columns() == {
+    assert profile_update_db.to_db() == {
         "first_name": "foo",
         "name": "foo1234",
         "privacy_hide_fullname": False,

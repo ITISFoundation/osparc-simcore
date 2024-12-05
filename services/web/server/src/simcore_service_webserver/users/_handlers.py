@@ -2,6 +2,7 @@ import functools
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_webserver.users import ProfileGet, ProfileUpdate
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
@@ -28,7 +29,6 @@ from .exceptions import (
     UserNameDuplicateError,
     UserNotFoundError,
 )
-from .schemas import ProfileGet, ProfileUpdate
 
 _logger = logging.getLogger(__name__)
 

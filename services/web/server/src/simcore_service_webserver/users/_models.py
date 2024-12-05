@@ -2,20 +2,6 @@ from typing import Annotated, Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
-#
-# REST models
-#
-class ProfilePrivacyGet(BaseModel):
-    hide_fullname: bool
-    hide_email: bool
-
-
-class ProfilePrivacyUpdate(BaseModel):
-    hide_fullname: bool | None = None
-    hide_email: bool | None = None
-
-
 #
 # DB models
 #
@@ -35,7 +21,7 @@ def flatten_dict(d: dict, parent_key="", sep="_"):
 
 class ToUserUpdateDB(BaseModel):
     """
-    Maps ProfileUpdate api model into UserDB db model
+    Maps ProfileUpdate api-model into UserUpdate db-model
     """
 
     # NOTE: field names are UserDB columns
@@ -57,5 +43,5 @@ class ToUserUpdateDB(BaseModel):
             flatten_dict(profile_update.model_dump(exclude_unset=True, by_alias=False))
         )
 
-    def to_columns(self) -> dict[str, Any]:
+    def to_db(self) -> dict[str, Any]:
         return self.model_dump(exclude_unset=True, by_alias=False)
