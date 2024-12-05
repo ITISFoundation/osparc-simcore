@@ -85,7 +85,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       this._add(modelsLayout, {
         flex: 1
       });
-      
+
       const modelsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 5,
@@ -152,7 +152,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
               found["leased"] = true;
               this.__populateModels();
               anatomicModelDetails.setAnatomicalModelsData(found);
-            };
+            }
           }, this);
         })
         .catch(err => console.error(err));
@@ -184,16 +184,14 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
               if (sortBy["order"] === "down") {
                 // A -> Z
                 return a["name"].localeCompare(b["name"]);
-              } else {
-                return b["name"].localeCompare(a["name"]);
               }
+              return b["name"].localeCompare(a["name"]);
             } else if (sortBy["sort"] === "date") {
               if (sortBy["order"] === "down") {
                 // Now -> Yesterday
                 return b["date"] - a["date"];
-              } else {
-                return a["date"] - b["date"];
               }
+              return a["date"] - b["date"];
             }
           }
           // default criteria
