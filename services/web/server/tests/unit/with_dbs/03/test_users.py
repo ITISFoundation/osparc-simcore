@@ -217,7 +217,8 @@ async def test_profile_workflow(
     resp = await client.patch(
         f"{url}",
         json={
-            "first_name": "Odei",
+            "firstName": "Odei",
+            "userName": "odei123",
             "privacy": {"hide_fullname": False},
         },
     )
@@ -232,9 +233,50 @@ async def test_profile_workflow(
     assert updated_profile.last_name == my_profile.last_name
     assert updated_profile.login == my_profile.login
 
+    assert updated_profile.user_name != my_profile.user_name
+    assert updated_profile.user_name == "odei123"
+
     assert updated_profile.privacy != my_profile.privacy
     assert updated_profile.privacy.hide_email == my_profile.privacy.hide_email
     assert updated_profile.privacy.hide_fullname != my_profile.privacy.hide_fullname
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_update_wrong_user_name(
+    logged_user: UserInfoDict,
+    client: TestClient,
+    user_role: UserRole,
+):
+    assert client.app
+
+    # update with INVALID username
+    url = client.app.router["update_my_profile"].url_for()
+
+    for invalid_username in ("_foo", "superadmin", "foo..-123"):
+        resp = await client.patch(
+            f"{url}",
+            json={
+                "userName": invalid_username,
+            },
+        )
+        await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    #  update with SAME username (i.e. existing)
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    url = client.app.router["update_my_profile"].url_for()
+    resp = await client.patch(
+        f"{url}",
+        json={
+            "userName": data["userName"],
+        },
+    )
+    await assert_status(resp, status.HTTP_409_CONFLICT)
 
 
 @pytest.fixture

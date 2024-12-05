@@ -1,3 +1,4 @@
+import re
 from datetime import date
 from typing import Annotated, Literal
 from uuid import UUID
@@ -103,7 +104,7 @@ class ProfileGet(BaseModel):
 class ProfileUpdate(BaseModel):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
-
+    user_name: IDStr | None = None
     privacy: ProfilePrivacyUpdate | None = None
 
     model_config = ConfigDict(
@@ -114,6 +115,46 @@ class ProfileUpdate(BaseModel):
             }
         }
     )
+
+    @field_validator("user_name")
+    @classmethod
+    def _validate_user_name(cls, value):
+        # Ensure valid characters (alphanumeric + . _ -)
+        if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", value):
+            msg = "Username must start with a letter and can only contain letters, numbers and '_'."
+            raise ValueError(msg)
+
+        # Ensure no consecutive special characters
+        if re.search(r"[_]{2,}", value):
+            msg = "Username cannot contain consecutive special characters like '__'."
+            raise ValueError(msg)
+
+        # Ensure it doesn't end with a special character
+        if value[-1] in {".", "_", "-"}:
+            msg = "Username cannot end with a special character."
+            raise ValueError(msg)
+
+        # Check reserved words (example list; extend as needed)
+        reserved_words = {
+            "admin",
+            "root",
+            "system",
+            "null",
+            "undefined",
+            "support",
+            "moderator",
+        }
+        if value.lower() in reserved_words:
+            msg = f"Username '{value}' is reserved and cannot be used."
+            raise ValueError(msg)
+
+        # Ensure no offensive content
+        offensive_terms = {"badword1", "badword2"}
+        if any(term in value.lower() for term in offensive_terms):
+            msg = "Username contains prohibited or offensive content"
+            raise ValueError(msg)
+
+        return value
 
 
 #

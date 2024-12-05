@@ -164,6 +164,7 @@ async def update_user_profile(
             include={
                 "first_name": True,
                 "last_name": True,
+                "user_name": True,
                 "privacy": {
                     "hide_email",
                     "hide_fullname",

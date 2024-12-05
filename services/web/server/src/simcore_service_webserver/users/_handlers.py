@@ -82,6 +82,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
 async def update_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     profile_update = await parse_request_body_as(ProfileUpdate, request)
+
     await api.update_user_profile(
         request.app, user_id=req_ctx.user_id, update=profile_update
     )
