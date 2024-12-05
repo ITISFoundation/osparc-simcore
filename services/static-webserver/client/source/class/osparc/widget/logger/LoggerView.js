@@ -402,12 +402,12 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       const msgLogs = [];
       msgs.forEach(msg => {
         const msgLog = {
+          logLevel,
           timeStamp: new Date(),
           nodeId,
           label,
           msg,
           tooltip: msg,
-          logLevel
         };
         msgLogs.push(msgLog);
       });
