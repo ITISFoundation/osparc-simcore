@@ -3,15 +3,11 @@
 
 import enum
 
-import shortuuid
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import UUID
 
 from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
-
-
-def _custom_id_generator():
-    return f"lgo_{shortuuid.uuid()}"
 
 
 class LicensedResourceType(str, enum.Enum):
@@ -23,10 +19,10 @@ licensed_items = sa.Table(
     metadata,
     sa.Column(
         "licensed_item_id",
-        sa.String,
+        UUID(as_uuid=True),
         nullable=False,
         primary_key=True,
-        default=_custom_id_generator,
+        server_default="gen_random_uuid()",
     ),
     sa.Column(
         "name",

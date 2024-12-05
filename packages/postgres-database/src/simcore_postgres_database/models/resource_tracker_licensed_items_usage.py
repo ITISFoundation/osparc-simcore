@@ -1,26 +1,21 @@
 """ resource_tracker_service_runs table
 """
 
-import shortuuid
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import UUID
 
 from ._common import RefActions, column_modified_datetime
 from .base import metadata
-
-
-def _custom_id_generator():
-    return f"rlc_{shortuuid.uuid()}"
-
 
 resource_tracker_licensed_items_usage = sa.Table(
     "resource_tracker_licensed_items_usage",
     metadata,
     sa.Column(
         "licensed_item_usage_id",
-        sa.String,
+        UUID(as_uuid=True),
         nullable=False,
         primary_key=True,
-        default=_custom_id_generator,
+        server_default="gen_random_uuid()",
     ),
     sa.Column(
         "licensed_item_id",
