@@ -4,7 +4,7 @@
 
 from typing import Annotated, Any, TypeAlias, Union
 
-from common_library.basic_types import UNSET
+from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -162,7 +162,7 @@ class Node(BaseModel):
     inputs: Annotated[
         InputsDict | None,
         Field(default_factory=dict, description="values of input properties"),
-    ] = UNSET
+    ] = DEFAULT_FACTORY
 
     inputs_required: Annotated[
         list[InputID],
@@ -171,7 +171,7 @@ class Node(BaseModel):
             description="Defines inputs that are required in order to run the service",
             alias="inputsRequired",
         ),
-    ] = UNSET
+    ] = DEFAULT_FACTORY
 
     inputs_units: Annotated[
         dict[InputID, UnitStr] | None,
@@ -196,13 +196,13 @@ class Node(BaseModel):
             description="node IDs of where the node is connected to",
             alias="inputNodes",
         ),
-    ] = UNSET
+    ] = DEFAULT_FACTORY
 
     # OUTPUT PORTS ---
     outputs: Annotated[
         OutputsDict | None,
         Field(default_factory=dict, description="values of output properties"),
-    ] = UNSET
+    ] = DEFAULT_FACTORY
 
     output_node: Annotated[
         bool | None, Field(deprecated=True, alias="outputNode")
@@ -234,7 +234,7 @@ class Node(BaseModel):
     state: Annotated[
         NodeState | None,
         Field(default_factory=NodeState, description="The node's state object"),
-    ] = UNSET
+    ] = DEFAULT_FACTORY
 
     boot_options: Annotated[
         dict[EnvVarKey, str] | None,

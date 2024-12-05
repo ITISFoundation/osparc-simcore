@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
-from common_library.basic_types import UNSET
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import ConstrainedStr
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
@@ -152,7 +152,7 @@ class Project(BaseProjectModel):
             description="Contains the reference to the project classifiers",
             examples=["some:id:to:a:classifier"],
         ),
-    ] = UNSET
+    ] = DEFAULT_FACTORY
 
     # Project state (SEE projects_state.py)
     state: ProjectState | None = None

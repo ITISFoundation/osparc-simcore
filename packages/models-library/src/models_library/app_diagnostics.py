@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from common_library.basic_types import UNSET
+from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import AnyUrl, BaseModel, Field
 
 
@@ -14,7 +14,7 @@ class AppStatusCheck(BaseModel):
             description="Other backend services connected from this service",
             json_schema_extra={"default": {}},
         ),
-    ] = UNSET
+    ] = DEFAULT_FACTORY
 
     sessions: Annotated[
         dict[str, Any] | None,
@@ -23,7 +23,7 @@ class AppStatusCheck(BaseModel):
             description="Client sessions info. If single session per app, then is denoted as main",
             json_schema_extra={"default": {}},
         ),
-    ] = UNSET
+    ] = DEFAULT_FACTORY
 
     url: AnyUrl | None = Field(
         default=None,
