@@ -119,20 +119,20 @@ class ProfileUpdate(BaseModel):
 
     @field_validator("user_name")
     @classmethod
-    def _validate_user_name(cls, value):
+    def _validate_user_name(cls, value: str):
         # Ensure valid characters (alphanumeric + . _ -)
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", value):
-            msg = "Username must start with a letter and can only contain letters, numbers and '_'."
+            msg = f"Username '{value}' must start with a letter and can only contain letters, numbers and '_'."
             raise ValueError(msg)
 
         # Ensure no consecutive special characters
         if re.search(r"[_]{2,}", value):
-            msg = "Username cannot contain consecutive special characters like '__'."
+            msg = f"Username '{value}' cannot contain consecutive special characters like '__'."
             raise ValueError(msg)
 
         # Ensure it doesn't end with a special character
-        if value[-1] in {".", "_", "-"}:
-            msg = "Username cannot end with a special character."
+        if {value[0], value[-1]}.intersection({"_"}):
+            msg = f"Username '{value}' cannot end or start with a special character."
             raise ValueError(msg)
 
         # Check reserved words (example list; extend as needed)
@@ -144,15 +144,10 @@ class ProfileUpdate(BaseModel):
             "undefined",
             "support",
             "moderator",
+            # NOTE: add here extra via env vars
         }
-        if value.lower() in reserved_words:
-            msg = f"Username '{value}' is reserved and cannot be used."
-            raise ValueError(msg)
-
-        # Ensure no offensive content
-        offensive_terms = {"badword1", "badword2"}
-        if any(term in value.lower() for term in offensive_terms):
-            msg = "Username contains prohibited or offensive content"
+        if any(w in value.lower() for w in reserved_words):
+            msg = f"Username '{value}' cannot be used."
             raise ValueError(msg)
 
         return value

@@ -100,10 +100,7 @@ async def test_access_update_profile(
     await assert_status(resp, expected)
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.USER],
-)
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_profile(
     logged_user: UserInfoDict,
     client: TestClient,
@@ -156,10 +153,7 @@ async def test_get_profile(
     )
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.USER],
-)
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_update_profile(
     logged_user: UserInfoDict,
     client: TestClient,
@@ -197,10 +191,7 @@ async def test_update_profile(
     assert _copy(data, exclude) == _copy(before, exclude)
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.USER],
-)
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_profile_workflow(
     logged_user: UserInfoDict,
     client: TestClient,
@@ -217,7 +208,7 @@ async def test_profile_workflow(
     resp = await client.patch(
         f"{url}",
         json={
-            "firstName": "Odei",
+            "first_name": "Odei",  # NOTE: still not camecase!
             "userName": "odei123",
             "privacy": {"hide_fullname": False},
         },
@@ -241,33 +232,40 @@ async def test_profile_workflow(
     assert updated_profile.privacy.hide_fullname != my_profile.privacy.hide_fullname
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.USER],
-)
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("invalid_username", ["", "_foo", "superadmin", "foo..-123"])
 async def test_update_wrong_user_name(
+    logged_user: UserInfoDict,
+    client: TestClient,
+    user_role: UserRole,
+    invalid_username: str,
+):
+    assert client.app
+
+    url = client.app.router["update_my_profile"].url_for()
+    resp = await client.patch(
+        f"{url}",
+        json={
+            "userName": invalid_username,
+        },
+    )
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_update_existing_user_name(
     logged_user: UserInfoDict,
     client: TestClient,
     user_role: UserRole,
 ):
     assert client.app
 
-    # update with INVALID username
-    url = client.app.router["update_my_profile"].url_for()
-
-    for invalid_username in ("_foo", "superadmin", "foo..-123"):
-        resp = await client.patch(
-            f"{url}",
-            json={
-                "userName": invalid_username,
-            },
-        )
-        await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
-
     #  update with SAME username (i.e. existing)
     url = client.app.router["get_my_profile"].url_for()
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    assert data["userName"] == logged_user["name"]
 
     url = client.app.router["update_my_profile"].url_for()
     resp = await client.patch(
