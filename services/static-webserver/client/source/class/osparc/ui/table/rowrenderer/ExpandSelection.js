@@ -35,14 +35,12 @@ qx.Class.define("osparc.ui.table.rowrenderer.ExpandSelection", {
       // extend collapse row
       const style = rowElem.style;
       if (rowInfo.selected) {
-        let messageDiv = rowElem.children.item(messageCellPos)
-        if (rowElem.children.item(messageCellPos).children.length) {
-          messageDiv = rowElem.children.item(messageCellPos).children.item(0);
-        }
-        const extendedHeight = messageDiv.getBoundingClientRect().height + "px";
-        style.height = extendedHeight;
-        Array.from(rowElem.children).forEach(child => child.style.height = extendedHeight);
+        const messageDiv = rowElem.children.item(messageCellPos);
+        const expandedHeight = messageDiv.scrollHeight + "px";
+        style.height = expandedHeight;
+        Array.from(rowElem.children).forEach(child => child.style.height = expandedHeight);
       } else {
+        // back to collapsed
         style.height = "19px";
       }
     }
