@@ -38,7 +38,7 @@ from simcore_service_webserver.users._schemas import (
     PreUserProfile,
     UserProfile,
 )
-from simcore_service_webserver.users.schemas import ProfileGet, ProfileUpdate
+from simcore_service_webserver.users.schemas import ProfileGet
 
 
 @pytest.fixture
@@ -168,19 +168,34 @@ async def test_update_profile(
 ):
     assert client.app
 
+    resp = await client.get("/v0/me")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    assert data["role"] == user_role.name
+    before = deepcopy(data)
+
     url = client.app.router["update_my_profile"].url_for()
     assert url.path == "/v0/me"
-    resp = await client.patch(f"{url}", json={"last_name": "Foo"})
+    resp = await client.patch(
+        f"{url}",
+        json={
+            "last_name": "Foo",
+        },
+    )
     _, error = await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     assert not error
-    resp = await client.get(f"{url}")
+
+    resp = await client.get("/v0/me")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    # This is a PUT! i.e. full replace of profile variable fields!
-    assert data["first_name"] == ProfileUpdate.model_fields["first_name"].default
     assert data["last_name"] == "Foo"
-    assert data["role"] == user_role.name
+
+    def _copy(data: dict, exclude: set) -> dict:
+        return {k: v for k, v in data.items() if k not in exclude}
+
+    exclude = {"last_name"}
+    assert _copy(data, exclude) == _copy(before, exclude)
 
 
 @pytest.mark.parametrize(
