@@ -536,14 +536,21 @@ class DaskClient:
     async def release_task_result(self, job_id: str) -> None:
         _logger.debug("releasing results for %s", f"{job_id=}")
         try:
+            # NOTE: The distributed Variable holds the future of the tasks in the dask-scheduler
+            # Alas, deleting the variable is done asynchronously and there is no way to ensure
+            # the variable was effectively deleted.
+            # This is annoying as one can re-create the variable without error.
+            var = distributed.Variable(job_id, client=self.backend.client)
+            var.delete()
             # first check if the key exists
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
             )
+
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.unpublish_dataset(name=job_id)
             )
-            distributed.Variable(job_id, client=self.backend.client).delete()
+
         except KeyError:
             _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 

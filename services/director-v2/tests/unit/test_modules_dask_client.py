@@ -91,7 +91,7 @@ async def _assert_wait_for_task_status(
     job_id: str,
     dask_client: DaskClient,
     expected_status: DaskClientTaskState,
-    timeout: int | None = None,
+    timeout: int | None = None,  # noqa: ASYNC109
 ):
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -104,24 +104,20 @@ async def _assert_wait_for_task_status(
                 f"waiting for task to be {expected_status=}, "
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
-            current_task_status = (await dask_client.get_tasks_status([job_id]))[0]
-            assert isinstance(current_task_status, DaskClientTaskState)
-            print(f"{current_task_status=} vs {expected_status=}")
-            if (
-                current_task_status is DaskClientTaskState.ERRED
-                and expected_status
-                not in [
-                    DaskClientTaskState.ERRED,
-                    DaskClientTaskState.LOST,
-                ]
-            ):
+            got = (await dask_client.get_tasks_status([job_id]))[0]
+            assert isinstance(got, DaskClientTaskState)
+            print(f"{got=} vs {expected_status=}")
+            if got is DaskClientTaskState.ERRED and expected_status not in [
+                DaskClientTaskState.ERRED,
+                DaskClientTaskState.LOST,
+            ]:
                 try:
                     # we can fail fast here
                     # this will raise and we catch the Assertion to not reraise too long
                     await dask_client.get_task_result(job_id)
                 except AssertionError as exc:
                     raise RuntimeError from exc
-            assert current_task_status is expected_status
+            assert got is expected_status
 
 
 @pytest.fixture
@@ -1024,11 +1020,6 @@ async def test_get_tasks_status(
     assert len(published_computation_task) == 1
 
     assert published_computation_task[0].node_id in cpu_image.fake_tasks
-    # let's get a dask future for the task here so dask will not remove the task from the scheduler at the end
-    computation_future = distributed.Future(
-        key=published_computation_task[0].job_id, client=dask_client.backend.client
-    )
-    assert computation_future
 
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
@@ -1047,15 +1038,11 @@ async def test_get_tasks_status(
     )
     # release the task results
     await dask_client.release_task_result(published_computation_task[0].job_id)
-    # the task is still present since we hold a future here
-    await _assert_wait_for_task_status(
-        published_computation_task[0].job_id,
-        dask_client,
-        DaskClientTaskState.ERRED if fail_remote_fct else DaskClientTaskState.SUCCESS,
-    )
 
-    # removing the future will let dask eventually delete the task from its memory, so its status becomes undefined
-    del computation_future
+    await asyncio.sleep(
+        5  # NOTE: here we wait to be sure that the dask-scheduler properly updates its state
+    )
+    # the task is gone, since the distributed Variable was removed above
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
