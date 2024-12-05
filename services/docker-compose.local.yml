@@ -100,6 +100,7 @@ services:
     environment:
       <<: *common_environment
       DYNAMIC_SCHEDULER_REMOTE_DEBUGGING_PORT : 3000
+      DYNAMIC_SCHEDULER_UI_MOUNT_PATH: /
     ports:
      - "8012:8000"
      - "3016:3000"
