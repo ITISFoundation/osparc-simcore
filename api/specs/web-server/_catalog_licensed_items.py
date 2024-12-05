@@ -56,7 +56,8 @@ async def get_licensed_item(
 
 
 @router.post(
-    "/catalog/licensed-items/{licensed_item_id}", status_code=status.HTTP_204_NO_CONTENT
+    "/catalog/licensed-items/{licensed_item_id}:purchase",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def purchase_licensed_item(
     _path: Annotated[LicensedItemsPathParams, Depends()],

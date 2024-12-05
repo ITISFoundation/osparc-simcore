@@ -2418,6 +2418,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+  /v0/catalog/licensed-items/{licensed_item_id}:purchase:
     post:
       tags:
       - licenses

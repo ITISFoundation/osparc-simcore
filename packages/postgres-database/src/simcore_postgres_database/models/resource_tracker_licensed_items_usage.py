@@ -12,18 +12,18 @@ def _custom_id_generator():
     return f"rlc_{shortuuid.uuid()}"
 
 
-resource_tracker_license_checkouts = sa.Table(
-    "resource_tracker_license_checkouts",
+resource_tracker_licensed_items_usage = sa.Table(
+    "resource_tracker_licensed_items_usage",
     metadata,
     sa.Column(
-        "license_checkout_id",
+        "licensed_item_usage_id",
         sa.String,
         nullable=False,
         primary_key=True,
         default=_custom_id_generator,
     ),
     sa.Column(
-        "license_package_id",
+        "licensed_item_id",
         sa.String,
         nullable=True,
     ),
@@ -79,13 +79,3 @@ resource_tracker_license_checkouts = sa.Table(
         ondelete=RefActions.RESTRICT,
     ),
 )
-
-# We define the partial index
-# sa.Index(
-#     "ix_resource_tracker_credit_transactions_status_running",
-#     resource_tracker_service_runs.c.service_run_status,
-#     postgresql_where=(
-#         resource_tracker_service_runs.c.service_run_status
-#         == ResourceTrackerServiceRunStatus.RUNNING
-#     ),
-# )

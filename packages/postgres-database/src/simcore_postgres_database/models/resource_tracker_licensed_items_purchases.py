@@ -13,11 +13,11 @@ def _custom_id_generator():
     return f"rlp_{shortuuid.uuid()}"
 
 
-resource_tracker_license_purchases = sa.Table(
-    "resource_tracker_license_purchases",
+resource_tracker_licensed_items_purchases = sa.Table(
+    "resource_tracker_licensed_items_purchases",
     metadata,
     sa.Column(
-        "license_purchase_id",
+        "licensed_item_purchase_id",
         sa.String,
         nullable=False,
         primary_key=True,
