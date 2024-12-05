@@ -1,16 +1,16 @@
 """new user privacy columns
 
-Revision ID: cc0e49c38d02
-Revises: e05bdc5b3c7b
-Create Date: 2024-12-05 13:59:09.509554+00:00
+Revision ID: 38c9ac332c58
+Revises: e5555076ef50
+Create Date: 2024-12-05 14:29:27.739650+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "cc0e49c38d02"
-down_revision = "e05bdc5b3c7b"
+revision = "38c9ac332c58"
+down_revision = "e5555076ef50"
 branch_labels = None
 depends_on = None
 
