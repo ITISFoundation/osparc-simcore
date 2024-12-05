@@ -16,7 +16,7 @@ resource_tracker_licensed_items_purchases = sa.Table(
         UUID(as_uuid=True),
         nullable=False,
         primary_key=True,
-        server_default="gen_random_uuid()",
+        server_default=sa.text("gen_random_uuid()"),
     ),
     sa.Column(
         "product_name",
