@@ -280,8 +280,8 @@ async def retrieve_node(request: web.Request) -> web.Response:
     retrieve = await parse_request_body_as(NodeRetrieve, request)
 
     return web.json_response(
-        await director_v2_api.retrieve(
-            request.app, f"{path_params.node_id}", retrieve.port_keys
+        await dynamic_scheduler_api.retrieve(
+            request.app, path_params.node_id, retrieve.port_keys
         ),
         dumps=json_dumps,
     )

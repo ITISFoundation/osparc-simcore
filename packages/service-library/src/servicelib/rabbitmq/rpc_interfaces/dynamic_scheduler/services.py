@@ -1,7 +1,10 @@
 import logging
 from typing import Final
 
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
+    RetrieveDataOutEnveloped,
+)
 from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
@@ -10,6 +13,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.services_types import ServicePortKey
 from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -73,3 +77,22 @@ async def stop_dynamic_service(
         timeout_s=timeout_s,
     )
     assert result is None  # nosec
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def retrieve_data_on_ports(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    node_id: NodeID,
+    port_keys: list[ServicePortKey],
+    timeout_s: NonNegativeInt,
+) -> RetrieveDataOutEnveloped:
+    result = await rabbitmq_rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("retrieve_data_on_ports"),
+        node_id=node_id,
+        port_keys=port_keys,
+        timeout_s=timeout_s,
+    )
+    assert isinstance(result, RetrieveDataOutEnveloped)  # nosec
+    return result

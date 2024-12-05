@@ -1,11 +1,15 @@
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
+    RetrieveDataOutEnveloped,
+)
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
+from models_library.services_types import ServicePortKey
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
@@ -44,4 +48,13 @@ async def stop_dynamic_service(
 ) -> None:
     return await scheduler_interface.stop_dynamic_service(
         app, dynamic_service_stop=dynamic_service_stop
+    )
+
+
+@router.expose()
+async def retrieve_data_on_ports(
+    app: FastAPI, *, node_id: NodeID, port_keys: list[ServicePortKey]
+) -> RetrieveDataOutEnveloped:
+    return await scheduler_interface.retrieve_data_on_ports(
+        app, node_id=node_id, port_keys=port_keys
     )

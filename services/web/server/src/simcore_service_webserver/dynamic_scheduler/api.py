@@ -3,7 +3,10 @@ from contextlib import AsyncExitStack
 from functools import partial
 
 from aiohttp import web
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
+    RetrieveDataOutEnveloped,
+)
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
@@ -18,6 +21,7 @@ from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
+from models_library.services import ServicePortKey
 from pydantic.types import PositiveInt
 from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient, RPCServerError
@@ -133,3 +137,18 @@ async def stop_dynamic_services_in_project(
         ]
 
         await logged_gather(*services_to_stop)
+
+
+# NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191
+async def retrieve(
+    app: web.Application, node_id: NodeID, port_keys: list[ServicePortKey]
+) -> RetrieveDataOutEnveloped:
+    settings: DynamicSchedulerSettings = get_plugin_settings(app)
+    return await services.retrieve_data_on_ports(
+        get_rabbitmq_rpc_client(app),
+        node_id=node_id,
+        port_keys=port_keys,
+        timeout_s=int(
+            settings.DYNAMIC_SCHEDULER_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT.total_seconds()
+        ),
+    )
