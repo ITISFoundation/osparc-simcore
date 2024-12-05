@@ -24,5 +24,7 @@ def test_api_server_model_examples(
         assert model_cls.model_validate(example_data) is not None
     except ValidationError as err:
         pytest.fail(
-            f"\n{example_name}: {json.dumps(example_data, indent=1)}\nError: {err}"
+            f"{example_name} is invalid {model_cls.__module__}.{model_cls.__name__}:"
+            f"\n{json.dumps(example_data, indent=1)}"
+            f"\nError: {err}"
         )

@@ -292,9 +292,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][0],
                 exp_status_code=status.HTTP_307_TEMPORARY_REDIRECT,
                 is_legacy=True,
             ),
@@ -305,9 +303,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][1],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][1],
                 exp_status_code=status.HTTP_201_CREATED,
                 is_legacy=False,
             ),
@@ -318,9 +314,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][2],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][2],
                 exp_status_code=status.HTTP_201_CREATED,
                 is_legacy=False,
             ),
@@ -376,9 +370,7 @@ def test_create_dynamic_services(
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][0],
                 exp_status_code=status.HTTP_307_TEMPORARY_REDIRECT,
                 is_legacy=True,
             ),
@@ -389,9 +381,7 @@ def test_create_dynamic_services(
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][1],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][1],
                 exp_status_code=status.HTTP_200_OK,
                 is_legacy=False,
             ),
@@ -402,9 +392,7 @@ def test_create_dynamic_services(
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][2],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][2],
                 exp_status_code=status.HTTP_200_OK,
                 is_legacy=False,
             ),
@@ -446,9 +434,7 @@ def test_get_service_status(
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][0],
                 exp_status_code=status.HTTP_307_TEMPORARY_REDIRECT,
                 is_legacy=True,
             ),
@@ -459,9 +445,7 @@ def test_get_service_status(
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][1],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][1],
                 exp_status_code=status.HTTP_204_NO_CONTENT,
                 is_legacy=False,
             ),
@@ -472,9 +456,7 @@ def test_get_service_status(
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][2],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][2],
                 exp_status_code=status.HTTP_204_NO_CONTENT,
                 is_legacy=False,
             ),
@@ -530,9 +512,7 @@ def dynamic_sidecar_scheduler(minimal_app: FastAPI) -> DynamicSidecarsScheduler:
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][1],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][1],
                 exp_status_code=status.HTTP_201_CREATED,
                 is_legacy=False,
             )
@@ -581,9 +561,7 @@ def test_delete_service_waiting_for_manual_intervention(
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][0],
                 exp_status_code=status.HTTP_200_OK,
                 is_legacy=True,
             ),
@@ -594,9 +572,7 @@ def test_delete_service_waiting_for_manual_intervention(
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][1],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][1],
                 exp_status_code=status.HTTP_200_OK,
                 is_legacy=False,
             ),
@@ -607,9 +583,7 @@ def test_delete_service_waiting_for_manual_intervention(
                 service=DynamicServiceCreate.model_config["json_schema_extra"][
                     "example"
                 ],
-                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
-                    "examples"
-                ][2],
+                service_labels=SimcoreServiceLabels.model_json_schema()["examples"][2],
                 exp_status_code=status.HTTP_200_OK,
                 is_legacy=False,
             ),

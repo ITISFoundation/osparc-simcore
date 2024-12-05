@@ -11,7 +11,7 @@ orjson==3.10.10
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
-pydantic==2.9.2
+pydantic==2.10.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -19,7 +19,7 @@ pydantic==2.9.2
     #   -r requirements/_base.in
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.23.4
+pydantic-core==2.27.1
     # via pydantic
 pydantic-extra-types==2.9.0
     # via -r requirements/../../../packages/common-library/requirements/_base.in
