@@ -68,6 +68,14 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     )
 
+    DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER: bool = Field(
+        default=False,
+        description=(
+            "this is a way to switch between different dynamic schedulers for the new style services"
+            # NOTE: this option should be removed when the scheduling will be done via this service
+        ),
+    )
+
     @field_validator("DYNAMIC_SCHEDULER_LOGLEVEL", mode="before")
     @classmethod
     def _validate_log_level(cls, value: str) -> str:

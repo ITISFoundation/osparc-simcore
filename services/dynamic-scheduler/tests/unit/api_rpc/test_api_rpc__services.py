@@ -20,6 +20,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
@@ -133,12 +134,35 @@ def mock_director_v2_service_state(
         yield None
 
 
+@pytest.fixture(
+    params=[
+        False,
+        pytest.param(
+            True,
+            marks=pytest.mark.xfail(
+                reason="INTERNAL scheduler implementation is missing"
+            ),
+        ),
+    ]
+)
+def use_internal_scheduler(request: pytest.FixtureRequest) -> bool:
+    return request.param
+
+
 @pytest.fixture
 def app_environment(
     app_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
+    use_internal_scheduler: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER": f"{use_internal_scheduler}",
+        },
+    )
     return app_environment
 
 
