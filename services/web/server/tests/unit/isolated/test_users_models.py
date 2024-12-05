@@ -1,3 +1,8 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 from copy import deepcopy
 from datetime import UTC, datetime
 from pprint import pformat
@@ -10,6 +15,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.users._models import ProfilePrivacyGet
 from simcore_service_webserver.users.schemas import ProfileGet, ThirdPartyToken
 
 
@@ -39,18 +45,28 @@ def test_user_models_examples(
         assert model_array_enveloped.error is None
 
 
-def test_profile_get_expiration_date(faker: Faker):
-    fake_expiration = datetime.now(UTC)
-
+@pytest.fixture
+def fake_profile_get(faker: Faker) -> ProfileGet:
     fake_profile: dict[str, Any] = faker.simple_profile()
+    first, last = fake_profile["name"].rsplit(maxsplit=1)
 
-    profile = ProfileGet(
+    return ProfileGet(
         id=faker.pyint(),
+        first_name=first,
+        last_name=last,
         user_name=fake_profile["username"],
         login=fake_profile["mail"],
-        role=UserRole.ADMIN,
-        expiration_date=fake_expiration.date(),
+        role="USER",
+        privacy=ProfilePrivacyGet(hide_fullname=True, hide_email=True),
         preferences={},
+    )
+
+
+def test_profile_get_expiration_date(fake_profile_get: ProfileGet):
+    fake_expiration = datetime.now(UTC)
+
+    profile = fake_profile_get.model_copy(
+        update={"expiration_date": fake_expiration.date()}
     )
 
     assert fake_expiration.date() == profile.expiration_date
@@ -59,25 +75,16 @@ def test_profile_get_expiration_date(faker: Faker):
     assert body["expirationDate"] == fake_expiration.date().isoformat()
 
 
-def test_auto_compute_gravatar(faker: Faker):
+def test_auto_compute_gravatar__deprecated(fake_profile_get: ProfileGet):
 
-    fake_profile: dict[str, Any] = faker.simple_profile()
-    first_name, last_name = fake_profile["name"].rsplit(maxsplit=1)
-
-    profile = ProfileGet(
-        id=faker.pyint(),
-        user_name=fake_profile["username"],
-        first_name=first_name,
-        last_name=last_name,
-        login=fake_profile["mail"],
-        role="USER",
-        preferences={},
-    )
+    profile = fake_profile_get.model_copy()
 
     envelope = Envelope[Any](data=profile)
     data = envelope.model_dump(**RESPONSE_MODEL_POLICY)["data"]
 
-    assert data["gravatar_id"]
+    assert (
+        "gravatar_id" not in data
+    ), f"{ProfileGet.model_fields['gravatar_id'].deprecated=}"
     assert data["id"] == profile.id
     assert data["first_name"] == profile.first_name
     assert data["last_name"] == profile.last_name
@@ -107,6 +114,7 @@ def test_parsing_output_of_get_user_profile():
         "last_name": "",
         "role": "Guest",
         "gravatar_id": "9d5e02c75fcd4bce1c8861f219f7f8a5",
+        "privacy": {"hide_email": True, "hide_fullname": False},
         "groups": {
             "me": {
                 "gid": 2,
