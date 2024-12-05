@@ -1,8 +1,12 @@
 # Models added here "cover" models from within the deployment in order to restore backwards compatibility
 
+from datetime import datetime
 from decimal import Decimal
 from typing import Annotated
 
+from models_library.api_schemas_api_server.pricing_plans import (
+    ServicePricingPlanGet as _ServicePricingPlanGet,
+)
 from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.product import (
     GetCreditPrice as _GetCreditPrice,
@@ -15,7 +19,12 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGetWithAvailableCredits as _WalletGetWithAvailableCredits,
 )
 from models_library.basic_types import NonNegativeDecimal
-from models_library.resource_tracker import PricingUnitId, UnitExtraInfo
+from models_library.resource_tracker import (
+    PricingPlanClassification,
+    PricingPlanId,
+    PricingUnitId,
+    UnitExtraInfo,
+)
 from pydantic import Field, NonNegativeFloat, NonNegativeInt, PlainSerializer
 
 
@@ -64,4 +73,19 @@ class WalletGetWithAvailableCredits(WalletGet):
 
 assert set(WalletGetWithAvailableCredits.model_fields.keys()) == set(
     _WalletGetWithAvailableCredits.model_fields.keys()
+)
+
+
+class ServicePricingPlanGet(OutputSchema):
+    pricing_plan_id: PricingPlanId
+    display_name: str
+    description: str
+    classification: PricingPlanClassification
+    created_at: datetime
+    pricing_plan_key: str
+    pricing_units: list[PricingUnitGet]
+
+
+assert set(ServicePricingPlanGet.model_fields.keys()) == set(
+    _ServicePricingPlanGet.model_fields.keys()
 )

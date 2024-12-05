@@ -3928,7 +3928,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/simcore_service_api_server__models__schemas__backwards_compatibility__PricingUnitGet"
+                  "$ref": "#/components/schemas/PricingUnitGet"
                 }
               }
             }
@@ -6469,6 +6469,41 @@
         "const": "TIER",
         "title": "PricingPlanClassification"
       },
+      "PricingUnitGet": {
+        "properties": {
+          "pricingUnitId": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricingunitid",
+            "minimum": 0
+          },
+          "unitName": {
+            "type": "string",
+            "title": "Unitname"
+          },
+          "unitExtraInfo": {
+            "$ref": "#/components/schemas/UnitExtraInfo"
+          },
+          "currentCostPerUnit": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Currentcostperunit"
+          },
+          "default": {
+            "type": "boolean",
+            "title": "Default"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricingUnitId",
+          "unitName",
+          "unitExtraInfo",
+          "currentCostPerUnit",
+          "default"
+        ],
+        "title": "PricingUnitGet"
+      },
       "Profile": {
         "properties": {
           "first_name": {
@@ -6639,7 +6674,7 @@
           },
           "pricingUnits": {
             "items": {
-              "$ref": "#/components/schemas/models_library__api_schemas_webserver__resource_usage__PricingUnitGet"
+              "$ref": "#/components/schemas/PricingUnitGet"
             },
             "type": "array",
             "title": "Pricingunits"
@@ -7076,75 +7111,6 @@
           "INACTIVE"
         ],
         "title": "WalletStatus"
-      },
-      "models_library__api_schemas_webserver__resource_usage__PricingUnitGet": {
-        "properties": {
-          "pricingUnitId": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricingunitid",
-            "minimum": 0
-          },
-          "unitName": {
-            "type": "string",
-            "title": "Unitname"
-          },
-          "unitExtraInfo": {
-            "$ref": "#/components/schemas/UnitExtraInfo"
-          },
-          "currentCostPerUnit": {
-            "type": "string",
-            "title": "Currentcostperunit"
-          },
-          "default": {
-            "type": "boolean",
-            "title": "Default"
-          }
-        },
-        "type": "object",
-        "required": [
-          "pricingUnitId",
-          "unitName",
-          "unitExtraInfo",
-          "currentCostPerUnit",
-          "default"
-        ],
-        "title": "PricingUnitGet"
-      },
-      "simcore_service_api_server__models__schemas__backwards_compatibility__PricingUnitGet": {
-        "properties": {
-          "pricingUnitId": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Pricingunitid",
-            "minimum": 0
-          },
-          "unitName": {
-            "type": "string",
-            "title": "Unitname"
-          },
-          "unitExtraInfo": {
-            "$ref": "#/components/schemas/UnitExtraInfo"
-          },
-          "currentCostPerUnit": {
-            "type": "number",
-            "minimum": 0.0,
-            "title": "Currentcostperunit"
-          },
-          "default": {
-            "type": "boolean",
-            "title": "Default"
-          }
-        },
-        "type": "object",
-        "required": [
-          "pricingUnitId",
-          "unitName",
-          "unitExtraInfo",
-          "currentCostPerUnit",
-          "default"
-        ],
-        "title": "PricingUnitGet"
       }
     },
     "securitySchemes": {
