@@ -2650,6 +2650,7 @@
                   "type": "null"
                 }
               ],
+              "deprecated": true,
               "title": "Cluster Id"
             },
             "deprecated": true
@@ -4628,6 +4629,7 @@
                   "type": "null"
                 }
               ],
+              "deprecated": true,
               "title": "Cluster Id"
             },
             "deprecated": true
@@ -6182,11 +6184,18 @@
             "title": "Version"
           },
           "released": {
-            "additionalProperties": {
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
-            },
-            "type": "object",
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Released",
             "description": "Maps every route's path tag with a released version"
           },
