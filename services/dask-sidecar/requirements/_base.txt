@@ -315,7 +315,7 @@ psutil==6.1.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   distributed
-pydantic==2.10.3
+pydantic==2.10.2
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
