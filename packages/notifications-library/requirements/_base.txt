@@ -154,8 +154,6 @@ rpds-py==0.20.0
     #   referencing
 shellingham==1.5.4
     # via typer
-shortuuid==1.0.13
-    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 six==1.16.0
     # via python-dateutil
 sqlalchemy==1.4.54

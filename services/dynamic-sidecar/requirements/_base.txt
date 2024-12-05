@@ -641,10 +641,6 @@ rpds-py==0.21.0
     #   referencing
 shellingham==1.5.4
     # via typer
-shortuuid==1.0.13
-    # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
 simple-websocket==1.1.0
     # via python-engineio
 six==1.16.0

@@ -56,8 +56,6 @@ pydantic-extra-types==2.10.0
     # via -r requirements/../../../packages/common-library/requirements/_base.in
 setuptools==75.6.0
     # via opentelemetry-instrumentation
-shortuuid==1.0.13
-    # via -r requirements/_base.in
 sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
