@@ -171,7 +171,30 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __createPricingUnits: function(anatomicalModelsData) {
-      const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      console.log(anatomicalModelsData);
+      const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+      const params = {
+        url: {
+          pricingPlanId: anatomicalModelsData["pricingPlanId"]
+        }
+      };
+      osparc.data.Resources.fetch("pricingPlans", "getOne", params)
+        .then(data => {
+          const pricingUnits = data["pricingUnits"];
+          pricingUnits.forEach(pricingUnit => {
+            const pUnit = new osparc.study.PricingUnit(pricingUnit).set({
+              showAwsSpecificInfo: false,
+              showUnitExtraInfo: false,
+              showEditButton: false,
+              allowGrowY: false
+            });
+            pricingUnitsLayout.add(pUnit);
+          });
+        })
+        .catch(err => console.error(err));
+
+      /*
       if (anatomicalModelsData["leased"]) {
         const leaseModelButton = new qx.ui.form.Button().set({
           label: this.tr("3 seats Leased (27 days left)"),
@@ -198,8 +221,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       buttonsLayout.add(leaseModelButton, {
         flex: 1
       });
-
-      return buttonsLayout;
+      */
+      return pricingUnitsLayout;
     },
   }
 });

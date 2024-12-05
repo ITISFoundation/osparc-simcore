@@ -81,7 +81,7 @@ qx.Class.define("osparc.pricing.UnitsList", {
 
       pricingUnits.forEach(pricingUnit => {
         const pUnit = new osparc.study.PricingUnit(pricingUnit).set({
-          showSpecificInfo: true,
+          showAwsSpecificInfo: true,
           showEditButton: true,
           allowGrowY: false
         });
