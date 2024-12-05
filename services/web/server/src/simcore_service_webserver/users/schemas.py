@@ -8,10 +8,9 @@ from models_library.api_schemas_webserver.users_preferences import AggregatedPre
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import FirstNameStr, LastNameStr, UserID
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from simcore_postgres_database.models.users import UserRole
 
-from ..utils import gravatar_hash
 from ._models import ProfilePrivacyGet, ProfilePrivacyUpdate
 
 
@@ -59,13 +58,15 @@ class ProfileGet(BaseModel):
 
     role: Literal["ANONYMOUS", "GUEST", "USER", "TESTER", "PRODUCT_OWNER", "ADMIN"]
     groups: MyGroupsGet | None = None
-    gravatar_id: str | None = None
+    gravatar_id: Annotated[str | None, Field(deprecated=True)] = None
 
-    expiration_date: date | None = Field(
-        default=None,
-        description="If user has a trial account, it sets the expiration date, otherwise None",
-        alias="expirationDate",
-    )
+    expiration_date: Annotated[
+        date | None,
+        Field(
+            description="If user has a trial account, it sets the expiration date, otherwise None",
+            alias="expirationDate",
+        ),
+    ] = None
 
     privacy: ProfilePrivacyGet
     preferences: AggregatedPreferences
@@ -76,16 +77,6 @@ class ProfileGet(BaseModel):
         populate_by_name=True,
         json_schema_extra={
             "examples": [
-                # 1. with gravatar
-                {
-                    "id": 1,
-                    "login": "bla@foo.com",
-                    "userName": "bla123",
-                    "role": "Admin",
-                    "gravatar_id": "205e460b479e2e5b48aec07710c08d50",
-                    "preferences": {},
-                },
-                # 2. with expiration date
                 {
                     "id": 42,
                     "login": "bla@foo.com",
@@ -93,19 +84,11 @@ class ProfileGet(BaseModel):
                     "role": UserRole.ADMIN.value,
                     "expirationDate": "2022-09-14",
                     "preferences": {},
+                    "privacy": {"hide_fullname": 0, "hide_email": 1},
                 },
             ]
         },
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def _auto_generate_gravatar(cls, values):
-        gravatar_id = values.get("gravatar_id")
-        email = values.get("login")
-        if not gravatar_id and email:
-            values["gravatar_id"] = gravatar_hash(email)
-        return values
 
     @field_validator("role", mode="before")
     @classmethod
