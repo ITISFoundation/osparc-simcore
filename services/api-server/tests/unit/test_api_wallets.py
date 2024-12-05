@@ -15,7 +15,7 @@ from pytest_simcore.helpers.httpx_calls_capture_models import (
     HttpApiCallCaptureModel,
 )
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.backwards_compatibility import (
+from simcore_service_api_server.models.schemas.model_adapter import (
     WalletGetWithAvailableCredits,
 )
 

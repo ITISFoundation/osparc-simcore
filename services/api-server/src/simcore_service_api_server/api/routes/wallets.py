@@ -4,8 +4,8 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, status
 
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
-from ...models.schemas.backwards_compatibility import WalletGetWithAvailableCredits
 from ...models.schemas.errors import ErrorGet
+from ...models.schemas.model_adapter import WalletGetWithAvailableCredits
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
 

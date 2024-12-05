@@ -19,7 +19,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletStatus
 from pydantic import PositiveInt
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.backwards_compatibility import (
+from simcore_service_api_server.models.schemas.model_adapter import (
     WalletGetWithAvailableCredits,
 )
 

@@ -57,9 +57,7 @@ from simcore_service_api_server.exceptions.backend_errors import (
     SolverOutputNotFoundError,
     WalletNotFoundError,
 )
-from simcore_service_api_server.models.schemas.backwards_compatibility import (
-    GetCreditPrice,
-)
+from simcore_service_api_server.models.schemas.model_adapter import GetCreditPrice
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -74,11 +72,8 @@ from ..exceptions.service_errors_utils import (
 )
 from ..models.basic_types import VersionStr
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-from ..models.schemas.backwards_compatibility import (
-    PricingUnitGet,
-    WalletGetWithAvailableCredits,
-)
 from ..models.schemas.jobs import MetaValueType
+from ..models.schemas.model_adapter import PricingUnitGet, WalletGetWithAvailableCredits
 from ..models.schemas.profiles import Profile, ProfileUpdate
 from ..models.schemas.solvers import SolverKeyId
 from ..models.schemas.studies import StudyPort

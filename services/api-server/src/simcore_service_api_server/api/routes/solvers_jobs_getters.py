@@ -23,10 +23,6 @@ from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletE
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams
-from ...models.schemas.backwards_compatibility import (
-    PricingUnitGet,
-    WalletGetWithAvailableCredits,
-)
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import File
 from ...models.schemas.jobs import (
@@ -36,6 +32,10 @@ from ...models.schemas.jobs import (
     JobLog,
     JobMetadata,
     JobOutputs,
+)
+from ...models.schemas.model_adapter import (
+    PricingUnitGet,
+    WalletGetWithAvailableCredits,
 )
 from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi

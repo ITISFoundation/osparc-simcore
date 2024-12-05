@@ -10,8 +10,8 @@ from pydantic import ValidationError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
-from ...models.schemas.backwards_compatibility import ServicePricingPlanGet
 from ...models.schemas.errors import ErrorGet
+from ...models.schemas.model_adapter import ServicePricingPlanGet
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper

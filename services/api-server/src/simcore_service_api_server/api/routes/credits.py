@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
-from ...models.schemas.backwards_compatibility import GetCreditPrice
+from ...models.schemas.model_adapter import GetCreditPrice
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
 
