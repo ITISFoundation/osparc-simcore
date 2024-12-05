@@ -1087,7 +1087,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProfileGet_'
-    put:
+    patch:
       tags:
       - user
       summary: Update My Profile
@@ -4540,7 +4540,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -11569,6 +11569,8 @@ components:
           title: Expirationdate
           description: If user has a trial account, it sets the expiration date, otherwise
             None
+        privacy:
+          $ref: '#/components/schemas/ProfilePrivacyGet'
         preferences:
           additionalProperties:
             $ref: '#/components/schemas/Preference'
@@ -11580,8 +11582,36 @@ components:
       - userName
       - login
       - role
+      - privacy
       - preferences
       title: ProfileGet
+    ProfilePrivacyGet:
+      properties:
+        hide_fullname:
+          type: boolean
+          title: Hide Fullname
+        hide_email:
+          type: boolean
+          title: Hide Email
+      type: object
+      required:
+      - hide_fullname
+      - hide_email
+      title: ProfilePrivacyGet
+    ProfilePrivacyUpdate:
+      properties:
+        hide_fullname:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hide Fullname
+        hide_email:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hide Email
+      type: object
+      title: ProfilePrivacyUpdate
     ProfileUpdate:
       properties:
         first_name:
@@ -11596,6 +11626,10 @@ components:
             maxLength: 255
           - type: 'null'
           title: Last Name
+        privacy:
+          anyOf:
+          - $ref: '#/components/schemas/ProfilePrivacyUpdate'
+          - type: 'null'
       type: object
       title: ProfileUpdate
       example:
