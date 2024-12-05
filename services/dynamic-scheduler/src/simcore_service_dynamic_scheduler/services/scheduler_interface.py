@@ -50,7 +50,6 @@ async def stop_dynamic_service(
         raise NotImplementedError
 
     director_v2_client = DirectorV2Client.get_from_app_state(app)
-    settings: ApplicationSettings = app.state.settings
     await director_v2_client.stop_dynamic_service(
         node_id=dynamic_service_stop.node_id,
         simcore_user_agent=dynamic_service_stop.simcore_user_agent,
