@@ -31,7 +31,8 @@ qx.Class.define("osparc.study.PricingUnit", {
   },
 
   events: {
-    "editPricingUnit": "qx.event.type.Event"
+    "editPricingUnit": "qx.event.type.Event",
+    "rentPricingUnit": "qx.event.type.Event",
   },
 
   properties: {

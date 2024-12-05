@@ -192,40 +192,17 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
               showRentButton: true,
               allowGrowY: false
             });
+            pUnit.addListener("rentPricingUnit", () => this.__rentAnatomicalModel(anatomicalModelsData, pricingUnit));
             pricingUnitsLayout.add(pUnit);
           });
         })
         .catch(err => console.error(err));
 
-      /*
-      if (anatomicalModelsData["leased"]) {
-        const leaseModelButton = new qx.ui.form.Button().set({
-          label: this.tr("3 seats Leased (27 days left)"),
-          appearance: "strong-button",
-          center: true,
-          enabled: false,
-        });
-        buttonsLayout.add(leaseModelButton, {
-          flex: 1
-        });
-      }
-      const leaseModelButton = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Lease model (2 for months)"),
-        appearance: "strong-button",
-        center: true,
-      });
-      leaseModelButton.addListener("execute", () => {
-        leaseModelButton.setFetching(true);
-        setTimeout(() => {
-          leaseModelButton.setFetching(false);
-          this.fireDataEvent("modelLeased", this.getAnatomicalModelsData()["modelId"]);
-        }, 2000);
-      });
-      buttonsLayout.add(leaseModelButton, {
-        flex: 1
-      });
-      */
       return pricingUnitsLayout;
+    },
+
+    __rentAnatomicalModel: function(anatomicalModelsData, pricingUnit) {
+      console.log(":puschase", anatomicalModelsData["licensedItemId"], pricingUnit["pricingUnitId"]);
     },
   }
 });
