@@ -46,7 +46,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       const anatomicalModelsData = this.getAnatomicalModelsData();
       if (anatomicalModelsData) {
-        const card = this.__createcCard(anatomicalModelsData);
+        const card = this.__createCard(anatomicalModelsData);
         this._add(card);
       } else {
         const selectModelLabel = new qx.ui.basic.Label().set({
@@ -61,13 +61,11 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       }
     },
 
-    __createcCard: function(anatomicalModelsData) {
-      console.log(anatomicalModelsData);
-
+    __createCard: function(anatomicalModelsData) {
       const cardGrid = new qx.ui.layout.Grid(16, 16);
       const cardLayout = new qx.ui.container.Composite(cardGrid);
 
-      const description = anatomicalModelsData["Description"];
+      const description = anatomicalModelsData["description"];
       description.split(" - ").forEach((desc, idx) => {
         const titleLabel = new qx.ui.basic.Label().set({
           value: desc,
@@ -85,7 +83,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       });
 
       const thumbnail = new qx.ui.basic.Image().set({
-        source: anatomicalModelsData["Thumbnail"],
+        source: anatomicalModelsData["thumbnail"],
         alignY: "middle",
         scale: true,
         allowGrowX: true,
@@ -100,7 +98,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         row: 2,
       });
 
-      const features = anatomicalModelsData["Features"];
+      const features = anatomicalModelsData["features"];
       const featuresGrid = new qx.ui.layout.Grid(8, 8);
       const featuresLayout = new qx.ui.container.Composite(featuresGrid);
       let idx = 0;
@@ -125,7 +123,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             column: 0,
             row: idx,
           });
-  
+
           const nameLabel = new qx.ui.basic.Label().set({
             value: features[key.toLowerCase()],
             font: "text-14",
@@ -135,7 +133,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             column: 1,
             row: idx,
           });
-  
+
           idx++;
         }
       });
@@ -188,7 +186,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         leaseModelButton.setFetching(true);
         setTimeout(() => {
           leaseModelButton.setFetching(false);
-          this.fireDataEvent("modelLeased", this.getAnatomicalModelsData()["ID"]);
+          this.fireDataEvent("modelLeased", this.getAnatomicalModelsData()["modelId"]);
         }, 2000);
       });
       buttonsLayout.add(leaseModelButton, {
