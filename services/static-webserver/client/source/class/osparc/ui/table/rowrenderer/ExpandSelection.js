@@ -18,12 +18,20 @@
 qx.Class.define("osparc.ui.table.rowrenderer.ExpandSelection", {
   extend: qx.ui.table.rowrenderer.Default,
 
+  construct: function(_, expandableColPos = 2) {
+    this.base(arguments);
+
+    this.__expandableColPos = expandableColPos;
+  },
+
   members: {
+    __expandableColPos: null,
+
     // overridden
     updateDataRowElement : function(rowInfo, rowElem) {
       this.base(arguments, rowInfo, rowElem);
 
-      const messageCellPos = 2;
+      const messageCellPos = this.__expandableColPos;
       // extend collapse row
       const style = rowElem.style;
       if (rowInfo.selected) {

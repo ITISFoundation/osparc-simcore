@@ -80,21 +80,22 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
   statics: {
     getLevelIcon: function(logLevel) {
       const logLevels = osparc.widget.logger.LoggerView.LOG_LEVELS;
-      let iconSource = "";
+      let iconSource = "@FontAwesome5Solid/home/12";
       switch (logLevel) {
         case logLevels.DEBUG:
-          iconSource = "@FontAwesome5Solid/info/12";
+          iconSource = "@FontAwesome5Solid/home/12";
           break;
         case logLevels.INFO:
-          iconSource = "@FontAwesome5Solid/info/12";
+          iconSource = "@FontAwesome5Solid/home/12";
           break;
         case logLevels.WARNING:
-          iconSource = "@FontAwesome5Solid/exclamation-triangle/12";
+          iconSource = "@FontAwesome5Solid/home/12";
           break;
         case logLevels.ERROR:
-          iconSource = "@FontAwesome5Solid/exclamation-circle/12";
+          iconSource = "@FontAwesome5Solid/home/12";
           break;
       }
+      return "";
       return iconSource;
     }
   },
