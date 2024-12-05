@@ -135,11 +135,11 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
     // used in table code
     "table-header-cell": "background-main",
-    "table-row-background-focused-selected": "background-main-4",
-    "table-row-background-focused": "background-main-3",
-    "table-row-background-selected": "background-main-4",
     "table-row-background-even": "background-main",
     "table-row-background-odd": "background-main",
+    "table-row-background-focused": "background-main-1",
+    "table-row-background-focused-selected": "background-main-2",
+    "table-row-background-selected": "background-main-2",
 
     // foreground
     "table-row-selected": "c12",
