@@ -7,6 +7,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
+from models_library.api_schemas_webserver.users import ProfileGet, ProfileUpdate
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
 from models_library.user_preferences import PreferenceIdentifier
@@ -24,8 +25,6 @@ from simcore_service_webserver.users._schemas import UserProfile
 from simcore_service_webserver.users._tokens_handlers import _TokenPathParams
 from simcore_service_webserver.users.schemas import (
     PermissionGet,
-    ProfileGet,
-    ProfileUpdate,
     ThirdPartyToken,
     TokenCreate,
 )

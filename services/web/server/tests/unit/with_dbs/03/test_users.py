@@ -18,6 +18,7 @@ from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
+from models_library.api_schemas_webserver.users import ProfileGet
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -38,7 +39,6 @@ from simcore_service_webserver.users._schemas import (
     PreUserProfile,
     UserProfile,
 )
-from simcore_service_webserver.users.schemas import ProfileGet
 
 
 @pytest.fixture
@@ -210,7 +210,7 @@ async def test_profile_workflow(
         json={
             "first_name": "Odei",  # NOTE: still not camecase!
             "userName": "odei123",
-            "privacy": {"hide_fullname": False},
+            "privacy": {"hideFullname": False},
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
