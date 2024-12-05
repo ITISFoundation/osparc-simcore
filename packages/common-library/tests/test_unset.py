@@ -5,7 +5,7 @@ from common_library.unset import UnSet, as_dict_exclude_unset
 
 def test_as_dict_exclude_unset():
     def f(
-        par1: str | UnSet = UnSet.INSTANCE, par2: int | UnSet = UnSet.INSTANCE
+        par1: str | UnSet = UnSet.VALUE, par2: int | UnSet = UnSet.VALUE
     ) -> dict[str, Any]:
         return as_dict_exclude_unset(par1=par1, par2=par2)
 
