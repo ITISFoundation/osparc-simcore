@@ -20,22 +20,23 @@ FROM python:${PYTHON_VERSION}-slim
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 RUN uv pip install --system datamodel-code-generator[http] && uv pip list
 ENTRYPOINT ["datamodel-codegen", \
-          "--output-model-type=pydantic_v2.BaseModel", \
-          "--input-file-type=jsonschema", \
-          "--snake-case-field", \
-          "--use-standard-collections", \
-          "--use-union-operator", \
-          "--use-schema-description", \
-          "--allow-population-by-field-name", \
-          "--use-subclass-enum", \
-          "--use-double-quotes", \
-          "--field-constraints", \
 		      "--use-non-positive-negative-number-constrained-types", \
+          "--allow-population-by-field-name", \
+          "--field-constraints", \
+          "--input-file-type=jsonschema", \
+          "--output-model-type=pydantic_v2.BaseModel", \
           "--reuse-model", \
           "--set-default-enum-member", \
-          "--use-title-as-name", \
+          "--snake-case-field", \
           "--target-python-version=${PYTHON_VERSION%.*}", \
+          "--use-annotated", \
           "--use-default-kwarg", \
+          "--use-double-quotes", \
+          "--use-schema-description", \
+          "--use-standard-collections", \
+          "--use-subclass-enum", \
+          "--use-title-as-name", \
+          "--use-union-operator", \
           "--validation"]
 EOF
 }

@@ -483,16 +483,22 @@
             "title": "Message"
           },
           "payment_method_id": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Payment Method Id"
           }
         },
         "type": "object",
         "required": [
-          "success",
-          "payment_method_id"
+          "success"
         ],
         "title": "SavedPaymentMethod"
       },

@@ -380,7 +380,6 @@
         "enum": [
           "TIER"
         ],
-        "const": "TIER",
         "title": "PricingPlanClassification"
       },
       "PricingPlanGet": {
@@ -581,9 +580,6 @@
           },
           "docs_url": {
             "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
             "title": "Docs Url"
           }
         },

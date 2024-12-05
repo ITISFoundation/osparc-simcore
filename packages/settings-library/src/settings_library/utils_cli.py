@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 from collections.abc import Callable
@@ -44,7 +43,7 @@ def print_as_envfile(
 
         if isinstance(value, BaseSettings):
             if compact:
-                value = json.dumps(
+                value = json_dumps(
                     model_dump_with_secrets(
                         value, show_secrets=show_secrets, **pydantic_export_options
                     )
@@ -70,16 +69,15 @@ def print_as_envfile(
         typer.echo(f"{name}={value}")
 
 
-def print_as_json(
+def _print_as_json(
     settings_obj,
     *,
     compact: bool = False,
     show_secrets: bool,
-    json_serializer,
     **pydantic_export_options,
 ):
     typer.echo(
-        json_serializer(
+        json_dumps(
             model_dump_with_secrets(
                 settings_obj, show_secrets=show_secrets, **pydantic_export_options
             ),
@@ -91,7 +89,6 @@ def print_as_json(
 def create_settings_command(
     settings_cls: type[BaseCustomSettings],
     logger: logging.Logger | None = None,
-    json_serializer=json_dumps,
 ) -> Callable:
     """Creates typer command function for settings"""
 
@@ -117,7 +114,7 @@ def create_settings_command(
 
         if as_json_schema:
             typer.echo(
-                json.dumps(
+                json_dumps(
                     settings_cls.model_json_schema(),
                     default=to_jsonable_python,
                     indent=0 if compact else 2,
@@ -129,7 +126,7 @@ def create_settings_command(
             settings_obj = settings_cls.create_from_envs()
 
         except ValidationError as err:
-            settings_schema = json.dumps(
+            settings_schema = json_dumps(
                 settings_cls.model_json_schema(),
                 default=to_jsonable_python,
                 indent=2,
@@ -162,11 +159,10 @@ def create_settings_command(
         pydantic_export_options: dict[str, Any] = {"exclude_unset": exclude_unset}
 
         if as_json:
-            print_as_json(
+            _print_as_json(
                 settings_obj,
                 compact=compact,
                 show_secrets=show_secrets,
-                json_serializer=json_serializer,
                 **pydantic_export_options,
             )
         else:
