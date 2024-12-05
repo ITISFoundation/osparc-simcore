@@ -118,9 +118,6 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "border-invalid": "failed-red",
     "border-disabled": "background-main",
 
-    // separator
-    "border-separator": "fab-background",
-
     // tooltip
     "tooltip": "flash_message_bg",
     "tooltip-text": "text",
