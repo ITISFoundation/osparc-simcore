@@ -7,10 +7,13 @@ import os
 from collections.abc import Callable
 
 import pytest
-from pydantic import AliasChoices, Field, ValidationError
+from pydantic import AliasChoices, Field, ValidationError, __version__
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
 from settings_library.base import BaseCustomSettings, DefaultFromEnvFactoryError
 from settings_library.basic_types import PortInt
+
+pydantic_vtag = ".".join(__version__.split(".")[:2])
+
 
 #
 # NOTE: Pydantic models are returned by function-scoped fixture such that every
@@ -174,7 +177,7 @@ def test_parse_from_individual_envs(
         "loc": ("WEBSERVER_POSTGRES",),
         "msg": "Field required",
         "type": "missing",
-        "url": "https://errors.pydantic.dev/2.9/v/missing",
+        "url": f"https://errors.pydantic.dev/{pydantic_vtag}/v/missing",
     }
 
     s2 = S2()

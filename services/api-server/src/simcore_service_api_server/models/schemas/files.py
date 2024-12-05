@@ -11,7 +11,7 @@ from models_library.api_schemas_storage import ETag
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import (
-    AnyUrl,
+    AnyHttpUrl,
     BaseModel,
     ConfigDict,
     Field,
@@ -22,6 +22,8 @@ from pydantic import (
     field_validator,
 )
 from servicelib.file_utils import create_sha256_checksum
+
+from .._utils_pydantic import UriSchema
 
 _NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 
@@ -167,9 +169,7 @@ class UploadLinks(BaseModel):
 
 class FileUploadData(BaseModel):
     chunk_size: NonNegativeInt
-    urls: list[
-        Annotated[AnyUrl, StringConstraints(max_length=65536)]
-    ]  # maxlength added for backwards compatibility
+    urls: list[Annotated[AnyHttpUrl, UriSchema()]]
     links: UploadLinks
 
 
