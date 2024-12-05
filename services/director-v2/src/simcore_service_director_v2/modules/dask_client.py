@@ -535,6 +535,7 @@ class DaskClient:
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.unpublish_dataset(name=job_id)
             )
+            distributed.Variable(job_id, client=self.backend.client).delete()
         except KeyError:
             _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 
