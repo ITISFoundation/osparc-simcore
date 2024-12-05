@@ -281,7 +281,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       colModel.setDataCellRenderer(this.self().POS.TIMESTAMP, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
-      colModel.setDataCellRenderer(this.self().POS.ORIGIN, new qx.ui.table.cellrenderer.String());
+      colModel.setDataCellRenderer(this.self().POS.ORIGIN, new osparc.ui.table.cellrenderer.Html());
       colModel.setDataCellRenderer(this.self().POS.MESSAGE, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text; text-wrap: wrap"
       }));

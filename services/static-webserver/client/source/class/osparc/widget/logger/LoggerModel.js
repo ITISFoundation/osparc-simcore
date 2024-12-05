@@ -117,7 +117,7 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
         newRow["level"] = this.self().getLevelIcon(newRow.logLevel);
         newRow["time"] = osparc.utils.Utils.formatTime(newRow.timeStamp, true);
         newRow["who"] = newRow.label;
-        newRow["msgRich"] = newRow.msg.replace("\n", "<br>");
+        newRow["msgRich"] = newRow.msg.replaceAll("\n", "<br>");
         this.__rawData.push(newRow);
       });
     },
