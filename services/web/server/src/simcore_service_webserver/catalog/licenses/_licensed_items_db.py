@@ -36,7 +36,7 @@ _logger = logging.getLogger(__name__)
 _SELECTION_ARGS = (
     licensed_items.c.licensed_item_id,
     licensed_items.c.name,
-    licensed_items.c.license_resource_type,
+    licensed_items.c.licensed_resource_type,
     licensed_items.c.pricing_plan_id,
     licensed_items.c.product_name,
     licensed_items.c.created,
@@ -52,7 +52,7 @@ async def create(
     *,
     product_name: ProductName,
     name: str,
-    license_resource_type: LicensedResourceType,
+    licensed_resource_type: LicensedResourceType,
     pricing_plan_id: PricingPlanId,
 ) -> LicensedItemDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
@@ -60,7 +60,7 @@ async def create(
             licensed_items.insert()
             .values(
                 name=name,
-                license_resource_type=license_resource_type,
+                licensed_resource_type=licensed_resource_type,
                 pricing_plan_id=pricing_plan_id,
                 product_name=product_name,
                 created=func.now(),

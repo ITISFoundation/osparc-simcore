@@ -11,7 +11,7 @@ from ._base import OutputSchema
 class LicensedItemGet(OutputSchema):
     licensed_item_id: LicensedItemID
     name: str
-    license_resource_type: LicensedResourceType
+    licensed_resource_type: LicensedResourceType
     pricing_plan_id: PricingPlanId
     created_at: datetime
     modified_at: datetime

@@ -38,7 +38,7 @@ async def test_licensed_items_db_crud(
         client.app,
         product_name=osparc_product_name,
         name="Model A",
-        license_resource_type=LicensedResourceType.VIP_MODEL,
+        licensed_resource_type=LicensedResourceType.VIP_MODEL,
         pricing_plan_id=pricing_plan_id,
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
