@@ -2347,6 +2347,105 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
+  /v0/catalog/licensed-items:
+    get:
+      tags:
+      - licenses
+      - catalog
+      summary: List Licensed Items
+      operationId: list_licensed_items
+      parameters:
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"modified","direction":"desc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_LicensedItemGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+  /v0/catalog/licensed-items/{licensed_item_id}:
+    get:
+      tags:
+      - licenses
+      - catalog
+      summary: Get Licensed Item
+      operationId: get_licensed_item
+      parameters:
+      - name: licensed_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Licensed Item Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_LicensedItemGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+    post:
+      tags:
+      - licenses
+      - catalog
+      summary: Purchase Licensed Item
+      operationId: purchase_licensed_item
+      parameters:
+      - name: licensed_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Licensed Item Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicensedItemsBodyParams'
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
   /v0/computations/{project_id}:
     get:
       tags:
@@ -2915,102 +3014,6 @@ paths:
           content:
             application/json:
               schema: {}
-  /v0/license-goods:
-    get:
-      tags:
-      - licenses
-      summary: List License Goods
-      operationId: list_license_goods
-      parameters:
-      - name: order_by
-        in: query
-        required: false
-        schema:
-          type: string
-          contentMediaType: application/json
-          contentSchema: {}
-          default: '{"field":"modified","direction":"desc"}'
-          title: Order By
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 20
-          title: Limit
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_LicenseGoodGet__'
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-  /v0/license-goods/{license_good_id}:
-    get:
-      tags:
-      - licenses
-      summary: Get License Good
-      operationId: get_license_good
-      parameters:
-      - name: license_good_id
-        in: path
-        required: true
-        schema:
-          type: string
-          title: License Good Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_LicenseGoodGet_'
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-    post:
-      tags:
-      - licenses
-      summary: Purchase License Good
-      operationId: purchase_license_good
-      parameters:
-      - name: license_good_id
-        in: path
-        required: true
-        schema:
-          type: string
-          title: License Good Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LicenseGoodsBodyParams'
-      responses:
-        '204':
-          description: Successful Response
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
   /v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations:
     get:
       tags:
@@ -7806,11 +7809,11 @@ components:
           title: Error
       type: object
       title: Envelope[InvitationInfo]
-    Envelope_LicenseGoodGet_:
+    Envelope_LicensedItemGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/LicenseGoodGet'
+          - $ref: '#/components/schemas/LicensedItemGet'
           - type: 'null'
         error:
           anyOf:
@@ -7818,7 +7821,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[LicenseGoodGet]
+      title: Envelope[LicensedItemGet]
     Envelope_Log_:
       properties:
         data:
@@ -8592,12 +8595,12 @@ components:
           title: Error
       type: object
       title: Envelope[list[GroupUserGet]]
-    Envelope_list_LicenseGoodGet__:
+    Envelope_list_LicensedItemGet__:
       properties:
         data:
           anyOf:
           - items:
-              $ref: '#/components/schemas/LicenseGoodGet'
+              $ref: '#/components/schemas/LicensedItemGet'
             type: array
           - type: 'null'
           title: Data
@@ -8607,7 +8610,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[LicenseGoodGet]]
+      title: Envelope[list[LicensedItemGet]]
     Envelope_list_OsparcCreditsAggregatedByServiceGet__:
       properties:
         data:
@@ -10003,16 +10006,16 @@ components:
       additionalProperties: false
       type: object
       title: InvitationInfo
-    LicenseGoodGet:
+    LicensedItemGet:
       properties:
-        licenseGoodId:
+        licensedItemId:
           type: string
-          title: Licensegoodid
+          title: Licenseditemid
         name:
           type: string
           title: Name
         licenseResourceType:
-          $ref: '#/components/schemas/LicenseResourceType'
+          $ref: '#/components/schemas/LicensedResourceType'
         pricingPlanId:
           type: integer
           exclusiveMinimum: true
@@ -10028,14 +10031,14 @@ components:
           title: Modifiedat
       type: object
       required:
-      - licenseGoodId
+      - licensedItemId
       - name
       - licenseResourceType
       - pricingPlanId
       - createdAt
       - modifiedAt
-      title: LicenseGoodGet
-    LicenseGoodsBodyParams:
+      title: LicensedItemGet
+    LicensedItemsBodyParams:
       properties:
         wallet_id:
           type: integer
@@ -10050,13 +10053,13 @@ components:
       required:
       - wallet_id
       - num_of_seeds
-      title: LicenseGoodsBodyParams
-    LicenseResourceType:
+      title: LicensedItemsBodyParams
+    LicensedResourceType:
       type: string
       enum:
       - VIP_MODEL
       const: VIP_MODEL
-      title: LicenseResourceType
+      title: LicensedResourceType
     Limits:
       properties:
         cpus:

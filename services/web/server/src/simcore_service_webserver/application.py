@@ -26,7 +26,6 @@ from .folders.plugin import setup_folders
 from .garbage_collector.plugin import setup_garbage_collector
 from .groups.plugin import setup_groups
 from .invitations.plugin import setup_invitations
-from .licenses.plugin import setup_licenses
 from .login.plugin import setup_login
 from .long_running_tasks import setup_long_running_tasks
 from .meta_modeling.plugin import setup_meta_modeling
@@ -143,9 +142,6 @@ def create_application() -> web.Application:
     # tagging
     setup_scicrunch(app)
     setup_tags(app)
-
-    # licenses
-    setup_licenses(app)
 
     setup_announcements(app)
     setup_publications(app)

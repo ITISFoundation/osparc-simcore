@@ -711,6 +711,10 @@ setuptools==69.2.0
     #   opentelemetry-instrumentation
 shellingham==1.5.4
     # via typer
+shortuuid==1.0.13
+    # via
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
 six==1.16.0
     # via
     #   jsonschema
@@ -907,7 +911,9 @@ wrapt==1.16.0
 yarl==1.9.4
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq

@@ -1,7 +1,7 @@
 import logging
 
 from models_library.basic_types import IDStr
-from models_library.license_goods import LicenseGoodID
+from models_library.licensed_items import LicensedItemID
 from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.rest_ordering import (
     OrderBy,
@@ -14,21 +14,21 @@ from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, Field
 from servicelib.request_keys import RQT_USERID_KEY
 
-from .._constants import RQ_PRODUCT_KEY
+from ..._constants import RQ_PRODUCT_KEY
 
 _logger = logging.getLogger(__name__)
 
 
-class LicenseGoodsRequestContext(RequestParameters):
+class LicensedItemsRequestContext(RequestParameters):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
-class LicenseGoodsPathParams(StrictRequestParameters):
-    license_good_id: LicenseGoodID
+class LicensedItemsPathParams(StrictRequestParameters):
+    licensed_item_id: LicensedItemID
 
 
-_LicenseGoodsListOrderQueryParams: type[
+_LicensedItemsListOrderQueryParams: type[
     RequestParameters
 ] = create_ordering_query_model_class(
     ordering_fields={
@@ -40,14 +40,14 @@ _LicenseGoodsListOrderQueryParams: type[
 )
 
 
-class LicenseGoodsListQueryParams(
+class LicensedItemsListQueryParams(
     PageQueryParameters,
-    _LicenseGoodsListOrderQueryParams,  # type: ignore[misc, valid-type]
+    _LicensedItemsListOrderQueryParams,  # type: ignore[misc, valid-type]
 ):
     ...
 
 
-class LicenseGoodsBodyParams(BaseModel):
+class LicensedItemsBodyParams(BaseModel):
     wallet_id: WalletID
     num_of_seeds: int
 

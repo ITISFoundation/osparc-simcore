@@ -1,22 +1,22 @@
 from datetime import datetime
 from typing import NamedTuple
 
-from models_library.license_goods import LicenseGoodID, LicenseResourceType
+from models_library.licensed_items import LicensedItemID, LicensedResourceType
 from models_library.resource_tracker import PricingPlanId
 from pydantic import PositiveInt
 
 from ._base import OutputSchema
 
 
-class LicenseGoodGet(OutputSchema):
-    license_good_id: LicenseGoodID
+class LicensedItemGet(OutputSchema):
+    licensed_item_id: LicensedItemID
     name: str
-    license_resource_type: LicenseResourceType
+    license_resource_type: LicensedResourceType
     pricing_plan_id: PricingPlanId
     created_at: datetime
     modified_at: datetime
 
 
-class LicenseGoodGetPage(NamedTuple):
-    items: list[LicenseGoodGet]
+class LicensedItemGetPage(NamedTuple):
+    items: list[LicensedItemGet]
     total: PositiveInt

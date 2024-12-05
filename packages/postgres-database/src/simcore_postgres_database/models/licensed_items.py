@@ -14,15 +14,15 @@ def _custom_id_generator():
     return f"lgo_{shortuuid.uuid()}"
 
 
-class LicenseResourceType(str, enum.Enum):
+class LicensedResourceType(str, enum.Enum):
     VIP_MODEL = "VIP_MODEL"
 
 
-license_goods = sa.Table(
-    "license_goods",
+licensed_items = sa.Table(
+    "licensed_items",
     metadata,
     sa.Column(
-        "license_good_id",
+        "licensed_item_id",
         sa.String,
         nullable=False,
         primary_key=True,
@@ -34,8 +34,8 @@ license_goods = sa.Table(
         nullable=False,
     ),
     sa.Column(
-        "license_resource_type",
-        sa.Enum(LicenseResourceType),
+        "licensed_resource_type",
+        sa.Enum(LicensedResourceType),
         nullable=False,
         doc="Item type, ex. VIP_MODEL",
     ),

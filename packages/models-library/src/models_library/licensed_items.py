@@ -8,10 +8,10 @@ from .products import ProductName
 from .resource_tracker import PricingPlanId
 from .utils.enums import StrAutoEnum
 
-LicenseGoodID: TypeAlias = str
+LicensedItemID: TypeAlias = str
 
 
-class LicenseResourceType(StrAutoEnum):
+class LicensedResourceType(StrAutoEnum):
     VIP_MODEL = auto()
 
 
@@ -20,10 +20,10 @@ class LicenseResourceType(StrAutoEnum):
 #
 
 
-class LicenseGoodDB(BaseModel):
-    license_good_id: LicenseGoodID
+class LicensedItemDB(BaseModel):
+    licensed_item_id: LicensedItemID
     name: str
-    license_resource_type: LicenseResourceType
+    license_resource_type: LicensedResourceType
     pricing_plan_id: PricingPlanId
     product_name: ProductName
     created: datetime = Field(
@@ -38,6 +38,6 @@ class LicenseGoodDB(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class LicenseGoodUpdateDB(BaseModel):
+class LicensedItemUpdateDB(BaseModel):
     name: str | None = None
     pricing_plan_id: PricingPlanId | None = None
