@@ -2,11 +2,11 @@
 
 # Recursively checks if all openapi specs within a local osparc-simcore revision are different/backwards compatible with a remote base
 # Example:
-#    bash osparc-simcore/ci/github/helpers/openapi-specs-backwards-compatibility.bash diff \
+#    bash osparc-simcore/ci/github/helpers/openapi-specs-diff.bash diff \
 #      https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master \
 #      ./osparc-simcore/
 # or
-#    bash osparc-simcore/ci/github/helpers/openapi-specs-backwards-compatibility.bash breaking \
+#    bash osparc-simcore/ci/github/helpers/openapi-specs-diff.bash breaking \
 #      https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master \
 #      ./osparc-simcore/
 #
