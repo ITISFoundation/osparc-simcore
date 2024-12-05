@@ -9,7 +9,7 @@ from pathlib import Path
 import distributed
 import pytest
 from distributed import Client
-from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
+from models_library.clusters import ClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl
 
 from .helpers.docker import get_service_published_port
@@ -72,7 +72,7 @@ def dask_backend_tls_certificates(
 @pytest.fixture
 def dask_scheduler_auth(
     dask_backend_tls_certificates: _TLSCertificates,
-) -> InternalClusterAuthentication:
+) -> ClusterAuthentication:
     return TLSAuthentication(
         tls_ca_file=dask_backend_tls_certificates.tls_ca_file,
         tls_client_cert=dask_backend_tls_certificates.tls_cert_file,

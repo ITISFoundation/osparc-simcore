@@ -70,9 +70,9 @@ class Monitor:
     def status_worker_interval_seconds(self) -> NonNegativeFloat:
         return self.status_worker_interval.total_seconds()
 
-    async def _worker_start_get_status_requests(self) -> None:
+    async def _worker_check_services_require_status_update(self) -> None:
         """
-        Check if a service requires it's status to be polled.
+        Check if any service requires it's status to be polled.
         Note that the interval at which the status is polled can vary.
         This is a relatively low resource check.
         """
@@ -136,7 +136,7 @@ class Monitor:
     async def setup(self) -> None:
         self.app.state.status_monitor_background_task = start_exclusive_periodic_task(
             get_redis_client(self.app, RedisDatabase.LOCKS),
-            self._worker_start_get_status_requests,
+            self._worker_check_services_require_status_update,
             task_period=_INTERVAL_BETWEEN_CHECKS,
             retry_after=_INTERVAL_BETWEEN_CHECKS,
             task_name="periodic_service_status_update",

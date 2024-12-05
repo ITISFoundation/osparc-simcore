@@ -3,7 +3,6 @@
 
 import json
 import logging
-import random
 import urllib.parse
 from collections.abc import AsyncIterable, Iterable, Iterator, Mapping
 from typing import Any
@@ -20,7 +19,6 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 )
 from models_library.basic_types import PortInt
 from models_library.callbacks_mapping import CallbacksMapping
-from models_library.clusters import ClusterID
 from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
 )
@@ -157,11 +155,6 @@ def scheduler_data(
         "scheduler_data_from_http_request": scheduler_data_from_http_request,
         "scheduler_data_from_service_inspect": scheduler_data_from_service_inspect,
     }[request.param]
-
-
-@pytest.fixture
-def cluster_id() -> ClusterID:
-    return random.randint(0, 10)
 
 
 @pytest.fixture(params=list(FileLinkType))

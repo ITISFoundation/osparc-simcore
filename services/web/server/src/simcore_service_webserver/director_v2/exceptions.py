@@ -20,29 +20,5 @@ class ComputationNotFoundError(DirectorServiceError):
     msg_template = "Computation '{project_id}' not found"
 
 
-class ClusterNotFoundError(DirectorServiceError):
-    """Cluster was not found in director-v2"""
-
-    msg_template = "Cluster '{cluster_id}' not found"
-
-
-class ClusterAccessForbidden(DirectorServiceError):
-    """Cluster access is forbidden"""
-
-    msg_template = "Cluster '{cluster_id}' access forbidden!"
-
-
-class ClusterPingError(DirectorServiceError):
-    """Cluster ping failed"""
-
-    msg_template = "Connection to cluster in '{endpoint}' failed, received '{reason}'"
-
-
-class ClusterDefinedPingError(DirectorServiceError):
-    """Cluster ping failed"""
-
-    msg_template = "Connection to cluster '{cluster_id}' failed, received '{reason}'"
-
-
 class ServiceWaitingForManualIntervention(DirectorServiceError):
     msg_template = "Service '{service_uuid}' is waiting for user manual intervention"

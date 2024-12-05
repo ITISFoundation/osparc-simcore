@@ -23,7 +23,6 @@ aio-pika
 aiocache[redis,msgpack]
 aiodocker
 aiopg[sa]
-dask-gateway
 fastapi[all]
 httpx
 networkx
