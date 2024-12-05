@@ -47,7 +47,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             curatedModel[key] = model[key];
           }
           if (key === "ID") {
-            curatedModel["leased"] = [22].includes(model[key]);
+            curatedModel["leased"] = model["ID"] < 4;
           }
         });
         anatomicalModels.push(curatedModel);
@@ -57,8 +57,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
   },
 
   members: {
-    __anatomicalModelsModel: null,
     __anatomicalModels: null,
+    __licensedItems: null,
+    __anatomicalModelsModel: null,
     __sortByButton: null,
 
     __buildLayout: function() {
@@ -99,10 +100,12 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       membersCtrl.setDelegate({
         createItem: () => new osparc.vipMarket.AnatomicalModelListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("id", "modelId", null, item, id);
+          ctrl.bindProperty("modelId", "modelId", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "name", null, item, id);
           ctrl.bindProperty("date", "date", null, item, id);
+          ctrl.bindProperty("licensedItemId", "licensedItemId", null, item, id);
+          ctrl.bindProperty("pricingPlanId", "pricingPlanId", null, item, id);
           ctrl.bindProperty("leased", "leased", null, item, id);
         },
         configureItem: item => {
@@ -143,17 +146,22 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         .then(resp => resp.json())
         .then(anatomicalModelsRaw => {
           this.__anatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
-          this.__populateModels();
 
-          anatomicModelDetails.addListener("modelLeased", e => {
-            const modelId = e.getData();
-            const found = this.__anatomicalModels.find(model => model["ID"] === modelId);
-            if (found) {
-              found["leased"] = true;
+          osparc.data.Resources.get("market")
+            .then(licensedItems => {
+              this.__licensedItems = licensedItems;
               this.__populateModels();
-              anatomicModelDetails.setAnatomicalModelsData(found);
-            }
-          }, this);
+
+              anatomicModelDetails.addListener("modelLeased", e => {
+                const modelId = e.getData();
+                const found = this.__anatomicalModels.find(model => model["ID"] === modelId);
+                if (found) {
+                  found["leased"] = true;
+                  this.__populateModels();
+                  anatomicModelDetails.setAnatomicalModelsData(found);
+                }
+              }, this);
+            });
         })
         .catch(err => console.error(err));
     },
@@ -161,13 +169,22 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     __populateModels: function() {
       const models = [];
       this.__anatomicalModels.forEach(model => {
-        const anatomicalModel = {};
-        anatomicalModel["id"] = model["ID"];
-        anatomicalModel["thumbnail"] = model["Thumbnail"];
-        anatomicalModel["name"] = model["Features"]["name"] + " " + model["Features"]["version"];
-        anatomicalModel["date"] = new Date(model["Features"]["date"]);
-        anatomicalModel["leased"] = model["leased"];
-        models.push(anatomicalModel);
+        const modelId = model["ID"];
+        const licensedItem = this.__licensedItems.find(licItem => licItem["name"] == modelId);
+        if (licensedItem) {
+          console.log(licensedItem);
+          const anatomicalModel = {};
+          anatomicalModel["modelId"] = modelId;
+          anatomicalModel["thumbnail"] = model["Thumbnail"];
+          anatomicalModel["name"] = model["Features"]["name"] + " " + model["Features"]["version"];
+          anatomicalModel["date"] = new Date(model["Features"]["date"]);
+          // attach license data
+          anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
+          anatomicalModel["pricingPlanId"] = licensedItem["pricingPlanId"];
+          // attach leased data
+          anatomicalModel["leased"] = model["leased"];
+          models.push(anatomicalModel);
+        }
       });
 
       this.__anatomicalModelsModel.removeAll();
