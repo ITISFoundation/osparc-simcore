@@ -121,17 +121,17 @@ class ProfileUpdate(BaseModel):
     @classmethod
     def _validate_user_name(cls, value: str):
         # Ensure valid characters (alphanumeric + . _ -)
-        if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", value):
-            msg = f"Username '{value}' must start with a letter and can only contain letters, numbers and '_'."
+        if not re.match(r"^[a-zA-Z][a-zA-Z0-9._-]*$", value):
+            msg = f"Username '{value}' must start with a letter and can only contain letters, numbers and '_', '.' or '-'."
             raise ValueError(msg)
 
         # Ensure no consecutive special characters
-        if re.search(r"[_]{2,}", value):
+        if re.search(r"[_.-]{2,}", value):
             msg = f"Username '{value}' cannot contain consecutive special characters like '__'."
             raise ValueError(msg)
 
         # Ensure it doesn't end with a special character
-        if {value[0], value[-1]}.intersection({"_"}):
+        if {value[0], value[-1]}.intersection({"_", "-", "."}):
             msg = f"Username '{value}' cannot end or start with a special character."
             raise ValueError(msg)
 

@@ -254,11 +254,15 @@ async def test_update_wrong_user_name(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_update_existing_user_name(
+    user: UserInfoDict,
     logged_user: UserInfoDict,
     client: TestClient,
     user_role: UserRole,
 ):
     assert client.app
+
+    other_username = user["name"]
+    assert other_username != logged_user["name"]
 
     #  update with SAME username (i.e. existing)
     url = client.app.router["get_my_profile"].url_for()
@@ -271,7 +275,7 @@ async def test_update_existing_user_name(
     resp = await client.patch(
         f"{url}",
         json={
-            "userName": data["userName"],
+            "userName": other_username,
         },
     )
     await assert_status(resp, status.HTTP_409_CONFLICT)

@@ -25,6 +25,7 @@ from ._schemas import PreUserProfile
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
+    UserNameDuplicateError,
     UserNotFoundError,
 )
 from .schemas import ProfileGet, ProfileUpdate
@@ -48,6 +49,10 @@ def _handle_users_exceptions(handler: Handler):
 
         except UserNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
+
+        except UserNameDuplicateError as exc:
+            raise web.HTTPConflict(reason=f"{exc}") from exc
+
         except MissingGroupExtraPropertiesForProductError as exc:
             error_code = exc.error_code()
             user_error_msg = FMSG_MISSING_CONFIG_WITH_OEC.format(error_code=error_code)

@@ -9,6 +9,7 @@ import logging
 from collections import deque
 from typing import Any, NamedTuple, TypedDict
 
+import simcore_postgres_database.errors as db_errors
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
@@ -32,7 +33,11 @@ from . import _db
 from ._api import get_user_credentials, get_user_invoice_address, set_user_as_deleted
 from ._models import ToUserUpdateDB
 from ._preferences_api import get_frontend_user_preferences_aggregation
-from .exceptions import MissingGroupExtraPropertiesForProductError, UserNotFoundError
+from .exceptions import (
+    MissingGroupExtraPropertiesForProductError,
+    UserNameDuplicateError,
+    UserNotFoundError,
+)
 from .schemas import ProfileGet, ProfileUpdate
 
 _logger = logging.getLogger(__name__)
@@ -42,7 +47,7 @@ def _parse_as_user(user_id: Any) -> UserID:
     try:
         return TypeAdapter(UserID).validate_python(user_id)
     except ValidationError as err:
-        raise UserNotFoundError(uid=user_id) from err
+        raise UserNotFoundError(uid=user_id, user_id=user_id) from err
 
 
 async def get_user_profile(
@@ -158,14 +163,23 @@ async def update_user_profile(
     """
     Raises:
         UserNotFoundError
+        UserNameAlreadyExistsError
     """
     user_id = _parse_as_user(user_id)
 
     if updated_values := ToUserUpdateDB.from_api(update).to_columns():
         async with get_database_engine(app).acquire() as conn:
             query = users.update().where(users.c.id == user_id).values(**updated_values)
-            resp = await conn.execute(query)
-            assert resp.rowcount == 1  # nosec
+
+            try:
+
+                resp = await conn.execute(query)
+                assert resp.rowcount == 1  # nosec
+
+            except db_errors.UniqueViolation as err:
+                raise UserNameDuplicateError(
+                    user_name=updated_values.get("name")
+                ) from err
 
 
 async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
