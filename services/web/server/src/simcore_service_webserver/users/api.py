@@ -140,8 +140,8 @@ async def get_user_profile(
             "all": all_group,
         },
         privacy=ProfilePrivacyGet(
-            hide_email=user_profile["privacy_hide_email"],
             hide_fullname=user_profile["privacy_hide_fullname"],
+            hide_email=user_profile["privacy_hide_email"],
         ),
         preferences=preferences,
         **optional,
@@ -160,10 +160,24 @@ async def update_user_profile(
     """
     user_id = _parse_as_user(user_id)
     async with get_database_engine(app).acquire() as conn:
-        if updated_values := update.to_db():
-            query = users.update().where(users.c.id == user_id).values(**updated_values)
-            resp = await conn.execute(query)
-            assert resp.rowcount == 1  # nosec
+        updated_values = update.model_dump(
+            include={
+                "first_name": True,
+                "last_name": True,
+                "privacy": {
+                    "hide_email",
+                    "hide_fullname",
+                },
+            },
+            exclude_unset=True,
+        )
+        # flatten dict
+        if privacy := updated_values.pop("privacy", None):
+            updated_values |= {f"privacy_{k}": v for k, v in privacy.items()}
+
+        query = users.update().where(users.c.id == user_id).values(**updated_values)
+        resp = await conn.execute(query)
+        assert resp.rowcount == 1  # nosec
 
 
 async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
