@@ -1,6 +1,7 @@
 from datetime import datetime
 from enum import auto
 from typing import TypeAlias
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -8,7 +9,7 @@ from .products import ProductName
 from .resource_tracker import PricingPlanId
 from .utils.enums import StrAutoEnum
 
-LicensedItemID: TypeAlias = str
+LicensedItemID: TypeAlias = UUID
 
 
 class LicensedResourceType(StrAutoEnum):

@@ -2404,6 +2404,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
           title: Licensed Item Id
       responses:
         '200':
@@ -2431,6 +2432,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
           title: Licensed Item Id
       requestBody:
         required: true
@@ -10011,11 +10013,12 @@ components:
       properties:
         licensedItemId:
           type: string
+          format: uuid
           title: Licenseditemid
         name:
           type: string
           title: Name
-        licenseResourceType:
+        licensedResourceType:
           $ref: '#/components/schemas/LicensedResourceType'
         pricingPlanId:
           type: integer
@@ -10034,7 +10037,7 @@ components:
       required:
       - licensedItemId
       - name
-      - licenseResourceType
+      - licensedResourceType
       - pricingPlanId
       - createdAt
       - modifiedAt

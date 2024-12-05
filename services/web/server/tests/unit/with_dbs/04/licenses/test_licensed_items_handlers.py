@@ -52,7 +52,7 @@ async def test_licensed_items_db_crud(
 
     # get
     url = client.app.router["get_licensed_item"].url_for(
-        licensed_item_id=_licensed_item_id
+        licensed_item_id=f"{_licensed_item_id}"
     )
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
@@ -60,7 +60,7 @@ async def test_licensed_items_db_crud(
 
     # purchase
     url = client.app.router["purchase_licensed_item"].url_for(
-        licensed_item_id=_licensed_item_id
+        licensed_item_id=f"{_licensed_item_id}"
     )
     resp = await client.post(f"{url}", json={"wallet_id": 1, "num_of_seeds": 5})
     # NOTE: Not yet implemented
