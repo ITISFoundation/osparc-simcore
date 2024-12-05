@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from models_library.api_schemas_webserver._base import OutputSchema
@@ -67,7 +67,7 @@ class ProfileGet(BaseModel):
         alias="expirationDate",
     )
 
-    privacy: ProfilePrivacyGet = ProfilePrivacyGet(hide_fullname=True, hide_email=True)
+    privacy: ProfilePrivacyGet
     preferences: AggregatedPreferences
 
     model_config = ConfigDict(
@@ -131,6 +131,19 @@ class ProfileUpdate(BaseModel):
             }
         }
     )
+
+    def to_db(self) -> dict[str, Any]:
+        values = self.model_dump(
+            include={"first_name", "last_name"},
+            exclude_unset=True,
+        )
+        if self.privacy:
+            values.update(
+                self.privacy.model_dump(
+                    include={"hide_fullname", "hide_email"}, exclude_unset=True
+                )
+            )
+        return values
 
 
 #

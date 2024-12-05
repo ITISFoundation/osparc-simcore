@@ -17,12 +17,13 @@ from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from pydantic import EmailStr, TypeAdapter, ValidationError
-from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
+from simcore_postgres_database.models.users import UserRole, users
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
 )
+from simcore_service_webserver.users._models import ProfilePrivacyGet
 
-from ..db.models import GroupType, groups, user_to_groups, users
 from ..db.plugin import get_database_engine
 from ..groups.models import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
@@ -59,17 +60,12 @@ async def get_user_profile(
 
     async with engine.acquire() as conn:
         row: RowProxy
+
         async for row in conn.execute(
             sa.select(users, groups, user_to_groups.c.access_rights)
             .select_from(
-                sa.join(
-                    users,
-                    sa.join(
-                        user_to_groups,
-                        groups,
-                        user_to_groups.c.gid == groups.c.gid,
-                    ),
-                    users.c.id == user_to_groups.c.uid,
+                users.join(user_to_groups, users.c.id == user_to_groups.c.uid).join(
+                    groups, user_to_groups.c.gid == groups.c.gid
                 )
             )
             .where(users.c.id == user_id)
@@ -84,6 +80,8 @@ async def get_user_profile(
                     "last_name": row.users_last_name,
                     "login": row.users_email,
                     "role": row.users_role,
+                    "privacy_hide_fullname": row.users_privacy_hide_fullname,
+                    "privacy_hide_email": row.users_privacy_hide_email,
                     "expiration_date": (
                         row.users_expires_at.date() if row.users_expires_at else None
                     ),
@@ -141,6 +139,10 @@ async def get_user_profile(
             "organizations": user_standard_groups,
             "all": all_group,
         },
+        privacy=ProfilePrivacyGet(
+            hide_email=user_profile["privacy_hide_email"],
+            hide_fullname=user_profile["privacy_hide_fullname"],
+        ),
         preferences=preferences,
         **optional,
     )
@@ -148,29 +150,20 @@ async def get_user_profile(
 
 async def update_user_profile(
     app: web.Application,
+    *,
     user_id: UserID,
     update: ProfileUpdate,
-    *,
-    as_patch: bool = True,
 ) -> None:
     """
-    Keyword Arguments:
-        as_patch -- set False if PUT and True if PATCH (default: {True})
-
     Raises:
         UserNotFoundError
     """
     user_id = _parse_as_user(user_id)
-
     async with get_database_engine(app).acquire() as conn:
-        to_update = update.model_dump(
-            include={"first_name", "last_name"},
-            exclude_unset=as_patch,
-        )
-        resp = await conn.execute(
-            users.update().where(users.c.id == user_id).values(**to_update)
-        )
-        assert resp.rowcount == 1  # nosec
+        if updated_values := update.to_db():
+            query = users.update().where(users.c.id == user_id).values(**updated_values)
+            resp = await conn.execute(query)
+            assert resp.rowcount == 1  # nosec
 
 
 async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
