@@ -32,7 +32,9 @@ def mocked_webserver_service_api(app: FastAPI):
     ) as respx_mock:
         # NOTE: webserver-api uses the same schema as api-server!
         # in-memory fake data
-        me = WebProfileGet.model_json_schema()["examples"][0]
+        me: dict = WebProfileGet.model_json_schema()["examples"][0]
+        me["first_name"] = "James"
+        me["last_name"] = "Maxwell"
 
         def _get_me(request):
             return httpx.Response(status.HTTP_200_OK, json={"data": me})
@@ -43,11 +45,9 @@ def mocked_webserver_service_api(app: FastAPI):
             return httpx.Response(status.HTTP_200_OK, json={"data": me})
 
         respx_mock.get("/me", name="get_me").mock(side_effect=_get_me)
-        respx_mock.put("/me", name="update_me").mock(side_effect=_update_me)
+        respx_mock.patch("/me", name="update_me").mock(side_effect=_update_me)
 
         yield respx_mock
-
-        del me
 
 
 async def test_get_profile(
