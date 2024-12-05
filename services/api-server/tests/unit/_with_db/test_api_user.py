@@ -4,12 +4,12 @@
 
 
 import json
-from copy import deepcopy
 
 import httpx
 import pytest
 import respx
 from fastapi import FastAPI
+from models_library.api_schemas_webserver.users import ProfileGet as WebProfileGet
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.core.settings import ApplicationSettings
@@ -32,7 +32,7 @@ def mocked_webserver_service_api(app: FastAPI):
     ) as respx_mock:
         # NOTE: webserver-api uses the same schema as api-server!
         # in-memory fake data
-        me = deepcopy(Profile.model_config["json_schema_extra"]["example"])
+        me = WebProfileGet.model_json_schema()["examples"][0]
 
         def _get_me(request):
             return httpx.Response(status.HTTP_200_OK, json={"data": me})

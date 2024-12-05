@@ -30,6 +30,8 @@ from models_library.api_schemas_webserver.projects_ports import (
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
 from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.api_schemas_webserver.users import ProfileGet as WebProfileGet
+from models_library.api_schemas_webserver.users import ProfileUpdate as WebProfileUpdate
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -78,6 +80,7 @@ from ..models.schemas.model_adapter import (
     WalletGetWithAvailableCreditsLegacy,
 )
 from ..models.schemas.profiles import Profile, ProfileUpdate
+from ..models.schemas.profiles import Profile, ProfileUpdate, UserRoleEnum
 from ..models.schemas.solvers import SolverKeyId
 from ..models.schemas.studies import StudyPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
@@ -243,17 +246,33 @@ class AuthSession:
     async def get_me(self) -> Profile:
         response = await self.client.get("/me", cookies=self.session_cookies)
         response.raise_for_status()
-        profile: Profile | None = (
-            Envelope[Profile].model_validate_json(response.text).data
+
+        got: WebProfileGet | None = (
+            Envelope[WebProfileGet].model_validate_json(response.text).data
         )
-        assert profile is not None  # nosec
-        return profile
+        assert got is not None  # nosec
+
+        return Profile(
+            first_name=got.first_name,
+            last_name=got.last_name,
+            id=got.id,
+            login=got.login,
+            role=UserRoleEnum(got.role),
+            groups=got.groups.model_dump() if got.groups else None,  # type: ignore
+            gravatar_id=got.gravatar_id,
+        )
 
     @_exception_mapper(_PROFILE_STATUS_MAP)
     async def update_me(self, *, profile_update: ProfileUpdate) -> Profile:
+
+        update = WebProfileUpdate(
+            first_name=profile_update.first_name,
+            last_name=profile_update.last_name,
+        )
+
         response = await self.client.patch(
             "/me",
-            json=profile_update.model_dump(exclude_none=True),
+            json=update.model_dump(exclude_none=True, exclude_unset=True),
             cookies=self.session_cookies,
         )
         response.raise_for_status()
