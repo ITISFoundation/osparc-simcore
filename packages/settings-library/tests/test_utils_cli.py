@@ -11,16 +11,16 @@ from typing import Any
 import pytest
 import typer
 from dotenv import dotenv_values
-from pydantic import Field, SecretStr
+from pydantic import AnyHttpUrl, Field, SecretStr
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_cli import (
+    _print_as_json,
     create_settings_command,
     create_version_callback,
     model_dump_with_secrets,
     print_as_envfile,
-    print_as_json,
 )
 from typer.testing import CliRunner
 
@@ -243,8 +243,8 @@ def test_cli_compact_settings_envs(
         assert mocked_envs_2 == {
             "APP_HOST": "localhost",
             "APP_PORT": "80",
-            "APP_OPTIONAL_ADDON": '{"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42}',
-            "APP_REQUIRED_PLUGIN": '{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, "POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "secret", "POSTGRES_DB": "foodb", "POSTGRES_MINSIZE": 1, "POSTGRES_MAXSIZE": 50, "POSTGRES_CLIENT_NAME": null}',
+            "APP_OPTIONAL_ADDON": '{"MODULE_VALUE":10,"MODULE_VALUE_DEFAULT":42}',
+            "APP_REQUIRED_PLUGIN": '{"POSTGRES_HOST":"localhost","POSTGRES_PORT":5432,"POSTGRES_USER":"foo","POSTGRES_PASSWORD":"secret","POSTGRES_DB":"foodb","POSTGRES_MINSIZE":1,"POSTGRES_MAXSIZE":50,"POSTGRES_CLIENT_NAME":null}',
         }
 
         settings_2 = fake_settings_class()
@@ -416,8 +416,9 @@ def test_print_as(capsys: pytest.CaptureFixture):
     class FakeSettings(BaseCustomSettings):
         INTEGER: int = Field(..., description="Some info")
         SECRET: SecretStr
+        URL: AnyHttpUrl
 
-    settings_obj = FakeSettings(INTEGER=1, SECRET="secret")  # type: ignore
+    settings_obj = FakeSettings(INTEGER=1, SECRET="secret", URL="http://google.com")  # type: ignore
 
     print_as_envfile(settings_obj, compact=True, verbose=True, show_secrets=True)
     captured = capsys.readouterr()
@@ -434,9 +435,7 @@ def test_print_as(capsys: pytest.CaptureFixture):
     assert "secret" not in captured.out
     assert "Some info" not in captured.out
 
-    print_as_json(
-        settings_obj, compact=True, show_secrets=False, json_serializer=json.dumps
-    )
+    _print_as_json(settings_obj, compact=True, show_secrets=False)
     captured = capsys.readouterr()
     assert "secret" not in captured.out
     assert "**" in captured.out

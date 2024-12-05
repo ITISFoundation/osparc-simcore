@@ -121,7 +121,7 @@ def swarm_network_id() -> str:
 def simcore_service_labels() -> SimcoreServiceLabels:
     # overwrites global fixture
     return SimcoreServiceLabels.model_validate(
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
+        SimcoreServiceLabels.model_json_schema()["examples"][2]
     )
 
 

@@ -199,7 +199,9 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
 
-        assert scheduler_data.product_name is not None  # nosec
+        assert (
+            scheduler_data.product_name is not None
+        ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
 
         user_extra_properties = await groups_extra_properties.get_user_extra_properties(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name

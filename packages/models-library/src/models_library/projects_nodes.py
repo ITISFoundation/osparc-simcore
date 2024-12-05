@@ -2,9 +2,9 @@
     Models Node as a central element in a project's pipeline
 """
 
-from copy import deepcopy
 from typing import Annotated, Any, TypeAlias, Union
 
+from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -113,16 +113,6 @@ class NodeState(BaseModel):
     )
 
 
-def _patch_json_schema_extra(schema: dict) -> None:
-    # NOTE: exporting without this trick does not make runHash as nullable.
-    # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
-    for prop_name in ["parent", "runHash"]:
-        if prop_name in schema.get("properties", {}):
-            prop = deepcopy(schema["properties"][prop_name])
-            prop["nullable"] = True
-            schema["properties"][prop_name] = prop
-
-
 class Node(BaseModel):
     key: ServiceKey = Field(
         ...,
@@ -141,110 +131,146 @@ class Node(BaseModel):
     label: str = Field(
         ..., description="The short name of the node", examples=["JupyterLab"]
     )
-    progress: float | None = Field(
-        default=None,
-        ge=0,
-        le=100,
-        description="the node progress value (deprecated in DB, still used for API only)",
-        deprecated=True,
-    )
-    thumbnail: Annotated[str, HttpUrl] | None = Field(
-        default=None,
-        description="url of the latest screenshot of the node",
-        examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
-    )
+    progress: Annotated[
+        float | None,
+        Field(
+            ge=0,
+            le=100,
+            description="the node progress value (deprecated in DB, still used for API only)",
+            deprecated=True,
+        ),
+    ] = None
+
+    thumbnail: Annotated[
+        str | HttpUrl | None,
+        Field(
+            description="url of the latest screenshot of the node",
+            examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+        ),
+    ] = None
 
     # RUN HASH
-    run_hash: str | None = Field(
-        default=None,
-        description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
-        alias="runHash",
-    )
+    run_hash: Annotated[
+        str | None,
+        Field(
+            description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
+            alias="runHash",
+        ),
+    ] = None
 
     # INPUT PORTS ---
-    inputs: InputsDict | None = Field(
-        default_factory=dict, description="values of input properties"
-    )
-    inputs_required: list[InputID] = Field(
-        default_factory=list,
-        description="Defines inputs that are required in order to run the service",
-        alias="inputsRequired",
-    )
-    inputs_units: dict[InputID, UnitStr] | None = Field(
-        default=None,
-        description="Overrides default unit (if any) defined in the service for each port",
-        alias="inputsUnits",
-    )
-    input_access: dict[InputID, AccessEnum] | None = Field(
-        default=None,
-        description="map with key - access level pairs",
-        alias="inputAccess",
-    )
-    input_nodes: list[NodeID] | None = Field(
-        default_factory=list,
-        description="node IDs of where the node is connected to",
-        alias="inputNodes",
-    )
+    inputs: Annotated[
+        InputsDict | None,
+        Field(default_factory=dict, description="values of input properties"),
+    ] = DEFAULT_FACTORY
+
+    inputs_required: Annotated[
+        list[InputID],
+        Field(
+            default_factory=list,
+            description="Defines inputs that are required in order to run the service",
+            alias="inputsRequired",
+        ),
+    ] = DEFAULT_FACTORY
+
+    inputs_units: Annotated[
+        dict[InputID, UnitStr] | None,
+        Field(
+            description="Overrides default unit (if any) defined in the service for each port",
+            alias="inputsUnits",
+        ),
+    ] = None
+
+    input_access: Annotated[
+        dict[InputID, AccessEnum] | None,
+        Field(
+            description="map with key - access level pairs",
+            alias="inputAccess",
+        ),
+    ] = None
+
+    input_nodes: Annotated[
+        list[NodeID] | None,
+        Field(
+            default_factory=list,
+            description="node IDs of where the node is connected to",
+            alias="inputNodes",
+        ),
+    ] = DEFAULT_FACTORY
 
     # OUTPUT PORTS ---
-    outputs: OutputsDict | None = Field(
-        default_factory=dict, description="values of output properties"
-    )
-    output_node: bool | None = Field(default=None, deprecated=True, alias="outputNode")
-    output_nodes: list[NodeID] | None = Field(
-        default=None,
-        description="Used in group-nodes. Node IDs of those connected to the output",
-        alias="outputNodes",
-    )
+    outputs: Annotated[
+        OutputsDict | None,
+        Field(default_factory=dict, description="values of output properties"),
+    ] = DEFAULT_FACTORY
 
-    parent: NodeID | None = Field(
-        default=None,
-        description="Parent's (group-nodes') node ID s. Used to group",
-    )
+    output_node: Annotated[
+        bool | None, Field(deprecated=True, alias="outputNode")
+    ] = None
 
-    position: Position | None = Field(
-        default=None,
-        deprecated=True,
-        description="Use projects_ui.WorkbenchUI.position instead",
-    )
-
-    state: NodeState | None = Field(
-        default_factory=NodeState, description="The node's state object"
-    )
-
-    boot_options: dict[EnvVarKey, str] | None = Field(
-        default=None,
-        alias="bootOptions",
-        description=(
-            "Some services provide alternative parameters to be injected at boot time. "
-            "The user selection should be stored here, and it will overwrite the "
-            "services's defaults."
+    output_nodes: Annotated[
+        list[NodeID] | None,
+        Field(
+            description="Used in group-nodes. Node IDs of those connected to the output",
+            alias="outputNodes",
         ),
-    )
+    ] = None
+
+    parent: Annotated[
+        NodeID | None,
+        Field(
+            description="Parent's (group-nodes') node ID s. Used to group",
+        ),
+    ] = None
+
+    position: Annotated[
+        Position | None,
+        Field(
+            deprecated=True,
+            description="Use projects_ui.WorkbenchUI.position instead",
+        ),
+    ] = None
+
+    state: Annotated[
+        NodeState | None,
+        Field(default_factory=NodeState, description="The node's state object"),
+    ] = DEFAULT_FACTORY
+
+    boot_options: Annotated[
+        dict[EnvVarKey, str] | None,
+        Field(
+            alias="bootOptions",
+            description=(
+                "Some services provide alternative parameters to be injected at boot time. "
+                "The user selection should be stored here, and it will overwrite the "
+                "services's defaults."
+            ),
+        ),
+    ] = None
 
     @field_validator("thumbnail", mode="before")
     @classmethod
-    def convert_empty_str_to_none(cls, v):
+    def _convert_empty_str_to_none(cls, v):
         if isinstance(v, str) and v == "":
             return None
         return v
 
     @classmethod
-    def convert_old_enum_name(cls, v) -> RunningState:
+    def _convert_old_enum_name(cls, v) -> RunningState:
         if v == "FAILURE":
             return RunningState.FAILED
         return RunningState(v)
 
     @field_validator("state", mode="before")
     @classmethod
-    def convert_from_enum(cls, v):
+    def _convert_from_enum(cls, v):
         if isinstance(v, str):
             # the old version of state was a enum of RunningState
-            running_state_value = cls.convert_old_enum_name(v)
+            running_state_value = cls._convert_old_enum_name(v)
             return NodeState(currentStatus=running_state_value)
         return v
 
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra=_patch_json_schema_extra,
+        populate_by_name=True,
     )
