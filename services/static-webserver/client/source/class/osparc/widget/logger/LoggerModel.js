@@ -49,7 +49,7 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
     this.base(arguments);
 
     this.setColumns([
-      "",
+      "Lvl",
       "Time",
       "Origin",
       "Message"
