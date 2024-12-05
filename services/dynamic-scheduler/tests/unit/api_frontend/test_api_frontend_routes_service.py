@@ -11,6 +11,7 @@ from helpers import (
     click_on_text,
     get_legacy_service_status,
     get_new_style_service_status,
+    take_screenshot_on_error,
 )
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -68,9 +69,8 @@ async def test_service_details_renders_friendly_404(
     app_runner: None, async_page: Page, server_host_port: str, node_id: NodeID
 ):
     # node was not started
-    await async_page.goto(
-        f"{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}/service/{node_id}:details"
-    )
+    url = f"http://{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}service/{node_id}:details"
+    await async_page.goto(f"{url}")
     await assert_contains_text(async_page, "Sorry could not find any details for")
 
 
@@ -121,8 +121,9 @@ async def test_service_details(
     # 4. click "Remove from tracking" -> confirm
     await click_on_text(async_page, "Remove from tracking")
     await click_on_text(async_page, "Remove service")
-    async for attempt in AsyncRetrying(
-        reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(3)
-    ):
-        with attempt:
-            mock_remove_tracked_service.assert_awaited_once()
+    async with take_screenshot_on_error(async_page):
+        async for attempt in AsyncRetrying(
+            reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(3)
+        ):
+            with attempt:
+                mock_remove_tracked_service.assert_awaited_once()

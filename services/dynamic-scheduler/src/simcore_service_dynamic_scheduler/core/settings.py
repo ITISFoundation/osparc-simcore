@@ -96,7 +96,7 @@ class ApplicationSettings(_BaseApplicationSettings):
         ),
     )
     DYNAMIC_SCHEDULER_UI_MOUNT_PATH: str = Field(
-        "/dynamic-scheduler",
+        "/dynamic-scheduler/",
         description="path on the URL where the dashboard is mounted",
     )
 

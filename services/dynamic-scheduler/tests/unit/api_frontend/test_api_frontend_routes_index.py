@@ -13,6 +13,7 @@ from helpers import (
     click_on_text,
     get_legacy_service_status,
     get_new_style_service_status,
+    take_screenshot_on_error,
 )
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -123,8 +124,10 @@ async def test_main_page(
 
     mock_stop_dynamic_service.assert_not_awaited()
     await click_on_text(async_page, "Stop Now")
-    async for attempt in AsyncRetrying(
-        reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(3)
-    ):
-        with attempt:
-            mock_stop_dynamic_service.assert_awaited_once()
+
+    async with take_screenshot_on_error(async_page):
+        async for attempt in AsyncRetrying(
+            reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(3)
+        ):
+            with attempt:
+                mock_stop_dynamic_service.assert_awaited_once()
