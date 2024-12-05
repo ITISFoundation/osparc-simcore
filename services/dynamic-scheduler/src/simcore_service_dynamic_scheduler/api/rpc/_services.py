@@ -23,9 +23,8 @@ router = RPCRouter()
 async def list_tracked_dynamic_services(
     app: FastAPI, *, user_id: UserID | None = None, project_id: ProjectID | None = None
 ) -> list[DynamicServiceGet]:
-    director_v2_client = DirectorV2Client.get_from_app_state(app)
-    return await director_v2_client.list_tracked_dynamic_services(
-        user_id=user_id, project_id=project_id
+    return await scheduler_interface.list_tracked_dynamic_services(
+        app, user_id=user_id, project_id=project_id
     )
 
 
