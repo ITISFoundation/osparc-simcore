@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
       this.__addCreditsIndicatorSettings();
     }
-      
+
     const preferences = osparc.Preferences.getInstance();
     if (preferences.getLowDiskSpaceThreshold()) {
       this.__addLowDiskSpaceSetting();
@@ -38,7 +38,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     }
 
     // this.__addJobConcurrencySetting();
-    
+
     if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
       this.__addS4LUserPrivacySettings();
     }
@@ -147,6 +147,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         allowGrowX: false,
         enabled: true
       });
+      const preferences = osparc.Preferences.getInstance();
       preferences.bind("lowDiskSpaceThreshold", diskUsageSpinner, "value");
 
       diskUsageSpinner.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
