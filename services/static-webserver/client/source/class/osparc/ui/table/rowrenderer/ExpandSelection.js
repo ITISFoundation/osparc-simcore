@@ -31,18 +31,20 @@ qx.Class.define("osparc.ui.table.rowrenderer.ExpandSelection", {
     updateDataRowElement : function(rowInfo, rowElem) {
       this.base(arguments, rowInfo, rowElem);
 
-      const messageCellPos = this.__expandableColPos;
-      // extend collapse row
       const style = rowElem.style;
-      if (rowInfo.selected) {
-        const messageDiv = rowElem.children.item(messageCellPos);
-        const expandedHeight = messageDiv.scrollHeight + "px";
-        style.height = expandedHeight;
-        Array.from(rowElem.children).forEach(child => child.style.height = expandedHeight);
-      } else {
-        // back to collapsed
-        style.height = "19px";
+
+      const rowClicked = () => {
+        // switch it's expanded if it was already expanded
+        rowInfo.expanded = !rowInfo.expanded;
+
+        const messageDiv = rowElem.children.item(this.__expandableColPos);
+        const expandedHeight = messageDiv.scrollHeight;
+        const newHeight = (rowInfo.expanded ? expandedHeight : 19) + "px";
+        style.height = newHeight
+        Array.from(rowElem.children).forEach(child => child.style.height = newHeight);
       }
+      rowElem.removeEventListener("click", rowClicked);
+      rowElem.addEventListener("click", rowClicked);
     }
   }
 });
