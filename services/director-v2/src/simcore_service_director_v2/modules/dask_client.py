@@ -99,7 +99,7 @@ _DASK_TASK_STATUS_DASK_CLIENT_TASK_STATE_MAP: dict[
 }
 
 
-_DASK_DEFAULT_TIMEOUT_S: Final[int] = 1
+_DASK_DEFAULT_TIMEOUT_S: Final[int] = 5
 
 
 _UserCallbackInSepThread = Callable[[], None]
@@ -453,25 +453,33 @@ class DaskClient:
                 DaskSchedulerTaskState | None, task_statuses.get(job_id, "lost")
             )
             if dask_status == "erred":
-                # find out if this was a cancellation
-                var = distributed.Variable(job_id, client=self.backend.client)
-                future: distributed.Future = await var.get(
-                    timeout=_DASK_DEFAULT_TIMEOUT_S
-                )
-                exception = await future.exception(timeout=_DASK_DEFAULT_TIMEOUT_S)
-                assert isinstance(exception, Exception)  # nosec
-
-                if isinstance(exception, TaskCancelledError):
-                    running_states.append(DaskClientTaskState.ABORTED)
-                else:
-                    assert exception  # nosec
-                    _logger.warning(
-                        "Task  %s completed in error:\n%s\nTrace:\n%s",
-                        job_id,
-                        exception,
-                        "".join(traceback.format_exception(exception)),
+                try:
+                    # find out if this was a cancellation
+                    var = distributed.Variable(job_id, client=self.backend.client)
+                    future: distributed.Future = await var.get(
+                        timeout=_DASK_DEFAULT_TIMEOUT_S
                     )
-                    running_states.append(DaskClientTaskState.ERRED)
+                    exception = await future.exception(timeout=_DASK_DEFAULT_TIMEOUT_S)
+                    assert isinstance(exception, Exception)  # nosec
+
+                    if isinstance(exception, TaskCancelledError):
+                        running_states.append(DaskClientTaskState.ABORTED)
+                    else:
+                        assert exception  # nosec
+                        _logger.warning(
+                            "Task  %s completed in error:\n%s\nTrace:\n%s",
+                            job_id,
+                            exception,
+                            "".join(traceback.format_exception(exception)),
+                        )
+                        running_states.append(DaskClientTaskState.ERRED)
+                except TimeoutError:
+                    _logger.warning(
+                        "Task  %s could not be retrieved from dask-scheduler, it is lost\n"
+                        "TIP:If the task was unpublished this can happen, or if the dask-scheduler was restarted.",
+                        job_id,
+                    )
+                    running_states.append(DaskClientTaskState.LOST)
 
             elif dask_status is None:
                 running_states.append(DaskClientTaskState.LOST)
