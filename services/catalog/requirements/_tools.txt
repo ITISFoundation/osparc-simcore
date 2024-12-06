@@ -58,7 +58,7 @@ platformdirs==4.3.6
     #   virtualenv
 pre-commit==4.0.1
     # via -r requirements/../../../requirements/devenv.txt
-pylint==3.3.1
+pylint==3.3.2
     # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.2.0
     # via
@@ -69,7 +69,7 @@ pyyaml==6.0.2
     #   -c requirements/_base.txt
     #   pre-commit
     #   watchdog
-ruff==0.8.0
+ruff==0.8.2
     # via -r requirements/../../../requirements/devenv.txt
 setuptools==75.6.0
     # via pip-tools
