@@ -49,7 +49,7 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
     this.base(arguments);
 
     this.setColumns([
-      "Lvl",
+      "",
       "Time",
       "Origin",
       "Message"
@@ -80,22 +80,18 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
   statics: {
     getLevelIcon: function(logLevel) {
       const logLevels = osparc.widget.logger.LoggerView.LOG_LEVELS;
-      let iconSource = "@FontAwesome5Solid/home/12";
+      let iconSource = "";
       switch (logLevel) {
-        case logLevels.DEBUG:
-          iconSource = "@FontAwesome5Solid/home/12";
-          break;
         case logLevels.INFO:
-          iconSource = "@FontAwesome5Solid/home/12";
+          iconSource = "osparc/circle-info-solid.svg";
           break;
         case logLevels.WARNING:
-          iconSource = "@FontAwesome5Solid/home/12";
+          iconSource = "osparc/circle-exclamation-solid.svg";
           break;
         case logLevels.ERROR:
-          iconSource = "@FontAwesome5Solid/home/12";
+          iconSource = "osparc/circle-xmark-solid.svg";
           break;
       }
-      return "";
       return iconSource;
     }
   },
