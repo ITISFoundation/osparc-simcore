@@ -45,7 +45,6 @@ qx.Class.define("osparc.data.model.User", {
       lastName: userData["last_name"],
       email: userData["login"],
       thumbnail,
-      accessRights: userData["accessRights"],
     });
   },
 
@@ -97,13 +96,6 @@ qx.Class.define("osparc.data.model.User", {
       nullable: true,
       init: null,
       event: "changeEmail",
-    },
-
-    accessRights: {
-      check: "Object",
-      nullable: false,
-      init: null,
-      event: "changeAccessRights",
     },
 
     thumbnail: {

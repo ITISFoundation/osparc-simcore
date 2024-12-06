@@ -115,7 +115,7 @@ qx.Class.define("osparc.store.Groups", {
             // reset group's group members
             group.setGroupMembers({});
             orgMembers.forEach(orgMember => {
-              const user = new osparc.data.model.User(orgMember);
+              const user = new osparc.data.model.UserMember(orgMember);
               this.__addToUsersCache(user, groupId);
             });
           }
