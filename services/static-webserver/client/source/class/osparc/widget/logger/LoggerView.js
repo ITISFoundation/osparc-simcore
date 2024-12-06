@@ -153,6 +153,11 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
         }
         case "log-level": {
           const toolbar = this.getChildControl("toolbar");
+          const minLogLevelLabel = new qx.ui.basic.Label().set({
+            value: this.tr("Min log-level"),
+            alignY: "middle",
+          });
+          toolbar.add(minLogLevelLabel);
           control = new qx.ui.form.SelectBox().set({
             appearance: "toolbar-selectbox",
             maxWidth: 80
