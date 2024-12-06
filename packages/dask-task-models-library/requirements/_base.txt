@@ -128,13 +128,13 @@ rich==13.9.4
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.22.1
+rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
 shellingham==1.5.4
     # via typer
-six==1.16.0
+six==1.17.0
     # via python-dateutil
 sortedcontainers==2.4.0
     # via distributed
@@ -147,9 +147,9 @@ toolz==1.0.0
     #   partd
 tornado==6.4.2
     # via distributed
-typer==0.15.0
+typer==0.15.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
-types-python-dateutil==2.9.0.20241003
+types-python-dateutil==2.9.0.20241206
     # via arrow
 typing-extensions==4.12.2
     # via
