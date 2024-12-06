@@ -272,7 +272,7 @@ jobs:
         python: ["3.11"]
         os: [ubuntu-22.04]
       fail-fast: false
-    name: "[build] docker images"
+    name: "[build] docker images (all but frontend)"
     steps:
       - name: Remove unused software
         run: |
@@ -319,7 +319,7 @@ jobs:
         python: ["3.11"]
         os: [ubuntu-22.04]
       fail-fast: false
-    name: "[build] docker images"
+    name: "[build] docker images (frontend-only)"
     steps:
       - name: Remove unused software
         run: |
