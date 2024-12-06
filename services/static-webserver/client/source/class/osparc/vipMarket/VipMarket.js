@@ -21,7 +21,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.HBox(10));
 
     this.__buildLayout();
   },
@@ -47,7 +47,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             curatedModel[key] = model[key];
           }
           if (key === "ID") {
-            curatedModel["leased"] = [22].includes(model[key]);
+            curatedModel["leased"] = model["ID"] < 4;
           }
         });
         anatomicalModels.push(curatedModel);
@@ -57,15 +57,21 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
   },
 
   members: {
-    __anatomicalModelsModel: null,
     __anatomicalModels: null,
+    __licensedItems: null,
+    __anatomicalModelsModel: null,
     __sortByButton: null,
 
     __buildLayout: function() {
+      const leftSide = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        alignY: "middle",
+      });
+      this._add(leftSide);
+
       const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         alignY: "middle",
       });
-      this._add(toolbarLayout);
+      leftSide.add(toolbarLayout)
 
       const sortModelsButtons = this.__sortByButton = new osparc.vipMarket.SortModelsButtons().set({
         alignY: "bottom",
@@ -76,33 +82,40 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const filter = new osparc.filter.TextFilter("text", "vipModels").set({
         alignY: "middle",
         allowGrowY: false,
-        minWidth: 170,
+        minWidth: 165,
       });
       this.addListener("appear", () => filter.getChildControl("textfield").focus());
-      toolbarLayout.add(filter);
-
-      const modelsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      this._add(modelsLayout, {
+      toolbarLayout.add(filter, {
         flex: 1
       });
-      
+
       const modelsUIList = new qx.ui.form.List().set({
         decorator: "no-border",
         spacing: 5,
         minWidth: 250,
         maxWidth: 250
       });
-      modelsLayout.add(modelsUIList)
+      leftSide.add(modelsUIList, {
+        flex: 1
+      });
 
+      const rightSide = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+        alignY: "middle",
+      });
+      this._add(rightSide, {
+        flex: 1
+      });
       const anatomicalModelsModel = this.__anatomicalModelsModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(anatomicalModelsModel, modelsUIList, "name");
       membersCtrl.setDelegate({
         createItem: () => new osparc.vipMarket.AnatomicalModelListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("id", "modelId", null, item, id);
+          ctrl.bindProperty("modelId", "modelId", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "name", null, item, id);
           ctrl.bindProperty("date", "date", null, item, id);
+          ctrl.bindProperty("licensedItemId", "licensedItemId", null, item, id);
+          ctrl.bindProperty("pricingPlanId", "pricingPlanId", null, item, id);
           ctrl.bindProperty("leased", "leased", null, item, id);
         },
         configureItem: item => {
@@ -120,7 +133,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const anatomicModelDetails = new osparc.vipMarket.AnatomicalModelDetails().set({
         padding: 20,
       });
-      modelsLayout.add(anatomicModelDetails, {
+      rightSide.add(anatomicModelDetails, {
         flex: 1
       });
 
@@ -128,7 +141,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         const selection = e.getData();
         if (selection.length) {
           const modelId = selection[0].getModelId();
-          const modelFound = this.__anatomicalModels.find(anatomicalModel => anatomicalModel["ID"] === modelId);
+          const modelFound = this.__anatomicalModels.find(anatomicalModel => anatomicalModel["modelId"] === modelId);
           if (modelFound) {
             anatomicModelDetails.setAnatomicalModelsData(modelFound);
             return;
@@ -142,33 +155,52 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       })
         .then(resp => resp.json())
         .then(anatomicalModelsRaw => {
-          this.__anatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
-          this.__populateModels();
+          const allAnatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
 
-          anatomicModelDetails.addListener("modelLeased", e => {
-            const modelId = e.getData();
-            const found = this.__anatomicalModels.find(model => model["ID"] === modelId);
-            if (found) {
-              found["leased"] = true;
+          osparc.data.Resources.get("market")
+            .then(licensedItems => {
+              this.__licensedItems = licensedItems;
+
+              this.__anatomicalModels = [];
+              allAnatomicalModels.forEach(model => {
+                const modelId = model["ID"];
+                const licensedItem = this.__licensedItems.find(licItem => licItem["name"] == modelId);
+                if (licensedItem) {
+                  const anatomicalModel = {};
+                  anatomicalModel["modelId"] = model["ID"];
+                  anatomicalModel["thumbnail"] = model["Thumbnail"];
+                  anatomicalModel["name"] = model["Features"]["name"] + " " + model["Features"]["version"];
+                  anatomicalModel["description"] = model["Description"];
+                  anatomicalModel["features"] = model["Features"];
+                  anatomicalModel["date"] = new Date(model["Features"]["date"]);
+                  anatomicalModel["DOI"] = model["DOI"];
+                  // attach license data
+                  anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
+                  anatomicalModel["pricingPlanId"] = licensedItem["pricingPlanId"];
+                  // attach leased data
+                  anatomicalModel["leased"] = model["leased"];
+                  this.__anatomicalModels.push(anatomicalModel);
+                }
+              });
+
               this.__populateModels();
-              anatomicModelDetails.setAnatomicalModelsData(found);
-            };
-          }, this);
+
+              anatomicModelDetails.addListener("modelLeased", e => {
+                const modelId = e.getData();
+                const found = this.__anatomicalModels.find(model => model["ID"] === modelId);
+                if (found) {
+                  found["leased"] = true;
+                  this.__populateModels();
+                  anatomicModelDetails.setAnatomicalModelsData(found);
+                }
+              }, this);
+            });
         })
         .catch(err => console.error(err));
     },
 
     __populateModels: function() {
-      const models = [];
-      this.__anatomicalModels.forEach(model => {
-        const anatomicalModel = {};
-        anatomicalModel["id"] = model["ID"];
-        anatomicalModel["thumbnail"] = model["Thumbnail"];
-        anatomicalModel["name"] = model["Features"]["name"] + " " + model["Features"]["version"];
-        anatomicalModel["date"] = new Date(model["Features"]["date"]);
-        anatomicalModel["leased"] = model["leased"];
-        models.push(anatomicalModel);
-      });
+      const models = this.__anatomicalModels;
 
       this.__anatomicalModelsModel.removeAll();
       const sortModel = sortBy => {
@@ -184,16 +216,14 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
               if (sortBy["order"] === "down") {
                 // A -> Z
                 return a["name"].localeCompare(b["name"]);
-              } else {
-                return b["name"].localeCompare(a["name"]);
               }
+              return b["name"].localeCompare(a["name"]);
             } else if (sortBy["sort"] === "date") {
               if (sortBy["order"] === "down") {
                 // Now -> Yesterday
                 return b["date"] - a["date"];
-              } else {
-                return a["date"] - b["date"];
               }
+              return a["date"] - b["date"];
             }
           }
           // default criteria

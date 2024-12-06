@@ -1239,6 +1239,23 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/tags/{tagId}"
           }
         }
+      },
+
+      /*
+       * MARKET
+       */
+      "market": {
+        useCache: false,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/catalog/licensed-items"
+          },
+          purchase: {
+            method: "POST",
+            url: statics.API + "/catalog/licensed-items/{licensedItemId}:purchase"
+          },
+        }
       }
     };
   },

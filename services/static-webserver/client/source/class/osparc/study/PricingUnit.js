@@ -31,7 +31,8 @@ qx.Class.define("osparc.study.PricingUnit", {
   },
 
   events: {
-    "editPricingUnit": "qx.event.type.Event"
+    "editPricingUnit": "qx.event.type.Event",
+    "rentPricingUnit": "qx.event.type.Event",
   },
 
   properties: {
@@ -42,18 +43,32 @@ qx.Class.define("osparc.study.PricingUnit", {
       apply: "__buildLayout"
     },
 
-    showSpecificInfo: {
+    showAwsSpecificInfo: {
       check: "Boolean",
       init: null,
       nullable: true,
-      event: "changeShowSpecificInfo"
+      event: "changeShowAwsSpecificInfo"
+    },
+
+    showUnitExtraInfo: {
+      check: "Boolean",
+      init: true,
+      nullable: true,
+      event: "changeShowUnitExtraInfo"
     },
 
     showEditButton: {
       check: "Boolean",
-      init: null,
+      init: false,
       nullable: true,
       event: "changeShowEditButton"
+    },
+
+    showRentButton: {
+      check: "Boolean",
+      init: false,
+      nullable: true,
+      event: "changeShowRentButton"
     },
   },
 
@@ -79,8 +94,22 @@ qx.Class.define("osparc.study.PricingUnit", {
           });
           this._add(control);
           break;
+        case "unitExtraInfo":
+          control = new qx.ui.basic.Label().set({
+            font: "text-13",
+            rich: true,
+          });
+          this._add(control);
+          break;
         case "edit-button":
           control = new qx.ui.form.Button(qx.locale.Manager.tr("Edit"));
+          this._add(control);
+          break;
+        case "rent-button":
+          control = new qx.ui.form.Button(qx.locale.Manager.tr("Rent")).set({
+            appearance: "strong-button",
+            center: true,
+          });
           this._add(control);
           break;
       }
@@ -106,17 +135,20 @@ qx.Class.define("osparc.study.PricingUnit", {
         pricingUnit.bind("awsSpecificInfo", specificInfo, "value", {
           converter: v => qx.locale.Manager.tr("EC2") + ": " + v,
         });
-        this.bind("showSpecificInfo", specificInfo, "visibility", {
+        this.bind("showAwsSpecificInfo", specificInfo, "visibility", {
           converter: show => show ? "visible" : "excluded"
         })
       }
 
       // add pricing unit extra info
+      const unitExtraInfo = this.getChildControl("unitExtraInfo");
+      let text = "";
       Object.entries(pricingUnit.getUnitExtraInfo()).forEach(([key, value]) => {
-        this._add(new qx.ui.basic.Label().set({
-          value: key + ": " + value,
-          font: "text-13"
-        }));
+        text += `${key}: ${value}<br>`;
+      });
+      unitExtraInfo.setValue(text);
+      this.bind("showUnitExtraInfo", unitExtraInfo, "visibility", {
+        converter: show => show ? "visible" : "excluded"
       });
 
       // add edit button
@@ -125,6 +157,13 @@ qx.Class.define("osparc.study.PricingUnit", {
         converter: show => show ? "visible" : "excluded"
       })
       editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
+
+      // add rent button
+      const rentButton = this.getChildControl("rent-button");
+      this.bind("showRentButton", rentButton, "visibility", {
+        converter: show => show ? "visible" : "excluded"
+      })
+      rentButton.addListener("execute", () => this.fireEvent("rentPricingUnit"));
     }
   }
 });
