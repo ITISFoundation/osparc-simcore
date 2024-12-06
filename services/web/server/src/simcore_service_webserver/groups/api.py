@@ -18,12 +18,6 @@ __all__: tuple[str, ...] = (
 )
 
 
-async def delete_user_group(
-    app: web.Application, user_id: UserID, gid: GroupID
-) -> None:
-    return await _groups_db.delete_user_group(app, user_id=user_id, gid=gid)
-
-
 async def list_users_in_group(
     app: web.Application, user_id: UserID, gid: GroupID
 ) -> list[dict[str, str]]:
