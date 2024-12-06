@@ -18,6 +18,9 @@ __all__: tuple[str, ...] = (
 )
 
 
+#
+# TODO: move all these to _groups_api
+#
 async def list_users_in_group(
     app: web.Application, user_id: UserID, gid: GroupID
 ) -> list[dict[str, str]]:

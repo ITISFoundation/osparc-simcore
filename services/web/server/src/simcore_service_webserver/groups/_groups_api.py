@@ -117,3 +117,8 @@ async def delete_organization(
     raises UserInsufficientRightsError
     """
     return await _groups_db.delete_user_group(app, user_id=user_id, gid=group_id)
+
+
+#
+# ORGANIZATION MEMBERS
+#
