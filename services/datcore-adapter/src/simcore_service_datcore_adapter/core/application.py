@@ -42,6 +42,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     config_all_loggers(
         log_format_local_dev_enabled=settings.DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.DATCORE_ADAPTER_LOG_FILTER_MAPPING,
+        tracing_settings=settings.DATCORE_ADAPTER_TRACING,
     )
 
     # keep mostly quiet noisy loggers
