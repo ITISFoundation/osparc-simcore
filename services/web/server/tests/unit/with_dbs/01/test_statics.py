@@ -154,6 +154,12 @@ def mock_product_vendor(postgres_db: sa.engine.Engine, template_url: str) -> Non
             "https://example.com/no_vtag.md",
             id="vtag_not_repalced_if_missing",
         ),
+        pytest.param(
+            "v1.75.4",
+            "https://example.com/releases/some_target_{vtag}.md",
+            "https://example.com/releases/some_target_v1.75.0.md",
+            id="production_replacement_hotfix_version",
+        ),
     ],
 )
 async def test_create_and_cache_statics_json_vendor_vcs_overwrite(
