@@ -99,18 +99,18 @@ async def test_create_api_key(
     disable_gc_manual_guest_users: None,
 ):
     display_name = "foo"
-    resp = await client.post("/v0/auth/api-keys", json={"display_name": display_name})
+    resp = await client.post("/v0/auth/api-keys", json={"displayName": display_name})
 
     data, errors = await assert_status(resp, expected)
 
     if not errors:
-        assert data["display_name"] == display_name
-        assert "api_key" in data
-        assert "api_secret" in data
+        assert data["displayName"] == display_name
+        assert "apiKey" in data
+        assert "apiSecret" in data
 
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
-        assert [d["display_name"] for d in data] == [display_name]
+        assert [d["displayName"] for d in data] == [display_name]
 
 
 @pytest.mark.parametrize(
@@ -150,19 +150,19 @@ async def test_create_api_key_with_expiration(
     expiration_interval = timedelta(seconds=1)
     resp = await client.post(
         "/v0/auth/api-keys",
-        json={"display_name": "foo", "expiration": expiration_interval.seconds},
+        json={"displayName": "foo", "expiration": expiration_interval.seconds},
     )
 
     data, errors = await assert_status(resp, expected)
     if not errors:
-        assert data["display_name"] == "foo"
-        assert "api_key" in data
-        assert "api_secret" in data
+        assert data["displayName"] == "foo"
+        assert "apiKey" in data
+        assert "apiSecret" in data
 
         # list created api-key
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
-        assert [d["display_name"] for d in data] == ["foo"]
+        assert [d["displayName"] for d in data] == ["foo"]
 
         # wait for api-key for it to expire and force-run scheduled task
         await asyncio.sleep(expiration_interval.seconds)
