@@ -277,7 +277,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           };
           osparc.data.Resources.fetch("profile", "patch", params)
             .then(() => {
-              this.__setDataToPrivacy(Object.assign(this.__userPrivacyData, params.data));
+              this.__setDataToPrivacy(Object.assign(this.__userPrivacyData, params.data["privacy"]));
               const msg = this.tr("Privacy updated");
               osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
             })
