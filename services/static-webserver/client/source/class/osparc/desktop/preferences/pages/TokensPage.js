@@ -77,7 +77,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         const formData = e.getData();
         const params = {
           data: {
-            "display_name": formData["name"]
+            "displayName": formData["name"]
           }
         };
         if (formData["expiration"]) {
