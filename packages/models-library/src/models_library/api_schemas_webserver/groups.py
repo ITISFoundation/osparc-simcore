@@ -1,5 +1,7 @@
 from contextlib import suppress
+from typing import Annotated
 
+from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -26,6 +28,7 @@ class GroupAccessRights(BaseModel):
     read: bool
     write: bool
     delete: bool
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
@@ -45,11 +48,15 @@ class GroupGet(OutputSchema):
         default=None, description="url to the group thumbnail"
     )
     access_rights: GroupAccessRights = Field(..., alias="accessRights")
-    inclusion_rules: dict[str, str] = Field(
-        default_factory=dict,
-        description="Maps user's column and regular expression",
-        alias="inclusionRules",
-    )
+
+    inclusion_rules: Annotated[
+        dict[str, str],
+        Field(
+            default_factory=dict,
+            description="Maps user's column and regular expression",
+            alias="inclusionRules",
+        ),
+    ] = DEFAULT_FACTORY
 
     model_config = ConfigDict(
         json_schema_extra={

@@ -1,6 +1,7 @@
 import enum
-from typing import Final
+from typing import Annotated, Final
 
+from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.types import PositiveInt
 
@@ -25,8 +26,15 @@ class Group(BaseModel):
     gid: PositiveInt
     name: str
     description: str
-    group_type: GroupTypeInModel = Field(..., alias="type")
+    group_type: Annotated[GroupTypeInModel, Field(alias="type")]
     thumbnail: str | None
+
+    inclusion_rules: Annotated[
+        dict[str, str],
+        Field(
+            default_factory=dict,
+        ),
+    ] = DEFAULT_FACTORY
 
     _from_equivalent_enums = field_validator("group_type", mode="before")(
         create_enums_pre_validator(GroupTypeInModel)
