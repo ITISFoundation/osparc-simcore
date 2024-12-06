@@ -29,9 +29,9 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
-from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.api_schemas_webserver.users import ProfileGet as WebProfileGet
 from models_library.api_schemas_webserver.users import ProfileUpdate as WebProfileUpdate
+from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -79,7 +79,6 @@ from ..models.schemas.model_adapter import (
     PricingUnitGetLegacy,
     WalletGetWithAvailableCreditsLegacy,
 )
-from ..models.schemas.profiles import Profile, ProfileUpdate
 from ..models.schemas.profiles import Profile, ProfileUpdate, UserRoleEnum
 from ..models.schemas.solvers import SolverKeyId
 from ..models.schemas.studies import StudyPort
