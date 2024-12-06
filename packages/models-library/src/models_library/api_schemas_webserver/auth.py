@@ -53,7 +53,7 @@ class UnregisterCheck(InputSchema):
 #
 
 
-class ApiKeyCreateRequest(OutputSchema):
+class ApiKeyCreateRequest(InputSchema):
     display_name: Annotated[str, Field(..., min_length=3)]
     expiration: timedelta | None = Field(
         None,
