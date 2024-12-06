@@ -15,7 +15,7 @@ def convert_user_in_group_to_schema(user: Mapping[str, Any]) -> dict[str, str]:
         "first_name": user["first_name"],
         "last_name": user["last_name"],
         "login": user["email"],
-        "gravatar_id": gravatar_hash(user["email"]),
+        "gravatar_id": gravatar_hash(user["email"]),  # deprecated
     }
     group_user["accessRights"] = user["access_rights"]
     group_user["gid"] = user["primary_gid"]
