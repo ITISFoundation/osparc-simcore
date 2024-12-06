@@ -2,13 +2,13 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from simcore_service_webserver.api_keys import _rest, _rpc
 
 from .._constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db
 from ..products.plugin import setup_products
 from ..rabbitmq import setup_rabbitmq
 from ..rest.plugin import setup_rest
-from . import _handlers, _rpc
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def setup_api_keys(app: web.Application):
 
     # http api
     setup_rest(app)
-    app.router.add_routes(_handlers.routes)
+    app.router.add_routes(_rest.routes)
 
     # rpc api
     setup_rabbitmq(app)
