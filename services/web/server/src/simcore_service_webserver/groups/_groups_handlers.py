@@ -90,7 +90,7 @@ async def list_groups(request: web.Request):
 
 
 #
-# Organization groups
+# ORGANIZATION GROUPS
 #
 
 
@@ -103,7 +103,7 @@ async def get_group(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
-    group_info = await _groups_api.get_user_group(
+    group_info = await _groups_api.get_organization(
         request.app, user_id=req_ctx.user_id, group_id=path_params.gid
     )
 
@@ -118,11 +118,16 @@ async def get_group(request: web.Request):
 async def create_group(request: web.Request):
     """Creates organization groups"""
     req_ctx = GroupsRequestContext.model_validate(request)
-    create = await parse_request_body_as(GroupCreate, request)
-    new_group = create.model_dump(mode="json", exclude_unset=True)
 
-    created_group = await api.create_user_group(request.app, req_ctx.user_id, new_group)
-    assert GroupGet.model_validate(created_group) is not None  # nosec
+    create = await parse_request_body_as(GroupCreate, request)
+
+    group_info = await _groups_api.create_organization(
+        request.app,
+        user_id=req_ctx.user_id,
+        new_group_values=create.model_dump(mode="json", exclude_unset=True),
+    )
+
+    created_group = _to_groupget_model(*group_info)
     return envelope_json_response(created_group, status_cls=web.HTTPCreated)
 
 
@@ -137,7 +142,7 @@ async def update_group(request: web.Request):
     update: GroupUpdate = await parse_request_body_as(GroupUpdate, request)
     new_group_values = update.model_dump(exclude_unset=True)
 
-    group_info = await _groups_api.update_user_group(
+    group_info = await _groups_api.update_organization(
         request.app,
         user_id=req_ctx.user_id,
         group_id=path_params.gid,
@@ -157,12 +162,14 @@ async def delete_group(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
-    await api.delete_user_group(request.app, req_ctx.user_id, path_params.gid)
+    await _groups_api.delete_organization(
+        request.app, user_id=req_ctx.user_id, group_id=path_params.gid
+    )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #
-# Users in organization groups (i.e. members of an organization)
+# USERS in ORGANIZATION groupS (i.e. members of an organization)
 #
 
 
