@@ -42,6 +42,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       });
 
       const authData = osparc.auth.Data.getInstance();
+
       const email = authData.getEmail();
       const avatarSize = 80;
       const img = new qx.ui.basic.Image().set({
@@ -56,8 +57,15 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       });
       layout.add(img);
 
-      const name = new qx.ui.basic.Label().set({
+      const usernameLabel = new qx.ui.basic.Label().set({
         font: "text-14",
+        alignX: "center"
+      });
+      authData.bind("username", usernameLabel, "value");
+      layout.add(usernameLabel);
+
+      const name = new qx.ui.basic.Label().set({
+        font: "text-13",
         alignX: "center"
       });
       layout.add(name);
@@ -67,13 +75,6 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       authData.bind("lastName", name, "value", {
         converter: lastName => authData.getFirstName() + " " + lastName
       });
-
-      const usernameLabel = new qx.ui.basic.Label().set({
-        font: "text-14",
-        alignX: "center"
-      });
-      authData.bind("username", usernameLabel, "value");
-      layout.add(usernameLabel);
 
       if (authData.getRole() !== "user") {
         const role = authData.getFriendlyRole();
