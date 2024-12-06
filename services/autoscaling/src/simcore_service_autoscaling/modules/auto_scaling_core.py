@@ -1116,16 +1116,26 @@ async def _drain_retired_nodes(
     )
 
 
+async def _scale_down_unused_cluster_machines(
+    app: FastAPI,
+    cluster: Cluster,
+    auto_scaling_mode: BaseAutoscaling,
+) -> Cluster:
+    await auto_scaling_mode.try_retire_nodes(app)
+    cluster = await _deactivate_empty_nodes(app, cluster)
+    return await _try_scale_down_cluster(app, cluster)
+
+
 async def _autoscale_cluster(
     app: FastAPI,
     cluster: Cluster,
     auto_scaling_mode: BaseAutoscaling,
     allowed_instance_types: list[EC2InstanceType],
 ) -> Cluster:
-    # 1. check if we have pending tasks and resolve them by activating some drained nodes
+    # 1. check if we have pending tasks
     unrunnable_tasks = await auto_scaling_mode.list_unrunnable_tasks(app)
     _logger.info("found %s unrunnable tasks", len(unrunnable_tasks))
-    # NOTE: this function predicts how dask will assign a task to a machine
+    # NOTE: this function predicts how the backend will assign tasks
     queued_or_missing_instance_tasks, cluster = await _assign_tasks_to_current_cluster(
         app, unrunnable_tasks, cluster, auto_scaling_mode
     )
@@ -1135,41 +1145,34 @@ async def _autoscale_cluster(
     # 3. start buffer instances to cover the remaining tasks
     cluster = await _start_buffer_instances(app, cluster, auto_scaling_mode)
 
+    # 4. scale down unused machines
+    cluster = await _scale_down_unused_cluster_machines(app, cluster, auto_scaling_mode)
+
     # 4. let's check if there are still pending tasks or if the reserve was used
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    if queued_or_missing_instance_tasks or (
-        len(cluster.buffer_drained_nodes)
-        < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-    ):
-        if (
+    if (
+        queued_or_missing_instance_tasks
+        or (
+            len(cluster.buffer_drained_nodes)
+            < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+        )
+        and (
             cluster.total_number_of_machines()
             < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-        ):
-            _logger.info(
-                "%s unrunnable tasks could not be assigned, slowly trying to scale up...",
-                len(queued_or_missing_instance_tasks),
-            )
-            cluster = await _scale_up_cluster(
-                app,
-                cluster,
-                queued_or_missing_instance_tasks,
-                auto_scaling_mode,
-                allowed_instance_types,
-            )
-
-    elif (
-        len(queued_or_missing_instance_tasks) == len(unrunnable_tasks) == 0
-        and cluster.can_scale_down()
+        )
     ):
         _logger.info(
-            "there is %s waiting task, slowly and gracefully scaling down...",
+            "%s unrunnable tasks could not be assigned, slowly trying to scale up...",
             len(queued_or_missing_instance_tasks),
         )
-        # NOTE: we only scale down in case we did not just scale up. The swarm needs some time to adjust
-        await auto_scaling_mode.try_retire_nodes(app)
-        cluster = await _deactivate_empty_nodes(app, cluster)
-        cluster = await _try_scale_down_cluster(app, cluster)
+        cluster = await _scale_up_cluster(
+            app,
+            cluster,
+            queued_or_missing_instance_tasks,
+            auto_scaling_mode,
+            allowed_instance_types,
+        )
 
     return cluster
 

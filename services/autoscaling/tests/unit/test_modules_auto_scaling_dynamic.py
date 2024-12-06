@@ -9,6 +9,7 @@
 import asyncio
 import datetime
 import logging
+import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
@@ -1185,6 +1186,269 @@ async def test_cluster_scaling_up_starts_multiple_instances(
         instances_pending=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
+
+
+@pytest.fixture
+async def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mock.Mock:
+    async def _(
+        nodes: list[Node], ec2_instances: list[EC2InstanceData]
+    ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
+        return [], ec2_instances
+
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.associate_ec2_instances_with_nodes",
+        autospec=True,
+        side_effect=_,
+    )
+
+
+@pytest.mark.parametrize(
+    "with_docker_join_drained", ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"], indirect=True
+)
+@pytest.mark.parametrize(
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "scale_up_params1, scale_up_params2",
+    [
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                service_resources=Resources(
+                    cpus=16, ram=TypeAdapter(ByteSize).validate_python("30Gib")
+                ),
+                num_services=12,
+                expected_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                expected_num_instances=10,
+            ),
+            _ScaleUpParams(
+                imposed_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
+                service_resources=Resources(
+                    cpus=32, ram=TypeAdapter(ByteSize).validate_python("20480MB")
+                ),
+                num_services=7,
+                expected_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
+                expected_num_instances=7,
+            ),
+            id="A batch of services requiring g3.4xlarge and a batch requiring g4dn.8xlarge",
+        ),
+    ],
+)
+async def test_cluster_adapts_machines_on_the_fly(
+    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
+    minimal_configuration: None,
+    ec2_client: EC2Client,
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    service_monitored_labels: dict[DockerLabelKey, str],
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+    ec2_instance_custom_tags: dict[str, str],
+    instance_type_filters: Sequence[FilterTypeDef],
+    async_docker_client: aiodocker.Docker,
+    scale_up_params1: _ScaleUpParams,
+    scale_up_params2: _ScaleUpParams,
+    mocked_associate_ec2_instances_with_nodes: mock.Mock,
+    create_fake_node: Callable[..., Node],
+    mock_docker_tag_node: mock.Mock,
+    mock_compute_node_used_resources: mock.Mock,
+    spied_cluster_analysis: MockType,
+):
+    # pre-requisites
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES > 0
+    assert (
+        scale_up_params1.num_services
+        >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    ), "this test requires to run a first batch of more services than the maximum number of instances allowed"
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+    #
+    # 1. create the first batch of services requiring the initial machines
+    first_batch_services = await asyncio.gather(
+        *(
+            create_service(
+                task_template
+                | create_task_reservations(
+                    int(scale_up_params1.service_resources.cpus),
+                    scale_up_params1.service_resources.ram,
+                ),
+                service_monitored_labels
+                | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
+                "pending",
+                (
+                    [
+                        f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params1.imposed_instance_type}"
+                    ]
+                    if scale_up_params1.imposed_instance_type
+                    else []
+                ),
+            )
+            for _ in range(scale_up_params1.num_services)
+        )
+    )
+
+    # it will only scale once and do nothing else
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    await assert_autoscaled_dynamic_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params1.expected_num_instances,
+        expected_instance_type=scale_up_params1.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+    _assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=0,
+    )
+    mocked_associate_ec2_instances_with_nodes.assert_called_once_with([], [])
+    mocked_associate_ec2_instances_with_nodes.reset_mock()
+
+    fake_node_to_instance_map = {}
+
+    async def _fake_node_creator(
+        nodes: list[Node], ec2_instances: list[EC2InstanceData]
+    ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
+        def _create_fake_node_with_labels(instance: EC2InstanceData) -> Node:
+            if instance not in fake_node_to_instance_map:
+                fake_node = create_fake_node()
+                assert fake_node.spec
+                fake_node.spec.availability = Availability.active
+                assert fake_node.status
+                fake_node.status.state = NodeState.ready
+                assert fake_node.spec.labels
+                fake_node.spec.labels |= {
+                    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: arrow.utcnow().isoformat(),
+                    _OSPARC_SERVICE_READY_LABEL_KEY: "true",
+                }
+                fake_node_to_instance_map[instance] = fake_node
+            return fake_node_to_instance_map[instance]
+
+        associated_instances = [
+            AssociatedInstance(node=_create_fake_node_with_labels(i), ec2_instance=i)
+            for i in ec2_instances
+        ]
+
+        return associated_instances, []
+
+    mocked_associate_ec2_instances_with_nodes.side_effect = _fake_node_creator
+
+    #
+    # 2. now the machines are associated
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    _assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    mocked_associate_ec2_instances_with_nodes.assert_called_once()
+    mock_docker_tag_node.assert_called()
+    assert (
+        mock_docker_tag_node.call_count
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    )
+
+    #
+    # 2. now we start the second batch of services requiring a different type of machines
+    await asyncio.gather(
+        *(
+            create_service(
+                task_template
+                | create_task_reservations(
+                    int(scale_up_params2.service_resources.cpus),
+                    scale_up_params2.service_resources.ram,
+                ),
+                service_monitored_labels
+                | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
+                "pending",
+                (
+                    [
+                        f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params2.imposed_instance_type}"
+                    ]
+                    if scale_up_params2.imposed_instance_type
+                    else []
+                ),
+            )
+            for _ in range(scale_up_params2.num_services)
+        )
+    )
+    # scaling will do nothing since we have hit the maximum number of machines
+    for _ in range(3):
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+        )
+        await assert_autoscaled_dynamic_ec2_instances(
+            ec2_client,
+            expected_num_reservations=1,
+            expected_num_instances=scale_up_params1.expected_num_instances,
+            expected_instance_type=scale_up_params1.expected_instance_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags),
+            instance_filters=instance_type_filters,
+        )
+
+    assert isinstance(spied_cluster_analysis.spy_return, Cluster)
+    assert spied_cluster_analysis.spy_return.active_nodes
+    assert not spied_cluster_analysis.spy_return.drained_nodes
+
+    # now we simulate that some of the services in the 1st batch have completed and that we are 1 below the max
+    # a machine should switch off and another type should be started
+    completed_services_to_stop = random.sample(
+        first_batch_services,
+        scale_up_params1.num_services
+        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+        + 1,
+    )
+    await asyncio.gather(
+        *(
+            async_docker_client.services.delete(s.id)
+            for s in completed_services_to_stop
+            if s.id
+        )
+    )
+
+    for _ in range(3):
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+        )
+
+        assert spied_cluster_analysis.spy_return.active_nodes
+        assert not spied_cluster_analysis.spy_return.drained_nodes
+
+        all_instances = await ec2_client.describe_instances()
+        assert len(all_instances["Reservations"]) == 2, "there should be 2 Reservations"
+        reservation1 = all_instances["Reservations"][0]
+        assert "Instances" in reservation1
+        assert len(reservation1["Instances"]) == (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES - 1
+        ), f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES-1} EC2 instances, found {len(reservation1['Instances'])}"
+        for instance in reservation1["Instances"]:
+            assert "InstanceType" in instance
+            assert instance["InstanceType"] == scale_up_params1.expected_instance_type
+
+        reservation2 = all_instances["Reservations"][0]
+        assert "Instances" in reservation2
+        assert len(reservation2["Instances"]) == (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES - 1
+        ), f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES-1} EC2 instances, found {len(reservation2['Instances'])}"
+        for instance in reservation2["Instances"]:
+            assert "InstanceType" in instance
+            assert instance["InstanceType"] == scale_up_params2.expected_instance_type
 
 
 @pytest.mark.parametrize(
