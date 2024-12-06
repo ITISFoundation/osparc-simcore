@@ -276,7 +276,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       // alwaysUpdateCells
       osparc.utils.Utils.setIdToWidget(table, "logsViewer");
       const colModel = table.getTableColumnModel();
-      colModel.setDataCellRenderer(this.self().POS.LOG_LEVEL, new qx.ui.table.cellrenderer.Image(14, 14));
+      colModel.setDataCellRenderer(this.self().POS.LOG_LEVEL, new qx.ui.table.cellrenderer.Image(16, 16));
       colModel.setDataCellRenderer(this.self().POS.TIMESTAMP, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
