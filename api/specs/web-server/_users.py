@@ -48,6 +48,16 @@ async def update_my_profile(_profile: ProfileUpdate):
     ...
 
 
+@router.put(
+    "/me",
+    status_code=status.HTTP_204_NO_CONTENT,
+    deprecated=True,
+    description="Use PATCH instead",
+)
+async def replace_my_profile(_profile: ProfileUpdate):
+    ...
+
+
 @router.patch(
     "/me/preferences/{preference_id}",
     status_code=status.HTTP_204_NO_CONTENT,

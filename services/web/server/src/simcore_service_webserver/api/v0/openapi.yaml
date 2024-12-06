@@ -1087,6 +1087,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProfileGet_'
+    put:
+      tags:
+      - user
+      summary: Replace My Profile
+      description: Use PATCH instead
+      operationId: replace_my_profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdate'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+      deprecated: true
     patch:
       tags:
       - user
