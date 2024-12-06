@@ -153,7 +153,7 @@ def registered_user(
         resp.raise_for_status()
 
         data = resp.json()["data"]
-        assert data["display_name"] == "test-public-api"
+        assert data["displayName"] == "test-public-api"
 
         assert "apiKey" in data
         assert "apiSecret" in data
