@@ -24,4 +24,4 @@ def setup_groups(app: web.Application):
     setup_products(app)
 
     app.router.add_routes(_groups_handlers.routes)
-    app.router.add_route(_classifiers_handlers.routes)
+    app.router.add_routes(_classifiers_handlers.routes)
