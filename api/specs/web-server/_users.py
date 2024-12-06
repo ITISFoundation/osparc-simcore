@@ -7,7 +7,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
-from models_library.api_schemas_webserver.users import ProfileGet, ProfileUpdate
+from models_library.api_schemas_webserver.users import MyProfileGet, MyProfilePatch
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
 from models_library.user_preferences import PreferenceIdentifier
@@ -34,7 +34,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["user"])
 
 @router.get(
     "/me",
-    response_model=Envelope[ProfileGet],
+    response_model=Envelope[MyProfileGet],
 )
 async def get_my_profile():
     ...
@@ -44,7 +44,7 @@ async def get_my_profile():
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def update_my_profile(_profile: ProfileUpdate):
+async def update_my_profile(_profile: MyProfilePatch):
     ...
 
 
@@ -54,7 +54,7 @@ async def update_my_profile(_profile: ProfileUpdate):
     deprecated=True,
     description="Use PATCH instead",
 )
-async def replace_my_profile(_profile: ProfileUpdate):
+async def replace_my_profile(_profile: MyProfilePatch):
     ...
 
 
