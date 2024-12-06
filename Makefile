@@ -153,6 +153,7 @@ DOCKER_TARGET_PLATFORMS ?= linux/amd64
 comma := ,
 
 define _docker_compose_build
+$(eval INCLUDED_SERVICES := $(filter-out $(exclude), $(SERVICES_NAMES_TO_BUILD))) \
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production) &&\
 pushd services &&\
 $(foreach service, $(SERVICES_NAMES_TO_BUILD),\
@@ -172,7 +173,7 @@ docker buildx bake \
 		)\
 	)\
 	$(if $(push),--push,) \
-	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) \
+	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),$(INCLUDED_SERVICES)) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) \
@@ -183,7 +184,7 @@ endef
 
 rebuild: build-nc # alias
 build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`
-	# Building service$(if $(target),,s) $(target)
+	# Building service$(if $(target),,s) $(target) $(if $(exclude),excluding,) $(exclude)
 	@$(_docker_compose_build)
 	# List production images
 	@docker images --filter="reference=local/*:production"
@@ -198,7 +199,7 @@ load-images: guard-local-src ## loads images from local-src
 
 build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
-	# Building services
+	# Building services $(if $(exclude),excluding,) $(exclude)
 	@$(_docker_compose_build)
 else
 ifeq ($(findstring static-webserver,$(target)),static-webserver)
