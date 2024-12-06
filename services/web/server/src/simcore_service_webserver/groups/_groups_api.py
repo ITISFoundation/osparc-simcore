@@ -57,3 +57,15 @@ async def get_product_group_for_user(
     return await _groups_db.get_product_group_for_user(
         app, user_id=user_id, product_gid=product_gid
     )
+
+
+async def get_user_group(
+    app: web.Application, user_id: UserID, gid: GroupID
+) -> tuple[Group, AccessRightsDict]:
+    """
+    Gets group gid if user associated to it and has read access
+
+    raises GroupNotFoundError
+    raises UserInsufficientRightsError
+    """
+    return await _groups_db.get_user_group(app, user_id=user_id, gid=gid)
