@@ -43,18 +43,18 @@ orjson==3.10.11
     #   -r requirements/../../../packages/common-library/requirements/_base.in
 psycopg2-binary==2.9.9
     # via sqlalchemy
-pydantic==2.9.2
+pydantic==2.10.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
     #   pydantic-extra-types
-pydantic-core==2.23.4
+pydantic-core==2.27.1
     # via pydantic
 pydantic-extra-types==2.10.0
     # via -r requirements/../../../packages/common-library/requirements/_base.in
-setuptools==75.2.0
+setuptools==75.6.0
     # via opentelemetry-instrumentation
 sqlalchemy==1.4.54
     # via

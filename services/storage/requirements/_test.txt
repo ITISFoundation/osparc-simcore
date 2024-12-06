@@ -189,12 +189,12 @@ py-partiql-parser==0.5.6
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==2.9.2
+pydantic==2.10.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.23.4
+pydantic-core==2.27.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -312,7 +312,7 @@ termcolor==2.4.0
     # via pytest-sugar
 types-aiofiles==24.1.0.20240626
     # via -r requirements/_test.in
-typing-extensions==4.10.0
+typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator

@@ -126,7 +126,7 @@ def fake_service_resources() -> ServiceResourcesDict:
 @pytest.fixture
 def fake_service_labels() -> dict[str, Any]:
     return choice(  # noqa: S311
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"]  # type: ignore
+        SimcoreServiceLabels.model_json_schema()["examples"]  # type: ignore
     )
 
 

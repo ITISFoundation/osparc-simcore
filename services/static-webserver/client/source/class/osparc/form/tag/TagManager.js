@@ -82,6 +82,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
         allowGrowX: false
       });
       addTagButton.addListener("execute", () => {
+        this.__repopulateTags();
         const newItem = new osparc.form.tag.TagItem().set({
           mode: osparc.form.tag.TagItem.modes.EDIT
         });
@@ -89,7 +90,6 @@ qx.Class.define("osparc.form.tag.TagManager", {
         newItem.addListener("cancelNewTag", e => tagsContainer.remove(e.getTarget()), this);
         newItem.addListener("deleteTag", e => tagsContainer.remove(e.getTarget()), this);
         tagsContainer.add(newItem);
-        this.__repopulateTags();
       });
       this._add(addTagButton);
 

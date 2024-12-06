@@ -276,6 +276,9 @@ async def get_solver_pricing_plan(
 ):
     assert user_id
     assert product_name
-    return await webserver_api.get_service_pricing_plan(
+    pricing_plan_or_none = await webserver_api.get_service_pricing_plan(
         solver_key=solver_key, version=version
     )
+    # NOTE: pricing_plan_or_none https://github.com/ITISFoundation/osparc-simcore/issues/6901
+    assert pricing_plan_or_none  # nosec
+    return pricing_plan_or_none
