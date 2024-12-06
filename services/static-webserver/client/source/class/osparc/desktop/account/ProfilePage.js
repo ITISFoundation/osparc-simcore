@@ -264,10 +264,10 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         const patchData = {
           "privacy": {}
         };
-        if (this.__userProfileData["privacy"]["hideFullname"] !== model.getHideFullname()) {
+        if (this.__userPrivacyData["hideFullname"] !== model.getHideFullname()) {
           patchData["privacy"]["hideFullname"] = model.getHideFullname();
         }
-        if (this.__userProfileData["privacy"]["hideEmail"] !== model.getHideEmail()) {
+        if (this.__userPrivacyData["hideEmail"] !== model.getHideEmail()) {
           patchData["privacy"]["hideEmail"] = model.getHideEmail();
         }
 
@@ -277,14 +277,13 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           };
           osparc.data.Resources.fetch("profile", "patch", params)
             .then(() => {
-              this.__setDataToPrivacy(Object.assign(this.__userProfileData, params.data));
-              // osparc.auth.Manager.getInstance().updateProfile(this.__userProfileData);
-              const msg = this.tr("Profile updated");
+              this.__setDataToPrivacy(Object.assign(this.__userPrivacyData, params.data));
+              const msg = this.tr("Privacy updated");
               osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
             })
             .catch(err => {
               this.__resetPrivacyData();
-              const msg = err.message || this.tr("Failed to update profile");
+              const msg = err.message || this.tr("Failed to update privacy");
               osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
               console.error(err);
             });
