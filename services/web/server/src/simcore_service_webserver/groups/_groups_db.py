@@ -6,7 +6,7 @@ from aiohttp import web
 from models_library.groups import GroupAtDB
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import UniqueViolation
-from simcore_postgres_database.utils_products import get_or_create_product_group
+from simcore_postgres_database.utils_products import execute_get_or_create_product_group
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -342,7 +342,7 @@ async def auto_add_user_to_product_group(
     product_name: str,
 ) -> GroupID:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        product_group_id: GroupID = await get_or_create_product_group(
+        product_group_id: GroupID = await execute_get_or_create_product_group(
             conn, product_name
         )
 
