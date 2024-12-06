@@ -9,29 +9,39 @@ import logging
 from collections import deque
 from typing import Any, NamedTuple, TypedDict
 
+import simcore_postgres_database.errors as db_errors
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
+from models_library.api_schemas_webserver.users import (
+    ProfileGet,
+    ProfilePrivacyGet,
+    ProfileUpdate,
+)
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from pydantic import EmailStr, TypeAdapter, ValidationError
-from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
+from simcore_postgres_database.models.users import UserRole, users
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
 )
 
-from ..db.models import GroupType, groups, user_to_groups, users
 from ..db.plugin import get_database_engine
 from ..groups.models import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _db
 from ._api import get_user_credentials, get_user_invoice_address, set_user_as_deleted
+from ._models import ToUserUpdateDB
 from ._preferences_api import get_frontend_user_preferences_aggregation
-from .exceptions import MissingGroupExtraPropertiesForProductError, UserNotFoundError
-from .schemas import ProfileGet, ProfileUpdate
+from .exceptions import (
+    MissingGroupExtraPropertiesForProductError,
+    UserNameDuplicateError,
+    UserNotFoundError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +50,7 @@ def _parse_as_user(user_id: Any) -> UserID:
     try:
         return TypeAdapter(UserID).validate_python(user_id)
     except ValidationError as err:
-        raise UserNotFoundError(uid=user_id) from err
+        raise UserNotFoundError(uid=user_id, user_id=user_id) from err
 
 
 async def get_user_profile(
@@ -59,15 +69,12 @@ async def get_user_profile(
 
     async with engine.acquire() as conn:
         row: RowProxy
+
         async for row in conn.execute(
             sa.select(users, groups, user_to_groups.c.access_rights)
             .select_from(
-                sa.join(
-                    users,
-                    sa.join(
-                        user_to_groups, groups, user_to_groups.c.gid == groups.c.gid
-                    ),
-                    users.c.id == user_to_groups.c.uid,
+                users.join(user_to_groups, users.c.id == user_to_groups.c.uid).join(
+                    groups, user_to_groups.c.gid == groups.c.gid
                 )
             )
             .where(users.c.id == user_id)
@@ -77,10 +84,13 @@ async def get_user_profile(
             if not user_profile:
                 user_profile = {
                     "id": row.users_id,
+                    "user_name": row.users_name,
                     "first_name": row.users_first_name,
                     "last_name": row.users_last_name,
                     "login": row.users_email,
                     "role": row.users_role,
+                    "privacy_hide_fullname": row.users_privacy_hide_fullname,
+                    "privacy_hide_email": row.users_privacy_hide_email,
                     "expiration_date": (
                         row.users_expires_at.date() if row.users_expires_at else None
                     ),
@@ -128,6 +138,7 @@ async def get_user_profile(
 
     return ProfileGet(
         id=user_profile["id"],
+        user_name=user_profile["user_name"],
         first_name=user_profile["first_name"],
         last_name=user_profile["last_name"],
         login=user_profile["login"],
@@ -137,6 +148,10 @@ async def get_user_profile(
             "organizations": user_standard_groups,
             "all": all_group,
         },
+        privacy=ProfilePrivacyGet(
+            hide_fullname=user_profile["privacy_hide_fullname"],
+            hide_email=user_profile["privacy_hide_email"],
+        ),
         preferences=preferences,
         **optional,
     )
@@ -144,32 +159,30 @@ async def get_user_profile(
 
 async def update_user_profile(
     app: web.Application,
+    *,
     user_id: UserID,
     update: ProfileUpdate,
-    *,
-    as_patch: bool = True,
 ) -> None:
     """
-    Keyword Arguments:
-        as_patch -- set False if PUT and True if PATCH (default: {True})
-
     Raises:
         UserNotFoundError
+        UserNameAlreadyExistsError
     """
     user_id = _parse_as_user(user_id)
 
-    async with get_database_engine(app).acquire() as conn:
-        to_update = update.model_dump(
-            include={
-                "first_name",
-                "last_name",
-            },
-            exclude_unset=as_patch,
-        )
-        resp = await conn.execute(
-            users.update().where(users.c.id == user_id).values(**to_update)
-        )
-        assert resp.rowcount == 1  # nosec
+    if updated_values := ToUserUpdateDB.from_api(update).to_db():
+        async with get_database_engine(app).acquire() as conn:
+            query = users.update().where(users.c.id == user_id).values(**updated_values)
+
+            try:
+
+                resp = await conn.execute(query)
+                assert resp.rowcount == 1  # nosec
+
+            except db_errors.UniqueViolation as err:
+                raise UserNameDuplicateError(
+                    user_name=updated_values.get("name")
+                ) from err
 
 
 async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
