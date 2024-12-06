@@ -208,8 +208,8 @@ def _get_dynamic_service_get_from(
     service_state: ServiceState,
 ) -> DynamicServiceGet:
     dict_data = DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
-    assert "state" in dict_data
-    dict_data["state"] = service_state
+    assert "service_state" in dict_data
+    dict_data["service_state"] = service_state
     return TypeAdapter(DynamicServiceGet).validate_python(dict_data)
 
 

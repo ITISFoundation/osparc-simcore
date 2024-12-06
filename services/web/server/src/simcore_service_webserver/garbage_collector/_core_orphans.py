@@ -13,7 +13,6 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.users import UserRole
 
-from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..projects.api import has_user_project_access_rights
 from ..projects.projects_api import (
@@ -90,7 +89,7 @@ async def remove_orphaned_services(
     # in between and the GC would remove services that actually should be running.
 
     with log_catch(_logger, reraise=False):
-        running_services = await director_v2_api.list_dynamic_services(app)
+        running_services = await dynamic_scheduler_api.list_dynamic_services(app)
         if not running_services:
             # nothing to do
             return

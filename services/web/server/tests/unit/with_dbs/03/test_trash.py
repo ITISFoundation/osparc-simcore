@@ -8,6 +8,7 @@
 
 import asyncio
 from collections.abc import AsyncIterable, Callable
+from unittest.mock import MagicMock
 from uuid import UUID
 
 import arrow
@@ -88,7 +89,7 @@ async def test_trash_projects(  # noqa: PLR0915
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._trash_api.director_v2_api.list_dynamic_services",
+        "simcore_service_webserver.projects._trash_api.dynamic_scheduler_api.list_dynamic_services",
         return_value=[mocker.MagicMock()] if is_project_running else [],
         autospec=True,
     )
@@ -125,9 +126,11 @@ async def test_trash_projects(  # noqa: PLR0915
     )
     _, error = await assert_status(
         resp,
-        status.HTTP_409_CONFLICT
-        if (is_project_running and not force)
-        else status.HTTP_204_NO_CONTENT,
+        (
+            status.HTTP_409_CONFLICT
+            if (is_project_running and not force)
+            else status.HTTP_204_NO_CONTENT
+        ),
     )
 
     could_not_trash = is_project_running and not force
@@ -182,6 +185,7 @@ async def test_trash_projects(  # noqa: PLR0915
     "For https://github.com/ITISFoundation/osparc-simcore/pull/6642"
 )
 async def test_trash_single_folder(client: TestClient, logged_user: UserInfoDict):
+
     assert client.app
 
     # CREATE a folder
@@ -263,7 +267,7 @@ async def test_trash_folder_with_content(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mocked_catalog: None,
-    mocked_director_v2: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
 ):
     assert client.app
     project_uuid = UUID(user_project["uuid"])

@@ -40,7 +40,7 @@ def client(
     aiohttp_client,
     app_cfg,
     postgres_db,
-    mocked_director_v2_api,
+    mocked_dynamic_services_interface,
     mock_orphaned_services,
     redis_client,  # this ensure redis is properly cleaned
     monkeypatch_setenv_from_app_config: Callable,

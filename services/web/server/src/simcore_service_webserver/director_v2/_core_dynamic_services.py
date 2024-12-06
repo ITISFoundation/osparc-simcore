@@ -7,11 +7,9 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
 from models_library.services import ServicePortKey
-from pydantic import BaseModel, NonNegativeInt, TypeAdapter
-from pydantic.types import PositiveInt
+from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_decorator
 from yarl import URL
 
@@ -20,36 +18,6 @@ from .exceptions import DirectorServiceError
 from .settings import DirectorV2Settings, get_plugin_settings
 
 _log = logging.getLogger(__name__)
-
-
-class _Params(BaseModel):
-    user_id: PositiveInt | None = None
-    project_id: str | None = None
-
-
-async def list_dynamic_services(
-    app: web.Application,
-    user_id: PositiveInt | None = None,
-    project_id: str | None = None,
-) -> list[DynamicServiceGet]:
-    params = _Params(user_id=user_id, project_id=project_id)
-    params_dict = params.model_dump(exclude_none=True)
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    if params_dict:  # Update query doesnt work with no params to unwrap
-        backend_url = (settings.base_url / "dynamic_services").update_query(
-            **params_dict
-        )
-    else:
-        backend_url = settings.base_url / "dynamic_services"
-
-    services = await request_director_v2(
-        app, "GET", backend_url, expected_status=web.HTTPOk
-    )
-
-    if services is None:
-        services = []
-    assert isinstance(services, list)  # nosec
-    return TypeAdapter(list[DynamicServiceGet]).validate_python(services)
 
 
 # NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191

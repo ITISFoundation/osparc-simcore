@@ -609,8 +609,8 @@ async def _start_dynamic_service(
             project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
         ),
     ):
-        project_running_nodes = await director_v2_api.list_dynamic_services(
-            request.app, user_id, f"{project_uuid}"
+        project_running_nodes = await dynamic_scheduler_api.list_dynamic_services(
+            request.app, user_id=user_id, project_id=project_uuid
         )
         _nodes_api.check_num_service_per_projects_limit(
             app=request.app,
@@ -903,8 +903,10 @@ async def delete_project_node(
         permission="write",
     )
 
-    list_running_dynamic_services = await director_v2_api.list_dynamic_services(
-        request.app, project_id=f"{project_uuid}", user_id=user_id
+    list_running_dynamic_services = await dynamic_scheduler_api.list_dynamic_services(
+        request.app,
+        user_id=user_id,
+        project_id=project_uuid,
     )
 
     fire_and_forget_task(
@@ -1628,9 +1630,9 @@ async def run_project_dynamic_services(
     # first get the services if they already exist
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
     running_services_uuids: list[NodeIDStr] = [
-        NodeIDStr(f"{d.node_uuid}")
-        for d in await director_v2_api.list_dynamic_services(
-            request.app, user_id, project["uuid"]
+        f"{d.node_uuid}"
+        for d in await dynamic_scheduler_api.list_dynamic_services(
+            request.app, user_id=user_id, project_id=ProjectID(project["uuid"])
         )
     ]
 

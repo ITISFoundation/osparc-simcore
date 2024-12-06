@@ -194,17 +194,3 @@ def compute_sha1_on_small_dataset(d: Any) -> SHA1Str:
     # SEE options in https://github.com/ijl/orjson#option
     data_bytes = orjson.dumps(d, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
     return SHA1Str(hashlib.sha1(data_bytes).hexdigest())  # nosec # NOSONAR
-
-
-# -----------------------------------------------
-#
-# UNSET
-#
-
-
-class UnSet:
-    ...
-
-
-def as_dict_exclude_unset(**params) -> dict[str, Any]:
-    return {k: v for k, v in params.items() if not isinstance(v, UnSet)}

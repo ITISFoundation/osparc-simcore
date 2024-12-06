@@ -7,7 +7,9 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import AttachLifespanMixin, HasClientSetupInterface
@@ -73,7 +75,7 @@ class DirectorV2Client(
         node_id: NodeID,
         simcore_user_agent: str,
         save_state: bool,
-        timeout: datetime.timedelta
+        timeout: datetime.timedelta,  # noqa: ASYNC109
     ) -> None:
         try:
             await self.thin_client.delete_dynamic_service(
@@ -97,6 +99,14 @@ class DirectorV2Client(
                 raise ServiceWasNotFoundError(node_id=node_id) from None
 
             raise
+
+    async def list_tracked_dynamic_services(
+        self, *, user_id: UserID | None = None, project_id: ProjectID | None = None
+    ) -> list[DynamicServiceGet]:
+        response = await self.thin_client.get_dynamic_services(
+            user_id=user_id, project_id=project_id
+        )
+        return TypeAdapter(list[DynamicServiceGet]).validate_python(response.json())
 
 
 def setup_director_v2(app: FastAPI) -> None:

@@ -12,6 +12,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import fire_and_forget_task
 
 from ..director_v2 import api as director_v2_api
+from ..dynamic_scheduler import api as dynamic_scheduler_api
 from . import projects_api
 from ._access_rights_api import check_user_project_permission
 from .exceptions import ProjectRunningConflictError
@@ -56,8 +57,8 @@ async def _is_project_running(
             app, user_id=user_id, project_id=project_id
         )
     ) or bool(
-        await director_v2_api.list_dynamic_services(
-            app, user_id=user_id, project_id=f"{project_id}"
+        await dynamic_scheduler_api.list_dynamic_services(
+            app, user_id=user_id, project_id=project_id
         )
     )
 
