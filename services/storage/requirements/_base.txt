@@ -276,6 +276,7 @@ opentelemetry-api==1.26.0
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-propagator-aws-xray
@@ -301,6 +302,7 @@ opentelemetry-instrumentation==0.47b0
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-aiohttp-client==0.47b0
@@ -317,6 +319,10 @@ opentelemetry-instrumentation-botocore==0.47b0
     #   -r requirements/_base.in
 opentelemetry-instrumentation-dbapi==0.47b0
     # via opentelemetry-instrumentation-aiopg
+opentelemetry-instrumentation-logging==0.47b0
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.47b0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in

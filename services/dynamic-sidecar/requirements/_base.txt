@@ -286,6 +286,7 @@ opentelemetry-api==1.28.2
     #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -310,6 +311,7 @@ opentelemetry-instrumentation==0.49b2
     #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-aiopg==0.49b2
@@ -326,7 +328,11 @@ opentelemetry-instrumentation-fastapi==0.49b2
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-httpx==0.49b2
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-opentelemetry-instrumentation-redis==0.49b2
+opentelemetry-instrumentation-logging==0.48b0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+opentelemetry-instrumentation-redis==0.48b0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
