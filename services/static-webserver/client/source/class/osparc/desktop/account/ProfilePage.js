@@ -96,7 +96,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       const form = new qx.ui.form.Form();
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
-      form.add(username, "Username", null, "username");
+      form.add(username, "username", null, "username");
       form.add(email, "Email", null, "email");
       box.add(new qx.ui.form.renderer.Single(form));
 
