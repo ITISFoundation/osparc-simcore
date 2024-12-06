@@ -7,28 +7,15 @@ from models_library.users import GroupID, UserID
 
 from ..users.api import get_user
 from . import _groups_db
-from ._utils import AccessRightsDict
+from ._common.types import AccessRightsDict
+from ._groups_api import list_all_user_groups_ids, list_user_groups_ids_with_read_access
 from .exceptions import GroupsError
 
-
-async def list_user_groups_with_read_access(
-    app: web.Application, user_id: UserID
-) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
-    """
-    Returns the user primary group, standard groups and the all group
-    """
-    # NOTE: Careful! It seems we are filtering out groups, such as Product Groups,
-    # because they do not have read access. I believe this was done because the frontend did not want to display them.
-    return await _groups_db.get_all_user_groups_with_read_access(app, user_id=user_id)
-
-
-async def list_all_user_groups(app: web.Application, user_id: UserID) -> list[Group]:
-    """
-    Return all user groups
-    """
-    groups_db = await _groups_db.get_all_user_groups(app, user_id=user_id)
-
-    return [Group.model_construct(**group.model_dump()) for group in groups_db]
+__all__: tuple[str, ...] = (
+    "list_user_groups_ids_with_read_access",
+    "list_all_user_groups_ids",
+    # nopycln: file
+)
 
 
 async def get_user_group(
@@ -41,24 +28,6 @@ async def get_user_group(
     raises UserInsufficientRightsError
     """
     return await _groups_db.get_user_group(app, user_id=user_id, gid=gid)
-
-
-async def get_product_group_for_user(
-    app: web.Application, user_id: UserID, product_gid: GroupID
-) -> dict[str, str]:
-    """
-    Returns product's group if user belongs to it, otherwise it
-    raises GroupNotFoundError
-    """
-    return await _groups_db.get_product_group_for_user(
-        app, user_id=user_id, product_gid=product_gid
-    )
-
-
-async def create_user_group(
-    app: web.Application, user_id: UserID, new_group: dict
-) -> dict[str, Any]:
-    return await _groups_db.create_user_group(app, user_id=user_id, new_group=new_group)
 
 
 async def update_user_group(
