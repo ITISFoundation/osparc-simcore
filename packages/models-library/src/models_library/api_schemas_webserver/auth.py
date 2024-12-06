@@ -113,7 +113,7 @@ class ApiKeyCreateResponse(ApiKeyCreateRequest):
                 },
                 {
                     "id": "54",
-                    "display_name": "test-api-for-another-day",
+                    "displayName": "test-api-for-another-day",
                     "expiration": "24:00:00",
                     "apiBaseUrl": "http://api.osparc-master.io/v0",
                     "apiKey": "key",
