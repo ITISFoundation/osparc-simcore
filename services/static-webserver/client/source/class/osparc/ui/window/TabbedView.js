@@ -88,7 +88,9 @@ qx.Class.define("osparc.ui.window.TabbedView", {
       widget.set({
         margin: 10
       });
-      page.add(widget, {
+      const scroll = new qx.ui.container.Scroll();
+      scroll.add(widget);
+      page.add(scroll, {
         flex: 1
       });
       return page;

@@ -105,7 +105,7 @@ qx.Class.define("osparc.data.model.Group", {
     },
 
     getGroupMemberByLogin: function(userEmail) {
-      return Object.values(this.getGroupMembers()).find(user => user.getLogin() === userEmail);
+      return Object.values(this.getGroupMembers()).find(user => user.getEmail() === userEmail);
     },
 
     addGroupMember: function(user) {

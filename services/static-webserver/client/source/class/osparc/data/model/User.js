@@ -28,14 +28,23 @@ qx.Class.define("osparc.data.model.User", {
   construct: function(userData) {
     this.base(arguments);
 
-    const label = this.self().namesToLabel(userData["first_name"], userData["last_name"]) || userData["login"];
+    let label = userData["login"];
+    if (userData["first_name"]) {
+      label = qx.lang.String.firstUp(userData["first_name"]);
+      if (userData["last_name"]) {
+        label += " " + qx.lang.String.firstUp(userData["last_name"]);
+      }
+    }
+    const thumbnail = osparc.utils.Avatar.emailToThumbnail(userData["login"]);
     this.set({
-      userId: userData.id,
-      groupId: userData.gid,
+      userId: userData["id"],
+      groupId: userData["gid"],
       label: label,
-      login: userData.login,
-      thumbnail: this.self().emailToThumbnail(userData.login),
-      accessRights: userData.accessRights,
+      username: userData["username"] || "",
+      firstName: userData["first_name"],
+      lastName: userData["last_name"],
+      email: userData["login"],
+      thumbnail,
     });
   },
 
@@ -61,18 +70,32 @@ qx.Class.define("osparc.data.model.User", {
       event: "changeLabel",
     },
 
-    login: {
+    username: {
       check: "String",
       nullable: true,
       init: null,
-      event: "changeLogin",
+      event: "changeUsername",
     },
 
-    accessRights: {
-      check: "Object",
-      nullable: false,
+    firstName: {
+      init: "",
+      nullable: true,
+      check: "String",
+      event: "changeFirstName"
+    },
+
+    lastName: {
+      init: "",
+      nullable: true,
+      check: "String",
+      event: "changeLastName"
+    },
+
+    email: {
+      check: "String",
+      nullable: true,
       init: null,
-      event: "changeAccessRights",
+      event: "changeEmail",
     },
 
     thumbnail: {
@@ -82,21 +105,4 @@ qx.Class.define("osparc.data.model.User", {
       event: "changeThumbnail",
     },
   },
-
-  statics: {
-    namesToLabel: function(firstName, lastName) {
-      let label = "";
-      if (firstName) {
-        label = osparc.utils.Utils.firstsUp(firstName);
-        if (lastName) {
-          label += " " + osparc.utils.Utils.firstsUp(lastName);
-        }
-      }
-      return label;
-    },
-
-    emailToThumbnail: function(email) {
-      return osparc.utils.Avatar.getUrl(email, 32)
-    },
-  }
 });

@@ -26,6 +26,38 @@ qx.Class.define("osparc.auth.Data", {
 
   properties: {
     /**
+     *  Basic authentification with a token
+    */
+    auth: {
+      init: null,
+      nullable: true,
+      check: "osparc.io.request.authentication.Token",
+      apply: "__applyAuth"
+    },
+
+    role: {
+      check: ["anonymous", "guest", "user", "tester", "product_owner", "admin"],
+      init: null,
+      nullable: false,
+      event: "changeRole",
+      apply: "__applyRole"
+    },
+
+    guest: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeGuest"
+    },
+
+    loggedIn: {
+      check: "Boolean",
+      nullable: false,
+      init: false,
+      event: "changeLoggedIn",
+    },
+
+    /**
      *  User Id
      */
     userId: {
@@ -43,14 +75,11 @@ qx.Class.define("osparc.auth.Data", {
       check: "Number"
     },
 
-    /**
-     *  Basic authentification with a token
-    */
-    auth: {
+    username: {
+      check: "String",
       init: null,
-      nullable: true,
-      check: "osparc.io.request.authentication.Token",
-      apply: "__applyAuth"
+      nullable: false,
+      event: "changeUsername",
     },
 
     /**
@@ -76,34 +105,12 @@ qx.Class.define("osparc.auth.Data", {
       event: "changeLastName"
     },
 
-    role: {
-      check: ["anonymous", "guest", "user", "tester", "product_owner", "admin"],
-      init: null,
-      nullable: false,
-      event: "changeRole",
-      apply: "__applyRole"
-    },
-
-    guest: {
-      check: "Boolean",
-      init: true,
-      nullable: false,
-      event: "changeGuest"
-    },
-
     expirationDate: {
       init: null,
       nullable: true,
       check: "Date",
       event: "changeExpirationDate"
     },
-
-    loggedIn: {
-      check: "Boolean",
-      nullable: false,
-      init: false,
-      event: "changeLoggedIn",
-    }
   },
 
   members: {
@@ -135,16 +142,12 @@ qx.Class.define("osparc.auth.Data", {
       return osparc.utils.Utils.cookie.getCookie("user") === "logout";
     },
 
-    getUserName: function() {
+    getFriendlyUsername: function() {
       const firstName = this.getFirstName();
       if (firstName) {
         return firstName;
       }
-      const email = this.getEmail();
-      if (email) {
-        return osparc.utils.Utils.getNameFromEmail(email);
-      }
-      return "user";
+      return this.getUsername();
     },
 
     getFriendlyRole: function() {

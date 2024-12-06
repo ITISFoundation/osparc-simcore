@@ -24,10 +24,10 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
     });
 
     let label = collaborator.getLabel();
-    if ("getLogin" in collaborator) {
+    if ("getEmail" in collaborator) {
       // user
-      label += ` (${collaborator.getLogin()})`;
-      this.setToolTipText(collaborator.getLogin());
+      label += ` (${collaborator.getEmail()})`;
+      this.setToolTipText(collaborator.getEmail());
     }
     this.setLabel(label);
 

@@ -22,10 +22,12 @@ qx.Class.define("osparc.desktop.account.MyAccountWindow", {
     this.base(arguments, "credits", this.tr("My Account"));
 
     const width = 900;
-    const height = 600;
+    const height = 700;
+    const maxHeight = 700;
     this.set({
       width,
-      height
+      height,
+      maxHeight,
     });
 
     const myAccount = this.__myAccount = new osparc.desktop.account.MyAccount();
