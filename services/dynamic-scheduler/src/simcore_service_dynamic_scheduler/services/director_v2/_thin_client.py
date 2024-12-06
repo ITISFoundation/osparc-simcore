@@ -9,6 +9,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
+from models_library.services_types import ServicePortKey
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
@@ -88,7 +89,7 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
         node_id: NodeID,
         simcore_user_agent: str,
         save_state: bool,
-        timeout: datetime.timedelta,
+        timeout: datetime.timedelta,  # noqa: ASYNC109
     ) -> Response:
         @retry_on_errors(total_retry_timeout_overwrite=timeout.total_seconds())
         @expect_status(status.HTTP_204_NO_CONTENT)
@@ -108,3 +109,17 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
             )
 
         return await _(self)
+
+    async def dynamic_service_retrieve(
+        self,
+        *,
+        node_id: NodeID,
+        port_keys: list[ServicePortKey],
+        timeout: datetime.timedelta,  # noqa: ASYNC109
+    ) -> Response:
+        post_data = {"port_keys": port_keys}
+        return await self.client.post(
+            f"/dynamic_services/{node_id}:retrieve",
+            content=json_dumps(post_data),
+            timeout=timeout.total_seconds(),
+        )
