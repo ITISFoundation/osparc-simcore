@@ -15,6 +15,7 @@ logging.root.setLevel(_the_settings.DYNAMIC_SCHEDULER_LOGLEVEL.value)
 config_all_loggers(
     log_format_local_dev_enabled=_the_settings.DYNAMIC_SCHEDULER_LOG_FORMAT_LOCAL_DEV_ENABLED,
     logger_filter_mapping=_the_settings.DYNAMIC_SCHEDULER_LOG_FILTER_MAPPING,
+    tracing_settings=_the_settings.DYNAMIC_SCHEDULER_TRACING,
 )
 
 # SINGLETON FastAPI app

@@ -121,7 +121,7 @@ def swarm_network_id() -> str:
 def simcore_service_labels() -> SimcoreServiceLabels:
     # overwrites global fixture
     return SimcoreServiceLabels.model_validate(
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
+        SimcoreServiceLabels.model_json_schema()["examples"][2]
     )
 
 
@@ -286,7 +286,7 @@ def expected_dynamic_sidecar_spec(
                     "RABBIT_PORT": "5672",
                     "RABBIT_USER": "admin",
                     "RABBIT_SECURE": "False",
-                    "R_CLONE_OPTION_BUFFER_SIZE": "0M",
+                    "R_CLONE_OPTION_BUFFER_SIZE": "16M",
                     "R_CLONE_OPTION_RETRIES": "3",
                     "R_CLONE_OPTION_TRANSFERS": "5",
                     "R_CLONE_PROVIDER": "MINIO",

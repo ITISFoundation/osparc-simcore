@@ -91,7 +91,7 @@ class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
             and field.default is None
             and prepared_value == _MARKED_AS_UNSET
         ):
-            prepared_value = field.default_factory()
+            prepared_value = field.default_factory()  # type: ignore[call-arg]
         return prepared_value
 
 

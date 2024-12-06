@@ -35,6 +35,9 @@ def get_dynamic_proxy_spec(
     The proxy is used to create network isolation
     from the rest of the platform.
     """
+    assert (
+        scheduler_data.product_name is not None
+    ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
 
     proxy_settings: DynamicSidecarProxySettings = (
         dynamic_services_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS

@@ -205,7 +205,7 @@ faker==19.6.1
     # via -r requirements/_base.in
 fast-depends==2.4.12
     # via faststream
-faststream==0.5.28
+faststream==0.5.31
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
@@ -340,6 +340,7 @@ opentelemetry-api==1.27.0
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -363,6 +364,7 @@ opentelemetry-instrumentation==0.48b0
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-aiohttp-client==0.48b0
@@ -380,6 +382,10 @@ opentelemetry-instrumentation-asyncpg==0.48b0
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
 opentelemetry-instrumentation-dbapi==0.48b0
     # via opentelemetry-instrumentation-aiopg
+opentelemetry-instrumentation-logging==0.48b0
+    # via
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.48b0
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
@@ -495,7 +501,7 @@ pycountry==23.12.11
     # via -r requirements/_base.in
 pycparser==2.21
     # via cffi
-pydantic==2.9.2
+pydantic==2.10.2
     # via
     #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -557,7 +563,7 @@ pydantic==2.9.2
     #   fast-depends
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.23.4
+pydantic-core==2.27.1
     # via pydantic
 pydantic-extra-types==2.9.0
     # via
@@ -765,7 +771,7 @@ typer==0.12.3
     #   -r requirements/../../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==4.12.0
+typing-extensions==4.12.2
     # via
     #   aiodebug
     #   aiodocker
@@ -854,7 +860,9 @@ yarl==1.9.4
     # via
     #   -c requirements/./constraints.txt
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq

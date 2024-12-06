@@ -163,7 +163,7 @@ lazy-object-proxy==1.10.0
     # via openapi-spec-validator
 lupa==2.2
     # via fakeredis
-markupsafe==2.1.5
+markupsafe==3.0.2
     # via
     #   -c requirements/_base.txt
     #   jinja2
@@ -185,7 +185,7 @@ openapi-spec-validator==0.7.1
     # via moto
 orderly-set==5.2.2
     # via deepdiff
-packaging==24.0
+packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -197,7 +197,7 @@ pluggy==1.5.0
     # via pytest
 ply==3.11
     # via jsonpath-ng
-psutil==6.0.0
+psutil==6.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -205,12 +205,12 @@ py-partiql-parser==0.5.6
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==2.9.2
+pydantic==2.10.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.23.4
+pydantic-core==2.27.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -242,7 +242,7 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -287,9 +287,7 @@ s3transfer==0.10.1
     #   -c requirements/_base.txt
     #   boto3
 setuptools==74.0.0
-    # via
-    #   -c requirements/_base.txt
-    #   moto
+    # via moto
 six==1.16.0
     # via
     #   -c requirements/_base.txt
@@ -309,7 +307,7 @@ sympy==1.13.3
     # via cfn-lint
 types-pyyaml==6.0.12.20240917
     # via -r requirements/_test.in
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   aiodocker

@@ -100,7 +100,7 @@ fastapi==0.115.5
     #   prometheus-fastapi-instrumentator
 fastapi-pagination==0.12.31
     # via -r requirements/_base.in
-faststream==0.5.28
+faststream==0.5.31
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.4.1
     # via
@@ -178,6 +178,7 @@ opentelemetry-api==1.26.0
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -197,6 +198,7 @@ opentelemetry-instrumentation==0.47b0
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-asgi==0.47b0
@@ -205,6 +207,8 @@ opentelemetry-instrumentation-fastapi==0.47b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-httpx==0.47b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+opentelemetry-instrumentation-logging==0.47b0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.47b0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-requests==0.47b0
@@ -269,7 +273,7 @@ protobuf==4.25.4
     #   opentelemetry-proto
 psutil==6.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-pydantic==2.9.2
+pydantic==2.10.2
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -300,7 +304,7 @@ pydantic==2.9.2
     #   fastapi-pagination
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.23.4
+pydantic-core==2.27.1
     # via pydantic
 pydantic-extra-types==2.9.0
     # via
@@ -365,7 +369,6 @@ redis==5.0.4
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 referencing==0.29.3
     # via
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 repro-zipfile==0.3.1
@@ -420,7 +423,7 @@ typer==0.12.3
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 types-python-dateutil==2.9.0.20240316
     # via arrow
-typing-extensions==4.10.0
+typing-extensions==4.12.2
     # via
     #   aiodebug
     #   aiodocker
@@ -464,6 +467,7 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-redis
 yarl==1.9.4
     # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq
