@@ -25,6 +25,7 @@ from ..products.api import Product, get_current_product
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
+from . import api as tmp_api
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import (
     GroupsPathParams,
@@ -182,7 +183,7 @@ async def get_group_users(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
-    group_user = await api.list_users_in_group(
+    group_user = await tmp_api.list_users_in_group(
         request.app, req_ctx.user_id, path_params.gid
     )
     assert (
@@ -203,7 +204,7 @@ async def add_group_user(request: web.Request):
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
     added: GroupUserAdd = await parse_request_body_as(GroupUserAdd, request)
 
-    await api.add_user_in_group(
+    await tmp_api.add_user_in_group(
         request.app,
         req_ctx.user_id,
         path_params.gid,
@@ -223,7 +224,7 @@ async def get_group_user(request: web.Request):
     """
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsUsersPathParams, request)
-    user = await api.get_user_in_group(
+    user = await tmp_api.get_user_in_group(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
     assert GroupUserGet.model_validate(user) is not None  # nosec
@@ -239,7 +240,7 @@ async def update_group_user(request: web.Request):
     path_params = parse_request_path_parameters_as(GroupsUsersPathParams, request)
     update: GroupUserUpdate = await parse_request_body_as(GroupUserUpdate, request)
 
-    user = await api.update_user_in_group(
+    user = await tmp_api.update_user_in_group(
         request.app,
         user_id=req_ctx.user_id,
         gid=path_params.gid,
@@ -257,7 +258,7 @@ async def update_group_user(request: web.Request):
 async def delete_group_user(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsUsersPathParams, request)
-    await api.delete_user_in_group(
+    await tmp_api.delete_user_in_group(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
