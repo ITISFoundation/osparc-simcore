@@ -5,13 +5,13 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
-from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from pydantic import ValidationError
 
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
+from ...models.schemas.model_adapter import ServicePricingPlanGetLegacy
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
@@ -262,7 +262,7 @@ async def list_solver_ports(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/pricing_plan",
-    response_model=ServicePricingPlanGet,
+    response_model=ServicePricingPlanGetLegacy,
     description="Gets solver pricing plan\n\n"
     + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
     responses=_SOLVER_STATUS_CODES,

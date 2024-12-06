@@ -147,7 +147,7 @@ lazy-object-proxy==1.10.0
     # via openapi-spec-validator
 lupa==2.2
     # via fakeredis
-markupsafe==2.1.5
+markupsafe==3.0.2
     # via
     #   -c requirements/_base.txt
     #   jinja2
@@ -164,7 +164,7 @@ openapi-spec-validator==0.7.1
     # via moto
 orderly-set==5.2.2
     # via deepdiff
-packaging==24.0
+packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -177,7 +177,7 @@ ply==3.11
     # via jsonpath-ng
 pprintpp==0.4.0
     # via pytest-icdiff
-psutil==6.0.0
+psutil==6.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -228,7 +228,7 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -273,9 +273,7 @@ s3transfer==0.10.1
     #   -c requirements/_base.txt
     #   boto3
 setuptools==74.0.0
-    # via
-    #   -c requirements/_base.txt
-    #   moto
+    # via moto
 six==1.16.0
     # via
     #   -c requirements/_base.txt

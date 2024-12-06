@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Deque
 
+from . import tracing
 from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ class Context:
 
 @dataclass
 class QueueElement:
+    tracing_context: tracing.TracingContext
     do_profile: bool = False
     input: Awaitable | None = None
     output: Any | None = None
@@ -162,16 +164,17 @@ def run_sequentially_in_context(
                     while True:
                         element = await in_q.get()
                         in_q.task_done()
-                        # check if requested to shutdown
-                        try:
-                            do_profile = element.do_profile
-                            awaitable = element.input
-                            if awaitable is None:
-                                break
-                            with profile_context(do_profile):
-                                result = await awaitable
-                        except Exception as e:  # pylint: disable=broad-except
-                            result = e
+                        with tracing.use_tracing_context(element.tracing_context):
+                            # check if requested to shutdown
+                            try:
+                                do_profile = element.do_profile
+                                awaitable = element.input
+                                if awaitable is None:
+                                    break
+                                with profile_context(do_profile):
+                                    result = await awaitable
+                            except Exception as e:  # pylint: disable=broad-except
+                                result = e
                         await out_q.put(result)
 
                     logging.info(
@@ -189,6 +192,7 @@ def run_sequentially_in_context(
                 queue_input = QueueElement(
                     input=decorated_function(*args, **kwargs),
                     do_profile=is_profiling(),
+                    tracing_context=tracing.get_context(),
                 )
                 await context.in_queue.put(queue_input)
                 wrapped_result = await context.out_queue.get()
