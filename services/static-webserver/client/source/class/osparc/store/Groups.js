@@ -94,8 +94,8 @@ qx.Class.define("osparc.store.Groups", {
           this.setGroupMe(groupMe);
           const myAuthData = osparc.auth.Data.getInstance();
           groupMe.set({
-            label: osparc.data.model.User.namesToLabel(myAuthData.getFirstName(), myAuthData.getLastName()),
-            description: myAuthData.getEmail(),
+            label: myAuthData.getUsername(),
+            description: `${myAuthData.getFirstName()} ${myAuthData.getLastName()} - ${myAuthData.getEmail()}`,
             thumbnail: osparc.data.model.User.emailToThumbnail(myAuthData.getEmail()),
           })
           return orgs;
