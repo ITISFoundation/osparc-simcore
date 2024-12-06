@@ -25,7 +25,7 @@ qx.Class.define("osparc.product.quickStart.s4llite.Welcome", {
 
   members: {
     _populateCard: function() {
-      const welcomeText = this.tr("Welcome onboard ") + osparc.utils.Utils.capitalize(osparc.auth.Data.getInstance().getUsername()) + ",";
+      const welcomeText = this.tr("Welcome onboard ") + osparc.utils.Utils.capitalize(osparc.auth.Data.getInstance().getFriendlyUsername()) + ",";
       const welcome = osparc.product.quickStart.Utils.createLabel(welcomeText);
       this._add(welcome);
 

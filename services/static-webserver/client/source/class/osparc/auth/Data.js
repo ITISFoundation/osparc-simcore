@@ -142,6 +142,14 @@ qx.Class.define("osparc.auth.Data", {
       return osparc.utils.Utils.cookie.getCookie("user") === "logout";
     },
 
+    getFriendlyUsername: function() {
+      const firstName = this.getFirstName();
+      if (firstName) {
+        return firstName;
+      }
+      return this.getUsername();
+    },
+
     getFriendlyRole: function() {
       const role = this.getRole();
       let friendlyRole = role.replace(/_/g, " ");
