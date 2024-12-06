@@ -11,6 +11,7 @@ from models_library.api_schemas_webserver.groups import (
     GroupUserUpdate,
     MyGroupsGet,
 )
+from models_library.groups import Group
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -23,19 +24,30 @@ from ..login.decorators import login_required
 from ..products.api import Product, get_current_product
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import api
+from . import _groups_api
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.models import (
     GroupsPathParams,
     GroupsRequestContext,
     GroupsUsersPathParams,
 )
+from ._common.types import AccessRightsDict
 from .exceptions import GroupNotFoundError
 
 _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
+
+
+def _to_groupget_model(group: Group, access_rights: AccessRightsDict) -> GroupGet:
+    # Fuses both dataset into GroupSet
+    return GroupGet.model_validate(
+        {
+            **group.model_dump(),
+            "access_rights": access_rights,
+        }
+    )
 
 
 @routes.get(f"/{API_VTAG}/groups", name="list_groups")
@@ -49,28 +61,32 @@ async def list_groups(request: web.Request):
     product: Product = get_current_product(request)
     req_ctx = GroupsRequestContext.model_validate(request)
 
-    primary_group, user_groups, all_group = await api.list_user_groups_with_read_access(
+    groups_by_type = await _groups_api.list_user_groups_with_read_access(
         request.app, req_ctx.user_id
     )
 
-    my_group = {
-        "me": primary_group,
-        "organizations": user_groups,
-        "all": all_group,
-        "product": None,
-    }
+    assert groups_by_type.primary
+    assert groups_by_type.everyone
+
+    my_product_group = None
 
     if product.group_id:
         with suppress(GroupNotFoundError):
             # Product is optional
-            my_group["product"] = await api.get_product_group_for_user(
+            my_product_group = await _groups_api.get_product_group_for_user(
                 app=request.app,
                 user_id=req_ctx.user_id,
                 product_gid=product.group_id,
             )
 
-    assert MyGroupsGet.model_validate(my_group) is not None  # nosec
-    return envelope_json_response(my_group)
+    my_groups = MyGroupsGet(
+        me=_to_groupget_model(*groups_by_type.primary),
+        organizations=[_to_groupget_model(*gi) for gi in groups_by_type.standard],
+        all=_to_groupget_model(*groups_by_type.everyone),
+        product=_to_groupget_model(*my_product_group) if my_product_group else None,
+    )
+
+    return envelope_json_response(my_groups)
 
 
 #
@@ -87,8 +103,11 @@ async def get_group(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
-    group = await api.get_user_group(request.app, req_ctx.user_id, path_params.gid)
-    assert GroupGet.model_validate(group) is not None  # nosec
+    group_info = await _groups_api.get_user_group(
+        request.app, req_ctx.user_id, path_params.gid
+    )
+
+    group = _to_groupget_model(*group_info)
     return envelope_json_response(group)
 
 
