@@ -64,13 +64,13 @@ async def create_api_key(request: web.Request):
     return envelope_json_response(api_key)
 
 
-@routes.get(f"/{API_VTAG}/auth/api-keys", name="get_api_keys")
+@routes.get(f"/{API_VTAG}/auth/api-keys", name="list_api_keys")
 @login_required
 @permission_required("user.apikey.*")
 @handle_plugin_requests_exceptions
-async def get_api_keys(request: web.Request):
+async def list_api_keys(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
-    api_keys = await _service.get_api_keys(
+    api_keys = await _service.list_api_keys(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,

@@ -48,7 +48,7 @@ async def create_api_key(
     )
 
 
-async def get_api_keys(
+async def list_api_keys(
     app: web.Application,
     *,
     user_id: UserID,
