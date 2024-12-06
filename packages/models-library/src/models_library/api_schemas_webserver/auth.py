@@ -99,7 +99,7 @@ class ApiKeyCreateResponse(ApiKeyCreateRequest):
                 {
                     "id": "42",
                     "display_name": "test-api-forever",
-                    "api_base_url": "http://api.osparc.io/v0",
+                    "api_base_url": "http://api.osparc.io/v0",  # NOSONAR
                     "api_key": "key",
                     "api_secret": "secret",
                 },
@@ -107,7 +107,7 @@ class ApiKeyCreateResponse(ApiKeyCreateRequest):
                     "id": "48",
                     "display_name": "test-api-for-one-day",
                     "expiration": 60 * 60 * 24,
-                    "api_base_url": "http://api.sim4life.io/v0",
+                    "api_base_url": "http://api.sim4life.io/v0",  # NOSONAR
                     "api_key": "key",
                     "api_secret": "secret",
                 },
@@ -115,7 +115,7 @@ class ApiKeyCreateResponse(ApiKeyCreateRequest):
                     "id": "54",
                     "display_name": "test-api-for-another-day",
                     "expiration": "24:00:00",
-                    "api_base_url": "http://api.osparc-master.io/v0",
+                    "api_base_url": "http://api.osparc-master.io/v0",  # NOSONAR
                     "api_key": "key",
                     "api_secret": "secret",
                 },
