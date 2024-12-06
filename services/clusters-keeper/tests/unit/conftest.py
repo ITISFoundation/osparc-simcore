@@ -262,7 +262,7 @@ def app_settings(initialized_app: FastAPI) -> ApplicationSettings:
 @pytest.fixture
 async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     async with httpx.AsyncClient(
-        app=initialized_app,
+        transport=httpx.ASGITransport(app=initialized_app),
         base_url=f"http://{initialized_app.title}.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
