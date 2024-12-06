@@ -22,4 +22,14 @@ class ApiKeyGet(BaseModel):
 
     model_config = ConfigDict(
         from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": "42",
+                    "display_name": "test-api-forever",
+                    "api_key": "key",
+                    "api_secret": "secret",
+                },
+            ]
+        },
     )
