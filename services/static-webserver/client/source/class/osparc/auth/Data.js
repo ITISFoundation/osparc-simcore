@@ -53,6 +53,13 @@ qx.Class.define("osparc.auth.Data", {
       apply: "__applyAuth"
     },
 
+    username: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeUsername",
+    },
+
     /**
      *  Email of logged in user, otherwise null
     */
@@ -133,18 +140,6 @@ qx.Class.define("osparc.auth.Data", {
 
     isLogout: function() {
       return osparc.utils.Utils.cookie.getCookie("user") === "logout";
-    },
-
-    getUserName: function() {
-      const firstName = this.getFirstName();
-      if (firstName) {
-        return firstName;
-      }
-      const email = this.getEmail();
-      if (email) {
-        return osparc.utils.Utils.getNameFromEmail(email);
-      }
-      return "user";
     },
 
     getFriendlyRole: function() {

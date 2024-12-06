@@ -68,6 +68,13 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
         converter: lastName => authData.getFirstName() + " " + lastName
       });
 
+      const usernameLabel = new qx.ui.basic.Label().set({
+        font: "text-14",
+        alignX: "center"
+      });
+      authData.bind("username", usernameLabel, "value");
+      layout.add(usernameLabel);
+
       if (authData.getRole() !== "user") {
         const role = authData.getFriendlyRole();
         const roleLabel = new qx.ui.basic.Label(role).set({
@@ -76,12 +83,6 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
         });
         layout.add(roleLabel);
       }
-
-      const emailLabel = new qx.ui.basic.Label(email).set({
-        font: "text-13",
-        alignX: "center"
-      });
-      layout.add(emailLabel);
 
       if (withSpacer) {
         layout.add(new qx.ui.core.Spacer(15, 15));

@@ -31,9 +31,6 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.__userProfileData = null;
-    this.__userProfileModel = null;
-
     this.__fetchProfile();
 
     this._add(this.__createProfileUser());
@@ -64,6 +61,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         this.__userProfileModel.set({
           "firstName": data["first_name"] || "",
           "lastName": data["last_name"] || "",
+          "username": data["userName"] || "",
           "email": data["login"],
           "expirationDate": data["expirationDate"] || null
         });
@@ -86,6 +84,10 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         placeholder: this.tr("Last Name")
       });
 
+      const username = new qx.ui.form.TextField().set({
+        placeholder: this.tr("username")
+      });
+
       const email = new qx.ui.form.TextField().set({
         placeholder: this.tr("Email"),
         readOnly: true
@@ -94,6 +96,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       const form = new qx.ui.form.Form();
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
+      form.add(username, "Username", null, "username");
       form.add(email, "Email", null, "email");
       box.add(new qx.ui.form.renderer.Single(form));
 
@@ -118,6 +121,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       const raw = {
         "firstName": "",
         "lastName": "",
+        "username": "",
         "email": "",
         "expirationDate": null
       };
@@ -132,6 +136,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         }
       });
       controller.addTarget(lastName, "value", "lastName", true);
+      controller.addTarget(username, "value", "username", true);
       controller.addTarget(expirationDate, "value", "expirationDate", false, {
         converter: expirationDay => {
           if (expirationDay) {
@@ -163,12 +168,17 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           return;
         }
 
-        if (this.__userProfileData["first_name"] !== model.getFirstName() || this.__userProfileData["last_name"] !== model.getLastName()) {
+        if (
+          this.__userProfileData["first_name"] !== model.getFirstName() ||
+          this.__userProfileData["last_name"] !== model.getLastName() ||
+          this.__userProfileData["username"] !== model.getUsername()
+        ) {
           if (namesValidator.validate()) {
             const params = {
               data: {
                 "first_name": model.getFirstName(),
                 "last_name": model.getLastName(),
+                "userName": model.getUsername(),
               }
             };
             osparc.data.Resources.fetch("profile", "patch", params)

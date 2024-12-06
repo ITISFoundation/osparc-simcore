@@ -240,6 +240,7 @@ qx.Class.define("osparc.auth.Manager", {
       const authData = osparc.auth.Data.getInstance();
       authData.set({
         email: profile["login"],
+        username: profile["userName"],
         firstName: profile["first_name"] || profile["login"],
         lastName: profile["last_name"] || "",
         expirationDate: "expirationDate" in profile ? new Date(profile["expirationDate"]) : null
