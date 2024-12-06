@@ -87,6 +87,7 @@ openapi-diff.md: guard-OPENAPI_JSON_BASE_URL openapi.json ## Diffs against a rem
 # SEE https://schemathesis.readthedocs.io/en/stable/index.html
 APP_URL:=http://$(get_my_ip).nip.io:8006
 
+
 test-api: ## Runs schemathesis against development server (NOTE: make up-devel first)
 	@docker run schemathesis/schemathesis:stable run \
 		"$(APP_URL)/api/v0/openapi.json"
