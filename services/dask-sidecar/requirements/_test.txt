@@ -145,7 +145,7 @@ py-partiql-parser==0.5.6
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==2.10.2
+pydantic==2.10.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -222,7 +222,7 @@ responses==0.25.3
     # via moto
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.22.1
+rpds-py==0.22.3
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -231,7 +231,7 @@ s3transfer==0.10.4
     # via boto3
 setuptools==75.6.0
     # via moto
-six==1.16.0
+six==1.17.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
