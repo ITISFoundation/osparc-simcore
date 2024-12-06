@@ -83,8 +83,13 @@ class ApiKeyCreateRequest(InputSchema):
     )
 
 
-class ApiKeyCreateResponse(ApiKeyCreateRequest):
+class ApiKeyCreateResponse(OutputSchema):
     id: IDStr
+    display_name: Annotated[str, Field(..., min_length=3)]
+    expiration: timedelta | None = Field(
+        None,
+        description="Time delta from creation time to expiration. If None, then it does not expire.",
+    )
     api_base_url: HttpUrl
     api_key: str
     api_secret: str
