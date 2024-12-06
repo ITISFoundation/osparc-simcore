@@ -92,7 +92,8 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
             const key = data["api_key"];
             const secret = data["api_secret"];
-            const showAPIKeyWindow = new osparc.desktop.preferences.window.ShowAPIKey(key, secret);
+            const baseUrl = data["api_base_url"];
+            const showAPIKeyWindow = new osparc.desktop.preferences.window.ShowAPIKey(key, secret, baseUrl);
             showAPIKeyWindow.center();
             showAPIKeyWindow.open();
           })

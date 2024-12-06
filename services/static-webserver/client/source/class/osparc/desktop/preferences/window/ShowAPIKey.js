@@ -16,7 +16,7 @@
 qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
   extend: osparc.desktop.preferences.window.APIKeyBase,
 
-  construct: function(key, secret) {
+  construct: function(key, secret, baseUrl) {
     const caption = this.tr("API Key");
     const infoText = this.tr("For your protection, store your access keys securely and do not share them. You will not be able to access the key again once this window is closed.");
     this.base(arguments, caption, infoText);
@@ -25,18 +25,21 @@ qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
       clickAwayClose: false
     });
 
-    this.__populateTokens(key, secret);
+    this.__populateTokens(key, secret, baseUrl);
   },
 
   members: {
-    __populateTokens: function(key, secret) {
+    __populateTokens: function(key, secret, baseUrl) {
       const hBox1 = this.__createEntry(this.tr("<b>Key:</b>"), key);
       this._add(hBox1);
 
       const hBox2 = this.__createEntry(this.tr("<b>Secret:</b>"), secret);
       this._add(hBox2);
 
-      const hBox3 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+      const hBox3 = this.__createEntry(this.tr("<b>Base url:</b>"), baseUrl);
+      this._add(hBox3);
+
+      const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         appearance: "margined-layout"
       });
       const copyAPIKeyBtn = new qx.ui.form.Button(this.tr("Copy API Key"));
@@ -45,7 +48,7 @@ qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
           copyAPIKeyBtn.setIcon("@FontAwesome5Solid/check/12");
         }
       });
-      hBox3.add(copyAPIKeyBtn, {
+      buttonsLayout.add(copyAPIKeyBtn, {
         width: "50%"
       });
       const copyAPISecretBtn = new qx.ui.form.Button(this.tr("Copy API Secret"));
@@ -54,10 +57,10 @@ qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
           copyAPISecretBtn.setIcon("@FontAwesome5Solid/check/12");
         }
       });
-      hBox3.add(copyAPISecretBtn, {
+      buttonsLayout.add(copyAPISecretBtn, {
         width: "50%"
       });
-      this._add(hBox3);
+      this._add(buttonsLayout);
     },
 
     __createEntry: function(title, label) {
