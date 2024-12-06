@@ -1,5 +1,3 @@
-from typing import TypedDict
-
 from aiopg.sa.result import RowProxy
 
 _GROUPS_SCHEMA_TO_DB = {
@@ -10,12 +8,6 @@ _GROUPS_SCHEMA_TO_DB = {
     "accessRights": "access_rights",
     "inclusionRules": "inclusion_rules",
 }
-
-
-class AccessRightsDict(TypedDict):
-    read: bool
-    write: bool
-    delete: bool
 
 
 def convert_groups_db_to_schema(
