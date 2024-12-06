@@ -43,7 +43,7 @@ pytest-asyncio<0.24
 #
 # Bugs
 #
-httpx<0.28 # Waiting for fix in respx: https://github.com/lundberg/respx/pull/278
+httpx!=0.28.0  # Waiting for fix in respx: https://github.com/lundberg/respx/pull/278
 
 
 
