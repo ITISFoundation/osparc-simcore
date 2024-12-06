@@ -119,9 +119,6 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "border-invalid": "failed-red",
     "border-disabled": "background-main",
 
-    // separator
-    "border-separator": "background-main-3",
-
     // tooltip
     "tooltip": "flash_message_bg",
     "tooltip-text": "text",
@@ -135,11 +132,11 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
     // used in table code
     "table-header-cell": "background-main",
-    "table-row-background-focused-selected": "background-main-4",
-    "table-row-background-focused": "background-main-3",
-    "table-row-background-selected": "background-main-4",
     "table-row-background-even": "background-main",
     "table-row-background-odd": "background-main",
+    "table-row-background-focused": "background-main-1",
+    "table-row-background-focused-selected": "background-main-2",
+    "table-row-background-selected": "background-main-2",
 
     // foreground
     "table-row-selected": "c12",

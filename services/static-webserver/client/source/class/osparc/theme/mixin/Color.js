@@ -46,6 +46,9 @@ qx.Theme.define("osparc.theme.mixin.Color", {
 
     "status_icon": "rgba(255, 255, 255, 1)",
 
+    // separator
+    "border-separator": "product-color",
+
     "visual-blue": "#007fd4", // Visual Studio blue
 
     "logger-warning-message": "warning-yellow",
