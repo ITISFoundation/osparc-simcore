@@ -35,7 +35,7 @@ qx.Class.define("osparc.data.model.User", {
         label += " " + qx.lang.String.firstUp(userData["last_name"]);
       }
     }
-    const thumbnail = this.self().emailToThumbnail(userData["login"]);
+    const thumbnail = osparc.utils.Avatar.emailToThumbnail(userData["login"]);
     this.set({
       userId: userData["id"],
       groupId: userData["gid"],
@@ -113,21 +113,4 @@ qx.Class.define("osparc.data.model.User", {
       event: "changeThumbnail",
     },
   },
-
-  statics: {
-    namesToLabel: function(firstName, lastName) {
-      let label = "";
-      if (firstName) {
-        label = osparc.utils.Utils.firstsUp(firstName);
-        if (lastName) {
-          label += " " + osparc.utils.Utils.firstsUp(lastName);
-        }
-      }
-      return label;
-    },
-
-    emailToThumbnail: function(email) {
-      return osparc.utils.Avatar.getUrl(email, 32)
-    },
-  }
 });
