@@ -90,9 +90,9 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
           .then(data => {
             this.__rebuildAPIKeysList();
 
-            const key = data["api_key"];
-            const secret = data["api_secret"];
-            const baseUrl = data["api_base_url"];
+            const key = data["apiKey"];
+            const secret = data["apiSecret"];
+            const baseUrl = data["apiBaseUrl"];
             const showAPIKeyWindow = new osparc.desktop.preferences.window.ShowAPIKey(key, secret, baseUrl);
             showAPIKeyWindow.center();
             showAPIKeyWindow.open();
@@ -120,7 +120,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
     __createAPIKeyEntry: function(apiKey) {
       const grid = this.__createValidEntryLayout();
 
-      const nameLabel = new qx.ui.basic.Label(apiKey["display_name"]);
+      const nameLabel = new qx.ui.basic.Label(apiKey["displayName"]);
       grid.add(nameLabel, {
         row: 0,
         column: 0
