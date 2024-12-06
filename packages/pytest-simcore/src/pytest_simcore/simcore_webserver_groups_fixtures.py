@@ -3,28 +3,27 @@
 # pylint: disable=unused-variable
 """
 
-    Fixtures for user groups
+    Fixtures for groups
 
     NOTE: These fixtures are used in integration and unit tests
 """
 
 
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, Protocol
 
 import pytest
+from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.groups import GroupGet
+from models_library.users import UserID
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from simcore_service_webserver.groups import _groups_db
 from simcore_service_webserver.groups._common.types import GroupsByTypeTuple
 from simcore_service_webserver.groups._groups_api import (
     list_user_groups_with_read_access,
 )
-from simcore_service_webserver.groups.api import (
-    add_user_in_group,
-    create_user_group,
-    delete_user_group,
-)
+from simcore_service_webserver.groups.api import add_user_in_group, delete_user_group
 
 
 def _to_group_get_json(group, access_rights) -> dict[str, Any]:
@@ -34,6 +33,36 @@ def _to_group_get_json(group, access_rights) -> dict[str, Any]:
             "access_rights": access_rights,
         }
     ).model_dump(mode="json")
+
+
+#
+# FACTORY FIXTURES
+#
+
+
+class CreateUserGroupCallable(Protocol):
+    async def __call__(
+        self, app: web.Application, user_id: UserID, new_group: dict
+    ) -> dict[str, Any]:
+        ...
+
+
+@pytest.fixture
+def create_user_group() -> CreateUserGroupCallable:
+    async def _create(
+        app: web.Application, user_id: UserID, new_group: dict
+    ) -> dict[str, Any]:
+        group, access_rights = await _groups_db.create_user_group(
+            app, user_id=user_id, new_group=new_group
+        )
+        return _to_group_get_json(group=group, access_rights=access_rights)
+
+    return _create
+
+
+#
+# USER'S GROUPS FIXTURES
+#
 
 
 @pytest.fixture
@@ -65,24 +94,10 @@ async def standard_groups(
     client: TestClient,
     logged_user: UserInfoDict,
     logged_user_groups_by_type: GroupsByTypeTuple,
+    create_user_group: CreateUserGroupCallable,
 ) -> AsyncIterator[list[dict[str, Any]]]:
 
     assert client.app
-    sparc_group = {
-        "gid": "5",  # this will be replaced
-        "label": "SPARC",
-        "description": "Stimulating Peripheral Activity to Relieve Conditions",
-        "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
-        "inclusionRules": {"email": r"@(sparc)+\.(io|com)$"},
-    }
-    team_black_group = {
-        "gid": "5",  # this will be replaced
-        "label": "team Black",
-        "description": "THE incredible black team",
-        "thumbnail": None,
-        "inclusionRules": {"email": r"@(black)+\.(io|com)$"},
-    }
-
     # create a separate account to own standard groups
     async with NewUser(
         {
@@ -95,12 +110,23 @@ async def standard_groups(
         sparc_group = await create_user_group(
             app=client.app,
             user_id=owner_user["id"],
-            new_group=sparc_group,
+            new_group={
+                "label": "SPARC",
+                "description": "Stimulating Peripheral Activity to Relieve Conditions",
+                "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
+                "inclusionRules": {"email": r"@(sparc)+\.(io|com)$"},
+            },
         )
         team_black_group = await create_user_group(
             app=client.app,
             user_id=owner_user["id"],
-            new_group=team_black_group,
+            new_group={
+                "gid": "5",  # this will be replaced
+                "label": "team Black",
+                "description": "THE incredible black team",
+                "thumbnail": None,
+                "inclusionRules": {"email": r"@(black)+\.(io|com)$"},
+            },
         )
 
         # adds logged_user  to sparc group
