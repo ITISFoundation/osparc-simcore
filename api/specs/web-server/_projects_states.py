@@ -34,8 +34,8 @@ router = APIRouter(
 )
 
 
-def to_desc(exceptions: set[type[Exception]] | type[Exception]):
-    exc_classes = {exceptions} if not isinstance(exceptions, set) else exceptions
+def to_desc(exceptions: list[type[Exception]] | type[Exception]):
+    exc_classes = [exceptions] if not isinstance(exceptions, list) else exceptions
     return ", ".join(f"{cls.__name__}" for cls in exc_classes)
 
 
@@ -43,26 +43,26 @@ def to_desc(exceptions: set[type[Exception]] | type[Exception]):
     "/projects/{project_id}:open",
     response_model=Envelope[ProjectGet],
     responses={
-        status.HTTP_400_BAD_REQUEST: {"description": to_desc({ValidationError})},
+        status.HTTP_400_BAD_REQUEST: {"description": to_desc([ValidationError])},
         status.HTTP_402_PAYMENT_REQUIRED: {
-            "description": to_desc({WalletNotEnoughCreditsError})
+            "description": to_desc([WalletNotEnoughCreditsError])
         },
         status.HTTP_403_FORBIDDEN: {
-            "description": to_desc({ProjectInvalidRightsError})
+            "description": to_desc([ProjectInvalidRightsError])
         },
         status.HTTP_404_NOT_FOUND: {
             "description": to_desc(
-                {ProjectNotFoundError, UserDefaultWalletNotFoundError}
+                [ProjectNotFoundError, UserDefaultWalletNotFoundError]
             )
         },
         status.HTTP_409_CONFLICT: {
-            "description": to_desc({ProjectTooManyProjectOpenedError}),
+            "description": to_desc([ProjectTooManyProjectOpenedError]),
         },
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": to_desc({ValidationError})
+            "description": to_desc([ValidationError])
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
-            "description": to_desc({DirectorServiceError})
+            "description": to_desc([DirectorServiceError])
         },
     },
 )

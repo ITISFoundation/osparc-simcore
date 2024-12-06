@@ -32,9 +32,3 @@ ${OAS_TARGET}: ${OAS_SOURCES} .update-schemas
 		--outfile $@ \
 		--type yaml  \
 		"${API_SPECS_DIR}/${APP_NAME}/openapi.yaml"
-
-
-.PHONY: openapi-specs
-openapi-specs: ${OAS_TARGET} ## creates and validates OpenAPI specs
-	# Validating bundled '${OAS_TARGET}'
-	@swagger-cli validate $<
