@@ -98,7 +98,9 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
             showAPIKeyWindow.open();
           })
           .catch(err => {
-            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+            const errorMsg = err.message || this.tr("Cannot create API Key");
+            osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+            console.error(err);
           })
           .finally(() => this.__requestAPIKeyBtn.setFetching(false));
       }, this);
