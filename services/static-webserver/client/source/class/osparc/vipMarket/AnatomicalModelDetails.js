@@ -202,7 +202,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __rentAnatomicalModel: function(anatomicalModelsData, pricingUnit) {
-      console.log(":puschase", anatomicalModelsData["licensedItemId"], pricingUnit["pricingUnitId"]);
+      console.log(":purchase", anatomicalModelsData["licensedItemId"], pricingUnit["pricingUnitId"]);
     },
   }
 });

@@ -1252,7 +1252,7 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/catalog/licensed-items"
           },
           purchase: {
-            method: "GET",
+            method: "POST",
             url: statics.API + "/catalog/licensed-items/{licensedItemId}:purchase"
           },
         }
