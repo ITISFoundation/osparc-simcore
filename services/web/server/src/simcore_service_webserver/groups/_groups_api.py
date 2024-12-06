@@ -59,7 +59,24 @@ async def get_product_group_for_user(
     )
 
 
-async def get_user_group(
+#
+# ORGANIZATIONS CRUD operations
+#
+
+
+async def create_organization(
+    app: web.Application, *, user_id: UserID, new_group_values: dict
+) -> tuple[Group, AccessRightsDict]:
+    """
+    raises GroupNotFoundError
+    raises UserInsufficientRightsError
+    """
+    return await _groups_db.create_user_group(
+        app, user_id=user_id, new_group=new_group_values
+    )
+
+
+async def get_organization(
     app: web.Application,
     *,
     user_id: UserID,
@@ -74,7 +91,7 @@ async def get_user_group(
     return await _groups_db.get_user_group(app, user_id=user_id, gid=group_id)
 
 
-async def update_user_group(
+async def update_organization(
     app: web.Application,
     *,
     user_id: UserID,
@@ -89,3 +106,14 @@ async def update_user_group(
     return await _groups_db.update_user_group(
         app, user_id=user_id, gid=group_id, new_group_values=new_group_values
     )
+
+
+async def delete_organization(
+    app: web.Application, *, user_id: UserID, group_id: GroupID
+) -> None:
+    """
+
+    raises GroupNotFoundError
+    raises UserInsufficientRightsError
+    """
+    return await _groups_db.delete_user_group(app, user_id=user_id, gid=group_id)
