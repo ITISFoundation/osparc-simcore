@@ -33,6 +33,7 @@ def _setup_logger(settings: ApplicationSettings):
     config_all_loggers(
         log_format_local_dev_enabled=settings.AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.AGENT_VOLUMES_LOG_FILTER_MAPPING,
+        tracing_settings=settings.AGENT_TRACING,
     )
 
 
