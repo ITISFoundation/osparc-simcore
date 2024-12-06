@@ -8,6 +8,7 @@ from ..exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
+from ..scicrunch.errors import InvalidRRIDError, ScicrunchError
 from ..users.exceptions import UserNotFoundError
 from .exceptions import (
     GroupNotFoundError,
@@ -39,6 +40,15 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     UserInsufficientRightsError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         "Insufficient rights for {permission} access to group {gid}",
+    ),
+    # scicrunch
+    InvalidRRIDError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        "Invalid RRID {rrid}",
+    ),
+    ScicrunchError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        "Cannot get RRID since scicrunch.org service is not reachable.",
     ),
 }
 
