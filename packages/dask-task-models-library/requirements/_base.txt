@@ -11,21 +11,21 @@ click==8.1.7
     #   dask
     #   distributed
     #   typer
-cloudpickle==3.0.0
+cloudpickle==3.1.0
     # via
     #   dask
     #   distributed
-dask==2024.9.0
+dask==2024.12.0
     # via
     #   -r requirements/_base.in
     #   distributed
-distributed==2024.9.0
+distributed==2024.12.0
     # via dask
-dnspython==2.6.1
+dnspython==2.7.0
     # via email-validator
 email-validator==2.2.0
     # via pydantic
-fsspec==2024.9.0
+fsspec==2024.10.0
     # via dask
 idna==3.10
     # via email-validator
@@ -42,7 +42,7 @@ jinja2==3.1.4
     #   distributed
 jsonschema==4.23.0
     # via -r requirements/../../../packages/models-library/requirements/_base.in
-jsonschema-specifications==2023.12.1
+jsonschema-specifications==2024.10.1
     # via jsonschema
 locket==1.0.0
     # via
@@ -50,13 +50,13 @@ locket==1.0.0
     #   partd
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.5
+markupsafe==3.0.2
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
 msgpack==1.1.0
     # via distributed
-orjson==3.10.7
+orjson==3.10.12
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -68,13 +68,13 @@ orjson==3.10.7
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-packaging==24.1
+packaging==24.2
     # via
     #   dask
     #   distributed
 partd==1.4.2
     # via dask
-psutil==6.0.0
+psutil==6.1.0
     # via distributed
 pydantic==2.10.3
     # via
@@ -94,7 +94,7 @@ pydantic==2.10.3
     #   pydantic-settings
 pydantic-core==2.27.1
     # via pydantic
-pydantic-extra-types==2.9.0
+pydantic-extra-types==2.10.0
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
@@ -124,37 +124,38 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-rich==13.8.1
+rich==13.9.4
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.20.0
+rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
 shellingham==1.5.4
     # via typer
-six==1.16.0
+six==1.17.0
     # via python-dateutil
 sortedcontainers==2.4.0
     # via distributed
 tblib==3.0.0
     # via distributed
-toolz==0.12.1
+toolz==1.0.0
     # via
     #   dask
     #   distributed
     #   partd
-tornado==6.4.1
+tornado==6.4.2
     # via distributed
-typer==0.12.5
+typer==0.15.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
-types-python-dateutil==2.9.0.20240906
+types-python-dateutil==2.9.0.20241206
     # via arrow
 typing-extensions==4.12.2
     # via
     #   pydantic
     #   pydantic-core
+    #   pydantic-extra-types
     #   typer
 urllib3==2.2.3
     # via
@@ -167,5 +168,5 @@ urllib3==2.2.3
     #   distributed
 zict==3.0.0
     # via distributed
-zipp==3.20.2
+zipp==3.21.0
     # via importlib-metadata
