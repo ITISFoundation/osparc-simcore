@@ -3,7 +3,6 @@ from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa.result import RowProxy
 from models_library.groups import GroupAtDB
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import UniqueViolation
@@ -288,6 +287,7 @@ async def list_users_in_group(
         # first check if the group exists
         group = await _get_user_group(conn, user_id=user_id, gid=gid)
         _check_group_permissions(group, user_id, gid, "read")
+
         # now get the list
         query = (
             sa.select(users, user_to_groups.c.access_rights)
@@ -422,7 +422,7 @@ async def add_new_user_in_group(
 
 async def _get_user_in_group_permissions(
     conn: AsyncConnection, *, gid: GroupID, the_user_id_in_group: int
-) -> RowProxy:
+):
     # now get the user
     result = await conn.stream(
         sa.select(users, user_to_groups.c.access_rights)
