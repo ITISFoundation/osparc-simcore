@@ -12,13 +12,14 @@
 
    Authors:
      * Pedro Crespo (pcrespov)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
 /**
  *  User profile in preferences dialog
  *
- *  - user name, surname, email, avatar
+ *  - first name, last name, username, email
  *
  */
 
@@ -46,6 +47,28 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
   members: {
     __userProfileData: null,
     __userProfileModel: null,
+
+    __fetchProfile: function() {
+      osparc.data.Resources.getOne("profile", {}, null, false)
+        .then(profile => {
+          this.__setDataToModel(profile);
+        })
+        .catch(err => {
+          console.error(err);
+        });
+    },
+
+    __setDataToModel: function(data) {
+      if (data) {
+        this.__userProfileData = data;
+        this.__userProfileModel.set({
+          "firstName": data["first_name"] || "",
+          "lastName": data["last_name"] || "",
+          "email": data["login"],
+          "expirationDate": data["expirationDate"] || null
+        });
+      }
+    },
 
     __createProfileUser: function() {
       // layout
@@ -140,55 +163,30 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           return;
         }
 
-        const requests = {
-          email: null,
-          names: null
-        };
-        if (this.__userProfileData["login"] !== model.getEmail()) {
-          if (emailValidator.validate()) {
-            const emailReq = new osparc.io.request.ApiRequest("/auth/change-email", "POST");
-            emailReq.setRequestData({
-              "email": model.getEmail()
-            });
-            requests.email = emailReq;
-          }
-        }
-
         if (this.__userProfileData["first_name"] !== model.getFirstName() || this.__userProfileData["last_name"] !== model.getLastName()) {
           if (namesValidator.validate()) {
-            const profileReq = new osparc.io.request.ApiRequest("/me", "PATCH");
-            profileReq.setRequestData({
-              "first_name": model.getFirstName(),
-              "last_name": model.getLastName()
-            });
-            requests.names = profileReq;
+            const params = {
+              data: {
+                "first_name": model.getFirstName(),
+                "last_name": model.getLastName(),
+              }
+            };
+            osparc.data.Resources.fetch("profile", "patch", params)
+              .then(() => {
+                this.__setDataToModel(Object.assign(this.__userProfileData, params.data));
+                osparc.auth.Manager.getInstance().updateProfile(this.__userProfileData);
+                const msg = this.tr("Profile updated");
+                osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+              })
+              .catch(err => {
+                this.__resetDataToModel();
+                const msg = err.message || this.tr("Failed to update profile");
+                osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                console.error(err);
+              });
           }
         }
-
-        Object.keys(requests).forEach(key => {
-          const req = requests[key];
-          if (req === null) {
-            return;
-          }
-
-          req.addListenerOnce("success", e => {
-            const reqData = e.getTarget().getRequestData();
-            this.__setDataToModel(Object.assign(this.__userProfileData, reqData));
-            osparc.auth.Manager.getInstance().updateProfile(this.__userProfileData);
-            const res = e.getTarget().getResponse();
-            const msg = (res && res.data) ? res.data : this.tr("Profile updated");
-            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-          }, this);
-
-          req.addListenerOnce("fail", e => {
-            this.__resetDataToModel();
-            const msg = osparc.data.Resources.getErrorMsg(e.getTarget().getResponse()) || this.tr("Failed to update profile");
-            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-          }, this);
-
-          req.send();
-        });
-      }, this);
+      });
 
       return box;
     },
@@ -259,28 +257,6 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       box.add(new qx.ui.form.renderer.Single(form));
 
       return box;
-    },
-
-    __fetchProfile: function() {
-      osparc.data.Resources.getOne("profile", {}, null, false)
-        .then(profile => {
-          this.__setDataToModel(profile);
-        })
-        .catch(err => {
-          console.error(err);
-        });
-    },
-
-    __setDataToModel: function(data) {
-      if (data) {
-        this.__userProfileData = data;
-        this.__userProfileModel.set({
-          "firstName": data["first_name"] || "",
-          "lastName": data["last_name"] || "",
-          "email": data["login"],
-          "expirationDate": data["expirationDate"] || null
-        });
-      }
     },
 
     __resetDataToModel: function() {
