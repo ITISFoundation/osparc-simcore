@@ -18,7 +18,7 @@ from models_library.api_schemas_webserver.groups import (
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.groups._models import (
+from simcore_service_webserver.groups._common.models import (
     GroupsClassifiersQuery,
     GroupsPathParams,
     GroupsUsersPathParams,
