@@ -21,6 +21,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from models_library.groups import EVERYONE_GROUP_ID
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
@@ -35,11 +36,7 @@ from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import _core as gc_core
 from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
-from simcore_service_webserver.groups.api import (
-    add_user_in_group,
-    create_user_group,
-    list_user_groups_with_read_access,
-)
+from simcore_service_webserver.groups.api import add_user_in_group, create_user_group
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
@@ -261,13 +258,12 @@ async def get_template_project(
 ):
     """returns a tempalte shared with all"""
     assert client.app
-    _, _, all_group = await list_user_groups_with_read_access(client.app, user["id"])
 
     # the information comes from a file, randomize it
     project_data["name"] = f"Fake template {uuid4()}"
     project_data["uuid"] = f"{uuid4()}"
     project_data["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": False, "delete": False}
+        str(EVERYONE_GROUP_ID): {"read": True, "write": False, "delete": False}
     }
     if access_rights is not None:
         project_data["accessRights"].update(access_rights)
