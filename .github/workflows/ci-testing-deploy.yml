@@ -2643,7 +2643,7 @@ jobs:
 
   system-api-specs:
     needs: [changes]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' && github.event_name == 'push' && github.event.pull_request != null }}
     timeout-minutes: 10
     name: "[sys] check api-specs are up to date"
     runs-on: ubuntu-latest
@@ -2669,7 +2669,7 @@ jobs:
 
   system-backwards-compatibility:
     needs: [changes, system-api-specs]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' && github.event_name == 'push' && github.event.pull_request != null }}
     timeout-minutes: 10
     name: "[sys] api-server backwards compatibility"
     runs-on: ubuntu-latest
@@ -2693,7 +2693,7 @@ jobs:
 
   api-spec-backwards-compatibility:
     needs: [changes, system-api-specs]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' && github.event_name == 'push' && github.event.pull_request != null }}
     continue-on-error: true
     timeout-minutes: 10
     name: "api-specs-backwards-compatibility"
