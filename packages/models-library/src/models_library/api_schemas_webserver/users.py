@@ -13,17 +13,17 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from ._base import InputSchema, OutputSchema
 
 
-class ProfilePrivacyGet(OutputSchema):
+class MyProfilePrivacyGet(OutputSchema):
     hide_fullname: bool
     hide_email: bool
 
 
-class ProfilePrivacyUpdate(InputSchema):
+class MyProfilePrivacyPatch(InputSchema):
     hide_fullname: bool | None = None
     hide_email: bool | None = None
 
 
-class ProfileGet(BaseModel):
+class MyProfileGet(BaseModel):
     # WARNING: do not use InputSchema until front-end is updated!
     id: UserID
     user_name: Annotated[
@@ -45,7 +45,7 @@ class ProfileGet(BaseModel):
         ),
     ] = None
 
-    privacy: ProfilePrivacyGet
+    privacy: MyProfilePrivacyGet
     preferences: AggregatedPreferences
 
     model_config = ConfigDict(
@@ -77,13 +77,13 @@ class ProfileGet(BaseModel):
         return v
 
 
-class ProfileUpdate(BaseModel):
+class MyProfilePatch(BaseModel):
     # WARNING: do not use InputSchema until front-end is updated!
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     user_name: Annotated[IDStr | None, Field(alias="userName")] = None
 
-    privacy: ProfilePrivacyUpdate | None = None
+    privacy: MyProfilePrivacyPatch | None = None
 
     model_config = ConfigDict(
         json_schema_extra={

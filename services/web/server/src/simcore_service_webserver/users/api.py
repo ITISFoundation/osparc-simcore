@@ -15,9 +15,9 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from models_library.api_schemas_webserver.users import (
-    ProfileGet,
-    ProfilePrivacyGet,
-    ProfileUpdate,
+    MyProfileGet,
+    MyProfilePatch,
+    MyProfilePrivacyGet,
 )
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
@@ -55,7 +55,7 @@ def _parse_as_user(user_id: Any) -> UserID:
 
 async def get_user_profile(
     app: web.Application, user_id: UserID, product_name: ProductName
-) -> ProfileGet:
+) -> MyProfileGet:
     """
     :raises UserNotFoundError:
     :raises MissingGroupExtraPropertiesForProductError: when product is not properly configured
@@ -136,7 +136,7 @@ async def get_user_profile(
     if user_profile.get("expiration_date"):
         optional["expiration_date"] = user_profile["expiration_date"]
 
-    return ProfileGet(
+    return MyProfileGet(
         id=user_profile["id"],
         user_name=user_profile["user_name"],
         first_name=user_profile["first_name"],
@@ -148,7 +148,7 @@ async def get_user_profile(
             "organizations": user_standard_groups,
             "all": all_group,
         },
-        privacy=ProfilePrivacyGet(
+        privacy=MyProfilePrivacyGet(
             hide_fullname=user_profile["privacy_hide_fullname"],
             hide_email=user_profile["privacy_hide_email"],
         ),
@@ -161,7 +161,7 @@ async def update_user_profile(
     app: web.Application,
     *,
     user_id: UserID,
-    update: ProfileUpdate,
+    update: MyProfilePatch,
 ) -> None:
     """
     Raises:
