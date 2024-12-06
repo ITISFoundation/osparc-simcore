@@ -9,8 +9,16 @@ from datetime import datetime
 from typing import Annotated, Any, Literal, TypeAlias
 
 from models_library.folders import FolderID
+from models_library.utils._original_fastapi_encoders import jsonable_encoder
 from models_library.workspaces import WorkspaceID
-from pydantic import BeforeValidator, ConfigDict, Field, HttpUrl, field_validator
+from pydantic import (
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    PlainSerializer,
+    field_validator,
+)
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import LongTruncatedStr, ShortTruncatedStr
@@ -80,9 +88,9 @@ class ProjectGet(OutputSchema):
     )
     state: ProjectState | None = None
     ui: EmptyModel | StudyUI | None = None
-    quality: dict[str, Any] = Field(
-        default_factory=dict, json_schema_extra={"default": {}}
-    )
+    quality: Annotated[
+        dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
+    ]
     dev: dict | None
     permalink: ProjectPermalink | None = None
     workspace_id: WorkspaceID | None
@@ -114,28 +122,42 @@ class ProjectReplace(InputSchema):
     last_change_date: DateTimeStr
     workbench: NodesDict
     access_rights: dict[GroupIDStr, AccessRights]
-    tags: list[int] | None = Field(
-        default_factory=list, json_schema_extra={"default": []}
-    )
-    classifiers: list[ClassifierID] | None = Field(
-        default_factory=list, json_schema_extra={"default": []}
-    )
+    tags: Annotated[
+        list[int] | None, Field(default_factory=list, json_schema_extra={"default": []})
+    ]
+
+    classifiers: Annotated[
+        list[ClassifierID] | None,
+        Field(default_factory=list, json_schema_extra={"default": []}),
+    ]
+
     ui: StudyUI | None = None
-    quality: dict[str, Any] = Field(
-        default_factory=dict, json_schema_extra={"default": {}}
-    )
+
+    quality: Annotated[
+        dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
+    ]
 
 
 class ProjectPatch(InputSchema):
     name: ShortTruncatedStr | None = Field(default=None)
     description: LongTruncatedStr | None = Field(default=None)
     thumbnail: Annotated[
-        HttpUrl | None, BeforeValidator(empty_str_to_none_pre_validator)
-    ] = Field(default=None)
+        HttpUrl | None,
+        BeforeValidator(empty_str_to_none_pre_validator),
+        PlainSerializer(lambda x: str(x) if x is not None else None),
+    ] = None
     access_rights: dict[GroupIDStr, AccessRights] | None = Field(default=None)
     classifiers: list[ClassifierID] | None = Field(default=None)
     dev: dict | None = Field(default=None)
-    ui: StudyUI | None = Field(default=None)
+    ui: Annotated[
+        StudyUI | None,
+        BeforeValidator(empty_str_to_none_pre_validator),
+        PlainSerializer(
+            lambda obj: jsonable_encoder(
+                obj, exclude_unset=True, by_alias=False
+            )  # For the sake of backward compatibility
+        ),
+    ] = Field(default=None)
     quality: dict[str, Any] | None = Field(default=None)
 
 

@@ -1,5 +1,5 @@
 """The dask client is the osparc part that communicates with a
-dask-scheduler/worker backend directly or through a dask-gateway.
+dask-scheduler/worker backend.
 
 From dask documentation any Data or function must follow the criteria to be
 usable in dask [http://distributed.dask.org/en/stable/limitations.html?highlight=cloudpickle#assumptions-on-functions-and-data]:
@@ -16,7 +16,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any, cast
+from typing import Any, Final, cast
 
 import dask.typing
 import distributed
@@ -43,7 +43,7 @@ from dask_task_models_library.resource_constraints import (
 from distributed.scheduler import TaskStateState as DaskSchedulerTaskState
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.clusters import ClusterDetails, Scheduler
-from models_library.clusters import ClusterAuthentication, ClusterID, ClusterTypeInModel
+from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
@@ -74,7 +74,7 @@ from ..utils import dask as dask_utils
 from ..utils.dask_client_utils import (
     DaskSubSystem,
     TaskHandlers,
-    create_internal_client_based_on_auth,
+    connect_to_dask_scheduler,
 )
 
 _logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ _DASK_TASK_STATUS_DASK_CLIENT_TASK_STATE_MAP: dict[
 }
 
 
-_DASK_DEFAULT_TIMEOUT_S = 1
+_DASK_DEFAULT_TIMEOUT_S: Final[int] = 5
 
 
 _UserCallbackInSepThread = Callable[[], None]
@@ -133,7 +133,7 @@ class DaskClient:
     ) -> "DaskClient":
         _logger.info(
             "Initiating connection to %s with auth: %s, type: %s",
-            f"dask-scheduler/gateway at {endpoint}",
+            f"dask-scheduler at {endpoint}",
             authentication,
             cluster_type,
         )
@@ -149,9 +149,7 @@ class DaskClient:
                     endpoint,
                     attempt.retry_state.attempt_number,
                 )
-                backend = await create_internal_client_based_on_auth(
-                    endpoint, authentication
-                )
+                backend = await connect_to_dask_scheduler(endpoint, authentication)
                 dask_utils.check_scheduler_status(backend.client)
                 instance = cls(
                     app=app,
@@ -162,7 +160,7 @@ class DaskClient:
                 )
                 _logger.info(
                     "Connection to %s succeeded [%s]",
-                    f"dask-scheduler/gateway at {endpoint}",
+                    f"dask-scheduler at {endpoint}",
                     json.dumps(attempt.retry_state.retry_object.statistics),
                 )
                 _logger.info(
@@ -265,6 +263,9 @@ class DaskClient:
             )
             # NOTE: the callback is running in a secondary thread, and takes a future as arg
             task_future.add_done_callback(lambda _: callback())
+            await distributed.Variable(job_id, client=self.backend.client).set(
+                task_future
+            )
 
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.publish_dataset(task_future, name=job_id)
@@ -287,7 +288,6 @@ class DaskClient:
         *,
         user_id: UserID,
         project_id: ProjectID,
-        cluster_id: ClusterID,
         tasks: dict[NodeID, Image],
         callback: _UserCallbackInSepThread,
         remote_fct: ContainerRemoteFct | None = None,
@@ -331,22 +331,18 @@ class DaskClient:
             )
             dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
             dask_utils.check_scheduler_status(self.backend.client)
-            await dask_utils.check_maximize_workers(self.backend.gateway_cluster)
-            # NOTE: in case it's a gateway or it is an on-demand cluster
+            # NOTE: in case it is an on-demand cluster
             # we do not check a priori if the task
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
-            # might also auto-scale and the gateway does not know that a priori.
+            # might also auto-scale we do not know that a priori.
             # So, we'll just send the tasks over and see what happens after a while.
-            if (self.cluster_type != ClusterTypeInModel.ON_DEMAND) and (
-                self.backend.gateway is None
-            ):
+            if self.cluster_type != ClusterTypeInModel.ON_DEMAND:
                 dask_utils.check_if_cluster_is_able_to_run_pipeline(
                     project_id=project_id,
                     node_id=node_id,
                     scheduler_info=self.backend.client.scheduler_info(),
                     task_resources=dask_resources,
                     node_image=node_image,
-                    cluster_id=cluster_id,
                 )
 
             s3_settings = None
@@ -457,23 +453,34 @@ class DaskClient:
                 DaskSchedulerTaskState | None, task_statuses.get(job_id, "lost")
             )
             if dask_status == "erred":
-                # find out if this was a cancellation
-                exception = await distributed.Future(job_id).exception(
-                    timeout=_DASK_DEFAULT_TIMEOUT_S
-                )
-                assert isinstance(exception, Exception)  # nosec
-
-                if isinstance(exception, TaskCancelledError):
-                    running_states.append(DaskClientTaskState.ABORTED)
-                else:
-                    assert exception  # nosec
-                    _logger.warning(
-                        "Task  %s completed in error:\n%s\nTrace:\n%s",
-                        job_id,
-                        exception,
-                        "".join(traceback.format_exception(exception)),
+                try:
+                    # find out if this was a cancellation
+                    var = distributed.Variable(job_id, client=self.backend.client)
+                    future: distributed.Future = await var.get(
+                        timeout=_DASK_DEFAULT_TIMEOUT_S
                     )
-                    running_states.append(DaskClientTaskState.ERRED)
+                    exception = await future.exception(timeout=_DASK_DEFAULT_TIMEOUT_S)
+                    assert isinstance(exception, Exception)  # nosec
+
+                    if isinstance(exception, TaskCancelledError):
+                        running_states.append(DaskClientTaskState.ABORTED)
+                    else:
+                        assert exception  # nosec
+                        _logger.warning(
+                            "Task  %s completed in error:\n%s\nTrace:\n%s",
+                            job_id,
+                            exception,
+                            "".join(traceback.format_exception(exception)),
+                        )
+                        running_states.append(DaskClientTaskState.ERRED)
+                except TimeoutError:
+                    _logger.warning(
+                        "Task  %s could not be retrieved from dask-scheduler, it is lost\n"
+                        "TIP:If the task was unpublished this can happen, or if the dask-scheduler was restarted.",
+                        job_id,
+                    )
+                    running_states.append(DaskClientTaskState.LOST)
+
             elif dask_status is None:
                 running_states.append(DaskClientTaskState.LOST)
             else:
@@ -529,13 +536,21 @@ class DaskClient:
     async def release_task_result(self, job_id: str) -> None:
         _logger.debug("releasing results for %s", f"{job_id=}")
         try:
+            # NOTE: The distributed Variable holds the future of the tasks in the dask-scheduler
+            # Alas, deleting the variable is done asynchronously and there is no way to ensure
+            # the variable was effectively deleted.
+            # This is annoying as one can re-create the variable without error.
+            var = distributed.Variable(job_id, client=self.backend.client)
+            var.delete()
             # first check if the key exists
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
             )
+
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.unpublish_dataset(name=job_id)
             )
+
         except KeyError:
             _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 

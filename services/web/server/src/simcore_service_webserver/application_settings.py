@@ -268,10 +268,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_ANNOUNCEMENTS: bool = False
     WEBSERVER_API_KEYS: bool = True
-    WEBSERVER_CLUSTERS: bool = False
     WEBSERVER_DB_LISTENER: bool = True
     WEBSERVER_FOLDERS: bool = True
     WEBSERVER_GROUPS: bool = True
+    WEBSERVER_LICENSES: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_NOTIFICATIONS: bool = Field(default=True)
     WEBSERVER_PRODUCTS: bool = True
@@ -370,7 +370,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         # TODO: more reliable definition of a "plugin" and whether it can be advertised or not
         # (extra var? e.g. Field( ... , x_advertise_plugin=True))
         public_plugin_candidates: Final = {
-            "WEBSERVER_CLUSTERS",
             "WEBSERVER_EXPORTER",
             "WEBSERVER_FOLDERS",
             "WEBSERVER_META_MODELING",

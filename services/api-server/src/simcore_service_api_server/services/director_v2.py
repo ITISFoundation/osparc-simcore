@@ -3,19 +3,10 @@ from functools import partial
 from uuid import UUID
 
 from fastapi import FastAPI
-from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
-from pydantic import (
-    AnyHttpUrl,
-    AnyUrl,
-    BaseModel,
-    ConfigDict,
-    Field,
-    PositiveInt,
-    TypeAdapter,
-)
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, PositiveInt, TypeAdapter
 from settings_library.tracing import TracingSettings
 from starlette import status
 
@@ -62,7 +53,7 @@ class ComputationTaskGet(ComputationTask):
 
 class TaskLogFileGet(BaseModel):
     task_id: NodeID
-    download_link: AnyUrl | None = Field(
+    download_link: AnyHttpUrl | None = Field(
         None, description="Presigned link for log file or None if still not available"
     )
 
@@ -102,18 +93,13 @@ class DirectorV2Api(BaseServiceClientApi):
         user_id: PositiveInt,
         product_name: str,
         groups_extra_properties_repository: GroupsExtraPropertiesRepository,
-        cluster_id: ClusterID | None = None,
     ) -> ComputationTaskGet:
-        extras = {}
 
         use_on_demand_clusters = (
             await groups_extra_properties_repository.use_on_demand_clusters(
                 user_id, product_name
             )
         )
-
-        if cluster_id is not None and not use_on_demand_clusters:
-            extras["cluster_id"] = cluster_id
 
         response = await self.client.post(
             "/v2/computations",
@@ -123,7 +109,6 @@ class DirectorV2Api(BaseServiceClientApi):
                 "start_pipeline": True,
                 "product_name": product_name,
                 "use_on_demand_clusters": use_on_demand_clusters,
-                **extras,
             },
         )
         response.raise_for_status()

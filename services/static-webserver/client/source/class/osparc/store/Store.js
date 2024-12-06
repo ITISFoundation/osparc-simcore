@@ -59,7 +59,8 @@ qx.Class.define("osparc.store.Store", {
       check: "osparc.data.model.Study",
       init: null,
       nullable: true,
-      event: "changeCurrentStudy"
+      event: "changeCurrentStudy",
+      apply: "__applyCurrentStudy",
     },
     currentStudyId: {
       check: "String",
@@ -173,11 +174,6 @@ qx.Class.define("osparc.store.Store", {
     tokens: {
       check: "Array",
       init: []
-    },
-    clusters: {
-      check: "Array",
-      init: [],
-      event: "changeClusters"
     },
     services: {
       check: "Array",
@@ -336,6 +332,21 @@ qx.Class.define("osparc.store.Store", {
           const initVal = qx.util.PropertyUtil.getInitValue(this, propName);
           qx.util.PropertyUtil.getUserValue(this, propName, initVal);
         });
+      }
+    },
+
+    __applyCurrentStudy: function(study) {
+      if (study) {
+        study.addListener("changeName", () => {
+          if (this.getCurrentStudy() === study) {
+            // the study might have been closed
+            osparc.utils.Utils.updateTabName(study.getName());
+          }
+        });
+        osparc.utils.Utils.updateTabName(study.getName());
+      } else {
+        const newName = osparc.utils.Utils.composeTabName();
+        osparc.utils.Utils.updateTabName(newName);
       }
     },
 

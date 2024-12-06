@@ -26,6 +26,7 @@ from starlette.datastructures import Headers
 
 from ...models.schemas.files import File
 from ...models.schemas.solvers import Solver
+from .._utils_pydantic import UriSchema
 from ..api_resources import (
     RelativeResourceName,
     compose_resource_name,
@@ -152,7 +153,9 @@ class JobMetadata(BaseModel):
     metadata: dict[str, MetaValueType] = Field(..., description="Custom key-value map")
 
     # Links
-    url: HttpUrl | None = Field(..., description="Link to get this resource (self)")
+    url: Annotated[HttpUrl, UriSchema()] | None = Field(
+        ..., description="Link to get this resource (self)"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -198,11 +201,13 @@ class Job(BaseModel):
     )
 
     # Get links to other resources
-    url: HttpUrl | None = Field(..., description="Link to get this resource (self)")
-    runner_url: HttpUrl | None = Field(
+    url: Annotated[HttpUrl, UriSchema()] | None = Field(
+        ..., description="Link to get this resource (self)"
+    )
+    runner_url: Annotated[HttpUrl, UriSchema()] | None = Field(
         ..., description="Link to the solver's job (parent collection)"
     )
-    outputs_url: HttpUrl | None = Field(
+    outputs_url: Annotated[HttpUrl, UriSchema()] | None = Field(
         ..., description="Link to the job outputs (sub-collection)"
     )
 
@@ -223,7 +228,7 @@ class Job(BaseModel):
 
     @field_validator("name", mode="before")
     @classmethod
-    def check_name(cls, v, info: ValidationInfo):
+    def _check_name(cls, v, info: ValidationInfo):
         _id = str(info.data["id"])
         if not v.endswith(f"/{_id}"):
             msg = f"Resource name [{v}] and id [{_id}] do not match"

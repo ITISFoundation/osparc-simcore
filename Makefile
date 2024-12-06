@@ -10,7 +10,7 @@
 .DEFAULT_GOAL := help
 
 SHELL := /bin/bash
-
+.SHELLFLAGS := -o errexit -o pipefail -c
 MAKE_C := $(MAKE) --no-print-directory --directory
 
 # Operating system
@@ -44,7 +44,6 @@ SERVICES_NAMES_TO_BUILD := \
 	efs-guardian \
 	invitations \
   migration \
-	osparc-gateway-server \
 	payments \
 	resource-usage-tracker \
 	dynamic-scheduler \
@@ -85,7 +84,7 @@ export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
-
+MAKEFILES_WITH_OPENAPI_SPECS := $(shell find . -mindepth 2 -type f -name 'Makefile' -not -path '*/.*' -exec grep -l '^openapi-specs:' {} \; | xargs realpath)
 
 get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
@@ -130,6 +129,12 @@ help: ## help on rule's targets
 test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
 	# Checking python version
 	@.venv/bin/python ./scripts/test_python_version.py
+
+
+.PHONY: _check_venv_active
+_check_venv_active:
+	# Checking whether virtual environment was activated
+	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
 
 
 ## DOCKER BUILD -------------------------------
@@ -323,6 +328,7 @@ printf "$$rows" "oSparc platform" "http://$(get_my_ip).nip.io:9081";\
 printf "$$rows" "oSparc public API doc" "http://$(get_my_ip).nip.io:8006/dev/doc";\
 printf "$$rows" "oSparc web API doc" "http://$(get_my_ip).nip.io:9081/dev/doc";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
+printf "$$rows" "Dy-scheduler Dashboard" "http://$(get_my_ip).nip.io:8012";\
 printf "$$rows" "Docker Registry" "http://$${REGISTRY_URL}/v2/_catalog" $${REGISTRY_USER} $${REGISTRY_PW};\
 printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
 printf "$$rows" "Jaeger" "http://$(get_my_ip).nip.io:16686";\
@@ -573,9 +579,13 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 
 
 .PHONY: openapi-specs
-openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
-	@$(MAKE_C) services/web/server $@
-	@$(MAKE_C) services/storage $@
+openapi-specs: .env _check_venv_active ## generates and validates openapi specifications and schemas of ALL service's API
+	@for makefile in $(MAKEFILES_WITH_OPENAPI_SPECS); do \
+		echo "Generating openapi-specs using $${makefile}"; \
+		$(MAKE_C) $$(dirname $${makefile}) install-dev; \
+		$(MAKE_C) $$(dirname $${makefile}) $@; \
+		printf "%0.s=" {1..100} && printf "\n"; \
+	done
 
 
 .PHONY: settings-schema.json

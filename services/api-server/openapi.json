@@ -1931,7 +1931,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServicePricingPlanGet"
+                  "$ref": "#/components/schemas/ServicePricingPlanGetLegacy"
                 }
               }
             }
@@ -2598,7 +2598,7 @@
           "solvers"
         ],
         "summary": "Start Job",
-        "description": "Starts job job_id created with the solver solver_key:version\n\nAdded in *version 0.4.3*: query parameter `cluster_id`\nAdded in *version 0.6*: responds with a 202 when successfully starting a computation",
+        "description": "Starts job job_id created with the solver solver_key:version\n\nAdded in *version 0.4.3*: query parameter `cluster_id`\nAdded in *version 0.6*: responds with a 202 when successfully starting a computation\nChanged in *version 0.8*: query parameter `cluster_id` deprecated",
         "operationId": "start_job",
         "security": [
           {
@@ -2650,8 +2650,10 @@
                   "type": "null"
                 }
               ],
+              "deprecated": true,
               "title": "Cluster Id"
-            }
+            },
+            "deprecated": true
           }
         ],
         "responses": {
@@ -3788,7 +3790,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
+                  "$ref": "#/components/schemas/WalletGetWithAvailableCreditsLegacy"
                 }
               }
             }
@@ -3927,7 +3929,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PricingUnitGet"
+                  "$ref": "#/components/schemas/PricingUnitGetLegacy"
                 }
               }
             }
@@ -4585,7 +4587,7 @@
           "studies"
         ],
         "summary": "Start Study Job",
-        "description": "Changed in *version 0.6.0*: Now responds with a 202 when successfully starting a computation",
+        "description": "Changed in *version 0.6.0*: Now responds with a 202 when successfully starting a computation\nChanged in *version 0.8*: query parameter `cluster_id` deprecated",
         "operationId": "start_study_job",
         "security": [
           {
@@ -4627,8 +4629,10 @@
                   "type": "null"
                 }
               ],
+              "deprecated": true,
               "title": "Cluster Id"
-            }
+            },
+            "deprecated": true
           }
         ],
         "responses": {
@@ -5117,7 +5121,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
+                  "$ref": "#/components/schemas/WalletGetWithAvailableCreditsLegacy"
                 }
               }
             }
@@ -5230,7 +5234,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
+                  "$ref": "#/components/schemas/WalletGetWithAvailableCreditsLegacy"
                 }
               }
             }
@@ -5332,7 +5336,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetCreditPrice"
+                  "$ref": "#/components/schemas/GetCreditPriceLegacy"
                 }
               }
             }
@@ -5544,8 +5548,6 @@
           "urls": {
             "items": {
               "type": "string",
-              "maxLength": 65536,
-              "minLength": 1,
               "format": "uri"
             },
             "type": "array",
@@ -5563,7 +5565,7 @@
         ],
         "title": "FileUploadData"
       },
-      "GetCreditPrice": {
+      "GetCreditPriceLegacy": {
         "properties": {
           "productName": {
             "type": "string",
@@ -5602,7 +5604,7 @@
           "usdPerCredit",
           "minPaymentAmountUsd"
         ],
-        "title": "GetCreditPrice"
+        "title": "GetCreditPriceLegacy"
       },
       "Groups": {
         "properties": {
@@ -6159,8 +6161,6 @@
           },
           "download_link": {
             "type": "string",
-            "maxLength": 65536,
-            "minLength": 1,
             "format": "uri",
             "title": "Download Link"
           }
@@ -6201,14 +6201,14 @@
           },
           "docs_url": {
             "type": "string",
-            "maxLength": 65536,
+            "maxLength": 2083,
             "minLength": 1,
             "format": "uri",
             "title": "Docs Url"
           },
           "docs_dev_url": {
             "type": "string",
-            "maxLength": 65536,
+            "maxLength": 2083,
             "minLength": 1,
             "format": "uri",
             "title": "Docs Dev Url"
@@ -6471,10 +6471,9 @@
         "enum": [
           "TIER"
         ],
-        "const": "TIER",
         "title": "PricingPlanClassification"
       },
-      "PricingUnitGet": {
+      "PricingUnitGetLegacy": {
         "properties": {
           "pricingUnitId": {
             "type": "integer",
@@ -6491,6 +6490,7 @@
           },
           "currentCostPerUnit": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Currentcostperunit"
           },
           "default": {
@@ -6506,7 +6506,7 @@
           "currentCostPerUnit",
           "default"
         ],
-        "title": "PricingUnitGet"
+        "title": "PricingUnitGetLegacy"
       },
       "Profile": {
         "properties": {
@@ -6648,7 +6648,7 @@
         "title": "RunningState",
         "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
       },
-      "ServicePricingPlanGet": {
+      "ServicePricingPlanGetLegacy": {
         "properties": {
           "pricingPlanId": {
             "type": "integer",
@@ -6678,7 +6678,7 @@
           },
           "pricingUnits": {
             "items": {
-              "$ref": "#/components/schemas/PricingUnitGet"
+              "$ref": "#/components/schemas/PricingUnitGetLegacy"
             },
             "type": "array",
             "title": "Pricingunits"
@@ -6694,7 +6694,7 @@
           "pricingPlanKey",
           "pricingUnits"
         ],
-        "title": "ServicePricingPlanGet"
+        "title": "ServicePricingPlanGetLegacy"
       },
       "Solver": {
         "properties": {
@@ -6891,7 +6891,7 @@
             "type": "integer",
             "x_unit": "second"
           },
-          "key": "input_2",
+          "key": "f763658f-a89a-4a90-ace4-c44631290f12",
           "kind": "input"
         }
       },
@@ -7035,7 +7035,7 @@
         ],
         "title": "ValidationError"
       },
-      "WalletGetWithAvailableCredits": {
+      "WalletGetWithAvailableCreditsLegacy": {
         "properties": {
           "walletId": {
             "type": "integer",
@@ -7092,6 +7092,7 @@
           },
           "availableCredits": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Availablecredits"
           }
         },
@@ -7105,7 +7106,7 @@
           "modified",
           "availableCredits"
         ],
-        "title": "WalletGetWithAvailableCredits"
+        "title": "WalletGetWithAvailableCreditsLegacy"
       },
       "WalletStatus": {
         "type": "string",

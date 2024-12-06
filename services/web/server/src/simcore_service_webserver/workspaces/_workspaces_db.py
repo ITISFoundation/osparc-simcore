@@ -114,6 +114,7 @@ async def list_workspaces_for_user(
     user_id: UserID,
     product_name: ProductName,
     filter_trashed: bool | None,
+    filter_by_text: str | None,
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
@@ -139,6 +140,11 @@ async def list_workspaces_for_user(
             workspaces.c.trashed.is_not(None)
             if filter_trashed
             else workspaces.c.trashed.is_(None)
+        )
+    if filter_by_text is not None:
+        base_query = base_query.where(
+            (workspaces.c.name.ilike(f"%{filter_by_text}%"))
+            | (workspaces.c.description.ilike(f"%{filter_by_text}%"))
         )
 
     # Select total count from base_query

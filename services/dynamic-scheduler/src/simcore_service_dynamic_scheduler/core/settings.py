@@ -1,7 +1,7 @@
 import datetime
 from typing import Annotated
 
-from pydantic import AliasChoices, Field, TypeAdapter, field_validator
+from pydantic import AliasChoices, Field, SecretStr, TypeAdapter, field_validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
@@ -68,6 +68,14 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     )
 
+    DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER: bool = Field(
+        default=False,
+        description=(
+            "this is a way to switch between different dynamic schedulers for the new style services"
+            # NOTE: this option should be removed when the scheduling will be done via this service
+        ),
+    )
+
     @field_validator("DYNAMIC_SCHEDULER_LOGLEVEL", mode="before")
     @classmethod
     def _validate_log_level(cls, value: str) -> str:
@@ -79,6 +87,14 @@ class ApplicationSettings(_BaseApplicationSettings):
 
     These settings includes extra configuration for the http-API
     """
+
+    DYNAMIC_SCHEDULER_UI_STORAGE_SECRET: SecretStr = Field(
+        ...,
+        description=(
+            "secret required to enabled browser-based storage for the UI. "
+            "Enables the full set of features to be used for NiceUI"
+        ),
+    )
 
     DYNAMIC_SCHEDULER_RABBITMQ: RabbitSettings = Field(
         json_schema_extra={"auto_default_from_env": True},

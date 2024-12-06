@@ -8,8 +8,8 @@ from copy import deepcopy
 from pprint import pformat
 from typing import Any, Final, NamedTuple
 
-import pydantic_core
 import pytest
+from common_library.json_serialization import json_dumps
 from models_library.basic_types import PortInt
 from models_library.osparc_variable_identifier import (
     OsparcVariableIdentifier,
@@ -43,17 +43,17 @@ class _Parametrization(NamedTuple):
 
 SIMCORE_SERVICE_EXAMPLES = {
     "legacy": _Parametrization(
-        example=SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][0],
+        example=SimcoreServiceLabels.model_json_schema()["examples"][0],
         items=1,
         uses_dynamic_sidecar=False,
     ),
     "dynamic-service": _Parametrization(
-        example=SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][1],
+        example=SimcoreServiceLabels.model_json_schema()["examples"][1],
         items=5,
         uses_dynamic_sidecar=True,
     ),
     "dynamic-service-with-compose-spec": _Parametrization(
-        example=SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2],
+        example=SimcoreServiceLabels.model_json_schema()["examples"][2],
         items=6,
         uses_dynamic_sidecar=True,
     ),
@@ -104,7 +104,7 @@ def test_correctly_detect_dynamic_sidecar_boot(
 
 def test_raises_error_if_http_entrypoint_is_missing():
     simcore_service_labels: dict[str, Any] = deepcopy(
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
+        SimcoreServiceLabels.model_json_schema()["examples"][2]
     )
     del simcore_service_labels["simcore.service.container-http-entrypoint"]
 
@@ -133,7 +133,7 @@ def test_path_mappings_json_encoding():
 
 def test_simcore_services_labels_compose_spec_null_container_http_entry_provided():
     sample_data: dict[str, Any] = deepcopy(
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
+        SimcoreServiceLabels.model_json_schema()["examples"][2]
     )
 
     assert sample_data["simcore.service.container-http-entrypoint"]
@@ -145,7 +145,7 @@ def test_simcore_services_labels_compose_spec_null_container_http_entry_provided
 
 def test_raises_error_wrong_restart_policy():
     simcore_service_labels: dict[str, Any] = deepcopy(
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
+        SimcoreServiceLabels.model_json_schema()["examples"][2]
     )
     simcore_service_labels["simcore.service.restart-policy"] = "__not_a_valid_policy__"
 
@@ -558,11 +558,6 @@ def test_can_parse_labels_with_osparc_identifiers(
     assert "$" not in service_meta_str
 
 
-def servicelib__json_serialization__json_dumps(obj: Any, **kwargs):
-    # Analogous to 'models_library.utils.json_serialization.json_dumps'
-    return json.dumps(obj, default=pydantic_core.to_jsonable_python, **kwargs)
-
-
 def test_resolving_some_service_labels_at_load_time(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
@@ -579,9 +574,7 @@ def test_resolving_some_service_labels_at_load_time(
         ("settings", SimcoreServiceSettingsLabel),
     ):
         to_serialize = getattr(service_meta, attribute_name)
-        template = TextTemplate(
-            servicelib__json_serialization__json_dumps(to_serialize)
-        )
+        template = TextTemplate(json_dumps(to_serialize))
         assert template.is_valid()
         resolved_label: str = template.safe_substitute(vendor_environments)
         to_restore = TypeAdapter(pydantic_model).validate_json(resolved_label)

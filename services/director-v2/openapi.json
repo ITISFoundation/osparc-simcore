@@ -118,25 +118,25 @@
         "operationId": "get_computation_v2_computations__project_id__get",
         "parameters": [
           {
+            "name": "project_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Project Id"
-            },
-            "name": "project_id",
-            "in": "path"
+            }
           },
           {
+            "name": "user_id",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "integer",
               "exclusiveMinimum": true,
               "title": "User Id",
               "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
+            }
           }
         ],
         "responses": {
@@ -170,25 +170,25 @@
         "operationId": "delete_computation_v2_computations__project_id__delete",
         "parameters": [
           {
+            "name": "project_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Project Id"
-            },
-            "name": "project_id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ComputationDelete"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "204": {
@@ -216,25 +216,25 @@
         "operationId": "stop_computation_v2_computations__project_id__stop_post",
         "parameters": [
           {
+            "name": "project_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Project Id"
-            },
-            "name": "project_id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ComputationStop"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "202": {
@@ -270,25 +270,25 @@
         "operationId": "get_all_tasks_log_files_v2_computations__project_id__tasks___logfile_get",
         "parameters": [
           {
+            "name": "project_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Project Id"
-            },
-            "name": "project_id",
-            "in": "path"
+            }
           },
           {
+            "name": "user_id",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "integer",
               "exclusiveMinimum": true,
               "title": "User Id",
               "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
+            }
           }
         ],
         "responses": {
@@ -297,10 +297,10 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/TaskLogFileGet"
                   },
-                  "type": "array",
                   "title": "Response Get All Tasks Log Files V2 Computations  Project Id  Tasks   Logfile Get"
                 }
               }
@@ -329,35 +329,35 @@
         "operationId": "get_task_log_file_v2_computations__project_id__tasks__node_uuid__logfile_get",
         "parameters": [
           {
+            "name": "project_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Project Id"
-            },
-            "name": "project_id",
-            "in": "path"
+            }
           },
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           },
           {
+            "name": "user_id",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "integer",
               "exclusiveMinimum": true,
               "title": "User Id",
               "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
+            }
           }
         ],
         "responses": {
@@ -393,25 +393,25 @@
         "operationId": "get_batch_tasks_outputs_v2_computations__project_id__tasks___outputs_batchGet_post",
         "parameters": [
           {
+            "name": "project_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Project Id"
-            },
-            "name": "project_id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TasksSelection"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -449,25 +449,39 @@
         "operationId": "list_tracked_dynamic_services_v2_dynamic_services_get",
         "parameters": [
           {
+            "name": "user_id",
+            "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": true,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
           },
           {
+            "name": "project_id",
+            "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Project Id"
-            },
-            "name": "project_id",
-            "in": "query"
+            }
           }
         ],
         "responses": {
@@ -476,10 +490,10 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/RunningDynamicServiceDetails"
                   },
-                  "type": "array",
                   "title": "Response List Tracked Dynamic Services V2 Dynamic Services Get"
                 }
               }
@@ -505,42 +519,42 @@
         "operationId": "create_dynamic_service_v2_dynamic_services_post",
         "parameters": [
           {
+            "name": "x-dynamic-sidecar-request-dns",
+            "in": "header",
             "required": true,
             "schema": {
               "type": "string",
               "title": "X-Dynamic-Sidecar-Request-Dns"
-            },
-            "name": "x-dynamic-sidecar-request-dns",
-            "in": "header"
+            }
           },
           {
+            "name": "x-dynamic-sidecar-request-scheme",
+            "in": "header",
             "required": true,
             "schema": {
               "type": "string",
               "title": "X-Dynamic-Sidecar-Request-Scheme"
-            },
-            "name": "x-dynamic-sidecar-request-scheme",
-            "in": "header"
+            }
           },
           {
+            "name": "x-simcore-user-agent",
+            "in": "header",
             "required": true,
             "schema": {
               "type": "string",
               "title": "X-Simcore-User-Agent"
-            },
-            "name": "x-simcore-user-agent",
-            "in": "header"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DynamicServiceCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -575,14 +589,14 @@
         "operationId": "get_dynamic_sidecar_status_v2_dynamic_services__node_uuid__get",
         "parameters": [
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -616,24 +630,31 @@
         "operationId": "stop_dynamic_service_v2_dynamic_services__node_uuid__delete",
         "parameters": [
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           },
           {
+            "name": "can_save",
+            "in": "query",
             "required": false,
             "schema": {
-              "type": "boolean",
-              "title": "Can Save",
-              "default": true
-            },
-            "name": "can_save",
-            "in": "query"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": true,
+              "title": "Can Save"
+            }
           }
         ],
         "responses": {
@@ -662,25 +683,25 @@
         "operationId": "service_retrieve_data_on_ports_v2_dynamic_services__node_uuid__retrieve_post",
         "parameters": [
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RetrieveDataIn"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -715,14 +736,14 @@
         "operationId": "service_restart_containers_v2_dynamic_services__node_uuid__restart_post",
         "parameters": [
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -751,14 +772,14 @@
         "operationId": "update_projects_networks_v2_dynamic_services_projects__project_id____networks_patch",
         "parameters": [
           {
+            "name": "project_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Project Id"
-            },
-            "name": "project_id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -787,24 +808,24 @@
         "operationId": "get_project_inactivity_v2_dynamic_services_projects__project_id__inactivity_get",
         "parameters": [
           {
+            "name": "project_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Project Id"
-            },
-            "name": "project_id",
-            "in": "path"
+            }
           },
           {
+            "name": "max_inactivity_seconds",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "number",
               "minimum": 0.0,
               "title": "Max Inactivity Seconds"
-            },
-            "name": "max_inactivity_seconds",
-            "in": "query"
+            }
           }
         ],
         "responses": {
@@ -831,481 +852,6 @@
         }
       }
     },
-    "/v2/clusters": {
-      "get": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Lists clusters for user",
-        "operationId": "list_clusters_v2_clusters_get",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ClusterGet"
-                  },
-                  "type": "array",
-                  "title": "Response List Clusters V2 Clusters Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Create a new cluster for a user",
-        "operationId": "create_cluster_v2_clusters_post",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClusterCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClusterGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v2/clusters/default": {
-      "get": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Returns the default cluster",
-        "operationId": "get_default_cluster_v2_clusters_default_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClusterGet"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v2/clusters/{cluster_id}": {
-      "get": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Get one cluster for user",
-        "operationId": "get_cluster_v2_clusters__cluster_id__get",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "title": "Cluster Id"
-            },
-            "name": "cluster_id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClusterGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Remove a cluster for user",
-        "operationId": "delete_cluster_v2_clusters__cluster_id__delete",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "title": "Cluster Id"
-            },
-            "name": "cluster_id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Modify a cluster for user",
-        "operationId": "update_cluster_v2_clusters__cluster_id__patch",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "title": "Cluster Id"
-            },
-            "name": "cluster_id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClusterPatch"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClusterGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v2/clusters/default/details": {
-      "get": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Returns the cluster details",
-        "operationId": "get_default_cluster_details_v2_clusters_default_details_get",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClusterDetailsGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v2/clusters/{cluster_id}/details": {
-      "get": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Returns the cluster details",
-        "operationId": "get_cluster_details_v2_clusters__cluster_id__details_get",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "title": "Cluster Id"
-            },
-            "name": "cluster_id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClusterDetailsGet"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v2/clusters:ping": {
-      "post": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Test cluster connection",
-        "operationId": "test_cluster_connection_v2_clusters_ping_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClusterPing"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v2/clusters/default:ping": {
-      "post": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Test cluster connection",
-        "operationId": "test_default_cluster_connection_v2_clusters_default_ping_post",
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          }
-        }
-      }
-    },
-    "/v2/clusters/{cluster_id}:ping": {
-      "post": {
-        "tags": [
-          "clusters"
-        ],
-        "summary": "Test cluster connection",
-        "operationId": "test_specific_cluster_connection_v2_clusters__cluster_id__ping_post",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "title": "Cluster Id"
-            },
-            "name": "cluster_id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "title": "User Id",
-              "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v2/dynamic_scheduler/services/{node_uuid}/observation": {
       "patch": {
         "tags": [
@@ -1315,25 +861,25 @@
         "operationId": "update_service_observation_v2_dynamic_scheduler_services__node_uuid__observation_patch",
         "parameters": [
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ObservationItem"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "204": {
@@ -1361,14 +907,14 @@
         "operationId": "delete_service_containers_v2_dynamic_scheduler_services__node_uuid__containers_delete",
         "parameters": [
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1408,14 +954,14 @@
         "operationId": "get_service_state_v2_dynamic_scheduler_services__node_uuid__state_get",
         "parameters": [
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1451,14 +997,14 @@
         "operationId": "save_service_state_v2_dynamic_scheduler_services__node_uuid__state_save_post",
         "parameters": [
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1498,14 +1044,14 @@
         "operationId": "push_service_outputs_v2_dynamic_scheduler_services__node_uuid__outputs_push_post",
         "parameters": [
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1545,14 +1091,14 @@
         "operationId": "delete_service_docker_resources_v2_dynamic_scheduler_services__node_uuid__docker_resources_delete",
         "parameters": [
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1592,14 +1138,14 @@
         "operationId": "free_reserved_disk_space_v2_dynamic_scheduler_services__node_uuid__disk_reserved_free_post",
         "parameters": [
           {
+            "name": "node_uuid",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
               "title": "Node Uuid"
-            },
-            "name": "node_uuid",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -1634,11 +1180,18 @@
             "title": "Version"
           },
           "released": {
-            "additionalProperties": {
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
-            },
-            "type": "object",
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Released",
             "description": "Maps every route's path tag with a released version"
           }
@@ -1651,11 +1204,11 @@
         "title": "BaseMeta",
         "example": {
           "name": "simcore_service_foo",
-          "version": "2.4.45",
           "released": {
             "v1": "1.3.4",
             "v2": "2.4.45"
-          }
+          },
+          "version": "2.4.45"
         }
       },
       "BootMode": {
@@ -1665,18 +1218,19 @@
           "GPU",
           "MPI"
         ],
-        "title": "BootMode",
-        "description": "An enumeration."
+        "title": "BootMode"
       },
       "CallbacksMapping": {
         "properties": {
           "metrics": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/UserServiceCommand"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Metrics",
             "description": "command to recover prometheus metrics from a specific user service"
           },
           "before_shutdown": {
@@ -1688,328 +1242,20 @@
             "description": "commands to run before shutting down the user servicescommands get executed first to last, multiple commands for the sameuser services are allowed"
           },
           "inactivity": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/UserServiceCommand"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Inactivity",
             "description": "command used to figure out for how much time the user service(s) were inactive for"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "title": "CallbacksMapping"
-      },
-      "ClusterAccessRights": {
-        "properties": {
-          "read": {
-            "type": "boolean",
-            "title": "Read",
-            "description": "allows to run pipelines on that cluster"
-          },
-          "write": {
-            "type": "boolean",
-            "title": "Write",
-            "description": "allows to modify the cluster"
-          },
-          "delete": {
-            "type": "boolean",
-            "title": "Delete",
-            "description": "allows to delete a cluster"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "read",
-          "write",
-          "delete"
-        ],
-        "title": "ClusterAccessRights"
-      },
-      "ClusterCreate": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name",
-            "description": "The human readable name of the cluster"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "type": {
-            "$ref": "#/components/schemas/ClusterTypeInModel"
-          },
-          "owner": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Owner",
-            "minimum": 0
-          },
-          "thumbnail": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
-            "title": "Thumbnail",
-            "description": "url to the image describing this cluster"
-          },
-          "endpoint": {
-            "type": "string",
-            "maxLength": 65536,
-            "minLength": 1,
-            "format": "uri",
-            "title": "Endpoint"
-          },
-          "authentication": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SimpleAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/KerberosAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/JupyterHubTokenAuthentication"
-              }
-            ],
-            "title": "Authentication"
-          },
-          "accessRights": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ClusterAccessRights"
-            },
-            "type": "object",
-            "title": "Accessrights"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "name",
-          "type",
-          "endpoint",
-          "authentication"
-        ],
-        "title": "ClusterCreate"
-      },
-      "ClusterDetailsGet": {
-        "properties": {
-          "scheduler": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Scheduler"
-              }
-            ],
-            "title": "Scheduler",
-            "description": "This contains dask scheduler information given by the underlying dask library"
-          },
-          "dashboard_link": {
-            "type": "string",
-            "maxLength": 65536,
-            "minLength": 1,
-            "format": "uri",
-            "title": "Dashboard Link",
-            "description": "Link to this scheduler's dashboard"
-          }
-        },
-        "type": "object",
-        "required": [
-          "scheduler",
-          "dashboard_link"
-        ],
-        "title": "ClusterDetailsGet"
-      },
-      "ClusterGet": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name",
-            "description": "The human readable name of the cluster"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "type": {
-            "$ref": "#/components/schemas/ClusterTypeInModel"
-          },
-          "owner": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Owner",
-            "minimum": 0
-          },
-          "thumbnail": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
-            "title": "Thumbnail",
-            "description": "url to the image describing this cluster"
-          },
-          "endpoint": {
-            "type": "string",
-            "maxLength": 65536,
-            "minLength": 1,
-            "format": "uri",
-            "title": "Endpoint"
-          },
-          "authentication": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SimpleAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/KerberosAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/JupyterHubTokenAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/NoAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/TLSAuthentication"
-              }
-            ],
-            "title": "Authentication",
-            "description": "Dask gateway authentication"
-          },
-          "accessRights": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ClusterAccessRights"
-            },
-            "type": "object",
-            "title": "Accessrights"
-          },
-          "id": {
-            "type": "integer",
-            "minimum": 0,
-            "title": "Id",
-            "description": "The cluster ID"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "name",
-          "type",
-          "owner",
-          "endpoint",
-          "authentication",
-          "id"
-        ],
-        "title": "ClusterGet"
-      },
-      "ClusterPatch": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "type": {
-            "$ref": "#/components/schemas/ClusterTypeInModel"
-          },
-          "owner": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Owner",
-            "minimum": 0
-          },
-          "thumbnail": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
-            "title": "Thumbnail"
-          },
-          "endpoint": {
-            "type": "string",
-            "maxLength": 65536,
-            "minLength": 1,
-            "format": "uri",
-            "title": "Endpoint"
-          },
-          "authentication": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SimpleAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/KerberosAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/JupyterHubTokenAuthentication"
-              }
-            ],
-            "title": "Authentication"
-          },
-          "accessRights": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ClusterAccessRights"
-            },
-            "type": "object",
-            "title": "Accessrights"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "ClusterPatch"
-      },
-      "ClusterPing": {
-        "properties": {
-          "endpoint": {
-            "type": "string",
-            "maxLength": 65536,
-            "minLength": 1,
-            "format": "uri",
-            "title": "Endpoint"
-          },
-          "authentication": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SimpleAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/KerberosAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/JupyterHubTokenAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/NoAuthentication"
-              },
-              {
-                "$ref": "#/components/schemas/TLSAuthentication"
-              }
-            ],
-            "title": "Authentication",
-            "description": "Dask gateway authentication"
-          }
-        },
-        "type": "object",
-        "required": [
-          "endpoint",
-          "authentication"
-        ],
-        "title": "ClusterPing"
-      },
-      "ClusterTypeInModel": {
-        "type": "string",
-        "enum": [
-          "AWS",
-          "ON_PREMISE",
-          "ON_DEMAND"
-        ],
-        "title": "ClusterTypeInModel",
-        "description": "An enumeration."
       },
       "ComputationCreate": {
         "properties": {
@@ -2025,7 +1271,14 @@
             "title": "Project Id"
           },
           "start_pipeline": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Start Pipeline",
             "description": "if True the computation pipeline will start right away",
             "default": false
@@ -2035,25 +1288,33 @@
             "title": "Product Name"
           },
           "subgraph": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Subgraph",
             "description": "An optional set of nodes that must be executed, if empty the whole pipeline is executed"
           },
           "force_restart": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Force Restart",
             "description": "if True will force re-running all dependent nodes",
             "default": false
-          },
-          "cluster_id": {
-            "type": "integer",
-            "minimum": 0,
-            "title": "Cluster Id",
-            "description": "the computation shall use the cluster described by its id, 0 is the default cluster"
           },
           "simcore_user_agent": {
             "type": "string",
@@ -2063,16 +1324,18 @@
           "use_on_demand_clusters": {
             "type": "boolean",
             "title": "Use On Demand Clusters",
-            "description": "if True, a cluster will be created as necessary (wallet_id cannot be None, and cluster_id must be None)",
+            "description": "if True, a cluster will be created as necessary (wallet_id cannot be None)",
             "default": false
           },
           "wallet_info": {
-            "allOf": [
+            "anyOf": [
               {
-                "$ref": "#/components/schemas/WalletInfo"
+                "$ref": "#/components/schemas/WalletInfo-Input"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Wallet Info",
             "description": "contains information about the wallet used to bill the running service"
           }
         },
@@ -2093,7 +1356,14 @@
             "minimum": 0
           },
           "force": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Force",
             "description": "if True then the pipeline will be removed even if it is running",
             "default": false
@@ -2114,71 +1384,92 @@
             "description": "the id of the computation task"
           },
           "state": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/RunningState"
-              }
-            ],
+            "$ref": "#/components/schemas/RunningState",
             "description": "the state of the computational task"
           },
           "result": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Result",
             "description": "the result of the computational task"
           },
           "pipeline_details": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PipelineDetails"
-              }
-            ],
-            "title": "Pipeline Details",
+            "$ref": "#/components/schemas/PipelineDetails",
             "description": "the details of the generated pipeline"
           },
           "iteration": {
-            "type": "integer",
-            "exclusiveMinimum": true,
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Iteration",
-            "description": "the iteration id of the computation task (none if no task ran yet)",
-            "minimum": 0
-          },
-          "cluster_id": {
-            "type": "integer",
-            "minimum": 0,
-            "title": "Cluster Id",
-            "description": "the cluster on which the computaional task runs/ran (none if no task ran yet)"
+            "description": "the iteration id of the computation task (none if no task ran yet)"
           },
           "started": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Started",
             "description": "the timestamp when the computation was started or None if not started yet"
           },
           "stopped": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Stopped",
             "description": "the timestamp when the computation was stopped or None if not started nor stopped yet"
           },
           "submitted": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Submitted",
             "description": "task last modification timestamp or None if the there is no task"
           },
           "url": {
             "type": "string",
-            "maxLength": 65536,
-            "minLength": 1,
-            "format": "uri",
             "title": "Url",
             "description": "the link where to get the status of the task"
           },
           "stop_url": {
-            "type": "string",
-            "maxLength": 65536,
-            "minLength": 1,
-            "format": "uri",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Stop Url",
             "description": "the link where to stop the task"
           }
@@ -2189,7 +1480,6 @@
           "state",
           "pipeline_details",
           "iteration",
-          "cluster_id",
           "started",
           "stopped",
           "submitted",
@@ -2215,85 +1505,156 @@
       "ContainerState": {
         "properties": {
           "Status": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/Status2"
+              },
+              {
+                "type": "null"
               }
             ],
-            "description": "String representation of the container state. Can be one of \"created\",\n\"running\", \"paused\", \"restarting\", \"removing\", \"exited\", or \"dead\".\n",
-            "example": "running"
+            "description": "String representation of the container state. Can be one of \"created\",\n\"running\", \"paused\", \"restarting\", \"removing\", \"exited\", or \"dead\".\n"
           },
           "Running": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Running",
-            "description": "Whether this container is running.\n\nNote that a running container can be _paused_. The `Running` and `Paused`\nbooleans are not mutually exclusive:\n\nWhen pausing a container (on Linux), the freezer cgroup is used to suspend\nall processes in the container. Freezing the process requires the process to\nbe running. As a result, paused containers are both `Running` _and_ `Paused`.\n\nUse the `Status` field instead to determine if a container's state is \"running\".\n",
-            "example": true
+            "description": "Whether this container is running.\n\nNote that a running container can be _paused_. The `Running` and `Paused`\nbooleans are not mutually exclusive:\n\nWhen pausing a container (on Linux), the freezer cgroup is used to suspend\nall processes in the container. Freezing the process requires the process to\nbe running. As a result, paused containers are both `Running` _and_ `Paused`.\n\nUse the `Status` field instead to determine if a container's state is \"running\".\n"
           },
           "Paused": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Paused",
-            "description": "Whether this container is paused.",
-            "example": false
+            "description": "Whether this container is paused."
           },
           "Restarting": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Restarting",
-            "description": "Whether this container is restarting.",
-            "example": false
+            "description": "Whether this container is restarting."
           },
           "OOMKilled": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Oomkilled",
-            "description": "Whether this container has been killed because it ran out of memory.\n",
-            "example": false
+            "description": "Whether this container has been killed because it ran out of memory.\n"
           },
           "Dead": {
-            "type": "boolean",
-            "title": "Dead",
-            "example": false
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dead"
           },
           "Pid": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Pid",
-            "description": "The process ID of this container",
-            "example": 1234
+            "description": "The process ID of this container"
           },
           "ExitCode": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Exitcode",
-            "description": "The last exit code of this container",
-            "example": 0
+            "description": "The last exit code of this container"
           },
           "Error": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Error"
           },
           "StartedAt": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Startedat",
-            "description": "The time when this container was last started.",
-            "example": "2020-01-06T09:06:59.461876391Z"
+            "description": "The time when this container was last started."
           },
           "FinishedAt": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Finishedat",
-            "description": "The time when this container last exited.",
-            "example": "2020-01-06T09:07:59.461876391Z"
+            "description": "The time when this container last exited."
           },
           "Health": {
-            "$ref": "#/components/schemas/Health"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Health"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
         "title": "ContainerState",
-        "description": "    ContainerState stores container's running state. It's part of ContainerJSONBase\nand will be returned by the \"inspect\" command."
+        "description": "ContainerState stores container's running state. It's part of ContainerJSONBase\nand will be returned by the \"inspect\" command."
       },
       "DNSResolver": {
         "properties": {
           "address": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/OsparcVariableIdentifier"
+                "type": "string",
+                "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
               },
               {
                 "type": "string"
@@ -2312,12 +1673,14 @@
                 "minimum": 0
               },
               {
-                "$ref": "#/components/schemas/OsparcVariableIdentifier"
+                "type": "string",
+                "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
               }
             ],
             "title": "Port"
           }
         },
+        "additionalProperties": true,
         "type": "object",
         "required": [
           "address",
@@ -2341,24 +1704,10 @@
         "title": "DelayedExceptionHandler",
         "description": "Allows to ignore an exception for an established\nperiod of time after which it is raised.\n\nThis use case most commonly occurs when dealing with\nexternal systems.\nFor example, due to poor network  performance or\nnetwork congestion, an external system which is healthy,\ncurrently is not reachable any longer.\nA possible solution:\n- ignore exceptions for an interval in which the\n    system usually is reachable again by not\n    raising the error\n- if the error persist give up and raise it\n\nExample code usage:\n\n    delayed_handler_external_service = DelayedExceptionHandler(\n        delay_for=60\n    )\n    try:\n        function_called_periodically_accessing_external_service()\n    except TargetException as e:\n        delayed_handler_external_service.try_to_raise(e)\n    else:\n        delayed_handler_external_service.else_reset()"
       },
-      "DictModel_str__PositiveFloat_": {
-        "additionalProperties": {
-          "type": "number",
-          "exclusiveMinimum": true,
-          "minimum": 0.0
-        },
-        "type": "object",
-        "title": "DictModel[str, PositiveFloat]"
-      },
       "DockerContainerInspect": {
         "properties": {
           "container_state": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ContainerState"
-              }
-            ],
-            "title": "Container State",
+            "$ref": "#/components/schemas/ContainerState",
             "description": "current state of container"
           },
           "name": {
@@ -2411,15 +1760,19 @@
             "title": "Service Uuid"
           },
           "service_basepath": {
-            "type": "string",
-            "format": "path",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "path"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Service Basepath",
             "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint."
           },
           "service_resources": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ImageResources"
-            },
             "type": "object",
             "title": "Service Resources"
           },
@@ -2434,30 +1787,36 @@
             "description": "the service data must be saved when closing"
           },
           "wallet_info": {
-            "allOf": [
+            "anyOf": [
               {
-                "$ref": "#/components/schemas/WalletInfo"
+                "$ref": "#/components/schemas/WalletInfo-Input"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Wallet Info",
             "description": "contains information about the wallet used to bill the running service"
           },
           "pricing_info": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/PricingInfo"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Pricing Info",
             "description": "contains pricing information (ex. pricing plan and unit ids)"
           },
           "hardware_info": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/HardwareInfo"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Hardware Info",
             "description": "contains harware information (ex. aws_ec2_instances)"
           }
         },
@@ -2474,16 +1833,27 @@
         ],
         "title": "DynamicServiceCreate",
         "example": {
-          "key": "simcore/services/dynamic/3dviewer",
-          "version": "2.4.5",
-          "user_id": 234,
-          "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-          "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
           "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-          "product_name": "osparc",
           "can_save": true,
+          "hardware_info": {
+            "aws_ec2_instances": [
+              "c6a.4xlarge"
+            ]
+          },
+          "key": "simcore/services/dynamic/3dviewer",
+          "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+          "pricing_info": {
+            "pricing_plan_id": 1,
+            "pricing_unit_cost_id": 1,
+            "pricing_unit_id": 1
+          },
+          "product_name": "osparc",
+          "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
           "service_resources": {
             "container": {
+              "boot_modes": [
+                "CPU"
+              ],
               "image": "simcore/services/dynamic/jupyter-math:2.0.5",
               "resources": {
                 "CPU": {
@@ -2494,38 +1864,22 @@
                   "limit": 2147483648,
                   "reservation": 2147483648
                 }
-              },
-              "boot_modes": [
-                "CPU"
-              ]
+              }
             }
           },
+          "user_id": 234,
+          "version": "2.4.5",
           "wallet_info": {
+            "wallet_credit_amount": "10",
             "wallet_id": 1,
-            "wallet_name": "My Wallet",
-            "wallet_credit_amount": 10
-          },
-          "pricing_info": {
-            "pricing_plan_id": 1,
-            "pricing_unit_id": 1,
-            "pricing_unit_cost_id": 1
-          },
-          "hardware_info": {
-            "aws_ec2_instances": [
-              "c6a.4xlarge"
-            ]
+            "wallet_name": "My Wallet"
           }
         }
       },
       "DynamicSidecar": {
         "properties": {
           "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/simcore_service_director_v2__models__dynamic_services_scheduler__Status"
-              }
-            ],
-            "title": "Status",
+            "$ref": "#/components/schemas/simcore_service_director_v2__models__dynamic_services_scheduler__Status",
             "description": "status of the service sidecar also with additional information",
             "default": {
               "current": "ok",
@@ -2535,8 +1889,8 @@
           "is_ready": {
             "type": "boolean",
             "title": "Is Ready",
-            "default": false,
-            "scription": "is True while the health check on the dynamic-sidecar is responding. Meaning that the dynamic-sidecar is reachable and can accept requests"
+            "description": "is True while the health check on the dynamic-sidecar is responding. Meaning that the dynamic-sidecar is reachable and can accept requests",
+            "default": false
           },
           "was_compose_spec_submitted": {
             "type": "boolean",
@@ -2550,8 +1904,8 @@
             },
             "type": "array",
             "title": "Containers Inspect",
-            "default": [],
-            "scription": "docker inspect results from all the container ran at regular intervals"
+            "description": "docker inspect results from all the container ran at regular intervals",
+            "default": []
           },
           "was_dynamic_sidecar_started": {
             "type": "boolean",
@@ -2582,12 +1936,7 @@
             "default": false
           },
           "service_removal_state": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ServiceRemovalState"
-              }
-            ],
-            "title": "Service Removal State",
+            "$ref": "#/components/schemas/ServiceRemovalState",
             "description": "stores information used during service removal from the dynamic-sidecar scheduler"
           },
           "wait_for_manual_intervention_after_error": {
@@ -2609,52 +1958,77 @@
             "default": false
           },
           "instrumentation": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ServicesInstrumentation"
-              }
-            ],
-            "title": "Instrumentation",
+            "$ref": "#/components/schemas/ServicesInstrumentation",
             "description": "keeps track times for various operations"
           },
           "dynamic_sidecar_id": {
-            "type": "string",
-            "maxLength": 25,
-            "pattern": "[A-Za-z0-9]{25}",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 25,
+                "pattern": "[A-Za-z0-9]{25}"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Dynamic Sidecar Id",
             "description": "returned by the docker engine; used for starting the proxy"
           },
           "dynamic_sidecar_network_id": {
-            "type": "string",
-            "maxLength": 25,
-            "pattern": "[A-Za-z0-9]{25}",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 25,
+                "pattern": "[A-Za-z0-9]{25}"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Dynamic Sidecar Network Id",
             "description": "returned by the docker engine; used for starting the proxy"
           },
           "swarm_network_id": {
-            "type": "string",
-            "maxLength": 25,
-            "pattern": "[A-Za-z0-9]{25}",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 25,
+                "pattern": "[A-Za-z0-9]{25}"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Swarm Network Id",
             "description": "returned by the docker engine; used for starting the proxy"
           },
           "swarm_network_name": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Swarm Network Name",
             "description": "used for starting the proxy"
           },
           "docker_node_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Docker Node Id",
             "description": "contains node id of the docker node where all services and created containers are started"
           },
           "inspect_error_handler": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DelayedExceptionHandler"
-              }
-            ],
-            "title": "Inspect Error Handler",
+            "$ref": "#/components/schemas/DelayedExceptionHandler",
             "description": "Set when the dy-sidecar can no longer be reached by the director-v2. If it will be possible to reach the dy-sidecar again, this value will be set to None.",
             "default": {
               "delay_for": 0.0
@@ -2670,8 +2044,7 @@
           "ok",
           "failing"
         ],
-        "title": "DynamicSidecarStatus",
-        "description": "An enumeration."
+        "title": "DynamicSidecarStatus"
       },
       "GetProjectInactivityResponse": {
         "properties": {
@@ -2718,25 +2091,40 @@
       "Health": {
         "properties": {
           "Status": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/models_library__generated_models__docker_rest_api__Status"
+              },
+              {
+                "type": "null"
               }
             ],
-            "description": "Status is one of `none`, `starting`, `healthy` or `unhealthy`\n\n- \"none\"      Indicates there is no healthcheck\n- \"starting\"  Starting indicates that the container is not yet ready\n- \"healthy\"   Healthy indicates that the container is running correctly\n- \"unhealthy\" Unhealthy indicates that the container has a problem\n",
-            "example": "healthy"
+            "description": "Status is one of `none`, `starting`, `healthy` or `unhealthy`\n\n- \"none\"      Indicates there is no healthcheck\n- \"starting\"  Starting indicates that the container is not yet ready\n- \"healthy\"   Healthy indicates that the container is running correctly\n- \"unhealthy\" Unhealthy indicates that the container has a problem\n"
           },
           "FailingStreak": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Failingstreak",
-            "description": "FailingStreak is the number of consecutive failures",
-            "example": 0
+            "description": "FailingStreak is the number of consecutive failures"
           },
           "Log": {
-            "items": {
-              "$ref": "#/components/schemas/HealthcheckResult"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HealthcheckResult"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Log",
             "description": "Log contains the last few results (oldest first)\n"
           }
@@ -2764,26 +2152,51 @@
       "HealthcheckResult": {
         "properties": {
           "Start": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Start",
-            "description": "Date and time at which this check started in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
-            "example": "2020-01-04T10:44:24.496525531Z"
+            "description": "Date and time at which this check started in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n"
           },
           "End": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "End",
-            "description": "Date and time at which this check ended in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
-            "example": "2020-01-04T10:45:21.364524523Z"
+            "description": "Date and time at which this check ended in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n"
           },
           "ExitCode": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Exitcode",
-            "description": "ExitCode meanings:\n\n- `0` healthy\n- `1` unhealthy\n- `2` reserved (considered unhealthy)\n- other values: error running probe\n",
-            "example": 0
+            "description": "ExitCode meanings:\n\n- `0` healthy\n- `1` unhealthy\n- `2` reserved (considered unhealthy)\n- other values: error running probe\n"
           },
           "Output": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Output",
             "description": "Output from last check"
           }
@@ -2812,6 +2225,7 @@
               "$ref": "#/components/schemas/BootMode"
             },
             "type": "array",
+            "title": "Boot Modes",
             "description": "describe how a service shall be booted, using CPU, MPI, openMP or GPU",
             "default": [
               "CPU"
@@ -2827,6 +2241,14 @@
         "example": {
           "image": "simcore/service/dynamic/pretty-intense:1.0.0",
           "resources": {
+            "AIRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "ANY_resource": {
+              "limit": "some_value",
+              "reservation": "some_value"
+            },
             "CPU": {
               "limit": 4,
               "reservation": 0.1
@@ -2838,61 +2260,17 @@
             "VRAM": {
               "limit": 1,
               "reservation": 1
-            },
-            "AIRAM": {
-              "limit": 1,
-              "reservation": 1
-            },
-            "ANY_resource": {
-              "limit": "some_value",
-              "reservation": "some_value"
             }
           }
         }
-      },
-      "JupyterHubTokenAuthentication": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "jupyterhub"
-            ],
-            "title": "Type",
-            "default": "jupyterhub"
-          },
-          "api_token": {
-            "type": "string",
-            "title": "Api Token"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "api_token"
-        ],
-        "title": "JupyterHubTokenAuthentication"
-      },
-      "KerberosAuthentication": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "kerberos"
-            ],
-            "title": "Type",
-            "default": "kerberos"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "KerberosAuthentication"
       },
       "NATRule": {
         "properties": {
           "hostname": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/OsparcVariableIdentifier"
+                "type": "string",
+                "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
               },
               {
                 "type": "string"
@@ -2911,7 +2289,8 @@
                   "minimum": 0
                 },
                 {
-                  "$ref": "#/components/schemas/OsparcVariableIdentifier"
+                  "type": "string",
+                  "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
                 },
                 {
                   "$ref": "#/components/schemas/_PortRange"
@@ -2922,12 +2301,7 @@
             "title": "Tcp Ports"
           },
           "dns_resolver": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DNSResolver"
-              }
-            ],
-            "title": "Dns Resolver",
+            "$ref": "#/components/schemas/DNSResolver",
             "description": "specify a DNS resolver address and port"
           }
         },
@@ -2938,21 +2312,6 @@
         ],
         "title": "NATRule",
         "description": "Content of \"simcore.service.containers-allowed-outgoing-permit-list\" label"
-      },
-      "NoAuthentication": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "none"
-            ],
-            "title": "Type",
-            "default": "none"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "NoAuthentication"
       },
       "NodeState": {
         "properties": {
@@ -2973,18 +2332,21 @@
             "description": "contains the node inputs dependencies if they need to be computed first"
           },
           "currentStatus": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/RunningState"
-              }
-            ],
+            "$ref": "#/components/schemas/RunningState",
             "description": "the node's current state",
             "default": "NOT_STARTED"
           },
           "progress": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Progress",
             "description": "current progress of the task if available (None if not started or not a computational task)",
             "default": 0
@@ -3007,11 +2369,6 @@
         ],
         "title": "ObservationItem"
       },
-      "OsparcVariableIdentifier": {
-        "type": "string",
-        "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$",
-        "title": "OsparcVariableIdentifier"
-      },
       "PathMappingsLabel": {
         "properties": {
           "inputs_path": {
@@ -3033,23 +2390,36 @@
             },
             "type": "array",
             "title": "State Paths",
-            "description": "optional list of paths which contents need to be persisted",
-            "default": []
+            "description": "optional list of paths which contents need to be persisted"
           },
           "state_exclude": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "uniqueItems": true,
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "uniqueItems": true
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "State Exclude",
             "description": "optional list unix shell rules used to exclude files from the state"
           },
           "volume_size_limits": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Volume Size Limits",
             "description": "Apply volume size limits to entries in: `inputs_path`, `outputs_path` and `state_paths`. Limits must be parsable by Pydantic's ByteSize."
           }
@@ -3073,20 +2443,33 @@
               },
               "type": "array"
             },
+            "propertyNames": {
+              "format": "uuid"
+            },
             "type": "object",
             "title": "Adjacency List",
             "description": "The adjacency list of the current pipeline in terms of {NodeID: [successor NodeID]}"
           },
           "progress": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Progress",
             "description": "the progress of the pipeline (None if there are no computational tasks)"
           },
           "node_states": {
             "additionalProperties": {
               "$ref": "#/components/schemas/NodeState"
+            },
+            "propertyNames": {
+              "format": "uuid"
             },
             "type": "object",
             "title": "Node States",
@@ -3199,6 +2582,7 @@
         "properties": {
           "size_bytes": {
             "type": "integer",
+            "minimum": 0,
             "title": "Size Bytes",
             "description": "The amount of data transferred by the retrieve call"
           }
@@ -3252,17 +2636,20 @@
             "title": "Service Uuid"
           },
           "service_basepath": {
-            "type": "string",
-            "format": "path",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "path"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Service Basepath",
             "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint."
           },
           "boot_type": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ServiceBootType"
-              }
-            ],
+            "$ref": "#/components/schemas/ServiceBootType",
             "description": "Describes how the dynamic services was started (legacy=V0, modern=V2).Since legacy services do not have this label it defaults to V0.",
             "default": "V0"
           },
@@ -3281,31 +2668,48 @@
             "minimum": 0
           },
           "published_port": {
-            "type": "integer",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMaximum": true,
+                "exclusiveMinimum": true,
+                "maximum": 65535,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Published Port",
             "description": "the service swarm published port if any",
-            "deprecated": true,
-            "maximum": 65535,
-            "minimum": 0
+            "deprecated": true
           },
           "entry_point": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Entry Point",
             "description": "if empty the service entrypoint is on the root endpoint.",
             "deprecated": true
           },
           "service_state": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ServiceState"
-              }
-            ],
+            "$ref": "#/components/schemas/ServiceState",
             "description": "service current state"
           },
           "service_message": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Service Message",
             "description": "additional information related to service state"
           }
@@ -3340,73 +2744,83 @@
         "title": "RunningState",
         "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
       },
-      "Scheduler": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "title": "Status",
-            "description": "The running status of the scheduler"
-          },
-          "workers": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/Worker"
-            },
-            "type": "object",
-            "title": "Workers"
-          }
-        },
-        "type": "object",
-        "required": [
-          "status"
-        ],
-        "title": "Scheduler"
-      },
       "SchedulerData": {
         "properties": {
           "paths_mapping": {
             "$ref": "#/components/schemas/PathMappingsLabel"
           },
           "simcore.service.compose-spec": {
-            "type": "object",
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Simcore.Service.Compose-Spec",
             "description": "json encoded docker-compose specifications. see https://docs.docker.com/compose/compose-file/, only used by dynamic-sidecar."
           },
           "simcore.service.container-http-entrypoint": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Simcore.Service.Container-Http-Entrypoint",
             "description": "When a docker-compose specifications is provided, the container where the traffic must flow has to be specified. Required by dynamic-sidecar when compose_spec is set."
           },
           "user_preferences_path": {
-            "type": "string",
-            "format": "path",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "path"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "User Preferences Path"
           },
           "simcore.service.restart-policy": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/RestartPolicy"
-              }
-            ],
+            "$ref": "#/components/schemas/RestartPolicy",
             "description": "the dynamic-sidecar can restart all running containers on certain events. Supported events:\n- `no-restart` default\n- `on-inputs-downloaded` after inputs are downloaded\n",
             "default": "no-restart"
           },
           "simcore.service.containers-allowed-outgoing-permit-list": {
-            "additionalProperties": {
-              "items": {
-                "$ref": "#/components/schemas/NATRule"
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {
+                    "$ref": "#/components/schemas/NATRule"
+                  },
+                  "type": "array"
+                },
+                "type": "object"
               },
-              "type": "array"
-            },
-            "type": "object",
+              {
+                "type": "null"
+              }
+            ],
             "title": "Simcore.Service.Containers-Allowed-Outgoing-Permit-List",
             "description": "allow internet access to certain domain names and ports per container"
           },
           "simcore.service.containers-allowed-outgoing-internet": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "uniqueItems": true,
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "uniqueItems": true
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Simcore.Service.Containers-Allowed-Outgoing-Internet",
             "description": "allow complete internet access to containers in here"
           },
@@ -3468,12 +2882,7 @@
             "minimum": 0
           },
           "dynamic_sidecar": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DynamicSidecar"
-              }
-            ],
-            "title": "Dynamic Sidecar",
+            "$ref": "#/components/schemas/DynamicSidecar",
             "description": "stores information fetched from the dynamic-sidecar"
           },
           "dynamic_sidecar_network_name": {
@@ -3497,9 +2906,6 @@
             "minimum": 0
           },
           "service_resources": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ImageResources"
-            },
             "type": "object",
             "title": "Service Resources",
             "description": "service resources used to enforce limits"
@@ -3525,47 +2931,68 @@
             "description": "service name given to the proxy"
           },
           "proxy_admin_api_port": {
-            "type": "integer",
-            "exclusiveMaximum": true,
-            "exclusiveMinimum": true,
-            "title": "Proxy Admin Api Port",
-            "description": "used as the admin endpoint API port",
-            "maximum": 65535,
-            "minimum": 0
-          },
-          "wallet_info": {
-            "allOf": [
+            "anyOf": [
               {
-                "$ref": "#/components/schemas/WalletInfo"
+                "type": "integer",
+                "exclusiveMaximum": true,
+                "exclusiveMinimum": true,
+                "maximum": 65535,
+                "minimum": 0
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Wallet Info",
+            "title": "Proxy Admin Api Port",
+            "description": "used as the admin endpoint API port"
+          },
+          "wallet_info": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WalletInfo-Output"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "contains information about the wallet used to bill the running service"
           },
           "pricing_info": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/PricingInfo"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Pricing Info",
             "description": "contains pricing information so we know what is the cost of running of the service"
           },
           "hardware_info": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/HardwareInfo"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Hardware Info",
             "description": "contains harware information so we know on which hardware to run the service"
           },
           "product_name": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Product Name",
-            "description": "Current product upon which this service is scheduled. If set to None, the current product is undefined. Mostly for backwards compatibility"
+            "description": "Current product upon which this service is scheduledIf set to None, the current product is undefined. Mostly for backwards compatibility"
           }
         },
+        "additionalProperties": true,
         "type": "object",
         "required": [
           "paths_mapping",
@@ -3582,10 +3009,10 @@
           "service_resources",
           "request_dns",
           "request_scheme",
-          "request_simcore_user_agent"
+          "request_simcore_user_agent",
+          "proxy_service_name"
         ],
-        "title": "SchedulerData",
-        "description": "All \"simcore.service.*\" labels including keys"
+        "title": "SchedulerData"
       },
       "ServiceBootType": {
         "type": "string",
@@ -3593,8 +3020,7 @@
           "V0",
           "V2"
         ],
-        "title": "ServiceBootType",
-        "description": "An enumeration."
+        "title": "ServiceBootType"
       },
       "ServiceRemovalState": {
         "properties": {
@@ -3621,6 +3047,7 @@
         "title": "ServiceRemovalState"
       },
       "ServiceState": {
+        "type": "string",
         "enum": [
           "failed",
           "pending",
@@ -3631,55 +3058,39 @@
           "complete",
           "idle"
         ],
-        "title": "ServiceState",
-        "description": "An enumeration."
+        "title": "ServiceState"
       },
       "ServicesInstrumentation": {
         "properties": {
           "start_requested_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Start Requested At",
             "description": "moment in which the process of starting the service was requested"
           },
           "close_requested_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Close Requested At",
             "description": "moment in which the process of stopping the service was requested"
           }
         },
         "type": "object",
         "title": "ServicesInstrumentation"
-      },
-      "SimpleAuthentication": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "simple"
-            ],
-            "title": "Type",
-            "default": "simple"
-          },
-          "username": {
-            "type": "string",
-            "title": "Username"
-          },
-          "password": {
-            "type": "string",
-            "format": "password",
-            "title": "Password",
-            "writeOnly": true
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "username",
-          "password"
-        ],
-        "title": "SimpleAuthentication"
       },
       "Status2": {
         "type": "string",
@@ -3693,63 +3104,7 @@
           "dead"
         ],
         "title": "Status2",
-        "description": "    String representation of the container state. Can be one of \"created\",\n\"running\", \"paused\", \"restarting\", \"removing\", \"exited\", or \"dead\"."
-      },
-      "TLSAuthentication": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "tls"
-            ],
-            "title": "Type",
-            "default": "tls"
-          },
-          "tls_ca_file": {
-            "type": "string",
-            "format": "path",
-            "title": "Tls Ca File"
-          },
-          "tls_client_cert": {
-            "type": "string",
-            "format": "path",
-            "title": "Tls Client Cert"
-          },
-          "tls_client_key": {
-            "type": "string",
-            "format": "path",
-            "title": "Tls Client Key"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "tls_ca_file",
-          "tls_client_cert",
-          "tls_client_key"
-        ],
-        "title": "TLSAuthentication"
-      },
-      "TaskCounts": {
-        "properties": {
-          "error": {
-            "type": "integer",
-            "title": "Error",
-            "default": 0
-          },
-          "memory": {
-            "type": "integer",
-            "title": "Memory",
-            "default": 0
-          },
-          "executing": {
-            "type": "integer",
-            "title": "Executing",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "TaskCounts"
+        "description": "String representation of the container state. Can be one of \"created\",\n\"running\", \"paused\", \"restarting\", \"removing\", \"exited\", or \"dead\"."
       },
       "TaskLogFileGet": {
         "properties": {
@@ -3759,10 +3114,14 @@
             "title": "Task Id"
           },
           "download_link": {
-            "type": "string",
-            "maxLength": 65536,
-            "minLength": 1,
-            "format": "uri",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Download Link",
             "description": "Presigned link for log file or None if still not available"
           }
@@ -3777,7 +3136,14 @@
         "properties": {
           "nodes_outputs": {
             "additionalProperties": {
+              "propertyNames": {
+                "maxLength": 100,
+                "minLength": 1
+              },
               "type": "object"
+            },
+            "propertyNames": {
+              "format": "uuid"
             },
             "type": "object",
             "title": "Nodes Outputs"
@@ -3805,14 +3171,6 @@
           "nodes_ids"
         ],
         "title": "TasksSelection"
-      },
-      "UsedResources": {
-        "additionalProperties": {
-          "type": "number",
-          "minimum": 0.0
-        },
-        "type": "object",
-        "title": "UsedResources"
       },
       "UserServiceCommand": {
         "properties": {
@@ -3885,7 +3243,7 @@
         ],
         "title": "ValidationError"
       },
-      "WalletInfo": {
+      "WalletInfo-Input": {
         "properties": {
           "wallet_id": {
             "type": "integer",
@@ -3898,7 +3256,14 @@
             "title": "Wallet Name"
           },
           "wallet_credit_amount": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
             "title": "Wallet Credit Amount"
           }
         },
@@ -3910,76 +3275,30 @@
         ],
         "title": "WalletInfo"
       },
-      "Worker": {
+      "WalletInfo-Output": {
         "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "resources": {
-            "$ref": "#/components/schemas/DictModel_str__PositiveFloat_"
-          },
-          "used_resources": {
-            "$ref": "#/components/schemas/UsedResources"
-          },
-          "memory_limit": {
+          "wallet_id": {
             "type": "integer",
-            "title": "Memory Limit"
+            "exclusiveMinimum": true,
+            "title": "Wallet Id",
+            "minimum": 0
           },
-          "metrics": {
-            "$ref": "#/components/schemas/WorkerMetrics"
+          "wallet_name": {
+            "type": "string",
+            "title": "Wallet Name"
+          },
+          "wallet_credit_amount": {
+            "type": "string",
+            "title": "Wallet Credit Amount"
           }
         },
         "type": "object",
         "required": [
-          "id",
-          "name",
-          "resources",
-          "used_resources",
-          "memory_limit",
-          "metrics"
+          "wallet_id",
+          "wallet_name",
+          "wallet_credit_amount"
         ],
-        "title": "Worker"
-      },
-      "WorkerMetrics": {
-        "properties": {
-          "cpu": {
-            "type": "number",
-            "title": "Cpu",
-            "description": "consumed % of cpus"
-          },
-          "memory": {
-            "type": "integer",
-            "title": "Memory",
-            "description": "consumed memory"
-          },
-          "num_fds": {
-            "type": "integer",
-            "title": "Num Fds",
-            "description": "consumed file descriptors"
-          },
-          "task_counts": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TaskCounts"
-              }
-            ],
-            "title": "Task Counts",
-            "description": "task details"
-          }
-        },
-        "type": "object",
-        "required": [
-          "cpu",
-          "memory",
-          "num_fds",
-          "task_counts"
-        ],
-        "title": "WorkerMetrics"
+        "title": "WalletInfo"
       },
       "_PortRange": {
         "properties": {
@@ -3993,7 +3312,8 @@
                 "minimum": 0
               },
               {
-                "$ref": "#/components/schemas/OsparcVariableIdentifier"
+                "type": "string",
+                "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
               }
             ],
             "title": "Lower"
@@ -4008,7 +3328,8 @@
                 "minimum": 0
               },
               {
-                "$ref": "#/components/schemas/OsparcVariableIdentifier"
+                "type": "string",
+                "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
               }
             ],
             "title": "Upper"
@@ -4031,16 +3352,12 @@
           "unhealthy"
         ],
         "title": "Status",
-        "description": "    Status is one of `none`, `starting`, `healthy` or `unhealthy`\n\n- \"none\"      Indicates there is no healthcheck\n- \"starting\"  Starting indicates that the container is not yet ready\n- \"healthy\"   Healthy indicates that the container is running correctly\n- \"unhealthy\" Unhealthy indicates that the container has a problem"
+        "description": "Status is one of `none`, `starting`, `healthy` or `unhealthy`\n\n- \"none\"      Indicates there is no healthcheck\n- \"starting\"  Starting indicates that the container is not yet ready\n- \"healthy\"   Healthy indicates that the container is running correctly\n- \"unhealthy\" Unhealthy indicates that the container has a problem"
       },
       "simcore_service_director_v2__models__dynamic_services_scheduler__Status": {
         "properties": {
           "current": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DynamicSidecarStatus"
-              }
-            ],
+            "$ref": "#/components/schemas/DynamicSidecarStatus",
             "description": "status of the service"
           },
           "info": {

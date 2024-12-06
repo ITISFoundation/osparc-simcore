@@ -75,7 +75,6 @@ jobs:
       efs-guardian: ${{ steps.filter.outputs.efs-guardian }}
       invitations: ${{ steps.filter.outputs.invitations }}
       migration: ${{ steps.filter.outputs.migration }}
-      osparc-gateway-server: ${{ steps.filter.outputs.osparc-gateway-server }}
       payments: ${{ steps.filter.outputs.payments }}
       dynamic-scheduler: ${{ steps.filter.outputs.dynamic-scheduler }}
       resource-usage-tracker: ${{ steps.filter.outputs.resource-usage-tracker }}
@@ -222,12 +221,6 @@ jobs:
               - 'packages/**'
               - 'services/migration/**'
               - 'services/docker-compose*'
-            osparc-gateway-server:
-              - 'packages/**'
-              - 'services/osparc-gateway-server/**'
-              - 'services/docker-compose*'
-              - 'scripts/mypy/*'
-              - 'mypy.ini'
             payments:
                 - 'packages/**'
                 - 'services/payments/**'
@@ -354,16 +347,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-webserver-02:
     needs: changes
@@ -399,16 +389,13 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-webserver-03:
     needs: changes
@@ -444,16 +431,13 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-webserver-04:
       needs: changes
@@ -489,7 +473,7 @@ jobs:
           run: ./ci/github/unit-testing/webserver.bash install
         - name: test
           run: ./ci/github/unit-testing/webserver.bash test_with_db 04
-        - uses: codecov/codecov-action@v5.0.7
+        - uses: codecov/codecov-action@v5
           env:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           with:
@@ -537,16 +521,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-agent:
     needs: changes
@@ -587,16 +568,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/agent.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-api:
     needs: changes
@@ -632,16 +610,13 @@ jobs:
         run: ./ci/github/unit-testing/api.bash install
       - name: test
         run: ./ci/github/unit-testing/api.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-api-server:
     needs: changes
@@ -683,16 +658,13 @@ jobs:
       - name: OAS backwards compatibility check
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/api-server.bash openapi-diff
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-autoscaling:
     needs: changes
@@ -731,16 +703,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/autoscaling.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-catalog:
     needs: changes
@@ -785,16 +754,13 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-clusters-keeper:
     needs: changes
@@ -844,16 +810,13 @@ jobs:
           source .venv/bin/activate && \
           pushd services/clusters-keeper && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-datcore-adapter:
     needs: changes
@@ -898,16 +861,13 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-director:
     needs: changes
@@ -952,16 +912,13 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director/test_failures
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-director-v2:
     needs: changes
@@ -1006,16 +963,13 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-aws-library:
     needs: changes
@@ -1054,16 +1008,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/aws-library.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-dask-task-models-library:
     needs: changes
@@ -1102,16 +1053,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-dask-sidecar:
     needs: changes
@@ -1150,74 +1098,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dask-sidecar.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
 
-  unit-test-osparc-gateway-server:
-    needs: changes
-    if: ${{ needs.changes.outputs.osparc-gateway-server == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] osparc-gateway-server"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-22.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: "0.4.x"
-          enable-cache: false
-          cache-dependency-glob: "**/osparc-gateway-server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: |
-          make devenv
-          source .venv/bin/activate && \
-          pushd services/osparc-gateway-server && \
-          make install-ci
-      - name: typecheck
-        run: |
-          source .venv/bin/activate && \
-          pushd services/osparc-gateway-server && \
-          make mypy
-      - name: test
-        if: ${{ !cancelled() }}
-        run: |
-          source .venv/bin/activate && \
-          pushd services/osparc-gateway-server && \
-          make test-ci-unit
-      - uses: codecov/codecov-action@v5.0.7
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-payments:
     needs: changes
@@ -1256,16 +1143,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/payments.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-dynamic-scheduler:
     needs: changes
@@ -1304,16 +1188,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dynamic-scheduler.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-resource-usage-tracker:
     needs: changes
@@ -1362,16 +1243,13 @@ jobs:
           source .venv/bin/activate && \
           pushd services/resource-usage-tracker && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-dynamic-sidecar:
     needs: changes
@@ -1410,16 +1288,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-efs-guardian:
     needs: changes
@@ -1469,16 +1344,13 @@ jobs:
           source .venv/bin/activate && \
           pushd services/efs-guardian && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-python-linting:
     needs: changes
@@ -1552,16 +1424,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-invitations:
     needs: changes
@@ -1600,16 +1469,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/invitations.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-service-integration:
     needs: changes
@@ -1648,16 +1514,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-service-library:
     needs: changes
@@ -1696,16 +1559,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/service-library.bash test_all
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-settings-library:
     needs: changes
@@ -1744,16 +1604,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/settings-library.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-models-library:
     needs: changes
@@ -1791,16 +1648,13 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-common-library:
     needs: changes
@@ -1839,7 +1693,7 @@ jobs:
         run: ./ci/github/unit-testing/common-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/common-library.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
         with:
           flags: unittests #optional
 
@@ -1882,16 +1736,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/notifications-library.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-simcore-sdk:
     needs: changes
@@ -1932,16 +1783,13 @@ jobs:
       - name: test
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-tests:
     # NOTE: this is a github required status check!
@@ -1965,7 +1813,6 @@ jobs:
         unit-test-models-library,
         unit-test-common-library,
         unit-test-notifications-library,
-        unit-test-osparc-gateway-server,
         unit-test-payments,
         unit-test-dynamic-scheduler,
         unit-test-postgres-database,
@@ -2048,7 +1895,8 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2111,7 +1959,8 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2174,7 +2023,8 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2246,7 +2096,8 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2311,85 +2162,8 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/dynamic-sidecar.bash clean_up
-      - uses: codecov/codecov-action@v5.0.7
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: integrationtests #optional
-
-  integration-test-osparc-gateway-server:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.osparc-gateway-server == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[int] osparc-gateway-server"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-22.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: "0.4.x"
-          enable-cache: false
-          cache-dependency-glob: "**/osparc-gateway-server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: |
-          make devenv && \
-          source .venv/bin/activate && \
-          pushd services/osparc-gateway-server && \
-          make install-ci
-      - name: integration-test
-        run: |
-          source .venv/bin/activate && \
-          pushd services/osparc-gateway-server && \
-          make test-ci-integration
-      - name: system-test
-        run: |
-          source .venv/bin/activate && \
-          pushd services/osparc-gateway-server && \
-          make test-system
-      - name: upload failed tests logs
+      - uses: codecov/codecov-action@v5
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/director-v2/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: |
-          pushd services/osparc-gateway-server && \
-          make down
-      - uses: codecov/codecov-action@v5.0.7
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2452,7 +2226,8 @@ jobs:
       - name: cleanup
         if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
-      - uses: codecov/codecov-action@v5.0.7
+      - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2460,13 +2235,12 @@ jobs:
 
   integration-tests:
     # NOTE: this is a github required status check!
-    if: ${{ !cancelled() }}
+    if: ${{ always() }}
     needs:
       [
         integration-test-director-v2-01,
         integration-test-director-v2-02,
         integration-test-dynamic-sidecar,
-        integration-test-osparc-gateway-server,
         integration-test-simcore-sdk,
         integration-test-webserver-01,
         integration-test-webserver-02,
@@ -2792,7 +2566,7 @@ jobs:
 
   system-tests:
     # NOTE: this is a github required status check!
-    if: ${{ !cancelled() }}
+    if: ${{ always() }}
     needs:
       [
         system-test-e2e,
@@ -2800,6 +2574,8 @@ jobs:
         system-test-environment-setup,
         system-test-public-api,
         system-test-swarm-deploy,
+        system-api-specs,
+        system-backwards-compatibility
       ]
     runs-on: ubuntu-latest
     steps:
@@ -2864,3 +2640,78 @@ jobs:
         env:
           TAG_PREFIX: hotfix-staging-github
         run: ./ci/deploy/dockerhub-deploy.bash -n
+
+  system-api-specs:
+    needs: [changes]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 10
+    name: "[sys] check api-specs are up to date"
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.4.x"
+          enable-cache: false
+      - name: checkout source branch
+        uses: actions/checkout@v4
+      - name: Regenerate specs and check
+        run: |
+          uv venv .venv && source .venv/bin/activate
+          make openapi-specs
+          ./ci/github/helpers/openapi-specs-diff.bash diff \
+            https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name }}/refs/heads/${{ github.event.pull_request.head.ref }} \
+            .
+
+  system-backwards-compatibility:
+    needs: [changes, system-api-specs]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 10
+    name: "[sys] api-server backwards compatibility"
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.4.x"
+          enable-cache: false
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: check api-server backwards compatibility
+        run: |
+          ./scripts/openapi-diff.bash breaking --fail-on ERR\
+            https://raw.githubusercontent.com/${{ github.event.pull_request.base.repo.full_name }}/refs/heads/${{ github.event.pull_request.base.ref }}/services/api-server/openapi.json \
+            /specs/services/api-server/openapi.json
+
+  api-spec-backwards-compatibility:
+    needs: [changes, system-api-specs]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
+    continue-on-error: true
+    timeout-minutes: 10
+    name: "api-specs-backwards-compatibility"
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.4.x"
+          enable-cache: false
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Check openapi-specs backwards compatibility
+        run: |
+          ./ci/github/helpers/openapi-specs-diff.bash breaking \
+            https://raw.githubusercontent.com/${{ github.event.pull_request.base.repo.full_name }}/refs/heads/${{ github.event.pull_request.base.ref }} \
+            .
