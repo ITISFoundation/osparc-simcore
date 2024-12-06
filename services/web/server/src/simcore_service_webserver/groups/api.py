@@ -18,18 +18,6 @@ __all__: tuple[str, ...] = (
 )
 
 
-async def get_user_group(
-    app: web.Application, user_id: UserID, gid: GroupID
-) -> dict[str, str]:
-    """
-    Gets group gid if user associated to it and has read access
-
-    raises GroupNotFoundError
-    raises UserInsufficientRightsError
-    """
-    return await _groups_db.get_user_group(app, user_id=user_id, gid=gid)
-
-
 async def update_user_group(
     app: web.Application,
     user_id: UserID,
