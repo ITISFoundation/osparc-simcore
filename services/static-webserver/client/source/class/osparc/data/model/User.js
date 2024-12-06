@@ -29,12 +29,13 @@ qx.Class.define("osparc.data.model.User", {
     this.base(arguments);
 
     const label = this.self().namesToLabel(userData["first_name"], userData["last_name"]) || userData["login"];
+    const thumbnail = this.self().emailToThumbnail(userData.login);
     this.set({
       userId: userData.id,
       groupId: userData.gid,
       label: label,
-      login: userData.login,
-      thumbnail: this.self().emailToThumbnail(userData.login),
+      email: userData.login,
+      thumbnail: thumbnail,
       accessRights: userData.accessRights,
     });
   },
@@ -61,11 +62,11 @@ qx.Class.define("osparc.data.model.User", {
       event: "changeLabel",
     },
 
-    login: {
+    email: {
       check: "String",
       nullable: true,
       init: null,
-      event: "changeLogin",
+      event: "changeEmail",
     },
 
     accessRights: {
