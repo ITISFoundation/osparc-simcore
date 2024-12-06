@@ -2,11 +2,11 @@ from datetime import timedelta
 from typing import Annotated, Any
 
 from models_library.basic_types import IDStr
-from pydantic import AliasGenerator, BaseModel, ConfigDict, Field, HttpUrl, SecretStr
+from pydantic import AliasGenerator, ConfigDict, Field, HttpUrl, SecretStr
 from pydantic.alias_generators import to_camel
 
 from ..emails import LowerCaseEmailStr
-from ._base import InputSchema
+from ._base import InputSchema, OutputSchema
 
 
 class AccountRequestInfo(InputSchema):
@@ -53,7 +53,7 @@ class UnregisterCheck(InputSchema):
 #
 
 
-class ApiKeyCreateRequest(BaseModel):
+class ApiKeyCreateRequest(OutputSchema):
     display_name: Annotated[str, Field(..., min_length=3)]
     expiration: timedelta | None = Field(
         None,
@@ -64,7 +64,6 @@ class ApiKeyCreateRequest(BaseModel):
         alias_generator=AliasGenerator(
             validation_alias=to_camel,
         ),
-        from_attributes=True,
         json_schema_extra={
             "examples": [
                 {
@@ -93,7 +92,6 @@ class ApiKeyCreateResponse(ApiKeyCreateRequest):
         alias_generator=AliasGenerator(
             serialization_alias=to_camel,
         ),
-        from_attributes=True,
         json_schema_extra={
             "examples": [
                 {
@@ -124,7 +122,7 @@ class ApiKeyCreateResponse(ApiKeyCreateRequest):
     )
 
 
-class ApiKeyGet(BaseModel):
+class ApiKeyGet(OutputSchema):
     id: IDStr
     display_name: Annotated[str, Field(..., min_length=3)]
 
@@ -132,7 +130,6 @@ class ApiKeyGet(BaseModel):
         alias_generator=AliasGenerator(
             serialization_alias=to_camel,
         ),
-        from_attributes=True,
         json_schema_extra={
             "examples": [
                 {
