@@ -26,6 +26,38 @@ qx.Class.define("osparc.auth.Data", {
 
   properties: {
     /**
+     *  Basic authentification with a token
+    */
+    auth: {
+      init: null,
+      nullable: true,
+      check: "osparc.io.request.authentication.Token",
+      apply: "__applyAuth"
+    },
+
+    role: {
+      check: ["anonymous", "guest", "user", "tester", "product_owner", "admin"],
+      init: null,
+      nullable: false,
+      event: "changeRole",
+      apply: "__applyRole"
+    },
+
+    guest: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeGuest"
+    },
+
+    loggedIn: {
+      check: "Boolean",
+      nullable: false,
+      init: false,
+      event: "changeLoggedIn",
+    },
+
+    /**
      *  User Id
      */
     userId: {
@@ -41,16 +73,6 @@ qx.Class.define("osparc.auth.Data", {
       init: null,
       nullable: false,
       check: "Number"
-    },
-
-    /**
-     *  Basic authentification with a token
-    */
-    auth: {
-      init: null,
-      nullable: true,
-      check: "osparc.io.request.authentication.Token",
-      apply: "__applyAuth"
     },
 
     username: {
@@ -83,34 +105,12 @@ qx.Class.define("osparc.auth.Data", {
       event: "changeLastName"
     },
 
-    role: {
-      check: ["anonymous", "guest", "user", "tester", "product_owner", "admin"],
-      init: null,
-      nullable: false,
-      event: "changeRole",
-      apply: "__applyRole"
-    },
-
-    guest: {
-      check: "Boolean",
-      init: true,
-      nullable: false,
-      event: "changeGuest"
-    },
-
     expirationDate: {
       init: null,
       nullable: true,
       check: "Date",
       event: "changeExpirationDate"
     },
-
-    loggedIn: {
-      check: "Boolean",
-      nullable: false,
-      init: false,
-      event: "changeLoggedIn",
-    }
   },
 
   members: {
