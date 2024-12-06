@@ -156,7 +156,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
         if (this.__userProfileData["first_name"] !== model.getFirstName() || this.__userProfileData["last_name"] !== model.getLastName()) {
           if (namesValidator.validate()) {
-            const profileReq = new osparc.io.request.ApiRequest("/me", "PUT");
+            const profileReq = new osparc.io.request.ApiRequest("/me", "PATCH");
             profileReq.setRequestData({
               "first_name": model.getFirstName(),
               "last_name": model.getLastName()
