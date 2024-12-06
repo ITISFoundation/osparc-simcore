@@ -711,8 +711,6 @@ paths:
         in: query
         required: false
         schema:
-          enum:
-          - std
           const: std
           type: string
           default: std
@@ -1010,9 +1008,7 @@ paths:
           - type: string
             minLength: 1
             maxLength: 100
-          - enum:
-            - current
-            const: current
+          - const: current
             type: string
           title: Product Name
       responses:
@@ -1038,9 +1034,7 @@ paths:
           - type: string
             minLength: 1
             maxLength: 100
-          - enum:
-            - current
-            const: current
+          - const: current
             type: string
           title: Product Name
       - name: template_id
@@ -4546,7 +4540,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5452,7 +5446,7 @@ paths:
               schema:
                 anyOf:
                 - $ref: '#/components/schemas/Envelope_FileUploadSchema_'
-                - $ref: '#/components/schemas/Envelope_Url_'
+                - $ref: '#/components/schemas/Envelope_AnyUrl_'
                 title: Response Upload File
     delete:
       tags:
@@ -5840,9 +5834,7 @@ paths:
           anyOf:
           - type: integer
           - type: string
-          - enum:
-            - HEAD
-            const: HEAD
+          - const: HEAD
             type: string
           title: Ref Id
       - name: project_uuid
@@ -6626,7 +6618,9 @@ components:
         limits:
           $ref: '#/components/schemas/Limits'
         queued:
-          type: boolean
+          anyOf:
+          - type: boolean
+          - type: 'null'
           title: Queued
       type: object
       required:
@@ -6766,16 +6760,12 @@ components:
         url:
           anyOf:
           - type: string
-            minLength: 1
-            format: uri
           - type: 'null'
           title: Url
           description: Link to current resource
         diagnostics_url:
           anyOf:
           - type: string
-            minLength: 1
-            format: uri
           - type: 'null'
           title: Diagnostics Url
           description: Link to diagnostics report sub-resource. This MIGHT take some
@@ -6876,9 +6866,6 @@ components:
         thumbnail:
           anyOf:
           - type: string
-            maxLength: 2083
-            minLength: 1
-            format: uri
           - type: 'null'
           title: Thumbnail
         description:
@@ -7169,9 +7156,6 @@ components:
           title: Parents Ids
         url:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: Url
       type: object
       required:
@@ -7297,15 +7281,11 @@ components:
             task
         url:
           type: string
-          minLength: 1
-          format: uri
           title: Url
           description: the link where to get the status of the task
         stop_url:
           anyOf:
           - type: string
-            minLength: 1
-            format: uri
           - type: 'null'
           title: Stop Url
           description: the link where to stop the task
@@ -7565,6 +7545,20 @@ components:
       additionalProperties: false
       type: object
       title: EmptyModel
+    Envelope_AnyUrl_:
+      properties:
+        data:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[AnyUrl]
     Envelope_AppStatusCheck_:
       properties:
         data:
@@ -8248,22 +8242,6 @@ components:
           title: Error
       type: object
       title: Envelope[Union[WalletGet, NoneType]]
-    Envelope_Url_:
-      properties:
-        data:
-          anyOf:
-          - type: string
-            minLength: 1
-            format: uri
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[Url]
     Envelope_UserProfile_:
       properties:
         data:
@@ -8429,6 +8407,8 @@ components:
               type: integer
               exclusiveMinimum: true
               minimum: 0
+            propertyNames:
+              const: comment_id
             type: object
           - type: 'null'
           title: Data
@@ -8445,6 +8425,8 @@ components:
           anyOf:
           - additionalProperties:
               $ref: '#/components/schemas/Activity'
+            propertyNames:
+              format: uuid
             type: object
           - type: 'null'
           title: Data
@@ -8461,6 +8443,8 @@ components:
           anyOf:
           - additionalProperties:
               $ref: '#/components/schemas/ProjectInputGet'
+            propertyNames:
+              format: uuid
             type: object
           - type: 'null'
           title: Data
@@ -8477,6 +8461,8 @@ components:
           anyOf:
           - additionalProperties:
               $ref: '#/components/schemas/ProjectOutputGet'
+            propertyNames:
+              format: uuid
             type: object
           - type: 'null'
           title: Data
@@ -9261,8 +9247,6 @@ components:
         file_size:
           anyOf:
           - type: integer
-            enum:
-            - -1
             const: -1
           - type: integer
             minimum: 0
@@ -9321,8 +9305,6 @@ components:
       properties:
         state:
           type: string
-          minLength: 1
-          format: uri
           title: State
       type: object
       required:
@@ -9357,13 +9339,9 @@ components:
       properties:
         abort_upload:
           type: string
-          minLength: 1
-          format: uri
           title: Abort Upload
         complete_upload:
           type: string
-          minLength: 1
-          format: uri
           title: Complete Upload
       type: object
       required:
@@ -9379,8 +9357,6 @@ components:
         urls:
           items:
             type: string
-            minLength: 1
-            format: uri
           type: array
           title: Urls
         links:
@@ -9740,8 +9716,6 @@ components:
         thumbnail:
           anyOf:
           - type: string
-            minLength: 1
-            format: uri
           - type: 'null'
           title: Thumbnail
           description: url to the group thumbnail
@@ -9985,9 +9959,6 @@ components:
           title: Created
         invitationLink:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: Invitationlink
       type: object
       required:
@@ -10062,7 +10033,6 @@ components:
       type: string
       enum:
       - VIP_MODEL
-      const: VIP_MODEL
       title: LicensedResourceType
     Limits:
       properties:
@@ -10292,6 +10262,10 @@ components:
         thumbnail:
           anyOf:
           - type: string
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Thumbnail
           description: url of the latest screenshot of the node
@@ -10302,7 +10276,6 @@ components:
           title: Runhash
           description: the hex digest of the resolved inputs +outputs hash at the
             time when the last outputs were generated
-          nullable: true
         inputs:
           anyOf:
           - type: object
@@ -10366,7 +10339,6 @@ components:
           - type: 'null'
           title: Parent
           description: Parent's (group-nodes') node ID s. Used to group
-          nullable: true
         position:
           anyOf:
           - $ref: '#/components/schemas/Position'
@@ -10433,7 +10405,6 @@ components:
           title: Runhash
           description: the hex digest of the resolved inputs +outputs hash at the
             time when the last outputs were generated
-          nullable: true
         inputs:
           anyOf:
           - type: object
@@ -10497,7 +10468,6 @@ components:
           - type: 'null'
           title: Parent
           description: Parent's (group-nodes') node ID s. Used to group
-          nullable: true
         position:
           anyOf:
           - $ref: '#/components/schemas/Position'
@@ -10598,6 +10568,7 @@ components:
           exclusiveMinimum: true
           title: Serviceport
           description: port to access the service within the network
+          default: 8080
           maximum: 65535
           minimum: 0
         serviceBasepath:
@@ -10634,7 +10605,6 @@ components:
       - serviceKey
       - serviceVersion
       - serviceHost
-      - servicePort
       - serviceState
       - userId
       title: NodeGet
@@ -10642,8 +10612,6 @@ components:
       properties:
         serviceState:
           type: string
-          enum:
-          - idle
           const: idle
           title: Servicestate
         serviceUuid:
@@ -10662,8 +10630,6 @@ components:
       properties:
         serviceState:
           type: string
-          enum:
-          - unknown
           const: unknown
           title: Servicestate
         serviceUuid:
@@ -10709,6 +10675,7 @@ components:
         inputs:
           type: object
           title: Inputs
+          default: {}
         inputsRequired:
           anyOf:
           - items:
@@ -10770,15 +10737,9 @@ components:
       properties:
         thumbnail_url:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: Thumbnail Url
         file_url:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: File Url
         mimetype:
           anyOf:
@@ -11153,9 +11114,6 @@ components:
           title: Paymentmethodid
         paymentMethodFormUrl:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: Paymentmethodformurl
           description: Link to external site that holds the payment submission form
       type: object
@@ -11213,9 +11171,6 @@ components:
         invoiceUrl:
           anyOf:
           - type: string
-            maxLength: 2083
-            minLength: 1
-            format: uri
           - type: 'null'
           title: Invoiceurl
       type: object
@@ -11271,6 +11226,8 @@ components:
               type: string
               format: uuid
             type: array
+          propertyNames:
+            format: uuid
           type: object
           title: Adjacency List
           description: 'The adjacency list of the current pipeline in terms of {NodeID:
@@ -11287,6 +11244,8 @@ components:
         node_states:
           additionalProperties:
             $ref: '#/components/schemas/NodeState'
+          propertyNames:
+            format: uuid
           type: object
           title: Node States
           description: The states of each of the computational nodes in the pipeline
@@ -11405,8 +11364,6 @@ components:
       properties:
         link:
           type: string
-          minLength: 1
-          format: uri
           title: Link
       type: object
       required:
@@ -11459,7 +11416,6 @@ components:
       type: string
       enum:
       - TIER
-      const: TIER
       title: PricingPlanClassification
     PricingPlanToServiceAdminGet:
       properties:
@@ -11695,6 +11651,9 @@ components:
         accessRights:
           additionalProperties:
             $ref: '#/components/schemas/AccessRights'
+          propertyNames:
+            maxLength: 100
+            minLength: 1
           type: object
           title: Accessrights
         tags:
@@ -11746,12 +11705,7 @@ components:
         thumbnail:
           anyOf:
           - type: string
-            maxLength: 2083
-            minLength: 1
-            format: uri
           - type: string
-            enum:
-            - ''
             const: ''
           title: Thumbnail
         creationDate:
@@ -11772,6 +11726,9 @@ components:
         accessRights:
           additionalProperties:
             $ref: '#/components/schemas/AccessRights'
+          propertyNames:
+            maxLength: 100
+            minLength: 1
           type: object
           title: Accessrights
         tags:
@@ -11936,9 +11893,6 @@ components:
             project where this iteration is run
         workcopy_project_url:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: Workcopy Project Url
           description: reference to a working copy project
       type: object
@@ -11971,9 +11925,6 @@ components:
             project where this iteration is run
         workcopy_project_url:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: Workcopy Project Url
           description: reference to a working copy project
         results:
@@ -12002,12 +11953,7 @@ components:
         thumbnail:
           anyOf:
           - type: string
-            maxLength: 2083
-            minLength: 1
-            format: uri
           - type: string
-            enum:
-            - ''
             const: ''
           title: Thumbnail
         creationDate:
@@ -12028,6 +11974,9 @@ components:
         accessRights:
           additionalProperties:
             $ref: '#/components/schemas/AccessRights'
+          propertyNames:
+            maxLength: 100
+            minLength: 1
           type: object
           title: Accessrights
         tags:
@@ -12225,6 +12174,9 @@ components:
           anyOf:
           - additionalProperties:
               $ref: '#/components/schemas/AccessRights'
+            propertyNames:
+              maxLength: 100
+              minLength: 1
             type: object
           - type: 'null'
           title: Accessrights
@@ -12255,9 +12207,6 @@ components:
       properties:
         url:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: Url
         is_public:
           type: boolean
@@ -12492,9 +12441,6 @@ components:
           title: Project Uuid
         url:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: Url
       type: object
       required:
@@ -12650,6 +12596,7 @@ components:
           exclusiveMinimum: true
           title: Service Port
           description: the service swarm internal port
+          default: 8080
           maximum: 65535
           minimum: 0
         published_port:
@@ -12687,7 +12634,6 @@ components:
       - project_id
       - service_uuid
       - service_host
-      - service_port
       - service_state
       title: RunningDynamicServiceDetails
     RunningState:
@@ -12744,9 +12690,6 @@ components:
           description: Long description of the service
         thumbnail:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: Thumbnail
           description: Url to service thumbnail
         file_extensions:
@@ -12757,9 +12700,6 @@ components:
           description: File extensions that this service can process
         view_url:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: View Url
           description: Redirection to open a service in osparc (see /view)
       type: object
@@ -13191,7 +13131,6 @@ components:
       type: string
       enum:
       - services
-      const: services
       title: ServicesAggregatedUsagesType
     SimCoreFileLink:
       properties:
@@ -13670,7 +13609,7 @@ components:
           - type: string
             format: email
           - type: 'null'
-          title: 'From '
+          title: From
           description: Email sender
         to:
           type: string
@@ -13939,8 +13878,6 @@ components:
         product:
           anyOf:
           - type: string
-            enum:
-            - UNDEFINED
             const: UNDEFINED
           - type: string
           title: Product
@@ -13948,8 +13885,6 @@ components:
         resource_id:
           anyOf:
           - type: string
-            enum:
-            - ''
             const: ''
           - type: string
           title: Resource Id
@@ -13957,8 +13892,6 @@ components:
         user_from_id:
           anyOf:
           - type: 'null'
-            enum:
-            - null
           - type: integer
             exclusiveMinimum: true
             minimum: 0
@@ -14005,8 +13938,6 @@ components:
         product:
           anyOf:
           - type: string
-            enum:
-            - UNDEFINED
             const: UNDEFINED
           - type: string
           title: Product
@@ -14014,8 +13945,6 @@ components:
         resource_id:
           anyOf:
           - type: string
-            enum:
-            - ''
             const: ''
           - type: string
           title: Resource Id
@@ -14023,8 +13952,6 @@ components:
         user_from_id:
           anyOf:
           - type: 'null'
-            enum:
-            - null
           - type: integer
             exclusiveMinimum: true
             minimum: 0
@@ -14160,9 +14087,6 @@ components:
           description: Identifier for the file type
         view_url:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: View Url
           description: Base url to execute viewer. Needs appending file_size,[file_name]
             and download_link as query parameters
@@ -14318,9 +14242,6 @@ components:
         paymentFormUrl:
           anyOf:
           - type: string
-            maxLength: 2083
-            minLength: 1
-            format: uri
           - type: 'null'
           title: Paymentformurl
           description: Link to external site that holds the payment submission form.None
@@ -14384,15 +14305,9 @@ components:
           default: {}
         url:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: Url
         checkpoint_url:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
           title: Checkpoint Url
       type: object
       required:
