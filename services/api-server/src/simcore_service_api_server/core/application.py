@@ -5,10 +5,16 @@ from fastapi_pagination import add_pagination
 from models_library.basic_types import BootModeEnum
 from packaging.version import Version
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.fastapi.tracing import (
+    setup_tracing,
+    setup_tracing_spans_for_simcore_service_functions,
+)
 from servicelib.logging_utils import config_all_loggers
+from simcore_service_api_server import exceptions
 
-from .. import exceptions
+setup_tracing_spans_for_simcore_service_functions()
+# isort: split
+
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
