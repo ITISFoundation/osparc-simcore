@@ -62,7 +62,7 @@ async def list_groups(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
 
     groups_by_type = await _groups_api.list_user_groups_with_read_access(
-        request.app, req_ctx.user_id
+        request.app, user_id=req_ctx.user_id
     )
 
     assert groups_by_type.primary
@@ -104,7 +104,7 @@ async def get_group(request: web.Request):
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
     group_info = await _groups_api.get_user_group(
-        request.app, req_ctx.user_id, path_params.gid
+        request.app, user_id=req_ctx.user_id, group_id=path_params.gid
     )
 
     group = _to_groupget_model(*group_info)
@@ -138,7 +138,10 @@ async def update_group(request: web.Request):
     new_group_values = update.model_dump(exclude_unset=True)
 
     group_info = await _groups_api.update_user_group(
-        request.app, req_ctx.user_id, path_params.gid, new_group_values
+        request.app,
+        user_id=req_ctx.user_id,
+        group_id=path_params.gid,
+        new_group_values=new_group_values,
     )
 
     updated_group = _to_groupget_model(*group_info)

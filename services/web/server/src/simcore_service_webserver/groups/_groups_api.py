@@ -27,7 +27,7 @@ async def list_user_groups_ids_with_read_access(
 
 
 async def list_user_groups_with_read_access(
-    app: web.Application, user_id: UserID
+    app: web.Application, *, user_id: UserID
 ) -> GroupsByTypeTuple:
     """
     Returns the user primary group, standard groups and the all group
@@ -40,7 +40,7 @@ async def list_user_groups_with_read_access(
 
 
 async def list_all_user_groups_ids(
-    app: web.Application, user_id: UserID
+    app: web.Application, *, user_id: UserID
 ) -> list[GroupID]:
     # TODO: Room for optimization. For the moment we reuse existing db functions
     user_groups = await _groups_db.get_all_user_groups(app, user_id=user_id)
@@ -48,7 +48,7 @@ async def list_all_user_groups_ids(
 
 
 async def get_product_group_for_user(
-    app: web.Application, user_id: UserID, product_gid: GroupID
+    app: web.Application, *, user_id: UserID, product_gid: GroupID
 ) -> tuple[Group, AccessRightsDict]:
     """
     Returns product's group if user belongs to it, otherwise it
@@ -60,7 +60,10 @@ async def get_product_group_for_user(
 
 
 async def get_user_group(
-    app: web.Application, user_id: UserID, gid: GroupID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    group_id: GroupID,
 ) -> tuple[Group, AccessRightsDict]:
     """
     Gets group gid if user associated to it and has read access
@@ -68,15 +71,21 @@ async def get_user_group(
     raises GroupNotFoundError
     raises UserInsufficientRightsError
     """
-    return await _groups_db.get_user_group(app, user_id=user_id, gid=gid)
+    return await _groups_db.get_user_group(app, user_id=user_id, gid=group_id)
 
 
 async def update_user_group(
     app: web.Application,
+    *,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
     new_group_values: dict[str, str],
 ) -> tuple[Group, AccessRightsDict]:
+    """
+
+    raises GroupNotFoundError
+    raises UserInsufficientRightsError
+    """
     return await _groups_db.update_user_group(
-        app, user_id=user_id, gid=gid, new_group_values=new_group_values
+        app, user_id=user_id, gid=group_id, new_group_values=new_group_values
     )
