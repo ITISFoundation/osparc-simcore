@@ -76,8 +76,8 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       if (privacyData) {
         this.__userPrivacyData = privacyData;
         this.__userPrivacyModel.set({
-          "hideFullname": privacyData["hideFullname"] || true,
-          "hideEmail": privacyData["hideEmail"] || true,
+          "hideFullname": "hideFullname" in privacyData ? privacyData["hideFullname"] : true,
+          "hideEmail": "hideEmail" in privacyData ? privacyData["hideEmail"] : true,
         });
       }
     },
