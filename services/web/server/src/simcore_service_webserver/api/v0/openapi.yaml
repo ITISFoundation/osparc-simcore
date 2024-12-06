@@ -1141,7 +1141,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ProfileGet_'
+                $ref: '#/components/schemas/Envelope_MyProfileGet_'
     put:
       tags:
       - user
@@ -1152,7 +1152,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProfileUpdate'
+              $ref: '#/components/schemas/MyProfilePatch'
         required: true
       responses:
         '204':
@@ -1167,7 +1167,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProfileUpdate'
+              $ref: '#/components/schemas/MyProfilePatch'
         required: true
       responses:
         '204':
@@ -7989,6 +7989,19 @@ components:
           title: Error
       type: object
       title: Envelope[MyGroupsGet]
+    Envelope_MyProfileGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/MyProfileGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[MyProfileGet]
     Envelope_NodeCreated_:
       properties:
         data:
@@ -8106,19 +8119,6 @@ components:
           title: Error
       type: object
       title: Envelope[PricingUnitGet]
-    Envelope_ProfileGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/ProfileGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[ProfileGet]
     Envelope_ProjectGet_:
       properties:
         data:
@@ -10379,6 +10379,136 @@ components:
           description: Some foundation
           gid: '16'
           label: Blue Fundation
+    MyProfileGet:
+      properties:
+        id:
+          type: integer
+          exclusiveMinimum: true
+          title: Id
+          minimum: 0
+        userName:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Username
+          description: Unique username identifier
+        first_name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: First Name
+        last_name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Last Name
+        login:
+          type: string
+          format: email
+          title: Login
+        role:
+          type: string
+          enum:
+          - ANONYMOUS
+          - GUEST
+          - USER
+          - TESTER
+          - PRODUCT_OWNER
+          - ADMIN
+          title: Role
+        groups:
+          anyOf:
+          - $ref: '#/components/schemas/MyGroupsGet'
+          - type: 'null'
+        gravatar_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Gravatar Id
+          deprecated: true
+        expirationDate:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Expirationdate
+          description: If user has a trial account, it sets the expiration date, otherwise
+            None
+        privacy:
+          $ref: '#/components/schemas/MyProfilePrivacyGet'
+        preferences:
+          additionalProperties:
+            $ref: '#/components/schemas/Preference'
+          type: object
+          title: Preferences
+      type: object
+      required:
+      - id
+      - userName
+      - login
+      - role
+      - privacy
+      - preferences
+      title: MyProfileGet
+    MyProfilePatch:
+      properties:
+        first_name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: First Name
+        last_name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Last Name
+        userName:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Username
+        privacy:
+          anyOf:
+          - $ref: '#/components/schemas/MyProfilePrivacyPatch'
+          - type: 'null'
+      type: object
+      title: MyProfilePatch
+      example:
+        first_name: Pedro
+        last_name: Crespo
+    MyProfilePrivacyGet:
+      properties:
+        hideFullname:
+          type: boolean
+          title: Hidefullname
+        hideEmail:
+          type: boolean
+          title: Hideemail
+      type: object
+      required:
+      - hideFullname
+      - hideEmail
+      title: MyProfilePrivacyGet
+    MyProfilePrivacyPatch:
+      properties:
+        hideFullname:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hidefullname
+        hideEmail:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hideemail
+      type: object
+      title: MyProfilePrivacyPatch
     Node-Input:
       properties:
         key:
@@ -11661,136 +11791,6 @@ components:
       - currentCostPerUnit
       - default
       title: PricingUnitGet
-    ProfileGet:
-      properties:
-        id:
-          type: integer
-          exclusiveMinimum: true
-          title: Id
-          minimum: 0
-        userName:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Username
-          description: Unique username identifier
-        first_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: First Name
-        last_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: Last Name
-        login:
-          type: string
-          format: email
-          title: Login
-        role:
-          type: string
-          enum:
-          - ANONYMOUS
-          - GUEST
-          - USER
-          - TESTER
-          - PRODUCT_OWNER
-          - ADMIN
-          title: Role
-        groups:
-          anyOf:
-          - $ref: '#/components/schemas/MyGroupsGet'
-          - type: 'null'
-        gravatar_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Gravatar Id
-          deprecated: true
-        expirationDate:
-          anyOf:
-          - type: string
-            format: date
-          - type: 'null'
-          title: Expirationdate
-          description: If user has a trial account, it sets the expiration date, otherwise
-            None
-        privacy:
-          $ref: '#/components/schemas/ProfilePrivacyGet'
-        preferences:
-          additionalProperties:
-            $ref: '#/components/schemas/Preference'
-          type: object
-          title: Preferences
-      type: object
-      required:
-      - id
-      - userName
-      - login
-      - role
-      - privacy
-      - preferences
-      title: ProfileGet
-    ProfilePrivacyGet:
-      properties:
-        hideFullname:
-          type: boolean
-          title: Hidefullname
-        hideEmail:
-          type: boolean
-          title: Hideemail
-      type: object
-      required:
-      - hideFullname
-      - hideEmail
-      title: ProfilePrivacyGet
-    ProfilePrivacyUpdate:
-      properties:
-        hideFullname:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Hidefullname
-        hideEmail:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Hideemail
-      type: object
-      title: ProfilePrivacyUpdate
-    ProfileUpdate:
-      properties:
-        first_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: First Name
-        last_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: Last Name
-        userName:
-          anyOf:
-          - type: string
-            maxLength: 100
-            minLength: 1
-          - type: 'null'
-          title: Username
-        privacy:
-          anyOf:
-          - $ref: '#/components/schemas/ProfilePrivacyUpdate'
-          - type: 'null'
-      type: object
-      title: ProfileUpdate
-      example:
-        first_name: Pedro
-        last_name: Crespo
     ProjectCopyOverride:
       properties:
         name:
