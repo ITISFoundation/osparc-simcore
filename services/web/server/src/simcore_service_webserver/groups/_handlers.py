@@ -32,16 +32,11 @@ from ..scicrunch.errors import InvalidRRIDError, ScicrunchError
 from ..scicrunch.models import ResearchResource, ResourceHit
 from ..scicrunch.service_client import SciCrunch
 from ..security.decorators import permission_required
-from ..users.exceptions import UserNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from . import api
 from ._classifiers import GroupClassifierRepository, build_rrids_tree_view
-from .exceptions import (
-    GroupNotFoundError,
-    UserAlreadyInGroupError,
-    UserInGroupNotFoundError,
-    UserInsufficientRightsError,
-)
+from ._exceptions_handlers import handle_plugin_requests_exceptions
+from .exceptions import GroupNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -51,42 +46,13 @@ class _GroupsRequestContext(BaseModel):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
-def _handle_groups_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except UserNotFoundError as exc:
-            raise web.HTTPNotFound(
-                reason=f"User {exc.uid or exc.email} not found"
-            ) from exc
-
-        except GroupNotFoundError as exc:
-            gid = getattr(exc, "gid", "")
-            raise web.HTTPNotFound(reason=f"Group {gid} not found") from exc
-
-        except UserInGroupNotFoundError as exc:
-            gid = getattr(exc, "gid", "")
-            raise web.HTTPNotFound(reason=f"User not found in group {gid}") from exc
-
-        except UserAlreadyInGroupError as exc:
-            gid = getattr(exc, "gid", "")
-            raise web.HTTPConflict(reason=f"User is already in group {gid}") from exc
-
-        except UserInsufficientRightsError as exc:
-            raise web.HTTPForbidden from exc
-
-    return wrapper
-
-
 routes = web.RouteTableDef()
 
 
 @routes.get(f"/{API_VTAG}/groups", name="list_groups")
 @login_required
 @permission_required("groups.read")
-@_handle_groups_exceptions
+@handle_plugin_requests_exceptions
 async def list_groups(request: web.Request):
     """
     List all groups (organizations, primary, everyone and products) I belong to
@@ -131,7 +97,7 @@ class _GroupPathParams(BaseModel):
 @routes.get(f"/{API_VTAG}/groups/{{gid}}", name="get_group")
 @login_required
 @permission_required("groups.read")
-@_handle_groups_exceptions
+@handle_plugin_requests_exceptions
 async def get_group(request: web.Request):
     """Get one group details"""
     req_ctx = _GroupsRequestContext.model_validate(request)
@@ -145,7 +111,7 @@ async def get_group(request: web.Request):
 @routes.post(f"/{API_VTAG}/groups", name="create_group")
 @login_required
 @permission_required("groups.*")
-@_handle_groups_exceptions
+@handle_plugin_requests_exceptions
 async def create_group(request: web.Request):
     """Creates organization groups"""
     req_ctx = _GroupsRequestContext.model_validate(request)
@@ -160,7 +126,7 @@ async def create_group(request: web.Request):
 @routes.patch(f"/{API_VTAG}/groups/{{gid}}", name="update_group")
 @login_required
 @permission_required("groups.*")
-@_handle_groups_exceptions
+@handle_plugin_requests_exceptions
 async def update_group(request: web.Request):
     """Updates organization groups"""
     req_ctx = _GroupsRequestContext.model_validate(request)
@@ -178,7 +144,7 @@ async def update_group(request: web.Request):
 @routes.delete(f"/{API_VTAG}/groups/{{gid}}", name="delete_group")
 @login_required
 @permission_required("groups.*")
-@_handle_groups_exceptions
+@handle_plugin_requests_exceptions
 async def delete_group(request: web.Request):
     """Deletes organization groups"""
     req_ctx = _GroupsRequestContext.model_validate(request)
@@ -196,7 +162,7 @@ async def delete_group(request: web.Request):
 @routes.get(f"/{API_VTAG}/groups/{{gid}}/users", name="get_all_group_users")
 @login_required
 @permission_required("groups.*")
-@_handle_groups_exceptions
+@handle_plugin_requests_exceptions
 async def get_group_users(request: web.Request):
     """Gets users in organization groups"""
     req_ctx = _GroupsRequestContext.model_validate(request)
@@ -214,7 +180,7 @@ async def get_group_users(request: web.Request):
 @routes.post(f"/{API_VTAG}/groups/{{gid}}/users", name="add_group_user")
 @login_required
 @permission_required("groups.*")
-@_handle_groups_exceptions
+@handle_plugin_requests_exceptions
 async def add_group_user(request: web.Request):
     """
     Adds a user in an organization group
@@ -242,7 +208,7 @@ class _GroupUserPathParams(BaseModel):
 @routes.get(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="get_group_user")
 @login_required
 @permission_required("groups.*")
-@_handle_groups_exceptions
+@handle_plugin_requests_exceptions
 async def get_group_user(request: web.Request):
     """
     Gets specific user in an organization group
@@ -259,7 +225,7 @@ async def get_group_user(request: web.Request):
 @routes.patch(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="update_group_user")
 @login_required
 @permission_required("groups.*")
-@_handle_groups_exceptions
+@handle_plugin_requests_exceptions
 async def update_group_user(request: web.Request):
     req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupUserPathParams, request)
@@ -279,7 +245,7 @@ async def update_group_user(request: web.Request):
 @routes.delete(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="delete_group_user")
 @login_required
 @permission_required("groups.*")
-@_handle_groups_exceptions
+@handle_plugin_requests_exceptions
 async def delete_group_user(request: web.Request):
     req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupUserPathParams, request)
