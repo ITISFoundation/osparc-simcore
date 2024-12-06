@@ -64,6 +64,7 @@ class ApiKeyCreateRequest(OutputSchema):
         alias_generator=AliasGenerator(
             validation_alias=to_camel,
         ),
+        from_attributes=True,
         json_schema_extra={
             "examples": [
                 {
@@ -92,6 +93,7 @@ class ApiKeyCreateResponse(ApiKeyCreateRequest):
         alias_generator=AliasGenerator(
             serialization_alias=to_camel,
         ),
+        from_attributes=True,
         json_schema_extra={
             "examples": [
                 {
@@ -130,6 +132,7 @@ class ApiKeyGet(OutputSchema):
         alias_generator=AliasGenerator(
             serialization_alias=to_camel,
         ),
+        from_attributes=True,
         json_schema_extra={
             "examples": [
                 {
