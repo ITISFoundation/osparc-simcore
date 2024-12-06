@@ -137,10 +137,11 @@ async def update_group(request: web.Request):
     update: GroupUpdate = await parse_request_body_as(GroupUpdate, request)
     new_group_values = update.model_dump(exclude_unset=True)
 
-    updated_group = await api.update_user_group(
+    group_info = await _groups_api.update_user_group(
         request.app, req_ctx.user_id, path_params.gid, new_group_values
     )
-    assert GroupGet.model_validate(updated_group) is not None  # nosec
+
+    updated_group = _to_groupget_model(*group_info)
     return envelope_json_response(updated_group)
 
 
