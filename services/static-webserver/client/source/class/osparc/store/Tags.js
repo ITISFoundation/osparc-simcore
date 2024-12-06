@@ -26,8 +26,7 @@ qx.Class.define("osparc.store.Tags", {
   },
 
   events: {
-    "tagAdded": "qx.event.type.Data",
-    "tagRemoved": "qx.event.type.Data",
+    "tagsChanged": "qx.event.type.Data",
   },
 
   members: {
@@ -62,7 +61,7 @@ qx.Class.define("osparc.store.Tags", {
       return osparc.data.Resources.getInstance().fetch("tags", "post", params)
         .then(tagData => {
           const tag = this.__addToCache(tagData);
-          this.fireDataEvent("tagAdded", tag);
+          this.fireDataEvent("tagsChanged", tag);
           return tag;
         });
     },
@@ -78,7 +77,7 @@ qx.Class.define("osparc.store.Tags", {
           const tag = this.getTag(tagId);
           if (tag) {
             this.__deleteFromCache(tagId);
-            this.fireDataEvent("tagRemoved", tag);
+            this.fireDataEvent("tagsChanged", tag);
           }
         })
         .catch(console.error);

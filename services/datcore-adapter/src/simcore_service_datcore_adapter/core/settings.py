@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import Annotated
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AliasChoices, Field, TypeAdapter, field_validator
@@ -21,15 +22,17 @@ class PennsieveSettings(BaseCustomSettings):
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
-    LOG_LEVEL: LogLevel = Field(
-        default=LogLevel.INFO.value,
-        validation_alias=AliasChoices(
-            "DATCORE_ADAPTER_LOGLEVEL",
-            "DATCORE_ADAPTER_LOG_LEVEL",
-            "LOG_LEVEL",
-            "LOGLEVEL",
+    LOG_LEVEL: Annotated[
+        LogLevel,
+        Field(
+            validation_alias=AliasChoices(
+                "DATCORE_ADAPTER_LOGLEVEL",
+                "DATCORE_ADAPTER_LOG_LEVEL",
+                "LOG_LEVEL",
+                "LOGLEVEL",
+            ),
         ),
-    )
+    ] = LogLevel.INFO
 
     PENNSIEVE: PennsieveSettings = Field(
         json_schema_extra={"auto_default_from_env": True}

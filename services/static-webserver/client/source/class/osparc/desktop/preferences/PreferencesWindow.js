@@ -31,7 +31,7 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       height
     });
 
-    const preferences = new osparc.desktop.preferences.Preferences();
+    const preferences = this.__preferences = new osparc.desktop.preferences.Preferences();
     this._setTabbedView(preferences);
   },
 
@@ -41,6 +41,14 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       preferencesWindow.center();
       preferencesWindow.open();
       return preferencesWindow;
+    }
+  },
+
+  members: {
+    __preferences: null,
+
+    openTags: function() {
+      return this.__preferences.openTags();
     }
   }
 });

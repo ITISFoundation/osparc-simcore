@@ -190,7 +190,7 @@ fastapi-cli==0.0.5
     # via fastapi
 fastapi-pagination==0.12.32
     # via -r requirements/_base.in
-faststream==0.5.30
+faststream==0.5.31
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in

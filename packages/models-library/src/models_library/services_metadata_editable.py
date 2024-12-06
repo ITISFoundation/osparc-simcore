@@ -33,9 +33,9 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
         "If now>=deprecated, the service is retired",
     )
     classifiers: list[str] | None
-    quality: dict[str, Any] = Field(
-        default_factory=dict, json_schema_extra={"default": {}}
-    )
+    quality: Annotated[
+        dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
+    ]
 
     model_config = ConfigDict(
         json_schema_extra={

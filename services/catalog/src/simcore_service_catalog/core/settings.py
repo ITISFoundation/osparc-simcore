@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Final
+from typing import Annotated, Final
 
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
@@ -44,12 +44,14 @@ _DEFAULT_SERVICE_SPECIFICATIONS: Final[
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
-    LOG_LEVEL: LogLevel = Field(
-        LogLevel.INFO.value,
-        validation_alias=AliasChoices(
-            "CATALOG_LOG_LEVEL", "CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+    LOG_LEVEL: Annotated[
+        LogLevel,
+        Field(
+            validation_alias=AliasChoices(
+                "CATALOG_LOG_LEVEL", "CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+            ),
         ),
-    )
+    ] = LogLevel.INFO
     CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         validation_alias=AliasChoices(

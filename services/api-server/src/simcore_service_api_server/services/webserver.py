@@ -602,7 +602,13 @@ class AuthSession:
         )
         if pricing_plan_get:
             return ServicePricingPlanGet.model_construct(
-                **pricing_plan_get.model_dump(exclude={"is_active"})
+                pricing_plan_id=pricing_plan_get.pricing_plan_id,
+                display_name=pricing_plan_get.display_name,
+                description=pricing_plan_get.description,
+                classification=pricing_plan_get.classification,
+                created_at=pricing_plan_get.created_at,
+                pricing_plan_key=pricing_plan_get.pricing_plan_key,
+                pricing_units=pricing_plan_get.pricing_units,
             )
         return None
 

@@ -26,6 +26,6 @@ class RCloneSettings(BaseCustomSettings):
     )
     # SEE https://rclone.org/docs/#buffer-size-size
     R_CLONE_OPTION_BUFFER_SIZE: str = Field(
-        default="0M",
+        default="16M",
         description="`--buffer-size X`: sets the amount of RAM to use for each individual transfer",
     )
