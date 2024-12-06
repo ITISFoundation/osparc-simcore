@@ -24,8 +24,12 @@ from ..products.api import Product, get_current_product
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import api
-from ._exceptions_handlers import handle_plugin_requests_exceptions
-from ._models import GroupsPathParams, GroupsRequestContext, GroupsUsersPathParams
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
+from ._common.models import (
+    GroupsPathParams,
+    GroupsRequestContext,
+    GroupsUsersPathParams,
+)
 from .exceptions import GroupNotFoundError
 
 _logger = logging.getLogger(__name__)
