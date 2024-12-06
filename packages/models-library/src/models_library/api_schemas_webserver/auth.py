@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Annotated, Any
 
 from models_library.basic_types import IDStr
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, SecretStr
+from pydantic import AliasGenerator, BaseModel, ConfigDict, Field, HttpUrl, SecretStr
 from pydantic.alias_generators import to_camel
 
 from ..emails import LowerCaseEmailStr
@@ -61,7 +61,9 @@ class ApiKeyCreateRequest(BaseModel):
     )
 
     model_config = ConfigDict(
-        alias_generator=to_camel,
+        alias_generator=AliasGenerator(
+            validation_alias=to_camel,
+        ),
         from_attributes=True,
         json_schema_extra={
             "examples": [
@@ -88,7 +90,9 @@ class ApiKeyCreateResponse(ApiKeyCreateRequest):
     api_secret: str
 
     model_config = ConfigDict(
-        alias_generator=to_camel,
+        alias_generator=AliasGenerator(
+            serialization_alias=to_camel,
+        ),
         from_attributes=True,
         json_schema_extra={
             "examples": [
@@ -125,7 +129,9 @@ class ApiKeyGet(BaseModel):
     display_name: Annotated[str, Field(..., min_length=3)]
 
     model_config = ConfigDict(
-        alias_generator=to_camel,
+        alias_generator=AliasGenerator(
+            serialization_alias=to_camel,
+        ),
         from_attributes=True,
         json_schema_extra={
             "examples": [

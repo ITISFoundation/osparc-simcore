@@ -6731,10 +6731,10 @@ components:
       title: Announcement
     ApiKeyCreateRequest:
       properties:
-        display_name:
+        displayName:
           type: string
           minLength: 3
-          title: Display Name
+          title: Displayname
         expiration:
           anyOf:
           - type: string
@@ -6745,14 +6745,14 @@ components:
             it does not expire.
       type: object
       required:
-      - display_name
+      - displayName
       title: ApiKeyCreateRequest
     ApiKeyCreateResponse:
       properties:
-        display_name:
+        displayName:
           type: string
           minLength: 3
-          title: Display Name
+          title: Displayname
         expiration:
           anyOf:
           - type: string
@@ -6766,25 +6766,22 @@ components:
           maxLength: 100
           minLength: 1
           title: Id
-        api_base_url:
+        apiBaseUrl:
           type: string
-          maxLength: 2083
-          minLength: 1
-          format: uri
-          title: Api Base Url
-        api_key:
+          title: Apibaseurl
+        apiKey:
           type: string
-          title: Api Key
-        api_secret:
+          title: Apikey
+        apiSecret:
           type: string
-          title: Api Secret
+          title: Apisecret
       type: object
       required:
-      - display_name
+      - displayName
       - id
-      - api_base_url
-      - api_key
-      - api_secret
+      - apiBaseUrl
+      - apiKey
+      - apiSecret
       title: ApiKeyCreateResponse
     ApiKeyGet:
       properties:
@@ -6793,14 +6790,14 @@ components:
           maxLength: 100
           minLength: 1
           title: Id
-        display_name:
+        displayName:
           type: string
           minLength: 3
-          title: Display Name
+          title: Displayname
       type: object
       required:
       - id
-      - display_name
+      - displayName
       title: ApiKeyGet
     AppStatusCheck:
       properties:
@@ -7613,26 +7610,6 @@ components:
       additionalProperties: false
       type: object
       title: EmptyModel
-    Envelope_ApiKeyCreateResponse_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/ApiKeyCreateResponse'
-          - type: 'null'
-          title: Envelope[ApiKeyCreateResponse]
-    Envelope_ApiKeyGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/ApiKeyGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[ApiKeyGet]
     Envelope_AnyUrl_:
       properties:
         data:
@@ -7647,6 +7624,32 @@ components:
           title: Error
       type: object
       title: Envelope[AnyUrl]
+    Envelope_ApiKeyCreateResponse_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ApiKeyCreateResponse'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ApiKeyCreateResponse]
+    Envelope_ApiKeyGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ApiKeyGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ApiKeyGet]
     Envelope_AppStatusCheck_:
       properties:
         data:
