@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.groups import (
     GroupUserUpdate,
     MyGroupsGet,
 )
-from models_library.groups import AccessRightsDict, Group
+from models_library.groups import AccessRightsDict, Group, GroupMember
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -172,6 +172,21 @@ async def delete_group(request: web.Request):
 #
 
 
+def _to_groupuserget_model(user: GroupMember) -> GroupUserGet:
+    # Fuses both dataset into GroupSet
+    return GroupUserGet.model_validate(
+        {
+            "id": user.id,
+            "user_name": user.name,
+            "login": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "gid": user.primary_gid,
+            "access_rights": user.access_rights,
+        }
+    )
+
+
 @routes.get(f"/{API_VTAG}/groups/{{gid}}/users", name="get_all_group_users")
 @login_required
 @permission_required("groups.*")
@@ -185,20 +200,9 @@ async def get_group_users(request: web.Request):
         request.app, req_ctx.user_id, path_params.gid
     )
 
-    group_members = [
-        GroupUserGet(
-            id=user.id,
-            user_name=user.name,
-            login=user.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            gid=user.primary_gid,
-            accessRights=user.access_rights,
-        )
-        for user in users_in_group
-    ]
-
-    return envelope_json_response(group_members)
+    return envelope_json_response(
+        [_to_groupuserget_model(user) for user in users_in_group]
+    )
 
 
 @routes.post(f"/{API_VTAG}/groups/{{gid}}/users", name="add_group_user")
@@ -233,11 +237,10 @@ async def get_group_user(request: web.Request):
     """
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsUsersPathParams, request)
-    user = await tmp_api.get_user_in_group(
+    user = await _groups_api.get_user_in_group(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
-    assert GroupUserGet.model_validate(user) is not None  # nosec
-    return envelope_json_response(user)
+    return envelope_json_response(_to_groupuserget_model(user))
 
 
 @routes.patch(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="update_group_user")
@@ -249,15 +252,14 @@ async def update_group_user(request: web.Request):
     path_params = parse_request_path_parameters_as(GroupsUsersPathParams, request)
     update: GroupUserUpdate = await parse_request_body_as(GroupUserUpdate, request)
 
-    user = await tmp_api.update_user_in_group(
+    user = await _groups_api.update_user_in_group(
         request.app,
         user_id=req_ctx.user_id,
         gid=path_params.gid,
         the_user_id_in_group=path_params.uid,
         access_rights=update.access_rights.model_dump(),
     )
-    assert GroupUserGet.model_validate(user) is not None  # nosec
-    return envelope_json_response(user)
+    return envelope_json_response(_to_groupuserget_model(user))
 
 
 @routes.delete(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="delete_group_user")
@@ -267,7 +269,7 @@ async def update_group_user(request: web.Request):
 async def delete_group_user(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsUsersPathParams, request)
-    await tmp_api.delete_user_in_group(
+    await _groups_api.delete_user_in_group(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
