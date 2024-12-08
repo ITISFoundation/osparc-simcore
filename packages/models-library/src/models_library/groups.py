@@ -59,15 +59,18 @@ class GroupsByTypeTuple(NamedTuple):
     everyone: GroupInfoTuple | None
 
 
-class GroupUser(BaseModel):
+class GroupMember(BaseModel):
+    # identifiers
     id: UserID
     name: IDStr
     primary_gid: GroupID
 
+    # private profile
     email: EmailStr | None
     first_name: str | None
     last_name: str | None
 
+    # group access
     access_rights: AccessRightsDict
 
     model_config = ConfigDict(from_attributes=True)

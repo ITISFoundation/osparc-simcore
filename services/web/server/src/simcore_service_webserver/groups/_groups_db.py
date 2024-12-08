@@ -6,10 +6,9 @@ from aiohttp import web
 from models_library.groups import (
     AccessRightsDict,
     Group,
-    GroupAtDB,
     GroupInfoTuple,
+    GroupMember,
     GroupsByTypeTuple,
-    GroupUser,
 )
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import UniqueViolation
@@ -26,7 +25,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from ..db.models import GroupType, groups, user_to_groups, users
 from ..db.plugin import get_asyncpg_engine
 from ..users.exceptions import UserNotFoundError
-from ._users_api import convert_user_in_group_to_schema
 from ._utils import convert_groups_schema_to_db
 from .exceptions import (
     GroupNotFoundError,
@@ -331,8 +329,44 @@ async def delete_user_group(
 
 
 #
-# USER GROUPS: Custom operations
+# GROUP MEMBERS
 #
+
+
+_GROUP_MEMBER_COLS = (
+    users.c.id,
+    users.c.name,
+    sa.case(
+        [(users.c.privacy_hide_email == sa.true(), None)],
+        else_=users.c.email,
+    ).label("email"),
+    sa.case(
+        [(users.c.privacy_hide_fullname == sa.true(), None)],
+        else_=users.c.first_name,
+    ).label("first_name"),
+    sa.case(
+        [(users.c.privacy_hide_fullname == sa.true(), None)],
+        else_=users.c.last_name,
+    ).label("last_name"),
+    users.c.primary_gid,
+)
+
+
+async def _get_user_in_group_permissions(
+    conn: AsyncConnection, *, gid: GroupID, user_id: int
+) -> Row:
+    # now get the user
+    result = await conn.stream(
+        sa.select(_GROUP_MEMBER_COLS, user_to_groups.c.access_rights)
+        .select_from(
+            users.join(user_to_groups, users.c.id == user_to_groups.c.uid),
+        )
+        .where(and_(user_to_groups.c.gid == gid, users.c.id == user_id))
+    )
+    row = await result.fetchone()
+    if not row:
+        raise UserInGroupNotFoundError(uid=user_id, gid=gid)
+    return row
 
 
 async def list_users_in_group(
@@ -341,7 +375,7 @@ async def list_users_in_group(
     *,
     user_id: UserID,
     gid: GroupID,
-) -> list[GroupUser]:
+) -> list[GroupMember]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
         group = await _get_group_and_access_rights_or_raise(
@@ -352,21 +386,7 @@ async def list_users_in_group(
         # now get the list
         query = (
             sa.select(
-                users.c.id,
-                users.c.name,
-                sa.case(
-                    [(users.c.privacy_hide_email == sa.true(), None)],
-                    else_=users.c.email,
-                ).label("email"),
-                sa.case(
-                    [(users.c.privacy_hide_fullname == sa.true(), None)],
-                    else_=users.c.first_name,
-                ).label("first_name"),
-                sa.case(
-                    [(users.c.privacy_hide_fullname == sa.true(), None)],
-                    else_=users.c.last_name,
-                ).label("last_name"),
-                users.c.primary_gid,
+                *_GROUP_MEMBER_COLS,
                 user_to_groups.c.access_rights,
             )
             .select_from(users.join(user_to_groups))
@@ -374,7 +394,134 @@ async def list_users_in_group(
         )
 
         result = await conn.stream(query)
-        return [GroupUser.model_validate(row) async for row in result]
+        return [GroupMember.model_validate(row) async for row in result]
+
+
+async def get_user_in_group(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    gid: GroupID,
+    the_user_id_in_group: int,
+) -> GroupMember:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        # first check if the group exists
+        group = await _get_group_and_access_rights_or_raise(
+            conn, user_id=user_id, gid=gid
+        )
+        _check_group_permissions(group, user_id, gid, "read")
+
+        # get the user with its permissions
+        the_user = await _get_user_in_group_permissions(
+            conn, gid=gid, user_id=the_user_id_in_group
+        )
+        return GroupMember.model_validate(the_user)
+
+
+async def update_user_in_group(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    gid: GroupID,
+    the_user_id_in_group: int,
+    access_rights: dict,
+) -> GroupMember:
+    if not access_rights:
+        msg = f"Cannot update empty {access_rights}"
+        raise ValueError(msg)
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+
+        # first check if the group exists
+        group = await _get_group_and_access_rights_or_raise(
+            conn, user_id=user_id, gid=gid
+        )
+        _check_group_permissions(group, user_id, gid, "write")
+
+        # now check the user exists
+        the_user = await _get_user_in_group_permissions(
+            conn, gid=gid, user_id=the_user_id_in_group
+        )
+
+        # modify the user access rights
+        new_db_values = {"access_rights": access_rights}
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            user_to_groups.update()
+            .values(**new_db_values)
+            .where(
+                and_(
+                    user_to_groups.c.uid == the_user_id_in_group,
+                    user_to_groups.c.gid == gid,
+                )
+            )
+        )
+        user = dict(the_user)
+        user.update(**new_db_values)
+        return GroupMember.model_validate(user)
+
+
+async def delete_user_in_group(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    gid: GroupID,
+    the_user_id_in_group: int,
+) -> None:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        # first check if the group exists
+        group = await _get_group_and_access_rights_or_raise(
+            conn, user_id=user_id, gid=gid
+        )
+        _check_group_permissions(group, user_id, gid, "write")
+
+        # check the user exists
+        await _get_user_in_group_permissions(
+            conn, gid=gid, user_id=the_user_id_in_group
+        )
+
+        # delete him/her
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            user_to_groups.delete().where(
+                and_(
+                    user_to_groups.c.uid == the_user_id_in_group,
+                    user_to_groups.c.gid == gid,
+                )
+            )
+        )
+
+
+async def get_group_from_gid(
+    app: web.Application, connection: AsyncConnection | None = None, *, gid: GroupID
+) -> Group | None:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        row = await conn.stream(groups.select().where(groups.c.gid == gid))
+        result = await row.first()
+        if result:
+            return Group.model_validate(result)
+        return None
+
+
+async def is_user_by_email_in_group(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    email: str,
+    group_id: GroupID,
+) -> bool:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        user_id = await conn.scalar(
+            sa.select(users.c.id)
+            .select_from(
+                sa.join(user_to_groups, users, user_to_groups.c.uid == users.c.id)
+            )
+            .where((users.c.email == email) & (user_to_groups.c.gid == group_id))
+        )
+        return user_id is not None
 
 
 async def auto_add_user_to_groups(
@@ -437,24 +584,6 @@ async def auto_add_user_to_product_group(
         return product_group_id
 
 
-async def is_user_by_email_in_group(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    email: str,
-    group_id: GroupID,
-) -> bool:
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        user_id = await conn.scalar(
-            sa.select(users.c.id)
-            .select_from(
-                sa.join(user_to_groups, users, user_to_groups.c.uid == users.c.id)
-            )
-            .where((users.c.email == email) & (user_to_groups.c.gid == group_id))
-        )
-        return user_id is not None
-
-
 async def add_new_user_in_group(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -498,127 +627,3 @@ async def add_new_user_in_group(
             raise UserAlreadyInGroupError(
                 uid=new_user_id, gid=gid, user_id=user_id, access_rights=access_rights
             ) from exc
-
-
-async def _get_user_in_group_permissions(
-    conn: AsyncConnection, *, gid: GroupID, the_user_id_in_group: int
-):
-    # now get the user
-    result = await conn.stream(
-        sa.select(users, user_to_groups.c.access_rights)
-        .select_from(users.join(user_to_groups, users.c.id == user_to_groups.c.uid))
-        .where(and_(user_to_groups.c.gid == gid, users.c.id == the_user_id_in_group))
-    )
-    the_user = await result.fetchone()
-    if not the_user:
-        raise UserInGroupNotFoundError(uid=the_user_id_in_group, gid=gid)
-    return the_user
-
-
-async def get_user_in_group(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-    gid: GroupID,
-    the_user_id_in_group: int,
-) -> dict[str, str]:
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        # first check if the group exists
-        group = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
-        )
-        _check_group_permissions(group, user_id, gid, "read")
-
-        # get the user with its permissions
-        the_user = await _get_user_in_group_permissions(
-            conn, gid=gid, the_user_id_in_group=the_user_id_in_group
-        )
-        return convert_user_in_group_to_schema(the_user)
-
-
-async def update_user_in_group(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-    gid: GroupID,
-    the_user_id_in_group: int,
-    access_rights: dict,
-) -> dict[str, str]:
-    if not access_rights:
-        msg = f"Cannot update empty {access_rights}"
-        raise ValueError(msg)
-
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-
-        # first check if the group exists
-        group = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
-        )
-        _check_group_permissions(group, user_id, gid, "write")
-
-        # now check the user exists
-        the_user = await _get_user_in_group_permissions(
-            conn, gid=gid, the_user_id_in_group=the_user_id_in_group
-        )
-
-        # modify the user access rights
-        new_db_values = {"access_rights": access_rights}
-        await conn.execute(
-            # pylint: disable=no-value-for-parameter
-            user_to_groups.update()
-            .values(**new_db_values)
-            .where(
-                and_(
-                    user_to_groups.c.uid == the_user_id_in_group,
-                    user_to_groups.c.gid == gid,
-                )
-            )
-        )
-        user = dict(the_user)
-        user.update(**new_db_values)
-        return convert_user_in_group_to_schema(user)
-
-
-async def delete_user_in_group(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-    gid: GroupID,
-    the_user_id_in_group: int,
-) -> None:
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        # first check if the group exists
-        group = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
-        )
-        _check_group_permissions(group, user_id, gid, "write")
-
-        # check the user exists
-        await _get_user_in_group_permissions(
-            conn, gid=gid, the_user_id_in_group=the_user_id_in_group
-        )
-
-        # delete him/her
-        await conn.execute(
-            # pylint: disable=no-value-for-parameter
-            user_to_groups.delete().where(
-                and_(
-                    user_to_groups.c.uid == the_user_id_in_group,
-                    user_to_groups.c.gid == gid,
-                )
-            )
-        )
-
-
-async def get_group_from_gid(
-    app: web.Application, connection: AsyncConnection | None = None, *, gid: GroupID
-) -> GroupAtDB | None:
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        row = await conn.stream(groups.select().where(groups.c.gid == gid))
-        result = await row.first()
-        if result:
-            return GroupAtDB.model_validate(result)
-        return None
