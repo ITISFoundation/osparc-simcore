@@ -304,7 +304,7 @@ jobs:
       - name: upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
           path: /${{ runner.temp }}/build
 
   build-test-images-frontend:
@@ -351,7 +351,7 @@ jobs:
       - name: upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-frontend
           path: /${{ runner.temp }}/build
 
   unit-test-webserver-01:
@@ -1915,7 +1915,7 @@ jobs:
         with:
           action: actions/download-artifact@v4
           with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
@@ -1979,7 +1979,7 @@ jobs:
         with:
           action: actions/download-artifact@v4
           with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
@@ -2043,7 +2043,7 @@ jobs:
         with:
           action: actions/download-artifact@v4
           with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
@@ -2114,7 +2114,7 @@ jobs:
         with:
           action: actions/download-artifact@v4
           with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
@@ -2180,7 +2180,7 @@ jobs:
         with:
           action: actions/download-artifact@v4
           with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
@@ -2246,7 +2246,7 @@ jobs:
         with:
           action: actions/download-artifact@v4
           with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
@@ -2333,7 +2333,7 @@ jobs:
         with:
           action: actions/download-artifact@v4
           with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
@@ -2393,7 +2393,7 @@ jobs:
         with:
           action: actions/download-artifact@v4
           with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
@@ -2464,7 +2464,7 @@ jobs:
         with:
           action: actions/download-artifact@v4
           with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
@@ -2544,7 +2544,7 @@ jobs:
       - name: download docker images
         uses: actions/download-artifact@v4
         with:
-          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
           path: /${{ runner.temp }}/build
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
@@ -2663,7 +2663,7 @@ jobs:
         with:
           action: actions/download-artifact@v4
           with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
             path: /${{ runner.temp }}/build
           attempt_limit: 5
           attempt_delay: 1000
