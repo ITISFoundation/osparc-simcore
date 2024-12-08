@@ -3,7 +3,14 @@ from copy import deepcopy
 
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.groups import Group, GroupAtDB
+from models_library.groups import (
+    AccessRightsDict,
+    Group,
+    GroupAtDB,
+    GroupInfoTuple,
+    GroupsByTypeTuple,
+    GroupUser,
+)
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.utils_products import execute_get_or_create_product_group
@@ -19,7 +26,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from ..db.models import GroupType, groups, user_to_groups, users
 from ..db.plugin import get_asyncpg_engine
 from ..users.exceptions import UserNotFoundError
-from ._common.types import AccessRightsDict, GroupInfoTuple, GroupsByTypeTuple
 from ._users_api import convert_user_in_group_to_schema
 from ._utils import convert_groups_schema_to_db
 from .exceptions import (
@@ -93,7 +99,7 @@ async def _get_group_and_access_rights_or_raise(
     *,
     user_id: UserID,
     gid: GroupID,
-):
+) -> Row:
     result = await conn.stream(
         sa.select(
             groups,
@@ -125,7 +131,7 @@ async def get_user_from_email(
 
 
 #
-# USER GROUPS: standard operations
+# USER GROUPS: Standard operations
 #
 
 
@@ -335,7 +341,7 @@ async def list_users_in_group(
     *,
     user_id: UserID,
     gid: GroupID,
-) -> list[dict[str, str]]:
+) -> list[GroupUser]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
         group = await _get_group_and_access_rights_or_raise(
@@ -345,13 +351,30 @@ async def list_users_in_group(
 
         # now get the list
         query = (
-            sa.select(users, user_to_groups.c.access_rights)
+            sa.select(
+                users.c.id,
+                users.c.name,
+                sa.case(
+                    [(users.c.privacy_hide_email == sa.true(), None)],
+                    else_=users.c.email,
+                ).label("email"),
+                sa.case(
+                    [(users.c.privacy_hide_fullname == sa.true(), None)],
+                    else_=users.c.first_name,
+                ).label("first_name"),
+                sa.case(
+                    [(users.c.privacy_hide_fullname == sa.true(), None)],
+                    else_=users.c.last_name,
+                ).label("last_name"),
+                users.c.primary_gid,
+                user_to_groups.c.access_rights,
+            )
             .select_from(users.join(user_to_groups))
             .where(user_to_groups.c.gid == gid)
         )
 
         result = await conn.stream(query)
-        return [convert_user_in_group_to_schema(row) async for row in result]
+        return [GroupUser.model_validate(row) async for row in result]
 
 
 async def auto_add_user_to_groups(
