@@ -26,6 +26,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
   apt-get install -y --no-install-recommends \
   gosu \
   && apt-get clean -y \
+  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
   && gosu nobody true
 
