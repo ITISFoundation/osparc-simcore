@@ -20,7 +20,7 @@ LABEL maintainer=pcrespov
 # for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
 RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
   echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
@@ -68,7 +68,7 @@ FROM base AS build
 
 ENV SC_BUILD_TARGET=build
 
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \

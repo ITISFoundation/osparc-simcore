@@ -16,7 +16,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 ENV VIRTUAL_ENV=/home/scu/.venv
 
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   set -eux && \
   apt-get update \
   && apt-get -y install --no-install-recommends\
