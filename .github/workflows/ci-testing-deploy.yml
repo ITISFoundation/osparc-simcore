@@ -311,7 +311,7 @@ jobs:
     # this step comes first, so that it is executed as first job in push calls
     # in PR calls this step is anyway skipped
     needs: changes
-    if: ${{ needs.changes.outputs.anything-js == 'true' || github.event_name == 'push' }}
+    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     strategy:
