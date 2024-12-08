@@ -21,10 +21,6 @@ __all__: tuple[str, ...] = (
 #
 # TODO: move all these to _groups_api
 #
-async def list_users_in_group(
-    app: web.Application, user_id: UserID, gid: GroupID
-) -> list[dict[str, str]]:
-    return await _groups_db.list_users_in_group(app, user_id=user_id, gid=gid)
 
 
 async def auto_add_user_to_groups(app: web.Application, user_id: UserID) -> None:
