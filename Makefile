@@ -190,10 +190,8 @@ build build-nc: .env ## Builds production images and tags them as 'local/{servic
 	@docker images --filter="reference=local/*:production"
 
 load-images: guard-local-src ## loads images from local-src
-	# loading from images from $(local-src)...
-	@$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-		docker load --input $(local-src)/$(service).tar; \
-	)
+	# loading from any tar images from $(local-src)...
+	@find $(local-src) -name '*.tar' -print0 | xargs -0 -n1 -P $(shell nproc) --no-run-if-empty --verbose docker load --input
 	# all images loaded
 	@docker images
 
