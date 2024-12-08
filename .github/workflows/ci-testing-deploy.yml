@@ -274,18 +274,6 @@ jobs:
       fail-fast: false
     name: "[build] docker images (all but frontend)"
     steps:
-      - name: Remove unused software
-        run: |
-          echo "Available storage before:"
-          sudo df -h
-          echo
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          echo "Available storage after:"
-          sudo df -h
-          echo
       - uses: actions/checkout@v4
       - name: setup docker buildx
         id: buildx
@@ -321,18 +309,6 @@ jobs:
       fail-fast: false
     name: "[build] docker images (frontend-only)"
     steps:
-      - name: Remove unused software
-        run: |
-          echo "Available storage before:"
-          sudo df -h
-          echo
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          echo "Available storage after:"
-          sudo df -h
-          echo
       - uses: actions/checkout@v4
       - name: setup docker buildx
         id: buildx
