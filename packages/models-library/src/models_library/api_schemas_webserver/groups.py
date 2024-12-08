@@ -2,6 +2,7 @@ from contextlib import suppress
 from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
+from models_library.basic_types import IDStr
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -163,17 +164,37 @@ class MyGroupsGet(OutputSchema):
 
 
 class GroupUserGet(BaseModel):
-    id: str | None = Field(None, description="the user id", coerce_numbers_to_str=True)
-    login: LowerCaseEmailStr | None = Field(None, description="the user login email")
-    first_name: str | None = Field(None, description="the user first name")
-    last_name: str | None = Field(None, description="the user last name")
-    gravatar_id: str | None = Field(None, description="the user gravatar id hash")
-    gid: str | None = Field(
-        None, description="the user primary gid", coerce_numbers_to_str=True
-    )
+
+    # Identifiers
+    id: Annotated[
+        str | None, Field(description="the user id", coerce_numbers_to_str=True)
+    ] = None
+    user_name: Annotated[IDStr, Field(alias="userName")]
+    gid: Annotated[
+        str | None,
+        Field(description="the user primary gid", coerce_numbers_to_str=True),
+    ] = None
+
+    # Private Profile
+    login: Annotated[
+        LowerCaseEmailStr | None,
+        Field(description="the user's email, if privacy settings allows"),
+    ] = None
+    first_name: Annotated[
+        str | None, Field(description="If privacy settings allows")
+    ] = None
+    last_name: Annotated[
+        str | None, Field(description="If privacy settings allows")
+    ] = None
+    gravatar_id: Annotated[
+        str | None, Field(description="the user gravatar id hash", deprecated=True)
+    ] = None
+
+    # Access Rights
     access_rights: GroupAccessRights = Field(..., alias="accessRights")
 
     model_config = ConfigDict(
+        populate_by_name=True,
         json_schema_extra={
             "example": {
                 "id": "1",
@@ -188,7 +209,7 @@ class GroupUserGet(BaseModel):
                     "delete": False,
                 },
             }
-        }
+        },
     )
 
 

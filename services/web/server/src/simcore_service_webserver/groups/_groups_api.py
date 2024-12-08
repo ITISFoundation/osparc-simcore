@@ -1,9 +1,8 @@
 from aiohttp import web
-from models_library.groups import Group
+from models_library.groups import AccessRightsDict, Group, GroupsByTypeTuple, GroupUser
 from models_library.users import GroupID, UserID
 
 from . import _groups_db
-from ._common.types import AccessRightsDict, GroupsByTypeTuple
 
 
 async def list_user_groups_ids_with_read_access(
@@ -122,3 +121,9 @@ async def delete_organization(
 #
 # ORGANIZATION MEMBERS
 #
+
+
+async def list_users_in_group(
+    app: web.Application, user_id: UserID, gid: GroupID
+) -> list[GroupUser]:
+    return await _groups_db.list_users_in_group(app, user_id=user_id, gid=gid)

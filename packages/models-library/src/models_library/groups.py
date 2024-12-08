@@ -1,8 +1,11 @@
 import enum
-from typing import Annotated, Final
+from typing import Annotated, Final, NamedTuple, TypeAlias, TypedDict
 
 from common_library.basic_types import DEFAULT_FACTORY
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from models_library.basic_types import IDStr
+from models_library.groups import Group
+from models_library.users import GroupID, UserID
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic.types import PositiveInt
 
 from .utils.common_validators import create_enums_pre_validator
@@ -39,6 +42,35 @@ class Group(BaseModel):
     _from_equivalent_enums = field_validator("group_type", mode="before")(
         create_enums_pre_validator(GroupTypeInModel)
     )
+
+
+class AccessRightsDict(TypedDict):
+    read: bool
+    write: bool
+    delete: bool
+
+
+GroupInfoTuple: TypeAlias = tuple[Group, AccessRightsDict]
+
+
+class GroupsByTypeTuple(NamedTuple):
+    primary: GroupInfoTuple | None
+    standard: list[GroupInfoTuple]
+    everyone: GroupInfoTuple | None
+
+
+class GroupUser(BaseModel):
+    id: UserID
+    name: IDStr
+    primary_gid: GroupID
+
+    email: EmailStr | None
+    first_name: str | None
+    last_name: str | None
+
+    access_rights: AccessRightsDict
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GroupAtDB(Group):

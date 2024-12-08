@@ -11,8 +11,7 @@ from models_library.api_schemas_webserver.groups import (
     GroupUserUpdate,
     MyGroupsGet,
 )
-from models_library.groups import Group
-from pydantic import TypeAdapter
+from models_library.groups import AccessRightsDict, Group
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -27,12 +26,11 @@ from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
 from . import api as tmp_api
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
-from ._common.models import (
+from ._common.schemas import (
     GroupsPathParams,
     GroupsRequestContext,
     GroupsUsersPathParams,
 )
-from ._common.types import AccessRightsDict
 from .exceptions import GroupNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -183,13 +181,24 @@ async def get_group_users(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
-    group_user = await tmp_api.list_users_in_group(
+    users_in_group = await _groups_api.list_users_in_group(
         request.app, req_ctx.user_id, path_params.gid
     )
-    assert (
-        TypeAdapter(list[GroupUserGet]).validate_python(group_user) is not None
-    )  # nosec
-    return envelope_json_response(group_user)
+
+    group_members = [
+        GroupUserGet(
+            id=user.id,
+            user_name=user.name,
+            login=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            gid=user.primary_gid,
+            accessRights=user.access_rights,
+        )
+        for user in users_in_group
+    ]
+
+    return envelope_json_response(group_members)
 
 
 @routes.post(f"/{API_VTAG}/groups/{{gid}}/users", name="add_group_user")
