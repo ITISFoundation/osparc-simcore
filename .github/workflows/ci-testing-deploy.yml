@@ -272,7 +272,7 @@ jobs:
         python: ["3.11"]
         os: [ubuntu-22.04]
       fail-fast: false
-    name: "[build] docker images (all but frontend)"
+    name: "[build] docker images (excluding frontend)"
     steps:
       - uses: actions/checkout@v4
       - name: setup docker buildx
