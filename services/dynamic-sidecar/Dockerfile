@@ -108,7 +108,7 @@ FROM base AS build
 
 ENV SC_BUILD_TARGET=build
 
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
