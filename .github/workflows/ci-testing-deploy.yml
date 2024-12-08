@@ -2304,7 +2304,7 @@ jobs:
         run: echo "::notice All good!"
 
   system-test-public-api:
-    needs: [changes, build-test-images]
+    needs: [changes, build-test-images, build-test-images-frontend]
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[sys] public api"
@@ -2364,7 +2364,7 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
-    needs: [changes, build-test-images]
+    needs: [changes, build-test-images, build-test-images-frontend]
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] deploy simcore"
@@ -2429,7 +2429,7 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
-    needs: [changes, build-test-images]
+    needs: [changes, build-test-images, build-test-images-frontend]
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] e2e"
@@ -2509,7 +2509,7 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-e2e-playwright:
-    needs: [changes, build-test-images]
+    needs: [changes, build-test-images, build-test-images-frontend]
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[sys] e2e-playwright"
