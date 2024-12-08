@@ -161,7 +161,7 @@ $(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 		export $(subst -,_,$(shell echo $(service) | tr a-z A-Z))_VERSION=$(shell cat services/$(service)/VERSION);\
 	,) \
 )\
-docker buildx bake \
+docker buildx bake --allow=fs.read=.. \
 	$(if $(findstring -devel,$@),,\
 	--set *.platform=$(DOCKER_TARGET_PLATFORMS) \
 	)\
