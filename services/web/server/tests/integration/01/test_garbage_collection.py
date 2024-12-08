@@ -21,10 +21,12 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from models_library.groups import EVERYONE_GROUP_ID
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.webserver_projects import create_project, empty_project_data
+from pytest_simcore.simcore_webserver_groups_fixtures import CreateUserGroupCallable
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -35,11 +37,7 @@ from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import _core as gc_core
 from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
-from simcore_service_webserver.groups.api import (
-    add_user_in_group,
-    create_user_group,
-    list_user_groups_with_read_access,
-)
+from simcore_service_webserver.groups.api import add_user_in_group
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
@@ -255,13 +253,12 @@ async def get_template_project(
 ):
     """returns a tempalte shared with all"""
     assert client.app
-    _, _, all_group = await list_user_groups_with_read_access(client.app, user["id"])
 
     # the information comes from a file, randomize it
     project_data["name"] = f"Fake template {uuid4()}"
     project_data["uuid"] = f"{uuid4()}"
     project_data["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": False, "delete": False}
+        str(EVERYONE_GROUP_ID): {"read": True, "write": False, "delete": False}
     }
     if access_rights is not None:
         project_data["accessRights"].update(access_rights)
@@ -275,8 +272,11 @@ async def get_template_project(
     )
 
 
-async def get_group(client: TestClient, user):
+async def get_group(
+    client: TestClient, user, create_user_group: CreateUserGroupCallable
+):
     """Creates a group for a given user"""
+    assert client.app
     return await create_user_group(
         app=client.app,
         user_id=user["id"],
@@ -581,6 +581,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    create_user_group: CreateUserGroupCallable,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -593,7 +594,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     u3 = await login_user(client)
 
     # creating g1 and inviting u2 and u3
-    g1 = await get_group(client, u1)
+    g1 = await get_group(client, u1, create_user_group)
     await invite_user_to_group(client, owner=u1, invitee=u2, group=g1)
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 
@@ -671,6 +672,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    create_user_group: CreateUserGroupCallable,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -685,7 +687,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     u3 = await login_user(client)
 
     # creating g1 and inviting u2 and u3
-    g1 = await get_group(client, u1)
+    g1 = await get_group(client, u1, create_user_group)
     await invite_user_to_group(client, owner=u1, invitee=u2, group=g1)
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 
@@ -742,6 +744,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    create_user_group: CreateUserGroupCallable,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -759,7 +762,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     u3 = await login_user(client)
 
     # creating g1 and inviting u2 and u3
-    g1 = await get_group(client, u1)
+    g1 = await get_group(client, u1, create_user_group)
     await invite_user_to_group(client, owner=u1, invitee=u2, group=g1)
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 
@@ -1038,6 +1041,7 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    create_user_group: CreateUserGroupCallable,
 ):
     """
     USER "u1" creates a group and invites "u2" and "u3";
@@ -1050,7 +1054,7 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     u3 = await login_user(client)
 
     # creating g1 and inviting u2 and u3
-    g1 = await get_group(client, u1)
+    g1 = await get_group(client, u1, create_user_group)
     await invite_user_to_group(client, owner=u1, invitee=u2, group=g1)
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 

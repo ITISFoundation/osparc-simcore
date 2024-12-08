@@ -1,8 +1,4 @@
-from typing import TypedDict
-
 from aiopg.sa.result import RowProxy
-
-from .exceptions import UserInsufficientRightsError
 
 _GROUPS_SCHEMA_TO_DB = {
     "gid": "gid",
@@ -12,21 +8,6 @@ _GROUPS_SCHEMA_TO_DB = {
     "accessRights": "access_rights",
     "inclusionRules": "inclusion_rules",
 }
-
-
-class AccessRightsDict(TypedDict):
-    read: bool
-    write: bool
-    delete: bool
-
-
-def check_group_permissions(
-    group: RowProxy, user_id: int, gid: int, permission: str
-) -> None:
-    if not group.access_rights[permission]:
-        raise UserInsufficientRightsError(
-            user_id=user_id, gid=gid, permission=permission
-        )
 
 
 def convert_groups_db_to_schema(
