@@ -1,5 +1,10 @@
 from aiohttp import web
-from models_library.groups import AccessRightsDict, Group, GroupsByTypeTuple, GroupUser
+from models_library.groups import (
+    AccessRightsDict,
+    Group,
+    GroupMember,
+    GroupsByTypeTuple,
+)
 from models_library.users import GroupID, UserID
 
 from . import _groups_db
@@ -125,5 +130,38 @@ async def delete_organization(
 
 async def list_users_in_group(
     app: web.Application, user_id: UserID, gid: GroupID
-) -> list[GroupUser]:
+) -> list[GroupMember]:
     return await _groups_db.list_users_in_group(app, user_id=user_id, gid=gid)
+
+
+async def get_user_in_group(
+    app: web.Application, user_id: UserID, gid: GroupID, the_user_id_in_group: int
+) -> GroupMember:
+
+    return await _groups_db.get_user_in_group(
+        app, user_id=user_id, gid=gid, the_user_id_in_group=the_user_id_in_group
+    )
+
+
+async def update_user_in_group(
+    app: web.Application,
+    user_id: UserID,
+    gid: GroupID,
+    the_user_id_in_group: int,
+    access_rights: dict,
+) -> GroupMember:
+    return await _groups_db.update_user_in_group(
+        app,
+        user_id=user_id,
+        gid=gid,
+        the_user_id_in_group=the_user_id_in_group,
+        access_rights=access_rights,
+    )
+
+
+async def delete_user_in_group(
+    app: web.Application, user_id: UserID, gid: GroupID, the_user_id_in_group: int
+) -> None:
+    return await _groups_db.delete_user_in_group(
+        app, user_id=user_id, gid=gid, the_user_id_in_group=the_user_id_in_group
+    )

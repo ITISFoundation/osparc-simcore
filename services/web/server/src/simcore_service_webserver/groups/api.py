@@ -84,39 +84,6 @@ async def add_user_in_group(
     )
 
 
-async def get_user_in_group(
-    app: web.Application, user_id: UserID, gid: GroupID, the_user_id_in_group: int
-) -> dict[str, str]:
-
-    return await _groups_db.get_user_in_group(
-        app, user_id=user_id, gid=gid, the_user_id_in_group=the_user_id_in_group
-    )
-
-
-async def update_user_in_group(
-    app: web.Application,
-    user_id: UserID,
-    gid: GroupID,
-    the_user_id_in_group: int,
-    access_rights: dict,
-) -> dict[str, str]:
-    return await _groups_db.update_user_in_group(
-        app,
-        user_id=user_id,
-        gid=gid,
-        the_user_id_in_group=the_user_id_in_group,
-        access_rights=access_rights,
-    )
-
-
-async def delete_user_in_group(
-    app: web.Application, user_id: UserID, gid: GroupID, the_user_id_in_group: int
-) -> None:
-    return await _groups_db.delete_user_in_group(
-        app, user_id=user_id, gid=gid, the_user_id_in_group=the_user_id_in_group
-    )
-
-
 async def get_group_from_gid(app: web.Application, gid: GroupID) -> Group | None:
     group_db = await _groups_db.get_group_from_gid(app, gid=gid)
 
