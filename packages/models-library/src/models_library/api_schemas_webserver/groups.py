@@ -251,6 +251,7 @@ class GroupUserGet(BaseModel):
         json_schema_extra={
             "example": {
                 "id": "1",
+                "userName": "mrmith",
                 "login": "mr.smith@matrix.com",
                 "first_name": "Mr",
                 "last_name": "Smith",
