@@ -11,7 +11,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.groups import GroupGet, GroupUserGet
-from models_library.groups import AccessRightsDict, Group
+from models_library.groups import AccessRightsDict, Group, OrganizationCreate
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -424,12 +424,14 @@ async def group_where_logged_user_is_the_owner(
     group, _ = await create_organization(
         app=client.app,
         user_id=logged_user["id"],
-        new_group_values={
-            "gid": "6543",
-            "label": f"this is user {logged_user['id']} group",
-            "description": f"user {logged_user['email']} is the owner of that one",
-            "thumbnail": None,
-        },
+        new_group_values=OrganizationCreate.model_validate(
+            {
+                "gid": "6543",
+                "label": f"this is user {logged_user['id']} group",
+                "description": f"user {logged_user['email']} is the owner of that one",
+                "thumbnail": None,
+            }
+        ),
     )
 
     yield group
