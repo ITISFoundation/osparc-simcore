@@ -18,8 +18,8 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
     description: str | None = None
 
     classifiers: Annotated[list[str] | None, Field(default_factory=list)]
-
     owner: PositiveInt | None = None
+
     model_config = ConfigDict(
         from_attributes=True,
         json_schema_extra={

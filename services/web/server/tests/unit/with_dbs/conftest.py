@@ -19,7 +19,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, I
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Final
+from typing import Any
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -396,33 +396,14 @@ def asyncpg_storage_system_mock(mocker):
     )
 
 
-_LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH: Final[list[str]] = [
-    "director_v2.api",
-    "director_v2._core_dynamic_services",
-    "dynamic_scheduler.api",
-]
-
-
 @pytest.fixture
-async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
+async def mocked_dynamic_services_interface(
+    mocker: MockerFixture,
+) -> dict[str, MagicMock]:
     mock = {}
 
-    #
-    # NOTE: depending on the test, function might have to be patched
-    #  via the director_v2_api or director_v2_core_dynamic_services modules
-    #
-    for mod_name in _LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH:
-        name = f"{mod_name}.list_dynamic_services"
-        mock[name] = mocker.patch(
-            f"simcore_service_webserver.{name}",
-            autospec=True,
-            return_value=[],
-        )
-    # add here redirects from director-v2 via dynamic-scheduler
-    # NOTE: once all above are moved to dynamic-scheduler
-    # this fixture needs to be renamed to mocked_dynamic_scheduler
-
     for func_name in (
+        "list_dynamic_services",
         "get_dynamic_service",
         "run_dynamic_service",
         "stop_dynamic_service",
@@ -444,7 +425,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
 
 @pytest.fixture
 def create_dynamic_service_mock(
-    client: TestClient, mocked_director_v2_api: dict, faker: Faker
+    client: TestClient, mocked_dynamic_services_interface: dict, faker: Faker
 ) -> Callable[..., Awaitable[DynamicServiceGet]]:
     services = []
 
@@ -469,10 +450,9 @@ def create_dynamic_service_mock(
 
         services.append(running_service)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        for module_name in _LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH:
-            mocked_director_v2_api[
-                f"{module_name}.list_dynamic_services"
-            ].return_value = services
+        mocked_dynamic_services_interface[
+            "dynamic_scheduler.api.list_dynamic_services"
+        ].return_value = services
 
         return running_service
 

@@ -109,6 +109,15 @@ def mock_director_v2_service_state(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
+        mock.get("/dynamic_services").respond(
+            status.HTTP_200_OK,
+            text=json.dumps(
+                jsonable_encoder(
+                    DynamicServiceGet.model_config["json_schema_extra"]["examples"]
+                )
+            ),
+        )
+
         mock.get(f"/dynamic_services/{node_id_new_style}").respond(
             status.HTTP_200_OK, text=service_status_new_style.model_dump_json()
         )
@@ -175,6 +184,17 @@ async def rpc_client(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ) -> RabbitMQRPCClient:
     return await rabbitmq_rpc_client("client")
+
+
+async def test_list_tracked_dynamic_services(rpc_client: RabbitMQRPCClient):
+    results = await services.list_tracked_dynamic_services(
+        rpc_client, user_id=None, project_id=None
+    )
+    assert len(results) == 2
+    assert results == [
+        TypeAdapter(DynamicServiceGet).validate_python(x)
+        for x in DynamicServiceGet.model_config["json_schema_extra"]["examples"]
+    ]
 
 
 async def test_get_state(
