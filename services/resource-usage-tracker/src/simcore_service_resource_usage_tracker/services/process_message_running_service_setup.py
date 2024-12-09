@@ -32,7 +32,9 @@ async def _subscribe_to_rabbitmq(app) -> str:
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         with log_context(
-            _logger, logging.INFO, msg="RUT process message running service startup.."
+            _logger,
+            logging.INFO,
+            msg="RUT setup process_message_running_service module.",
         ), log_catch(_logger, reraise=False):
             app_settings: ApplicationSettings = app.state.settings
             app.state.resource_tracker_rabbitmq_consumer = None
