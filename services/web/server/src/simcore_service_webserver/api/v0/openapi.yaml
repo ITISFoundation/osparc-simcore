@@ -9996,6 +9996,60 @@ components:
       additionalProperties: false
       type: object
       title: InvitationInfo
+    LicensedItemGet:
+      properties:
+        licensedItemId:
+          type: string
+          format: uuid
+          title: Licenseditemid
+        name:
+          type: string
+          title: Name
+        licensedResourceType:
+          $ref: '#/components/schemas/LicensedResourceType'
+        pricingPlanId:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricingplanid
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+        modifiedAt:
+          type: string
+          format: date-time
+          title: Modifiedat
+      type: object
+      required:
+      - licensedItemId
+      - name
+      - licensedResourceType
+      - pricingPlanId
+      - createdAt
+      - modifiedAt
+      title: LicensedItemGet
+    LicensedItemsBodyParams:
+      properties:
+        wallet_id:
+          type: integer
+          exclusiveMinimum: true
+          title: Wallet Id
+          minimum: 0
+        num_of_seeds:
+          type: integer
+          title: Num Of Seeds
+      additionalProperties: false
+      type: object
+      required:
+      - wallet_id
+      - num_of_seeds
+      title: LicensedItemsBodyParams
+    LicensedResourceType:
+      type: string
+      enum:
+      - VIP_MODEL
+      title: LicensedResourceType
     Limits:
       properties:
         cpus:
@@ -11378,6 +11432,7 @@ components:
       type: string
       enum:
       - TIER
+      - LICENSE
       title: PricingPlanClassification
     PricingPlanToServiceAdminGet:
       properties:
