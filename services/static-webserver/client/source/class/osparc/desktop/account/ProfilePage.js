@@ -34,7 +34,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     this.__fetchProfile();
 
     this._add(this.__createProfileUser());
-    this._add(this.__createPrivacySection());
+    if (osparc.utils.Utils.isDevelopmentPlatform()) {
+      this._add(this.__createPrivacySection());
+    }
     if (osparc.store.StaticInfo.getInstance().is2FARequired()) {
       this._add(this.__create2FASection());
     }
@@ -107,7 +109,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
 
       const form = new qx.ui.form.Form();
-      form.add(username, "username", null, "username");
+      form.add(username, "Username", null, "username");
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
       form.add(email, "Email", null, "email");
