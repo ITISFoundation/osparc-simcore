@@ -361,7 +361,7 @@ async def get_user_from_email(
                 (users.c.email == email)
                 & (
                     users.c.privacy_hide_email.is_(False)
-                    | (users.c.id != caller_user_id)
+                    | (users.c.id == caller_user_id)
                 )
             )
         )
