@@ -286,14 +286,24 @@ class GroupUserAdd(InputSchema):
     """
 
     uid: UserID | None = None
-    email: LowerCaseEmailStr | None = None
+    email: Annotated[
+        LowerCaseEmailStr | None,
+        Field(
+            description="Accessible only if the user has opted to share their email in privacy settings"
+        ),
+    ] = None
 
     _check_uid_or_email = model_validator(mode="after")(
         create__check_only_one_is_set__root_validator(["uid", "email"])
     )
 
     model_config = ConfigDict(
-        json_schema_extra={"examples": [{"uid": 42}, {"email": "foo@email.com"}]}
+        json_schema_extra={
+            "examples": [
+                {"uid": 42},
+                {"email": "foo@email.com"},
+            ]
+        }
     )
 
 
