@@ -129,7 +129,23 @@ async def get_user_from_email(
 
 
 #
-# USER GROUPS: Standard operations
+# GROUPS
+#
+
+
+async def get_group_from_gid(
+    app: web.Application, connection: AsyncConnection | None = None, *, gid: GroupID
+) -> Group | None:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        row = await conn.stream(groups.select().where(groups.c.gid == gid))
+        result = await row.first()
+        if result:
+            return Group.model_validate(result)
+        return None
+
+
+#
+# USER's GROUPS
 #
 
 
@@ -329,7 +345,7 @@ async def delete_user_group(
 
 
 #
-# GROUP MEMBERS
+# GROUP MEMBERS - CRUD
 #
 
 
@@ -495,15 +511,9 @@ async def delete_user_in_group(
         )
 
 
-async def get_group_from_gid(
-    app: web.Application, connection: AsyncConnection | None = None, *, gid: GroupID
-) -> Group | None:
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        row = await conn.stream(groups.select().where(groups.c.gid == gid))
-        result = await row.first()
-        if result:
-            return Group.model_validate(result)
-        return None
+#
+# GROUP MEMBERS - CUSTOM
+#
 
 
 async def is_user_by_email_in_group(
@@ -522,6 +532,51 @@ async def is_user_by_email_in_group(
             .where((users.c.email == email) & (user_to_groups.c.gid == group_id))
         )
         return user_id is not None
+
+
+async def add_new_user_in_group(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    gid: GroupID,
+    new_user_id: UserID,
+    access_rights: AccessRightsDict | None = None,
+) -> None:
+    """
+    adds new_user (either by id or email) in group (with gid) owned by user_id
+    """
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        # first check if the group exists
+        group = await _get_group_and_access_rights_or_raise(
+            conn, user_id=user_id, gid=gid
+        )
+        _check_group_permissions(group, user_id, gid, "write")
+
+        # now check the new user exists
+        users_count = await conn.scalar(
+            sa.select(sa.func.count()).where(users.c.id == new_user_id)
+        )
+        if not users_count:
+            assert new_user_id is not None  # nosec
+            raise UserInGroupNotFoundError(uid=new_user_id, gid=gid)
+
+        # add the new user to the group now
+        user_access_rights = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
+        if access_rights:
+            user_access_rights.update(access_rights)
+
+        try:
+            await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                user_to_groups.insert().values(
+                    uid=new_user_id, gid=group.gid, access_rights=user_access_rights
+                )
+            )
+        except UniqueViolation as exc:
+            raise UserAlreadyInGroupError(
+                uid=new_user_id, gid=gid, user_id=user_id, access_rights=access_rights
+            ) from exc
 
 
 async def auto_add_user_to_groups(
@@ -582,48 +637,3 @@ async def auto_add_user_to_product_group(
             .on_conflict_do_nothing()  # in case the user was already added
         )
         return product_group_id
-
-
-async def add_new_user_in_group(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-    gid: GroupID,
-    new_user_id: UserID,
-    access_rights: AccessRightsDict | None = None,
-) -> None:
-    """
-    adds new_user (either by id or email) in group (with gid) owned by user_id
-    """
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        # first check if the group exists
-        group = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
-        )
-        _check_group_permissions(group, user_id, gid, "write")
-
-        # now check the new user exists
-        users_count = await conn.scalar(
-            sa.select(sa.func.count()).where(users.c.id == new_user_id)
-        )
-        if not users_count:
-            assert new_user_id is not None  # nosec
-            raise UserInGroupNotFoundError(uid=new_user_id, gid=gid)
-
-        # add the new user to the group now
-        user_access_rights = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
-        if access_rights:
-            user_access_rights.update(access_rights)
-
-        try:
-            await conn.execute(
-                # pylint: disable=no-value-for-parameter
-                user_to_groups.insert().values(
-                    uid=new_user_id, gid=group.gid, access_rights=user_access_rights
-                )
-            )
-        except UniqueViolation as exc:
-            raise UserAlreadyInGroupError(
-                uid=new_user_id, gid=gid, user_id=user_id, access_rights=access_rights
-            ) from exc
