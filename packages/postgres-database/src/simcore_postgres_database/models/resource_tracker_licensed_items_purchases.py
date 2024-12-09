@@ -5,7 +5,7 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
 
-from ._common import column_modified_datetime
+from ._common import NUMERIC_KWARGS, column_modified_datetime
 from .base import metadata
 
 resource_tracker_licensed_items_purchases = sa.Table(
@@ -33,6 +33,22 @@ resource_tracker_licensed_items_purchases = sa.Table(
         "wallet_id",
         sa.BigInteger,
         nullable=False,
+    ),
+    sa.Column(
+        "wallet_name",
+        sa.String,
+        nullable=False,
+    ),
+    sa.Column(
+        "pricing_unit_cost_id",
+        sa.BigInteger,
+        nullable=False,
+    ),
+    sa.Column(
+        "pricing_unit_cost",
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
+        nullable=True,
+        doc="Pricing unit cost used for billing purposes",
     ),
     sa.Column(
         "start_at",

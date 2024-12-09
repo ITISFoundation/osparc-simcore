@@ -18,13 +18,17 @@ def mock_webserver_service_environment(
     monkeypatch: pytest.MonkeyPatch, mock_webserver_service_environment: EnvVarsDict
 ) -> EnvVarsDict:
 
-    return mock_webserver_service_environment | setenvs_from_dict(
+    envs = mock_webserver_service_environment | setenvs_from_dict(
         monkeypatch,
         {
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://opentelemetry-collector",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
         },
     )
+
+    envs.pop("WEBSERVER_TRACING")
+
+    return envs
 
 
 def test_middleware_restrictions_opentelemetry_is_second_middleware(
