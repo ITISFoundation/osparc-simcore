@@ -9917,6 +9917,8 @@ components:
             format: email
           - type: 'null'
           title: Email
+          description: Accessible only if the user has opted to share their email
+            in privacy settings
       type: object
       title: GroupUserAdd
       description: "Identify the user with either `email` or `uid` \u2014 only one."
@@ -9928,41 +9930,48 @@ components:
           - type: 'null'
           title: Id
           description: the user id
-        login:
-          anyOf:
-          - type: string
-            format: email
-          - type: 'null'
-          title: Login
-          description: the user login email
-        first_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: First Name
-          description: the user first name
-        last_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Last Name
-          description: the user last name
-        gravatar_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Gravatar Id
-          description: the user gravatar id hash
+        userName:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Username
         gid:
           anyOf:
           - type: string
           - type: 'null'
           title: Gid
           description: the user primary gid
+        login:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Login
+          description: the user's email, if privacy settings allows
+        first_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: First Name
+          description: If privacy settings allows
+        last_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Name
+          description: If privacy settings allows
+        gravatar_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Gravatar Id
+          description: the user gravatar id hash
+          deprecated: true
         accessRights:
           $ref: '#/components/schemas/GroupAccessRights'
       type: object
       required:
+      - userName
       - accessRights
       title: GroupUserGet
       example:
