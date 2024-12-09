@@ -316,7 +316,7 @@ async def update_user_group(
         )
         assert row.gid == gid  # nosec
         _check_group_permissions(row, user_id, gid, "write")
-        access_rights = AccessRightsDict(**row.access_rights)
+        access_rights = AccessRightsDict(**row.access_rights)  # type: ignore[typeddict-item]
 
         result = await conn.stream(
             # pylint: disable=no-value-for-parameter
