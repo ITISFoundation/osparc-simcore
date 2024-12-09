@@ -163,7 +163,7 @@ def registered_user(
 
         yield user
 
-        resp = client.request("DELETE", f"/auth/api-keys{data['id']}")
+        resp = client.delete(f"/auth/api-keys/{data['id']}")
 
 
 @pytest.fixture(scope="module")
@@ -281,7 +281,7 @@ def api_client(
     def as_dict(obj: object):
         return {
             attr: getattr(obj, attr)
-            for attr in obj.__dict__.keys()
+            for attr in obj.__dict__
             if not attr.startswith("_")
         }
 

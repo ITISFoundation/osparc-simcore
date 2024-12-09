@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import sqlalchemy as sa
 from aiohttp import web
+from asyncpg.exceptions import UniqueViolationError
 from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.models.api_keys import api_keys
@@ -12,6 +13,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
+from .errors import ApiKeyDuplicatedDisplayNameError
 
 _logger = logging.getLogger(__name__)
 
@@ -28,29 +30,32 @@ async def create_api_key(
     api_secret: str,
 ) -> ApiKey:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        stmt = (
-            api_keys.insert()
-            .values(
+        try:
+            stmt = (
+                api_keys.insert()
+                .values(
+                    display_name=display_name,
+                    user_id=user_id,
+                    product_name=product_name,
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    expires_at=(sa.func.now() + expiration) if expiration else None,
+                )
+                .returning(api_keys.c.id)
+            )
+
+            result = await conn.stream(stmt)
+            row = await result.first()
+
+            return ApiKey(
+                id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
                 display_name=display_name,
-                user_id=user_id,
-                product_name=product_name,
+                expiration=expiration,
                 api_key=api_key,
                 api_secret=api_secret,
-                expires_at=(sa.func.now() + expiration) if expiration else None,
             )
-            .returning(api_keys.c.id)
-        )
-
-        result = await conn.stream(stmt)
-        row = await result.first()
-
-        return ApiKey(
-            id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
-            display_name=display_name,
-            expiration=expiration,
-            api_key=api_key,
-            api_secret=api_secret,
-        )
+        except UniqueViolationError as exc:
+            raise ApiKeyDuplicatedDisplayNameError(display_name=display_name) from exc
 
 
 async def get_or_create_api_key(

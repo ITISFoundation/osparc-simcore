@@ -6,9 +6,13 @@ from ..exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from .errors import ApiKeyNotFoundError
+from .errors import ApiKeyDuplicatedDisplayNameError, ApiKeyNotFoundError
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    ApiKeyDuplicatedDisplayNameError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        "API key display name duplicated",
+    ),
     ApiKeyNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         "API key was not found",
