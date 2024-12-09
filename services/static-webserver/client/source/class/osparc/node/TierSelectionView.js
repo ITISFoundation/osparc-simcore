@@ -46,15 +46,8 @@ qx.Class.define("osparc.node.TierSelectionView", {
       tiersLayout.add(tierBox);
 
       const node = this.getNode();
-      const plansParams = {
-        url: osparc.data.Resources.getServiceUrl(
-          node.getKey(),
-          node.getVersion()
-        )
-      };
-      const studyId = node.getStudy().getUuid();
-      const nodeId = node.getNodeId();
-      osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
+      const pricingStore = osparc.store.Pricing.getInatance();
+      pricingStore.fetchPricingPlansService(node.getKey(), node.getVersion())
         .then(pricingPlans => {
           if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
             const pricingUnits = pricingPlans["pricingUnits"].map(princingUnitData => {
@@ -65,6 +58,8 @@ qx.Class.define("osparc.node.TierSelectionView", {
               const tItem = new qx.ui.form.ListItem(pricingUnit.getName(), null, pricingUnit.getPricingUnitId());
               tierBox.add(tItem);
             });
+            const studyId = node.getStudy().getUuid();
+            const nodeId = node.getNodeId();
             const unitParams = {
               url: {
                 studyId,
