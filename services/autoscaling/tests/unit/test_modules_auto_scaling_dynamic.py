@@ -420,15 +420,11 @@ def _assert_cluster_state(
 
 async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     *,
-    service_monitored_labels: dict[DockerLabelKey, str],
-    osparc_docker_label_keys: StandardSimcoreDockerLabels,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
+    create_services_batch: Callable[
+        [Resources, str | None, int], Awaitable[list[Service]]
     ],
-    task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     fake_node: Node,
@@ -454,27 +450,10 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     ), "This test is not made to work with more than 1 expected instance. so please adapt if needed"
 
     # create the service(s)
-    created_docker_services = await asyncio.gather(
-        *(
-            create_service(
-                task_template
-                | create_task_reservations(
-                    int(scale_up_params.service_resources.cpus),
-                    scale_up_params.service_resources.ram,
-                ),
-                service_monitored_labels
-                | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
-                "pending",
-                (
-                    [
-                        f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params.imposed_instance_type}"
-                    ]
-                    if scale_up_params.imposed_instance_type
-                    else []
-                ),
-            )
-            for _ in range(scale_up_params.num_services)
-        )
+    created_docker_services = await create_services_batch(
+        scale_up_params.service_resources,
+        scale_up_params.imposed_instance_type,
+        scale_up_params.num_services,
     )
 
     # this should trigger a scaling up as we have no nodes
@@ -946,15 +925,11 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
 )
 async def test_cluster_scaling_up_and_down(
     minimal_configuration: None,
-    service_monitored_labels: dict[DockerLabelKey, str],
-    osparc_docker_label_keys: StandardSimcoreDockerLabels,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
+    create_services_batch: Callable[
+        [Resources, str | None, int], Awaitable[list[Service]]
     ],
-    task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     fake_node: Node,
@@ -971,13 +946,9 @@ async def test_cluster_scaling_up_and_down(
     spied_cluster_analysis: MockType,
 ):
     await _test_cluster_scaling_up_and_down(
-        service_monitored_labels=service_monitored_labels,
-        osparc_docker_label_keys=osparc_docker_label_keys,
         app_settings=app_settings,
         initialized_app=initialized_app,
-        create_service=create_service,
-        task_template=task_template,
-        create_task_reservations=create_task_reservations,
+        create_services_batch=create_services_batch,
         ec2_client=ec2_client,
         mock_docker_tag_node=mock_docker_tag_node,
         fake_node=fake_node,
@@ -1024,15 +995,11 @@ async def test_cluster_scaling_up_and_down_against_aws(
     disable_buffers_pool_background_task: None,
     mocked_redis_server: None,
     external_envfile_dict: EnvVarsDict,
-    service_monitored_labels: dict[DockerLabelKey, str],
-    osparc_docker_label_keys: StandardSimcoreDockerLabels,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
+    create_services_batch: Callable[
+        [Resources, str | None, int], Awaitable[list[Service]]
     ],
-    task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     fake_node: Node,
@@ -1057,13 +1024,9 @@ async def test_cluster_scaling_up_and_down_against_aws(
         f" The passed external ENV allows for {list(external_ec2_instances_allowed_types)}"
     )
     await _test_cluster_scaling_up_and_down(
-        service_monitored_labels=service_monitored_labels,
-        osparc_docker_label_keys=osparc_docker_label_keys,
         app_settings=app_settings,
         initialized_app=initialized_app,
-        create_service=create_service,
-        task_template=task_template,
-        create_task_reservations=create_task_reservations,
+        create_services_batch=create_services_batch,
         ec2_client=ec2_client,
         mock_docker_tag_node=mock_docker_tag_node,
         fake_node=fake_node,
@@ -1114,15 +1077,11 @@ async def test_cluster_scaling_up_and_down_against_aws(
 async def test_cluster_scaling_up_starts_multiple_instances(
     patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
-    service_monitored_labels: dict[DockerLabelKey, str],
-    osparc_docker_label_keys: StandardSimcoreDockerLabels,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
+    create_services_batch: Callable[
+        [Resources, str | None, int], Awaitable[list[Service]]
     ],
-    task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     scale_up_params: _ScaleUpParams,
@@ -1137,27 +1096,10 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     assert not all_instances["Reservations"]
 
     # create several tasks that needs more power
-    await asyncio.gather(
-        *(
-            create_service(
-                task_template
-                | create_task_reservations(
-                    int(scale_up_params.service_resources.cpus),
-                    scale_up_params.service_resources.ram,
-                ),
-                service_monitored_labels
-                | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
-                "pending",
-                (
-                    [
-                        f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params.imposed_instance_type}"
-                    ]
-                    if scale_up_params.imposed_instance_type
-                    else []
-                ),
-            )
-            for _ in range(scale_up_params.num_services)
-        )
+    await create_services_batch(
+        scale_up_params.service_resources,
+        scale_up_params.imposed_instance_type,
+        scale_up_params.num_services,
     )
 
     # run the code
