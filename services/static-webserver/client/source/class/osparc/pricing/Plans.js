@@ -125,12 +125,7 @@ qx.Class.define("osparc.pricing.Plans", {
     },
 
     __openUpdatePricingPlan: function(pricingPlanId) {
-      const params = {
-        url: {
-          pricingPlanId
-        }
-      }
-      osparc.data.Resources.fetch("pricingPlans", "getOne", params)
+      osparc.store.Pricing.getInstance().fetchPricingUnits(pricingPlanId)
         .then(pricingPlan => {
           const ppEditor = new osparc.pricing.PlanEditor(pricingPlan);
           const title = this.tr("Pricing Plan Editor");

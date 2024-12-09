@@ -38,11 +38,11 @@ qx.Class.define("osparc.pricing.PlanEditor", {
     if (pricingPlan) {
       this.__pricingPlan = osparc.utils.Utils.deepCloneObject(pricingPlan);
       this.set({
-        ppKey: pricingPlan.pricingPlanKey,
-        name: pricingPlan.displayName,
-        description: pricingPlan.description,
-        classification: pricingPlan.classification,
-        isActive: pricingPlan.isActive
+        ppKey: pricingPlan.getPricingPlanKey(),
+        name: pricingPlan.getName(),
+        description: pricingPlan.getDescription(),
+        classification: pricingPlan.getClassification(),
+        isActive: pricingPlan.getIsActive(),
       });
       ppKey.setEnabled(false);
       this.getChildControl("save");
