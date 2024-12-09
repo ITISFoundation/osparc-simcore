@@ -218,24 +218,6 @@ def _assert_rabbit_autoscaling_message_sent(
     assert mock_rabbitmq_post_message.call_args == mock.call(app, expected_message)
 
 
-async def test_cluster_scaling_with_no_services_does_nothing(
-    minimal_configuration: None,
-    app_settings: ApplicationSettings,
-    initialized_app: FastAPI,
-    mock_launch_instances: mock.Mock,
-    mock_terminate_instances: mock.Mock,
-    mock_rabbitmq_post_message: mock.Mock,
-):
-    await auto_scale_cluster(
-        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
-    )
-    mock_launch_instances.assert_not_called()
-    mock_terminate_instances.assert_not_called()
-    _assert_rabbit_autoscaling_message_sent(
-        mock_rabbitmq_post_message, app_settings, initialized_app
-    )
-
-
 @pytest.fixture
 def instance_type_filters(
     ec2_instance_custom_tags: dict[str, str],
@@ -258,6 +240,142 @@ def instance_type_filters(
 @pytest.fixture
 async def spied_cluster_analysis(mocker: MockerFixture) -> MockType:
     return mocker.spy(auto_scaling_core, "_analyze_current_cluster")
+
+
+@dataclass(frozen=True)
+class _ScaleUpParams:
+    imposed_instance_type: str | None
+    service_resources: Resources
+    num_services: int
+    expected_instance_type: InstanceTypeType
+    expected_num_instances: int
+
+
+def _assert_cluster_state(
+    spied_cluster_analysis: MockType, *, expected_calls: int, expected_num_machines: int
+) -> None:
+    assert spied_cluster_analysis.call_count > 0
+
+    assert isinstance(spied_cluster_analysis.spy_return, Cluster)
+    assert (
+        spied_cluster_analysis.spy_return.total_number_of_machines()
+        == expected_num_machines
+    )
+    print("current cluster state:", spied_cluster_analysis.spy_return)
+
+
+@pytest.fixture
+async def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mock.Mock:
+    async def _(
+        nodes: list[Node], ec2_instances: list[EC2InstanceData]
+    ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
+        return [], ec2_instances
+
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.associate_ec2_instances_with_nodes",
+        autospec=True,
+        side_effect=_,
+    )
+
+
+@pytest.fixture
+async def create_services_batch(
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    service_monitored_labels: dict[DockerLabelKey, str],
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+) -> Callable[[Resources, str | None, int], Awaitable[list[Service]]]:
+    async def _(
+        service_resources: Resources,
+        imposed_instance_type: str | None,
+        num_services: int,
+    ) -> list[Service]:
+        return await asyncio.gather(
+            *(
+                create_service(
+                    task_template
+                    | create_task_reservations(
+                        int(service_resources.cpus),
+                        service_resources.ram,
+                    ),
+                    service_monitored_labels
+                    | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
+                    "pending",
+                    (
+                        [
+                            f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={imposed_instance_type}"
+                        ]
+                        if imposed_instance_type
+                        else []
+                    ),
+                )
+                for _ in range(num_services)
+            )
+        )
+
+    return _
+
+
+def _create_fake_association(
+    create_fake_node: Callable,
+    drained_machine_id: str | None,
+    terminating_machine_id: str | None,
+):
+    fake_node_to_instance_map = {}
+
+    async def _fake_node_creator(
+        nodes: list[Node], ec2_instances: list[EC2InstanceData]
+    ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
+        def _create_fake_node_with_labels(instance: EC2InstanceData) -> Node:
+            if instance not in fake_node_to_instance_map:
+                fake_node = create_fake_node()
+                assert fake_node.spec
+                fake_node.spec.availability = Availability.active
+                assert fake_node.status
+                fake_node.status.state = NodeState.ready
+                assert fake_node.spec.labels
+                fake_node.spec.labels |= {
+                    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: arrow.utcnow().isoformat(),
+                    _OSPARC_SERVICE_READY_LABEL_KEY: (
+                        "true" if instance.id != drained_machine_id else "false"
+                    ),
+                }
+                if instance.id == terminating_machine_id:
+                    fake_node.spec.labels |= {
+                        _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: arrow.utcnow().isoformat()
+                    }
+                fake_node_to_instance_map[instance] = fake_node
+            return fake_node_to_instance_map[instance]
+
+        associated_instances = [
+            AssociatedInstance(node=_create_fake_node_with_labels(i), ec2_instance=i)
+            for i in ec2_instances
+        ]
+
+        return associated_instances, []
+
+    return _fake_node_creator
+
+
+async def test_cluster_scaling_with_no_services_does_nothing(
+    minimal_configuration: None,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    mock_launch_instances: mock.Mock,
+    mock_terminate_instances: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
+):
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    mock_launch_instances.assert_not_called()
+    mock_terminate_instances.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message, app_settings, initialized_app
+    )
 
 
 async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
@@ -394,28 +512,6 @@ async def test_cluster_scaling_with_service_asking_for_too_much_resources_starts
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message, app_settings, initialized_app
     )
-
-
-@dataclass(frozen=True)
-class _ScaleUpParams:
-    imposed_instance_type: str | None
-    service_resources: Resources
-    num_services: int
-    expected_instance_type: InstanceTypeType
-    expected_num_instances: int
-
-
-def _assert_cluster_state(
-    spied_cluster_analysis: MockType, *, expected_calls: int, expected_num_machines: int
-) -> None:
-    assert spied_cluster_analysis.call_count > 0
-
-    assert isinstance(spied_cluster_analysis.spy_return, Cluster)
-    assert (
-        spied_cluster_analysis.spy_return.total_number_of_machines()
-        == expected_num_machines
-    )
-    print("current cluster state:", spied_cluster_analysis.spy_return)
 
 
 async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
@@ -1130,102 +1226,6 @@ async def test_cluster_scaling_up_starts_multiple_instances(
         instances_pending=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
-
-
-@pytest.fixture
-async def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mock.Mock:
-    async def _(
-        nodes: list[Node], ec2_instances: list[EC2InstanceData]
-    ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
-        return [], ec2_instances
-
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.associate_ec2_instances_with_nodes",
-        autospec=True,
-        side_effect=_,
-    )
-
-
-@pytest.fixture
-async def create_services_batch(
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
-    ],
-    task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
-    service_monitored_labels: dict[DockerLabelKey, str],
-    osparc_docker_label_keys: StandardSimcoreDockerLabels,
-) -> Callable[[Resources, str | None, int], Awaitable[list[Service]]]:
-    async def _(
-        service_resources: Resources,
-        imposed_instance_type: str | None,
-        num_services: int,
-    ) -> list[Service]:
-        return await asyncio.gather(
-            *(
-                create_service(
-                    task_template
-                    | create_task_reservations(
-                        int(service_resources.cpus),
-                        service_resources.ram,
-                    ),
-                    service_monitored_labels
-                    | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
-                    "pending",
-                    (
-                        [
-                            f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={imposed_instance_type}"
-                        ]
-                        if imposed_instance_type
-                        else []
-                    ),
-                )
-                for _ in range(num_services)
-            )
-        )
-
-    return _
-
-
-def _create_fake_association(
-    create_fake_node: Callable,
-    drained_machine_id: str | None,
-    terminating_machine_id: str | None,
-):
-    fake_node_to_instance_map = {}
-
-    async def _fake_node_creator(
-        nodes: list[Node], ec2_instances: list[EC2InstanceData]
-    ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
-        def _create_fake_node_with_labels(instance: EC2InstanceData) -> Node:
-            if instance not in fake_node_to_instance_map:
-                fake_node = create_fake_node()
-                assert fake_node.spec
-                fake_node.spec.availability = Availability.active
-                assert fake_node.status
-                fake_node.status.state = NodeState.ready
-                assert fake_node.spec.labels
-                fake_node.spec.labels |= {
-                    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: arrow.utcnow().isoformat(),
-                    _OSPARC_SERVICE_READY_LABEL_KEY: (
-                        "true" if instance.id != drained_machine_id else "false"
-                    ),
-                }
-                if instance.id == terminating_machine_id:
-                    fake_node.spec.labels |= {
-                        _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: arrow.utcnow().isoformat()
-                    }
-                fake_node_to_instance_map[instance] = fake_node
-            return fake_node_to_instance_map[instance]
-
-        associated_instances = [
-            AssociatedInstance(node=_create_fake_node_with_labels(i), ec2_instance=i)
-            for i in ec2_instances
-        ]
-
-        return associated_instances, []
-
-    return _fake_node_creator
 
 
 @pytest.mark.parametrize(
