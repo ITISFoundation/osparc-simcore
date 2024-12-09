@@ -26,7 +26,6 @@ from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.webserver_projects import create_project, empty_project_data
-from pytest_simcore.simcore_webserver_groups_fixtures import CreateUserGroupCallable
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -279,9 +278,7 @@ async def get_template_project(
     )
 
 
-async def get_group(
-    client: TestClient, user, create_user_group: CreateUserGroupCallable
-):
+async def get_group(client: TestClient, user: dict):
     """Creates a group for a given user"""
     assert client.app
 
