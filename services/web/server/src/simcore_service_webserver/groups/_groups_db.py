@@ -352,23 +352,25 @@ async def delete_user_group(
 #
 
 
-_GROUP_MEMBER_COLS = (
-    users.c.id,
-    users.c.name,
-    sa.case(
-        (users.c.privacy_hide_email.is_(True), None),
-        else_=users.c.email,
-    ).label("email"),
-    sa.case(
-        (users.c.privacy_hide_fullname.is_(True), None),
-        else_=users.c.first_name,
-    ).label("first_name"),
-    sa.case(
-        (users.c.privacy_hide_fullname.is_(True), None),
-        else_=users.c.last_name,
-    ).label("last_name"),
-    users.c.primary_gid,
-)
+def _group_user_cols(user_id: int):
+    return (
+        users.c.id,
+        users.c.name,
+        # privacy settings
+        sa.case(
+            (users.c.privacy_hide_email.is_(True) and users.c.id != user_id, None),
+            else_=users.c.email,
+        ).label("email"),
+        sa.case(
+            (users.c.privacy_hide_fullname.is_(True) and users.c.id != user_id, None),
+            else_=users.c.first_name,
+        ).label("first_name"),
+        sa.case(
+            (users.c.privacy_hide_fullname.is_(True) and users.c.id != user_id, None),
+            else_=users.c.last_name,
+        ).label("last_name"),
+        users.c.primary_gid,
+    )
 
 
 async def _get_user_in_group_permissions(
@@ -376,7 +378,7 @@ async def _get_user_in_group_permissions(
 ) -> Row:
     # now get the user
     result = await conn.stream(
-        sa.select(*_GROUP_MEMBER_COLS, user_to_groups.c.access_rights)
+        sa.select(*_group_user_cols(user_id), user_to_groups.c.access_rights)
         .select_from(
             users.join(user_to_groups, users.c.id == user_to_groups.c.uid),
         )
@@ -405,7 +407,7 @@ async def list_users_in_group(
         # now get the list
         query = (
             sa.select(
-                *_GROUP_MEMBER_COLS,
+                *_group_user_cols(user_id),
                 user_to_groups.c.access_rights,
             )
             .select_from(users.join(user_to_groups))
@@ -444,8 +446,8 @@ async def update_user_in_group(
     *,
     user_id: UserID,
     gid: GroupID,
-    the_user_id_in_group: int,
-    access_rights: dict,
+    the_user_id_in_group: UserID,
+    access_rights: AccessRightsDict,
 ) -> GroupMember:
     if not access_rights:
         msg = f"Cannot update empty {access_rights}"
@@ -482,13 +484,13 @@ async def update_user_in_group(
         return GroupMember.model_validate(user)
 
 
-async def delete_user_in_group(
+async def delete_user_from_group(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     gid: GroupID,
-    the_user_id_in_group: int,
+    the_user_id_in_group: UserID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
