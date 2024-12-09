@@ -50,13 +50,11 @@ jobs:
         with:
           python-version: "3.11"
       - name: install uv
-        if: ${{ github.event.pull_request == null }}
         uses: astral-sh/setup-uv@v4
         with:
           version: "0.4.x"
           enable-cache: false
       - name: checkout
-        if: ${{ github.event.pull_request == null }}
         uses: actions/checkout@v4
       - name: check api-server backwards compatibility
         run: |
