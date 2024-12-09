@@ -260,10 +260,8 @@ async def create_user_group(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    new_group_values: OrganizationCreate,
+    create: OrganizationCreate,
 ) -> tuple[Group, AccessRightsDict]:
-
-    values = new_group_values.model_dump(mode="json", exclude_unset=True)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -275,7 +273,7 @@ async def create_user_group(
         result = await conn.stream(
             # pylint: disable=no-value-for-parameter
             groups.insert()
-            .values(**values)
+            .values(**create.model_dump(mode="json", exclude_unset=True))
             .returning(*_GROUP_COLUMNS)
         )
         row = await result.fetchone()
@@ -303,10 +301,10 @@ async def update_user_group(
     *,
     user_id: UserID,
     gid: GroupID,
-    updated_group_values: OrganizationUpdate,
+    update: OrganizationUpdate,
 ) -> tuple[Group, AccessRightsDict]:
 
-    values = updated_group_values.model_dump(mode="json", exclude_unset=True)
+    values = update.model_dump(mode="json", exclude_unset=True)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         row = await _get_group_and_access_rights_or_raise(

@@ -424,7 +424,7 @@ async def group_where_logged_user_is_the_owner(
     group, _ = await create_organization(
         app=client.app,
         user_id=logged_user["id"],
-        new_group_values=OrganizationCreate.model_validate(
+        create=OrganizationCreate.model_validate(
             {
                 "gid": "6543",
                 "label": f"this is user {logged_user['id']} group",

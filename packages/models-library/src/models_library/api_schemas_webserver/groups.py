@@ -132,14 +132,12 @@ class GroupGet(OutputSchema):
         return None
 
 
-S = TypeVar("S", bound=BaseModel)
+Sc = TypeVar("Sc", bound=BaseModel)
 
 
-def _model_dump_with_mapping(
-    schema: S, field_mapping: dict[str, str]
-) -> dict[str, Any]:
+def _model_dump_with_map(schema: Sc, alias_map: dict[str, str]) -> dict[str, Any]:
     return {
-        field_mapping.get(k, k): v
+        alias_map.get(k, k): v
         for k, v in schema.model_dump(mode="json", exclude_unset=True).items()
     }
 
@@ -150,11 +148,9 @@ class GroupCreate(InputSchema):
     thumbnail: AnyUrl | None = None
 
     def to_model(self) -> OrganizationCreate:
-        data = _model_dump_with_mapping(
+        data = _model_dump_with_map(
             self,
-            {
-                "label": "name",
-            },
+            alias_map={"label": "name"},
         )
         return OrganizationCreate(**data)
 
@@ -165,11 +161,9 @@ class GroupUpdate(InputSchema):
     thumbnail: AnyUrl | None = None
 
     def to_model(self) -> OrganizationUpdate:
-        data = _model_dump_with_mapping(
+        data = _model_dump_with_map(
             self,
-            {
-                "label": "name",
-            },
+            alias_map={"label": "name"},
         )
         return OrganizationUpdate(**data)
 

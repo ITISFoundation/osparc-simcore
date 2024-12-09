@@ -91,6 +91,7 @@ class OrganizationUpdate(BaseModel):
 
 
 class GroupAtDB(Group):
+    # NOTE: deprecate and use `Group` instead
     model_config = ConfigDict(
         from_attributes=True,
         json_schema_extra={

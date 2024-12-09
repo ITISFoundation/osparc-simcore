@@ -37,7 +37,7 @@ async def _create_organization(
     group, access_rights = await create_organization(
         app,
         user_id=user_id,
-        new_group_values=OrganizationCreate.model_validate(new_group),
+        create=OrganizationCreate.model_validate(new_group),
     )
     return _groupget_model_dump(group=group, access_rights=access_rights)
 
