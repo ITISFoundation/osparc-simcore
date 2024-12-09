@@ -28,6 +28,7 @@ from simcore_postgres_database.models.users import UserRole, users
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
 )
+from simcore_postgres_database.utils_users import generate_alternative_username
 
 from ..db.plugin import get_database_engine
 from ..groups.models import convert_groups_db_to_schema
@@ -180,8 +181,13 @@ async def update_user_profile(
                 assert resp.rowcount == 1  # nosec
 
             except db_errors.UniqueViolation as err:
+                user_name = updated_values.get("name")
+
                 raise UserNameDuplicateError(
-                    user_name=updated_values.get("name")
+                    user_name=user_name,
+                    alternative_user_name=generate_alternative_username(user_name),
+                    user_id=user_id,
+                    updated_values=updated_values,
                 ) from err
 
 
