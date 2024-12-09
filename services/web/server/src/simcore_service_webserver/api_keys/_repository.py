@@ -45,7 +45,7 @@ async def create_api_key(
         row = await result.first()
 
         return ApiKey(
-            id=f"{row.id}",  # NOTE: remove after migration to str
+            id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
             display_name=display_name,
             expiration=expiration,
             api_key=api_key,
@@ -91,7 +91,7 @@ async def get_or_create_api_key(
         assert row  # nosec
 
         return ApiKey(
-            id=f"{row.id}",  # NOTE: remove after migration to str
+            id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
             display_name=row.display_name,
             expiration=row.expires_at,
             api_key=row.api_key,
@@ -116,7 +116,7 @@ async def list_api_keys(
 
         return [
             ApiKey(
-                id=f"{row.id}",  # NOTE: remove after migration to str
+                id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
                 display_name=row.display_name,
             )
             for row in rows
@@ -133,7 +133,9 @@ async def get_api_key(
 ) -> ApiKey | None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         stmt = sa.select(api_keys).where(
-            (api_keys.c.id == int(api_key_id))  # NOTE: remove after migration to str
+            (
+                api_keys.c.id == int(api_key_id)
+            )  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
             & (api_keys.c.user_id == user_id)
             & (api_keys.c.product_name == product_name)
         )
@@ -143,7 +145,7 @@ async def get_api_key(
 
         return (
             ApiKey(
-                id=f"{row.id}",  # NOTE: remove after migration to str
+                id=f"{row.id}",  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
                 display_name=row.display_name,
                 expiration=row.expires_at,
                 api_key=row.api_key,
@@ -164,7 +166,9 @@ async def delete_api_key(
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         stmt = api_keys.delete().where(
-            (api_keys.c.id == int(api_key_id))  # NOTE: remove after migration to str
+            (
+                api_keys.c.id == int(api_key_id)
+            )  # NOTE See: https://github.com/ITISFoundation/osparc-simcore/issues/6919
             & (api_keys.c.user_id == user_id)
             & (api_keys.c.product_name == product_name)
         )
