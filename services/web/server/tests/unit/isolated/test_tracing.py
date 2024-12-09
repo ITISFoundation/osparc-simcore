@@ -21,6 +21,7 @@ def mock_webserver_service_environment(
     return mock_webserver_service_environment | setenvs_from_dict(
         monkeypatch,
         {
+            "WEBSERVER_TRACING": "{}",
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://opentelemetry-collector",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
         },
