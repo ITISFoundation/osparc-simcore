@@ -211,8 +211,10 @@ def mocked_dynamic_scheduler_events(
 
 
 @pytest.fixture
-def mock_remove_calls(mocker: MockerFixture) -> None:
+def mock_rpc_calls(mocker: MockerFixture, minimal_app: FastAPI) -> None:
+    minimal_app.state.rabbitmq_rpc_client = AsyncMock()
     mocker.patch.object(_events_utils, "remove_volumes_without_backup_for_service")
+    mocker.patch.object(_events_utils, "force_container_cleanup")
 
 
 @pytest.fixture(params=[True, False])
@@ -241,8 +243,9 @@ async def test_skip_observation_cycle_after_error(
     mocked_dynamic_scheduler_events: ACounter,
     error_raised_by_saving_state: bool,
     use_case: UseCase,
-    mock_remove_calls: None,
+    mock_rpc_calls: None,
 ):
+
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again
     assert mocked_dynamic_scheduler_events.count == 0
