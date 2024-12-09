@@ -32,7 +32,7 @@ qx.Class.define("osparc.data.model.PricingPlan", {
       pricingPlanId: pricingPlanData.pricingPlanId,
       pricingPlanKey: pricingPlanData.pricingPlanKey,
       pricingUnits: pricingPlanData.pricingUnits,
-      classification: pricingPlanData.classification,
+      classification: pricingPlanData.displayName.includes("ViP") ? "LICENSE" : pricingPlanData.classification,
       name: pricingPlanData.displayName,
       description: pricingPlanData.description,
       isActive: pricingPlanData.isActive,
@@ -62,7 +62,7 @@ qx.Class.define("osparc.data.model.PricingPlan", {
     },
 
     classification: {
-      check: "TIER, ",
+      check: ["TIER", "LICENSE"],
       nullable: false,
       init: null,
       event: "changeClassification"
