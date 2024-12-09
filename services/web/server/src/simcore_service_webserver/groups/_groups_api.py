@@ -5,6 +5,8 @@ from models_library.groups import (
     Group,
     GroupMember,
     GroupsByTypeTuple,
+    OrganizationCreate,
+    OrganizationUpdate,
 )
 from models_library.users import GroupID, UserID
 
@@ -87,14 +89,19 @@ async def get_product_group_for_user(
 
 
 async def create_organization(
-    app: web.Application, *, user_id: UserID, new_group_values: dict
+    app: web.Application,
+    *,
+    user_id: UserID,
+    new_group_values: OrganizationCreate,
 ) -> tuple[Group, AccessRightsDict]:
     """
     raises GroupNotFoundError
     raises UserInsufficientRightsError
     """
     return await _groups_db.create_user_group(
-        app, user_id=user_id, new_group=new_group_values
+        app,
+        user_id=user_id,
+        new_group_values=new_group_values,
     )
 
 
@@ -118,15 +125,19 @@ async def update_organization(
     *,
     user_id: UserID,
     group_id: GroupID,
-    new_group_values: dict[str, str],
+    new_group_values: OrganizationUpdate,
 ) -> tuple[Group, AccessRightsDict]:
     """
 
     raises GroupNotFoundError
     raises UserInsufficientRightsError
     """
+
     return await _groups_db.update_user_group(
-        app, user_id=user_id, gid=group_id, new_group_values=new_group_values
+        app,
+        user_id=user_id,
+        gid=group_id,
+        updated_group_values=new_group_values,
     )
 
 

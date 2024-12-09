@@ -21,7 +21,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-from models_library.groups import EVERYONE_GROUP_ID
+from models_library.groups import EVERYONE_GROUP_ID, OrganizationCreate
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
@@ -285,7 +285,9 @@ async def get_group(client: TestClient, user: dict):
     return await create_organization(
         app=client.app,
         user_id=user["id"],
-        new_group_values={"label": uuid4(), "description": uuid4(), "thumbnail": None},
+        new_group_values=OrganizationCreate.model_validate(
+            {"label": uuid4(), "description": uuid4(), "thumbnail": None}
+        ),
     )
 
 

@@ -9,6 +9,8 @@ from models_library.groups import (
     GroupInfoTuple,
     GroupMember,
     GroupsByTypeTuple,
+    OrganizationCreate,
+    OrganizationUpdate,
 )
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import UniqueViolation
@@ -25,7 +27,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from ..db.models import GroupType, groups, user_to_groups, users
 from ..db.plugin import get_asyncpg_engine
 from ..users.exceptions import UserNotFoundError
-from ._utils import convert_groups_schema_to_db
 from .exceptions import (
     GroupNotFoundError,
     UserAlreadyInGroupError,
@@ -251,25 +252,30 @@ async def get_product_group_for_user(
         return group, access_rights
 
 
+assert set(OrganizationCreate.model_fields).issubset({c.name for c in groups.columns})
+
+
 async def create_user_group(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    new_group: dict,
+    new_group_values: OrganizationCreate,
 ) -> tuple[Group, AccessRightsDict]:
+
+    values = new_group_values.model_dump(mode="json", exclude_unset=True)
+
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             sa.select(users.c.primary_gid).where(users.c.id == user_id)
         )
-        user = await result.fetchone()
-        if not user:
+        if not await result.scalar_one_or_none():
             raise UserNotFoundError(uid=user_id)
 
         result = await conn.stream(
             # pylint: disable=no-value-for-parameter
             groups.insert()
-            .values(**convert_groups_schema_to_db(new_group))
+            .values(**values)
             .returning(*_GROUP_COLUMNS)
         )
         row = await result.fetchone()
@@ -288,20 +294,21 @@ async def create_user_group(
         return group, deepcopy(_DEFAULT_GROUP_OWNER_ACCESS_RIGHTS)
 
 
+assert set(OrganizationUpdate.model_fields).issubset({c.name for c in groups.columns})
+
+
 async def update_user_group(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     gid: GroupID,
-    new_group_values: dict[str, str],
+    updated_group_values: OrganizationUpdate,
 ) -> tuple[Group, AccessRightsDict]:
 
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        new_values = {
-            k: v for k, v in convert_groups_schema_to_db(new_group_values).items() if v
-        }
+    values = updated_group_values.model_dump(mode="json", exclude_unset=True)
 
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         row = await _get_group_and_access_rights_or_raise(
             conn, user_id=user_id, gid=gid
         )
@@ -312,7 +319,7 @@ async def update_user_group(
         result = await conn.stream(
             # pylint: disable=no-value-for-parameter
             groups.update()
-            .values(**new_values)
+            .values(**values)
             .where(groups.c.gid == row.gid)
             .returning(*_GROUP_COLUMNS)
         )

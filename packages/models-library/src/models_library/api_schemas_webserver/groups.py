@@ -1,5 +1,6 @@
+from ast import TypeVar
 from contextlib import suppress
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
@@ -16,7 +17,7 @@ from pydantic import (
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
-from ..groups import AccessRightsDict, Group
+from ..groups import AccessRightsDict, Group, OrganizationCreate, OrganizationUpdate
 from ..users import UserID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
 from ._base import InputSchema, OutputSchema
@@ -131,16 +132,46 @@ class GroupGet(OutputSchema):
         return None
 
 
+S = TypeVar("S", bound=BaseModel)
+
+
+def _model_dump_with_mapping(
+    schema: S, field_mapping: dict[str, str]
+) -> dict[str, Any]:
+    return {
+        field_mapping.get(k, k): v
+        for k, v in schema.model_dump(mode="json", exclude_unset=True).items()
+    }
+
+
 class GroupCreate(InputSchema):
     label: str
     description: str
     thumbnail: AnyUrl | None = None
+
+    def to_model(self) -> OrganizationCreate:
+        data = _model_dump_with_mapping(
+            self,
+            {
+                "label": "name",
+            },
+        )
+        return OrganizationCreate(**data)
 
 
 class GroupUpdate(InputSchema):
     label: str | None = None
     description: str | None = None
     thumbnail: AnyUrl | None = None
+
+    def to_model(self) -> OrganizationUpdate:
+        data = _model_dump_with_mapping(
+            self,
+            {
+                "label": "name",
+            },
+        )
+        return OrganizationUpdate(**data)
 
 
 class MyGroupsGet(OutputSchema):

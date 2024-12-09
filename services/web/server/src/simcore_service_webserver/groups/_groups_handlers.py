@@ -112,7 +112,7 @@ async def create_group(request: web.Request):
     group, access_rights = await _groups_api.create_organization(
         request.app,
         user_id=req_ctx.user_id,
-        new_group_values=create.model_dump(mode="json", exclude_unset=True),
+        new_group_values=create.to_model(),
     )
 
     created_group = GroupGet.from_model(group, access_rights)
@@ -133,7 +133,7 @@ async def update_group(request: web.Request):
         request.app,
         user_id=req_ctx.user_id,
         group_id=path_params.gid,
-        new_group_values=update.model_dump(exclude_unset=True),
+        new_group_values=update.to_model(),
     )
 
     updated_group = GroupGet.from_model(group, access_rights)

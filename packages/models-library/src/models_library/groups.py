@@ -78,6 +78,18 @@ class GroupMember(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class OrganizationCreate(BaseModel):
+    name: str
+    description: str | None
+    thumbnail: str | None
+
+
+class OrganizationUpdate(BaseModel):
+    name: str | None
+    description: str | None
+    thumbnail: str | None
+
+
 class GroupAtDB(Group):
     model_config = ConfigDict(
         from_attributes=True,
