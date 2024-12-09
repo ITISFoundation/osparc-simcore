@@ -6,6 +6,7 @@
 import json
 import random
 from collections.abc import Awaitable, Callable
+from unittest.mock import MagicMock
 
 import aiopg
 import aiopg.sa
@@ -40,7 +41,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_custom_metadata_handlers(
     # for deletion
-    mocked_director_v2_api: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
     #
     client: TestClient,
@@ -114,7 +115,7 @@ async def test_custom_metadata_handlers(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_with_parent_project_node(
     # for deletion
-    mocked_director_v2_api: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
     #
     client: TestClient,
@@ -191,7 +192,7 @@ async def test_new_project_with_parent_project_node(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_with_invalid_parent_project_node(
     # for deletion
-    mocked_director_v2_api: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
     #
     client: TestClient,
@@ -274,7 +275,7 @@ async def test_new_project_with_invalid_parent_project_node(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_set_project_parent_backward_compatibility(
     # for deletion
-    mocked_director_v2_api: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
     #
     client: TestClient,
@@ -338,7 +339,7 @@ async def test_set_project_parent_backward_compatibility(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_update_project_metadata_backward_compatibility_with_same_project_does_not_raises_and_does_not_work(
     # for deletion
-    mocked_director_v2_api: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
     #
     client: TestClient,
@@ -393,7 +394,7 @@ async def test_update_project_metadata_backward_compatibility_with_same_project_
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_update_project_metadata_s4lacad_backward_compatibility_passing_nil_parent_node_id(
     # for deletion
-    mocked_director_v2_api: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
     #
     client: TestClient,
