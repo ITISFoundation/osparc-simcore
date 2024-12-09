@@ -189,7 +189,7 @@ def request_update_project(
         return_value=ServiceResourcesDict(),
     )
     mocker.patch(
-        "simcore_service_webserver.director_v2.api.list_dynamic_services",
+        "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
         return_value=[],
     )
 
