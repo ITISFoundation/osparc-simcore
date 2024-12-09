@@ -128,13 +128,12 @@ async def update_group(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
     update: GroupUpdate = await parse_request_body_as(GroupUpdate, request)
-    new_group_values = update.model_dump(exclude_unset=True)
 
     group, access_rights = await _groups_api.update_organization(
         request.app,
         user_id=req_ctx.user_id,
         group_id=path_params.gid,
-        new_group_values=new_group_values,
+        new_group_values=update.model_dump(exclude_unset=True),
     )
 
     updated_group = GroupGet.from_model(group, access_rights)

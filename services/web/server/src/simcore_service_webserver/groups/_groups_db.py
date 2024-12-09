@@ -17,7 +17,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import and_, literal_column
+from sqlalchemy import and_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -96,7 +96,7 @@ async def _get_group_and_access_rights_or_raise(
 ) -> Row:
     result = await conn.stream(
         sa.select(
-            groups,
+            *_GROUP_COLUMNS,
             user_to_groups.c.access_rights,
         )
         .select_from(user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid))
@@ -302,22 +302,24 @@ async def update_user_group(
             k: v for k, v in convert_groups_schema_to_db(new_group_values).items() if v
         }
 
-        group = await _get_group_and_access_rights_or_raise(
+        row = await _get_group_and_access_rights_or_raise(
             conn, user_id=user_id, gid=gid
         )
-        _check_group_permissions(group, user_id, gid, "write")
+        assert row.gid == gid  # nosec
+        _check_group_permissions(row, user_id, gid, "write")
+        access_rights = AccessRightsDict(**row.access_rights)
 
         result = await conn.stream(
             # pylint: disable=no-value-for-parameter
             groups.update()
             .values(**new_values)
-            .where(groups.c.gid == group.gid)
-            .returning(literal_column("*"))
+            .where(groups.c.gid == row.gid)
+            .returning(*_GROUP_COLUMNS)
         )
         row = await result.fetchone()
         assert row  # nosec
 
-        group, access_rights = _to_group_info_tuple(row)
+        group = _row_to_model(row)
         return group, access_rights
 
 
