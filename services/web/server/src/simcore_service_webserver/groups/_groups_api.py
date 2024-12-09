@@ -8,6 +8,7 @@ from models_library.groups import (
     OrganizationCreate,
     OrganizationUpdate,
 )
+from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 
 from ..users.api import get_user
@@ -92,7 +93,7 @@ async def create_organization(
     app: web.Application,
     *,
     user_id: UserID,
-    new_group_values: OrganizationCreate,
+    create: OrganizationCreate,
 ) -> tuple[Group, AccessRightsDict]:
     """
     raises GroupNotFoundError
@@ -101,7 +102,7 @@ async def create_organization(
     return await _groups_db.create_user_group(
         app,
         user_id=user_id,
-        new_group_values=new_group_values,
+        create=create,
     )
 
 
@@ -125,7 +126,7 @@ async def update_organization(
     *,
     user_id: UserID,
     group_id: GroupID,
-    new_group_values: OrganizationUpdate,
+    update: OrganizationUpdate,
 ) -> tuple[Group, AccessRightsDict]:
     """
 
@@ -137,7 +138,7 @@ async def update_organization(
         app,
         user_id=user_id,
         gid=group_id,
-        updated_group_values=new_group_values,
+        update=update,
     )
 
 
@@ -164,7 +165,10 @@ async def list_users_in_group(
 
 
 async def get_user_in_group(
-    app: web.Application, user_id: UserID, gid: GroupID, the_user_id_in_group: int
+    app: web.Application,
+    user_id: UserID,
+    gid: GroupID,
+    the_user_id_in_group: UserID,
 ) -> GroupMember:
 
     return await _groups_db.get_user_in_group(
@@ -176,7 +180,7 @@ async def update_user_in_group(
     app: web.Application,
     user_id: UserID,
     gid: GroupID,
-    the_user_id_in_group: int,
+    the_user_id_in_group: UserID,
     access_rights: dict,
 ) -> GroupMember:
     return await _groups_db.update_user_in_group(
@@ -192,7 +196,7 @@ async def delete_user_in_group(
     app: web.Application,
     user_id: UserID,
     gid: GroupID,
-    the_user_id_in_group: int,
+    the_user_id_in_group: UserID,
 ) -> None:
     return await _groups_db.delete_user_in_group(
         app, user_id=user_id, gid=gid, the_user_id_in_group=the_user_id_in_group
@@ -216,7 +220,9 @@ async def auto_add_user_to_groups(app: web.Application, user_id: UserID) -> None
 
 
 async def auto_add_user_to_product_group(
-    app: web.Application, user_id: UserID, product_name: str
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
 ) -> GroupID:
     return await _groups_db.auto_add_user_to_product_group(
         app, user_id=user_id, product_name=product_name

@@ -285,7 +285,7 @@ async def get_group(client: TestClient, user: dict):
     return await create_organization(
         app=client.app,
         user_id=user["id"],
-        new_group_values=OrganizationCreate.model_validate(
+        create=OrganizationCreate.model_validate(
             {"label": uuid4(), "description": uuid4(), "thumbnail": None}
         ),
     )
