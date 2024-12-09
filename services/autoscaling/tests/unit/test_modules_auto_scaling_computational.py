@@ -458,7 +458,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     expected_docker_node_tags = {
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: expected_ec2_type
     }
-    assert mock_docker_tag_node.call_count == 2
+    assert mock_docker_tag_node.call_count == 3
     assert fake_node.spec
     assert fake_node.spec.labels
     fake_attached_node = deepcopy(fake_node)
@@ -557,7 +557,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert mock_dask_get_worker_used_resources.call_count == 2 * num_useless_calls
     mock_dask_get_worker_used_resources.reset_mock()
     mock_docker_find_node_with_name_returns_fake_node.assert_not_called()
-    mock_docker_tag_node.assert_not_called()
+    assert mock_docker_tag_node.call_count == num_useless_calls
+    mock_docker_tag_node.reset_mock()
     mock_docker_set_node_availability.assert_not_called()
     # check the number of instances did not change and is still running
     await assert_autoscaled_computational_ec2_instances(
