@@ -9,6 +9,7 @@ from http import HTTPStatus
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_webserver.users import ProfileGet
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_error, assert_status
@@ -31,7 +32,6 @@ from simcore_service_webserver.login.settings import (
     get_plugin_settings,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
-from simcore_service_webserver.users.schemas import ProfileGet
 
 
 @pytest.fixture

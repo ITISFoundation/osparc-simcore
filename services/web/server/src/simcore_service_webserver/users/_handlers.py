@@ -2,6 +2,7 @@ import functools
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_webserver.users import ProfileGet, ProfileUpdate
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
@@ -25,9 +26,9 @@ from ._schemas import PreUserProfile
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
+    UserNameDuplicateError,
     UserNotFoundError,
 )
-from .schemas import ProfileGet, ProfileUpdate
 
 _logger = logging.getLogger(__name__)
 
@@ -48,6 +49,10 @@ def _handle_users_exceptions(handler: Handler):
 
         except UserNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
+
+        except UserNameDuplicateError as exc:
+            raise web.HTTPConflict(reason=f"{exc}") from exc
+
         except MissingGroupExtraPropertiesForProductError as exc:
             error_code = exc.error_code()
             user_error_msg = FMSG_MISSING_CONFIG_WITH_OEC.format(error_code=error_code)
@@ -75,15 +80,19 @@ async def get_my_profile(request: web.Request) -> web.Response:
     return envelope_json_response(profile)
 
 
-@routes.put(f"/{API_VTAG}/me", name="update_my_profile")
+@routes.patch(f"/{API_VTAG}/me", name="update_my_profile")
+@routes.put(
+    f"/{API_VTAG}/me", name="replace_my_profile"  # deprecated. Use patch instead
+)
 @login_required
 @permission_required("user.profile.update")
 @_handle_users_exceptions
 async def update_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     profile_update = await parse_request_body_as(ProfileUpdate, request)
+
     await api.update_user_profile(
-        request.app, req_ctx.user_id, profile_update, as_patch=False
+        request.app, user_id=req_ctx.user_id, update=profile_update
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 

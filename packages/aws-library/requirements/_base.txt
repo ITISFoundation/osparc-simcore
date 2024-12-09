@@ -142,6 +142,7 @@ opentelemetry-api==1.27.0
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-botocore
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-propagator-aws-xray
@@ -160,10 +161,13 @@ opentelemetry-exporter-otlp-proto-http==1.27.0
 opentelemetry-instrumentation==0.48b0
     # via
     #   opentelemetry-instrumentation-botocore
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-botocore==0.48b0
     # via -r requirements/_base.in
+opentelemetry-instrumentation-logging==0.48b0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.48b0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-requests==0.48b0

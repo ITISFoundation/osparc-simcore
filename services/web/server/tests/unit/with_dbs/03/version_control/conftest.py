@@ -122,7 +122,10 @@ def app_cfg(
 
     # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
     setup_logging(
-        level=logging.DEBUG, log_format_local_dev_enabled=True, logger_filter_mapping={}
+        level=logging.DEBUG,
+        log_format_local_dev_enabled=True,
+        logger_filter_mapping={},
+        tracing_settings=None,
     )
 
     # Enforces smallest GC in the background task
