@@ -178,7 +178,10 @@ async def update_user_in_group(
 
 
 async def delete_user_in_group(
-    app: web.Application, user_id: UserID, gid: GroupID, the_user_id_in_group: int
+    app: web.Application,
+    user_id: UserID,
+    gid: GroupID,
+    the_user_id_in_group: int,
 ) -> None:
     return await _groups_db.delete_user_in_group(
         app, user_id=user_id, gid=gid, the_user_id_in_group=the_user_id_in_group
