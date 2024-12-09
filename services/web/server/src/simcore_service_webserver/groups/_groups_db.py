@@ -371,7 +371,7 @@ async def _get_user_in_group_permissions(
 ) -> Row:
     # now get the user
     result = await conn.stream(
-        sa.select(_GROUP_MEMBER_COLS, user_to_groups.c.access_rights)
+        sa.select(*_GROUP_MEMBER_COLS, user_to_groups.c.access_rights)
         .select_from(
             users.join(user_to_groups, users.c.id == user_to_groups.c.uid),
         )
