@@ -46,7 +46,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
       tiersLayout.add(tierBox);
 
       const node = this.getNode();
-      const pricingStore = osparc.store.Pricing.getInatance();
+      const pricingStore = osparc.store.Pricing.getInstance();
       pricingStore.fetchPricingPlansService(node.getKey(), node.getVersion())
         .then(pricingPlans => {
           if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
