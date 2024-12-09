@@ -61,11 +61,11 @@ qx.Class.define("osparc.service.PricingUnitsList", {
         });
     },
 
-    __populateList: function(pricingUnits) {
+    __populateList: function(pricingUnitsData) {
       this.getChildControl("pricing-units-container").removeAll();
 
-      if (pricingUnits.length) {
-        const pUnits = new osparc.study.PricingUnits(pricingUnits, null, false);
+      if (pricingUnitsData.length) {
+        const pUnits = new osparc.study.PricingUnits(pricingUnitsData, null, false);
         this.getChildControl("pricing-units-container").add(pUnits);
       } else {
         const notFound = new qx.ui.basic.Label().set({

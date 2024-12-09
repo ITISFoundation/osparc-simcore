@@ -57,9 +57,12 @@ qx.Class.define("osparc.node.TierSelectionView", {
       osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
         .then(pricingPlans => {
           if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
-            const pUnits = pricingPlans["pricingUnits"];
-            pUnits.forEach(pUnit => {
-              const tItem = new qx.ui.form.ListItem(pUnit.unitName, null, pUnit.pricingUnitId);
+            const pricingUnits = pricingPlans["pricingUnits"].map(princingUnitData => {
+              const pricingUnit = new osparc.data.model.PricingUnit(princingUnitData);
+              return pricingUnit;
+            });
+            pricingUnits.forEach(pricingUnit => {
+              const tItem = new qx.ui.form.ListItem(pricingUnit.getName(), null, pricingUnit.getPricingUnitId());
               tierBox.add(tItem);
             });
             const unitParams = {
@@ -81,8 +84,8 @@ qx.Class.define("osparc.node.TierSelectionView", {
               })
               .finally(() => {
                 const pUnitUIs = [];
-                pUnits.forEach(pUnit => {
-                  const pUnitUI = new osparc.study.PricingUnit(pUnit).set({
+                pricingUnits.forEach(pricingUnit => {
+                  const pUnitUI = new osparc.study.PricingUnitTier(pricingUnit).set({
                     allowGrowX: false
                   });
                   pUnitUI.getChildControl("name").exclude();

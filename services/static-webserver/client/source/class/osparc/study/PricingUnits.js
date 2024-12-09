@@ -42,7 +42,7 @@ qx.Class.define("osparc.study.PricingUnits", {
     __buildLayout: function(pricingUnits, preselectedPricingUnit, changeSelectionAllowed) {
       const buttons = [];
       pricingUnits.forEach(pricingUnit => {
-        const button = new osparc.study.PricingUnit(pricingUnit);
+        const button = new osparc.study.PricingUnitTier(pricingUnit);
         buttons.push(button);
         this._add(button);
       });

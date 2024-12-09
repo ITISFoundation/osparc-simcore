@@ -185,12 +185,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         .then(data => {
           const pricingUnits = data["pricingUnits"];
           pricingUnits.forEach(pricingUnit => {
-            const pUnit = new osparc.study.PricingUnit(pricingUnit).set({
-              showAwsSpecificInfo: false,
-              showUnitExtraInfo: false,
-              showEditButton: false,
-              showRentButton: true,
-              allowGrowY: false
+            const pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
+              allowGrowY: false,
             });
             pUnit.addListener("rentPricingUnit", () => this.__rentAnatomicalModel(anatomicalModelsData, pricingUnit));
             pricingUnitsLayout.add(pUnit);
