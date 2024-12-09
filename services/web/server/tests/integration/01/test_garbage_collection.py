@@ -37,6 +37,7 @@ from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import _core as gc_core
 from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
+from simcore_service_webserver.groups._groups_api import create_organization
 from simcore_service_webserver.groups.api import add_user_in_group
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
@@ -283,15 +284,18 @@ async def get_group(
 ):
     """Creates a group for a given user"""
     assert client.app
-    return await create_user_group(
+
+    return await create_organization(
         app=client.app,
         user_id=user["id"],
-        new_group={"label": uuid4(), "description": uuid4(), "thumbnail": None},
+        new_group_values={"label": uuid4(), "description": uuid4(), "thumbnail": None},
     )
 
 
 async def invite_user_to_group(client: TestClient, owner, invitee, group):
     """Invite a user to a group on which the owner has writes over"""
+    assert client.app
+
     await add_user_in_group(
         client.app,
         owner["id"],
@@ -595,7 +599,6 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
-    create_user_group: CreateUserGroupCallable,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -608,7 +611,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     u3 = await login_user(client)
 
     # creating g1 and inviting u2 and u3
-    g1 = await get_group(client, u1, create_user_group)
+    g1 = await get_group(client, u1)
     await invite_user_to_group(client, owner=u1, invitee=u2, group=g1)
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 
@@ -686,7 +689,6 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
-    create_user_group: CreateUserGroupCallable,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -701,7 +703,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     u3 = await login_user(client)
 
     # creating g1 and inviting u2 and u3
-    g1 = await get_group(client, u1, create_user_group)
+    g1 = await get_group(client, u1)
     await invite_user_to_group(client, owner=u1, invitee=u2, group=g1)
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 
@@ -758,7 +760,6 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
-    create_user_group: CreateUserGroupCallable,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -776,7 +777,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     u3 = await login_user(client)
 
     # creating g1 and inviting u2 and u3
-    g1 = await get_group(client, u1, create_user_group)
+    g1 = await get_group(client, u1)
     await invite_user_to_group(client, owner=u1, invitee=u2, group=g1)
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 
@@ -1055,7 +1056,6 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
-    create_user_group: CreateUserGroupCallable,
 ):
     """
     USER "u1" creates a group and invites "u2" and "u3";
@@ -1068,7 +1068,7 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     u3 = await login_user(client)
 
     # creating g1 and inviting u2 and u3
-    g1 = await get_group(client, u1, create_user_group)
+    g1 = await get_group(client, u1)
     await invite_user_to_group(client, owner=u1, invitee=u2, group=g1)
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 
