@@ -6,12 +6,15 @@
 
 
 import operator
+from collections.abc import Callable
 
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.groups import GroupGet, MyGroupsGet
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -34,9 +37,9 @@ from simcore_service_webserver.users.plugin import setup_users
 @pytest.fixture
 def client(
     event_loop,
-    aiohttp_client,
-    app_environment,
-    postgres_db,
+    aiohttp_client: Callable,
+    app_environment: EnvVarsDict,
+    postgres_db: sa.engine.Engine,
 ) -> TestClient:
     app = create_safe_application()
 
@@ -53,14 +56,11 @@ def client(
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_list_groups_access_rights(
+async def test_groups_access_rights(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: ExpectedResponse,
-    primary_group: dict[str, str],
-    standard_groups: list[dict[str, str]],
-    all_group: dict[str, str],
 ):
     assert client.app
     url = client.app.router["list_groups"].url_for()
@@ -73,7 +73,7 @@ async def test_list_groups_access_rights(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_list_user_groups(
+async def test_list_user_groups_and_try_modify_organizations(
     client: TestClient,
     user_role: UserRole,
     standard_groups_owner: UserInfoDict,
