@@ -75,8 +75,8 @@ qx.Class.define("osparc.pricing.PlanEditor", {
     },
 
     classification: {
-      check: "String",
-      init: "TIER",
+      check: ["TIER", "LICENSE"],
+      init: "",
       nullable: false,
       event: "changeClassification"
     },
@@ -132,12 +132,21 @@ qx.Class.define("osparc.pricing.PlanEditor", {
           break;
         }
         case "classification": {
-          control = new qx.ui.form.TextField().set({
+          control = new qx.ui.form.SelectBox().set({
             font: "text-14",
-            enabled: false
+          });
+          [
+            "TIER",
+            "LICENSE",
+          ].forEach(c => {
+            const cItem = new qx.ui.form.ListItem(c);
+            control.add(cItem);
           });
           this.bind("classification", control, "value");
-          control.bind("value", this, "classification");
+          control.addListener("changeValue", e => {
+            const currentSelection = e.getData();
+            this.setClassification(currentSelection.getLabel());
+          }, this);
           this._add(control);
           break;
         }
@@ -212,7 +221,8 @@ qx.Class.define("osparc.pricing.PlanEditor", {
           this.fireEvent("done");
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
+          const errorMsg = err.message || this.tr("Something went wrong creating ") + name;
+          osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
           console.error(err);
         })
         .finally(() => this.getChildControl("create").setFetching(false));
@@ -232,7 +242,8 @@ qx.Class.define("osparc.pricing.PlanEditor", {
           this.fireEvent("done");
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
+          const errorMsg = err.message || this.tr("Something went wrong");
+          osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
           console.error(err);
         })
         .finally(() => this.getChildControl("save").setFetching(false));
