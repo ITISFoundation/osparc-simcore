@@ -18,6 +18,7 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import setup_rpc_api_routes
+from ..services.containers_manager import setup_containers_manager
 from ..services.instrumentation import setup_instrumentation
 from ..services.rabbitmq import setup_rabbitmq
 from ..services.volumes_manager import setup_volume_manager
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
 
     setup_rabbitmq(app)
     setup_volume_manager(app)
+    setup_containers_manager(app)
     setup_rest_api(app)
     setup_rpc_api_routes(app)
 
