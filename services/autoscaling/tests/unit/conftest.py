@@ -11,7 +11,7 @@ import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Final, cast, get_args
+from typing import Any, Final, TypeAlias, cast, get_args
 from unittest import mock
 
 import aiodocker
@@ -529,7 +529,7 @@ def task_template() -> dict[str, Any]:
 
 
 _GIGA_NANO_CPU = 10**9
-NUM_CPUS = PositiveInt
+NUM_CPUS: TypeAlias = PositiveInt
 
 
 @pytest.fixture
@@ -761,7 +761,9 @@ def aws_allowed_ec2_instance_type_names_env(
 
 @pytest.fixture
 def host_cpu_count() -> int:
-    return psutil.cpu_count()
+    cpus = psutil.cpu_count()
+    assert cpus is not None
+    return cpus
 
 
 @pytest.fixture
@@ -853,9 +855,7 @@ def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
         returned_node.spec.availability = (
             Availability.active if available else Availability.drain
         )
-        returned_node.updated_at = datetime.datetime.now(
-            tz=datetime.timezone.utc
-        ).isoformat()
+        returned_node.updated_at = datetime.datetime.now(tz=datetime.UTC).isoformat()
         return returned_node
 
     return mocker.patch(
@@ -954,7 +954,7 @@ def create_associated_instance(
         return AssociatedInstance(
             node=node,
             ec2_instance=fake_ec2_instance_data(
-                launch_time=datetime.datetime.now(datetime.timezone.utc)
+                launch_time=datetime.datetime.now(datetime.UTC)
                 - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
                 - datetime.timedelta(
                     days=faker.pyint(min_value=0, max_value=100),
