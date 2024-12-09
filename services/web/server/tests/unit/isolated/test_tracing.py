@@ -17,7 +17,7 @@ from simcore_service_webserver.application_settings import ApplicationSettings
 def mock_webserver_service_environment(
     monkeypatch: pytest.MonkeyPatch, mock_webserver_service_environment: EnvVarsDict
 ) -> EnvVarsDict:
-
+    monkeypatch.delenv("WEBSERVER_TRACING")
     envs = mock_webserver_service_environment | setenvs_from_dict(
         monkeypatch,
         {
@@ -25,7 +25,6 @@ def mock_webserver_service_environment(
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
         },
     )
-    envs.pop("WEBSERVER_TRACING")
     return envs
 
 
