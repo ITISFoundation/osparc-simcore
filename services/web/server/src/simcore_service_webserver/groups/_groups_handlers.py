@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.groups import (
     GroupUserUpdate,
     MyGroupsGet,
 )
-from models_library.groups import AccessRightsDict, Group, GroupMember
+from models_library.groups import GroupMember
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -36,16 +36,6 @@ _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
-
-
-def _to_groupget_model(group: Group, access_rights: AccessRightsDict) -> GroupGet:
-    # Fuses both dataset into GroupSet
-    return GroupGet.model_validate(
-        {
-            **group.model_dump(),
-            "access_rights": access_rights,
-        }
-    )
 
 
 @routes.get(f"/{API_VTAG}/groups", name="list_groups")
@@ -78,10 +68,10 @@ async def list_groups(request: web.Request):
             )
 
     my_groups = MyGroupsGet(
-        me=_to_groupget_model(*groups_by_type.primary),
-        organizations=[_to_groupget_model(*gi) for gi in groups_by_type.standard],
-        all=_to_groupget_model(*groups_by_type.everyone),
-        product=_to_groupget_model(*my_product_group) if my_product_group else None,
+        me=GroupGet.from_model(*groups_by_type.primary),
+        organizations=[GroupGet.from_model(*gi) for gi in groups_by_type.standard],
+        all=GroupGet.from_model(*groups_by_type.everyone),
+        product=GroupGet.from_model(*my_product_group) if my_product_group else None,
     )
 
     return envelope_json_response(my_groups)
@@ -105,7 +95,7 @@ async def get_group(request: web.Request):
         request.app, user_id=req_ctx.user_id, group_id=path_params.gid
     )
 
-    group = _to_groupget_model(group, access_rights)
+    group = GroupGet.from_model(group, access_rights)
     return envelope_json_response(group)
 
 
@@ -125,7 +115,7 @@ async def create_group(request: web.Request):
         new_group_values=create.model_dump(mode="json", exclude_unset=True),
     )
 
-    created_group = _to_groupget_model(group, access_rights)
+    created_group = GroupGet.from_model(group, access_rights)
     return envelope_json_response(created_group, status_cls=web.HTTPCreated)
 
 
@@ -147,7 +137,7 @@ async def update_group(request: web.Request):
         new_group_values=new_group_values,
     )
 
-    updated_group = _to_groupget_model(group, access_rights)
+    updated_group = GroupGet.from_model(group, access_rights)
     return envelope_json_response(updated_group)
 
 
