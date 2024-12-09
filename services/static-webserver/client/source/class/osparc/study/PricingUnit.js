@@ -38,6 +38,13 @@ qx.Class.define("osparc.study.PricingUnit", {
       init: null,
       apply: "_buildLayout"
     },
+
+    showEditButton: {
+      check: "Boolean",
+      init: false,
+      nullable: true,
+      event: "changeShowEditButton"
+    },
   },
 
   members: {
@@ -54,6 +61,10 @@ qx.Class.define("osparc.study.PricingUnit", {
           control = new qx.ui.basic.Label().set({
             font: "text-14"
           });
+          this._add(control);
+          break;
+        case "edit-button":
+          control = new qx.ui.form.Button(qx.locale.Manager.tr("Edit"));
           this._add(control);
           break;
       }

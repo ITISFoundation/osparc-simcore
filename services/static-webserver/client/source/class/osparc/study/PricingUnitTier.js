@@ -36,13 +36,6 @@ qx.Class.define("osparc.study.PricingUnitTier", {
       nullable: true,
       event: "changeShowUnitExtraInfo"
     },
-
-    showEditButton: {
-      check: "Boolean",
-      init: false,
-      nullable: true,
-      event: "changeShowEditButton"
-    },
   },
 
   members: {
@@ -60,10 +53,6 @@ qx.Class.define("osparc.study.PricingUnitTier", {
             font: "text-13",
             rich: true,
           });
-          this._add(control);
-          break;
-        case "edit-button":
-          control = new qx.ui.form.Button(qx.locale.Manager.tr("Edit"));
           this._add(control);
           break;
       }

@@ -25,7 +25,7 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
   properties: {
     showRentButton: {
       check: "Boolean",
-      init: true,
+      init: false,
       nullable: true,
       event: "changeShowRentButton"
     },
@@ -55,6 +55,13 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
       pricingUnit.bind("cost", price, "value", {
         converter: v => qx.locale.Manager.tr("Credits") + ": " + v
       });
+
+      // add edit button
+      const editButton = this.getChildControl("edit-button");
+      this.bind("showEditButton", editButton, "visibility", {
+        converter: show => show ? "visible" : "excluded"
+      })
+      editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
 
       // add rent button
       const rentButton = this.getChildControl("rent-button");

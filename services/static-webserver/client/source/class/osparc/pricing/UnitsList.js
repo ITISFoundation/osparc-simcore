@@ -78,6 +78,7 @@ qx.Class.define("osparc.pricing.UnitsList", {
         let pUnit = null;
         if (pricingUnit.getClassification() === "LICENSE") {
           pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
+            showEditButton: true,
             showRentButton: false,
           });
         } else {
