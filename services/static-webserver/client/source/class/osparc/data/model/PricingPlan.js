@@ -31,12 +31,19 @@ qx.Class.define("osparc.data.model.PricingPlan", {
     this.set({
       pricingPlanId: pricingPlanData.pricingPlanId,
       pricingPlanKey: pricingPlanData.pricingPlanKey,
-      pricingUnits: pricingPlanData.pricingUnits || [],
       classification: pricingPlanData.displayName.includes("ViP") ? "LICENSE" : pricingPlanData.classification,
       name: pricingPlanData.displayName,
       description: pricingPlanData.description,
       isActive: pricingPlanData.isActive,
+      pricingUnits: [],
     });
+
+    if (pricingPlanData.pricingUnits) {
+      pricingPlanData.pricingUnits.forEach(pricingUnitData => {
+        const pricingUnit = new osparc.data.model.PricingUnit(pricingUnitData);
+        this.getPricingUnits().push(pricingUnit);
+      });
+    }
   },
 
   properties: {

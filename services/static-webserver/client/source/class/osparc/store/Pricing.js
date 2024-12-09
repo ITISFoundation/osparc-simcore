@@ -79,14 +79,10 @@ qx.Class.define("osparc.store.Pricing", {
       return osparc.data.Resources.fetch("pricingPlans", "getOne", params)
         .then(pricingPlanData => {
           const pricingPlan = this.__addToCache(pricingPlanData);
-          const pricingUnits = [];
-          if (pricingPlan && "pricingUnits" in pricingPlanData) {
-            const pricingUnitsData = pricingPlanData["pricingUnits"];
-            pricingUnitsData.forEach(pricingUnitData => {
-              const pricingUnit = this.__addPricingUnitToCache(pricingPlan, pricingUnitData);
-              pricingUnits.push(pricingUnit);
-            });
-          }
+          const pricingUnits = pricingPlan.getPricingUnits();
+          pricingUnits.forEach(pricingUnit => {
+            pricingPlan.bind("classification", pricingUnit, "classification");
+          })
           return pricingUnits;
         });
     },
@@ -120,7 +116,7 @@ qx.Class.define("osparc.store.Pricing", {
 
     __addPricingUnitToCache: function(pricingPlan, pricingUnitData) {
       const pricingUnits = pricingPlan.getPricingUnits();
-      let pricingUnit = pricingUnits ? pricingUnits.find(unit => unit.getPricingUnitId() === pricingUnitData["pricingUnitId"]) : null;
+      let pricingUnit = pricingUnits ? pricingUnits.find(unit => ("getPricingUnitId" in unit) && unit.getPricingUnitId() === pricingUnitData["pricingUnitId"]) : null;
       if (pricingUnit) {
         const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.PricingPlan));
         // put
