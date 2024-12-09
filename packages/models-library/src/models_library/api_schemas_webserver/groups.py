@@ -63,9 +63,26 @@ class GroupGet(OutputSchema):
     @classmethod
     def from_model(cls, group: Group, access_rights: AccessRightsDict) -> Self:
         # Fuses both dataset into GroupSet
+        _to = {
+            "name": "label",
+        }
+
         return cls.model_validate(
             {
-                **group.model_dump(),
+                **{
+                    _to.get(key, key): value
+                    for key, value in group.model_dump(
+                        include={
+                            "gid",
+                            "name",
+                            "description",
+                            "thumbnail",
+                            "inclusion_rules",
+                        },
+                        exclude_unset=True,
+                        by_alias=False,
+                    ).items()
+                },
                 "access_rights": access_rights,
             }
         )

@@ -75,11 +75,7 @@ def _row_to_model(group: Row) -> Group:
 def _to_group_info_tuple(group: Row) -> GroupInfoTuple:
     return (
         _row_to_model(group),
-        AccessRightsDict(
-            read=group.access_rights.read,
-            write=group.access_rights.read,
-            delete=group.access_rights.delete,
-        ),
+        AccessRightsDict(**group.access_rights),
     )
 
 
@@ -353,15 +349,15 @@ _GROUP_MEMBER_COLS = (
     users.c.id,
     users.c.name,
     sa.case(
-        [(users.c.privacy_hide_email == sa.true(), None)],
+        (users.c.privacy_hide_email.is_(True), None),
         else_=users.c.email,
     ).label("email"),
     sa.case(
-        [(users.c.privacy_hide_fullname == sa.true(), None)],
+        (users.c.privacy_hide_fullname.is_(True), None),
         else_=users.c.first_name,
     ).label("first_name"),
     sa.case(
-        [(users.c.privacy_hide_fullname == sa.true(), None)],
+        (users.c.privacy_hide_fullname.is_(True), None),
         else_=users.c.last_name,
     ).label("last_name"),
     users.c.primary_gid,
