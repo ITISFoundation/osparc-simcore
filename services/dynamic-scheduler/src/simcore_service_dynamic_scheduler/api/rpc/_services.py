@@ -5,7 +5,9 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
@@ -15,6 +17,15 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
 from ...services import scheduler_interface
 
 router = RPCRouter()
+
+
+@router.expose()
+async def list_tracked_dynamic_services(
+    app: FastAPI, *, user_id: UserID | None = None, project_id: ProjectID | None = None
+) -> list[DynamicServiceGet]:
+    return await scheduler_interface.list_tracked_dynamic_services(
+        app, user_id=user_id, project_id=project_id
+    )
 
 
 @router.expose()
