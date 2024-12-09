@@ -2,7 +2,6 @@ from contextlib import suppress
 from typing import Annotated, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.basic_types import IDStr
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -15,6 +14,7 @@ from pydantic import (
     model_validator,
 )
 
+from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
 from ..groups import AccessRightsDict, Group
 from ..users import UserID
