@@ -295,7 +295,7 @@ qx.Class.define("osparc.share.Collaborators", {
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id); // user
           ctrl.bindProperty("label", "title", null, item, id); // organization
-          ctrl.bindProperty("login", "subtitleMD", null, item, id); // user
+          ctrl.bindProperty("email", "subtitleMD", null, item, id); // user
           ctrl.bindProperty("description", "subtitle", null, item, id); // organization
           ctrl.bindProperty("resourceType", "resourceType", null, item, id); // Resource type
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
@@ -413,7 +413,7 @@ qx.Class.define("osparc.share.Collaborators", {
           if ("getUserId" in collab) {
             // user
             collaborator["name"] = collab.getLabel();
-            collaborator["login"] = collab.getLogin();
+            collaborator["email"] = collab.getEmail();
           } else {
             // org/group
             collaborator["label"] = collab.getLabel();

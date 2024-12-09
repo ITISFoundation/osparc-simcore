@@ -82,9 +82,10 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
 
   statics: {
     POS: {
-      TIMESTAMP: 0,
-      ORIGIN: 1,
-      MESSAGE: 2
+      LOG_LEVEL: 0,
+      TIMESTAMP: 1,
+      ORIGIN: 2,
+      MESSAGE: 3,
     },
 
     LOG_LEVELS: {
@@ -152,6 +153,11 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
         }
         case "log-level": {
           const toolbar = this.getChildControl("toolbar");
+          const minLogLevelLabel = new qx.ui.basic.Label().set({
+            value: this.tr("Min log-level"),
+            alignY: "middle",
+          });
+          toolbar.add(minLogLevelLabel);
           control = new qx.ui.form.SelectBox().set({
             appearance: "toolbar-selectbox",
             maxWidth: 80
@@ -275,18 +281,20 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       // alwaysUpdateCells
       osparc.utils.Utils.setIdToWidget(table, "logsViewer");
       const colModel = table.getTableColumnModel();
+      colModel.setDataCellRenderer(this.self().POS.LOG_LEVEL, new qx.ui.table.cellrenderer.Image(14, 14));
       colModel.setDataCellRenderer(this.self().POS.TIMESTAMP, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text"
       }));
-      colModel.setDataCellRenderer(this.self().POS.ORIGIN, new qx.ui.table.cellrenderer.Html());
+      colModel.setDataCellRenderer(this.self().POS.ORIGIN, new osparc.ui.table.cellrenderer.Html());
       colModel.setDataCellRenderer(this.self().POS.MESSAGE, new osparc.ui.table.cellrenderer.Html().set({
         defaultCellStyle: "user-select: text; text-wrap: wrap"
       }));
-      let resizeBehavior = colModel.getBehavior();
+      const resizeBehavior = colModel.getBehavior();
+      resizeBehavior.setWidth(this.self().POS.LOG_LEVEL, 35);
       resizeBehavior.setWidth(this.self().POS.TIMESTAMP, 80);
       resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
 
-      table.setDataRowRenderer(new osparc.ui.table.rowrenderer.ExpandSelection(table));
+      table.setDataRowRenderer(new osparc.ui.table.rowrenderer.ExpandSelection(table, this.self().POS.MESSAGE));
 
       this.__applyFilters();
 
@@ -398,12 +406,12 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       const msgLogs = [];
       msgs.forEach(msg => {
         const msgLog = {
+          logLevel,
           timeStamp: new Date(),
           nodeId,
           label,
           msg,
           tooltip: msg,
-          logLevel
         };
         msgLogs.push(msgLog);
       });

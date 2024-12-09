@@ -2,13 +2,16 @@ import datetime
 from typing import cast
 
 from common_library.json_serialization import json_dumps
+from common_library.unset import UnSet, as_dict_exclude_unset
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
+from models_library.users import UserID
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
@@ -108,3 +111,16 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
             )
 
         return await _(self)
+
+    @retry_on_errors()
+    @expect_status(status.HTTP_200_OK)
+    async def get_dynamic_services(
+        self,
+        *,
+        user_id: UserID | None | UnSet = UnSet.VALUE,
+        project_id: ProjectID | None | UnSet = UnSet.VALUE,
+    ) -> Response:
+        return await self.client.get(
+            "/dynamic_services",
+            params=as_dict_exclude_unset(user_id=user_id, project_id=project_id),
+        )
