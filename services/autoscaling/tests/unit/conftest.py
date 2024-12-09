@@ -492,8 +492,8 @@ def create_fake_node(faker: Faker) -> Callable[..., DockerNode]:
         default_config = {
             "ID": faker.uuid4(),
             "Version": ObjectVersion(Index=faker.pyint()),
-            "CreatedAt": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
-            "UpdatedAt": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            "CreatedAt": datetime.datetime.now(tz=datetime.UTC).isoformat(),
+            "UpdatedAt": datetime.datetime.now(tz=datetime.UTC).isoformat(),
             "Description": NodeDescription(
                 Hostname=faker.pystr(),
                 Resources=ResourceObject(
