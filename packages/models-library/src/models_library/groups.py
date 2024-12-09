@@ -2,12 +2,11 @@ import enum
 from typing import Annotated, Final, NamedTuple, TypeAlias, TypedDict
 
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.basic_types import IDStr
-from models_library.groups import Group
-from models_library.users import GroupID, UserID
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic.types import PositiveInt
 
+from .basic_types import IDStr
+from .users import GroupID, UserID
 from .utils.common_validators import create_enums_pre_validator
 
 EVERYONE_GROUP_ID: Final[int] = 1
