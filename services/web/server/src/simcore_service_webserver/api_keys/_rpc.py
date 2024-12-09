@@ -4,7 +4,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.auth import ApiKeyCreateRequest
 from models_library.products import ProductName
-from models_library.rpc_auth_api_keys import ApiKeyGet
+from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 

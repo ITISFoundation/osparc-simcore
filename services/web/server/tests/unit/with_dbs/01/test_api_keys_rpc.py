@@ -8,16 +8,18 @@ from collections.abc import AsyncIterable, Awaitable, Callable
 import pytest
 from aiohttp.test_utils import TestServer
 from faker import Faker
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.products import ProductName
-from models_library.rabbitmq_basic_types import RPCMethodName
-from models_library.rpc_auth_api_keys import ApiKeyCreate
-from pydantic import TypeAdapter
+from models_library.rpc.webserver.auth.api_keys import ApiKeyCreate
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.webserver.auth.api_keys import (
+    create_api_key,
+    delete_api_key,
+    get_api_key,
+)
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.api_keys import _repository as repo
@@ -108,11 +110,10 @@ async def test_get_api_key(
     logged_user: UserInfoDict,
 ):
     for api_key in fake_user_api_keys:
-        result = await rpc_client.request(
-            WEBSERVER_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("get_api_key"),
-            product_name=osparc_product_name,
+        result = await get_api_key(
+            rpc_client,
             user_id=logged_user["id"],
+            product_name=osparc_product_name,
             api_key_id=api_key.id,
         )
         assert result.id == api_key.id
@@ -128,19 +129,17 @@ async def test_api_keys_workflow(
     key_name = faker.pystr()
 
     # creating a key
-    created_api_key = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("create_api_key"),
-        product_name=osparc_product_name,
+    created_api_key = await create_api_key(
+        rpc_client,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
         api_key=ApiKeyCreate(display_name=key_name, expiration=None),
     )
     assert created_api_key.display_name == key_name
 
     # query the key is still present
-    queried_api_key = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_api_key"),
+    queried_api_key = await get_api_key(
+        rpc_client,
         product_name=osparc_product_name,
         user_id=logged_user["id"],
         api_key_id=created_api_key.id,
@@ -151,20 +150,17 @@ async def test_api_keys_workflow(
     assert created_api_key.display_name == queried_api_key.display_name
 
     # remove the key
-    delete_key_result = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("delete_api_key"),
-        product_name=osparc_product_name,
+    await delete_api_key(
+        rpc_client,
         user_id=logged_user["id"],
+        product_name=osparc_product_name,
         api_key_id=created_api_key.id,
     )
-    assert delete_key_result is None
 
     with pytest.raises(ApiKeyNotFoundError):
         # key no longer present
-        await rpc_client.request(
-            WEBSERVER_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("get_api_key"),
+        await get_api_key(
+            rpc_client,
             product_name=osparc_product_name,
             user_id=logged_user["id"],
             api_key_id=created_api_key.id,
