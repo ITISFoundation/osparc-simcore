@@ -20,6 +20,7 @@ qx.Class.define("osparc.study.PricingUnitTier", {
 
   events: {
     "editPricingUnit": "qx.event.type.Event",
+    "selectPricingUnit": "qx.event.type.Event",
   },
 
   properties: {
@@ -66,6 +67,10 @@ qx.Class.define("osparc.study.PricingUnitTier", {
           control = new qx.ui.form.Button(qx.locale.Manager.tr("Edit"));
           this._add(control);
           break;
+        case "select-button":
+          control = new qx.ui.form.Button(qx.locale.Manager.tr("Select"));
+          this._add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -108,6 +113,13 @@ qx.Class.define("osparc.study.PricingUnitTier", {
         converter: show => show ? "visible" : "excluded"
       })
       editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
+
+      // add select button
+      const selectButton = this.getChildControl("edit-button");
+      this.bind("showSelectButton", selectButton, "visibility", {
+        converter: show => show ? "visible" : "excluded"
+      })
+      selectButton.addListener("execute", () => this.fireEvent("selectPricingUnit"));
     }
   }
 });

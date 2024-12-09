@@ -25,7 +25,7 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
   properties: {
     showRentButton: {
       check: "Boolean",
-      init: false,
+      init: true,
       nullable: true,
       event: "changeShowRentButton"
     },
