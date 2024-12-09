@@ -18,7 +18,7 @@
 qx.Class.define("osparc.study.PricingUnits", {
   extend: qx.ui.container.Composite,
 
-  construct: function(pricingUnits, preselectedPricingUnit, changeSelectionAllowed = true) {
+  construct: function(pricingUnitsData, preselectedPricingUnit, changeSelectionAllowed = true) {
     this.base(arguments);
 
     this.set({
@@ -26,7 +26,7 @@ qx.Class.define("osparc.study.PricingUnits", {
       allowGrowY: false,
     });
 
-    this.__buildLayout(pricingUnits, preselectedPricingUnit, changeSelectionAllowed);
+    this.__buildLayout(pricingUnitsData, preselectedPricingUnit, changeSelectionAllowed);
   },
 
   properties: {
@@ -39,9 +39,10 @@ qx.Class.define("osparc.study.PricingUnits", {
   },
 
   members: {
-    __buildLayout: function(pricingUnits, preselectedPricingUnit, changeSelectionAllowed) {
+    __buildLayout: function(pricingUnitsData, preselectedPricingUnit, changeSelectionAllowed) {
       const buttons = [];
-      pricingUnits.forEach(pricingUnit => {
+      pricingUnitsData.forEach(pricingUnitData => {
+        const pricingUnit = new osparc.data.model.PricingUnit(pricingUnitData);
         const button = new osparc.study.PricingUnitTier(pricingUnit);
         buttons.push(button);
         this._add(button);

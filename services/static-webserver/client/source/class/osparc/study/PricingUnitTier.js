@@ -72,7 +72,7 @@ qx.Class.define("osparc.study.PricingUnitTier", {
 
     // override
     _buildLayout: function(pricingUnit) {
-      this.base(arguments);
+      this.base(arguments, pricingUnit);
 
       // add price info
       const price = this.getChildControl("price");

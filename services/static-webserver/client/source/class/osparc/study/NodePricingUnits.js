@@ -121,7 +121,8 @@ qx.Class.define("osparc.study.NodePricingUnits", {
               osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
                 .then(preselectedPricingUnit => {
                   if (pricingPlanData && "pricingUnits" in pricingPlanData && pricingPlanData["pricingUnits"].length) {
-                    const pricingUnitButtons = this.__pricingUnits = new osparc.study.PricingUnits(pricingPlanData["pricingUnits"], preselectedPricingUnit);
+                    const pricingUnitsData = pricingPlanData["pricingUnits"];
+                    const pricingUnitButtons = this.__pricingUnits = new osparc.study.PricingUnits(pricingUnitsData, preselectedPricingUnit);
                     if (inGroupBox) {
                       const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
                       pricingUnitsLayout.add(pricingUnitButtons);
