@@ -70,6 +70,16 @@ qx.Class.define("osparc.store.Pricing", {
         .catch(console.error);
     },
 
+    fetchPricingPlansService: function(serviceKey, serviceVersion) {
+      const plansParams = {
+        url: osparc.data.Resources.getServiceUrl(serviceKey, serviceVersion)
+      };
+      return osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
+        .then(pricingPlansData => {
+          return pricingPlansData;
+        });
+    },
+
     fetchPricingUnits: function(pricingPlanId) {
       const params = {
         url: {
