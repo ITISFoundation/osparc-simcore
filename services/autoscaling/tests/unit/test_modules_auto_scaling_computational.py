@@ -43,7 +43,6 @@ from simcore_service_autoscaling.modules.auto_scaling_mode_computational import 
 )
 from simcore_service_autoscaling.modules.dask import DaskTaskResources
 from simcore_service_autoscaling.modules.docker import get_docker_client
-from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
     _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
@@ -182,6 +181,92 @@ def ec2_instance_custom_tags(
     }
 
 
+@pytest.fixture
+def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
+    def _do(
+        ec2_instance_type: InstanceTypeType | None, ram: ByteSize
+    ) -> DaskTaskResources:
+        resources = DaskTaskResources(
+            {
+                "RAM": int(ram),
+            }
+        )
+        if ec2_instance_type is not None:
+            resources[create_ec2_resource_constraint_key(ec2_instance_type)] = 1
+        return resources
+
+    return _do
+
+
+@pytest.fixture
+def mock_dask_get_worker_has_results_in_memory(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.dask.get_worker_still_has_results_in_memory",
+        return_value=0,
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def mock_dask_get_worker_used_resources(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.dask.get_worker_used_resources",
+        return_value=Resources.create_as_empty(),
+        autospec=True,
+    )
+
+
+@pytest.fixture
+def mock_dask_is_worker_connected(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.dask.is_worker_connected",
+        return_value=True,
+        autospec=True,
+    )
+
+
+async def _create_task_with_resources(
+    ec2_client: EC2Client,
+    dask_task_imposed_ec2_type: InstanceTypeType | None,
+    dask_ram: ByteSize | None,
+    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+) -> distributed.Future:
+    if dask_task_imposed_ec2_type and not dask_ram:
+        instance_types = await ec2_client.describe_instance_types(
+            InstanceTypes=[dask_task_imposed_ec2_type]
+        )
+        assert instance_types
+        assert "InstanceTypes" in instance_types
+        assert instance_types["InstanceTypes"]
+        assert "MemoryInfo" in instance_types["InstanceTypes"][0]
+        assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
+        dask_ram = TypeAdapter(ByteSize).validate_python(
+            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
+        )
+    dask_task_resources = create_dask_task_resources(
+        dask_task_imposed_ec2_type, dask_ram
+    )
+    dask_future = create_dask_task(dask_task_resources)
+    assert dask_future
+    return dask_future
+
+
+@dataclass(frozen=True)
+class _ScaleUpParams:
+    task_resources: Resources
+    num_tasks: int
+    expected_instance_type: str
+    expected_num_instances: int
+
+
+def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResources:
+    return {
+        res_key.upper(): res_value
+        for res_key, res_value in resources.model_dump().items()
+    }
+
+
 async def test_cluster_scaling_with_no_tasks_does_nothing(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
@@ -257,77 +342,6 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
         initialized_app,
         dask_spec_local_cluster.scheduler_address,
     )
-
-
-@pytest.fixture
-def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
-    def _do(
-        ec2_instance_type: InstanceTypeType | None, ram: ByteSize
-    ) -> DaskTaskResources:
-        resources = DaskTaskResources(
-            {
-                "RAM": int(ram),
-            }
-        )
-        if ec2_instance_type is not None:
-            resources[create_ec2_resource_constraint_key(ec2_instance_type)] = 1
-        return resources
-
-    return _do
-
-
-@pytest.fixture
-def mock_dask_get_worker_has_results_in_memory(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.dask.get_worker_still_has_results_in_memory",
-        return_value=0,
-        autospec=True,
-    )
-
-
-@pytest.fixture
-def mock_dask_get_worker_used_resources(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.dask.get_worker_used_resources",
-        return_value=Resources.create_as_empty(),
-        autospec=True,
-    )
-
-
-@pytest.fixture
-def mock_dask_is_worker_connected(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.dask.is_worker_connected",
-        return_value=True,
-        autospec=True,
-    )
-
-
-async def _create_task_with_resources(
-    ec2_client: EC2Client,
-    dask_task_imposed_ec2_type: InstanceTypeType | None,
-    dask_ram: ByteSize | None,
-    create_dask_task_resources: Callable[..., DaskTaskResources],
-    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
-) -> distributed.Future:
-    if dask_task_imposed_ec2_type and not dask_ram:
-        instance_types = await ec2_client.describe_instance_types(
-            InstanceTypes=[dask_task_imposed_ec2_type]
-        )
-        assert instance_types
-        assert "InstanceTypes" in instance_types
-        assert instance_types["InstanceTypes"]
-        assert "MemoryInfo" in instance_types["InstanceTypes"][0]
-        assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
-        dask_ram = TypeAdapter(ByteSize).validate_python(
-            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
-        )
-    dask_task_resources = create_dask_task_resources(
-        dask_task_imposed_ec2_type, dask_ram
-    )
-    dask_future = create_dask_task(dask_task_resources)
-    assert dask_future
-    return dask_future
 
 
 @pytest.mark.acceptance_test()
@@ -807,42 +821,6 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
     ]
     assert len(error_messages) == 1
     assert "Unexpected error:" in error_messages[0]
-
-
-@dataclass(frozen=True)
-class _ScaleUpParams:
-    task_resources: Resources
-    num_tasks: int
-    expected_instance_type: str
-    expected_num_instances: int
-
-
-def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResources:
-    return {
-        res_key.upper(): res_value
-        for res_key, res_value in resources.model_dump().items()
-    }
-
-
-@pytest.fixture
-def patch_ec2_client_launch_instancess_min_number_of_instances(
-    mocker: MockerFixture,
-) -> mock.Mock:
-    """the moto library always returns min number of instances instead of max number of instances which makes
-    it difficult to test scaling to multiple of machines. this should help"""
-    original_fct = SimcoreEC2API.launch_instances
-
-    async def _change_parameters(*args, **kwargs) -> list[EC2InstanceData]:
-        new_kwargs = kwargs | {"min_number_of_instances": kwargs["number_of_instances"]}
-        print(f"patching launch_instances with: {new_kwargs}")
-        return await original_fct(*args, **new_kwargs)
-
-    return mocker.patch.object(
-        SimcoreEC2API,
-        "launch_instances",
-        autospec=True,
-        side_effect=_change_parameters,
-    )
 
 
 @pytest.mark.parametrize(
