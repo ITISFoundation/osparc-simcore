@@ -31,7 +31,6 @@ from simcore_service_webserver.groups._groups_db import (
 )
 from simcore_service_webserver.groups.api import auto_add_user_to_groups
 from simcore_service_webserver.security.api import clean_auth_policy_cache
-from simcore_service_webserver.utils import gravatar_hash
 
 
 def _assert_group(group: dict[str, str]):
@@ -43,19 +42,26 @@ def _assert__group_user(
     expected_access_rights: AccessRightsDict,
     actual_user: dict,
 ):
-    assert "first_name" in actual_user
-    assert actual_user["first_name"] == expected_user.get("first_name")
-    assert "last_name" in actual_user
-    assert actual_user["last_name"] == expected_user.get("last_name")
-    assert "login" in actual_user
-    assert actual_user["login"] == expected_user["email"]
-    assert "gravatar_id" in actual_user
-    assert actual_user["gravatar_id"] == gravatar_hash(expected_user["email"])
+    # identifiers
+    assert actual_user["userName"] == expected_user["name"]
+
+    assert "id" in actual_user
+    assert int(actual_user["id"]) == expected_user["id"]
+
+    assert "gid" in actual_user
+    assert int(actual_user["gid"]) == expected_user.get("primary_id")
+
+    # privacy
+    # assert "first_name" in actual_user
+    # assert actual_user["first_name"] == expected_user.get("first_name")
+    # assert "last_name" in actual_user
+    # assert actual_user["last_name"] == expected_user.get("last_name")
+    # assert "login" in actual_user
+    # assert actual_user["login"] == expected_user["email"]
+
+    # access-rights
     assert "accessRights" in actual_user
     assert actual_user["accessRights"] == expected_access_rights
-    assert "id" in actual_user
-    assert actual_user["id"] == expected_user["id"]
-    assert "gid" in actual_user
 
 
 @pytest.mark.parametrize(*standard_role_response())
