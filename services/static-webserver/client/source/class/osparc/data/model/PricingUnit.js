@@ -31,7 +31,7 @@ qx.Class.define("osparc.data.model.PricingUnit", {
     this.set({
       pricingUnitId: pricingUnitData.pricingUnitId,
       name: pricingUnitData.unitName,
-      cost: pricingUnitData.currentCostPerUnit,
+      cost: parseFloat(pricingUnitData.currentCostPerUnit),
       isDefault: pricingUnitData.default,
       extraInfo: pricingUnitData.unitExtraInfo,
     });

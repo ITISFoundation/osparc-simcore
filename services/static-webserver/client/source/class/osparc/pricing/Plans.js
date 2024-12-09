@@ -91,7 +91,7 @@ qx.Class.define("osparc.pricing.Plans", {
           ctrl.bindProperty("pricingPlanId", "model", null, item, id);
           ctrl.bindProperty("pricingPlanId", "ppId", null, item, id);
           ctrl.bindProperty("pricingPlanKey", "ppKey", null, item, id);
-          ctrl.bindProperty("displayName", "title", null, item, id);
+          ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "description", null, item, id);
           ctrl.bindProperty("isActive", "isActive", null, item, id);
         },
@@ -103,13 +103,13 @@ qx.Class.define("osparc.pricing.Plans", {
     },
 
     fetchPlans: function() {
-      osparc.data.Resources.fetch("pricingPlans", "get")
+      osparc.store.Pricing.getInstance().fetchPricingPlans()
         .then(data => this.__populateList(data));
     },
 
     __populateList: function(pricingPlans) {
       this.__model.removeAll();
-      pricingPlans.forEach(pricingPlan => this.__model.append(new osparc.pricing.PlanData(pricingPlan)));
+      pricingPlans.forEach(pricingPlan => this.__model.append(pricingPlan));
     },
 
     __openCreatePricingPlan: function() {

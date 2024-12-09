@@ -200,15 +200,13 @@ qx.Class.define("osparc.pricing.PlanEditor", {
       const name = this.getName();
       const description = this.getDescription();
       const classification = this.getClassification();
-      const params = {
-        data: {
-          "pricingPlanKey": ppKey,
-          "displayName": name,
-          "description": description,
-          "classification": classification
-        }
+      const newPricingPlanData = {
+        "pricingPlanKey": ppKey,
+        "displayName": name,
+        "description": description,
+        "classification": classification
       };
-      osparc.data.Resources.fetch("pricingPlans", "post", params)
+      osparc.store.Pricing.getInstance().postPricingPlan(newPricingPlanData)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
           this.fireEvent("done");

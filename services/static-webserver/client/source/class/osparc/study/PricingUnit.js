@@ -27,7 +27,7 @@ qx.Class.define("osparc.study.PricingUnit", {
       decorator: "rounded",
     });
 
-    this.setUnitData(new osparc.pricing.UnitData(pricingUnit));
+    this.setUnitData(new osparc.data.model.PricingUnit(pricingUnit));
   },
 
   events: {
@@ -37,7 +37,7 @@ qx.Class.define("osparc.study.PricingUnit", {
 
   properties: {
     unitData: {
-      check: "osparc.pricing.UnitData",
+      check: "osparc.data.model.PricingUnit",
       nullable: false,
       init: null,
       apply: "__buildLayout"

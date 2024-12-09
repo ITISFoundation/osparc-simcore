@@ -631,7 +631,7 @@ qx.Class.define("osparc.data.Resources", {
        * PRICING PLANS
        */
       "pricingPlans": {
-        useCache: true,
+        useCache: false, // handled in osparc.store.Pricing
         endpoints: {
           get: {
             method: "GET",
@@ -656,7 +656,7 @@ qx.Class.define("osparc.data.Resources", {
        * PRICING UNITS
        */
       "pricingUnits": {
-        useCache: true,
+        useCache: false, // handled in osparc.store.Pricing
         endpoints: {
           getOne: {
             method: "GET",
