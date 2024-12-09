@@ -2664,11 +2664,14 @@ jobs:
 
   system-api-specs:
     needs: [changes]
-    if: ${{ needs.changes.outputs.anything-py == 'true' && github.event_name == 'push' && github.event.pull_request != null }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 10
     name: "[sys] check api-specs are up to date"
     runs-on: ubuntu-latest
     steps:
+      - name: Ensure job passes if not PR # ensure pass so upstream jobs which depend on this will run (dockerhub deployment)
+        if: ${{ github.event.pull_request != null }}
+        run: echo "::notice Passing job because not in PR"; exit 0
       - name: setup python environment
         uses: actions/setup-python@v5
         with:
@@ -2690,11 +2693,14 @@ jobs:
 
   system-backwards-compatibility:
     needs: [changes, system-api-specs]
-    if: ${{ needs.changes.outputs.anything-py == 'true' && github.event_name == 'push' && github.event.pull_request != null }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' }}
     timeout-minutes: 10
     name: "[sys] api-server backwards compatibility"
     runs-on: ubuntu-latest
     steps:
+      - name: Ensure job passes if not PR # ensure pass so upstream jobs which depend on this will run (dockerhub deployment)
+        if: ${{ github.event.pull_request != null }}
+        run: echo "::notice Passing job because not in PR"; exit 0
       - name: setup python environment
         uses: actions/setup-python@v5
         with:
