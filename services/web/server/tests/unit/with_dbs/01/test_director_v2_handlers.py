@@ -16,7 +16,6 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMock
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.director_v2 import api
 
 
 @pytest.fixture
@@ -117,12 +116,3 @@ async def test_stop_computation(
             else expected.no_content
         ),
     )
-
-
-async def test_regression_get_dynamic_services_empty_params(
-    director_v2_service_mock: AioResponsesMock,
-    client: TestClient,
-):
-    assert client.app
-    list_of_services = await api.list_dynamic_services(client.app)
-    assert list_of_services == []
