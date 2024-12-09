@@ -22,7 +22,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.projects import Node, NodesDict
-from models_library.rpc_auth_api_keys import ApiKeyGet
+from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import (

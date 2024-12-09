@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
-from models_library.rpc_auth_api_keys import ApiKeyGet
+from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
 from models_library.users import UserID
 from pydantic import TypeAdapter
 
