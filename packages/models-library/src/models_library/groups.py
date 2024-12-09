@@ -1,9 +1,10 @@
 import enum
-from typing import Annotated, Final, NamedTuple, TypeAlias, TypedDict
+from typing import Annotated, Final, NamedTuple, TypeAlias
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic.types import PositiveInt
+from typing_extensions import TypedDict
 
 from .basic_types import IDStr
 from .users import GroupID, UserID
@@ -41,6 +42,8 @@ class Group(BaseModel):
     _from_equivalent_enums = field_validator("group_type", mode="before")(
         create_enums_pre_validator(GroupTypeInModel)
     )
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class AccessRightsDict(TypedDict):
