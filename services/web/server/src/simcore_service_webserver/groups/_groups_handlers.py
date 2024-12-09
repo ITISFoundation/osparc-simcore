@@ -227,7 +227,7 @@ async def update_group_user(request: web.Request):
     user = await _groups_api.update_user_in_group(
         request.app,
         user_id=req_ctx.user_id,
-        gid=path_params.gid,
+        group_id=path_params.gid,
         the_user_id_in_group=path_params.uid,
         access_rights=update.access_rights.model_dump(mode="json"),  # type: ignore[arg-type]
     )

@@ -559,7 +559,7 @@ async def get_project_services_access_for_gid(
 
     # Get the group from the provided group ID
     _sharing_with_group: Group | None = await get_group_from_gid(
-        app=request.app, gid=query_params.for_gid
+        app=request.app, group_id=query_params.for_gid
     )
 
     # Check if the group exists
