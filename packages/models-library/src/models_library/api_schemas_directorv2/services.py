@@ -103,3 +103,7 @@ class ServiceExtras(BaseModel):
 
 
 CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME: Final[NonNegativeInt] = 89
+
+
+DYNAMIC_SIDECAR_SERVICE_PREFIX: Final[str] = "dy-sidecar"
+DYNAMIC_PROXY_SERVICE_PREFIX: Final[str] = "dy-proxy"

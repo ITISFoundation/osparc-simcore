@@ -1,8 +1,11 @@
 from typing import Final
-# dynamic services
 
-DYNAMIC_SIDECAR_SERVICE_PREFIX: Final[str] = "dy-sidecar"
-DYNAMIC_PROXY_SERVICE_PREFIX: Final[str] = "dy-proxy"
+from models_library.api_schemas_directorv2.services import (
+    DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+)
+
+# dynamic services
 
 # label storing scheduler_data to allow service
 # monitoring recovery after director-v2 reboots

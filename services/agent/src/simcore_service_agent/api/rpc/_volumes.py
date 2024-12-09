@@ -7,7 +7,8 @@ from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
     NoServiceVolumesFoundRPCError,
 )
-from simcore_service_agent.services.volumes_manager import VolumesManager
+
+from ...services.volumes_manager import VolumesManager
 
 _logger = logging.getLogger(__name__)
 
