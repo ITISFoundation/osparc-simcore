@@ -93,6 +93,7 @@ qx.Class.define("osparc.pricing.Plans", {
           ctrl.bindProperty("pricingPlanKey", "ppKey", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "description", null, item, id);
+          ctrl.bindProperty("classification", "classification", null, item, id);
           ctrl.bindProperty("isActive", "isActive", null, item, id);
         },
         configureItem: item => {

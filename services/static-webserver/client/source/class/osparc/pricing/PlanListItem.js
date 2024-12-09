@@ -30,6 +30,7 @@ qx.Class.define("osparc.pricing.PlanListItem", {
 
     this.getChildControl("title");
     this.getChildControl("description");
+    this.getChildControl("classification");
     this.getChildControl("edit-button");
 
     this.addListener("pointerover", this._onPointerOver, this);
@@ -74,6 +75,12 @@ qx.Class.define("osparc.pricing.PlanListItem", {
       event: "changeDescription"
     },
 
+    classification: {
+      check: "String",
+      nullable: true,
+      event: "changeClassification"
+    },
+
     isActive: {
       check: "Boolean",
       apply: "__applyIsActive",
@@ -112,7 +119,8 @@ qx.Class.define("osparc.pricing.PlanListItem", {
         case "pp-id":
           control = new qx.ui.basic.Label().set({
             font: "text-14",
-            alignY: "middle"
+            alignY: "middle",
+            width: 35,
           });
           this._add(control, {
             row: 0,
@@ -123,7 +131,8 @@ qx.Class.define("osparc.pricing.PlanListItem", {
         case "pp-key":
           control = new qx.ui.basic.Label().set({
             font: "text-14",
-            alignY: "middle"
+            alignY: "middle",
+            width: 80,
           });
           this._add(control, {
             row: 0,
@@ -151,6 +160,19 @@ qx.Class.define("osparc.pricing.PlanListItem", {
             column: 2
           });
           break;
+        case "classification":
+          control = new qx.ui.basic.Label().set({
+            font: "text-14",
+            alignY: "middle",
+            width: 60,
+          });
+          this.bind("classification", control, "value");
+          this._add(control, {
+            row: 0,
+            column: 3,
+            rowSpan: 2
+          });
+          break;
         case "is-active":
           control = new qx.ui.basic.Label().set({
             font: "text-14",
@@ -158,7 +180,7 @@ qx.Class.define("osparc.pricing.PlanListItem", {
           });
           this._add(control, {
             row: 0,
-            column: 3,
+            column: 4,
             rowSpan: 2
           });
           break;
@@ -170,7 +192,7 @@ qx.Class.define("osparc.pricing.PlanListItem", {
           control.addListener("tap", () => this.fireEvent("editPricingPlan"));
           this._add(control, {
             row: 0,
-            column: 4,
+            column: 5,
             rowSpan: 2
           });
           break;
@@ -206,7 +228,7 @@ qx.Class.define("osparc.pricing.PlanListItem", {
         return;
       }
       const label = this.getChildControl("is-active");
-      label.setValue("Active: " + value);
+      label.setValue(value ? "Active" : "Inactive");
     },
 
     /**
