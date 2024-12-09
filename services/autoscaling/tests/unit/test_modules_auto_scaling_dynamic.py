@@ -558,7 +558,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_find_node_with_name_returns_fake_node.assert_called_once()
     mock_find_node_with_name_returns_fake_node.reset_mock()
 
-    assert mock_docker_tag_node.call_count == 2
+    assert mock_docker_tag_node.call_count == 3
     assert fake_node.spec
     assert fake_node.spec.labels
     # check attach call
@@ -678,7 +678,8 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert mock_compute_node_used_resources.call_count == num_useless_calls * 2
     mock_compute_node_used_resources.reset_mock()
     mock_find_node_with_name_returns_fake_node.assert_not_called()
-    mock_docker_tag_node.assert_not_called()
+    assert mock_docker_tag_node.call_count == num_useless_calls
+    mock_docker_tag_node.reset_mock()
     mock_docker_set_node_availability.assert_not_called()
     # check the number of instances did not change and is still running
     instances = await assert_autoscaled_dynamic_ec2_instances(
