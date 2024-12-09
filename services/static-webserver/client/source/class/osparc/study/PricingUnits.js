@@ -43,7 +43,9 @@ qx.Class.define("osparc.study.PricingUnits", {
       const buttons = [];
       pricingUnitsData.forEach(pricingUnitData => {
         const pricingUnit = new osparc.data.model.PricingUnit(pricingUnitData);
-        const button = new osparc.study.PricingUnitTier(pricingUnit);
+        const button = new osparc.study.PricingUnitTier(pricingUnit).set({
+          showSelectButton: changeSelectionAllowed,
+        });
         buttons.push(button);
         this._add(button);
       });
@@ -74,13 +76,18 @@ qx.Class.define("osparc.study.PricingUnits", {
         if (!changeSelectionAllowed) {
           button.setCursor("default");
         }
-        button.addListener("execute", () => {
-          if (changeSelectionAllowed) {
-            const selectedUnitId = button.getUnitData().getPricingUnitId();
-            this.setSelectedUnitId(selectedUnitId);
-          } else {
-            buttons.forEach(btn => btn.setValue(btn.getUnitData().getIsDefault()));
-          }
+        [
+          "execute",
+          "selectPricingUnit",
+        ].forEach(ev => {
+          button.addListener(ev, () => {
+            if (changeSelectionAllowed) {
+              const selectedUnitId = button.getUnitData().getPricingUnitId();
+              this.setSelectedUnitId(selectedUnitId);
+            } else {
+              buttons.forEach(btn => btn.setValue(btn.getUnitData().getIsDefault()));
+            }
+          });
         });
       });
     }
