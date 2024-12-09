@@ -165,6 +165,7 @@ opentelemetry-api==1.27.0
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -184,6 +185,7 @@ opentelemetry-instrumentation==0.48b0
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-aiopg==0.48b0
@@ -192,6 +194,8 @@ opentelemetry-instrumentation-asyncpg==0.48b0
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 opentelemetry-instrumentation-dbapi==0.48b0
     # via opentelemetry-instrumentation-aiopg
+opentelemetry-instrumentation-logging==0.48b0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.48b0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-requests==0.48b0

@@ -94,9 +94,9 @@ qx.Class.define("osparc.store.Groups", {
           this.setGroupMe(groupMe);
           const myAuthData = osparc.auth.Data.getInstance();
           groupMe.set({
-            label: osparc.data.model.User.namesToLabel(myAuthData.getFirstName(), myAuthData.getLastName()),
-            description: myAuthData.getEmail(),
-            thumbnail: osparc.data.model.User.emailToThumbnail(myAuthData.getEmail()),
+            label: myAuthData.getUsername(),
+            description: `${myAuthData.getFirstName()} ${myAuthData.getLastName()} - ${myAuthData.getEmail()}`,
+            thumbnail: osparc.utils.Avatar.emailToThumbnail(myAuthData.getEmail()),
           })
           return orgs;
         });
@@ -115,7 +115,7 @@ qx.Class.define("osparc.store.Groups", {
             // reset group's group members
             group.setGroupMembers({});
             orgMembers.forEach(orgMember => {
-              const user = new osparc.data.model.User(orgMember);
+              const user = new osparc.data.model.UserMember(orgMember);
               this.__addToUsersCache(user, groupId);
             });
           }

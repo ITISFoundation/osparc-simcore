@@ -424,7 +424,6 @@ async def test_dispatch_study_anonymously(
 
         data, _ = await assert_status(response, status.HTTP_200_OK)
         assert data["login"].endswith("guest-at-osparc.io")
-        assert data["gravatar_id"]
         assert data["role"].upper() == UserRole.GUEST.name
 
         # guest user only a copy of the template project

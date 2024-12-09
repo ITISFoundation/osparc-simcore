@@ -28,7 +28,6 @@ qx.Class.define("osparc.store.Folders", {
   events: {
     "folderAdded": "qx.event.type.Data",
     "folderRemoved": "qx.event.type.Data",
-    "folderMoved": "qx.event.type.Data",
   },
 
   statics: {
@@ -212,15 +211,54 @@ qx.Class.define("osparc.store.Folders", {
       };
       return osparc.data.Resources.getInstance().fetch("folders", "update", params)
         .then(folderData => {
-          this.__addToCache(folderData);
-          if (updateData.parentFolderId !== oldParentFolderId) {
-            this.fireDataEvent("folderMoved", {
-              folder,
-              oldParentFolderId,
-            });
+          const folderMoved = updateData.parentFolderId !== oldParentFolderId;
+          if (folderMoved) {
+            this.fireDataEvent("folderRemoved", folder);
+          }
+          this.__addToCache(folderData); // it will update the folder model
+          if (folderMoved) {
+            this.fireDataEvent("folderAdded", folder);
           }
         })
         .catch(console.error);
+    },
+
+    moveFolderToFolder: function(folderId, destFolderId) {
+      if (folderId === destFolderId) {
+        // resolve right away
+        return new Promise(resolve => resolve());
+      }
+
+      const folder = this.getFolder(folderId);
+      const updatedData = {
+        name: folder.getName(),
+        parentFolderId: destFolderId,
+      };
+      return this.putFolder(folderId, updatedData)
+        .then(() => folder.setParentFolderId(destFolderId))
+        .catch(err => console.error(err));
+    },
+
+    moveFolderToWorkspace: function(folderId, destWorkspaceId) {
+      const folder = this.getFolder(folderId);
+      if (folder.getWorkspaceId() === destWorkspaceId) {
+        // resolve right away
+        return new Promise(resolve => resolve());
+      }
+
+      const params = {
+        url: {
+          folderId,
+          workspaceId: destWorkspaceId,
+        }
+      };
+      return osparc.data.Resources.fetch("folders", "moveToWorkspace", params)
+        .then(() => {
+          this.fireDataEvent("folderRemoved", folder);
+          folder.setWorkspaceId(destWorkspaceId);
+          this.fireDataEvent("folderAdded", folder);
+        })
+        .catch(err => console.error(err));
     },
 
     getFolder: function(folderId = null) {

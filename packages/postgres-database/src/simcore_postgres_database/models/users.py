@@ -2,6 +2,7 @@ from enum import Enum
 from functools import total_ordering
 
 import sqlalchemy as sa
+from sqlalchemy.sql import expression
 
 from ._common import RefActions
 from .base import metadata
@@ -67,6 +68,9 @@ class UserStatus(str, Enum):
 users = sa.Table(
     "users",
     metadata,
+    #
+    # User Identifiers ------------------
+    #
     sa.Column(
         "id",
         sa.BigInteger(),
@@ -77,8 +81,23 @@ users = sa.Table(
         "name",
         sa.String(),
         nullable=False,
-        doc="username is a unique short user friendly identifier e.g. pcrespov, sanderegg, GitHK, ...",
+        doc="username is a unique short user friendly identifier e.g. pcrespov, sanderegg, GitHK, ..."
+        "This identifier **is public**.",
     ),
+    sa.Column(
+        "primary_gid",
+        sa.BigInteger(),
+        sa.ForeignKey(
+            "groups.gid",
+            name="fk_users_gid_groups",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.RESTRICT,
+        ),
+        doc="User's group ID",
+    ),
+    #
+    # User Information  ------------------
+    #
     sa.Column(
         "first_name",
         sa.String(),
@@ -102,37 +121,52 @@ users = sa.Table(
         doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication."
         "NOTE: new policy (NK) is that the same phone can be reused therefore it does not has to be unique",
     ),
+    #
+    # User Secrets  ------------------
+    #
     sa.Column(
         "password_hash",
         sa.String(),
         nullable=False,
         doc="Hashed password",
     ),
-    sa.Column(
-        "primary_gid",
-        sa.BigInteger(),
-        sa.ForeignKey(
-            "groups.gid",
-            name="fk_users_gid_groups",
-            onupdate=RefActions.CASCADE,
-            ondelete=RefActions.RESTRICT,
-        ),
-        doc="User's group ID",
-    ),
+    #
+    # User Account ------------------
+    #
     sa.Column(
         "status",
         sa.Enum(UserStatus),
         nullable=False,
         default=UserStatus.CONFIRMATION_PENDING,
-        doc="Status of the user account. SEE UserStatus",
+        doc="Current status of the user's account",
     ),
     sa.Column(
         "role",
         sa.Enum(UserRole),
         nullable=False,
         default=UserRole.USER,
-        doc="Use for role-base authorization",
+        doc="Used for role-base authorization",
     ),
+    #
+    # User Privacy Rules ------------------
+    #
+    sa.Column(
+        "privacy_hide_fullname",
+        sa.Boolean,
+        nullable=False,
+        server_default=expression.true(),
+        doc="If true, it hides users.first_name, users.last_name to others",
+    ),
+    sa.Column(
+        "privacy_hide_email",
+        sa.Boolean,
+        nullable=False,
+        server_default=expression.true(),
+        doc="If true, it hides users.email to others",
+    ),
+    #
+    # Timestamps ---------------
+    #
     sa.Column(
         "created_at",
         sa.DateTime(),

@@ -14,12 +14,14 @@ from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
-from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.generics import Envelope
 from models_library.users import UserID
 from models_library.wallets import WalletStatus
 from pydantic import PositiveInt
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.models.schemas.model_adapter import (
+    WalletGetWithAvailableCreditsLegacy,
+)
 
 
 async def test_product_webserver(
@@ -46,8 +48,8 @@ async def test_product_webserver(
         return httpx.Response(
             status.HTTP_200_OK,
             json=jsonable_encoder(
-                Envelope[WalletGetWithAvailableCredits](
-                    data=WalletGetWithAvailableCredits(
+                Envelope[WalletGetWithAvailableCreditsLegacy](
+                    data=WalletGetWithAvailableCreditsLegacy(
                         wallet_id=wallet_id,
                         name="my_wallet",
                         description="this is my wallet",

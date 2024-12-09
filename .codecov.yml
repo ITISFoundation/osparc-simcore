@@ -22,6 +22,7 @@ component_management:
     statuses:
       - type: project
         target: auto
+        threshold: 1%
         branches:
           - "!master"
   individual_components:

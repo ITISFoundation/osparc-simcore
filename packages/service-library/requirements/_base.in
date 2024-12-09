@@ -20,6 +20,7 @@ opentelemetry-api
 opentelemetry-exporter-otlp
 opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-redis
+opentelemetry-instrumentation-logging
 opentelemetry-sdk
 psutil
 pydantic

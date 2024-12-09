@@ -65,6 +65,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
     config_all_loggers(
         log_format_local_dev_enabled=settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.DASK_LOG_FILTER_MAPPING,
+        tracing_settings=None,  # no tracing for dask sidecar
     )
 
     logger.info("Setting up worker...")

@@ -9,6 +9,7 @@ from pint import UnitRegistry
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from . import _handlers, _tags_handlers
+from .licenses.plugin import setup_licenses
 
 _logger = logging.getLogger(__name__)
 
@@ -26,6 +27,8 @@ def setup_catalog(app: web.Application):
         route_def.kwargs["name"] == route_def.handler.__name__  # type: ignore[attr-defined] # route_def is a RouteDef not an Abstract
         for route_def in _handlers.routes
     )
+
+    setup_licenses(app)
 
     app.add_routes(_handlers.routes)
     app.add_routes(_tags_handlers.routes)
