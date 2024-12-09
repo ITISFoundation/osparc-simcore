@@ -16,23 +16,19 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.groups import GroupGet
+from models_library.groups import GroupsByTypeTuple
 from models_library.users import UserID
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from simcore_service_webserver.groups import _groups_db
-from simcore_service_webserver.groups._common.types import GroupsByTypeTuple
 from simcore_service_webserver.groups._groups_api import (
+    add_user_in_group,
+    delete_organization,
     list_user_groups_with_read_access,
 )
-from simcore_service_webserver.groups.api import add_user_in_group, delete_user_group
 
 
 def _to_group_get_json(group, access_rights) -> dict[str, Any]:
-    return GroupGet.model_validate(
-        {
-            **group.model_dump(),
-            "access_rights": access_rights,
-        }
-    ).model_dump(mode="json")
+    return GroupGet.from_model(group, access_rights).model_dump(mode="json")
 
 
 #
@@ -72,7 +68,7 @@ async def logged_user_groups_by_type(
     assert client.app
 
     groups_by_type = await list_user_groups_with_read_access(
-        client.app, logged_user["id"]
+        client.app, user_id=logged_user["id"]
     )
     assert groups_by_type.primary
     assert groups_by_type.everyone
@@ -152,8 +148,12 @@ async def standard_groups(
         yield standard_groups
 
         # clean groups
-        await delete_user_group(client.app, owner_user["id"], sparc_group["gid"])
-        await delete_user_group(client.app, owner_user["id"], team_black_group["gid"])
+        await delete_organization(
+            client.app, user_id=owner_user["id"], group_id=sparc_group["gid"]
+        )
+        await delete_organization(
+            client.app, user_id=owner_user["id"], group_id=team_black_group["gid"]
+        )
 
 
 @pytest.fixture

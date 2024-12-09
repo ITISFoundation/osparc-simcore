@@ -1,5 +1,5 @@
 from contextlib import suppress
-from typing import Annotated
+from typing import Annotated, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import IDStr
@@ -16,6 +16,7 @@ from pydantic import (
 )
 
 from ..emails import LowerCaseEmailStr
+from ..groups import AccessRightsDict, Group
 from ..users import UserID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
 from ._base import InputSchema, OutputSchema
@@ -58,6 +59,16 @@ class GroupGet(OutputSchema):
             alias="inclusionRules",
         ),
     ] = DEFAULT_FACTORY
+
+    @classmethod
+    def from_model(cls, group: Group, access_rights: AccessRightsDict) -> Self:
+        # Fuses both dataset into GroupSet
+        return cls.model_validate(
+            {
+                **group.model_dump(),
+                "access_rights": access_rights,
+            }
+        )
 
     model_config = ConfigDict(
         json_schema_extra={
