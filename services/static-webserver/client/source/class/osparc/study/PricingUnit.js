@@ -126,7 +126,14 @@ qx.Class.define("osparc.study.PricingUnit", {
       // add price info
       const price = this.getChildControl("price");
       pricingUnit.bind("cost", price, "value", {
-        converter: v => qx.locale.Manager.tr("Credits/h") + ": " + v,
+        converter: v => {
+          if (pricingUnit.getClassification() === "TIER") {
+            return qx.locale.Manager.tr("Credits/h") + ": " + v;
+          } else if (pricingUnit.getClassification() === "LICENSE") {
+            return qx.locale.Manager.tr("Credits") + ": " + v;
+          }
+          return qx.locale.Manager.tr("Credits") + ": " + v;
+        },
       });
 
       // add aws specific info
@@ -143,7 +150,7 @@ qx.Class.define("osparc.study.PricingUnit", {
       // add pricing unit extra info
       const unitExtraInfo = this.getChildControl("unitExtraInfo");
       let text = "";
-      Object.entries(pricingUnit.getUnitExtraInfo()).forEach(([key, value]) => {
+      Object.entries(pricingUnit.getExtraInfo()).forEach(([key, value]) => {
         text += `${key}: ${value}<br>`;
       });
       unitExtraInfo.setValue(text);

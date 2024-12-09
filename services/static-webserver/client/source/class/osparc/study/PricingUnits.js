@@ -63,7 +63,7 @@ qx.Class.define("osparc.study.PricingUnits", {
       } else {
         // preselect default
         buttons.forEach(button => {
-          if (button.getUnitData().isDefault()) {
+          if (button.getUnitData().getIsDefault()) {
             button.setValue(true);
           }
         });
@@ -78,7 +78,7 @@ qx.Class.define("osparc.study.PricingUnits", {
             const selectedUnitId = button.getUnitData().getPricingUnitId();
             this.setSelectedUnitId(selectedUnitId);
           } else {
-            buttons.forEach(btn => btn.setValue(btn.getUnitData().isDefault()));
+            buttons.forEach(btn => btn.setValue(btn.getUnitData().getIsDefault()));
           }
         });
       });
