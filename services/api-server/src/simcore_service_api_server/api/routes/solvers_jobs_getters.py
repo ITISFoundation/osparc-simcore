@@ -11,8 +11,6 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
-from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
-from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS
@@ -34,6 +32,10 @@ from ...models.schemas.jobs import (
     JobLog,
     JobMetadata,
     JobOutputs,
+)
+from ...models.schemas.model_adapter import (
+    PricingUnitGetLegacy,
+    WalletGetWithAvailableCreditsLegacy,
 )
 from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi
@@ -376,7 +378,7 @@ async def get_job_custom_metadata(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
-    response_model=WalletGetWithAvailableCredits,
+    response_model=WalletGetWithAvailableCreditsLegacy,
     responses=WALLET_STATUS_CODES,
     description=("Get job wallet\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")),
 )
@@ -385,7 +387,7 @@ async def get_job_wallet(
     version: VersionStr,
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-) -> WalletGetWithAvailableCredits:
+) -> WalletGetWithAvailableCreditsLegacy:
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Getting wallet for job '%s'", job_name)
 
@@ -396,7 +398,7 @@ async def get_job_wallet(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/pricing_unit",
-    response_model=PricingUnitGet,
+    response_model=PricingUnitGetLegacy,
     responses=_PRICING_UNITS_STATUS_CODES,
     description=(
         "Get job pricing unit\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")

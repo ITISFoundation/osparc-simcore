@@ -7,6 +7,7 @@ import logging
 from aiodebug import log_slow_callbacks  # type: ignore[import-untyped]
 from aiohttp.log import access_logger
 from servicelib.logging_utils import config_all_loggers
+from settings_library.tracing import TracingSettings
 
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 NOISY_LOGGERS = (
@@ -29,6 +30,7 @@ def setup_logging(
     slow_duration: float | None = None,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict,
+    tracing_settings: TracingSettings | None
 ):
     # service log level
     logging.basicConfig(level=level)
@@ -38,6 +40,7 @@ def setup_logging(
     config_all_loggers(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
         logger_filter_mapping=logger_filter_mapping,
+        tracing_settings=tracing_settings,
     )
 
     # Enforces same log-level to aiohttp & gunicorn access loggers

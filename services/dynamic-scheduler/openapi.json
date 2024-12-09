@@ -2,14 +2,14 @@
   "openapi": "3.1.0",
   "info": {
     "title": "simcore-service-dynamic-scheduler web API",
-    "description": " Service that manages lifecycle of dynamic services",
+    "description": "Service that manages lifecycle of dynamic services",
     "version": "1.0.0"
   },
   "paths": {
-    "/": {
+    "/health": {
       "get": {
         "summary": "Healthcheck",
-        "operationId": "healthcheck__get",
+        "operationId": "healthcheck_health_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -59,11 +59,24 @@
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "title": "Version"
           },
+          "released": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released",
+            "description": "Maps every route's path tag with a released version"
+          },
           "docs_url": {
             "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
             "title": "Docs Url"
           }
         },
@@ -73,12 +86,7 @@
           "version",
           "docs_url"
         ],
-        "title": "Meta",
-        "example": {
-          "name": "simcore_service_dynamic_scheduler",
-          "version": "2.4.45",
-          "docs_url": "https://foo.io/doc"
-        }
+        "title": "Meta"
       }
     }
   }

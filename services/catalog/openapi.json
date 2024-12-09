@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-catalog",
     "description": "Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
-    "version": "0.5.0"
+    "version": "0.6.0"
   },
   "paths": {
     "/": {
@@ -628,17 +628,11 @@
           },
           "image": {
             "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
             "title": "Image",
             "description": "Url to the badge"
           },
           "url": {
             "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
             "title": "Url",
             "description": "Link to the status"
           }
@@ -3082,7 +3076,8 @@
                 "type": "null"
               }
             ],
-            "title": "Owner"
+            "title": "Owner",
+            "description": "None when the owner email cannot be found in the database"
           }
         },
         "type": "object",
@@ -3549,7 +3544,10 @@
           "thumbnail": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
               },
               {
                 "type": "null"

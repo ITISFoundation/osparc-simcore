@@ -21,6 +21,10 @@ class UserNotFoundError(UsersBaseError):
         self.email = email
 
 
+class UserNameDuplicateError(UsersBaseError):
+    msg_template = "Username {user_name} is already in use. Violates unique constraint"
+
+
 class TokenNotFoundError(UsersBaseError):
     msg_template = "Token for service {service_id} not found"
 
