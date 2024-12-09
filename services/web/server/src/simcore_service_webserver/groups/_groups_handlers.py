@@ -11,7 +11,6 @@ from models_library.api_schemas_webserver.groups import (
     GroupUserUpdate,
     MyGroupsGet,
 )
-from models_library.groups import GroupMember
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -160,21 +159,6 @@ async def delete_group(request: web.Request):
 #
 
 
-def _to_groupuserget_model(user: GroupMember) -> GroupUserGet:
-    # Fuses both dataset into GroupSet
-    return GroupUserGet.model_validate(
-        {
-            "id": user.id,
-            "user_name": user.name,
-            "login": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "gid": user.primary_gid,
-            "access_rights": user.access_rights,
-        }
-    )
-
-
 @routes.get(f"/{API_VTAG}/groups/{{gid}}/users", name="get_all_group_users")
 @login_required
 @permission_required("groups.*")
@@ -189,7 +173,7 @@ async def get_group_users(request: web.Request):
     )
 
     return envelope_json_response(
-        [_to_groupuserget_model(user) for user in users_in_group]
+        [GroupUserGet.from_model(user) for user in users_in_group]
     )
 
 
@@ -228,7 +212,7 @@ async def get_group_user(request: web.Request):
     user = await _groups_api.get_user_in_group(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
-    return envelope_json_response(_to_groupuserget_model(user))
+    return envelope_json_response(GroupUserGet.from_model(user))
 
 
 @routes.patch(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="update_group_user")
@@ -247,7 +231,7 @@ async def update_group_user(request: web.Request):
         the_user_id_in_group=path_params.uid,
         access_rights=update.access_rights.model_dump(),
     )
-    return envelope_json_response(_to_groupuserget_model(user))
+    return envelope_json_response(GroupUserGet.from_model(user))
 
 
 @routes.delete(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="delete_group_user")

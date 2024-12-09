@@ -10,6 +10,7 @@ from models_library.groups import (
 )
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
+from pydantic import EmailStr
 
 from ..users.api import get_user
 from . import _groups_db
@@ -181,7 +182,7 @@ async def update_user_in_group(
     user_id: UserID,
     gid: GroupID,
     the_user_id_in_group: UserID,
-    access_rights: dict,
+    access_rights: AccessRightsDict,
 ) -> GroupMember:
     return await _groups_db.update_user_in_group(
         app,
@@ -235,7 +236,7 @@ async def add_user_in_group(
     gid: GroupID,
     *,
     new_user_id: UserID | None = None,
-    new_user_email: str | None = None,
+    new_user_email: EmailStr | None = None,
     access_rights: AccessRightsDict | None = None,
 ) -> None:
     """Adds new_user (either by id or email) in group (with gid) owned by user_id

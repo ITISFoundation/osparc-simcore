@@ -76,7 +76,11 @@ def _row_to_model(group: Row) -> Group:
 def _to_group_info_tuple(group: Row) -> GroupInfoTuple:
     return (
         _row_to_model(group),
-        AccessRightsDict(**group.access_rights),
+        AccessRightsDict(
+            read=group.access_rights["read"],
+            write=group.access_rights["write"],
+            delete=group.access_rights["delete"],
+        ),
     )
 
 
