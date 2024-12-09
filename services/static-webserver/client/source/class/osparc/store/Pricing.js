@@ -76,14 +76,18 @@ qx.Class.define("osparc.store.Pricing", {
           pricingPlanId,
         }
       };
-      return osparc.data.Resources.fetch("pricingUnits", "get", params)
-        .then(pricingPlansData => {
-          const pricingPlans = [];
-          pricingPlansData.forEach(pricingPlanData => {
-            const pricingPlan = this.__addToCache(pricingPlanData);
-            pricingPlans.push(pricingPlan);
-          });
-          return pricingPlans;
+      return osparc.data.Resources.fetch("pricingPlans", "getOne", params)
+        .then(pricingPlanData => {
+          const pricingUnits = [];
+          const pricingPlan = this.getPricingPlan(pricingPlanId);
+          if (pricingPlan && "pricingUnits" in pricingPlanData) {
+            const pricingUnitsData = pricingPlanData["pricingUnits"];
+            pricingUnitsData.forEach(pricingUnitData => {
+              const pricingUnit = this.__addPricingUnitToCache(pricingPlan, pricingUnitData);
+              pricingUnits.push(pricingUnit);
+            });
+          }
+          return pricingUnits;
         });
     },
 
@@ -111,6 +115,25 @@ qx.Class.define("osparc.store.Pricing", {
         this.pricingPlansCached.unshift(pricingPlan);
       }
       return pricingPlan;
+    },
+
+    __addPricingUnitToCache: function(pricingPlan, pricingUnitData) {
+      const pricingUnits = pricingPlan.getPricingUnits();
+      let pricingUnit = pricingUnits ? pricingUnits.find(unit => unit.getPricingUnitId() === pricingUnitData["pricingUnitId"]) : null;
+      if (pricingUnit) {
+        const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.PricingPlan));
+        // put
+        Object.keys(pricingUnitData).forEach(key => {
+          if (props.includes(key)) {
+            pricingPlan.set(key, pricingUnitData[key]);
+          }
+        });
+      } else {
+        // get and post
+        pricingUnit = new osparc.data.model.PricingUnit(pricingUnitData);
+        pricingUnits.push(pricingUnit);
+      }
+      return pricingUnit;
     },
   }
 });

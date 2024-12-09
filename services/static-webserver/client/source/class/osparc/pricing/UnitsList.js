@@ -63,12 +63,7 @@ qx.Class.define("osparc.pricing.UnitsList", {
     },
 
     __fetchUnits: function() {
-      const params = {
-        url: {
-          pricingPlanId: this.getPricingPlanId()
-        }
-      };
-      osparc.data.Resources.fetch("pricingPlans", "getOne", params)
+      osparc.store.Pricing.getInstance().fetchPricingUnits(this.getPricingPlanId())
         .then(data => this.__populateList(data["pricingUnits"]));
     },
 

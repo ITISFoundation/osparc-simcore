@@ -31,7 +31,7 @@ qx.Class.define("osparc.data.model.PricingPlan", {
     this.set({
       pricingPlanId: pricingPlanData.pricingPlanId,
       pricingPlanKey: pricingPlanData.pricingPlanKey,
-      pricingUnits: pricingPlanData.pricingUnits,
+      pricingUnits: pricingPlanData.pricingUnits || [],
       classification: pricingPlanData.displayName.includes("ViP") ? "LICENSE" : pricingPlanData.classification,
       name: pricingPlanData.displayName,
       description: pricingPlanData.description,
@@ -57,7 +57,7 @@ qx.Class.define("osparc.data.model.PricingPlan", {
     pricingUnits: {
       check: "Array",
       nullable: true,
-      init: null,
+      init: [],
       event: "changePricingunits"
     },
 
