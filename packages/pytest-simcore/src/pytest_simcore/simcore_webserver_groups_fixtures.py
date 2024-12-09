@@ -10,7 +10,7 @@
 
 
 from collections.abc import AsyncIterator
-from typing import Any, Protocol
+from typing import Any
 
 import pytest
 from aiohttp import web
@@ -19,41 +19,25 @@ from models_library.api_schemas_webserver.groups import GroupGet
 from models_library.groups import GroupsByTypeTuple
 from models_library.users import UserID
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
-from simcore_service_webserver.groups import _groups_db
 from simcore_service_webserver.groups._groups_api import (
     add_user_in_group,
+    create_organization,
     delete_organization,
     list_user_groups_with_read_access,
 )
 
 
-def _to_group_get_json(group, access_rights) -> dict[str, Any]:
+def _groupget_model_dump(group, access_rights) -> dict[str, Any]:
     return GroupGet.from_model(group, access_rights).model_dump(mode="json")
 
 
-#
-# FACTORY FIXTURES
-#
-
-
-class CreateUserGroupCallable(Protocol):
-    async def __call__(
-        self, app: web.Application, user_id: UserID, new_group: dict
-    ) -> dict[str, Any]:
-        ...
-
-
-@pytest.fixture
-def create_user_group() -> CreateUserGroupCallable:
-    async def _create(
-        app: web.Application, user_id: UserID, new_group: dict
-    ) -> dict[str, Any]:
-        group, access_rights = await _groups_db.create_user_group(
-            app, user_id=user_id, new_group=new_group
-        )
-        return _to_group_get_json(group=group, access_rights=access_rights)
-
-    return _create
+async def _create_organization(
+    app: web.Application, user_id: UserID, new_group: dict
+) -> dict[str, Any]:
+    group, access_rights = await create_organization(
+        app, user_id=user_id, new_group_values=new_group
+    )
+    return _groupget_model_dump(group=group, access_rights=access_rights)
 
 
 #
@@ -62,36 +46,13 @@ def create_user_group() -> CreateUserGroupCallable:
 
 
 @pytest.fixture
-async def logged_user_groups_by_type(
-    client: TestClient, logged_user: UserInfoDict
-) -> GroupsByTypeTuple:
-    assert client.app
-
-    groups_by_type = await list_user_groups_with_read_access(
-        client.app, user_id=logged_user["id"]
-    )
-    assert groups_by_type.primary
-    assert groups_by_type.everyone
-    return groups_by_type
-
-
-@pytest.fixture
-async def primary_group(
-    client: TestClient,
-    logged_user_groups_by_type: GroupsByTypeTuple,
-) -> dict[str, Any]:
-    assert client.app
-    assert logged_user_groups_by_type.primary
-    return _to_group_get_json(*logged_user_groups_by_type.primary)
-
-
-@pytest.fixture
-async def standard_groups(
+async def standard_groups_owner(
     client: TestClient,
     logged_user: UserInfoDict,
-    logged_user_groups_by_type: GroupsByTypeTuple,
-    create_user_group: CreateUserGroupCallable,
-) -> AsyncIterator[list[dict[str, Any]]]:
+) -> AsyncIterator[UserInfoDict]:
+    """
+    standard_groups_owner creates TWO organizations and adds logged_user in them
+    """
 
     assert client.app
     # create a separate account to own standard groups
@@ -102,8 +63,9 @@ async def standard_groups(
         },
         client.app,
     ) as owner_user:
+
         # creates two groups
-        sparc_group = await create_user_group(
+        sparc_group = await _create_organization(
             app=client.app,
             user_id=owner_user["id"],
             new_group={
@@ -113,7 +75,7 @@ async def standard_groups(
                 "inclusionRules": {"email": r"@(sparc)+\.(io|com)$"},
             },
         )
-        team_black_group = await create_user_group(
+        team_black_group = await _create_organization(
             app=client.app,
             user_id=owner_user["id"],
             new_group={
@@ -141,11 +103,7 @@ async def standard_groups(
             new_user_email=logged_user["email"],
         )
 
-        standard_groups = [
-            _to_group_get_json(*sg) for sg in logged_user_groups_by_type.standard
-        ]
-
-        yield standard_groups
+        yield owner_user
 
         # clean groups
         await delete_organization(
@@ -157,11 +115,41 @@ async def standard_groups(
 
 
 @pytest.fixture
-async def all_group(
-    client: TestClient,
+async def logged_user_groups_by_type(
+    client: TestClient, logged_user: UserInfoDict, standard_groups_owner: UserInfoDict
+) -> GroupsByTypeTuple:
+    assert client.app
+
+    assert logged_user["id"] != standard_groups_owner["id"]
+
+    groups_by_type = await list_user_groups_with_read_access(
+        client.app, user_id=logged_user["id"]
+    )
+    assert groups_by_type.primary
+    assert groups_by_type.everyone
+    return groups_by_type
+
+
+@pytest.fixture
+def primary_group(
     logged_user_groups_by_type: GroupsByTypeTuple,
 ) -> dict[str, Any]:
-    assert client.app
-    assert logged_user_groups_by_type.everyone
+    """`logged_user`'s primary group"""
+    assert logged_user_groups_by_type.primary
+    return _groupget_model_dump(*logged_user_groups_by_type.primary)
 
-    return _to_group_get_json(*logged_user_groups_by_type.everyone)
+
+@pytest.fixture
+def standard_groups(
+    logged_user_groups_by_type: GroupsByTypeTuple,
+) -> list[dict[str, Any]]:
+    """owned by `standard_groups_owner` and shared with `logged_user`"""
+    return [_groupget_model_dump(*sg) for sg in logged_user_groups_by_type.standard]
+
+
+@pytest.fixture
+def all_group(
+    logged_user_groups_by_type: GroupsByTypeTuple,
+) -> dict[str, Any]:
+    assert logged_user_groups_by_type.everyone
+    return _groupget_model_dump(*logged_user_groups_by_type.everyone)
