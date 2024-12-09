@@ -86,6 +86,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
                 const pUnitUIs = [];
                 pricingUnits.forEach(pricingUnit => {
                   const pUnitUI = new osparc.study.PricingUnitTier(pricingUnit).set({
+                    showEditButton: false,
                     allowGrowX: false
                   });
                   pUnitUI.getChildControl("name").exclude();

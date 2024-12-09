@@ -189,6 +189,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
               classification: "LICENSE"
             });
             const pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
+              showRentButton: true,
               allowGrowY: false,
             });
             pUnit.addListener("rentPricingUnit", () => this.__rentAnatomicalModel(anatomicalModelsData, pricingUnit));
