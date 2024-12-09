@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.groups import AccessRightsDict
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -25,7 +26,6 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db.plugin import setup_db
-from simcore_service_webserver.groups._common.types import AccessRightsDict
 from simcore_service_webserver.groups._groups_db import (
     _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
     _DEFAULT_GROUP_READ_ACCESS_RIGHTS,
@@ -62,9 +62,7 @@ def client(
     # fake config
     app = create_safe_application(cfg)
 
-    settings = setup_settings(app)
-    print(settings.model_dump_json(indent=1))
-
+    setup_settings(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)
@@ -92,9 +90,9 @@ def _assert__group_user(
     actual_user: dict,
 ):
     assert "first_name" in actual_user
-    assert actual_user["first_name"] == expected_user["first_name"]
+    assert actual_user["first_name"] == expected_user.get("first_name")
     assert "last_name" in actual_user
-    assert actual_user["last_name"] == expected_user["last_name"]
+    assert actual_user["last_name"] == expected_user.get("last_name")
     assert "login" in actual_user
     assert actual_user["login"] == expected_user["email"]
     assert "gravatar_id" in actual_user
