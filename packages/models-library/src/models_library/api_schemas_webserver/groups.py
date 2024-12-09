@@ -1,6 +1,5 @@
-from ast import TypeVar
 from contextlib import suppress
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
@@ -17,10 +16,22 @@ from pydantic import (
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
-from ..groups import AccessRightsDict, Group, OrganizationCreate, OrganizationUpdate
+from ..groups import (
+    AccessRightsDict,
+    Group,
+    GroupMember,
+    OrganizationCreate,
+    OrganizationUpdate,
+)
 from ..users import UserID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
 from ._base import InputSchema, OutputSchema
+
+S = TypeVar("S", bound=BaseModel)
+
+
+def _rename_keys(source: dict, name_map: dict[str, str]) -> dict[str, Any]:
+    return {name_map.get(k, k): v for k, v in source.items()}
 
 
 class GroupAccessRights(BaseModel):
@@ -63,16 +74,11 @@ class GroupGet(OutputSchema):
 
     @classmethod
     def from_model(cls, group: Group, access_rights: AccessRightsDict) -> Self:
-        # Fuses both dataset into GroupSet
-        _to = {
-            "name": "label",
-        }
-
+        # Merges both service models into this schema
         return cls.model_validate(
             {
-                **{
-                    _to.get(key, key): value
-                    for key, value in group.model_dump(
+                **_rename_keys(
+                    group.model_dump(
                         include={
                             "gid",
                             "name",
@@ -82,8 +88,11 @@ class GroupGet(OutputSchema):
                         },
                         exclude_unset=True,
                         by_alias=False,
-                    ).items()
-                },
+                    ),
+                    name_map={
+                        "name": "label",
+                    },
+                ),
                 "access_rights": access_rights,
             }
         )
@@ -132,25 +141,15 @@ class GroupGet(OutputSchema):
         return None
 
 
-Sc = TypeVar("Sc", bound=BaseModel)
-
-
-def _model_dump_with_map(schema: Sc, alias_map: dict[str, str]) -> dict[str, Any]:
-    return {
-        alias_map.get(k, k): v
-        for k, v in schema.model_dump(mode="json", exclude_unset=True).items()
-    }
-
-
 class GroupCreate(InputSchema):
     label: str
     description: str
     thumbnail: AnyUrl | None = None
 
     def to_model(self) -> OrganizationCreate:
-        data = _model_dump_with_map(
-            self,
-            alias_map={"label": "name"},
+        data = _rename_keys(
+            self.model_dump(mode="json", exclude_unset=True),
+            name_map={"label": "name"},
         )
         return OrganizationCreate(**data)
 
@@ -161,9 +160,9 @@ class GroupUpdate(InputSchema):
     thumbnail: AnyUrl | None = None
 
     def to_model(self) -> OrganizationUpdate:
-        data = _model_dump_with_map(
-            self,
-            alias_map={"label": "name"},
+        data = _rename_keys(
+            self.model_dump(mode="json", exclude_unset=True),
+            name_map={"label": "name"},
         )
         return OrganizationUpdate(**data)
 
@@ -217,6 +216,7 @@ class MyGroupsGet(OutputSchema):
 
 
 class GroupUserGet(BaseModel):
+    # OutputSchema
 
     # Identifiers
     id: Annotated[
@@ -264,6 +264,20 @@ class GroupUserGet(BaseModel):
             }
         },
     )
+
+    @classmethod
+    def from_model(cls, user: GroupMember) -> Self:
+        return cls.model_validate(
+            {
+                "id": user.id,
+                "user_name": user.name,
+                "login": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "gid": user.primary_gid,
+                "access_rights": user.access_rights,
+            }
+        )
 
 
 class GroupUserAdd(InputSchema):
