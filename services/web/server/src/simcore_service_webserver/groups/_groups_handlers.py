@@ -24,7 +24,6 @@ from ..products.api import Product, get_current_product
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
-from . import api as tmp_api
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.schemas import (
     GroupsPathParams,
@@ -102,11 +101,11 @@ async def get_group(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
-    group_info = await _groups_api.get_organization(
+    group, access_rights = await _groups_api.get_organization(
         request.app, user_id=req_ctx.user_id, group_id=path_params.gid
     )
 
-    group = _to_groupget_model(*group_info)
+    group = _to_groupget_model(group, access_rights)
     return envelope_json_response(group)
 
 
@@ -120,13 +119,13 @@ async def create_group(request: web.Request):
 
     create = await parse_request_body_as(GroupCreate, request)
 
-    group_info = await _groups_api.create_organization(
+    group, access_rights = await _groups_api.create_organization(
         request.app,
         user_id=req_ctx.user_id,
         new_group_values=create.model_dump(mode="json", exclude_unset=True),
     )
 
-    created_group = _to_groupget_model(*group_info)
+    created_group = _to_groupget_model(group, access_rights)
     return envelope_json_response(created_group, status_cls=web.HTTPCreated)
 
 
@@ -141,14 +140,14 @@ async def update_group(request: web.Request):
     update: GroupUpdate = await parse_request_body_as(GroupUpdate, request)
     new_group_values = update.model_dump(exclude_unset=True)
 
-    group_info = await _groups_api.update_organization(
+    group, access_rights = await _groups_api.update_organization(
         request.app,
         user_id=req_ctx.user_id,
         group_id=path_params.gid,
         new_group_values=new_group_values,
     )
 
-    updated_group = _to_groupget_model(*group_info)
+    updated_group = _to_groupget_model(group, access_rights)
     return envelope_json_response(updated_group)
 
 
@@ -217,7 +216,7 @@ async def add_group_user(request: web.Request):
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
     added: GroupUserAdd = await parse_request_body_as(GroupUserAdd, request)
 
-    await tmp_api.add_user_in_group(
+    await _groups_api.add_user_in_group(
         request.app,
         req_ctx.user_id,
         path_params.gid,
