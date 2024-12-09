@@ -183,8 +183,11 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       };
       osparc.data.Resources.fetch("pricingPlans", "getOne", params)
         .then(data => {
-          const pricingUnits = data["pricingUnits"];
-          pricingUnits.forEach(pricingUnit => {
+          const pricingUnitsData = data["pricingUnits"];
+          pricingUnitsData.forEach(pricingUnitData => {
+            const pricingUnit = new osparc.data.model.PricingUnit(pricingUnitData).set({
+              classification: "LICENSE"
+            });
             const pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
               allowGrowY: false,
             });
@@ -198,7 +201,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __rentAnatomicalModel: function(anatomicalModelsData, pricingUnit) {
-      console.log(":purchase", anatomicalModelsData["licensedItemId"], pricingUnit["pricingUnitId"]);
+      console.log(":purchase", anatomicalModelsData["licensedItemId"], pricingUnit.getPricingUnitId());
     },
   }
 });
