@@ -34,6 +34,7 @@ qx.Class.define("osparc.data.model.PricingUnit", {
       cost: parseFloat(pricingUnitData.currentCostPerUnit),
       isDefault: pricingUnitData.default,
       extraInfo: pricingUnitData.unitExtraInfo,
+      specificInfo: pricingUnitData.specificInfo || null,
     });
   },
 
@@ -77,7 +78,14 @@ qx.Class.define("osparc.data.model.PricingUnit", {
       check: "Object",
       nullable: false,
       init: null,
-      event: "changeExtraInfo"
+      event: "changeExtraInfo",
+    },
+
+    specificInfo: {
+      check: "Object",
+      nullable: true,
+      init: null,
+      event: "changeSpecificInfo",
     },
   },
 });

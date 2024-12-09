@@ -31,6 +31,10 @@ qx.Class.define("osparc.study.PricingUnit", {
     this.setUnitData(pricingUnit);
   },
 
+  events: {
+    "editPricingUnit": "qx.event.type.Event",
+  },
+
   properties: {
     unitData: {
       check: "osparc.data.model.PricingUnit",
@@ -65,6 +69,10 @@ qx.Class.define("osparc.study.PricingUnit", {
           break;
         case "edit-button":
           control = new qx.ui.form.Button(qx.locale.Manager.tr("Edit"));
+          this.bind("showEditButton", control, "visibility", {
+            converter: show => show ? "visible" : "excluded"
+          });
+          control.addListener("execute", () => this.fireEvent("editPricingUnit"));
           this._add(control);
           break;
       }

@@ -40,6 +40,10 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
             appearance: "strong-button",
             center: true,
           });
+          this.bind("showRentButton", control, "visibility", {
+            converter: show => show ? "visible" : "excluded"
+          });
+          control.addListener("execute", () => this.fireEvent("rentPricingUnit"));
           this._add(control);
           break;
       }
@@ -57,18 +61,10 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
       });
 
       // add edit button
-      const editButton = this.getChildControl("edit-button");
-      this.bind("showEditButton", editButton, "visibility", {
-        converter: show => show ? "visible" : "excluded"
-      })
-      editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
+      this.getChildControl("edit-button");
 
       // add rent button
-      const rentButton = this.getChildControl("rent-button");
-      this.bind("showRentButton", rentButton, "visibility", {
-        converter: show => show ? "visible" : "excluded"
-      })
-      rentButton.addListener("execute", () => this.fireEvent("rentPricingUnit"));
+      this.getChildControl("rent-button");
     }
   }
 });

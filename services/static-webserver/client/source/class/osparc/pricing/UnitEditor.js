@@ -18,7 +18,7 @@
 qx.Class.define("osparc.pricing.UnitEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(pricingUnitData) {
+  construct: function(pricingUnit) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -46,16 +46,19 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     manager.add(specificInfo);
     manager.add(unitExtraInfo);
 
-    if (pricingUnitData) {
+    if (pricingUnit) {
       this.set({
-        pricingUnitId: pricingUnitData.pricingUnitId,
-        unitName: pricingUnitData.unitName,
-        costPerUnit: parseFloat(pricingUnitData.currentCostPerUnit),
-        comment: pricingUnitData.comment ? pricingUnitData.comment : "",
-        specificInfo: pricingUnitData.specificInfo && pricingUnitData.specificInfo["aws_ec2_instances"] ? pricingUnitData.specificInfo["aws_ec2_instances"].toString() : "",
-        default: pricingUnitData.default
+        pricingUnitId: pricingUnit.getPricingUnitId(),
+        unitName: pricingUnit.getName(),
+        costPerUnit: pricingUnit.getCost(),
       });
-      const extraInfo = osparc.utils.Utils.deepCloneObject(pricingUnitData.unitExtraInfo);
+      if (pricingUnit.getClassification() === "TIER") {
+        this.set({
+          specificInfo: pricingUnit.getSpecificInfo() && pricingUnit.getSpecificInfo()["aws_ec2_instances"] ? pricingUnit.getSpecificInfo()["aws_ec2_instances"].toString() : "",
+          default: pricingUnit.getIsDefault(),
+        });
+      }
+      const extraInfo = osparc.utils.Utils.deepCloneObject(pricingUnit.getExtraInfo());
       // extract the required fields from the unitExtraInfo
       this.set({
         unitExtraInfoCPU: extraInfo["CPU"],

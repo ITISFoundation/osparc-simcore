@@ -19,7 +19,6 @@ qx.Class.define("osparc.study.PricingUnitTier", {
   extend: osparc.study.PricingUnit,
 
   events: {
-    "editPricingUnit": "qx.event.type.Event",
   },
 
   properties: {
@@ -46,12 +45,18 @@ qx.Class.define("osparc.study.PricingUnitTier", {
           control = new qx.ui.basic.Label().set({
             font: "text-14"
           });
+          this.bind("showAwsSpecificInfo", control, "visibility", {
+            converter: show => show ? "visible" : "excluded"
+          })
           this._add(control);
           break;
         case "unitExtraInfo":
           control = new qx.ui.basic.Label().set({
             font: "text-13",
             rich: true,
+          });
+          this.bind("showUnitExtraInfo", control, "visibility", {
+            converter: show => show ? "visible" : "excluded"
           });
           this._add(control);
           break;
@@ -75,9 +80,6 @@ qx.Class.define("osparc.study.PricingUnitTier", {
         pricingUnit.bind("awsSpecificInfo", specificInfo, "value", {
           converter: v => qx.locale.Manager.tr("EC2") + ": " + v,
         });
-        this.bind("showAwsSpecificInfo", specificInfo, "visibility", {
-          converter: show => show ? "visible" : "excluded"
-        })
       }
 
       // add pricing unit extra info
@@ -87,16 +89,9 @@ qx.Class.define("osparc.study.PricingUnitTier", {
         text += `${key}: ${value}<br>`;
       });
       unitExtraInfo.setValue(text);
-      this.bind("showUnitExtraInfo", unitExtraInfo, "visibility", {
-        converter: show => show ? "visible" : "excluded"
-      });
 
       // add edit button
-      const editButton = this.getChildControl("edit-button");
-      this.bind("showEditButton", editButton, "visibility", {
-        converter: show => show ? "visible" : "excluded"
-      })
-      editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
+      this.getChildControl("edit-button");
     }
   }
 });
