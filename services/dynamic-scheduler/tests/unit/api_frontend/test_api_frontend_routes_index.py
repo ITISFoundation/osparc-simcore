@@ -13,6 +13,7 @@ from helpers import (
     click_on_text,
     get_legacy_service_status,
     get_new_style_service_status,
+    take_screenshot_on_error,
 )
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -22,6 +23,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.api_schemas_webserver.projects_nodes import NodeGet
 from models_library.projects_nodes_io import NodeID
 from playwright.async_api import Page
+from simcore_service_dynamic_scheduler.api.frontend._utils import get_settings
 from simcore_service_dynamic_scheduler.services.service_tracker import (
     set_if_status_changed_for_service,
     set_request_as_running,
@@ -47,7 +49,9 @@ async def test_index_with_elements(
     get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
     get_dynamic_service_stop: Callable[[NodeID], DynamicServiceStop],
 ):
-    await async_page.goto(server_host_port)
+    await async_page.goto(
+        f"{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}"
+    )
 
     # 1. no content
     await assert_contains_text(async_page, "Total tracked services:")
@@ -81,7 +85,9 @@ async def test_main_page(
     get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
     mock_stop_dynamic_service: AsyncMock,
 ):
-    await async_page.goto(server_host_port)
+    await async_page.goto(
+        f"{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}"
+    )
 
     # 1. no content
     await assert_contains_text(async_page, "Total tracked services:")
@@ -118,8 +124,10 @@ async def test_main_page(
 
     mock_stop_dynamic_service.assert_not_awaited()
     await click_on_text(async_page, "Stop Now")
-    async for attempt in AsyncRetrying(
-        reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(3)
-    ):
-        with attempt:
-            mock_stop_dynamic_service.assert_awaited_once()
+
+    async with take_screenshot_on_error(async_page):
+        async for attempt in AsyncRetrying(
+            reraise=True, wait=wait_fixed(0.1), stop=stop_after_delay(3)
+        ):
+            with attempt:
+                mock_stop_dynamic_service.assert_awaited_once()
