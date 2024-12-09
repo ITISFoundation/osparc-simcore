@@ -100,15 +100,10 @@ qx.Class.define("osparc.study.NodePricingUnits", {
         const studyId = this.getStudyId();
         const nodeId = this.getNodeId();
 
-        const plansParams = {
-          url: osparc.data.Resources.getServiceUrl(
-            nodeKey,
-            nodeVersion
-          )
-        };
-        osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
-          .then(pricingPlan => {
-            if (pricingPlan) {
+        const pricingStore = osparc.store.Pricing.getInstance();
+        pricingStore.fetchPricingPlansService(nodeKey, nodeVersion)
+          .then(pricingPlanData => {
+            if (pricingPlanData) {
               const unitParams = {
                 url: {
                   studyId,
@@ -116,12 +111,13 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                 }
               };
               this.set({
-                pricingPlanId: pricingPlan["pricingPlanId"]
+                pricingPlanId: pricingPlanData["pricingPlanId"]
               });
               osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
                 .then(preselectedPricingUnit => {
-                  if (pricingPlan && "pricingUnits" in pricingPlan && pricingPlan["pricingUnits"].length) {
-                    const pricingUnitButtons = this.__pricingUnits = new osparc.study.PricingUnits(pricingPlan["pricingUnits"], preselectedPricingUnit);
+                  if (pricingPlanData && "pricingUnits" in pricingPlanData && pricingPlanData["pricingUnits"].length) {
+                    const pricingUnitsData = pricingPlanData["pricingUnits"];
+                    const pricingUnitButtons = this.__pricingUnits = new osparc.study.PricingUnits(pricingUnitsData, preselectedPricingUnit);
                     if (inGroupBox) {
                       const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
                       pricingUnitsLayout.add(pricingUnitButtons);

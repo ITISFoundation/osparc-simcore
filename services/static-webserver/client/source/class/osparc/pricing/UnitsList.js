@@ -63,13 +63,8 @@ qx.Class.define("osparc.pricing.UnitsList", {
     },
 
     __fetchUnits: function() {
-      const params = {
-        url: {
-          pricingPlanId: this.getPricingPlanId()
-        }
-      };
-      osparc.data.Resources.fetch("pricingPlans", "getOne", params)
-        .then(data => this.__populateList(data["pricingUnits"]));
+      osparc.store.Pricing.getInstance().fetchPricingUnits(this.getPricingPlanId())
+        .then(pricingUnits => this.__populateList(pricingUnits));
     },
 
     __populateList: function(pricingUnits) {
@@ -80,10 +75,18 @@ qx.Class.define("osparc.pricing.UnitsList", {
       }
 
       pricingUnits.forEach(pricingUnit => {
-        const pUnit = new osparc.study.PricingUnit(pricingUnit).set({
-          showSpecificInfo: true,
+        let pUnit = null;
+        if (pricingUnit.getClassification() === "LICENSE") {
+          pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
+            showRentButton: false,
+          });
+        } else {
+          pUnit = new osparc.study.PricingUnitTier(pricingUnit).set({
+            showAwsSpecificInfo: true,
+          });
+        }
+        pUnit.set({
           showEditButton: true,
-          allowGrowY: false
         });
         pUnit.addListener("editPricingUnit", () => this.__openUpdatePricingUnit(pricingUnit));
         this.getChildControl("pricing-units-container").add(pUnit);
@@ -92,7 +95,7 @@ qx.Class.define("osparc.pricing.UnitsList", {
       const buttons = this.getChildControl("pricing-units-container").getChildren();
       const keepDefaultSelected = () => {
         buttons.forEach(btn => {
-          btn.setValue(btn.getUnitData().isDefault());
+          btn.setValue(btn.getUnitData().getIsDefault());
         });
       };
       keepDefaultSelected();

@@ -37,10 +37,13 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
 
   statics: {
     openWindow: function() {
-      const storeWindow = new osparc.vipMarket.MarketWindow();
-      storeWindow.center();
-      storeWindow.open();
-      return storeWindow;
+      if (osparc.product.Utils.showS4LStore()) {
+        const storeWindow = new osparc.vipMarket.MarketWindow();
+        storeWindow.center();
+        storeWindow.open();
+        return storeWindow;
+      }
+      return null;
     }
   },
 

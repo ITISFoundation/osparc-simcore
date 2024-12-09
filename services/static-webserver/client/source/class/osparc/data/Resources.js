@@ -631,7 +631,7 @@ qx.Class.define("osparc.data.Resources", {
        * PRICING PLANS
        */
       "pricingPlans": {
-        useCache: true,
+        useCache: false, // handled in osparc.store.Pricing
         endpoints: {
           get: {
             method: "GET",
@@ -656,7 +656,7 @@ qx.Class.define("osparc.data.Resources", {
        * PRICING UNITS
        */
       "pricingUnits": {
-        useCache: true,
+        useCache: false, // handled in osparc.store.Pricing
         endpoints: {
           getOne: {
             method: "GET",
@@ -1246,6 +1246,23 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/tags/{tagId}"
           }
+        }
+      },
+
+      /*
+       * MARKET
+       */
+      "market": {
+        useCache: false,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/catalog/licensed-items"
+          },
+          purchase: {
+            method: "POST",
+            url: statics.API + "/catalog/licensed-items/{licensedItemId}:purchase"
+          },
         }
       }
     };
