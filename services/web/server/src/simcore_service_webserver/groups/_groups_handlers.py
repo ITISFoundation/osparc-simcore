@@ -94,8 +94,7 @@ async def get_group(request: web.Request):
         request.app, user_id=req_ctx.user_id, group_id=path_params.gid
     )
 
-    group = GroupGet.from_model(group, access_rights)
-    return envelope_json_response(group)
+    return envelope_json_response(GroupGet.from_model(group, access_rights))
 
 
 @routes.post(f"/{API_VTAG}/groups", name="create_group")
@@ -209,6 +208,7 @@ async def get_group_user(request: web.Request):
     """
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsUsersPathParams, request)
+
     user = await _groups_api.get_user_in_group(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
@@ -229,7 +229,7 @@ async def update_group_user(request: web.Request):
         user_id=req_ctx.user_id,
         gid=path_params.gid,
         the_user_id_in_group=path_params.uid,
-        access_rights=update.access_rights.model_dump(),
+        access_rights=update.access_rights.model_dump(mode="json"),  # type: ignore[arg-type]
     )
     return envelope_json_response(GroupUserGet.from_model(user))
 
