@@ -34,7 +34,6 @@ async def create_api_key(
     display_name=str,
     expiration=dt.timedelta,
 ) -> ApiKey:
-    # generate key and secret
     api_key, api_secret = _generate_api_key_and_secret(display_name)
 
     return await _repository.create_api_key(
