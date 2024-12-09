@@ -268,10 +268,10 @@ async def create_user_group(
 ) -> tuple[Group, AccessRightsDict]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
+        user = await conn.scalar(
             sa.select(users.c.primary_gid).where(users.c.id == user_id)
         )
-        if not await result.scalar_one_or_none():
+        if not user:
             raise UserNotFoundError(uid=user_id)
 
         result = await conn.stream(
@@ -304,7 +304,7 @@ async def update_user_group(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
     update: OrganizationUpdate,
 ) -> tuple[Group, AccessRightsDict]:
 
@@ -312,10 +312,10 @@ async def update_user_group(
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         row = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
+            conn, user_id=user_id, gid=group_id
         )
-        assert row.gid == gid  # nosec
-        _check_group_permissions(row, user_id, gid, "write")
+        assert row.gid == group_id  # nosec
+        _check_group_permissions(row, user_id, group_id, "write")
         access_rights = AccessRightsDict(**row.access_rights)  # type: ignore[typeddict-item]
 
         result = await conn.stream(
@@ -337,13 +337,13 @@ async def delete_user_group(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         group = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
+            conn, user_id=user_id, gid=group_id
         )
-        _check_group_permissions(group, user_id, gid, "delete")
+        _check_group_permissions(group, user_id, group_id, "delete")
 
         await conn.execute(
             # pylint: disable=no-value-for-parameter
@@ -356,41 +356,52 @@ async def delete_user_group(
 #
 
 
-def _group_user_cols(user_id: int):
+def _group_user_cols(caller_user_id: int):
     return (
         users.c.id,
         users.c.name,
         # privacy settings
         sa.case(
-            (users.c.privacy_hide_email.is_(True) and users.c.id != user_id, None),
+            (
+                users.c.privacy_hide_email.is_(True) & (users.c.id != caller_user_id),
+                None,
+            ),
             else_=users.c.email,
         ).label("email"),
         sa.case(
-            (users.c.privacy_hide_fullname.is_(True) and users.c.id != user_id, None),
+            (
+                users.c.privacy_hide_fullname.is_(True)
+                & (users.c.id != caller_user_id),
+                None,
+            ),
             else_=users.c.first_name,
         ).label("first_name"),
         sa.case(
-            (users.c.privacy_hide_fullname.is_(True) and users.c.id != user_id, None),
+            (
+                users.c.privacy_hide_fullname.is_(True)
+                & (users.c.id != caller_user_id),
+                None,
+            ),
             else_=users.c.last_name,
         ).label("last_name"),
         users.c.primary_gid,
     )
 
 
-async def _get_user_in_group_permissions(
-    conn: AsyncConnection, *, gid: GroupID, user_id: int
+async def _get_user_in_group(
+    conn: AsyncConnection, *, caller_user_id, group_id: GroupID, user_id: int
 ) -> Row:
     # now get the user
     result = await conn.stream(
-        sa.select(*_group_user_cols(user_id), user_to_groups.c.access_rights)
+        sa.select(*_group_user_cols(caller_user_id), user_to_groups.c.access_rights)
         .select_from(
             users.join(user_to_groups, users.c.id == user_to_groups.c.uid),
         )
-        .where(and_(user_to_groups.c.gid == gid, users.c.id == user_id))
+        .where(and_(user_to_groups.c.gid == group_id, users.c.id == user_id))
     )
     row = await result.fetchone()
     if not row:
-        raise UserInGroupNotFoundError(uid=user_id, gid=gid)
+        raise UserInGroupNotFoundError(uid=user_id, gid=group_id)
     return row
 
 
@@ -399,14 +410,14 @@ async def list_users_in_group(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
 ) -> list[GroupMember]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
         group = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
+            conn, user_id=user_id, gid=group_id
         )
-        _check_group_permissions(group, user_id, gid, "read")
+        _check_group_permissions(group, user_id, group_id, "read")
 
         # now get the list
         query = (
@@ -415,7 +426,7 @@ async def list_users_in_group(
                 user_to_groups.c.access_rights,
             )
             .select_from(users.join(user_to_groups))
-            .where(user_to_groups.c.gid == gid)
+            .where(user_to_groups.c.gid == group_id)
         )
 
         result = await conn.stream(query)
@@ -427,19 +438,22 @@ async def get_user_in_group(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
     the_user_id_in_group: int,
 ) -> GroupMember:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
         group = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
+            conn, user_id=user_id, gid=group_id
         )
-        _check_group_permissions(group, user_id, gid, "read")
+        _check_group_permissions(group, user_id, group_id, "read")
 
         # get the user with its permissions
-        the_user = await _get_user_in_group_permissions(
-            conn, gid=gid, user_id=the_user_id_in_group
+        the_user = await _get_user_in_group(
+            conn,
+            caller_user_id=user_id,
+            group_id=group_id,
+            user_id=the_user_id_in_group,
         )
         return GroupMember.model_validate(the_user)
 
@@ -466,8 +480,8 @@ async def update_user_in_group(
         _check_group_permissions(group, user_id, gid, "write")
 
         # now check the user exists
-        the_user = await _get_user_in_group_permissions(
-            conn, gid=gid, user_id=the_user_id_in_group
+        the_user = await _get_user_in_group(
+            conn, caller_user_id=user_id, group_id=gid, user_id=the_user_id_in_group
         )
 
         # modify the user access rights
@@ -504,8 +518,8 @@ async def delete_user_from_group(
         _check_group_permissions(group, user_id, gid, "write")
 
         # check the user exists
-        await _get_user_in_group_permissions(
-            conn, gid=gid, user_id=the_user_id_in_group
+        await _get_user_in_group(
+            conn, caller_user_id=user_id, group_id=gid, user_id=the_user_id_in_group
         )
 
         # delete him/her

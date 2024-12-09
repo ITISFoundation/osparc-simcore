@@ -138,7 +138,7 @@ async def update_organization(
     return await _groups_db.update_user_group(
         app,
         user_id=user_id,
-        gid=group_id,
+        group_id=group_id,
         update=update,
     )
 
@@ -151,7 +151,7 @@ async def delete_organization(
     raises GroupNotFoundError
     raises UserInsufficientRightsError
     """
-    return await _groups_db.delete_user_group(app, user_id=user_id, gid=group_id)
+    return await _groups_db.delete_user_group(app, user_id=user_id, group_id=group_id)
 
 
 #
@@ -162,7 +162,7 @@ async def delete_organization(
 async def list_users_in_group(
     app: web.Application, user_id: UserID, gid: GroupID
 ) -> list[GroupMember]:
-    return await _groups_db.list_users_in_group(app, user_id=user_id, gid=gid)
+    return await _groups_db.list_users_in_group(app, user_id=user_id, group_id=gid)
 
 
 async def get_user_in_group(
@@ -173,7 +173,7 @@ async def get_user_in_group(
 ) -> GroupMember:
 
     return await _groups_db.get_user_in_group(
-        app, user_id=user_id, gid=gid, the_user_id_in_group=the_user_id_in_group
+        app, user_id=user_id, group_id=gid, the_user_id_in_group=the_user_id_in_group
     )
 
 
