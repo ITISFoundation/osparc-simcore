@@ -16,7 +16,6 @@ from aws_library.ec2 import (
     Resources,
 )
 from aws_library.ec2._errors import EC2TooManyInstancesError
-from aws_library.ec2._models import AWSTagValue
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node, NodeState
 from servicelib.logging_utils import log_catch, log_context
@@ -265,9 +264,7 @@ async def _make_pending_buffer_ec2s_join_cluster(
             await ec2_client.set_instances_tags(
                 buffer_ec2_ready_for_command,
                 tags={
-                    DOCKER_JOIN_COMMAND_EC2_TAG_KEY: AWSTagValue(
-                        ssm_command.command_id
-                    ),
+                    DOCKER_JOIN_COMMAND_EC2_TAG_KEY: ssm_command.command_id,
                 },
             )
     return cluster
@@ -945,7 +942,7 @@ async def _find_terminateable_instances(
     for instance in cluster.drained_nodes:
         node_last_updated = utils_docker.get_node_last_readyness_update(instance.node)
         elapsed_time_since_drained = (
-            datetime.datetime.now(datetime.timezone.utc) - node_last_updated
+            datetime.datetime.now(datetime.UTC) - node_last_updated
         )
         _logger.debug("%s", f"{node_last_updated=}, {elapsed_time_since_drained=}")
         if (
@@ -985,6 +982,9 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
                 get_docker_client(app), instance.node
             )
             new_terminating_instances.append(instance)
+    new_terminating_instance_ids = [
+        i.ec2_instance.id for i in new_terminating_instances
+    ]
 
     # instances that are in the termination process and already waited long enough are terminated.
     now = arrow.utcnow().datetime
@@ -1016,7 +1016,8 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     still_drained_nodes = [
         i
         for i in cluster.drained_nodes
-        if i.ec2_instance.id not in terminated_instance_ids
+        if i.ec2_instance.id
+        not in (new_terminating_instance_ids + terminated_instance_ids)
     ]
     return dataclasses.replace(
         cluster,
@@ -1043,7 +1044,7 @@ async def _notify_based_on_machine_type(
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
     launch_time_to_tasks: dict[datetime.datetime, list] = collections.defaultdict(list)
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     for instance in instances:
         launch_time_to_tasks[
             instance.ec2_instance.launch_time
@@ -1116,16 +1117,26 @@ async def _drain_retired_nodes(
     )
 
 
+async def _scale_down_unused_cluster_machines(
+    app: FastAPI,
+    cluster: Cluster,
+    auto_scaling_mode: BaseAutoscaling,
+) -> Cluster:
+    await auto_scaling_mode.try_retire_nodes(app)
+    cluster = await _deactivate_empty_nodes(app, cluster)
+    return await _try_scale_down_cluster(app, cluster)
+
+
 async def _autoscale_cluster(
     app: FastAPI,
     cluster: Cluster,
     auto_scaling_mode: BaseAutoscaling,
     allowed_instance_types: list[EC2InstanceType],
 ) -> Cluster:
-    # 1. check if we have pending tasks and resolve them by activating some drained nodes
+    # 1. check if we have pending tasks
     unrunnable_tasks = await auto_scaling_mode.list_unrunnable_tasks(app)
     _logger.info("found %s unrunnable tasks", len(unrunnable_tasks))
-    # NOTE: this function predicts how dask will assign a task to a machine
+    # NOTE: this function predicts how the backend will assign tasks
     queued_or_missing_instance_tasks, cluster = await _assign_tasks_to_current_cluster(
         app, unrunnable_tasks, cluster, auto_scaling_mode
     )
@@ -1135,41 +1146,34 @@ async def _autoscale_cluster(
     # 3. start buffer instances to cover the remaining tasks
     cluster = await _start_buffer_instances(app, cluster, auto_scaling_mode)
 
+    # 4. scale down unused machines
+    cluster = await _scale_down_unused_cluster_machines(app, cluster, auto_scaling_mode)
+
     # 4. let's check if there are still pending tasks or if the reserve was used
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    if queued_or_missing_instance_tasks or (
-        len(cluster.buffer_drained_nodes)
-        < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-    ):
-        if (
+    if (
+        queued_or_missing_instance_tasks
+        or (
+            len(cluster.buffer_drained_nodes)
+            < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+        )
+        and (
             cluster.total_number_of_machines()
             < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-        ):
-            _logger.info(
-                "%s unrunnable tasks could not be assigned, slowly trying to scale up...",
-                len(queued_or_missing_instance_tasks),
-            )
-            cluster = await _scale_up_cluster(
-                app,
-                cluster,
-                queued_or_missing_instance_tasks,
-                auto_scaling_mode,
-                allowed_instance_types,
-            )
-
-    elif (
-        len(queued_or_missing_instance_tasks) == len(unrunnable_tasks) == 0
-        and cluster.can_scale_down()
+        )
     ):
         _logger.info(
-            "there is %s waiting task, slowly and gracefully scaling down...",
+            "%s unrunnable tasks could not be assigned, slowly trying to scale up...",
             len(queued_or_missing_instance_tasks),
         )
-        # NOTE: we only scale down in case we did not just scale up. The swarm needs some time to adjust
-        await auto_scaling_mode.try_retire_nodes(app)
-        cluster = await _deactivate_empty_nodes(app, cluster)
-        cluster = await _try_scale_down_cluster(app, cluster)
+        cluster = await _scale_up_cluster(
+            app,
+            cluster,
+            queued_or_missing_instance_tasks,
+            auto_scaling_mode,
+            allowed_instance_types,
+        )
 
     return cluster
 
