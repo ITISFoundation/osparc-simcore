@@ -2,13 +2,13 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from simcore_service_webserver.api_keys import _rest, _rpc
 
 from .._constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db
 from ..products.plugin import setup_products
 from ..rabbitmq import setup_rabbitmq
 from ..rest.plugin import setup_rest
+from . import _rest, _rpc
 
 _logger = logging.getLogger(__name__)
 

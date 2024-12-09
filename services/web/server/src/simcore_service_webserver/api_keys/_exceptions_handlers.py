@@ -1,5 +1,4 @@
 from servicelib.aiohttp import status
-from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
 
 from ..exception_handling import (
     ExceptionToHttpErrorMap,
@@ -7,6 +6,7 @@ from ..exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
+from .errors import ApiKeyNotFoundError
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ApiKeyNotFoundError: HttpErrorInfo(

@@ -7,10 +7,11 @@ from models_library.products import ProductName
 from models_library.rpc_auth_api_keys import ApiKeyGet
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
-from simcore_service_webserver.api_keys import _service
-from simcore_service_webserver.api_keys._models import ApiKey
-from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
-from simcore_service_webserver.rabbitmq import get_rabbitmq_rpc_server
+
+from ..rabbitmq import get_rabbitmq_rpc_server
+from . import _service
+from ._models import ApiKey
+from .errors import ApiKeyNotFoundError
 
 router = RPCRouter()
 

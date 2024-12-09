@@ -16,17 +16,15 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from simcore_service_webserver.api_keys import _service
-from simcore_service_webserver.api_keys._exceptions_handlers import (
-    handle_plugin_requests_exceptions,
-)
-from simcore_service_webserver.api_keys._models import ApiKey
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from . import _service
+from ._exceptions_handlers import handle_plugin_requests_exceptions
+from ._models import ApiKey
 
 _logger = logging.getLogger(__name__)
 

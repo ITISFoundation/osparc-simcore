@@ -7,9 +7,10 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.utils_secrets import generate_token_secret_key
-from simcore_service_webserver.api_keys import _repository
-from simcore_service_webserver.api_keys._models import ApiKey
-from simcore_service_webserver.api_keys.errors import ApiKeyNotFoundError
+
+from . import _repository
+from ._models import ApiKey
+from .errors import ApiKeyNotFoundError
 
 _PUNCTUATION_REGEX = re.compile(
     pattern="[" + re.escape(string.punctuation.replace("_", "")) + "]"
