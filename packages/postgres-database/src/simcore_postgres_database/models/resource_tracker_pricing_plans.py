@@ -18,6 +18,7 @@ class PricingPlanClassification(str, enum.Enum):
     """
 
     TIER = "TIER"
+    LICENSE = "LICENSE"
 
 
 resource_tracker_pricing_plans = sa.Table(
