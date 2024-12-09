@@ -32,7 +32,7 @@ class ContainersManager(SingletonInAppStateMixin):
             self.docker, {proxy_prefix, dy_sidecar_prefix, user_service_prefix}
         )
 
-        _logger.debug(
+        _logger.info(
             "Orphan containers for node_id='%s': %s", node_id, orphan_containers
         )
 
