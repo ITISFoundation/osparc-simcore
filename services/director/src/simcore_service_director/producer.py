@@ -1078,7 +1078,7 @@ async def _get_node_details(
 
 
 async def get_services_details(
-    app: FastAPI, user_id: str | None, study_id: str | None
+    app: FastAPI, user_id: str | None, project_id: str | None
 ) -> list[dict]:
     app_settings = get_application_settings(app)
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
@@ -1091,9 +1091,10 @@ async def get_services_details(
                 filters.append(
                     f"{_to_simcore_runtime_docker_label_key('user_id')}=" + user_id
                 )
-            if study_id:
+            if project_id:
                 filters.append(
-                    f"{_to_simcore_runtime_docker_label_key('project_id')}=" + study_id
+                    f"{_to_simcore_runtime_docker_label_key('project_id')}="
+                    + project_id
                 )
             list_running_services = await client.services.list(
                 filters={"label": filters}
@@ -1104,7 +1105,7 @@ async def get_services_details(
                 for service in list_running_services
             ]
         except aiodocker.DockerError as err:
-            msg = f"Error while accessing container for {user_id=}, {study_id=}"
+            msg = f"Error while accessing container for {user_id=}, {project_id=}"
             raise GenericDockerError(err=msg) from err
 
 
