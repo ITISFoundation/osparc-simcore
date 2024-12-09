@@ -80,9 +80,10 @@ qx.Class.define("osparc.store.Pricing", {
         .then(pricingPlanData => {
           const pricingPlan = this.__addToCache(pricingPlanData);
           const pricingUnits = pricingPlan.getPricingUnits();
-          pricingUnits.forEach(pricingUnit => {
-            pricingPlan.bind("classification", pricingUnit, "classification");
-          })
+          pricingUnits.length = 0;
+          pricingPlanData["pricingUnits"].forEach(pricingUnitData => {
+            this.__addPricingUnitToCache(pricingPlan, pricingUnitData);
+          });
           return pricingUnits;
         });
     },
