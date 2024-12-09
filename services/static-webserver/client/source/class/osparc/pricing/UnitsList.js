@@ -75,9 +75,15 @@ qx.Class.define("osparc.pricing.UnitsList", {
       }
 
       pricingUnits.forEach(pricingUnit => {
-        const pUnit = new osparc.study.PricingUnit(pricingUnit).set({
-          showAwsSpecificInfo: true,
-          showEditButton: true,
+        let pUnit = null;
+        if (pricingUnit.getClassification() === "LICENSE") {
+          pUnit = new osparc.study.PricingUnitLicense(pricingUnit);
+        } else {
+          pUnit = new osparc.study.PricingUnitTier(pricingUnit).set({
+            showAwsSpecificInfo: true,
+          });
+        }
+        pUnit.set({
           allowGrowY: false
         });
         pUnit.addListener("editPricingUnit", () => this.__openUpdatePricingUnit(pricingUnit));
