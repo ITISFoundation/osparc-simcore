@@ -64,7 +64,7 @@ qx.Class.define("osparc.pricing.UnitsList", {
 
     __fetchUnits: function() {
       osparc.store.Pricing.getInstance().fetchPricingUnits(this.getPricingPlanId())
-        .then(data => this.__populateList(data["pricingUnits"]));
+        .then(pricingUnits => this.__populateList(pricingUnits));
     },
 
     __populateList: function(pricingUnits) {

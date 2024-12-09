@@ -45,6 +45,13 @@ qx.Class.define("osparc.data.model.PricingUnit", {
       event: "changePricingUnitId"
     },
 
+    classification: {
+      check: ["TIER", "LICENSE"],
+      nullable: false,
+      init: null,
+      event: "changeClassification"
+    },
+
     name: {
       check: "String",
       nullable: false,

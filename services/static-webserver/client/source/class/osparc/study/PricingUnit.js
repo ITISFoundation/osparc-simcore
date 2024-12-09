@@ -27,7 +27,7 @@ qx.Class.define("osparc.study.PricingUnit", {
       decorator: "rounded",
     });
 
-    this.setUnitData(new osparc.data.model.PricingUnit(pricingUnit));
+    this.setUnitData(pricingUnit);
   },
 
   events: {
@@ -120,12 +120,12 @@ qx.Class.define("osparc.study.PricingUnit", {
       this._removeAll();
       this._setLayout(new qx.ui.layout.VBox(5));
 
-      const unitName = this.getChildControl("name");
-      pricingUnit.bind("unitName", unitName, "value");
+      const name = this.getChildControl("name");
+      pricingUnit.bind("name", name, "value");
 
       // add price info
       const price = this.getChildControl("price");
-      pricingUnit.bind("currentCostPerUnit", price, "value", {
+      pricingUnit.bind("cost", price, "value", {
         converter: v => qx.locale.Manager.tr("Credits/h") + ": " + v,
       });
 

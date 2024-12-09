@@ -131,6 +131,7 @@ qx.Class.define("osparc.store.Pricing", {
       } else {
         // get and post
         pricingUnit = new osparc.data.model.PricingUnit(pricingUnitData);
+        pricingPlan.bind("classification", pricingUnit, "classification");
         pricingUnits.push(pricingUnit);
       }
       return pricingUnit;
