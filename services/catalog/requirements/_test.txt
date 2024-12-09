@@ -1,4 +1,8 @@
-aiohttp==3.9.3
+aiohappyeyeballs==2.4.4
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+aiohttp==3.11.10
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -7,31 +11,31 @@ aiosignal==1.3.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.13.1
+alembic==1.14.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-anyio==4.3.0
+anyio==4.7.0
     # via
     #   -c requirements/_base.txt
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-attrs==23.2.0
+attrs==24.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
     #   pytest-docker
     #   referencing
-certifi==2024.2.2
+certifi==2024.8.30
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -39,18 +43,18 @@ click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-coverage==7.6.1
+coverage==7.6.9
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==29.0.0
+faker==33.1.0
     # via -r requirements/_test.in
-frozenlist==1.4.1
+frozenlist==1.5.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-greenlet==3.0.3
+greenlet==3.1.1
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -58,16 +62,16 @@ h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==1.0.4
+httpcore==1.0.7
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.27.0
+httpx==0.27.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
-idna==3.6
+idna==3.10
     # via
     #   -c requirements/_base.txt
     #   anyio
@@ -76,43 +80,48 @@ idna==3.6
     #   yarl
 iniconfig==2.0.0
     # via pytest
-jsonschema==4.21.1
+jsonschema==4.23.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-jsonschema-specifications==2023.7.1
+jsonschema-specifications==2024.10.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-mako==1.3.2
+mako==1.3.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==2.1.5
+markupsafe==3.0.2
     # via
     #   -c requirements/_base.txt
     #   mako
-multidict==6.0.5
+multidict==6.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.12.0
+mypy==1.13.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-packaging==24.0
+packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   pytest
 pluggy==1.5.0
     # via pytest
+propcache==0.2.1
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   yarl
 ptvsd==4.3.2
     # via -r requirements/_test.in
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -127,9 +136,9 @@ pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-aiohttp
-pytest-benchmark==4.0.0
+pytest-benchmark==5.1.0
     # via -r requirements/_test.in
-pytest-cov==5.0.0
+pytest-cov==6.0.0
     # via -r requirements/_test.in
 pytest-docker==3.1.1
     # via -r requirements/_test.in
@@ -141,7 +150,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   faker
-referencing==0.29.3
+referencing==0.35.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -152,12 +161,12 @@ requests==2.32.3
     #   docker
 respx==0.21.1
     # via -r requirements/_test.in
-rpds-py==0.18.0
+rpds-py==0.22.3
     # via
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-six==1.16.0
+six==1.17.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
@@ -167,7 +176,7 @@ sniffio==1.3.1
     #   anyio
     #   asgi-lifespan
     #   httpx
-sqlalchemy==1.4.52
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -175,7 +184,7 @@ sqlalchemy==1.4.52
     #   alembic
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-types-psycopg2==2.9.21.20240819
+types-psycopg2==2.9.21.20241019
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20240917
     # via -r requirements/_test.in
@@ -183,6 +192,8 @@ typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   alembic
+    #   anyio
+    #   faker
     #   mypy
     #   sqlalchemy2-stubs
 urllib3==2.2.3
@@ -191,7 +202,7 @@ urllib3==2.2.3
     #   -c requirements/_base.txt
     #   docker
     #   requests
-yarl==1.9.4
+yarl==1.18.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp

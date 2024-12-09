@@ -70,8 +70,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       if (sorted !== 0) {
         return sorted;
       }
-      if (("login" in a) && ("login" in b)) {
-        return a["login"].localeCompare(b["login"]);
+      if (("email" in a) && ("email" in b)) {
+        return a["email"].localeCompare(b["email"]);
       }
       return 0;
     }
@@ -156,7 +156,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
-          ctrl.bindProperty("login", "subtitleMD", null, item, id);
+          ctrl.bindProperty("email", "subtitleMD", null, item, id);
           ctrl.bindProperty("options", "options", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
@@ -233,7 +233,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         member["groupId"] = groupMember.getGroupId();
         member["thumbnail"] = groupMember.getThumbnail();
         member["name"] = groupMember.getLabel();
-        member["login"] = groupMember.getLogin();
+        member["email"] = groupMember.getEmail();
         member["accessRights"] = groupMember.getAccessRights();
         let options = [];
         if (canIDelete) {

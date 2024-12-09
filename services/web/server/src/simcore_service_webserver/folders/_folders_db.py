@@ -10,6 +10,7 @@ from typing import Final, cast
 
 import sqlalchemy as sa
 from aiohttp import web
+from common_library.unset import UnSet, as_dict_exclude_unset
 from models_library.folders import (
     FolderDB,
     FolderID,
@@ -33,7 +34,6 @@ from simcore_postgres_database.utils_repos import (
 from simcore_postgres_database.utils_workspaces_sql import (
     create_my_workspace_access_rights_subquery,
 )
-from simcore_service_webserver.utils import UnSet, as_dict_exclude_unset
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.orm import aliased
@@ -312,12 +312,12 @@ async def update(
     folders_id_or_ids: FolderID | set[FolderID],
     product_name: ProductName,
     # updatable columns
-    name: str | UnSet = _unset,
-    parent_folder_id: FolderID | None | UnSet = _unset,
-    trashed_at: datetime | None | UnSet = _unset,
-    trashed_explicitly: bool | UnSet = _unset,
-    workspace_id: WorkspaceID | None | UnSet = _unset,
-    user_id: UserID | None | UnSet = _unset,
+    name: str | UnSet = UnSet.VALUE,
+    parent_folder_id: FolderID | None | UnSet = UnSet.VALUE,
+    trashed_at: datetime | None | UnSet = UnSet.VALUE,
+    trashed_explicitly: bool | UnSet = UnSet.VALUE,
+    workspace_id: WorkspaceID | None | UnSet = UnSet.VALUE,
+    user_id: UserID | None | UnSet = UnSet.VALUE,
 ) -> FolderDB:
     """
     Batch/single patch of folder/s

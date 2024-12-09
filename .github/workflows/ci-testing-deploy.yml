@@ -2596,9 +2596,7 @@ jobs:
         system-test-e2e-playwright,
         system-test-environment-setup,
         system-test-public-api,
-        system-test-swarm-deploy,
-        system-api-specs,
-        system-backwards-compatibility
+        system-test-swarm-deploy
       ]
     runs-on: ubuntu-latest
     steps:
