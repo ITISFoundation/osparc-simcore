@@ -16,7 +16,6 @@ from aws_library.ec2 import (
     Resources,
 )
 from aws_library.ec2._errors import EC2TooManyInstancesError
-from aws_library.ec2._models import AWSTagValue
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node, NodeState
 from servicelib.logging_utils import log_catch, log_context
@@ -339,10 +338,10 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         allowed_instance_type_names
     ), "EC2_INSTANCES_ALLOWED_TYPES cannot be empty!"
 
-    allowed_instance_types: list[EC2InstanceType] = (
-        await ec2_client.get_ec2_instance_capabilities(
-            cast(set[InstanceTypeType], set(allowed_instance_type_names))
-        )
+    allowed_instance_types: list[
+        EC2InstanceType
+    ] = await ec2_client.get_ec2_instance_capabilities(
+        cast(set[InstanceTypeType], set(allowed_instance_type_names))
     )
 
     def _as_selection(instance_type: EC2InstanceType) -> int:
