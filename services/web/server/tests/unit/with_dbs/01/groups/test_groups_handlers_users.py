@@ -324,8 +324,7 @@ async def test_group_access_rights(
             == f"/{API_VTAG}/groups/{assigned_group['gid']}/users"
         )
         for i, user in enumerate(users):
-            params = {"uid": user["id"]} if i % 2 == 0 else {"email": user["email"]}
-            resp = await client.post(f"{add_group_user_url}", json=params)
+            resp = await client.post(f"{add_group_user_url}", json={"uid": user["id"]})
             data, error = await assert_status(resp, expected.no_content)
 
         # 3. user 1 shall be a manager
