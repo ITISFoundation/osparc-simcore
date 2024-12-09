@@ -45,6 +45,11 @@ qx.Class.define("osparc.file.FileTreeItem", {
   construct: function() {
     this.base(arguments);
 
+    this.set({
+      indent: 12, // defaults to 19,
+      decorator: "rounded",
+    });
+
     // create a date format like "Oct. 19, 2018 11:31 AM"
     this._dateFormat = new qx.util.format.DateFormat(
       qx.locale.Date.getDateFormat("medium") + " " +
