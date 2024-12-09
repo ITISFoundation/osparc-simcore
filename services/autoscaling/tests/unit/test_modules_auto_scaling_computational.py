@@ -901,6 +901,13 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_rabbitmq_post_message.reset_mock()
 
 
+async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
+    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
+    minimal_configuration: None,
+):
+    ...
+
+
 async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and_not_more(
     patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
