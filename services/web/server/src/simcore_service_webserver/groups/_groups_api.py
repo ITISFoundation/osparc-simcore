@@ -21,8 +21,8 @@ from .exceptions import GroupsError
 #
 
 
-async def get_group_from_gid(app: web.Application, gid: GroupID) -> Group | None:
-    group_db = await _groups_db.get_group_from_gid(app, gid=gid)
+async def get_group_from_gid(app: web.Application, group_id: GroupID) -> Group | None:
+    group_db = await _groups_db.get_group_from_gid(app, group_id=group_id)
 
     if group_db:
         return Group.model_construct(**group_db.model_dump())
@@ -119,7 +119,7 @@ async def get_organization(
     raises GroupNotFoundError
     raises UserInsufficientRightsError
     """
-    return await _groups_db.get_user_group(app, user_id=user_id, gid=group_id)
+    return await _groups_db.get_user_group(app, user_id=user_id, group_9d=group_id)
 
 
 async def update_organization(
@@ -160,34 +160,37 @@ async def delete_organization(
 
 
 async def list_users_in_group(
-    app: web.Application, user_id: UserID, gid: GroupID
+    app: web.Application, user_id: UserID, group_id: GroupID
 ) -> list[GroupMember]:
-    return await _groups_db.list_users_in_group(app, user_id=user_id, group_id=gid)
+    return await _groups_db.list_users_in_group(app, user_id=user_id, group_id=group_id)
 
 
 async def get_user_in_group(
     app: web.Application,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
     the_user_id_in_group: UserID,
 ) -> GroupMember:
 
     return await _groups_db.get_user_in_group(
-        app, user_id=user_id, group_id=gid, the_user_id_in_group=the_user_id_in_group
+        app,
+        user_id=user_id,
+        group_id=group_id,
+        the_user_id_in_group=the_user_id_in_group,
     )
 
 
 async def update_user_in_group(
     app: web.Application,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
     the_user_id_in_group: UserID,
     access_rights: AccessRightsDict,
 ) -> GroupMember:
     return await _groups_db.update_user_in_group(
         app,
         user_id=user_id,
-        gid=gid,
+        group_id=group_id,
         the_user_id_in_group=the_user_id_in_group,
         access_rights=access_rights,
     )
@@ -196,11 +199,14 @@ async def update_user_in_group(
 async def delete_user_in_group(
     app: web.Application,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
     the_user_id_in_group: UserID,
 ) -> None:
     return await _groups_db.delete_user_from_group(
-        app, user_id=user_id, gid=gid, the_user_id_in_group=the_user_id_in_group
+        app,
+        user_id=user_id,
+        group_id=group_id,
+        the_user_id_in_group=the_user_id_in_group,
     )
 
 
@@ -233,7 +239,7 @@ async def auto_add_user_to_product_group(
 async def add_user_in_group(
     app: web.Application,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
     *,
     new_user_id: UserID | None = None,
     new_user_email: EmailStr | None = None,
@@ -250,6 +256,7 @@ async def add_user_in_group(
         msg = "Invalid method call, missing user id or user email"
         raise GroupsError(msg=msg)
 
+    # FIXME: check privacy
     if new_user_email:
         user = await _groups_db.get_user_from_email(app, email=new_user_email)
         new_user_id = user.id
@@ -261,7 +268,7 @@ async def add_user_in_group(
     return await _groups_db.add_new_user_in_group(
         app,
         user_id=user_id,
-        gid=gid,
+        group_id=group_id,
         new_user_id=new_user_id,
         access_rights=access_rights,
     )

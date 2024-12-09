@@ -93,7 +93,7 @@ async def standard_groups_owner(
         await add_user_in_group(
             app=client.app,
             user_id=owner_user["id"],
-            gid=sparc_group["gid"],
+            group_id=sparc_group["gid"],
             new_user_id=logged_user["id"],
         )
 
@@ -101,7 +101,7 @@ async def standard_groups_owner(
         await add_user_in_group(
             app=client.app,
             user_id=owner_user["id"],
-            gid=team_black_group["gid"],
+            group_id=team_black_group["gid"],
             new_user_email=logged_user["email"],
         )
 

@@ -121,6 +121,8 @@ async def get_user_from_email(
         UserNotFoundError
 
     """
+    # FIXME: check privacy
+
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(sa.select(users).where(users.c.email == email))
         user = await result.fetchone()
@@ -135,10 +137,13 @@ async def get_user_from_email(
 
 
 async def get_group_from_gid(
-    app: web.Application, connection: AsyncConnection | None = None, *, gid: GroupID
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    group_id: GroupID,
 ) -> Group | None:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        row = await conn.stream(groups.select().where(groups.c.gid == gid))
+        row = await conn.stream(groups.select().where(groups.c.gid == group_id))
         result = await row.first()
         if result:
             return Group.model_validate(result)
@@ -219,7 +224,7 @@ async def get_user_group(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    gid: GroupID,
+    group_9d: GroupID,
 ) -> tuple[Group, AccessRightsDict]:
     """
     Gets group gid if user associated to it and has read access
@@ -229,9 +234,9 @@ async def get_user_group(
     """
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         row = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
+            conn, user_id=user_id, gid=group_9d
         )
-        _check_group_permissions(row, user_id, gid, "read")
+        _check_group_permissions(row, user_id, group_9d, "read")
 
         group, access_rights = _to_group_info_tuple(row)
         return group, access_rights
@@ -463,7 +468,7 @@ async def update_user_in_group(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
     the_user_id_in_group: UserID,
     access_rights: AccessRightsDict,
 ) -> GroupMember:
@@ -475,13 +480,16 @@ async def update_user_in_group(
 
         # first check if the group exists
         group = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
+            conn, user_id=user_id, gid=group_id
         )
-        _check_group_permissions(group, user_id, gid, "write")
+        _check_group_permissions(group, user_id, group_id, "write")
 
         # now check the user exists
         the_user = await _get_user_in_group(
-            conn, caller_user_id=user_id, group_id=gid, user_id=the_user_id_in_group
+            conn,
+            caller_user_id=user_id,
+            group_id=group_id,
+            user_id=the_user_id_in_group,
         )
 
         # modify the user access rights
@@ -493,7 +501,7 @@ async def update_user_in_group(
             .where(
                 and_(
                     user_to_groups.c.uid == the_user_id_in_group,
-                    user_to_groups.c.gid == gid,
+                    user_to_groups.c.gid == group_id,
                 )
             )
         )
@@ -507,19 +515,22 @@ async def delete_user_from_group(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
     the_user_id_in_group: UserID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
         group = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
+            conn, user_id=user_id, gid=group_id
         )
-        _check_group_permissions(group, user_id, gid, "write")
+        _check_group_permissions(group, user_id, group_id, "write")
 
         # check the user exists
         await _get_user_in_group(
-            conn, caller_user_id=user_id, group_id=gid, user_id=the_user_id_in_group
+            conn,
+            caller_user_id=user_id,
+            group_id=group_id,
+            user_id=the_user_id_in_group,
         )
 
         # delete him/her
@@ -528,7 +539,7 @@ async def delete_user_from_group(
             user_to_groups.delete().where(
                 and_(
                     user_to_groups.c.uid == the_user_id_in_group,
-                    user_to_groups.c.gid == gid,
+                    user_to_groups.c.gid == group_id,
                 )
             )
         )
@@ -562,7 +573,7 @@ async def add_new_user_in_group(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    gid: GroupID,
+    group_id: GroupID,
     new_user_id: UserID,
     access_rights: AccessRightsDict | None = None,
 ) -> None:
@@ -572,9 +583,9 @@ async def add_new_user_in_group(
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
         group = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=gid
+            conn, user_id=user_id, gid=group_id
         )
-        _check_group_permissions(group, user_id, gid, "write")
+        _check_group_permissions(group, user_id, group_id, "write")
 
         # now check the new user exists
         users_count = await conn.scalar(
@@ -582,7 +593,7 @@ async def add_new_user_in_group(
         )
         if not users_count:
             assert new_user_id is not None  # nosec
-            raise UserInGroupNotFoundError(uid=new_user_id, gid=gid)
+            raise UserInGroupNotFoundError(uid=new_user_id, gid=group_id)
 
         # add the new user to the group now
         user_access_rights = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
@@ -598,7 +609,10 @@ async def add_new_user_in_group(
             )
         except UniqueViolation as exc:
             raise UserAlreadyInGroupError(
-                uid=new_user_id, gid=gid, user_id=user_id, access_rights=access_rights
+                uid=new_user_id,
+                gid=group_id,
+                user_id=user_id,
+                access_rights=access_rights,
             ) from exc
 
 
