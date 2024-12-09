@@ -4,84 +4,38 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack
-from copy import deepcopy
-from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.groups import AccessRightsDict
+from models_library.api_schemas_webserver.groups import GroupGet
+from models_library.groups import AccessRightsDict, Group
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
-from pytest_simcore.simcore_webserver_groups_fixtures import CreateUserGroupCallable
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db.plugin import setup_db
+from simcore_service_webserver.groups._groups_api import (
+    create_organization,
+    delete_organization,
+)
 from simcore_service_webserver.groups._groups_db import (
     _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
     _DEFAULT_GROUP_READ_ACCESS_RIGHTS,
 )
-from simcore_service_webserver.groups.api import (
-    auto_add_user_to_groups,
-    delete_user_group,
-)
-from simcore_service_webserver.groups.plugin import setup_groups
-from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.rest.plugin import setup_rest
+from simcore_service_webserver.groups.api import auto_add_user_to_groups
 from simcore_service_webserver.security.api import clean_auth_policy_cache
-from simcore_service_webserver.security.plugin import setup_security
-from simcore_service_webserver.session.plugin import setup_session
-from simcore_service_webserver.users.plugin import setup_users
 from simcore_service_webserver.utils import gravatar_hash
 
 
-@pytest.fixture
-def client(
-    event_loop,
-    aiohttp_client,
-    app_cfg,
-    postgres_db,
-    monkeypatch_setenv_from_app_config: Callable,
-) -> TestClient:
-    cfg = deepcopy(app_cfg)
-
-    port = cfg["main"]["port"]
-
-    assert cfg["rest"]["version"] == API_VTAG
-    monkeypatch_setenv_from_app_config(cfg)
-
-    # fake config
-    app = create_safe_application(cfg)
-
-    setup_settings(app)
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-    setup_login(app)
-    setup_users(app)
-    setup_groups(app)
-
-    return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
-    )
-
-
 def _assert_group(group: dict[str, str]):
-    properties = ["gid", "label", "description", "thumbnail", "accessRights"]
-    assert all(x in group for x in properties)
-    access_rights = group["accessRights"]
-    access_rights_properties = ["read", "write", "delete"]
-    assert all(x in access_rights for x in access_rights_properties)
+    return GroupGet.model_validate(group)
 
 
 def _assert__group_user(
@@ -102,113 +56,6 @@ def _assert__group_user(
     assert "id" in actual_user
     assert actual_user["id"] == expected_user["id"]
     assert "gid" in actual_user
-
-
-@pytest.mark.parametrize(*standard_role_response())
-async def test_group_creation_workflow(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    user_role: UserRole,
-    expected: ExpectedResponse,
-):
-    assert client.app
-    url = client.app.router["create_group"].url_for()
-    assert f"{url}" == f"/{API_VTAG}/groups"
-
-    new_group = {
-        "gid": "4564",
-        "label": "Black Sabbath",
-        "description": "The founders of Rock'N'Roll",
-        "thumbnail": "https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcS3pAUISv_wtYDL9Ih4JtUfAWyHj9PkYMlEBGHJsJB9QlTZuuaK%26s&sp=1591105967T00f0b7ff95c7b3bca035102fa1ead205ab29eb6cd95acedcedf6320e64634f0c",
-    }
-
-    resp = await client.post(f"{url}", json=new_group)
-    data, error = await assert_status(resp, expected.created)
-
-    assigned_group = new_group
-    if not error:
-        assert isinstance(data, dict)
-        assigned_group = data
-        _assert_group(assigned_group)
-        # we get a new gid and the rest keeps the same
-        assert assigned_group["gid"] != new_group["gid"]
-        for prop in ["label", "description", "thumbnail"]:
-            assert assigned_group[prop] == new_group[prop]
-        # we get all rights on the group since we are the creator
-        assert assigned_group["accessRights"] == {
-            "read": True,
-            "write": True,
-            "delete": True,
-        }
-
-    # get the groups and check we are part of this new group
-    url = client.app.router["list_groups"].url_for()
-    assert f"{url}" == f"/{API_VTAG}/groups"
-
-    resp = await client.get(f"{url}")
-    data, error = await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK
-    )
-    if not error and user_role != UserRole.GUEST:
-        assert len(data["organizations"]) == 1
-        assert data["organizations"][0] == assigned_group
-
-    # check getting one group
-    url = client.app.router["get_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}"
-    resp = await client.get(f"{url}")
-    data, error = await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_404_NOT_FOUND
-    )
-    if not error:
-        assert data == assigned_group
-
-    # modify the group
-    modified_group = {"label": "Led Zeppelin"}
-    url = client.app.router["update_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}"
-    resp = await client.patch(f"{url}", json=modified_group)
-    data, error = await assert_status(resp, expected.ok)
-    if not error:
-        assert data != assigned_group
-        _assert_group(data)
-        assigned_group.update(**modified_group)
-        assert data == assigned_group
-    # check getting the group returns the newly modified group
-    url = client.app.router["get_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}"
-    resp = await client.get(f"{url}")
-    data, error = await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_404_NOT_FOUND
-    )
-    if not error:
-        _assert_group(data)
-        assert data == assigned_group
-
-    # delete the group
-    url = client.app.router["delete_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}"
-    resp = await client.delete(f"{url}")
-    data, error = await assert_status(resp, expected.no_content)
-    if not error:
-        assert not data
-
-    # check deleting the same group again fails
-    url = client.app.router["delete_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}"
-    resp = await client.delete(f"{url}")
-    data, error = await assert_status(resp, expected.not_found)
-
-    # check getting the group fails
-    url = client.app.router["get_group"].url_for(gid=f"{assigned_group['gid']}")
-    assert f"{url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}"
-    resp = await client.get(f"{url}")
-    data, error = await assert_status(
-        resp,
-        expected.not_found
-        if user_role != UserRole.GUEST
-        else status.HTTP_404_NOT_FOUND,
-    )
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -428,6 +275,7 @@ async def test_group_access_rights(
             params = {"uid": user["id"]} if i % 2 == 0 else {"email": user["email"]}
             resp = await client.post(f"{add_group_user_url}", json=params)
             data, error = await assert_status(resp, expected.no_content)
+
         # 3. user 1 shall be a manager
         patch_group_user_url = client.app.router["update_group_user"].url_for(
             gid=f"{assigned_group['gid']}", uid=f"{users[0]['id']}"
@@ -439,6 +287,7 @@ async def test_group_access_rights(
         params = {"accessRights": {"read": True, "write": True, "delete": False}}
         resp = await client.patch(f"{patch_group_user_url}", json=params)
         data, error = await assert_status(resp, expected.ok)
+
         # 4. user 2 shall be a member
         patch_group_user_url = client.app.router["update_group_user"].url_for(
             gid=f"{assigned_group['gid']}", uid=f"{users[1]['id']}"
@@ -462,6 +311,7 @@ async def test_group_access_rights(
             },
         )
         await assert_status(resp, expected.ok)
+
         # check as a manager I can remove user 2
         delete_group_user_url = client.app.router["delete_group_user"].url_for(
             gid=f"{assigned_group['gid']}", uid=f"{users[1]['id']}"
@@ -472,9 +322,11 @@ async def test_group_access_rights(
         )
         resp = await client.delete(f"{delete_group_user_url}")
         data, error = await assert_status(resp, expected.no_content)
+
         # as a manager I can add user 2 again
         resp = await client.post(f"{add_group_user_url}", json={"uid": users[1]["id"]})
         data, error = await assert_status(resp, expected.no_content)
+
         # as a manager I cannot delete the group
         url = client.app.router["delete_group"].url_for(gid=f"{assigned_group['gid']}")
         resp = await client.delete(f"{url}")
@@ -491,6 +343,7 @@ async def test_group_access_rights(
             },
         )
         await assert_status(resp, expected.ok)
+
         # as a member I cannot remove user 1
         delete_group_user_url = client.app.router["delete_group_user"].url_for(
             gid=f"{assigned_group['gid']}", uid=f"{users[0]['id']}"
@@ -501,9 +354,11 @@ async def test_group_access_rights(
         )
         resp = await client.delete(f"{delete_group_user_url}")
         data, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
         # as a member I cannot add user 1
         resp = await client.post(f"{add_group_user_url}", json={"uid": users[0]["id"]})
         data, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
         # as a member I cannot delete the grouop
         url = client.app.router["delete_group"].url_for(gid=f"{assigned_group['gid']}")
         resp = await client.delete(f"{url}")
@@ -553,21 +408,22 @@ async def test_add_user_gets_added_to_group(
 async def group_where_logged_user_is_the_owner(
     client: TestClient,
     logged_user: UserInfoDict,
-    create_user_group: CreateUserGroupCallable,
-) -> AsyncIterator[dict[str, Any]]:
+) -> AsyncIterator[Group]:
     assert client.app
-    group = await create_user_group(
+    group, _ = await create_organization(
         app=client.app,
         user_id=logged_user["id"],
-        new_group={
+        new_group_values={
             "gid": "6543",
             "label": f"this is user {logged_user['id']} group",
             "description": f"user {logged_user['email']} is the owner of that one",
             "thumbnail": None,
         },
     )
+
     yield group
-    await delete_user_group(client.app, logged_user["id"], group["gid"])
+
+    await delete_organization(client.app, user_id=logged_user["id"], group_id=group.gid)
 
 
 @pytest.mark.acceptance_test(
@@ -577,12 +433,12 @@ async def group_where_logged_user_is_the_owner(
 async def test_adding_user_to_group_with_upper_case_email(
     client: TestClient,
     user_role: UserRole,
-    group_where_logged_user_is_the_owner: dict[str, str],
+    group_where_logged_user_is_the_owner: Group,
     faker: Faker,
 ):
     assert client.app
     url = client.app.router["add_group_user"].url_for(
-        gid=f"{group_where_logged_user_is_the_owner['gid']}"
+        gid=f"{group_where_logged_user_is_the_owner.gid}"
     )
     # adding a user to group with the email in capital letters
     # Tests 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812
