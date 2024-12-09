@@ -63,7 +63,7 @@ qx.Class.define("osparc.store.Pricing", {
         },
         data: updateData
       };
-      return osparc.data.Resources.getInstance().fetch("pricingPlans", "put", params)
+      return osparc.data.Resources.getInstance().fetch("pricingPlans", "update", params)
         .then(pricingPlanData => {
           return this.__addToCache(pricingPlanData);
         })
@@ -102,12 +102,13 @@ qx.Class.define("osparc.store.Pricing", {
     __addToCache: function(pricingPlanData) {
       let pricingPlan = this.pricingPlansCached.find(f => f.getPricingPlanId() === pricingPlanData["pricingPlanId"]);
       if (pricingPlan) {
-        const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.PricingPlan));
         // put
-        Object.keys(pricingPlanData).forEach(key => {
-          if (props.includes(key)) {
-            pricingPlan.set(key, pricingPlanData[key]);
-          }
+        pricingPlan.set({
+          pricingPlanKey: pricingPlanData["pricingPlanKey"],
+          name: pricingPlanData["displayName"],
+          description: pricingPlanData["description"],
+          classification: pricingPlanData["classification"],
+          isActive: pricingPlanData["isActive"],
         });
       } else {
         // get and post

@@ -204,7 +204,7 @@ qx.Class.define("osparc.pricing.PlanEditor", {
         "pricingPlanKey": ppKey,
         "displayName": name,
         "description": description,
-        "classification": classification
+        "classification": classification,
       };
       osparc.store.Pricing.getInstance().postPricingPlan(newPricingPlanData)
         .then(() => {
@@ -219,16 +219,14 @@ qx.Class.define("osparc.pricing.PlanEditor", {
     },
 
     __updatePricingPlan: function() {
-      this.__pricingPlan["displayName"] = this.getName();
-      this.__pricingPlan["description"] = this.getDescription();
-      this.__pricingPlan["isActive"] = this.getIsActive();
-      const params = {
-        url: {
-          "pricingPlanId": this.__pricingPlan["pricingPlanId"]
-        },
-        data: this.__pricingPlan
+      const updateData = {
+        "pricingPlanKey": this.getPpKey(),
+        "displayName": this.getName(),
+        "description": this.getDescription(),
+        "classification": this.getClassification(),
+        "isActive": this.getIsActive(),
       };
-      osparc.data.Resources.fetch("pricingPlans", "update", params)
+      osparc.store.Pricing.getInstance().putPricingPlan(this.__pricingPlan["pricingPlanId"], updateData)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Successfully updated"));
           this.fireEvent("done");
