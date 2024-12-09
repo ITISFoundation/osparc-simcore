@@ -10,7 +10,7 @@ from contextlib import AsyncExitStack
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.api_schemas_webserver.groups import GroupGet
+from models_library.api_schemas_webserver.groups import GroupGet, GroupUserGet
 from models_library.groups import AccessRightsDict, Group
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
@@ -42,14 +42,19 @@ def _assert__group_user(
     expected_access_rights: AccessRightsDict,
     actual_user: dict,
 ):
+    user = GroupUserGet.model_validate(actual_user)
+
+    assert user.id
+    assert user.gid
+
     # identifiers
     assert actual_user["userName"] == expected_user["name"]
 
     assert "id" in actual_user
-    assert int(actual_user["id"]) == expected_user["id"]
+    assert int(user.id) == expected_user["id"]
 
     assert "gid" in actual_user
-    assert int(actual_user["gid"]) == expected_user.get("primary_id")
+    assert int(user.gid) == expected_user.get("primary_gid")
 
     # privacy
     # assert "first_name" in actual_user
@@ -175,7 +180,7 @@ async def test_add_remove_users_from_group(
 
                 expected_users_list = list(
                     filter(
-                        lambda x, ac=actual_user: x["email"] == ac["login"],
+                        lambda x, ac=actual_user: x["id"] == ac["id"],
                         all_created_users,
                     )
                 )
@@ -183,7 +188,7 @@ async def test_add_remove_users_from_group(
                 expected_user = expected_users_list[0]
 
                 expected_access_rigths = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
-                if actual_user["login"] == logged_user["email"]:
+                if actual_user["id"] == logged_user["id"]:
                     expected_access_rigths = _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
 
                 _assert__group_user(
