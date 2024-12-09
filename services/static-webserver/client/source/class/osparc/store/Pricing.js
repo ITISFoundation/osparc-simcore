@@ -78,8 +78,8 @@ qx.Class.define("osparc.store.Pricing", {
       };
       return osparc.data.Resources.fetch("pricingPlans", "getOne", params)
         .then(pricingPlanData => {
+          const pricingPlan = this.__addToCache(pricingPlanData);
           const pricingUnits = [];
-          const pricingPlan = this.getPricingPlan(pricingPlanId);
           if (pricingPlan && "pricingUnits" in pricingPlanData) {
             const pricingUnitsData = pricingPlanData["pricingUnits"];
             pricingUnitsData.forEach(pricingUnitData => {

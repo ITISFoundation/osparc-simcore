@@ -171,26 +171,18 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __createPricingUnits: function(anatomicalModelsData) {
-      console.log(anatomicalModelsData);
       const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignX: "center"
       }));
 
-      const params = {
-        url: {
-          pricingPlanId: anatomicalModelsData["pricingPlanId"]
-        }
-      };
-      osparc.data.Resources.fetch("pricingPlans", "getOne", params)
-        .then(data => {
-          const pricingUnitsData = data["pricingUnits"];
-          pricingUnitsData.forEach(pricingUnitData => {
-            const pricingUnit = new osparc.data.model.PricingUnit(pricingUnitData).set({
+      osparc.store.Pricing.getInstance().fetchPricingUnits(anatomicalModelsData["pricingPlanId"])
+        .then(pricingUnits => {
+          pricingUnits.forEach(pricingUnit => {
+            pricingUnit.set({
               classification: "LICENSE"
             });
             const pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
               showRentButton: true,
-              allowGrowY: false,
             });
             pUnit.addListener("rentPricingUnit", () => this.__rentAnatomicalModel(anatomicalModelsData, pricingUnit));
             pricingUnitsLayout.add(pUnit);

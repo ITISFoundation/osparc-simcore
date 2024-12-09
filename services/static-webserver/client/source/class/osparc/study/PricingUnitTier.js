@@ -24,7 +24,7 @@ qx.Class.define("osparc.study.PricingUnitTier", {
   properties: {
     showAwsSpecificInfo: {
       check: "Boolean",
-      init: null,
+      init: false,
       nullable: true,
       event: "changeShowAwsSpecificInfo"
     },

@@ -26,6 +26,8 @@ qx.Class.define("osparc.study.PricingUnit", {
       padding: 10,
       center: true,
       decorator: "rounded",
+      allowGrowX: false,
+      allowGrowY: false,
     });
 
     this.setUnitData(pricingUnit);
