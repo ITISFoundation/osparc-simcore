@@ -256,9 +256,10 @@ async def add_user_in_group(
         msg = "Invalid method call, missing user id or user email"
         raise GroupsError(msg=msg)
 
-    # FIXME: check privacy
     if new_user_email:
-        user = await _groups_db.get_user_from_email(app, email=new_user_email)
+        user = await _groups_db.get_user_from_email(
+            app, email=new_user_email, caller_user_id=user_id
+        )
         new_user_id = user.id
 
     if not new_user_id:

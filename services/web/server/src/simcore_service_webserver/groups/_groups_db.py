@@ -113,24 +113,6 @@ async def _get_group_and_access_rights_or_raise(
     return row
 
 
-async def get_user_from_email(
-    app: web.Application, connection: AsyncConnection | None = None, *, email: str
-) -> Row:
-    """
-    Raises:
-        UserNotFoundError
-
-    """
-    # FIXME: check privacy
-
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(sa.select(users).where(users.c.email == email))
-        user = await result.fetchone()
-        if not user:
-            raise UserNotFoundError(email=email)
-        return user
-
-
 #
 # GROUPS
 #
@@ -354,6 +336,39 @@ async def delete_user_group(
             # pylint: disable=no-value-for-parameter
             groups.delete().where(groups.c.gid == group.gid)
         )
+
+
+#
+# USERS
+#
+
+
+async def get_user_from_email(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    caller_user_id: UserID,
+    email: str,
+) -> Row:
+    """
+    Raises:
+        UserNotFoundError: if not found or privacy hides email
+
+    """
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
+            sa.select(users.c.id).where(
+                (users.c.email == email)
+                & (
+                    users.c.privacy_hide_email.is_(False)
+                    | (users.c.id != caller_user_id)
+                )
+            )
+        )
+        user = await result.fetchone()
+        if not user:
+            raise UserNotFoundError(email=email)
+        return user
 
 
 #
