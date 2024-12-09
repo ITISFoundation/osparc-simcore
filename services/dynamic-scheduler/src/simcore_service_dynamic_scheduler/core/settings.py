@@ -126,3 +126,11 @@ class ApplicationSettings(_BaseApplicationSettings):
         json_schema_extra={"auto_default_from_env": True},
         description="settings for opentelemetry tracing",
     )
+
+    @field_validator("DYNAMIC_SCHEDULER_UI_MOUNT_PATH", mode="before")
+    @classmethod
+    def _ensure_ends_with_slash(cls, v: str) -> str:
+        if not v.endswith("/"):
+            msg = f"Provided mount path: '{v}' must be '/' terminated"
+            raise ValueError(msg)
+        return v
