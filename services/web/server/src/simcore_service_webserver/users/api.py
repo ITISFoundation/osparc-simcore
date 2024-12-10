@@ -52,19 +52,20 @@ _GROUPS_SCHEMA_TO_DB = {
     "description": "description",
     "thumbnail": "thumbnail",
     "accessRights": "access_rights",
-    "inclusionRules": "inclusion_rules",
 }
 
 
 def _convert_groups_db_to_schema(
     db_row: RowProxy, *, prefix: str | None = "", **kwargs
 ) -> dict:
+    # NOTE: Deprecated. has to be replaced with
     converted_dict = {
         k: db_row[f"{prefix}{v}"]
         for k, v in _GROUPS_SCHEMA_TO_DB.items()
         if f"{prefix}{v}" in db_row
     }
     converted_dict.update(**kwargs)
+    converted_dict["inclusionRules"] = {}
     return converted_dict
 
 
