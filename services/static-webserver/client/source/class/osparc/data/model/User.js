@@ -28,22 +28,27 @@ qx.Class.define("osparc.data.model.User", {
   construct: function(userData) {
     this.base(arguments);
 
-    let label = userData["login"];
+    let description = "";
     if (userData["first_name"]) {
-      label = qx.lang.String.firstUp(userData["first_name"]);
+      description = userData["first_name"];
       if (userData["last_name"]) {
-        label += " " + qx.lang.String.firstUp(userData["last_name"]);
+        description += " " + userData["last_name"];
       }
+      description += " | ";
+    }
+    if (userData["login"]) {
+      description += userData["login"];
     }
     const thumbnail = osparc.utils.Avatar.emailToThumbnail(userData["login"]);
     this.set({
       userId: userData["id"],
       groupId: userData["gid"],
-      label: label,
       username: userData["username"] || "",
       firstName: userData["first_name"],
       lastName: userData["last_name"],
       email: userData["login"],
+      label: userData["username"],
+      description,
       thumbnail,
     });
   },
