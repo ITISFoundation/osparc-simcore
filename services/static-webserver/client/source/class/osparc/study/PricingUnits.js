@@ -50,12 +50,6 @@ qx.Class.define("osparc.study.PricingUnits", {
         this._add(pricingUnitTier);
       });
 
-      pricingUnitTiers.forEach(pricingUnitTier => {
-        pricingUnitTier.bind("selected", pricingUnitTier, "backgroundColor", {
-          converter: selected => selected ? "background-main-1" : "transparent"
-        });
-      });
-
       if (preselectedPricingUnit) {
         const pricingUnitTierFound = pricingUnitTiers.find(pricingUnitTier => pricingUnitTier.getUnitData().getPricingUnitId() === preselectedPricingUnit["pricingUnitId"]);
         if (pricingUnitTierFound) {

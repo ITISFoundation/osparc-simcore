@@ -32,6 +32,8 @@ qx.Class.define("osparc.study.PricingUnit", {
     });
 
     this.setUnitData(pricingUnit);
+
+    osparc.utils.Utils.addBorder(this);
   },
 
   events: {
@@ -44,6 +46,7 @@ qx.Class.define("osparc.study.PricingUnit", {
       init: false,
       nullable: false,
       event: "changeSelected",
+      apply: "__applySelected",
     },
 
     unitData: {
@@ -94,6 +97,11 @@ qx.Class.define("osparc.study.PricingUnit", {
 
       const name = this.getChildControl("name");
       pricingUnit.bind("name", name, "value");
-    }
+    },
+
+    __applySelected: function(selected) {
+      const strong = qx.theme.manager.Color.getInstance().resolve("strong-main");
+      osparc.utils.Utils.updateBorderColor(this, selected ? strong : "transparent");
+    },
   }
 });
