@@ -13,7 +13,7 @@ from . import (
     _notifications_handlers,
     _preferences_handlers,
     _tokens_handlers,
-    _users_handlers,
+    _users_rest,
 )
 from ._preferences_models import overwrite_user_preferences_defaults
 
@@ -32,7 +32,7 @@ def setup_users(app: web.Application):
     setup_observer_registry(app)
     overwrite_user_preferences_defaults(app)
 
-    app.router.add_routes(_users_handlers.routes)
+    app.router.add_routes(_users_rest.routes)
     app.router.add_routes(_tokens_handlers.routes)
     app.router.add_routes(_notifications_handlers.routes)
     app.router.add_routes(_preferences_handlers.routes)
