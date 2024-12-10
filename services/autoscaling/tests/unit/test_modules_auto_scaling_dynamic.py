@@ -44,7 +44,6 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
-from simcore_service_autoscaling.modules import auto_scaling_core
 from simcore_service_autoscaling.modules.auto_scaling_core import (
     _activate_drained_nodes,
     _find_terminateable_instances,
@@ -235,11 +234,6 @@ def instance_type_filters(
             Values=["pending", "running"],
         ),
     ]
-
-
-@pytest.fixture
-async def spied_cluster_analysis(mocker: MockerFixture) -> MockType:
-    return mocker.spy(auto_scaling_core, "_analyze_current_cluster")
 
 
 @dataclass(frozen=True)

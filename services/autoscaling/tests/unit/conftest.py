@@ -46,6 +46,7 @@ from models_library.generated_models.docker_rest_api import (
     TaskSpec,
 )
 from pydantic import ByteSize, PositiveInt, TypeAdapter
+from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.logging_tools import log_context
@@ -69,6 +70,7 @@ from simcore_service_autoscaling.models import (
     Cluster,
     DaskTaskResources,
 )
+from simcore_service_autoscaling.modules import auto_scaling_core
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
 from simcore_service_autoscaling.utils.utils_docker import (
@@ -1002,3 +1004,8 @@ def with_short_ec2_instances_max_start_time(
             "EC2_INSTANCES_MAX_START_TIME": f"{short_ec2_instance_max_start_time}",
         },
     )
+
+
+@pytest.fixture
+async def spied_cluster_analysis(mocker: MockerFixture) -> MockType:
+    return mocker.spy(auto_scaling_core, "_analyze_current_cluster")
