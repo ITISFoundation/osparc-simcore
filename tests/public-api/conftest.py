@@ -147,25 +147,23 @@ def registered_user(
             resp.raise_for_status()
 
         # create a key via web-api
-        resp = client.post("/auth/api-keys", json={"display_name": "test-public-api"})
+        resp = client.post("/auth/api-keys", json={"displayName": "test-public-api"})
 
         print(resp.text)
         resp.raise_for_status()
 
         data = resp.json()["data"]
-        assert data["display_name"] == "test-public-api"
+        assert data["displayName"] == "test-public-api"
 
-        assert "api_key" in data
-        assert "api_secret" in data
+        assert "apiKey" in data
+        assert "apiSecret" in data
 
-        user["api_key"] = data["api_key"]
-        user["api_secret"] = data["api_secret"]
+        user["api_key"] = data["apiKey"]
+        user["api_secret"] = data["apiSecret"]
 
         yield user
 
-        resp = client.request(
-            "DELETE", "/auth/api-keys", json={"display_name": "test-public-api"}
-        )
+        resp = client.delete(f"/auth/api-keys/{data['id']}")
 
 
 @pytest.fixture(scope="module")
@@ -283,7 +281,7 @@ def api_client(
     def as_dict(obj: object):
         return {
             attr: getattr(obj, attr)
-            for attr in obj.__dict__.keys()
+            for attr in obj.__dict__
             if not attr.startswith("_")
         }
 

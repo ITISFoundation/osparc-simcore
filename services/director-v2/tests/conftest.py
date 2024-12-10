@@ -20,9 +20,9 @@ import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.auth import ApiKeyGet
 from models_library.products import ProductName
 from models_library.projects import Node, NodesDict
+from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import (
@@ -347,7 +347,7 @@ def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
         *,
         product_name: ProductName,
         user_id: UserID,
-        name: str,
+        display_name: str,
         expiration: timedelta,
     ):
         assert app
@@ -355,7 +355,7 @@ def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
         assert user_id
         assert expiration is None
 
-        fake_data.display_name = name
+        fake_data.display_name = display_name
         return fake_data
 
     # mocks RPC interface

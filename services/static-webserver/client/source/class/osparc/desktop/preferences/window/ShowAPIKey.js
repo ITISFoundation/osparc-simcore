@@ -16,7 +16,7 @@
 qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
   extend: osparc.desktop.preferences.window.APIKeyBase,
 
-  construct: function(key, secret) {
+  construct: function(key, secret, baseUrl) {
     const caption = this.tr("API Key");
     const infoText = this.tr("For your protection, store your access keys securely and do not share them. You will not be able to access the key again once this window is closed.");
     this.base(arguments, caption, infoText);
@@ -25,39 +25,60 @@ qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
       clickAwayClose: false
     });
 
-    this.__populateTokens(key, secret);
+    this.__populateTokens(key, secret, baseUrl);
   },
 
   members: {
-    __populateTokens: function(key, secret) {
-      const hBox1 = this.__createEntry(this.tr("<b>Key:</b>"), key);
+    __populateTokens: function(key, secret, baseUrl) {
+      const hBox1 = this.__createStarredEntry(this.tr("<b>Key:</b>"), key);
       this._add(hBox1);
 
-      const hBox2 = this.__createEntry(this.tr("<b>Secret:</b>"), secret);
+      const hBox2 = this.__createStarredEntry(this.tr("<b>Secret:</b>"), secret);
       this._add(hBox2);
 
-      const hBox3 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+      const hBox3 = this.__createEntry(this.tr("<b>Base url:</b>"), baseUrl);
+      this._add(hBox3);
+
+      const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
         appearance: "margined-layout"
       });
-      const copyAPIKeyBtn = new qx.ui.form.Button(this.tr("Copy API Key"));
+      const copyAPIKeyBtn = new qx.ui.form.Button(this.tr("API Key"), "@FontAwesome5Solid/copy/12");
       copyAPIKeyBtn.addListener("execute", e => {
         if (osparc.utils.Utils.copyTextToClipboard(key)) {
           copyAPIKeyBtn.setIcon("@FontAwesome5Solid/check/12");
         }
       });
-      hBox3.add(copyAPIKeyBtn, {
-        width: "50%"
+      buttonsLayout.add(copyAPIKeyBtn, {
+        flex: 1
       });
-      const copyAPISecretBtn = new qx.ui.form.Button(this.tr("Copy API Secret"));
+      const copyAPISecretBtn = new qx.ui.form.Button(this.tr("API Secret"), "@FontAwesome5Solid/copy/12");
       copyAPISecretBtn.addListener("execute", e => {
         if (osparc.utils.Utils.copyTextToClipboard(secret)) {
           copyAPISecretBtn.setIcon("@FontAwesome5Solid/check/12");
         }
       });
-      hBox3.add(copyAPISecretBtn, {
-        width: "50%"
+      buttonsLayout.add(copyAPISecretBtn, {
+        flex: 1
       });
-      this._add(hBox3);
+      const copyBaseUrlBtn = new qx.ui.form.Button(this.tr("Base URL"), "@FontAwesome5Solid/copy/12");
+      copyBaseUrlBtn.addListener("execute", e => {
+        if (osparc.utils.Utils.copyTextToClipboard(baseUrl)) {
+          copyBaseUrlBtn.setIcon("@FontAwesome5Solid/check/12");
+        }
+      });
+      buttonsLayout.add(copyBaseUrlBtn, {
+        flex: 1
+      });
+      this._add(buttonsLayout);
+    },
+
+    __createStarredEntry: function(title, label) {
+      const hBox = this.__createEntry(title);
+      if (label) {
+        // partially hide the key and secret
+        hBox.getChildren()[1].setValue(label.substring(1, 8) + "****")
+      }
+      return hBox;
     },
 
     __createEntry: function(title, label) {
@@ -66,13 +87,13 @@ qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
       });
       const sTitle = new qx.ui.basic.Label(title).set({
         rich: true,
-        width: 40
+        width: 60
       });
       hBox.add(sTitle);
       const sLabel = new qx.ui.basic.Label();
       if (label) {
         // partially hide the key and secret
-        sLabel.setValue(label.substring(1, 8) + "****")
+        sLabel.setValue(label);
       }
       hBox.add(sLabel);
       return hBox;

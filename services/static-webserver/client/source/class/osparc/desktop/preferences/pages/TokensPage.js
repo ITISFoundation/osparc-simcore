@@ -77,7 +77,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         const formData = e.getData();
         const params = {
           data: {
-            "display_name": formData["name"]
+            "displayName": formData["name"]
           }
         };
         if (formData["expiration"]) {
@@ -90,14 +90,17 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
           .then(data => {
             this.__rebuildAPIKeysList();
 
-            const key = data["api_key"];
-            const secret = data["api_secret"];
-            const showAPIKeyWindow = new osparc.desktop.preferences.window.ShowAPIKey(key, secret);
+            const key = data["apiKey"];
+            const secret = data["apiSecret"];
+            const baseUrl = data["apiBaseUrl"];
+            const showAPIKeyWindow = new osparc.desktop.preferences.window.ShowAPIKey(key, secret, baseUrl);
             showAPIKeyWindow.center();
             showAPIKeyWindow.open();
           })
           .catch(err => {
-            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+            const errorMsg = err.message || this.tr("Cannot create API Key");
+            osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+            console.error(err);
           })
           .finally(() => this.__requestAPIKeyBtn.setFetching(false));
       }, this);
@@ -109,26 +112,24 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       osparc.data.Resources.get("apiKeys")
         .then(apiKeys => {
           apiKeys.forEach(apiKey => {
-            const apiKeyForm = this.__createValidAPIKeyForm(apiKey);
+            const apiKeyForm = this.__createAPIKeyEntry(apiKey);
             this.__apiKeysList.add(apiKeyForm);
           });
         })
         .catch(err => console.error(err));
     },
 
-    __createValidAPIKeyForm: function(apiKeyLabel) {
+    __createAPIKeyEntry: function(apiKey) {
       const grid = this.__createValidEntryLayout();
 
-      const nameLabel = new qx.ui.basic.Label(apiKeyLabel);
+      const nameLabel = new qx.ui.basic.Label(apiKey["displayName"]);
       grid.add(nameLabel, {
         row: 0,
         column: 0
       });
 
       const delAPIKeyBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash/14");
-      delAPIKeyBtn.addListener("execute", e => {
-        this.__deleteAPIKey(apiKeyLabel);
-      }, this);
+      delAPIKeyBtn.addListener("execute", () => this.__deleteAPIKey(apiKey["id"]), this);
       grid.add(delAPIKeyBtn, {
         row: 0,
         column: 1
@@ -137,7 +138,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       return grid;
     },
 
-    __deleteAPIKey: function(apiKeyLabel) {
+    __deleteAPIKey: function(apiKeyId) {
       if (!osparc.data.Permissions.getInstance().canDo("user.apikey.delete", true)) {
         return;
       }
@@ -153,13 +154,17 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       win.addListener("close", () => {
         if (win.getConfirmed()) {
           const params = {
-            data: {
-              "display_name": apiKeyLabel
+            url: {
+              "apiKeyId": apiKeyId
             }
           };
           osparc.data.Resources.fetch("apiKeys", "delete", params)
             .then(() => this.__rebuildAPIKeysList())
-            .catch(err => console.error(err));
+            .catch(err => {
+              const errorMsg = err.message || this.tr("Cannot delete API Key");
+              osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+              console.error(err)
+            });
         }
       }, this);
     },
@@ -203,7 +208,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
           const supportedExternalServices = osparc.utils.Utils.deepCloneObject(this.__supportedExternalServices());
 
           tokensList.forEach(token => {
-            const tokenForm = this.__createValidTokenEntry(token);
+            const tokenForm = this.__createTokenEntry(token);
             this.__validTokensGB.add(tokenForm);
             const idx = supportedExternalServices.findIndex(srv => srv.name === token.service);
             if (idx > -1) {
@@ -244,7 +249,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         .catch(err => console.error(err));
     },
 
-    __createValidTokenEntry: function(token) {
+    __createTokenEntry: function(token) {
       const grid = this.__createValidEntryLayout();
 
       const service = token["service"];
