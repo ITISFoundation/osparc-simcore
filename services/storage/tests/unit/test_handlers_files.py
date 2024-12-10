@@ -1386,6 +1386,27 @@ async def test_upload_file_is_directory_and_remove_content(
     )
     assert len(list_of_files) == SUBDIR_COUNT * FILE_COUNT
 
+    # DELETE ONE FILE FROM THE DIRECTORY
+
+    assert client.app
+    delete_url = (
+        client.app.router["delete_file"]
+        .url_for(
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(list_of_files[0].file_id, safe=""),
+        )
+        .with_query(user_id=user_id)
+    )
+    response = await client.delete(f"{delete_url}")
+    _, error = await assert_status(response, status.HTTP_204_NO_CONTENT)
+    assert error is None
+
+    list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
+        client, user_id, location_id, directory_file_upload
+    )
+
+    assert len(list_of_files) == SUBDIR_COUNT * FILE_COUNT - 1
+
     # DIRECTORY REMOVAL
 
     await delete_directory(directory_file_upload=directory_file_upload)
