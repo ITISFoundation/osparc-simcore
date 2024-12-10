@@ -18,7 +18,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
 
 def assert_cluster_state(
     spied_cluster_analysis: MockType, *, expected_calls: int, expected_num_machines: int
-) -> None:
+) -> Cluster:
     assert spied_cluster_analysis.call_count > 0
 
     assert isinstance(spied_cluster_analysis.spy_return, Cluster)
@@ -27,6 +27,7 @@ def assert_cluster_state(
         == expected_num_machines
     )
     print("current cluster state:", spied_cluster_analysis.spy_return)
+    return spied_cluster_analysis.spy_return
 
 
 def create_fake_association(
