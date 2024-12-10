@@ -261,6 +261,14 @@ qx.Class.define("osparc.store.Groups", {
       return null;
     },
 
+    getGroupMemberByUsername: function(orgId, username) {
+      const org = this.getGroup(orgId);
+      if (org) {
+        return org.getGroupMemberByUsername(username);
+      }
+      return null;
+    },
+
     getGroupMemberByLogin: function(orgId, userEmail) {
       const org = this.getGroup(orgId);
       if (org) {
@@ -330,7 +338,7 @@ qx.Class.define("osparc.store.Groups", {
     // CRUD GROUP
 
     // CRUD GROUP MEMBERS
-    addMember: function(orgId, newMemberUserName, newMemberEmail = null) {
+    addMember: function(orgId, username, email = null) {
       const gid = parseInt(orgId);
       const params = {
         url: {
@@ -338,10 +346,10 @@ qx.Class.define("osparc.store.Groups", {
         },
         data: {},
       };
-      if (newMemberEmail) {
-        params.data["email"] = newMemberEmail;
+      if (email) {
+        params.data["email"] = email;
       } else {
-        params.data["userName"] = newMemberUserName;
+        params.data["userName"] = username;
       }
       return osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
@@ -350,7 +358,7 @@ qx.Class.define("osparc.store.Groups", {
           return this.__fetchGroupMembers(gid);
         })
         .then(() => {
-          const groupMember = this.getGroupMemberByLogin(gid, newMemberEmail);
+          const groupMember = email ? this.getGroupMemberByLogin(gid, email) : this.getGroupMemberByUsername(gid, username);
           if (groupMember) {
             return groupMember;
           }
