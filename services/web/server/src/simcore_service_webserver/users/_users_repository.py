@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.users import GroupID, UserBillingDetails, UserID
 from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.users import UserStatus, users
+from simcore_postgres_database.models.users import UserStatus, user_to_groups, users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
@@ -22,7 +22,6 @@ from simcore_service_webserver.users.exceptions import UserNotFoundError
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ..db.models import user_to_groups
 from ..db.plugin import get_asyncpg_engine
 from .exceptions import BillingDetailsNotFoundError
 from .schemas import Permission

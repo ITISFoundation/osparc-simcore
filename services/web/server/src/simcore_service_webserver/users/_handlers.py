@@ -20,7 +20,7 @@ from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _api, api
+from . import _users_service, api
 from ._constants import FMSG_MISSING_CONFIG_WITH_OEC
 from ._schemas import PreUserProfile
 from .exceptions import (
@@ -121,7 +121,7 @@ async def search_users(request: web.Request) -> web.Response:
         _SearchQueryParams, request
     )
 
-    found = await _api.search_users(
+    found = await _users_service.search_users(
         request.app, email_glob=query_params.email, include_products=True
     )
 
@@ -139,7 +139,7 @@ async def pre_register_user(request: web.Request) -> web.Response:
     pre_user_profile = await parse_request_body_as(PreUserProfile, request)
 
     try:
-        user_profile = await _api.pre_register_user(
+        user_profile = await _users_service.pre_register_user(
             request.app, profile=pre_user_profile, creator_user_id=req_ctx.user_id
         )
         return envelope_json_response(
