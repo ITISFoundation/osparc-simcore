@@ -6469,7 +6469,8 @@
       "PricingPlanClassification": {
         "type": "string",
         "enum": [
-          "TIER"
+          "TIER",
+          "LICENSE"
         ],
         "title": "PricingPlanClassification"
       },
