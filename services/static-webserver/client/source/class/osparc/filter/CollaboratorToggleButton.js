@@ -23,13 +23,12 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
       appearance: "tagbutton"
     });
 
-    let label = collaborator.getLabel();
-    if ("getEmail" in collaborator) {
-      // user
-      label += ` (${collaborator.getEmail()})`;
-      this.setToolTipText(collaborator.getEmail());
-    }
+    const label = collaborator.getLabel();
     this.setLabel(label);
+    if (collaborator.getDescription()) {
+      const ttt = label + "<br>" + collaborator.getDescription();
+      this.setToolTipText(ttt);
+    }
 
     let iconPath = null;
     switch (collaborator["collabType"]) {
