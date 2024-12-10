@@ -236,11 +236,15 @@ async def test_add_remove_users_from_group(
             "delete": False,
         }
         for i in range(num_new_users):
-            update_group_user_url = client.app.router["update_group_user"].url_for(
-                gid=f"{assigned_group['gid']}", uid=f"{created_users_list[i]['id']}"
+            group_id = assigned_group["gid"]
+            user_id = created_users_list[i]["id"]
+            is_private = created_users_list[i].get("is_private", False)
+
+            url = client.app.router["update_group_user"].url_for(
+                gid=f"{group_id}", uid=f"{user_id}"
             )
             resp = await client.patch(
-                f"{update_group_user_url}", json={"accessRights": MANAGER_ACCESS_RIGHTS}
+                f"{url}", json={"accessRights": MANAGER_ACCESS_RIGHTS}
             )
             data, error = await assert_status(resp, expected.ok)
             if not error:
@@ -248,11 +252,12 @@ async def test_add_remove_users_from_group(
                     created_users_list[i],
                     MANAGER_ACCESS_RIGHTS,
                     data,
-                    group_owner_id=the_owner["id"],
+                    group_owner_id=the_owner["id"] if is_private else user_id,
                 )
+
             # check it is there
             url = client.app.router["get_group_user"].url_for(
-                gid=f"{assigned_group['gid']}", uid=f"{created_users_list[i]['id']}"
+                gid=f"{group_id}", uid=f"{user_id}"
             )
             resp = await client.get(f"{url}")
             data, error = await assert_status(resp, expected.ok)
@@ -261,21 +266,23 @@ async def test_add_remove_users_from_group(
                     created_users_list[i],
                     MANAGER_ACCESS_RIGHTS,
                     data,
-                    group_owner_id=the_owner["id"],
+                    group_owner_id=the_owner["id"] if is_private else user_id,
                 )
+
             # remove the user from the group
-            delete_group_user_url = client.app.router["delete_group_user"].url_for(
-                gid=f"{assigned_group['gid']}", uid=f"{created_users_list[i]['id']}"
+            url = client.app.router["delete_group_user"].url_for(
+                gid=f"{group_id}", uid=f"{user_id}"
             )
-            resp = await client.delete(f"{delete_group_user_url}")
+            resp = await client.delete(f"{url}")
             data, error = await assert_status(resp, expected.no_content)
+
             # do it again to check it is not found anymore
-            resp = await client.delete(f"{delete_group_user_url}")
+            resp = await client.delete(f"{url}")
             data, error = await assert_status(resp, expected.not_found)
 
             # check it is not there anymore
             url = client.app.router["get_group_user"].url_for(
-                gid=f"{assigned_group['gid']}", uid=f"{created_users_list[i]['id']}"
+                gid=f"{group_id}", uid=f"{user_id}"
             )
             resp = await client.get(f"{url}")
             data, error = await assert_status(resp, expected.not_found)
@@ -435,7 +442,11 @@ async def test_add_user_gets_added_to_group(
             user = await users_stack.enter_async_context(
                 LoggedUser(
                     client,
-                    user_data={"role": user_role.name, "email": email},
+                    user_data={
+                        "role": user_role.name,
+                        "email": email,
+                        "privacy_hide_email": False,
+                    },
                     check_if_succeeds=user_role != UserRole.ANONYMOUS,
                 )
             )
@@ -495,15 +506,16 @@ async def test_adding_user_to_group_with_upper_case_email(
     # adding a user to group with the email in capital letters
     # Tests 🐛 https://github.com/ITISFoundation/osparc-issues/issues/812
     async with NewUser(
-        app=client.app,
+        app=client.app, user_data={"privacy_hide_email": False}
     ) as registered_user:
         assert registered_user["email"]  # <--- this email is lower case
 
         response = await client.post(
             f"{url}",
             json={
+                # <--- email in upper case
                 "email": registered_user["email"].upper()
-            },  # <--- email in upper case
+            },
         )
         data, error = await assert_status(response, status.HTTP_204_NO_CONTENT)
 
