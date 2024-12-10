@@ -1,6 +1,21 @@
 import models_library.groups
 import simcore_postgres_database.models.groups
-from models_library.api_schemas_webserver.groups import GroupGet
+from faker import Faker
+from models_library.api_schemas_webserver._base import OutputSchema
+from models_library.api_schemas_webserver.groups import (
+    GroupCreate,
+    GroupGet,
+    GroupUpdate,
+    GroupUserGet,
+)
+from models_library.groups import (
+    AccessRightsDict,
+    Group,
+    GroupMember,
+    GroupTypeInModel,
+    OrganizationCreate,
+    OrganizationUpdate,
+)
 from models_library.utils.enums import enum_to_dict
 
 
@@ -39,3 +54,49 @@ def test_sanitize_legacy_data():
     assert users_group_2.thumbnail is None
 
     assert users_group_1 == users_group_2
+
+
+def test_output_schemas_from_models(faker: Faker):
+    # output :  schema <- model
+    assert issubclass(GroupGet, OutputSchema)
+    domain_model = Group(
+        gid=1,
+        name=faker.word(),
+        description=faker.sentence(),
+        group_type=GroupTypeInModel.STANDARD,
+        thumbnail=None,
+    )
+    output_schema = GroupGet.from_model(
+        domain_model,
+        access_rights=AccessRightsDict(read=True, write=False, delete=False),
+    )
+    assert output_schema.label == domain_model.name
+
+    # output :  schema <- model
+    domain_model = GroupMember(
+        id=12,
+        name=faker.user_name(),
+        email=None,
+        first_name=None,
+        last_name=None,
+        primary_gid=13,
+        access_rights=AccessRightsDict(read=True, write=False, delete=False),
+    )
+    output_schema = GroupUserGet.from_model(user=domain_model)
+    assert output_schema.user_name == domain_model.name
+
+
+def test_input_schemas_to_models(faker: Faker):
+    # input : scheam -> model
+    input_schema = GroupCreate(
+        label=faker.word(), description=faker.sentence(), thumbnail=faker.url()
+    )
+    domain_model = input_schema.to_model()
+    assert isinstance(domain_model, OrganizationCreate)
+    assert domain_model.name == input_schema.label
+
+    # input : scheam -> model
+    input_schema = GroupUpdate(label=faker.word())
+    domain_model = input_schema.to_model()
+    assert isinstance(domain_model, OrganizationUpdate)
+    assert domain_model.name == input_schema.label

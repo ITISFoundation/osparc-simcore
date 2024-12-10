@@ -71,7 +71,7 @@ async def standard_groups_owner(
             app=client.app,
             user_id=owner_user["id"],
             new_group={
-                "label": "SPARC",
+                "name": "SPARC",
                 "description": "Stimulating Peripheral Activity to Relieve Conditions",
                 "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
                 "inclusionRules": {"email": r"@(sparc)+\.(io|com)$"},
@@ -81,8 +81,7 @@ async def standard_groups_owner(
             app=client.app,
             user_id=owner_user["id"],
             new_group={
-                "gid": "5",  # this will be replaced
-                "label": "team Black",
+                "name": "team Black",
                 "description": "THE incredible black team",
                 "thumbnail": None,
                 "inclusionRules": {"email": r"@(black)+\.(io|com)$"},

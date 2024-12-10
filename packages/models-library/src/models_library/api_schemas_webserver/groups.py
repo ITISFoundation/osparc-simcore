@@ -86,6 +86,7 @@ class GroupGet(OutputSchema):
                             "thumbnail",
                             "inclusion_rules",
                         },
+                        exclude={"access_rights"},
                         exclude_unset=True,
                         by_alias=False,
                     ),

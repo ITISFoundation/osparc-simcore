@@ -80,14 +80,14 @@ class GroupMember(BaseModel):
 
 class OrganizationCreate(BaseModel):
     name: str
-    description: str | None
-    thumbnail: str | None
+    description: str | None = None
+    thumbnail: str | None = None
 
 
 class OrganizationUpdate(BaseModel):
-    name: str | None
-    description: str | None
-    thumbnail: str | None
+    name: str | None = None
+    description: str | None = None
+    thumbnail: str | None = None
 
 
 class GroupAtDB(Group):
