@@ -11,8 +11,34 @@ import pycountry
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from pydantic import ConfigDict, Field, ValidationInfo, field_validator, model_validator
+from models_library.users import UserID
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
+from servicelib.aiohttp import status
+from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserStatus
+
+from .._constants import RQ_PRODUCT_KEY
+from ._schemas import PreUserProfile
+
+
+class UsersRequestContext(BaseModel):
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
+
+
+class _SearchQueryParams(BaseModel):
+    email: str = Field(
+        min_length=3,
+        max_length=200,
+        description="complete or glob pattern for an email",
+    )
 
 
 class UserProfile(OutputSchema):
