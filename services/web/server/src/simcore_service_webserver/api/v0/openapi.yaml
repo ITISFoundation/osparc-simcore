@@ -9985,6 +9985,7 @@ components:
         id: '1'
         last_name: Smith
         login: mr.smith@matrix.com
+        userName: mrmith
     GroupUserUpdate:
       properties:
         accessRights:
