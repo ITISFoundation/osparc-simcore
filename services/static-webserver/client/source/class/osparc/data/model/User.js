@@ -28,13 +28,16 @@ qx.Class.define("osparc.data.model.User", {
   construct: function(userData) {
     this.base(arguments);
 
+    if (!userData["username"]) {
+      userData["username"] = "odeimaiz";
+    }
     let description = "";
     if (userData["first_name"]) {
       description = userData["first_name"];
       if (userData["last_name"]) {
         description += " " + userData["last_name"];
       }
-      description += " | ";
+      description += " - ";
     }
     if (userData["login"]) {
       description += userData["login"];
@@ -43,7 +46,7 @@ qx.Class.define("osparc.data.model.User", {
     this.set({
       userId: userData["id"],
       groupId: userData["gid"],
-      username: userData["username"] || "",
+      username: userData["username"],
       firstName: userData["first_name"],
       lastName: userData["last_name"],
       email: userData["login"],
@@ -73,6 +76,13 @@ qx.Class.define("osparc.data.model.User", {
       nullable: false,
       init: null,
       event: "changeLabel",
+    },
+
+    description: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeDescription",
     },
 
     username: {
