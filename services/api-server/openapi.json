@@ -6484,16 +6484,6 @@
             "title": "Pricingunitid",
             "minimum": 0
           },
-          "unitName": {
-            "type": "string",
-            "title": "Unitname"
-          },
-          "unitExtraInfo": {
-            "$ref": "#/components/schemas/UnitExtraInfo"
-          },
-          "currentCostPerUnit": {
-            "type": "number",
-            "minimum": 0.0,
             "title": "Currentcostperunit"
           },
           "default": {
