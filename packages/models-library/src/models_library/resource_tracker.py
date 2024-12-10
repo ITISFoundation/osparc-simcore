@@ -52,6 +52,7 @@ class CreditClassification(StrAutoEnum):
 
 class PricingPlanClassification(StrAutoEnum):
     TIER = auto()
+    LICENSE = auto()
 
 
 class PricingInfo(BaseModel):

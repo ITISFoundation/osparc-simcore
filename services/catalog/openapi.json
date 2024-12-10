@@ -628,11 +628,17 @@
           },
           "image": {
             "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
             "title": "Image",
             "description": "Url to the badge"
           },
           "url": {
             "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
             "title": "Url",
             "description": "Link to the status"
           }
@@ -2843,7 +2849,10 @@
           "thumbnail": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
               },
               {
                 "type": "null"
