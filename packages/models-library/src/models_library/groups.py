@@ -82,12 +82,20 @@ class StandardGroupCreate(BaseModel):
     name: str
     description: str | None = None
     thumbnail: str | None = None
+    inclusion_rules: Annotated[
+        dict[str, str],
+        Field(
+            default_factory=dict,
+            description="Maps user's column and regular expression",
+        ),
+    ] = DEFAULT_FACTORY
 
 
 class StandardGroupUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     thumbnail: str | None = None
+    inclusion_rules: dict[str, str] | None = None
 
 
 class GroupAtDB(Group):

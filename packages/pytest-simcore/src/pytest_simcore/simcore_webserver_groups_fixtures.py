@@ -74,7 +74,7 @@ async def standard_groups_owner(
                 "name": "SPARC",
                 "description": "Stimulating Peripheral Activity to Relieve Conditions",
                 "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
-                "inclusionRules": {"email": r"@(sparc)+\.(io|com)$"},
+                "inclusion_rules": {"email": r"@(sparc)+\.(io|com)$"},
             },
         )
         team_black_group = await _create_organization(
@@ -84,7 +84,7 @@ async def standard_groups_owner(
                 "name": "team Black",
                 "description": "THE incredible black team",
                 "thumbnail": None,
-                "inclusionRules": {"email": r"@(black)+\.(io|com)$"},
+                "inclusion_rules": {"email": r"@(black)+\.(io|com)$"},
             },
         )
 

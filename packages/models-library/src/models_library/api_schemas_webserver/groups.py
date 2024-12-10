@@ -149,7 +149,12 @@ class GroupCreate(InputSchema):
 
     def to_model(self) -> StandardGroupCreate:
         data = _rename_keys(
-            self.model_dump(mode="json", exclude_unset=True),
+            self.model_dump(
+                mode="json",
+                # NOTE: intentionally inclusion_rules are not exposed to the REST api
+                include={"label", "description", "thumbnail"},
+                exclude_unset=True,
+            ),
             name_map={"label": "name"},
         )
         return StandardGroupCreate(**data)
@@ -162,7 +167,12 @@ class GroupUpdate(InputSchema):
 
     def to_model(self) -> StandardGroupUpdate:
         data = _rename_keys(
-            self.model_dump(mode="json", exclude_unset=True),
+            self.model_dump(
+                mode="json",
+                # NOTE: intentionally inclusion_rules are not exposed to the REST api
+                include={"label", "description", "thumbnail"},
+                exclude_unset=True,
+            ),
             name_map={"label": "name"},
         )
         return StandardGroupUpdate(**data)

@@ -418,9 +418,12 @@ async def test_add_user_gets_added_to_group(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
+
     assert client.app
     async with AsyncExitStack() as users_stack:
         for email in (
+            # SEE StandardGroupCreate.inclusion_rules in
+            #  packages/pytest-simcore/src/pytest_simcore/simcore_webserver_groups_fixtures.py
             "good@sparc.io",
             "bad@bad.com",
             "bad@osparc.com",
