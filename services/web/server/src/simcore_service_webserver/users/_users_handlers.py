@@ -12,17 +12,15 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
-from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _users_service, api
 from ._constants import FMSG_MISSING_CONFIG_WITH_OEC
-from ._schemas import PreUserProfile
+from ._schemas import PreUserProfile, UsersRequestContext, _SearchQueryParams
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
@@ -34,11 +32,6 @@ _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
-
-
-class UsersRequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 def _handle_users_exceptions(handler: Handler):
@@ -95,14 +88,6 @@ async def update_my_profile(request: web.Request) -> web.Response:
         request.app, user_id=req_ctx.user_id, update=profile_update
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
-
-
-class _SearchQueryParams(BaseModel):
-    email: str = Field(
-        min_length=3,
-        max_length=200,
-        description="complete or glob pattern for an email",
-    )
 
 
 _RESPONSE_MODEL_MINIMAL_POLICY = RESPONSE_MODEL_POLICY.copy()

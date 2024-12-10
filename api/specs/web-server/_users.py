@@ -12,7 +12,6 @@ from models_library.api_schemas_webserver.users_preferences import PatchRequestB
 from models_library.generics import Envelope
 from models_library.user_preferences import PreferenceIdentifier
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.users._handlers import PreUserProfile, _SearchQueryParams
 from simcore_service_webserver.users._notifications import (
     UserNotification,
     UserNotificationCreate,
@@ -21,7 +20,11 @@ from simcore_service_webserver.users._notifications import (
 from simcore_service_webserver.users._notifications_handlers import (
     _NotificationPathParams,
 )
-from simcore_service_webserver.users._schemas import UserProfile
+from simcore_service_webserver.users._schemas import (
+    PreUserProfile,
+    UserProfile,
+    _SearchQueryParams,
+)
 from simcore_service_webserver.users._tokens_handlers import _TokenPathParams
 from simcore_service_webserver.users.schemas import (
     PermissionGet,
