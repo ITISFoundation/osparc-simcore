@@ -87,22 +87,22 @@ qx.Class.define("osparc.data.model.User", {
 
     username: {
       check: "String",
-      nullable: true,
+      nullable: false,
       init: null,
       event: "changeUsername",
     },
 
     firstName: {
-      init: "",
-      nullable: true,
       check: "String",
+      nullable: true,
+      init: "",
       event: "changeFirstName"
     },
 
     lastName: {
-      init: "",
-      nullable: true,
       check: "String",
+      nullable: true,
+      init: "",
       event: "changeLastName"
     },
 
