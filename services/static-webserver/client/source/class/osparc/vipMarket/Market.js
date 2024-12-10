@@ -44,22 +44,10 @@ qx.Class.define("osparc.vipMarket.Market", {
       url: "https://speag.swiss/PD_DirectDownload/getDownloadableItems/ComputationalPhantom",
     }].forEach(marketInfo => {
       this.__buildViPMarketPage(marketInfo);
-    })
-
-    // this.__vipMarketPage = this.__getVipMarketPage();
+    });
   },
 
   members: {
-    __vipMarketPage: null,
-
-    __getVipMarketPage: function() {
-      const title = this.tr("ViP Models");
-      const iconSrc = "@FontAwesome5Solid/users/20";
-      const vipMarketView = new osparc.vipMarket.VipMarket();
-      const page = this.addTab(title, iconSrc, vipMarketView);
-      return page;
-    },
-
     __buildViPMarketPage: function(marketInfo) {
       const title = marketInfo["label"];
       const iconSrc = "@FontAwesome5Solid/users/20";
@@ -68,6 +56,7 @@ qx.Class.define("osparc.vipMarket.Market", {
         metadataUrl: marketInfo["url"],
       });
       const page = this.addTab(title, iconSrc, vipMarketView);
+      page.category = marketInfo["category"];
       return page;
     },
   }
