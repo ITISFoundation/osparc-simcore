@@ -1125,12 +1125,18 @@ async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_star
 
 
 @pytest.mark.parametrize(
-    "dask_task_imposed_ec2_type, dask_ram, expected_ec2_type",
+    "scale_up_params",
     [
         pytest.param(
-            None,
-            TypeAdapter(ByteSize).validate_python("128Gib"),
-            "r5n.4xlarge",
+            _ScaleUpParams(
+                imposed_instance_type=None,
+                task_resources=Resources(
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                ),
+                num_tasks=1,
+                expected_instance_type="r5n.4xlarge",
+                expected_num_instances=1,
+            ),
             id="No explicit instance defined",
         ),
     ],
@@ -1142,18 +1148,16 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
     ec2_client: EC2Client,
-    dask_task_imposed_ec2_type: InstanceTypeType | None,
-    dask_ram: ByteSize | None,
     create_dask_task_resources: Callable[
         [InstanceTypeType | None, Resources], DaskTaskResources
     ],
     dask_spec_local_cluster: distributed.SpecCluster,
-    expected_ec2_type: InstanceTypeType,
     mock_find_node_with_name_returns_none: mock.Mock,
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     short_ec2_instance_max_start_time: datetime.timedelta,
     ec2_instance_custom_tags: dict[str, str],
+    scale_up_params: _ScaleUpParams,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
@@ -1166,8 +1170,8 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     # create a task that needs more power
     dask_future = await _create_task_with_resources(
         ec2_client,
-        dask_task_imposed_ec2_type,
-        Resources(cpus=1, ram=dask_ram),
+        scale_up_params.imposed_instance_type,
+        scale_up_params.task_resources,
         create_dask_task_resources,
         create_dask_task,
     )
@@ -1181,8 +1185,8 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     instances = await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -1224,8 +1228,8 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
         instances = await assert_autoscaled_computational_ec2_instances(
             ec2_client,
             expected_num_reservations=1,
-            expected_num_instances=1,
-            expected_instance_type=expected_ec2_type,
+            expected_num_instances=scale_up_params.expected_num_instances,
+            expected_instance_type=scale_up_params.expected_instance_type,
             expected_instance_state="running",
             expected_additional_tag_keys=list(ec2_instance_custom_tags),
         )
@@ -1237,7 +1241,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
             initialized_app,
             dask_spec_local_cluster.scheduler_address,
             instances_running=0,
-            instances_pending=1,
+            instances_pending=scale_up_params.expected_num_instances,
         )
         mock_rabbitmq_post_message.reset_mock()
         assert instances
@@ -1268,7 +1272,10 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     all_instances = await ec2_client.describe_instances()
     assert len(all_instances["Reservations"]) == 2
     assert "Instances" in all_instances["Reservations"][0]
-    assert len(all_instances["Reservations"][0]["Instances"]) == 1
+    assert (
+        len(all_instances["Reservations"][0]["Instances"])
+        == scale_up_params.expected_num_instances
+    )
     assert "State" in all_instances["Reservations"][0]["Instances"][0]
     assert "Name" in all_instances["Reservations"][0]["Instances"][0]["State"]
     assert (
@@ -1277,7 +1284,10 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     )
 
     assert "Instances" in all_instances["Reservations"][1]
-    assert len(all_instances["Reservations"][1]["Instances"]) == 1
+    assert (
+        len(all_instances["Reservations"][1]["Instances"])
+        == scale_up_params.expected_num_instances
+    )
     assert "State" in all_instances["Reservations"][1]["Instances"][0]
     assert "Name" in all_instances["Reservations"][1]["Instances"][0]["State"]
     assert (
