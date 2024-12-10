@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  system-api-specs:
+  api-specs:
     timeout-minutes: 10
     name: "check oas' are up to date"
     runs-on: ubuntu-latest
@@ -40,7 +40,7 @@ jobs:
             .
 
   api-server-backwards-compatibility:
-    needs: system-api-specs
+    needs: api-specs
     timeout-minutes: 10
     name: "api-server backwards compatibility"
     runs-on: ubuntu-latest
@@ -63,7 +63,7 @@ jobs:
             /specs/services/api-server/openapi.json
 
   oas-backwards-compatibility:
-    needs: system-api-specs
+    needs: api-specs
     continue-on-error: true
     timeout-minutes: 10
     name: "oas backwards compatibility"
