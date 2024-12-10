@@ -49,7 +49,7 @@ async def create(
     data: CreateLicensedItemsPurchasesDB,
 ) -> LicensedItemsPurchasesDB:
     async with transaction_context(engine, connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             resource_tracker_licensed_items_purchases.insert()
             .values(
                 product_name=data.product_name,
@@ -67,7 +67,7 @@ async def create(
             )
             .returning(*_SELECTION_ARGS)
         )
-        row = await result.first()
+        row = result.first()
         return LicensedItemsPurchasesDB.model_validate(row)
 
 

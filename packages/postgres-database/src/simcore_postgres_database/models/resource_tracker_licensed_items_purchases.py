@@ -26,7 +26,7 @@ resource_tracker_licensed_items_purchases = sa.Table(
     ),
     sa.Column(
         "licensed_item_id",
-        sa.BigInteger,
+        UUID(as_uuid=True),
         nullable=False,
     ),
     sa.Column(
