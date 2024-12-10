@@ -171,7 +171,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
     },
 
     __createPricingUnits: function(anatomicalModelsData) {
-      const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+      const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       }));
 

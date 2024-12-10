@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.study.PricingUnits", {
+qx.Class.define("osparc.study.PricingUnitTiers", {
   extend: qx.ui.container.Composite,
 
   construct: function(pricingUnitsData, preselectedPricingUnit, changeSelectionAllowed = true) {
