@@ -27,7 +27,7 @@ class LicensedItemPurchaseGet(OutputSchema):
     num_of_seats: int
     purchased_by_user: UserID
     purchased_at: datetime
-    modified: datetime
+    modified_at: datetime
 
 
 class LicensedItemPurchaseGetPage(NamedTuple):
