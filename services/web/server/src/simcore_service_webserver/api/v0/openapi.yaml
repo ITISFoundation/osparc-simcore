@@ -369,73 +369,6 @@ paths:
                 $ref: '#/components/schemas/Envelope_Log_'
         3XX:
           description: redirection to specific ui application page
-  /v0/auth/api-keys:
-    get:
-      tags:
-      - auth
-      summary: List Api Keys
-      description: lists display names of API keys by this user
-      operationId: list_api_keys
-      responses:
-        '200':
-          description: returns the display names of API keys
-          content:
-            application/json:
-              schema:
-                items:
-                  type: string
-                type: array
-                title: Response 200 List Api Keys
-        '400':
-          description: key name requested is invalid
-        '401':
-          description: requires login to  list keys
-        '403':
-          description: not enough permissions to list keys
-    post:
-      tags:
-      - auth
-      summary: Create Api Key
-      description: creates API keys to access public API
-      operationId: create_api_key
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiKeyCreate'
-        required: true
-      responses:
-        '200':
-          description: Authorization granted returning API key
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiKeyGet'
-        '400':
-          description: key name requested is invalid
-        '401':
-          description: requires login to  list keys
-        '403':
-          description: not enough permissions to list keys
-    delete:
-      tags:
-      - auth
-      summary: Delete Api Key
-      description: deletes API key by name
-      operationId: delete_api_key
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiKeyCreate'
-        required: true
-      responses:
-        '204':
-          description: api key successfully deleted
-        '401':
-          description: requires login to  delete a key
-        '403':
-          description: not enough permissions to delete a key
   /v0/auth/captcha:
     get:
       tags:
@@ -449,6 +382,128 @@ paths:
             application/json:
               schema: {}
             image/png: {}
+  /v0/auth/api-keys:
+    get:
+      tags:
+      - auth
+      summary: List Api Keys
+      description: lists API keys by this user
+      operationId: list_api_keys
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_ApiKeyGet__'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+    post:
+      tags:
+      - auth
+      summary: Create Api Key
+      description: creates API keys to access public API
+      operationId: create_api_key
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyCreateRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ApiKeyCreateResponse_'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+  /v0/auth/api-keys/{api_key_id}:
+    get:
+      tags:
+      - auth
+      summary: Get Api Key
+      description: returns the API Key with the given ID
+      operationId: get_api_key
+      parameters:
+      - name: api_key_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+          title: Api Key Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ApiKeyGet_'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+    delete:
+      tags:
+      - auth
+      summary: Delete Api Key
+      description: deletes the API key with the given ID
+      operationId: delete_api_key
+      parameters:
+      - name: api_key_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+          title: Api Key Id
+      responses:
+        '204':
+          description: Successful Response
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
   /v0/groups:
     get:
       tags:
@@ -6822,12 +6877,12 @@ components:
       - link
       - widgets
       title: Announcement
-    ApiKeyCreate:
+    ApiKeyCreateRequest:
       properties:
-        display_name:
+        displayName:
           type: string
           minLength: 3
-          title: Display Name
+          title: Displayname
         expiration:
           anyOf:
           - type: string
@@ -6838,25 +6893,59 @@ components:
             it does not expire.
       type: object
       required:
-      - display_name
-      title: ApiKeyCreate
-    ApiKeyGet:
+      - displayName
+      title: ApiKeyCreateRequest
+    ApiKeyCreateResponse:
       properties:
-        display_name:
+        id:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Id
+        displayName:
           type: string
           minLength: 3
-          title: Display Name
-        api_key:
+          title: Displayname
+        expiration:
+          anyOf:
+          - type: string
+            format: duration
+          - type: 'null'
+          title: Expiration
+          description: Time delta from creation time to expiration. If None, then
+            it does not expire.
+        apiBaseUrl:
           type: string
-          title: Api Key
-        api_secret:
+          title: Apibaseurl
+        apiKey:
           type: string
-          title: Api Secret
+          title: Apikey
+        apiSecret:
+          type: string
+          title: Apisecret
       type: object
       required:
-      - display_name
-      - api_key
-      - api_secret
+      - id
+      - displayName
+      - apiBaseUrl
+      - apiKey
+      - apiSecret
+      title: ApiKeyCreateResponse
+    ApiKeyGet:
+      properties:
+        id:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Id
+        displayName:
+          type: string
+          minLength: 3
+          title: Displayname
+      type: object
+      required:
+      - id
+      - displayName
       title: ApiKeyGet
     AppStatusCheck:
       properties:
@@ -7683,6 +7772,32 @@ components:
           title: Error
       type: object
       title: Envelope[AnyUrl]
+    Envelope_ApiKeyCreateResponse_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ApiKeyCreateResponse'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ApiKeyCreateResponse]
+    Envelope_ApiKeyGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ApiKeyGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ApiKeyGet]
     Envelope_AppStatusCheck_:
       properties:
         data:
@@ -8657,6 +8772,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[Announcement]]
+    Envelope_list_ApiKeyGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ApiKeyGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[ApiKeyGet]]
     Envelope_list_DatasetMetaData__:
       properties:
         data:
