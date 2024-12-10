@@ -242,7 +242,7 @@ async def get_ids_of_all_user_groups(
             )
             .where(user_to_groups.c.uid == user_id)
         )
-        return [row.id async for row in result]
+        return [row.gid async for row in result]
 
 
 async def get_user_group(
