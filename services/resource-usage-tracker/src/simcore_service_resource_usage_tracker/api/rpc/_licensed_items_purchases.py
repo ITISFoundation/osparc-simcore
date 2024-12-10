@@ -3,6 +3,7 @@ from models_library.api_schemas_resource_usage_tracker.licensed_items_purchases 
     LicensedItemPurchaseGet,
     LicensedItemsPurchasesPage,
 )
+from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemPurchaseID,
@@ -25,7 +26,7 @@ async def get_licensed_items_purchases_page(
     wallet_id: WalletID,
     offset: int = 0,
     limit: int = 20,
-    order_by: OrderBy = OrderBy(field="purchased_at"),
+    order_by: OrderBy = OrderBy(field=IDStr("purchased_at")),
 ) -> LicensedItemsPurchasesPage:
     return await licensed_items_purchases.list_licensed_items_purchases(
         db_engine=app.state.engine,
