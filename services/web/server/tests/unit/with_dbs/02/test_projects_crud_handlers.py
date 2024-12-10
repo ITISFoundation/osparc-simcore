@@ -33,10 +33,8 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.groups.api import (
-    auto_add_user_to_product_group,
-    get_product_group_for_user,
-)
+from simcore_service_webserver.groups._groups_api import get_product_group_for_user
+from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.groups.exceptions import GroupNotFoundError
 from simcore_service_webserver.products.api import get_product
 from simcore_service_webserver.projects._permalink_api import ProjectPermalink
@@ -294,9 +292,14 @@ async def logged_user_registed_in_two_products(
     # registered to osparc
     osparc_product = get_product(client.app, "osparc")
     assert osparc_product.group_id
-    assert await get_product_group_for_user(
-        client.app, user_id=logged_user["id"], product_gid=osparc_product.group_id
+
+    group, _ = await get_product_group_for_user(
+        # should not raise
+        client.app,
+        user_id=logged_user["id"],
+        product_gid=osparc_product.group_id,
     )
+    assert group.gid == osparc_product.group_id
 
     # not registered to s4l
     s4l_product = get_product(client.app, s4l_products_db_name)
@@ -312,9 +315,13 @@ async def logged_user_registed_in_two_products(
         client.app, user_id=logged_user["id"], product_name=s4l_products_db_name
     )
 
-    assert await get_product_group_for_user(
-        client.app, user_id=logged_user["id"], product_gid=s4l_product.group_id
+    group, _ = await get_product_group_for_user(
+        # should not raise
+        client.app,
+        user_id=logged_user["id"],
+        product_gid=s4l_product.group_id,
     )
+    assert group.gid == s4l_product.group_id
 
 
 @pytest.mark.parametrize(
