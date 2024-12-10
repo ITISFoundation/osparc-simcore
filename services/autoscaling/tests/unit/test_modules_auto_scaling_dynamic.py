@@ -39,6 +39,10 @@ from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.autoscaling import (
+    assert_cluster_state,
+    create_fake_association,
+)
 from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_dynamic_ec2_instances
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
@@ -245,33 +249,6 @@ class _ScaleUpParams:
     expected_num_instances: int
 
 
-def _assert_cluster_state(
-    spied_cluster_analysis: MockType, *, expected_calls: int, expected_num_machines: int
-) -> None:
-    assert spied_cluster_analysis.call_count > 0
-
-    assert isinstance(spied_cluster_analysis.spy_return, Cluster)
-    assert (
-        spied_cluster_analysis.spy_return.total_number_of_machines()
-        == expected_num_machines
-    )
-    print("current cluster state:", spied_cluster_analysis.spy_return)
-
-
-@pytest.fixture
-async def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mock.Mock:
-    async def _(
-        nodes: list[Node], ec2_instances: list[EC2InstanceData]
-    ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
-        return [], ec2_instances
-
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.associate_ec2_instances_with_nodes",
-        autospec=True,
-        side_effect=_,
-    )
-
-
 @pytest.fixture
 async def create_services_batch(
     create_service: Callable[
@@ -281,7 +258,7 @@ async def create_services_batch(
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     service_monitored_labels: dict[DockerLabelKey, str],
     osparc_docker_label_keys: StandardSimcoreDockerLabels,
-) -> Callable[[Resources, str | None, int], Awaitable[list[Service]]]:
+) -> Callable[[Resources, InstanceTypeType | None, int], Awaitable[list[Service]]]:
     async def _(
         service_resources: Resources,
         imposed_instance_type: InstanceTypeType | None,
@@ -311,47 +288,6 @@ async def create_services_batch(
         )
 
     return _
-
-
-def _create_fake_association(
-    create_fake_node: Callable,
-    drained_machine_id: str | None,
-    terminating_machine_id: str | None,
-):
-    fake_node_to_instance_map = {}
-
-    async def _fake_node_creator(
-        nodes: list[Node], ec2_instances: list[EC2InstanceData]
-    ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
-        def _create_fake_node_with_labels(instance: EC2InstanceData) -> Node:
-            if instance not in fake_node_to_instance_map:
-                fake_node = create_fake_node()
-                assert fake_node.spec
-                fake_node.spec.availability = Availability.active
-                assert fake_node.status
-                fake_node.status.state = NodeState.ready
-                assert fake_node.spec.labels
-                fake_node.spec.labels |= {
-                    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: arrow.utcnow().isoformat(),
-                    _OSPARC_SERVICE_READY_LABEL_KEY: (
-                        "true" if instance.id != drained_machine_id else "false"
-                    ),
-                }
-                if instance.id == terminating_machine_id:
-                    fake_node.spec.labels |= {
-                        _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: arrow.utcnow().isoformat()
-                    }
-                fake_node_to_instance_map[instance] = fake_node
-            return fake_node_to_instance_map[instance]
-
-        associated_instances = [
-            AssociatedInstance(node=_create_fake_node_with_labels(i), ec2_instance=i)
-            for i in ec2_instances
-        ]
-
-        return associated_instances, []
-
-    return _fake_node_creator
 
 
 async def test_cluster_scaling_with_no_services_does_nothing(
@@ -550,7 +486,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    _assert_cluster_state(
+    assert_cluster_state(
         spied_cluster_analysis, expected_calls=1, expected_num_machines=0
     )
 
@@ -599,7 +535,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    _assert_cluster_state(
+    assert_cluster_state(
         spied_cluster_analysis, expected_calls=1, expected_num_machines=1
     )
 
@@ -1309,14 +1245,14 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
-    _assert_cluster_state(
+    assert_cluster_state(
         spied_cluster_analysis,
         expected_calls=1,
         expected_num_machines=0,
     )
     mocked_associate_ec2_instances_with_nodes.assert_called_once_with([], [])
     mocked_associate_ec2_instances_with_nodes.reset_mock()
-    mocked_associate_ec2_instances_with_nodes.side_effect = _create_fake_association(
+    mocked_associate_ec2_instances_with_nodes.side_effect = create_fake_association(
         create_fake_node, None, None
     )
 
@@ -1325,7 +1261,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    _assert_cluster_state(
+    assert_cluster_state(
         spied_cluster_analysis,
         expected_calls=1,
         expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
@@ -1338,7 +1274,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     )
 
     #
-    # 2. now we start the second batch of services requiring a different type of machines
+    # 3. now we start the second batch of services requiring a different type of machines
     await create_services_batch(
         scale_up_params2.service_resources,
         scale_up_params2.imposed_instance_type,
@@ -1418,7 +1354,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     drained_machine_instance_id = spied_cluster_analysis.spy_return.active_nodes[
         -1
     ].ec2_instance.id
-    mocked_associate_ec2_instances_with_nodes.side_effect = _create_fake_association(
+    mocked_associate_ec2_instances_with_nodes.side_effect = create_fake_association(
         create_fake_node, drained_machine_instance_id, None
     )
     await auto_scale_cluster(
@@ -1447,7 +1383,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
         )
 
     # and this should now recognize the node as terminating
-    mocked_associate_ec2_instances_with_nodes.side_effect = _create_fake_association(
+    mocked_associate_ec2_instances_with_nodes.side_effect = create_fake_association(
         create_fake_node, drained_machine_instance_id, drained_machine_instance_id
     )
     await auto_scale_cluster(
