@@ -102,7 +102,7 @@ async def get_associated_group(
     user_id: UserID,
     group_id: GroupID,
 ) -> tuple[Group, AccessRightsDict]:
-    """
+    """NOTE: here it can also be a non-standard group
 
     raises GroupNotFoundError
     raises UserInsufficientRightsError: needs READ access
