@@ -9,7 +9,7 @@ from models_library.users import UserBillingDetails, UserID
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.users import UserStatus
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_asyncpg_engine
 from . import _schemas, _users_repository
 from ._users_repository import get_user_or_raise
 from ._users_repository import list_user_permissions as db_list_of_permissions
@@ -39,7 +39,7 @@ async def get_user_credentials(
     app: web.Application, *, user_id: UserID
 ) -> UserCredentialsTuple:
     row = await get_user_or_raise(
-        get_database_engine(app),
+        get_asyncpg_engine(app),
         user_id=user_id,
         return_column_names=[
             "name",
@@ -58,7 +58,7 @@ async def get_user_credentials(
 
 async def set_user_as_deleted(app: web.Application, user_id: UserID) -> None:
     await update_user_status(
-        get_database_engine(app), user_id=user_id, new_status=UserStatus.DELETED
+        get_asyncpg_engine(app), user_id=user_id, new_status=UserStatus.DELETED
     )
 
 
@@ -74,13 +74,13 @@ async def search_users(
 ) -> list[_schemas.UserProfile]:
     # NOTE: this search is deploy-wide i.e. independent of the product!
     rows = await _users_repository.search_users_and_get_profile(
-        get_database_engine(app), email_like=_glob_to_sql_like(email_glob)
+        get_asyncpg_engine(app), email_like=_glob_to_sql_like(email_glob)
     )
 
     async def _list_products_or_none(user_id):
         if user_id is not None and include_products:
             products = await _users_repository.get_user_products(
-                get_database_engine(app), user_id=user_id
+                get_asyncpg_engine(app), user_id=user_id
             )
             return [_.product_name for _ in products]
         return None
@@ -137,7 +137,7 @@ async def pre_register_user(
             details[f"pre_{key}"] = details.pop(key)
 
     await _users_repository.new_user_details(
-        get_database_engine(app),
+        get_asyncpg_engine(app),
         email=profile.email,
         created_by=creator_user_id,
         **details,
@@ -154,7 +154,7 @@ async def get_user_invoice_address(
 ) -> UserInvoiceAddress:
     user_billing_details: UserBillingDetails = (
         await _users_repository.get_user_billing_details(
-            get_database_engine(app), user_id=user_id
+            get_asyncpg_engine(app), user_id=user_id
         )
     )
     _user_billing_country = pycountry.countries.lookup(user_billing_details.country)
