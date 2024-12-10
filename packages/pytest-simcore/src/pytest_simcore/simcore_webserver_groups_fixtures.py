@@ -101,7 +101,7 @@ async def standard_groups_owner(
             app=client.app,
             user_id=owner_user["id"],
             group_id=team_black_group["gid"],
-            new_user_email=logged_user["email"],
+            new_user_id=logged_user["id"],
         )
 
         yield owner_user

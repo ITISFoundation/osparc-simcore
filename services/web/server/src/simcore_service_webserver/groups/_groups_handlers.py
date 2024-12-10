@@ -150,6 +150,7 @@ async def delete_group(request: web.Request):
     await _groups_api.delete_organization(
         request.app, user_id=req_ctx.user_id, group_id=path_params.gid
     )
+
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -195,6 +196,7 @@ async def add_group_user(request: web.Request):
         new_user_id=added.uid,
         new_user_email=added.email,
     )
+
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -212,6 +214,7 @@ async def get_group_user(request: web.Request):
     user = await _groups_api.get_user_in_group(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
+
     return envelope_json_response(GroupUserGet.from_model(user))
 
 
@@ -231,6 +234,7 @@ async def update_group_user(request: web.Request):
         the_user_id_in_group=path_params.uid,
         access_rights=update.access_rights.model_dump(mode="json"),  # type: ignore[arg-type]
     )
+
     return envelope_json_response(GroupUserGet.from_model(user))
 
 
@@ -244,4 +248,5 @@ async def delete_group_user(request: web.Request):
     await _groups_api.delete_user_in_group(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
+
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
