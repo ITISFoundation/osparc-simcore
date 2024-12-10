@@ -10,10 +10,10 @@ from pydantic import TypeAdapter
 from simcore_postgres_database.models.users import UserStatus
 
 from ..db.plugin import get_database_engine
-from . import _db, _schemas
-from ._db import get_user_or_raise
-from ._db import list_user_permissions as db_list_of_permissions
-from ._db import update_user_status
+from . import _schemas, _users_repository
+from ._users_repository import get_user_or_raise
+from ._users_repository import list_user_permissions as db_list_of_permissions
+from ._users_repository import update_user_status
 from .exceptions import AlreadyPreRegisteredError
 from .schemas import Permission
 
@@ -73,13 +73,13 @@ async def search_users(
     app: web.Application, email_glob: str, *, include_products: bool = False
 ) -> list[_schemas.UserProfile]:
     # NOTE: this search is deploy-wide i.e. independent of the product!
-    rows = await _db.search_users_and_get_profile(
+    rows = await _users_repository.search_users_and_get_profile(
         get_database_engine(app), email_like=_glob_to_sql_like(email_glob)
     )
 
     async def _list_products_or_none(user_id):
         if user_id is not None and include_products:
-            products = await _db.get_user_products(
+            products = await _users_repository.get_user_products(
                 get_database_engine(app), user_id=user_id
             )
             return [_.product_name for _ in products]
@@ -136,7 +136,7 @@ async def pre_register_user(
         if key in details:
             details[f"pre_{key}"] = details.pop(key)
 
-    await _db.new_user_details(
+    await _users_repository.new_user_details(
         get_database_engine(app),
         email=profile.email,
         created_by=creator_user_id,
@@ -152,8 +152,10 @@ async def pre_register_user(
 async def get_user_invoice_address(
     app: web.Application, user_id: UserID
 ) -> UserInvoiceAddress:
-    user_billing_details: UserBillingDetails = await _db.get_user_billing_details(
-        get_database_engine(app), user_id=user_id
+    user_billing_details: UserBillingDetails = (
+        await _users_repository.get_user_billing_details(
+            get_database_engine(app), user_id=user_id
+        )
     )
     _user_billing_country = pycountry.countries.lookup(user_billing_details.country)
     _user_billing_country_alpha_2_format = _user_billing_country.alpha_2

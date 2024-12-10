@@ -11,7 +11,6 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import NewUser
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from simcore_postgres_database.models.users import UserStatus
 from simcore_service_webserver.users.api import (
     get_user_name_and_email,
@@ -67,7 +66,7 @@ async def test_update_expired_users(
         await assert_status(r1, status.HTTP_200_OK)
 
         # apply update
-        expired = await update_expired_users(client.app[APP_AIOPG_ENGINE_KEY])
+        expired = await update_expired_users(client.app)
         if has_expired:
             assert expired == [user["id"]]
         else:
