@@ -1,4 +1,4 @@
-from ...errors import WebServerBaseError
+from ..errors import WebServerBaseError
 
 
 class LicensesValueError(WebServerBaseError, ValueError):

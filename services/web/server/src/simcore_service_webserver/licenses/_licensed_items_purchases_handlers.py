@@ -34,7 +34,7 @@ routes = web.RouteTableDef()
 
 
 @routes.get(
-    f"/{VTAG}/catalog/licensed-items-purchases/{{licensed_item_purchase_id}}",
+    f"/{VTAG}/licensed-items-purchases/{{licensed_item_purchase_id}}",
     name="get_licensed_item_purchase",
 )
 @login_required
@@ -65,7 +65,7 @@ async def get_licensed_item_purchase(request: web.Request):
 @login_required
 @permission_required("catalog/licensed-items.*")
 @handle_plugin_requests_exceptions
-async def list_licensed_items_purchases(request: web.Request):
+async def list_wallet_licensed_items_purchases(request: web.Request):
     req_ctx = LicensedItemsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     query_params: LicensedItemsPurchasesListQueryParams = (
