@@ -70,8 +70,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       if (sorted !== 0) {
         return sorted;
       }
-      if (("email" in a) && ("email" in b)) {
-        return a["email"].localeCompare(b["email"]);
+      if (("label" in a) && ("label" in b)) {
+        return a["label"].localeCompare(b["label"]);
       }
       return 0;
     }
