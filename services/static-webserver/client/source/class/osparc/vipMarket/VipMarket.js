@@ -47,7 +47,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             curatedModel[key] = model[key];
           }
           if (key === "ID") {
-            curatedModel["leased"] = model["ID"] < 4;
+            curatedModel["purchased"] = model["ID"] < 4;
           }
         });
         anatomicalModels.push(curatedModel);
@@ -116,7 +116,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           ctrl.bindProperty("date", "date", null, item, id);
           ctrl.bindProperty("licensedItemId", "licensedItemId", null, item, id);
           ctrl.bindProperty("pricingPlanId", "pricingPlanId", null, item, id);
-          ctrl.bindProperty("leased", "leased", null, item, id);
+          ctrl.bindProperty("purchased", "purchased", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("vipModels");
@@ -178,18 +178,18 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                   anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
                   anatomicalModel["pricingPlanId"] = licensedItem["pricingPlanId"];
                   // attach leased data
-                  anatomicalModel["leased"] = model["leased"];
+                  anatomicalModel["purchased"] = model["purchased"];
                   this.__anatomicalModels.push(anatomicalModel);
                 }
               });
 
               this.__populateModels();
 
-              anatomicModelDetails.addListener("modelLeased", e => {
+              anatomicModelDetails.addListener("modelPurchased", e => {
                 const modelId = e.getData();
                 const found = this.__anatomicalModels.find(model => model["ID"] === modelId);
                 if (found) {
-                  found["leased"] = true;
+                  found["purchased"] = true;
                   this.__populateModels();
                   anatomicModelDetails.setAnatomicalModelsData(found);
                 }
@@ -206,9 +206,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const sortModel = sortBy => {
         models.sort((a, b) => {
           // first criteria
-          if (b["leased"] !== a["leased"]) {
+          if (b["purchased"] !== a["purchased"]) {
             // leased first
-            return b["leased"] - a["leased"];
+            return b["purchased"] - a["purchased"];
           }
           // second criteria
           if (sortBy) {

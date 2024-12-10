@@ -28,7 +28,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
   },
 
   events: {
-    "modelLeased": "qx.event.type.Event",
+    "modelPurchased": "qx.event.type.Event",
   },
 
   properties: {
