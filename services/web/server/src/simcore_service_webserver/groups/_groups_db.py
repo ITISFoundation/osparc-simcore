@@ -130,7 +130,7 @@ async def get_group_from_gid(
         row = await conn.stream(groups.select().where(groups.c.gid == group_id))
         result = await row.first()
         if result:
-            return Group.model_validate(result)
+            return Group.model_validate(result, from_attributes=True)
         return None
 
 
