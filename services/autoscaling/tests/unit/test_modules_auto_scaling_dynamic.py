@@ -1305,7 +1305,8 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     assert analyzed_cluster.active_nodes
     assert not analyzed_cluster.drained_nodes
 
-    # now we simulate that some of the services in the 1st batch have completed and that we are 1 below the max
+    #
+    # 4.now we simulate that some of the services in the 1st batch have completed and that we are 1 below the max
     # a machine should switch off and another type should be started
     completed_services_to_stop = random.sample(
         first_batch_services,
@@ -1329,16 +1330,19 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
         await auto_scale_cluster(
             app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
         )
-        assert isinstance(spied_cluster_analysis.spy_return, Cluster)
-        assert spied_cluster_analysis.spy_return.active_nodes
-        assert not spied_cluster_analysis.spy_return.drained_nodes
-
-        # the last machine is found empty
-        mock_docker_set_node_found_empty.assert_called_with(
-            mock.ANY,
-            spied_cluster_analysis.spy_return.active_nodes[-1].node,
-            empty=True,
-        )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
+    # the last machine is found empty
+    mock_docker_set_node_found_empty.assert_called_with(
+        mock.ANY,
+        analyzed_cluster.active_nodes[-1].node,
+        empty=True,
+    )
 
     # now we mock the get_node_found_empty so the next call will actually drain the machine
     with mock.patch(
@@ -1351,22 +1355,29 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
         await auto_scale_cluster(
             app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
         )
-        mocked_get_node_empty_since.assert_called_once()
-        assert isinstance(spied_cluster_analysis.spy_return, Cluster)
-        assert spied_cluster_analysis.spy_return.active_nodes
-        assert not spied_cluster_analysis.spy_return.drained_nodes
-    # now the drained machine
-    drained_machine_instance_id = spied_cluster_analysis.spy_return.active_nodes[
-        -1
-    ].ec2_instance.id
+    mocked_get_node_empty_since.assert_called_once()
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
+    # now scaling again should find the drained machine
+    drained_machine_instance_id = analyzed_cluster.active_nodes[-1].ec2_instance.id
     mocked_associate_ec2_instances_with_nodes.side_effect = create_fake_association(
         create_fake_node, drained_machine_instance_id, None
     )
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    assert spied_cluster_analysis.spy_return.active_nodes
-    assert spied_cluster_analysis.spy_return.drained_nodes
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert analyzed_cluster.drained_nodes
 
     # this will initiate termination now
     with mock.patch(
@@ -1380,23 +1391,28 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
         await auto_scale_cluster(
             app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
         )
-        mock_docker_tag_node.assert_called_with(
-            mock.ANY,
-            spied_cluster_analysis.spy_return.drained_nodes[-1].node,
-            tags=mock.ANY,
-            available=False,
-        )
+    mock_docker_tag_node.assert_called_with(
+        mock.ANY,
+        analyzed_cluster.drained_nodes[-1].node,
+        tags=mock.ANY,
+        available=False,
+    )
 
-    # and this should now recognize the node as terminating
+    # scaling again should find the terminating machine
     mocked_associate_ec2_instances_with_nodes.side_effect = create_fake_association(
         create_fake_node, drained_machine_instance_id, drained_machine_instance_id
     )
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    assert spied_cluster_analysis.spy_return.active_nodes
-    assert not spied_cluster_analysis.spy_return.drained_nodes
-    assert spied_cluster_analysis.spy_return.terminating_nodes
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
+    assert analyzed_cluster.terminating_nodes
 
     # now this will terminate it and straight away start a new machine type
     with mock.patch(
