@@ -520,7 +520,7 @@ async def update_user_in_group(
                 )
             )
         )
-        user = dict(the_user)
+        user = the_user._asdict()
         user.update(**new_db_values)
         return GroupMember.model_validate(user)
 

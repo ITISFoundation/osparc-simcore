@@ -118,14 +118,12 @@ async def test_add_remove_users_from_group(
         # we get all rights on the group since we are the creator
         assert assigned_group["accessRights"] == _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
 
+    group_id = assigned_group["gid"]
+
     # check that our user is in the group of users
-    get_group_users_url = client.app.router["get_all_group_users"].url_for(
-        gid=f"{assigned_group['gid']}"
-    )
-    assert (
-        f"{get_group_users_url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}/users"
-    )
-    resp = await client.get(f"{get_group_users_url}")
+    url = client.app.router["get_all_group_users"].url_for(gid=f"{group_id}")
+    assert f"{url}" == f"/{API_VTAG}/groups/{group_id}/users"
+    resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected.ok)
 
     if not error:
@@ -140,15 +138,8 @@ async def test_add_remove_users_from_group(
         )
 
     # create a random number of users and put them in the group
-    add_group_user_url = client.app.router["add_group_user"].url_for(
-        gid=f"{assigned_group['gid']}"
-    )
-    assert (
-        f"{add_group_user_url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}/users"
-    )
     num_new_users = faker.random_int(1, 10)
     created_users_list = []
-
     async with AsyncExitStack() as users_stack:
         for i in range(num_new_users):
 
@@ -164,31 +155,27 @@ async def test_add_remove_users_from_group(
             user_id = created_users_list[i]["id"]
             user_email = created_users_list[i]["email"]
 
+            # ADD
+            url = client.app.router["add_group_user"].url_for(gid=f"{group_id}")
+            assert f"{url}" == f"/{API_VTAG}/groups/{group_id}/users"
             if is_private:
                 # only if privacy allows
-                resp = await client.post(
-                    f"{add_group_user_url}", json={"email": user_email}
-                )
+                resp = await client.post(f"{url}", json={"email": user_email})
                 data, error = await assert_status(resp, expected.not_found)
 
                 # always allowed
-                resp = await client.post(f"{add_group_user_url}", json={"uid": user_id})
+                resp = await client.post(f"{url}", json={"uid": user_id})
                 await assert_status(resp, expected.no_content)
             else:
                 # both work
-                resp = await client.post(
-                    f"{add_group_user_url}", json={"email": user_email}
-                )
+                resp = await client.post(f"{url}", json={"email": user_email})
                 await assert_status(resp, expected.no_content)
 
             # GET
             url = client.app.router["get_group_user"].url_for(
-                gid=f"{assigned_group['gid']}", uid=f"{created_users_list[i]['id']}"
+                gid=f"{group_id}", uid=f"{user_id}"
             )
-            assert (
-                f"{url}"
-                == f"/{API_VTAG}/groups/{assigned_group['gid']}/users/{created_users_list[i]['id']}"
-            )
+            assert f"{url}" == f"/{API_VTAG}/groups/{group_id}/users/{user_id}"
             resp = await client.get(f"{url}")
             data, error = await assert_status(resp, expected.ok)
             if not error:
@@ -199,37 +186,37 @@ async def test_add_remove_users_from_group(
                     group_owner_id=the_owner["id"] if is_private else user_id,
                 )
 
-        # check list is correct
-        resp = await client.get(f"{get_group_users_url}")
+        # LIST:  check list is correct
+        url = client.app.router["get_all_group_users"].url_for(gid=f"{group_id}")
+        resp = await client.get(f"{url}")
         data, error = await assert_status(resp, expected.ok)
         if not error:
             list_of_users = data
 
             # now we should have all the users in the group + the owner
             all_created_users = [*created_users_list, logged_user]
-            assert len(list_of_users) == len(all_created_users)
-            for actual_user in list_of_users:
-                expected_users_list = [
-                    usr for usr in all_created_users if usr["id"] == actual_user["id"]
-                ]
-                assert len(expected_users_list) == 1
-                expected_user = expected_users_list[0]
 
-                expected_access_rigths = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
-                if actual_user["id"] == logged_user["id"]:
-                    expected_access_rigths = _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
+            assert len(list_of_users) == len(all_created_users)
+            for user in list_of_users:
+                expected_user: UserInfoDict = next(
+                    u for u in all_created_users if int(u["id"]) == int(user["id"])
+                )
+                expected_access_rigths = (
+                    _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
+                    if int(user["id"]) == int(logged_user["id"])
+                    else _DEFAULT_GROUP_READ_ACCESS_RIGHTS
+                )
 
                 _assert__group_user(
                     expected_user,
                     expected_access_rigths,
-                    actual_user,
+                    user,
                     group_owner_id=the_owner["id"]
-                    if actual_user.get("is_private", False)
-                    else actual_user["id"],
+                    if expected_user.get("is_private", False)
+                    else user["id"],
                 )
-                all_created_users.remove(expected_users_list[0])
 
-        # modify the user and remove them from the group
+        # PATCH the user and REMOVE them from the group
         MANAGER_ACCESS_RIGHTS: AccessRightsDict = {
             "read": True,
             "write": True,
@@ -240,6 +227,7 @@ async def test_add_remove_users_from_group(
             user_id = created_users_list[i]["id"]
             is_private = created_users_list[i].get("is_private", False)
 
+            # PATCH access-rights
             url = client.app.router["update_group_user"].url_for(
                 gid=f"{group_id}", uid=f"{user_id}"
             )
@@ -255,7 +243,7 @@ async def test_add_remove_users_from_group(
                     group_owner_id=the_owner["id"] if is_private else user_id,
                 )
 
-            # check it is there
+            # GET: check it is there
             url = client.app.router["get_group_user"].url_for(
                 gid=f"{group_id}", uid=f"{user_id}"
             )
@@ -269,18 +257,18 @@ async def test_add_remove_users_from_group(
                     group_owner_id=the_owner["id"] if is_private else user_id,
                 )
 
-            # remove the user from the group
+            # REMOVE the user from the group
             url = client.app.router["delete_group_user"].url_for(
                 gid=f"{group_id}", uid=f"{user_id}"
             )
             resp = await client.delete(f"{url}")
             data, error = await assert_status(resp, expected.no_content)
 
-            # do it again to check it is not found anymore
+            # REMOVE: do it again to check it is not found anymore
             resp = await client.delete(f"{url}")
             data, error = await assert_status(resp, expected.not_found)
 
-            # check it is not there anymore
+            # GET check it is not there anymore
             url = client.app.router["get_group_user"].url_for(
                 gid=f"{group_id}", uid=f"{user_id}"
             )
