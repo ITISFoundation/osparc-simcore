@@ -28,7 +28,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
   },
 
   events: {
-    "modelPurchased": "qx.event.type.Event",
+    "modelPurchaseRequested": "qx.event.type.Data",
+    "modelImportRequested": "qx.event.type.Data",
   },
 
   properties: {
@@ -47,9 +48,11 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       const anatomicalModelsData = this.getAnatomicalModelsData();
       if (anatomicalModelsData) {
         const modelInfo = this.__createModelInfo(anatomicalModelsData);
-        this._add(modelInfo);
         const pricingUnits = this.__createPricingUnits(anatomicalModelsData);
+        const importButton = this.__createImportButton(anatomicalModelsData);
+        this._add(modelInfo);
         this._add(pricingUnits);
+        this._add(importButton);
       } else {
         const selectModelLabel = new qx.ui.basic.Label().set({
           value: this.tr("Select a model for more details"),
@@ -184,7 +187,13 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             const pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
               showRentButton: true,
             });
-            pUnit.addListener("rentPricingUnit", () => this.__rentAnatomicalModel(anatomicalModelsData, pricingUnit));
+            pUnit.addListener("rentPricingUnit", () => {
+              this.fireDataEvent("modelPurchaseRequested", {
+                modelId: anatomicalModelsData["modelId"],
+                licensedItemId: anatomicalModelsData["licensedItemId"],
+                pricingUnitId: pricingUnit.getPricingUnitId(),
+              });
+            }, this);
             pricingUnitsLayout.add(pUnit);
           });
         })
@@ -193,8 +202,20 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       return pricingUnitsLayout;
     },
 
-    __rentAnatomicalModel: function(anatomicalModelsData, pricingUnit) {
-      console.log(":purchase", anatomicalModelsData["licensedItemId"], pricingUnit.getPricingUnitId());
+    __createImportButton: function(anatomicalModelsData) {
+      const importButton = new qx.ui.form.Button().set({
+        label: this.tr("Import"),
+        appearance: "strong-button",
+        center: true,
+        maxWidth: 200,
+        alignX: "center",
+      });
+      importButton.addListener("execute", () => {
+        this.fireDataEvent("modelImportRequested", {
+          modelId: anatomicalModelsData["modelId"]
+        });
+      }, this);
+      return importButton;
     },
   }
 });
