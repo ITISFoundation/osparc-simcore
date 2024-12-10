@@ -17,8 +17,8 @@ class LicensedItemPurchaseGet(BaseModel):
     licensed_item_purchase_id: LicensedItemPurchaseID
     product_name: ProductName
     licensed_item_id: LicensedItemID
-    wallet_id: WalletID | None
-    wallet_name: str | None
+    wallet_id: WalletID
+    wallet_name: str
     pricing_unit_cost_id: PricingUnitCostId
     pricing_unit_cost: Decimal
     start_at: datetime

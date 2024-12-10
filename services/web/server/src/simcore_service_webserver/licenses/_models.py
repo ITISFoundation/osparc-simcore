@@ -52,3 +52,7 @@ class LicensedItemsBodyParams(BaseModel):
     num_of_seats: int
 
     model_config = ConfigDict(extra="forbid")
+
+
+class LicensedItemsPurchasesPathParams(StrictRequestParameters):
+    licensed_item_purchase_id: LicensedItemPurchaseID
