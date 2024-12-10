@@ -36,21 +36,10 @@ async def get_group_from_gid(app: web.Application, group_id: GroupID) -> Group |
 async def list_user_groups_ids_with_read_access(
     app: web.Application, *, user_id: UserID
 ) -> list[GroupID]:
-    # TODO: Room for optimization. For the moment we reuse existing db functions
-    groups_by_type = await _groups_db.get_all_user_groups_with_read_access(
+
+    return await _groups_db.get_ids_of_all_user_groups_with_read_access(
         app, user_id=user_id
     )
-    assert groups_by_type.primary  # nosec
-
-    groups_ids = [groups_by_type.primary[0].gid]
-
-    # NOTE: that product-groups will not be listed here
-    groups_ids += [g[0].gid for g in groups_by_type.standard]
-
-    assert groups_by_type.everyone  # nosec
-    groups_ids.append(groups_by_type.everyone[0].gid)
-
-    return groups_ids
 
 
 async def list_user_groups_with_read_access(

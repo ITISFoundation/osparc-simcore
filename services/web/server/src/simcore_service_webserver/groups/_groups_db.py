@@ -139,6 +139,15 @@ async def get_group_from_gid(
 #
 
 
+def _query_user_groups_with_read_access(query, user_id: UserID):
+    return query.select_from(
+        user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
+    ).where(
+        (user_to_groups.c.uid == user_id)
+        & (user_to_groups.c.access_rights["read"].is_(True))
+    )
+
+
 async def get_all_user_groups_with_read_access(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -153,12 +162,8 @@ async def get_all_user_groups_with_read_access(
     standard_groups: list[GroupInfoTuple] = []
     everyone_group: GroupInfoTuple | None = None
 
-    query = (
-        sa.select(groups, user_to_groups.c.access_rights)
-        .select_from(
-            user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
-        )
-        .where(user_to_groups.c.uid == user_id)
+    query = _query_user_groups_with_read_access(
+        sa.select(groups, user_to_groups.c.access_rights), user_id=user_id
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -181,6 +186,22 @@ async def get_all_user_groups_with_read_access(
         return GroupsByTypeTuple(
             primary=primary_group, standard=standard_groups, everyone=everyone_group
         )
+
+
+async def get_ids_of_all_user_groups_with_read_access(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+) -> list[GroupID]:
+
+    query = _query_user_groups_with_read_access(
+        sa.select(groups.c.gid, user_to_groups.c.access_rights), user_id=user_id
+    )
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(query)
+        return [row.gid async for row in result]
 
 
 async def get_all_user_groups(
