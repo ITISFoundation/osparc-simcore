@@ -6,9 +6,8 @@ from models_library.api_schemas_resource_usage_tracker import (
 )
 from models_library.api_schemas_resource_usage_tracker.licensed_items_purchases import (
     LicensedItemPurchaseGet,
-)
-from models_library.api_schemas_resource_usage_tracker.service_runs import (
-    ServiceRunPage,
+    LicensedItemPurchaseID,
+    LicensedItemsPurchasesPage,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -39,7 +38,7 @@ async def get_licensed_items_purchases_page(
     offset: int = 0,
     limit: int = 20,
     order_by: OrderBy = OrderBy(field="purchased_at"),
-) -> ServiceRunPage:
+) -> LicensedItemsPurchasesPage:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("get_licensed_items_purchases_page"),
@@ -50,7 +49,7 @@ async def get_licensed_items_purchases_page(
         order_by=order_by,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, ServiceRunPage)  # nosec
+    assert isinstance(result, LicensedItemsPurchasesPage)  # nosec
     return result
 
 
@@ -59,13 +58,13 @@ async def get_licensed_item_purchase(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
-    wallet_id: WalletID,
+    licensed_item_purchase_id: LicensedItemPurchaseID,
 ) -> LicensedItemPurchaseGet:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("get_licensed_item_purchase"),
         product_name=product_name,
-        wallet_id=wallet_id,
+        licensed_item_purchase_id=licensed_item_purchase_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, LicensedItemPurchaseGet)  # nosec

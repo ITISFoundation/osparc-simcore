@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import NamedTuple
 
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
