@@ -33,13 +33,6 @@ async def get_group_from_gid(app: web.Application, group_id: GroupID) -> Group |
 #
 # USER GROUPS: groups a user belongs to
 #
-async def list_user_groups_ids_with_read_access(
-    app: web.Application, *, user_id: UserID
-) -> list[GroupID]:
-
-    return await _groups_db.get_ids_of_all_user_groups_with_read_access(
-        app, user_id=user_id
-    )
 
 
 async def list_user_groups_with_read_access(
@@ -51,16 +44,21 @@ async def list_user_groups_with_read_access(
     # NOTE: Careful! It seems we are filtering out groups, such as Product Groups,
     # because they do not have read access. I believe this was done because the
     # frontend did not want to display them.
-
     return await _groups_db.get_all_user_groups_with_read_access(app, user_id=user_id)
+
+
+async def list_user_groups_ids_with_read_access(
+    app: web.Application, *, user_id: UserID
+) -> list[GroupID]:
+    return await _groups_db.get_ids_of_all_user_groups_with_read_access(
+        app, user_id=user_id
+    )
 
 
 async def list_all_user_groups_ids(
     app: web.Application, *, user_id: UserID
 ) -> list[GroupID]:
-    # TODO: Room for optimization. For the moment we reuse existing db functions
-    user_groups = await _groups_db.get_all_user_groups(app, user_id=user_id)
-    return [g.gid for g in user_groups]
+    return await _groups_db.get_ids_of_all_user_groups(app, user_id=user_id)
 
 
 async def get_product_group_for_user(

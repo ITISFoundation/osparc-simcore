@@ -194,7 +194,7 @@ async def get_ids_of_all_user_groups_with_read_access(
     *,
     user_id: UserID,
 ) -> list[GroupID]:
-
+    # thin version of `get_all_user_groups_with_read_access`
     query = _query_user_groups_with_read_access(
         sa.select(groups.c.gid, user_to_groups.c.access_rights), user_id=user_id
     )
@@ -215,13 +215,33 @@ async def get_all_user_groups(
     """
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
-            sa.select(_GROUP_COLUMNS)
+            sa.select(*_GROUP_COLUMNS)
             .select_from(
                 user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
             )
             .where(user_to_groups.c.uid == user_id)
         )
         return [Group.model_validate(row) async for row in result]
+
+
+async def get_ids_of_all_user_groups(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+) -> list[GroupID]:
+    # thin version of `get_all_user_groups`
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.stream(
+            sa.select(
+                groups.c.gid,
+            )
+            .select_from(
+                user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
+            )
+            .where(user_to_groups.c.uid == user_id)
+        )
+        return [row.id async for row in result]
 
 
 async def get_user_group(
