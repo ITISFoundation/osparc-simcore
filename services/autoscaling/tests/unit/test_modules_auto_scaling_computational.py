@@ -14,7 +14,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Awaitable
+from typing import Any, Awaitable, cast
 from unittest import mock
 
 import arrow
@@ -248,6 +248,7 @@ async def _create_task_with_resources(
             ),
         )
 
+    assert task_resources
     dask_task_resources = create_dask_task_resources(
         dask_task_imposed_ec2_type, task_resources
     )
@@ -428,7 +429,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     fake_node: DockerNode,
@@ -441,9 +442,6 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_dask_is_worker_connected: mock.Mock,
     mocker: MockerFixture,
     dask_spec_local_cluster: distributed.SpecCluster,
-    create_dask_task_resources: Callable[
-        [InstanceTypeType | None, Resources], DaskTaskResources
-    ],
     with_drain_nodes_labelled: bool,
     ec2_instance_custom_tags: dict[str, str],
     scale_up_params: _ScaleUpParams,
@@ -453,14 +451,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert not all_instances["Reservations"]
 
     # create a task that needs more power
-    dask_future = await _create_task_with_resources(
-        ec2_client,
-        scale_up_params.imposed_instance_type,
-        scale_up_params.task_resources,
-        create_dask_task_resources,
-        create_dask_task,
-    )
-
+    dask_futures = await create_tasks_batch(scale_up_params)
+    assert dask_futures
     # this should trigger a scaling up as we have no nodes
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
@@ -642,7 +634,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     #
     # 4. now scaling down, as we deleted all the tasks
     #
-    del dask_future
+    del dask_futures
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mock_dask_is_worker_connected.assert_called_once()
     mock_dask_is_worker_connected.reset_mock()
@@ -819,7 +811,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
 
     # create a task that needs more power
     dask_task_resources = create_dask_task_resources(
-        faker.pystr(),
+        cast(InstanceTypeType, faker.pystr()),
         Resources(cpus=1, ram=TypeAdapter(ByteSize).validate_python("128GiB")),
     )
     dask_future = create_dask_task(dask_task_resources)
@@ -1164,11 +1156,8 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
     ec2_client: EC2Client,
-    create_dask_task_resources: Callable[
-        [InstanceTypeType | None, Resources], DaskTaskResources
-    ],
     dask_spec_local_cluster: distributed.SpecCluster,
     mock_find_node_with_name_returns_none: mock.Mock,
     mock_docker_tag_node: mock.Mock,
@@ -1186,14 +1175,9 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
     # create a task that needs more power
-    dask_future = await _create_task_with_resources(
-        ec2_client,
-        scale_up_params.imposed_instance_type,
-        scale_up_params.task_resources,
-        create_dask_task_resources,
-        create_dask_task,
-    )
-    assert dask_future
+    dask_futures = await create_tasks_batch(scale_up_params)
+    assert dask_futures
+
     # this should trigger a scaling up as we have no nodes
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
