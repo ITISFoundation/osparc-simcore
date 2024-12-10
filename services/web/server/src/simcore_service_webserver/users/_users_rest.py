@@ -66,7 +66,7 @@ def _handle_users_exceptions(handler: Handler):
 async def get_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     profile: MyProfileGet = await api.get_user_profile(
-        request.app, req_ctx.user_id, req_ctx.product_name
+        request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
     return envelope_json_response(profile)
 

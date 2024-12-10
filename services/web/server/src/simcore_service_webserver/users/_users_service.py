@@ -4,10 +4,10 @@ import pycountry
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
 from models_library.payments import UserInvoiceAddress
+from models_library.products import ProductName
 from models_library.users import UserBillingDetails, UserID
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.users import UserStatus
-from simcore_service_webserver.products._api import ProductName
 
 from ..db.plugin import get_asyncpg_engine
 from . import _schemas, _users_repository
