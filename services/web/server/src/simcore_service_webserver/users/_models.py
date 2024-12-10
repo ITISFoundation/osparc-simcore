@@ -1,5 +1,6 @@
 from typing import Annotated, Any, Self
 
+from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, ConfigDict, Field
 
 #
@@ -46,3 +47,9 @@ class ToUserUpdateDB(BaseModel):
 
     def to_db(self) -> dict[str, Any]:
         return self.model_dump(exclude_unset=True, by_alias=False)
+
+
+class UserCredentialsTuple(NamedTuple):
+    email: LowerCaseEmailStr
+    password_hash: str
+    display_name: str
