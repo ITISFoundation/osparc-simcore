@@ -258,32 +258,28 @@ async def create_services_batch(
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     service_monitored_labels: dict[DockerLabelKey, str],
     osparc_docker_label_keys: StandardSimcoreDockerLabels,
-) -> Callable[[Resources, InstanceTypeType | None, int], Awaitable[list[Service]]]:
-    async def _(
-        service_resources: Resources,
-        imposed_instance_type: InstanceTypeType | None,
-        num_services: int,
-    ) -> list[Service]:
+) -> Callable[[_ScaleUpParams], Awaitable[list[Service]]]:
+    async def _(scale_up_params: _ScaleUpParams) -> list[Service]:
         return await asyncio.gather(
             *(
                 create_service(
                     task_template
                     | create_task_reservations(
-                        int(service_resources.cpus),
-                        service_resources.ram,
+                        int(scale_up_params.service_resources.cpus),
+                        scale_up_params.service_resources.ram,
                     ),
                     service_monitored_labels
                     | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
                     "pending",
                     (
                         [
-                            f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={imposed_instance_type}"
+                            f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params.imposed_instance_type}"
                         ]
-                        if imposed_instance_type
+                        if scale_up_params.imposed_instance_type
                         else []
                     ),
                 )
-                for _ in range(num_services)
+                for _ in range(scale_up_params.num_services)
             )
         )
 
@@ -411,28 +407,34 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     )
 
 
+@pytest.mark.parametrize(
+    "scale_up_params",
+    [
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type=None,
+                service_resources=Resources(
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128000Gib")
+                ),
+                num_services=1,
+                expected_instance_type="r5n.4xlarge",
+                expected_num_instances=1,
+            ),
+            id="No explicit instance defined",
+        ),
+    ],
+)
 async def test_cluster_scaling_with_service_asking_for_too_much_resources_starts_nothing(
     minimal_configuration: None,
-    service_monitored_labels: dict[DockerLabelKey, str],
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
-    task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
     mock_launch_instances: mock.Mock,
     mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
+    scale_up_params: _ScaleUpParams,
 ):
-    task_template_with_too_many_resource = task_template | create_task_reservations(
-        1000, 0
-    )
-    await create_service(
-        task_template_with_too_many_resource,
-        service_monitored_labels,
-        "pending",
-    )
+    await create_services_batch(scale_up_params)
 
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
@@ -448,9 +450,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     *,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_services_batch: Callable[
-        [Resources, str | None, int], Awaitable[list[Service]]
-    ],
+    create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     fake_node: Node,
@@ -476,11 +476,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     ), "This test is not made to work with more than 1 expected instance. so please adapt if needed"
 
     # create the service(s)
-    created_docker_services = await create_services_batch(
-        scale_up_params.service_resources,
-        scale_up_params.imposed_instance_type,
-        scale_up_params.num_services,
-    )
+    created_docker_services = await create_services_batch(scale_up_params)
 
     # this should trigger a scaling up as we have no nodes
     await auto_scale_cluster(
@@ -953,9 +949,7 @@ async def test_cluster_scaling_up_and_down(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_services_batch: Callable[
-        [Resources, str | None, int], Awaitable[list[Service]]
-    ],
+    create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     fake_node: Node,
@@ -1023,9 +1017,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
     external_envfile_dict: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_services_batch: Callable[
-        [Resources, str | None, int], Awaitable[list[Service]]
-    ],
+    create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     fake_node: Node,
@@ -1105,9 +1097,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_services_batch: Callable[
-        [Resources, str | None, int], Awaitable[list[Service]]
-    ],
+    create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     scale_up_params: _ScaleUpParams,
@@ -1122,11 +1112,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     assert not all_instances["Reservations"]
 
     # create several tasks that needs more power
-    await create_services_batch(
-        scale_up_params.service_resources,
-        scale_up_params.imposed_instance_type,
-        scale_up_params.num_services,
-    )
+    await create_services_batch(scale_up_params)
 
     # run the code
     await auto_scale_cluster(
@@ -1198,9 +1184,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     ec2_client: EC2Client,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,
-    create_services_batch: Callable[
-        [Resources, str | None, int], Awaitable[list[Service]]
-    ],
+    create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
     ec2_instance_custom_tags: dict[str, str],
     instance_type_filters: Sequence[FilterTypeDef],
     async_docker_client: aiodocker.Docker,
@@ -1226,11 +1210,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
     #
     # 1. create the first batch of services requiring the initial machines
-    first_batch_services = await create_services_batch(
-        scale_up_params1.service_resources,
-        scale_up_params1.imposed_instance_type,
-        scale_up_params1.num_services,
-    )
+    first_batch_services = await create_services_batch(scale_up_params1)
 
     # it will only scale once and do nothing else
     await auto_scale_cluster(
@@ -1276,11 +1256,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
     #
     # 3. now we start the second batch of services requiring a different type of machines
-    await create_services_batch(
-        scale_up_params2.service_resources,
-        scale_up_params2.imposed_instance_type,
-        scale_up_params2.num_services,
-    )
+    await create_services_batch(scale_up_params2)
 
     # scaling will do nothing since we have hit the maximum number of machines
     for _ in range(3):
@@ -1467,12 +1443,18 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
 
 @pytest.mark.parametrize(
-    "docker_service_imposed_ec2_type, docker_service_ram, expected_ec2_type",
+    "scale_up_params",
     [
         pytest.param(
-            None,
-            TypeAdapter(ByteSize).validate_python("128Gib"),
-            "r5n.4xlarge",
+            _ScaleUpParams(
+                imposed_instance_type=None,
+                service_resources=Resources(
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                ),
+                num_services=1,
+                expected_instance_type="r5n.4xlarge",
+                expected_num_instances=1,
+            ),
             id="No explicit instance defined",
         ),
     ],
@@ -1480,24 +1462,17 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     with_short_ec2_instances_max_start_time: EnvVarsDict,
     minimal_configuration: None,
-    service_monitored_labels: dict[DockerLabelKey, str],
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
-    ],
-    task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
     ec2_client: EC2Client,
-    docker_service_imposed_ec2_type: InstanceTypeType | None,
-    docker_service_ram: ByteSize,
-    expected_ec2_type: InstanceTypeType,
     mock_find_node_with_name_returns_none: mock.Mock,
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     short_ec2_instance_max_start_time: datetime.timedelta,
     ec2_instance_custom_tags: dict[str, str],
     instance_type_filters: Sequence[FilterTypeDef],
+    scale_up_params: _ScaleUpParams,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
@@ -1507,19 +1482,8 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
-    # create a service
-    await create_service(
-        task_template | create_task_reservations(4, docker_service_ram),
-        service_monitored_labels,
-        "pending",
-        (
-            [
-                f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ docker_service_imposed_ec2_type}"
-            ]
-            if docker_service_imposed_ec2_type
-            else []
-        ),
-    )
+    await create_services_batch(scale_up_params)
+
     # this should trigger a scaling up as we have no nodes
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
@@ -1529,8 +1493,8 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     instances = await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
@@ -1545,7 +1509,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
         app_settings,
         initialized_app,
         instances_running=0,
-        instances_pending=1,
+        instances_pending=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
 
@@ -1572,8 +1536,8 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
         instances = await assert_autoscaled_dynamic_ec2_instances(
             ec2_client,
             expected_num_reservations=1,
-            expected_num_instances=1,
-            expected_instance_type=expected_ec2_type,
+            expected_num_instances=scale_up_params.expected_num_instances,
+            expected_instance_type=scale_up_params.expected_instance_type,
             expected_instance_state="running",
             expected_additional_tag_keys=list(ec2_instance_custom_tags),
             instance_filters=instance_type_filters,
@@ -1585,7 +1549,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
             app_settings,
             initialized_app,
             instances_running=0,
-            instances_pending=1,
+            instances_pending=scale_up_params.expected_num_instances,
         )
         mock_rabbitmq_post_message.reset_mock()
         assert instances
@@ -1616,7 +1580,10 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     all_instances = await ec2_client.describe_instances()
     assert len(all_instances["Reservations"]) == 2
     assert "Instances" in all_instances["Reservations"][0]
-    assert len(all_instances["Reservations"][0]["Instances"]) == 1
+    assert (
+        len(all_instances["Reservations"][0]["Instances"])
+        == scale_up_params.expected_num_instances
+    )
     assert "State" in all_instances["Reservations"][0]["Instances"][0]
     assert "Name" in all_instances["Reservations"][0]["Instances"][0]["State"]
     assert (
@@ -1625,7 +1592,10 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     )
 
     assert "Instances" in all_instances["Reservations"][1]
-    assert len(all_instances["Reservations"][1]["Instances"]) == 1
+    assert (
+        len(all_instances["Reservations"][1]["Instances"])
+        == scale_up_params.expected_num_instances
+    )
     assert "State" in all_instances["Reservations"][1]["Instances"][0]
     assert "Name" in all_instances["Reservations"][1]["Instances"][0]["State"]
     assert (
