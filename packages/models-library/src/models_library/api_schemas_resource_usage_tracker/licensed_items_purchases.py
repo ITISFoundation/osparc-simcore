@@ -38,14 +38,14 @@ class LicensedItemPurchaseGet(BaseModel):
                     "wallet_id": 1,
                     "wallet_name": "My Wallet",
                     "pricing_unit_cost_id": 1,
-                    "pricing_unit_cost": Decimal(10),
+                    "pricing_unit_cost": 10,
                     "start_at": "2023-01-11 13:11:47.293595",
                     "expire_at": "2023-01-11 13:11:47.293595",
                     "num_of_seats": 1,
                     "purchased_by_user": 1,
                     "purchased_at": "2023-01-11 13:11:47.293595",
                     "modified": "2023-01-11 13:11:47.293595",
-                }  # type: ignore[index,union-attr]
+                }
             ]
         }
     )
