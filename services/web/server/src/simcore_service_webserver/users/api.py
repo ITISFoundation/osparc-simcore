@@ -6,7 +6,6 @@
 """
 
 import logging
-from collections import deque
 from typing import Any, NamedTuple, TypedDict
 
 import simcore_postgres_database.errors as db_errors
@@ -28,10 +27,13 @@ from simcore_postgres_database.models.users import UserRole, users
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
 )
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
 from simcore_postgres_database.utils_users import generate_alternative_username
 
-from ..db.plugin import get_database_engine
-from ..db.plugin import get_asyncpg_engine, get_database_engine
+from ..db.plugin import get_asyncpg_engine
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _users_repository
@@ -82,23 +84,19 @@ def _parse_as_user(user_id: Any) -> UserID:
 
 
 async def get_user_profile(
-    app: web.Application, user_id: UserID, product_name: ProductName
+    app: web.Application, *, user_id: UserID, product_name: ProductName
 ) -> MyProfileGet:
     """
     :raises UserNotFoundError:
     :raises MissingGroupExtraPropertiesForProductError: when product is not properly configured
     """
-
-    engine = get_database_engine(app)
     user_profile: dict[str, Any] = {}
     user_primary_group = everyone_group = {}
     user_standard_groups = []
     user_id = _parse_as_user(user_id)
 
-    async with engine.acquire() as conn:
-        row: RowProxy
-
-        async for row in conn.execute(
+    async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
+        result = await conn.stream(
             sa.select(users, groups, user_to_groups.c.access_rights)
             .select_from(
                 users.join(user_to_groups, users.c.id == user_to_groups.c.uid).join(
@@ -108,7 +106,9 @@ async def get_user_profile(
             .where(users.c.id == user_id)
             .order_by(sa.asc(groups.c.name))
             .set_label_style(sa.LABEL_STYLE_TABLENAME_PLUS_COL)
-        ):
+        )
+
+        async for row in result:
             if not user_profile:
                 user_profile = {
                     "id": row.users_id,
@@ -199,13 +199,12 @@ async def update_user_profile(
     user_id = _parse_as_user(user_id)
 
     if updated_values := ToUserUpdateDB.from_api(update).to_db():
-        async with get_database_engine(app).acquire() as conn:
+
+        async with transaction_context(engine=get_asyncpg_engine(app)) as conn:
             query = users.update().where(users.c.id == user_id).values(**updated_values)
 
             try:
-
-                resp = await conn.execute(query)
-                assert resp.rowcount == 1  # nosec
+                await conn.execute(query)
 
             except db_errors.UniqueViolation as err:
                 user_name = updated_values.get("name")
@@ -218,15 +217,14 @@ async def update_user_profile(
                 ) from err
 
 
-async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
+async def get_user_role(app: web.Application, *, user_id: UserID) -> UserRole:
     """
     :raises UserNotFoundError:
     """
     user_id = _parse_as_user(user_id)
 
-    engine = get_database_engine(app)
-    async with engine.acquire() as conn:
-        user_role: RowProxy | None = await conn.scalar(
+    async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
+        user_role = await conn.scalar(
             sa.select(users.c.role).where(users.c.id == user_id)
         )
         if user_role is None:
@@ -289,14 +287,11 @@ async def get_user_display_and_id_names(
 
 
 async def get_guest_user_ids_and_names(app: web.Application) -> list[tuple[int, str]]:
-    engine = get_database_engine(app)
-    result: deque = deque()
-    async with engine.acquire() as conn:
-        async for row in conn.execute(
+    async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
+        result = await conn.stream(
             sa.select(users.c.id, users.c.name).where(users.c.role == UserRole.GUEST)
-        ):
-            result.append(row.as_tuple())
-        return list(result)
+        )
+        return [(row.id, row.name) async for row in result]
 
 
 async def delete_user_without_projects(app: web.Application, user_id: UserID) -> None:
@@ -305,6 +300,7 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
     # otherwise this function will raise asyncpg.exceptions.ForeignKeyViolationError
     # Consider "marking" users as deleted and havning a background job that
     # cleans it up
+    # TODO: upgrade!!!
     db: AsyncpgStorage = get_plugin_storage(app)
     user = await db.get_user({"id": user_id})
     if not user:
@@ -331,8 +327,8 @@ async def get_user_fullname(app: web.Application, user_id: UserID) -> FullNameDi
     """
     user_id = _parse_as_user(user_id)
 
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(
+    async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
+        result = await conn.stream(
             sa.select(users.c.first_name, users.c.last_name).where(
                 users.c.id == user_id
             )
@@ -354,12 +350,11 @@ async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
     row = await _users_repository.get_user_or_raise(
         engine=get_asyncpg_engine(app), user_id=user_id
     )
-    return dict(row)
+    return row._asdict()
 
 
 async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> UserID:
-    engine = get_database_engine(app)
-    async with engine.acquire() as conn:
+    async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
         user_id: UserID = await conn.scalar(
             sa.select(users.c.id).where(users.c.primary_gid == primary_gid)
         )
