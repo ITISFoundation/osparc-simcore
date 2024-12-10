@@ -182,7 +182,9 @@ def ec2_instance_custom_tags(
 
 
 @pytest.fixture
-def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
+def create_dask_task_resources() -> (
+    Callable[[InstanceTypeType | None, Resources], DaskTaskResources]
+):
     def _do(
         ec2_instance_type: InstanceTypeType | None, task_resource: Resources
     ) -> DaskTaskResources:
@@ -229,7 +231,9 @@ async def _create_task_with_resources(
     ec2_client: EC2Client,
     dask_task_imposed_ec2_type: InstanceTypeType | None,
     task_resources: Resources | None,
-    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
 ) -> distributed.Future:
     if dask_task_imposed_ec2_type and not task_resources:
@@ -416,7 +420,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_dask_is_worker_connected: mock.Mock,
     mocker: MockerFixture,
     dask_spec_local_cluster: distributed.SpecCluster,
-    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
     with_drain_nodes_labelled: bool,
     ec2_instance_custom_tags: dict[str, str],
     scale_up_params: _ScaleUpParams,
@@ -779,7 +785,9 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
-    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
     ec2_client: EC2Client,
     faker: Faker,
     caplog: pytest.LogCaptureFixture,
@@ -790,7 +798,8 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
 
     # create a task that needs more power
     dask_task_resources = create_dask_task_resources(
-        faker.pystr(), TypeAdapter(ByteSize).validate_python("128GiB")
+        faker.pystr(),
+        Resources(cpus=1, ram=TypeAdapter(ByteSize).validate_python("128GiB")),
     )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
@@ -815,7 +824,9 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
-    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
     ec2_client: EC2Client,
     faker: Faker,
     caplog: pytest.LogCaptureFixture,
@@ -826,7 +837,8 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
 
     # create a task that needs more power
     dask_task_resources = create_dask_task_resources(
-        "t2.xlarge", TypeAdapter(ByteSize).validate_python("128GiB")
+        "t2.xlarge",
+        Resources(cpus=1, ram=TypeAdapter(ByteSize).validate_python("128GiB")),
     )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
@@ -933,7 +945,9 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
     ec2_client: EC2Client,
     dask_spec_local_cluster: distributed.SpecCluster,
-    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     mock_docker_find_node_with_name_returns_fake_node: mock.Mock,
@@ -1021,7 +1035,9 @@ async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_star
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
     ec2_client: EC2Client,
     dask_spec_local_cluster: distributed.SpecCluster,
-    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     mock_docker_find_node_with_name_returns_fake_node: mock.Mock,
@@ -1128,7 +1144,9 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     ec2_client: EC2Client,
     dask_task_imposed_ec2_type: InstanceTypeType | None,
     dask_ram: ByteSize | None,
-    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
     dask_spec_local_cluster: distributed.SpecCluster,
     expected_ec2_type: InstanceTypeType,
     mock_find_node_with_name_returns_none: mock.Mock,
@@ -1149,7 +1167,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     dask_future = await _create_task_with_resources(
         ec2_client,
         dask_task_imposed_ec2_type,
-        dask_ram,
+        Resources(cpus=1, ram=dask_ram),
         create_dask_task_resources,
         create_dask_task,
     )
