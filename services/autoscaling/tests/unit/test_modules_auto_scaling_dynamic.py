@@ -290,7 +290,7 @@ async def create_services_batch(
 ) -> Callable[[Resources, str | None, int], Awaitable[list[Service]]]:
     async def _(
         service_resources: Resources,
-        imposed_instance_type: str | None,
+        imposed_instance_type: InstanceTypeType | None,
         num_services: int,
     ) -> list[Service]:
         return await asyncio.gather(

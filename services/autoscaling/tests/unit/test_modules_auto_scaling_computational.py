@@ -14,7 +14,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Awaitable
 from unittest import mock
 
 import arrow
@@ -188,11 +188,7 @@ def create_dask_task_resources() -> (
     def _do(
         ec2_instance_type: InstanceTypeType | None, task_resource: Resources
     ) -> DaskTaskResources:
-        resources = DaskTaskResources(
-            {
-                "RAM": int(task_resource.ram),
-            }
-        )
+        resources = _dask_task_resources_from_resources(task_resource)
         if ec2_instance_type is not None:
             resources[create_ec2_resource_constraint_key(ec2_instance_type)] = 1
         return resources
@@ -260,7 +256,7 @@ async def _create_task_with_resources(
     return dask_future
 
 
-@dataclass(frozen=True)
+@dataclass(kw_only=True)
 class _ScaleUpParams:
     imposed_instance_type: InstanceTypeType | None
     task_resources: Resources | None
@@ -274,6 +270,31 @@ def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResourc
         res_key.upper(): res_value
         for res_key, res_value in resources.model_dump().items()
     }
+
+
+@pytest.fixture
+async def create_tasks_batch(
+    ec2_client: EC2Client,
+    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
+) -> Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]]:
+    async def _(scale_up_params: _ScaleUpParams) -> list[distributed.Future]:
+        return await asyncio.gather(
+            *(
+                _create_task_with_resources(
+                    ec2_client,
+                    scale_up_params.imposed_instance_type,
+                    scale_up_params.task_resources,
+                    create_dask_task_resources,
+                    create_dask_task,
+                )
+                for _ in range(scale_up_params.num_tasks)
+            )
+        )
+
+    return _
 
 
 async def test_cluster_scaling_with_no_tasks_does_nothing(
@@ -880,7 +901,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     scale_up_params: _ScaleUpParams,
@@ -895,16 +916,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     assert not all_instances["Reservations"]
 
     # create several tasks that needs more power
-    dask_futures = await asyncio.gather(
-        *(
-            asyncio.get_event_loop().run_in_executor(
-                None,
-                create_dask_task,
-                _dask_task_resources_from_resources(scale_up_params.task_resources),
-            )
-            for _ in range(scale_up_params.num_tasks)
-        )
-    )
+    dask_futures = await create_tasks_batch(scale_up_params)
     assert dask_futures
 
     # run the code
@@ -917,7 +929,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=scale_up_params.expected_num_instances,
-        expected_instance_type="g3.4xlarge",
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -937,17 +949,29 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_rabbitmq_post_message.reset_mock()
 
 
+@pytest.mark.parametrize(
+    "scale_up_params",
+    [
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type="r5n.8xlarge",
+                task_resources=None,
+                num_tasks=1,
+                expected_instance_type="r5n.8xlarge",
+                expected_num_instances=1,
+            ),
+            id="Impose r5n.8xlarge without resources",
+        ),
+    ],
+)
 async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and_not_more(
     patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
     ec2_client: EC2Client,
     dask_spec_local_cluster: distributed.SpecCluster,
-    create_dask_task_resources: Callable[
-        [InstanceTypeType | None, Resources], DaskTaskResources
-    ],
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     mock_docker_find_node_with_name_returns_fake_node: mock.Mock,
@@ -956,29 +980,23 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
     mock_dask_get_worker_has_results_in_memory: mock.Mock,
     mock_dask_get_worker_used_resources: mock.Mock,
     ec2_instance_custom_tags: dict[str, str],
+    scale_up_params: _ScaleUpParams,
 ):
-    ec2_instance_type = "r5n.8xlarge"
-
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES > 0
-    num_tasks = 3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    # override the number of tasks
+    scale_up_params.num_tasks = (
+        3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    )
+    scale_up_params.expected_num_instances = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    )
 
     # create the tasks
-    task_futures = await asyncio.gather(
-        *(
-            _create_task_with_resources(
-                ec2_client,
-                ec2_instance_type,
-                None,
-                create_dask_task_resources,
-                create_dask_task,
-            )
-            for _ in range(num_tasks)
-        )
-    )
+    task_futures = await create_tasks_batch(scale_up_params)
     assert all(task_futures)
 
     # this should trigger a scaling up as we have no nodes
@@ -988,8 +1006,8 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
-        expected_instance_type=ec2_instance_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -1007,7 +1025,7 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
         initialized_app,
         dask_spec_local_cluster.scheduler_address,
         instances_running=0,
-        instances_pending=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+        instances_pending=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
 
@@ -1020,8 +1038,8 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
-        expected_instance_type=ec2_instance_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
