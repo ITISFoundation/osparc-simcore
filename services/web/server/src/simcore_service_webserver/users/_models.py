@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, NamedTuple, Self
 
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, ConfigDict, Field

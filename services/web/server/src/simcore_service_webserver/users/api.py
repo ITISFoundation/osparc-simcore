@@ -11,7 +11,6 @@ from typing import Any, NamedTuple, TypedDict
 import simcore_postgres_database.errors as db_errors
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa.result import RowProxy
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
@@ -32,6 +31,7 @@ from simcore_postgres_database.utils_repos import (
     transaction_context,
 )
 from simcore_postgres_database.utils_users import generate_alternative_username
+from sqlalchemy.engine.row import Row
 
 from ..db.plugin import get_asyncpg_engine
 from ..login.storage import AsyncpgStorage, get_plugin_storage
@@ -63,7 +63,7 @@ _GROUPS_SCHEMA_TO_DB = {
 
 
 def _convert_groups_db_to_schema(
-    db_row: RowProxy, *, prefix: str | None = "", **kwargs
+    db_row: Row, *, prefix: str | None = "", **kwargs
 ) -> dict:
     # NOTE: Deprecated. has to be replaced with
     converted_dict = {
@@ -347,10 +347,11 @@ async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
     """
     :raises UserNotFoundError:
     """
-    row = await _users_repository.get_user_or_raise(
+    row: Row = await _users_repository.get_user_or_raise(
         engine=get_asyncpg_engine(app), user_id=user_id
     )
-    return row._asdict()
+    user: dict[str, Any] = row._asdict()
+    return user
 
 
 async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> UserID:

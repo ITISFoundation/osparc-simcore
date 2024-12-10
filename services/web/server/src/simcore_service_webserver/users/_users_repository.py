@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.users import GroupID, UserBillingDetails, UserID
 from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.users import UserStatus, user_to_groups, users
+from simcore_postgres_database.models.users import UserStatus, users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
@@ -243,7 +243,9 @@ async def get_user_billing_details(
         BillingDetailsNotFoundError
     """
     async with pass_or_acquire_connection(engine, connection) as conn:
-        user_billing_details = await UsersRepo.get_billing_details(conn, user_id)
-        if not user_billing_details:
+        query = UsersRepo.get_billing_details_query(user_id=user_id)
+        result = await conn.stream(query)
+        row = await result.fetchone()
+        if not row:
             raise BillingDetailsNotFoundError(user_id=user_id)
-        return UserBillingDetails.model_validate(user_billing_details)
+        return UserBillingDetails.model_validate(row)

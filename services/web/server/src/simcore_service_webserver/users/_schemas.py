@@ -20,12 +20,10 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from servicelib.aiohttp import status
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserStatus
 
 from .._constants import RQ_PRODUCT_KEY
-from ._schemas import PreUserProfile
 
 
 class UsersRequestContext(BaseModel):
