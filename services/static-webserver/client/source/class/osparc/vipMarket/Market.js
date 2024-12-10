@@ -61,5 +61,14 @@ qx.Class.define("osparc.vipMarket.Market", {
       page.category = marketInfo["category"];
       return page;
     },
+
+    openCategory: function(category) {
+      const viewFound = this.getChildControl("tabs-view").getChildren().find(view => view.category === category);
+      if (viewFound) {
+        this._openPage(viewFound);
+        return true;
+      }
+      return false;
+    },
   }
 });

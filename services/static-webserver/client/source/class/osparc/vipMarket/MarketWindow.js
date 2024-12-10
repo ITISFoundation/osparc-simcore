@@ -50,8 +50,8 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
   members: {
     __vipMarket: null,
 
-    openVipMarket: function() {
-      return this.__vipMarket.openVipMarket();
+    openCategory: function(category) {
+      return this.__vipMarket.openCategory(category);
     },
   }
 });
