@@ -7,19 +7,21 @@ import asyncio
 from collections.abc import AsyncIterable
 from datetime import timedelta
 from http import HTTPStatus
+from http.client import HTTPException
 
 import pytest
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
-from simcore_service_webserver.api_keys._api import (
-    get_api_key,
+from simcore_service_webserver.api_keys import _repository as repo
+from simcore_service_webserver.api_keys._models import ApiKey
+from simcore_service_webserver.api_keys._service import (
     get_or_create_api_key,
     prune_expired_api_keys,
 )
-from simcore_service_webserver.api_keys._db import ApiKeyRepo
 from simcore_service_webserver.db.models import UserRole
 
 
@@ -28,26 +30,28 @@ async def fake_user_api_keys(
     client: TestClient,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
-) -> AsyncIterable[list[str]]:
+    faker: Faker,
+) -> AsyncIterable[list[int]]:
     assert client.app
-    names = ["foo", "bar", "beta", "alpha"]
-    repo = ApiKeyRepo.create_from_app(app=client.app)
-
-    for name in names:
-        await repo.create(
+    api_keys: list[ApiKey] = [
+        await repo.create_api_key(
+            client.app,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
-            display_name=name,
+            display_name=faker.pystr(),
             expiration=None,
-            api_key=f"{name}-key",
-            api_secret=f"{name}-secret",
+            api_key=faker.pystr(),
+            api_secret=faker.pystr(),
         )
+        for _ in range(5)
+    ]
 
-    yield names
+    yield api_keys
 
-    for name in names:
-        await repo.delete_by_name(
-            display_name=name,
+    for api_key in api_keys:
+        await repo.delete_api_key(
+            client.app,
+            api_key_id=api_key.id,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
@@ -87,7 +91,7 @@ async def test_list_api_keys(
     "user_role,expected",
     _get_user_access_parametrizations(status.HTTP_200_OK),
 )
-async def test_create_api_keys(
+async def test_create_api_key(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
@@ -95,18 +99,18 @@ async def test_create_api_keys(
     disable_gc_manual_guest_users: None,
 ):
     display_name = "foo"
-    resp = await client.post("/v0/auth/api-keys", json={"display_name": display_name})
+    resp = await client.post("/v0/auth/api-keys", json={"displayName": display_name})
 
     data, errors = await assert_status(resp, expected)
 
     if not errors:
-        assert data["display_name"] == display_name
-        assert "api_key" in data
-        assert "api_secret" in data
+        assert data["displayName"] == display_name
+        assert "apiKey" in data
+        assert "apiSecret" in data
 
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
-        assert sorted(data) == [display_name]
+        assert [d["displayName"] for d in data] == [display_name]
 
 
 @pytest.mark.parametrize(
@@ -115,17 +119,17 @@ async def test_create_api_keys(
 )
 async def test_delete_api_keys(
     client: TestClient,
-    fake_user_api_keys: list[str],
+    fake_user_api_keys: list[ApiKey],
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPStatus,
     disable_gc_manual_guest_users: None,
 ):
-    resp = await client.delete("/v0/auth/api-keys", json={"display_name": "foo"})
+    resp = await client.delete("/v0/auth/api-keys/0")
     await assert_status(resp, expected)
 
-    for name in fake_user_api_keys:
-        resp = await client.delete("/v0/auth/api-keys", json={"display_name": name})
+    for api_key in fake_user_api_keys:
+        resp = await client.delete(f"/v0/auth/api-keys/{api_key.id}")
         await assert_status(resp, expected)
 
 
@@ -146,19 +150,19 @@ async def test_create_api_key_with_expiration(
     expiration_interval = timedelta(seconds=1)
     resp = await client.post(
         "/v0/auth/api-keys",
-        json={"display_name": "foo", "expiration": expiration_interval.seconds},
+        json={"displayName": "foo", "expiration": expiration_interval.seconds},
     )
 
     data, errors = await assert_status(resp, expected)
     if not errors:
-        assert data["display_name"] == "foo"
-        assert "api_key" in data
-        assert "api_secret" in data
+        assert data["displayName"] == "foo"
+        assert "apiKey" in data
+        assert "apiSecret" in data
 
         # list created api-key
         resp = await client.get("/v0/auth/api-keys")
         data, _ = await assert_status(resp, expected)
-        assert data == ["foo"]
+        assert [d["displayName"] for d in data] == ["foo"]
 
         # wait for api-key for it to expire and force-run scheduled task
         await asyncio.sleep(expiration_interval.seconds)
@@ -180,19 +184,34 @@ async def test_get_or_create_api_key(
         assert client.app
 
         options = {
-            "name": "repeated_name",
             "user_id": user["id"],
             "product_name": "osparc",
+            "display_name": "foo",
         }
-
-        # does not exist
-        assert await get_api_key(client.app, **options) is None
 
         # create once
         created = await get_or_create_api_key(client.app, **options)
-        assert created.display_name == options["name"]
+        assert created.display_name == "foo"
         assert created.api_key != created.api_secret
 
-        # idempottent
+        # idempotent
         for _ in range(3):
             assert await get_or_create_api_key(client.app, **options) == created
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    _get_user_access_parametrizations(status.HTTP_404_NOT_FOUND),
+)
+async def test_get_not_existing_api_key(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    expected: HTTPException,
+    disable_gc_manual_guest_users: None,
+):
+    resp = await client.get("/v0/auth/api-keys/42")
+    data, errors = await assert_status(resp, expected)
+
+    if not errors:
+        assert data is None
