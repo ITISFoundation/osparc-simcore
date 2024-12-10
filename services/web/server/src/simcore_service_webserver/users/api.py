@@ -12,7 +12,6 @@ from typing import Any, NamedTuple, TypedDict
 import simcore_postgres_database.errors as db_errors
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
@@ -32,9 +31,10 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 from simcore_postgres_database.utils_users import generate_alternative_username
 
 from ..db.plugin import get_database_engine
+from ..db.plugin import get_asyncpg_engine, get_database_engine
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
-from . import _db
+from . import _users_repository
 from ._api import get_user_credentials, get_user_invoice_address, set_user_as_deleted
 from ._models import ToUserUpdateDB
 from ._preferences_api import get_frontend_user_preferences_aggregation
@@ -245,8 +245,8 @@ async def get_user_name_and_email(
     Returns:
         (user, email)
     """
-    row = await _db.get_user_or_raise(
-        get_database_engine(app),
+    row = await _users_repository.get_user_or_raise(
+        get_asyncpg_engine(app),
         user_id=_parse_as_user(user_id),
         return_column_names=["name", "email"],
     )
@@ -271,8 +271,8 @@ async def get_user_display_and_id_names(
     Raises:
         UserNotFoundError
     """
-    row = await _db.get_user_or_raise(
-        get_database_engine(app),
+    row = await _users_repository.get_user_or_raise(
+        get_asyncpg_engine(app),
         user_id=_parse_as_user(user_id),
         return_column_names=["name", "email", "first_name", "last_name"],
     )
@@ -347,7 +347,9 @@ async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
     """
     :raises UserNotFoundError:
     """
-    row = await _db.get_user_or_raise(engine=get_database_engine(app), user_id=user_id)
+    row = await _users_repository.get_user_or_raise(
+        engine=get_asyncpg_engine(app), user_id=user_id
+    )
     return dict(row)
 
 
@@ -361,14 +363,13 @@ async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> UserID
 
 
 async def get_users_in_group(app: web.Application, gid: GroupID) -> set[UserID]:
-    engine = get_database_engine(app)
-    async with engine.acquire() as conn:
-        return await _db.get_users_ids_in_group(conn, gid)
+    return await _users_repository.get_users_ids_in_group(
+        get_asyncpg_engine(app), group_id=gid
+    )
 
 
-async def update_expired_users(engine: Engine) -> list[UserID]:
-    async with engine.acquire() as conn:
-        return await _db.do_update_expired_users(conn)
+async def update_expired_users(app: web.Application) -> list[UserID]:
+    return await _users_repository.do_update_expired_users(get_asyncpg_engine(app))
 
 
 assert set_user_as_deleted  # nosec
