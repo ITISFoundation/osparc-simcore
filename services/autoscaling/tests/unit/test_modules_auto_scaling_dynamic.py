@@ -1261,7 +1261,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
-    assert_cluster_state(
+    analyzed_cluster = assert_cluster_state(
         spied_cluster_analysis,
         expected_calls=1,
         expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
@@ -1272,6 +1272,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
         mock_docker_tag_node.call_count
         == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
     )
+    assert analyzed_cluster.active_nodes
 
     #
     # 3. now we start the second batch of services requiring a different type of machines
@@ -1296,9 +1297,13 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
             instance_filters=instance_type_filters,
         )
 
-    assert isinstance(spied_cluster_analysis.spy_return, Cluster)
-    assert spied_cluster_analysis.spy_return.active_nodes
-    assert not spied_cluster_analysis.spy_return.drained_nodes
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
 
     # now we simulate that some of the services in the 1st batch have completed and that we are 1 below the max
     # a machine should switch off and another type should be started

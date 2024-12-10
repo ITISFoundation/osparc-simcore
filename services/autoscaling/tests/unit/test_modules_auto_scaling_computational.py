@@ -33,10 +33,14 @@ from models_library.generated_models.docker_rest_api import NodeState, NodeStatu
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture, MockType
+from pytest_simcore.helpers.autoscaling import (
+    assert_cluster_state,
+    create_fake_association,
+)
 from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_computational_ec2_instances
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
-from simcore_service_autoscaling.models import Cluster, EC2InstanceData
+from simcore_service_autoscaling.models import EC2InstanceData
 from simcore_service_autoscaling.modules.auto_scaling_core import auto_scale_cluster
 from simcore_service_autoscaling.modules.auto_scaling_mode_computational import (
     ComputationalAutoscaling,
@@ -264,19 +268,6 @@ class _ScaleUpParams:
     num_tasks: int
     expected_instance_type: InstanceTypeType
     expected_num_instances: int
-
-
-def _assert_cluster_state(
-    spied_cluster_analysis: MockType, *, expected_calls: int, expected_num_machines: int
-) -> None:
-    assert spied_cluster_analysis.call_count > 0
-
-    assert isinstance(spied_cluster_analysis.spy_return, Cluster)
-    assert (
-        spied_cluster_analysis.spy_return.total_number_of_machines()
-        == expected_num_machines
-    )
-    print("current cluster state:", spied_cluster_analysis.spy_return)
 
 
 _RESOURCE_TO_DASK_RESOURCE_MAP: Final[dict[str, str]] = {"CPUS": "CPU", "RAM": "RAM"}
@@ -1357,6 +1348,10 @@ async def test_cluster_adapts_machines_on_the_fly(
     ec2_instance_custom_tags: dict[str, str],
     scale_up_params1: _ScaleUpParams,
     scale_up_params2: _ScaleUpParams,
+    mocked_associate_ec2_instances_with_nodes: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
+    mock_dask_is_worker_connected: mock.Mock,
+    create_fake_node: Callable[..., DockerNode],
     mock_docker_tag_node: mock.Mock,
     spied_cluster_analysis: MockType,
     mocker: MockerFixture,
@@ -1390,13 +1385,59 @@ async def test_cluster_adapts_machines_on_the_fly(
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
-    _assert_cluster_state(
+    assert_cluster_state(
         spied_cluster_analysis,
         expected_calls=1,
         expected_num_machines=0,
     )
-    # mocked_associate_ec2_instances_with_nodes.assert_called_once_with([], [])
-    # mocked_associate_ec2_instances_with_nodes.reset_mock()
-    # mocked_associate_ec2_instances_with_nodes.side_effect = _create_fake_association(
-    #     create_fake_node, None, None
-    # )
+    mocked_associate_ec2_instances_with_nodes.assert_called_once_with([], [])
+    mocked_associate_ec2_instances_with_nodes.reset_mock()
+    mocked_associate_ec2_instances_with_nodes.side_effect = create_fake_association(
+        create_fake_node, None, None
+    )
+    mock_docker_tag_node.assert_not_called()
+    mock_dask_is_worker_connected.assert_not_called()
+
+    #
+    # 2. now the machines are associated
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    mocked_associate_ec2_instances_with_nodes.assert_called_once()
+    mock_docker_tag_node.assert_called()
+    assert (
+        mock_docker_tag_node.call_count
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    )
+    assert analyzed_cluster.active_nodes
+
+    #
+    # 3. now we start the second batch of services requiring a different type of machines
+    second_batch_tasks = await create_tasks_batch(scale_up_params2)
+    assert second_batch_tasks
+
+    # scaling will do nothing since we have hit the maximum number of machines
+    for _ in range(3):
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+        )
+        await assert_autoscaled_computational_ec2_instances(
+            ec2_client,
+            expected_num_reservations=1,
+            expected_num_instances=scale_up_params1.expected_num_instances,
+            expected_instance_type=scale_up_params1.expected_instance_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
