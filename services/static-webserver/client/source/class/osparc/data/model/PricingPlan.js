@@ -31,7 +31,7 @@ qx.Class.define("osparc.data.model.PricingPlan", {
     this.set({
       pricingPlanId: pricingPlanData.pricingPlanId,
       pricingPlanKey: pricingPlanData.pricingPlanKey,
-      classification: pricingPlanData.displayName.includes("ViP") ? "LICENSE" : pricingPlanData.classification,
+      classification: pricingPlanData.classification,
       name: pricingPlanData.displayName,
       description: pricingPlanData.description,
       isActive: pricingPlanData.isActive,
