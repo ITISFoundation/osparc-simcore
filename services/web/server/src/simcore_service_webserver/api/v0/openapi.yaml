@@ -635,7 +635,7 @@ paths:
       - groups
       summary: Add Group User
       description: Adds a user to an organization group using their username, user
-        ID, or email (subject to privacy settings
+        ID, or email (subject to privacy settings)
       operationId: add_group_user
       parameters:
       - name: gid
