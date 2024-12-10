@@ -286,7 +286,11 @@ async def get_group(client: TestClient, user: dict):
         app=client.app,
         user_id=user["id"],
         create=StandardGroupCreate.model_validate(
-            {"name": uuid4(), "description": uuid4(), "thumbnail": None}
+            {
+                "name": f"name-{uuid4()}",
+                "description": f"desc-{uuid4()}",
+                "thumbnail": None,
+            }
         ),
     )
 
