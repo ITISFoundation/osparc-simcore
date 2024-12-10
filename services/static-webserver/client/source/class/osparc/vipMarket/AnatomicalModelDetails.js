@@ -209,6 +209,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         center: true,
         maxWidth: 200,
         alignX: "center",
+        visibility: anatomicalModelsData["purchased"] ? "visible" : "excluded",
       });
       importButton.addListener("execute", () => {
         this.fireDataEvent("modelImportRequested", {
