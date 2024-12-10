@@ -6,9 +6,6 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 
-#     # Remove the environment variable
-#     if "RESOURCE_USAGE_TRACKER_S3" in os.environ:
-#         monkeypatch.delenv("RESOURCE_USAGE_TRACKER_S3")
 import sqlalchemy as sa
 from models_library.api_schemas_resource_usage_tracker.licensed_items_purchases import (
     LicensedItemPurchaseGet,
@@ -31,45 +28,10 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-_USER_ID = 1
-
-
-# @pytest.fixture
-# async def mocked_export(mocker: MockerFixture) -> AsyncMock:
-#     return mocker.patch(
-#         "simcore_service_resource_usage_tracker.services.service_runs.service_runs_db.export_service_runs_table_to_s3",
-#         autospec=True,
-#     )
-
-
-# @pytest.fixture
-# async def mocked_presigned_link(mocker: MockerFixture) -> AsyncMock:
-#     return mocker.patch(
-#         "simcore_service_resource_usage_tracker.services.service_runs.SimcoreS3API.create_single_presigned_download_link",
-#         return_value=TypeAdapter(AnyUrl).validate_python("https://www.testing.com/"),
-#     )
-
-
-# @pytest.fixture
-# async def enable_resource_usage_tracker_s3(
-#     mock_env: EnvVarsDict,
-#     mocked_aws_server: ThreadedMotoServer,
-#     mocked_s3_server_envs: EnvVarsDict,
-#     mocked_s3_server_settings: S3Settings,
-#     s3_client: S3Client,
-#     monkeypatch: pytest.MonkeyPatch,
-# ) -> None:
-#     # Create bucket
-#     await s3_client.create_bucket(Bucket=mocked_s3_server_settings.S3_BUCKET_NAME)
-
-
 async def test_rpc_licensed_items_purchases_workflow(
-    # enable_resource_usage_tracker_s3: None,
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
     rpc_client: RabbitMQRPCClient,
-    # mocked_export: Mock,
-    # mocked_presigned_link: Mock,
 ):
     result = await licensed_items_purchases.get_licensed_items_purchases_page(
         rpc_client, product_name="osparc", wallet_id=1
