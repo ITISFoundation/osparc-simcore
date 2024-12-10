@@ -16,13 +16,13 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.groups import GroupGet
-from models_library.groups import GroupsByTypeTuple, OrganizationCreate
+from models_library.groups import GroupsByTypeTuple, StandardGroupCreate
 from models_library.users import UserID
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from simcore_service_webserver.groups._groups_api import (
     add_user_in_group,
     create_standard_group,
-    delete_group,
+    delete_standard_group,
     list_user_groups_with_read_access,
 )
 
@@ -37,7 +37,7 @@ async def _create_organization(
     group, access_rights = await create_standard_group(
         app,
         user_id=user_id,
-        create=OrganizationCreate.model_validate(new_group),
+        create=StandardGroupCreate.model_validate(new_group),
     )
     return _groupget_model_dump(group=group, access_rights=access_rights)
 
@@ -107,10 +107,10 @@ async def standard_groups_owner(
         yield owner_user
 
         # clean groups
-        await delete_group(
+        await delete_standard_group(
             client.app, user_id=owner_user["id"], group_id=sparc_group["gid"]
         )
-        await delete_group(
+        await delete_standard_group(
             client.app, user_id=owner_user["id"], group_id=team_black_group["gid"]
         )
 

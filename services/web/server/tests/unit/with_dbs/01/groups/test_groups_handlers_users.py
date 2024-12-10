@@ -11,7 +11,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.groups import GroupGet, GroupUserGet
-from models_library.groups import AccessRightsDict, Group, OrganizationCreate
+from models_library.groups import AccessRightsDict, Group, StandardGroupCreate
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -23,7 +23,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.groups._groups_api import (
     create_standard_group,
-    delete_group,
+    delete_standard_group,
 )
 from simcore_service_webserver.groups._groups_db import (
     _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
@@ -463,7 +463,7 @@ async def group_where_logged_user_is_the_owner(
     group, _ = await create_standard_group(
         app=client.app,
         user_id=logged_user["id"],
-        create=OrganizationCreate.model_validate(
+        create=StandardGroupCreate.model_validate(
             {
                 "name": f"this is user {logged_user['id']} group",
                 "description": f"user {logged_user['email']} is the owner of that one",
@@ -474,7 +474,9 @@ async def group_where_logged_user_is_the_owner(
 
     yield group
 
-    await delete_group(client.app, user_id=logged_user["id"], group_id=group.gid)
+    await delete_standard_group(
+        client.app, user_id=logged_user["id"], group_id=group.gid
+    )
 
 
 @pytest.mark.acceptance_test(

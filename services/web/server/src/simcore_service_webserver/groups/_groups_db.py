@@ -10,8 +10,8 @@ from models_library.groups import (
     GroupInfoTuple,
     GroupMember,
     GroupsByTypeTuple,
-    OrganizationCreate,
-    OrganizationUpdate,
+    StandardGroupCreate,
+    StandardGroupUpdate,
 )
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import UniqueViolation
@@ -208,7 +208,7 @@ async def get_user_group(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    group_9d: GroupID,
+    group_id: GroupID,
 ) -> tuple[Group, AccessRightsDict]:
     """
     Gets group gid if user associated to it and has read access
@@ -218,9 +218,9 @@ async def get_user_group(
     """
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         row = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=group_9d
+            conn, user_id=user_id, gid=group_id
         )
-        _check_group_permissions(row, user_id, group_9d, "read")
+        _check_group_permissions(row, user_id, group_id, "read")
 
         group, access_rights = _to_group_info_tuple(row)
         return group, access_rights
@@ -245,7 +245,7 @@ async def get_product_group_for_user(
         return group, access_rights
 
 
-assert set(OrganizationCreate.model_fields).issubset({c.name for c in groups.columns})
+assert set(StandardGroupCreate.model_fields).issubset({c.name for c in groups.columns})
 
 
 async def create_standard_group(
@@ -253,7 +253,7 @@ async def create_standard_group(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    create: OrganizationCreate,
+    create: StandardGroupCreate,
 ) -> tuple[Group, AccessRightsDict]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
@@ -288,16 +288,16 @@ async def create_standard_group(
         return group, deepcopy(_DEFAULT_GROUP_OWNER_ACCESS_RIGHTS)
 
 
-assert set(OrganizationUpdate.model_fields).issubset({c.name for c in groups.columns})
+assert set(StandardGroupUpdate.model_fields).issubset({c.name for c in groups.columns})
 
 
-async def update_user_group(
+async def update_standard_group(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     group_id: GroupID,
-    update: OrganizationUpdate,
+    update: StandardGroupUpdate,
 ) -> tuple[Group, AccessRightsDict]:
 
     values = update.model_dump(mode="json", exclude_unset=True)
@@ -314,7 +314,7 @@ async def update_user_group(
             # pylint: disable=no-value-for-parameter
             groups.update()
             .values(**values)
-            .where(groups.c.gid == row.gid)
+            .where((groups.c.gid == row.gid) & (groups.c.type == GroupType.STANDARD))
             .returning(*_GROUP_COLUMNS)
         )
         row = await result.fetchone()
@@ -324,7 +324,7 @@ async def update_user_group(
         return group, access_rights
 
 
-async def delete_user_group(
+async def delete_standard_group(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -339,7 +339,9 @@ async def delete_user_group(
 
         await conn.execute(
             # pylint: disable=no-value-for-parameter
-            groups.delete().where(groups.c.gid == group.gid)
+            groups.delete().where(
+                (groups.c.gid == group.gid) & (groups.c.type == GroupType.STANDARD)
+            )
         )
 
 

@@ -78,13 +78,13 @@ class GroupMember(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class OrganizationCreate(BaseModel):
+class StandardGroupCreate(BaseModel):
     name: str
     description: str | None = None
     thumbnail: str | None = None
 
 
-class OrganizationUpdate(BaseModel):
+class StandardGroupUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     thumbnail: str | None = None

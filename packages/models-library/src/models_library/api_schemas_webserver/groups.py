@@ -20,8 +20,8 @@ from ..groups import (
     AccessRightsDict,
     Group,
     GroupMember,
-    OrganizationCreate,
-    OrganizationUpdate,
+    StandardGroupCreate,
+    StandardGroupUpdate,
 )
 from ..users import UserID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
@@ -147,12 +147,12 @@ class GroupCreate(InputSchema):
     description: str
     thumbnail: AnyUrl | None = None
 
-    def to_model(self) -> OrganizationCreate:
+    def to_model(self) -> StandardGroupCreate:
         data = _rename_keys(
             self.model_dump(mode="json", exclude_unset=True),
             name_map={"label": "name"},
         )
-        return OrganizationCreate(**data)
+        return StandardGroupCreate(**data)
 
 
 class GroupUpdate(InputSchema):
@@ -160,12 +160,12 @@ class GroupUpdate(InputSchema):
     description: str | None = None
     thumbnail: AnyUrl | None = None
 
-    def to_model(self) -> OrganizationUpdate:
+    def to_model(self) -> StandardGroupUpdate:
         data = _rename_keys(
             self.model_dump(mode="json", exclude_unset=True),
             name_map={"label": "name"},
         )
-        return OrganizationUpdate(**data)
+        return StandardGroupUpdate(**data)
 
 
 class MyGroupsGet(OutputSchema):

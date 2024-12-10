@@ -6,8 +6,8 @@ from models_library.groups import (
     Group,
     GroupMember,
     GroupsByTypeTuple,
-    OrganizationCreate,
-    OrganizationUpdate,
+    StandardGroupCreate,
+    StandardGroupUpdate,
 )
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
@@ -87,7 +87,7 @@ async def get_product_group_for_user(
 
 
 #
-# ORGANIZATIONS CRUD operations
+# CRUD operations on groups linked to a user
 #
 
 
@@ -95,11 +95,12 @@ async def create_standard_group(
     app: web.Application,
     *,
     user_id: UserID,
-    create: OrganizationCreate,
+    create: StandardGroupCreate,
 ) -> tuple[Group, AccessRightsDict]:
-    """
+    """NOTE: creation/update and deletion restricted to STANDARD groups
+
     raises GroupNotFoundError
-    raises UserInsufficientRightsError
+    raises UserInsufficientRightsError: needs WRITE access
     """
     return await _groups_db.create_standard_group(
         app,
@@ -108,35 +109,34 @@ async def create_standard_group(
     )
 
 
-async def get_organization(
+async def get_associated_group(
     app: web.Application,
     *,
     user_id: UserID,
     group_id: GroupID,
 ) -> tuple[Group, AccessRightsDict]:
     """
-    Gets group gid if user associated to it and has read access
 
     raises GroupNotFoundError
-    raises UserInsufficientRightsError
+    raises UserInsufficientRightsError: needs READ access
     """
-    return await _groups_db.get_user_group(app, user_id=user_id, group_9d=group_id)
+    return await _groups_db.get_user_group(app, user_id=user_id, group_id=group_id)
 
 
-async def update_group(
+async def update_standard_group(
     app: web.Application,
     *,
     user_id: UserID,
     group_id: GroupID,
-    update: OrganizationUpdate,
+    update: StandardGroupUpdate,
 ) -> tuple[Group, AccessRightsDict]:
-    """
+    """NOTE: creation/update and deletion restricted to STANDARD groups
 
     raises GroupNotFoundError
-    raises UserInsufficientRightsError
+    raises UserInsufficientRightsError: needs WRITE access
     """
 
-    return await _groups_db.update_user_group(
+    return await _groups_db.update_standard_group(
         app,
         user_id=user_id,
         group_id=group_id,
@@ -144,29 +144,31 @@ async def update_group(
     )
 
 
-async def delete_group(
+async def delete_standard_group(
     app: web.Application, *, user_id: UserID, group_id: GroupID
 ) -> None:
-    """
+    """NOTE: creation/update and deletion restricted to STANDARD groups
 
     raises GroupNotFoundError
-    raises UserInsufficientRightsError
+    raises UserInsufficientRightsError: needs DELETE access
     """
-    return await _groups_db.delete_user_group(app, user_id=user_id, group_id=group_id)
+    return await _groups_db.delete_standard_group(
+        app, user_id=user_id, group_id=group_id
+    )
 
 
 #
-# ORGANIZATION MEMBERS
+# GROUP MEMBERS (= a user with some access-rights to a group)
 #
 
 
-async def list_users_in_group(
+async def list_group_members(
     app: web.Application, user_id: UserID, group_id: GroupID
 ) -> list[GroupMember]:
     return await _groups_db.list_users_in_group(app, user_id=user_id, group_id=group_id)
 
 
-async def get_user_in_group(
+async def get_group_member(
     app: web.Application,
     user_id: UserID,
     group_id: GroupID,
@@ -181,7 +183,7 @@ async def get_user_in_group(
     )
 
 
-async def update_user_in_group(
+async def update_group_member(
     app: web.Application,
     user_id: UserID,
     group_id: GroupID,
@@ -197,7 +199,7 @@ async def update_user_in_group(
     )
 
 
-async def delete_user_in_group(
+async def delete_group_member(
     app: web.Application,
     user_id: UserID,
     group_id: GroupID,

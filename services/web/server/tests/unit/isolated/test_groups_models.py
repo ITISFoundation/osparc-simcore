@@ -15,8 +15,8 @@ from models_library.groups import (
     Group,
     GroupMember,
     GroupTypeInModel,
-    OrganizationCreate,
-    OrganizationUpdate,
+    StandardGroupCreate,
+    StandardGroupUpdate,
 )
 from models_library.utils.enums import enum_to_dict
 from pydantic import ValidationError
@@ -95,13 +95,13 @@ def test_input_schemas_to_models(faker: Faker):
         label=faker.word(), description=faker.sentence(), thumbnail=faker.url()
     )
     domain_model = input_schema.to_model()
-    assert isinstance(domain_model, OrganizationCreate)
+    assert isinstance(domain_model, StandardGroupCreate)
     assert domain_model.name == input_schema.label
 
     # input : scheam -> model
     input_schema = GroupUpdate(label=faker.word())
     domain_model = input_schema.to_model()
-    assert isinstance(domain_model, OrganizationUpdate)
+    assert isinstance(domain_model, StandardGroupUpdate)
     assert domain_model.name == input_schema.label
 
 
