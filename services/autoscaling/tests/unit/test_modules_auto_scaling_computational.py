@@ -1436,7 +1436,7 @@ async def test_cluster_adapts_machines_on_the_fly(
         )
     analyzed_cluster = assert_cluster_state(
         spied_cluster_analysis,
-        expected_calls=1,
+        expected_calls=3,
         expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
     )
     assert analyzed_cluster.active_nodes
@@ -1521,6 +1521,11 @@ async def test_cluster_adapts_machines_on_the_fly(
         await auto_scale_cluster(
             app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
         )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
     mock_docker_tag_node.assert_called_with(
         mock.ANY,
         analyzed_cluster.drained_nodes[-1].node,

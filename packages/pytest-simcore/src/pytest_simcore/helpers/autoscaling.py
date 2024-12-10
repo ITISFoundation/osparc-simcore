@@ -27,7 +27,9 @@ def assert_cluster_state(
         == expected_num_machines
     )
     print("current cluster state:", spied_cluster_analysis.spy_return)
-    return spied_cluster_analysis.spy_return
+    cluster = spied_cluster_analysis.spy_return
+    spied_cluster_analysis.reset_mock()
+    return cluster
 
 
 def create_fake_association(
