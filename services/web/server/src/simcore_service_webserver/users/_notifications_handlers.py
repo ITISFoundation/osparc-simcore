@@ -126,7 +126,7 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
 async def list_user_permissions(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     list_permissions: list[Permission] = await _users_service.list_user_permissions(
-        request.app, req_ctx.user_id, req_ctx.product_name
+        request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
     return envelope_json_response(
         [

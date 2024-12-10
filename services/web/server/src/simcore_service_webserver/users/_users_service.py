@@ -1,5 +1,4 @@
 import logging
-from typing import NamedTuple
 
 import pycountry
 from aiohttp import web
@@ -8,12 +7,11 @@ from models_library.payments import UserInvoiceAddress
 from models_library.users import UserBillingDetails, UserID
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.users import UserStatus
+from simcore_service_webserver.products._api import ProductName
 
 from ..db.plugin import get_asyncpg_engine
 from . import _schemas, _users_repository
-from ._users_repository import get_user_or_raise
-from ._users_repository import list_user_permissions as db_list_of_permissions
-from ._users_repository import update_user_status
+from ._models import UserCredentialsTuple
 from .exceptions import AlreadyPreRegisteredError
 from .schemas import Permission
 
@@ -21,24 +19,21 @@ _logger = logging.getLogger(__name__)
 
 
 async def list_user_permissions(
-    app: web.Application, user_id: UserID, product_name: str
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
 ) -> list[Permission]:
-    permissions: list[Permission] = await db_list_of_permissions(
+    permissions: list[Permission] = await _users_repository.list_user_permissions(
         app, user_id=user_id, product_name=product_name
     )
     return permissions
 
 
-class UserCredentialsTuple(NamedTuple):
-    email: LowerCaseEmailStr
-    password_hash: str
-    display_name: str
-
-
 async def get_user_credentials(
     app: web.Application, *, user_id: UserID
 ) -> UserCredentialsTuple:
-    row = await get_user_or_raise(
+    row = await _users_repository.get_user_or_raise(
         get_asyncpg_engine(app),
         user_id=user_id,
         return_column_names=[
@@ -56,8 +51,8 @@ async def get_user_credentials(
     )
 
 
-async def set_user_as_deleted(app: web.Application, user_id: UserID) -> None:
-    await update_user_status(
+async def set_user_as_deleted(app: web.Application, *, user_id: UserID) -> None:
+    await _users_repository.update_user_status(
         get_asyncpg_engine(app), user_id=user_id, new_status=UserStatus.DELETED
     )
 
@@ -109,7 +104,9 @@ async def search_users(
 
 
 async def pre_register_user(
-    app: web.Application, profile: _schemas.PreUserProfile, creator_user_id: UserID
+    app: web.Application,
+    profile: _schemas.PreUserProfile,
+    creator_user_id: UserID,
 ) -> _schemas.UserProfile:
 
     found = await search_users(app, email_glob=profile.email, include_products=False)
@@ -150,7 +147,7 @@ async def pre_register_user(
 
 
 async def get_user_invoice_address(
-    app: web.Application, user_id: UserID
+    app: web.Application, *, user_id: UserID
 ) -> UserInvoiceAddress:
     user_billing_details: UserBillingDetails = (
         await _users_repository.get_user_billing_details(
