@@ -538,7 +538,8 @@ async def _assign_tasks_to_current_cluster(
 
     if unassigned_tasks:
         _logger.info(
-            "the current cluster should cope with %s tasks, %s are unnassigned/queued tasks and will need new EC2s",
+            "the current cluster should cope with %s tasks, %s are unnassigned/queued "
+            "tasks and need to wait or get new EC2s",
             len(tasks) - len(unassigned_tasks),
             len(unassigned_tasks),
         )
@@ -614,7 +615,8 @@ async def _find_needed_instances(
                 _logger.exception("Unexpected error:")
 
     _logger.info(
-        "found following needed instances: %s",
+        "found following needed %s instances: %s",
+        len(needed_new_instance_types_for_tasks),
         [
             f"{i.instance_type.name=}:{i.instance_type.resources} with {len(i.assigned_tasks)} tasks"
             for i in needed_new_instance_types_for_tasks
