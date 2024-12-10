@@ -288,6 +288,7 @@ class GroupUserAdd(InputSchema):
     """
 
     uid: UserID | None = None
+    user_name: Annotated[IDStr | None, Field(alias="userName")] = None
     email: Annotated[
         LowerCaseEmailStr | None,
         Field(
@@ -296,7 +297,7 @@ class GroupUserAdd(InputSchema):
     ] = None
 
     _check_uid_or_email = model_validator(mode="after")(
-        create__check_only_one_is_set__root_validator(["uid", "email"])
+        create__check_only_one_is_set__root_validator(["uid", "email", "user_name"])
     )
 
     model_config = ConfigDict(

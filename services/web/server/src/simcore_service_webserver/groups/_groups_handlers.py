@@ -163,7 +163,7 @@ async def delete_group(request: web.Request):
 @login_required
 @permission_required("groups.*")
 @handle_plugin_requests_exceptions
-async def get_group_users(request: web.Request):
+async def get_all_group_users(request: web.Request):
     """Gets users in organization groups"""
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
@@ -194,6 +194,7 @@ async def add_group_user(request: web.Request):
         req_ctx.user_id,
         path_params.gid,
         new_user_id=added.uid,
+        new_user_name=added.user_name,
         new_user_email=added.email,
     )
 

@@ -634,7 +634,8 @@ paths:
       tags:
       - groups
       summary: Add Group User
-      description: Adds a user to an organization group
+      description: Adds a user to an organization group using their username, user
+        ID, or email (subject to privacy settings
       operationId: add_group_user
       parameters:
       - name: gid
@@ -9911,6 +9912,13 @@ components:
             minimum: 0
           - type: 'null'
           title: Uid
+        userName:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Username
         email:
           anyOf:
           - type: string

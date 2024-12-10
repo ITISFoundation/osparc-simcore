@@ -1,4 +1,5 @@
 from aiohttp import web
+from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import (
     AccessRightsDict,
@@ -236,12 +237,17 @@ async def auto_add_user_to_product_group(
     )
 
 
+def _only_one_true(*args):
+    return sum(bool(arg) for arg in args) == 1
+
+
 async def add_user_in_group(
     app: web.Application,
     user_id: UserID,
     group_id: GroupID,
     *,
     new_user_id: UserID | None = None,
+    new_user_name: IDStr | None = None,
     new_user_email: EmailStr | None = None,
     access_rights: AccessRightsDict | None = None,
 ) -> None:
@@ -251,9 +257,8 @@ async def add_user_in_group(
         UserInGroupNotFoundError
         GroupsException
     """
-
-    if not new_user_id and not new_user_email:
-        msg = "Invalid method call, missing user id or user email"
+    if not _only_one_true(new_user_id, new_user_name, new_user_email):
+        msg = "Invalid method call, required one of these: user id, username or user email, none provided"
         raise GroupsError(msg=msg)
 
     if new_user_email:

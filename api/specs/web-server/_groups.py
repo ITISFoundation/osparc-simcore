@@ -106,7 +106,7 @@ async def add_group_user(
     _body: GroupUserAdd,
 ):
     """
-    Adds a user to an organization group
+    Adds a user to an organization group using their username, user ID, or email (subject to privacy settings
     """
 
 

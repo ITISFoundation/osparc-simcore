@@ -1,4 +1,5 @@
 import models_library.groups
+import pytest
 import simcore_postgres_database.models.groups
 from faker import Faker
 from models_library.api_schemas_webserver._base import OutputSchema
@@ -6,6 +7,7 @@ from models_library.api_schemas_webserver.groups import (
     GroupCreate,
     GroupGet,
     GroupUpdate,
+    GroupUserAdd,
     GroupUserGet,
 )
 from models_library.groups import (
@@ -17,6 +19,7 @@ from models_library.groups import (
     OrganizationUpdate,
 )
 from models_library.utils.enums import enum_to_dict
+from pydantic import ValidationError
 
 
 def test_models_library_and_postgress_database_enums_are_equivalent():
@@ -100,3 +103,22 @@ def test_input_schemas_to_models(faker: Faker):
     domain_model = input_schema.to_model()
     assert isinstance(domain_model, OrganizationUpdate)
     assert domain_model.name == input_schema.label
+
+
+def test_group_user_add_options(faker: Faker):
+    def _only_one_true(*args):
+        return sum(bool(arg) for arg in args) == 1
+
+    input_schema = GroupUserAdd(uid=faker.pyint())
+    assert input_schema.uid
+    assert _only_one_true(input_schema.uid, input_schema.user_name, input_schema.email)
+
+    input_schema = GroupUserAdd(userName=faker.user_name())
+    assert input_schema.user_name
+    assert _only_one_true(input_schema.uid, input_schema.user_name, input_schema.email)
+
+    input_schema = GroupUserAdd(email=faker.email())
+    assert _only_one_true(input_schema.uid, input_schema.user_name, input_schema.email)
+
+    with pytest.raises(ValidationError):
+        GroupUserAdd(userName=faker.user_name(), email=faker.email())

@@ -3,6 +3,7 @@ from copy import deepcopy
 
 import sqlalchemy as sa
 from aiohttp import web
+from models_library.basic_types import IDStr
 from models_library.groups import (
     AccessRightsDict,
     Group,
@@ -589,7 +590,9 @@ async def add_new_user_in_group(
     *,
     user_id: UserID,
     group_id: GroupID,
-    new_user_id: UserID,
+    # either user_id or user_name
+    new_user_id: UserID | None = None,
+    new_user_name: IDStr | None = None,
     access_rights: AccessRightsDict | None = None,
 ) -> None:
     """
@@ -602,10 +605,17 @@ async def add_new_user_in_group(
         )
         _check_group_permissions(group, user_id, group_id, "write")
 
+        query = sa.select(sa.func.count())
+        if new_user_id:
+            query = query.where(users.c.id == new_user_id)
+        elif new_user_name:
+            query = query.where(users.c.name == new_user_name)
+        else:
+            msg = "Either user name or id but none provided"
+            raise ValueError(msg)
+
         # now check the new user exists
-        users_count = await conn.scalar(
-            sa.select(sa.func.count()).where(users.c.id == new_user_id)
-        )
+        users_count = await conn.scalar(query)
         if not users_count:
             assert new_user_id is not None  # nosec
             raise UserInGroupNotFoundError(uid=new_user_id, gid=group_id)
