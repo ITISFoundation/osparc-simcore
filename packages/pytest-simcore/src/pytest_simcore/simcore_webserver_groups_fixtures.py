@@ -21,8 +21,8 @@ from models_library.users import UserID
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from simcore_service_webserver.groups._groups_api import (
     add_user_in_group,
-    create_organization,
-    delete_organization,
+    create_standard_group,
+    delete_group,
     list_user_groups_with_read_access,
 )
 
@@ -34,7 +34,7 @@ def _groupget_model_dump(group, access_rights) -> dict[str, Any]:
 async def _create_organization(
     app: web.Application, user_id: UserID, new_group: dict
 ) -> dict[str, Any]:
-    group, access_rights = await create_organization(
+    group, access_rights = await create_standard_group(
         app,
         user_id=user_id,
         create=OrganizationCreate.model_validate(new_group),
@@ -107,10 +107,10 @@ async def standard_groups_owner(
         yield owner_user
 
         # clean groups
-        await delete_organization(
+        await delete_group(
             client.app, user_id=owner_user["id"], group_id=sparc_group["gid"]
         )
-        await delete_organization(
+        await delete_group(
             client.app, user_id=owner_user["id"], group_id=team_black_group["gid"]
         )
 

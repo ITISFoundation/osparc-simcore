@@ -102,12 +102,12 @@ async def get_group(request: web.Request):
 @permission_required("groups.*")
 @handle_plugin_requests_exceptions
 async def create_group(request: web.Request):
-    """Creates organization groups"""
+    """Creates standard groups"""
     req_ctx = GroupsRequestContext.model_validate(request)
 
     create = await parse_request_body_as(GroupCreate, request)
 
-    group, access_rights = await _groups_api.create_organization(
+    group, access_rights = await _groups_api.create_standard_group(
         request.app,
         user_id=req_ctx.user_id,
         create=create.to_model(),
@@ -122,12 +122,12 @@ async def create_group(request: web.Request):
 @permission_required("groups.*")
 @handle_plugin_requests_exceptions
 async def update_group(request: web.Request):
-    """Updates organization groups"""
+    """Updates groups metadata"""
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
     update: GroupUpdate = await parse_request_body_as(GroupUpdate, request)
 
-    group, access_rights = await _groups_api.update_organization(
+    group, access_rights = await _groups_api.update_group(
         request.app,
         user_id=req_ctx.user_id,
         group_id=path_params.gid,
@@ -147,7 +147,7 @@ async def delete_group(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
-    await _groups_api.delete_organization(
+    await _groups_api.delete_group(
         request.app, user_id=req_ctx.user_id, group_id=path_params.gid
     )
 

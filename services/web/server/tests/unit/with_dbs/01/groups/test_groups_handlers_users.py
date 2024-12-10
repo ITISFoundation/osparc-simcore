@@ -22,8 +22,8 @@ from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.groups._groups_api import (
-    create_organization,
-    delete_organization,
+    create_standard_group,
+    delete_group,
 )
 from simcore_service_webserver.groups._groups_db import (
     _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
@@ -460,7 +460,7 @@ async def group_where_logged_user_is_the_owner(
     logged_user: UserInfoDict,
 ) -> AsyncIterator[Group]:
     assert client.app
-    group, _ = await create_organization(
+    group, _ = await create_standard_group(
         app=client.app,
         user_id=logged_user["id"],
         create=OrganizationCreate.model_validate(
@@ -474,7 +474,7 @@ async def group_where_logged_user_is_the_owner(
 
     yield group
 
-    await delete_organization(client.app, user_id=logged_user["id"], group_id=group.gid)
+    await delete_group(client.app, user_id=logged_user["id"], group_id=group.gid)
 
 
 @pytest.mark.acceptance_test(

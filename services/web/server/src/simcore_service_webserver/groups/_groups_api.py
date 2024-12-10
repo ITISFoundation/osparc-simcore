@@ -91,7 +91,7 @@ async def get_product_group_for_user(
 #
 
 
-async def create_organization(
+async def create_standard_group(
     app: web.Application,
     *,
     user_id: UserID,
@@ -101,7 +101,7 @@ async def create_organization(
     raises GroupNotFoundError
     raises UserInsufficientRightsError
     """
-    return await _groups_db.create_user_group(
+    return await _groups_db.create_standard_group(
         app,
         user_id=user_id,
         create=create,
@@ -123,7 +123,7 @@ async def get_organization(
     return await _groups_db.get_user_group(app, user_id=user_id, group_9d=group_id)
 
 
-async def update_organization(
+async def update_group(
     app: web.Application,
     *,
     user_id: UserID,
@@ -144,7 +144,7 @@ async def update_organization(
     )
 
 
-async def delete_organization(
+async def delete_group(
     app: web.Application, *, user_id: UserID, group_id: GroupID
 ) -> None:
     """

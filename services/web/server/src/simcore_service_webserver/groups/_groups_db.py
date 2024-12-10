@@ -15,6 +15,7 @@ from models_library.groups import (
 )
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.utils_products import execute_get_or_create_product_group
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -247,7 +248,7 @@ async def get_product_group_for_user(
 assert set(OrganizationCreate.model_fields).issubset({c.name for c in groups.columns})
 
 
-async def create_user_group(
+async def create_standard_group(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -265,7 +266,10 @@ async def create_user_group(
         result = await conn.stream(
             # pylint: disable=no-value-for-parameter
             groups.insert()
-            .values(**create.model_dump(mode="json", exclude_unset=True))
+            .values(
+                **create.model_dump(mode="json", exclude_unset=True),
+                type=GroupType.STANDARD,
+            )
             .returning(*_GROUP_COLUMNS)
         )
         row = await result.fetchone()
