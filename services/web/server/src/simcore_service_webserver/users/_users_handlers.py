@@ -3,8 +3,6 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users import MyProfileGet, MyProfilePatch
-from models_library.users import UserID
-from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
