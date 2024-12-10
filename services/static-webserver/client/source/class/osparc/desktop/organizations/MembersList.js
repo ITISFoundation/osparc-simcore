@@ -154,9 +154,9 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           ctrl.bindProperty("userId", "model", null, item, id);
           ctrl.bindProperty("userId", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
-          ctrl.bindProperty("name", "title", null, item, id);
+          ctrl.bindProperty("label", "title", null, item, id);
+          ctrl.bindProperty("description", "subtitleMD", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
-          ctrl.bindProperty("email", "subtitleMD", null, item, id);
           ctrl.bindProperty("options", "options", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
@@ -225,15 +225,17 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         enabled: canIWrite
       });
 
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const membersList = [];
       const groupMembers = organization.getGroupMembers();
       Object.values(groupMembers).forEach(groupMember => {
+        const gid = parseInt(groupMember.getGroupId());
         const member = {};
-        member["userId"] = groupMember.getUserId();
-        member["groupId"] = groupMember.getGroupId();
+        member["userId"] = gid === myGroupId ? osparc.auth.Data.getInstance().getUserId() : groupMember.getUserId();
+        member["groupId"] = gid;
         member["thumbnail"] = groupMember.getThumbnail();
-        member["name"] = groupMember.getLabel();
-        member["email"] = groupMember.getEmail();
+        member["label"] = groupMember.getLabel();
+        member["description"] = gid === myGroupId ? osparc.auth.Data.getInstance().getEmail() : groupMember.getDescription();
         member["accessRights"] = groupMember.getAccessRights();
         let options = [];
         if (canIDelete) {
@@ -287,7 +289,6 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         }
         // Let me go?
         const openStudy = osparc.store.Store.getInstance().getCurrentStudy();
-        const myGroupId = osparc.store.Groups.getInstance().getMyGroupId();
         if (
           openStudy === null &&
           canIWrite &&
