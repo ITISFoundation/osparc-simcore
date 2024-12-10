@@ -38,6 +38,7 @@ class ToUserUpdateDB(BaseModel):
 
     @classmethod
     def from_api(cls, profile_update) -> Self:
+        # TODO: move this to schema!!!
         # The mapping of embed fields to flatten keys is done here
         return cls.model_validate(
             flatten_dict(profile_update.model_dump(exclude_unset=True, by_alias=False))

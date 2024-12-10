@@ -3,6 +3,7 @@ from uuid import UUID
 from models_library.api_schemas_webserver._base import OutputSchema
 from pydantic import BaseModel, ConfigDict, Field
 
+# TODO: move to _schemas or to models_library.api_schemas_webserver??
 
 #
 # TOKENS resource
