@@ -26,6 +26,15 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     this.__buildLayout();
   },
 
+  properties: {
+    metadataUrl: {
+      check: "String",
+      init: null,
+      nullable: false,
+      apply: "__fetchModels",
+    }
+  },
+
   statics: {
     curateAnatomicalModels: function(anatomicalModelsRaw) {
       const anatomicalModels = [];
@@ -60,51 +69,77 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     __anatomicalModels: null,
     __licensedItems: null,
     __anatomicalModelsModel: null,
-    __sortByButton: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "left-side":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+            alignY: "middle",
+          });
+          this._add(control);
+          break;
+        case "right-side":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+            alignY: "middle",
+          });
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "toolbar-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+            alignY: "middle",
+          });
+          this.getChildControl("left-side").add(control);
+          break;
+        case "sort-button":
+          control = new osparc.vipMarket.SortModelsButtons().set({
+            alignY: "bottom",
+            maxHeight: 27,
+          });
+          this.getChildControl("toolbar-layout").add(control);
+          break;
+        case "filter-text":
+          control = new osparc.filter.TextFilter("text", "vipModels").set({
+            alignY: "middle",
+            allowGrowY: false,
+            minWidth: 160,
+            backgroundColor: "transparent",
+          });
+          this.addListener("appear", () => control.getChildControl("textfield").focus());
+          this.getChildControl("toolbar-layout").add(control, {
+            flex: 1
+          });
+          break;
+        case "models-list":
+          control = new qx.ui.form.List().set({
+            decorator: "no-border",
+            spacing: 5,
+            minWidth: 250,
+            maxWidth: 250
+          });
+          this.getChildControl("left-side").add(control, {
+            flex: 1
+          });
+          break;
+        case "models-details":
+          control = new osparc.vipMarket.AnatomicalModelDetails().set({
+            padding: 10,
+          });
+          this.getChildControl("right-side").add(control, {
+            flex: 1
+          });
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
     __buildLayout: function() {
-      const leftSide = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        alignY: "middle",
-      });
-      this._add(leftSide);
+      this.getChildControl("sort-button");
+      this.getChildControl("filter-text");
+      const modelsUIList = this.getChildControl("models-list");
 
-      const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        alignY: "middle",
-      });
-      leftSide.add(toolbarLayout)
-
-      const sortModelsButtons = this.__sortByButton = new osparc.vipMarket.SortModelsButtons().set({
-        alignY: "bottom",
-        maxHeight: 27,
-      });
-      toolbarLayout.add(sortModelsButtons);
-
-      const filter = new osparc.filter.TextFilter("text", "vipModels").set({
-        alignY: "middle",
-        allowGrowY: false,
-        minWidth: 165,
-      });
-      this.addListener("appear", () => filter.getChildControl("textfield").focus());
-      toolbarLayout.add(filter, {
-        flex: 1
-      });
-
-      const modelsUIList = new qx.ui.form.List().set({
-        decorator: "no-border",
-        spacing: 5,
-        minWidth: 250,
-        maxWidth: 250
-      });
-      leftSide.add(modelsUIList, {
-        flex: 1
-      });
-
-      const rightSide = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-        alignY: "middle",
-      });
-      this._add(rightSide, {
-        flex: 1
-      });
       const anatomicalModelsModel = this.__anatomicalModelsModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(anatomicalModelsModel, modelsUIList, "name");
       membersCtrl.setDelegate({
@@ -130,12 +165,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       };
       this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(loadingModel));
 
-      const anatomicModelDetails = new osparc.vipMarket.AnatomicalModelDetails().set({
-        padding: 20,
-      });
-      rightSide.add(anatomicModelDetails, {
-        flex: 1
-      });
+      const anatomicModelDetails = this.getChildControl("models-details");
 
       modelsUIList.addListener("changeSelection", e => {
         const selection = e.getData();
@@ -149,8 +179,10 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         }
         anatomicModelDetails.setAnatomicalModelsData(null);
       }, this);
+    },
 
-      fetch("https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnatomicalModels", {
+    __fetchModels: function(url) {
+      fetch(url, {
         method:"POST"
       })
         .then(resp => resp.json())
@@ -185,6 +217,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
 
               this.__populateModels();
 
+              const anatomicModelDetails = this.getChildControl("models-details");
               anatomicModelDetails.addListener("modelPurchaseRequested", e => {
                 const {
                   modelId,
@@ -246,7 +279,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       sortModel();
       models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
 
-      this.__sortByButton.addListener("sortBy", e => {
+      this.getChildControl("sort-button").addListener("sortBy", e => {
         this.__anatomicalModelsModel.removeAll();
         const sortBy = e.getData();
         sortModel(sortBy);

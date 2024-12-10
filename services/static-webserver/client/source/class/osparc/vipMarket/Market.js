@@ -26,7 +26,27 @@ qx.Class.define("osparc.vipMarket.Market", {
     });
     this.addWidgetOnTopOfTheTabs(miniWallet);
 
-    this.__vipMarketPage = this.__getVipMarketPage();
+    [{
+      category: "humanWhole",
+      label: "Humans",
+      url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanWholeBody",
+    }, {
+      category: "humanRegion",
+      label: "Humans (Region)",
+      url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanBodyRegion",
+    }, {
+      category: "animalWhole",
+      label: "Animals",
+      url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnimalWholeBody",
+    }, {
+      category: "compPhantom",
+      label: "Phantoms",
+      url: "https://speag.swiss/PD_DirectDownload/getDownloadableItems/ComputationalPhantom",
+    }].forEach(marketInfo => {
+      this.__buildViPMarketPage(marketInfo);
+    })
+
+    // this.__vipMarketPage = this.__getVipMarketPage();
   },
 
   members: {
@@ -34,8 +54,19 @@ qx.Class.define("osparc.vipMarket.Market", {
 
     __getVipMarketPage: function() {
       const title = this.tr("ViP Models");
-      const iconSrc = "@FontAwesome5Solid/users/22";
+      const iconSrc = "@FontAwesome5Solid/users/20";
       const vipMarketView = new osparc.vipMarket.VipMarket();
+      const page = this.addTab(title, iconSrc, vipMarketView);
+      return page;
+    },
+
+    __buildViPMarketPage: function(marketInfo) {
+      const title = marketInfo["label"];
+      const iconSrc = "@FontAwesome5Solid/users/20";
+      const vipMarketView = new osparc.vipMarket.VipMarket();
+      vipMarketView.set({
+        metadataUrl: marketInfo["url"],
+      });
       const page = this.addTab(title, iconSrc, vipMarketView);
       return page;
     },
