@@ -14,7 +14,7 @@ from collections import defaultdict
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any, Final, cast
 from unittest import mock
 
 import arrow
@@ -279,9 +279,12 @@ def _assert_cluster_state(
     print("current cluster state:", spied_cluster_analysis.spy_return)
 
 
+_RESOURCE_TO_DASK_RESOURCE_MAP: Final[dict[str, str]] = {"CPUS": "CPU", "RAM": "RAM"}
+
+
 def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResources:
     return {
-        res_key.upper(): res_value
+        _RESOURCE_TO_DASK_RESOURCE_MAP[res_key.upper()]: res_value
         for res_key, res_value in resources.model_dump().items()
     }
 
