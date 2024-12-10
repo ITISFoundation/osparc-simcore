@@ -2,6 +2,9 @@ from typing import cast
 
 import sqlalchemy as sa
 from models_library.products import ProductName
+from models_library.resource_tracker_licensed_items_purchases import (
+    LicensedItemPurchaseID,
+)
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt
@@ -17,7 +20,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from ....exceptions.errors import LicensedItemPurchaseNotFoundError
 from ....models.licensed_items_purchases import (
     CreateLicensedItemsPurchasesDB,
-    LicensedItemPurchaseID,
     LicensedItemsPurchasesDB,
 )
 
