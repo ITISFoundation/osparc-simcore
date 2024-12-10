@@ -38,7 +38,7 @@ jobs:
           if ! ./ci/github/helpers/openapi-specs-diff.bash diff \
             https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name }}/refs/heads/${{ github.event.pull_request.head.ref }} \
             .; then \
-            echo "::error OAS are not up to date. Run 'make openapi-specs' to update them"; \
+            echo "::error:: OAS are not up to date. Run 'make openapi-specs' to update them"; exit 1; \
           fi
 
   api-server-oas-breaking:
