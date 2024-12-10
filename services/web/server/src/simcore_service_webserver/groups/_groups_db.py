@@ -147,7 +147,7 @@ def _list_user_groups_with_read_access_query(*group_selection, user_id: UserID):
         )
         .where(
             (user_to_groups.c.uid == user_id)
-            & (user_to_groups.c.access_rights["read"].is_(True))
+            & (user_to_groups.c.access_rights["read"].astext == "true")
         )
     )
 
