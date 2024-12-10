@@ -301,7 +301,9 @@ async def test_group_access_rights(
     if not data:
         # role cannot create a group so stop here
         return
+
     assigned_group = data
+    group_id = assigned_group["gid"]
 
     async with AsyncExitStack() as users_stack:
         # 1. have 2 users
@@ -310,44 +312,42 @@ async def test_group_access_rights(
             for _ in range(2)
         ]
 
-        # 2. add the users to the group
+        # 2. ADD the users to the group
         add_group_user_url = client.app.router["add_group_user"].url_for(
-            gid=f"{assigned_group['gid']}"
+            gid=f"{group_id}"
         )
-        assert (
-            f"{add_group_user_url}"
-            == f"/{API_VTAG}/groups/{assigned_group['gid']}/users"
-        )
-        for i, user in enumerate(users):
+        assert f"{add_group_user_url}" == f"/{API_VTAG}/groups/{group_id}/users"
+        for user in users:
             resp = await client.post(f"{add_group_user_url}", json={"uid": user["id"]})
-            data, error = await assert_status(resp, expected.no_content)
+            await assert_status(resp, expected.no_content)
 
-        # 3. user 1 shall be a manager
+        # 3. PATCH: user 1 shall be a manager
         patch_group_user_url = client.app.router["update_group_user"].url_for(
-            gid=f"{assigned_group['gid']}", uid=f"{users[0]['id']}"
+            gid=f"{group_id}", uid=f"{users[0]['id']}"
         )
         assert (
             f"{patch_group_user_url}"
-            == f"/{API_VTAG}/groups/{assigned_group['gid']}/users/{users[0]['id']}"
+            == f"/{API_VTAG}/groups/{group_id}/users/{users[0]['id']}"
         )
         params = {"accessRights": {"read": True, "write": True, "delete": False}}
         resp = await client.patch(f"{patch_group_user_url}", json=params)
-        data, error = await assert_status(resp, expected.ok)
+        await assert_status(resp, expected.ok)
 
-        # 4. user 2 shall be a member
+        # 4. PATCH user 2 shall be a member
         patch_group_user_url = client.app.router["update_group_user"].url_for(
-            gid=f"{assigned_group['gid']}", uid=f"{users[1]['id']}"
+            gid=f"{group_id}", uid=f"{users[1]['id']}"
         )
         assert (
             f"{patch_group_user_url}"
-            == f"/{API_VTAG}/groups/{assigned_group['gid']}/users/{users[1]['id']}"
+            == f"/{API_VTAG}/groups/{group_id}/users/{users[1]['id']}"
         )
-        params = {"accessRights": {"read": True, "write": False, "delete": False}}
-        resp = await client.patch(f"{patch_group_user_url}", json=params)
-        data, error = await assert_status(resp, expected.ok)
+        resp = await client.patch(
+            f"{patch_group_user_url}",
+            json={"accessRights": {"read": True, "write": False, "delete": False}},
+        )
+        await assert_status(resp, expected.ok)
 
-        # let's login as user 1
-        # login
+        # let's LOGIN as user 1
         url = client.app.router["auth_login"].url_for()
         resp = await client.post(
             f"{url}",
@@ -358,28 +358,28 @@ async def test_group_access_rights(
         )
         await assert_status(resp, expected.ok)
 
-        # check as a manager I can remove user 2
+        # check as a manager I can REMOVE user 2
         delete_group_user_url = client.app.router["delete_group_user"].url_for(
-            gid=f"{assigned_group['gid']}", uid=f"{users[1]['id']}"
+            gid=f"{group_id}", uid=f"{users[1]['id']}"
         )
         assert (
             f"{delete_group_user_url}"
-            == f"/{API_VTAG}/groups/{assigned_group['gid']}/users/{users[1]['id']}"
+            == f"/{API_VTAG}/groups/{group_id}/users/{users[1]['id']}"
         )
         resp = await client.delete(f"{delete_group_user_url}")
-        data, error = await assert_status(resp, expected.no_content)
+        await assert_status(resp, expected.no_content)
 
-        # as a manager I can add user 2 again
+        # as a manager I can ADD user 2 again
         resp = await client.post(f"{add_group_user_url}", json={"uid": users[1]["id"]})
-        data, error = await assert_status(resp, expected.no_content)
+        await assert_status(resp, expected.no_content)
 
-        # as a manager I cannot delete the group
-        url = client.app.router["delete_group"].url_for(gid=f"{assigned_group['gid']}")
+        # as a manager I cannot DELETE the group
+        url = client.app.router["delete_group"].url_for(gid=f"{group_id}")
         resp = await client.delete(f"{url}")
-        data, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+        await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
         # now log in as user 2
-        # login
+        # LOGIN
         url = client.app.router["auth_login"].url_for()
         resp = await client.post(
             f"{url}",
@@ -390,25 +390,25 @@ async def test_group_access_rights(
         )
         await assert_status(resp, expected.ok)
 
-        # as a member I cannot remove user 1
+        # as a member I cannot REMOVE user 1
         delete_group_user_url = client.app.router["delete_group_user"].url_for(
-            gid=f"{assigned_group['gid']}", uid=f"{users[0]['id']}"
+            gid=f"{group_id}", uid=f"{users[0]['id']}"
         )
         assert (
             f"{delete_group_user_url}"
-            == f"/{API_VTAG}/groups/{assigned_group['gid']}/users/{users[0]['id']}"
+            == f"/{API_VTAG}/groups/{group_id}/users/{users[0]['id']}"
         )
         resp = await client.delete(f"{delete_group_user_url}")
-        data, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+        await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
-        # as a member I cannot add user 1
+        # as a member I cannot ADD user 1
         resp = await client.post(f"{add_group_user_url}", json={"uid": users[0]["id"]})
-        data, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+        await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
-        # as a member I cannot delete the grouop
-        url = client.app.router["delete_group"].url_for(gid=f"{assigned_group['gid']}")
+        # as a member I cannot DELETE the grouop
+        url = client.app.router["delete_group"].url_for(gid=f"{group_id}")
         resp = await client.delete(f"{url}")
-        data, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+        await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
 
 @pytest.mark.parametrize(*standard_role_response())
