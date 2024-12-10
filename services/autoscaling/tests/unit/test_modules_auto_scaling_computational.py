@@ -1441,3 +1441,151 @@ async def test_cluster_adapts_machines_on_the_fly(
     )
     assert analyzed_cluster.active_nodes
     assert not analyzed_cluster.drained_nodes
+
+    #
+    # 4.now we simulate that some of the services in the 1st batch have completed and that we are 1 below the max
+    # a machine should switch off and another type should be started (just pop the future out of scope)
+    for _ in range(
+        scale_up_params1.num_tasks
+        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+        + 1
+    ):
+        first_batch_tasks.pop()
+
+    # first call to auto_scale_cluster will mark 1 node as empty
+    with mock.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.set_node_found_empty",
+        autospec=True,
+    ) as mock_docker_set_node_found_empty:
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+        )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
+    # the last machine is found empty
+    mock_docker_set_node_found_empty.assert_called_with(
+        mock.ANY,
+        analyzed_cluster.active_nodes[-1].node,
+        empty=True,
+    )
+
+    # now we mock the get_node_found_empty so the next call will actually drain the machine
+    with mock.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.get_node_empty_since",
+        autospec=True,
+        return_value=arrow.utcnow().datetime
+        - 1.5
+        * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING,
+    ) as mocked_get_node_empty_since:
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+        )
+    mocked_get_node_empty_since.assert_called_once()
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
+    # now scaling again should find the drained machine
+    drained_machine_instance_id = analyzed_cluster.active_nodes[-1].ec2_instance.id
+    mocked_associate_ec2_instances_with_nodes.side_effect = create_fake_association(
+        create_fake_node, drained_machine_instance_id, None
+    )
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert analyzed_cluster.drained_nodes
+
+    # this will initiate termination now
+    with mock.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.get_node_last_readyness_update",
+        autospec=True,
+        return_value=arrow.utcnow().datetime
+        - 1.5
+        * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION,
+    ):
+        mock_docker_tag_node.reset_mock()
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+        )
+    mock_docker_tag_node.assert_called_with(
+        mock.ANY,
+        analyzed_cluster.drained_nodes[-1].node,
+        tags=mock.ANY,
+        available=False,
+    )
+
+    # scaling again should find the terminating machine
+    mocked_associate_ec2_instances_with_nodes.side_effect = create_fake_association(
+        create_fake_node, drained_machine_instance_id, drained_machine_instance_id
+    )
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
+    assert analyzed_cluster.terminating_nodes
+
+    # now this will terminate it and straight away start a new machine type
+    with mock.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.get_node_termination_started_since",
+        autospec=True,
+        return_value=arrow.utcnow().datetime
+        - 1.5
+        * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION,
+    ):
+        mocked_docker_remove_node = mocker.patch(
+            "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.remove_nodes",
+            return_value=None,
+            autospec=True,
+        )
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+        )
+        mocked_docker_remove_node.assert_called_once()
+
+    # now let's check what we have
+    all_instances = await ec2_client.describe_instances()
+    assert len(all_instances["Reservations"]) == 2, "there should be 2 Reservations"
+    reservation1 = all_instances["Reservations"][0]
+    assert "Instances" in reservation1
+    assert len(reservation1["Instances"]) == (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    ), f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, found {len(reservation1['Instances'])}"
+    for instance in reservation1["Instances"]:
+        assert "InstanceType" in instance
+        assert instance["InstanceType"] == scale_up_params1.expected_instance_type
+        assert "InstanceId" in instance
+        assert "State" in instance
+        assert "Name" in instance["State"]
+        if instance["InstanceId"] == drained_machine_instance_id:
+            assert instance["State"]["Name"] == "terminated"
+        else:
+            assert instance["State"]["Name"] == "running"
+
+    reservation2 = all_instances["Reservations"][1]
+    assert "Instances" in reservation2
+    assert (
+        len(reservation2["Instances"]) == 1
+    ), f"expected 1 EC2 instances, found {len(reservation2['Instances'])}"
+    for instance in reservation2["Instances"]:
+        assert "InstanceType" in instance
+        assert instance["InstanceType"] == scale_up_params2.expected_instance_type
