@@ -593,7 +593,7 @@ async def _start_dynamic_service(
         raise
 
     save_state = False
-    user_role: UserRole = await get_user_role(request.app, user_id)
+    user_role: UserRole = await get_user_role(request.app, user_id=user_id)
     if user_role > UserRole.GUEST:
         save_state = await has_user_project_access_rights(
             request.app, project_id=project_uuid, user_id=user_id, permission="write"
@@ -1716,7 +1716,7 @@ async def remove_project_dynamic_services(
 
     user_role: UserRole | None = None
     try:
-        user_role = await get_user_role(app, user_id)
+        user_role = await get_user_role(app, user_id=user_id)
     except UserNotFoundError:
         user_role = None
 
