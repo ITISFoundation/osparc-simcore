@@ -22,7 +22,7 @@ qx.Class.define("osparc.study.PricingUnits", {
     this.base(arguments);
 
     this.set({
-      layout: new qx.ui.layout.HBox(5),
+      layout: new qx.ui.layout.HBox(10),
       allowGrowY: false,
     });
 
@@ -40,54 +40,44 @@ qx.Class.define("osparc.study.PricingUnits", {
 
   members: {
     __buildLayout: function(pricingUnitsData, preselectedPricingUnit, changeSelectionAllowed) {
-      const buttons = [];
+      const pricingUnitTiers = [];
       pricingUnitsData.forEach(pricingUnitData => {
         const pricingUnit = new osparc.data.model.PricingUnit(pricingUnitData);
-        const button = new osparc.study.PricingUnitTier(pricingUnit).set({
+        const pricingUnitTier = new osparc.study.PricingUnitTier(pricingUnit).set({
           showSelectButton: changeSelectionAllowed,
         });
-        buttons.push(button);
-        this._add(button);
+        pricingUnitTiers.push(pricingUnitTier);
+        this._add(pricingUnitTier);
       });
 
-      const groupOptions = new qx.ui.form.RadioGroup();
-      buttons.forEach(btn => {
-        groupOptions.add(btn);
-        btn.bind("value", btn, "backgroundColor", {
+      pricingUnitTiers.forEach(pricingUnitTier => {
+        pricingUnitTier.bind("selected", pricingUnitTier, "backgroundColor", {
           converter: selected => selected ? "background-main-1" : "transparent"
         });
       });
 
       if (preselectedPricingUnit) {
-        const buttonFound = buttons.find(button => button.getUnitData().getPricingUnitId() === preselectedPricingUnit["pricingUnitId"]);
-        if (buttonFound) {
-          buttonFound.setValue(true);
+        const pricingUnitTierFound = pricingUnitTiers.find(pricingUnitTier => pricingUnitTier.getUnitData().getPricingUnitId() === preselectedPricingUnit["pricingUnitId"]);
+        if (pricingUnitTierFound) {
+          pricingUnitTierFound.setSelected(true);
         }
       } else {
         // preselect default
-        buttons.forEach(button => {
-          if (button.getUnitData().getIsDefault()) {
-            button.setValue(true);
+        pricingUnitTiers.forEach(pricingUnitTier => {
+          if (pricingUnitTier.getUnitData().getIsDefault()) {
+            pricingUnitTier.setSelected(true);
           }
         });
       }
 
-      buttons.forEach(button => {
-        if (!changeSelectionAllowed) {
-          button.setCursor("default");
-        }
-        [
-          "execute",
-          "selectPricingUnit",
-        ].forEach(ev => {
-          button.addListener(ev, () => {
-            if (changeSelectionAllowed) {
-              const selectedUnitId = button.getUnitData().getPricingUnitId();
-              this.setSelectedUnitId(selectedUnitId);
-            } else {
-              buttons.forEach(btn => btn.setValue(btn.getUnitData().getIsDefault()));
-            }
-          });
+      pricingUnitTiers.forEach(pricingUnitTier => {
+        pricingUnitTier.addListener("selectPricingUnit", () => {
+          if (changeSelectionAllowed) {
+            const selectedUnitId = pricingUnitTier.getUnitData().getPricingUnitId();
+            this.setSelectedUnitId(selectedUnitId);
+          } else {
+            pricingUnitTiers.forEach(btn => btn.setSelected(btn.getUnitData().getIsDefault()));
+          }
         });
       });
     }

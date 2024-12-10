@@ -73,19 +73,16 @@ qx.Class.define("osparc.study.PricingUnitTier", {
             appearance: "strong-button",
             center: true,
           });
-          this.bind("value", control, "label", {
-            converter: value => value ? "Selected" : "Select"
+          this.bind("selected", control, "label", {
+            converter: selected => selected ? "Selected" : "Select"
           });
-          this.bind("value", control, "enabled", {
-            converter: value => !value
+          this.bind("selected", control, "enabled", {
+            converter: selected => !selected
           });
           this.bind("showSelectButton", control, "visibility", {
             converter: show => show ? "visible" : "excluded"
           });
-          control.addListener("execute", () => {
-            this.setValue(true);
-            this.fireEvent("selectPricingUnit");
-          });
+          control.addListener("execute", () => this.fireEvent("selectPricingUnit"));
           this._add(control);
           break;
       }

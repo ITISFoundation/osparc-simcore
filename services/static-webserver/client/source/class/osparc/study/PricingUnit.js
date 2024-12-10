@@ -16,15 +16,16 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.study.PricingUnit", {
-  extend: qx.ui.form.ToggleButton,
+  extend: qx.ui.core.Widget,
   type: "abstract",
 
   construct: function(pricingUnit) {
     this.base(arguments);
 
+    this._setLayout(new qx.ui.layout.VBox(5));
+
     this.set({
       padding: 10,
-      center: true,
       decorator: "rounded",
       allowGrowX: false,
       allowGrowY: false,
@@ -38,6 +39,13 @@ qx.Class.define("osparc.study.PricingUnit", {
   },
 
   properties: {
+    selected: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeSelected",
+    },
+
     unitData: {
       check: "osparc.data.model.PricingUnit",
       nullable: false,
@@ -83,7 +91,6 @@ qx.Class.define("osparc.study.PricingUnit", {
 
     _buildLayout: function(pricingUnit) {
       this._removeAll();
-      this._setLayout(new qx.ui.layout.VBox(5));
 
       const name = this.getChildControl("name");
       pricingUnit.bind("name", name, "value");
