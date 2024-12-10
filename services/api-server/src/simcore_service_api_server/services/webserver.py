@@ -353,7 +353,7 @@ class AuthSession:
             show_hidden=True,
             # WARNING: better way to match jobs with projects (Next PR if this works fine!)
             # WARNING: search text has a limit that I needed to increase for the example!
-            search=urllib.parse.quote(solver_name, safe=""),
+            search=solver_name,
         )
 
     async def get_projects_page(self, *, limit: int, offset: int):
