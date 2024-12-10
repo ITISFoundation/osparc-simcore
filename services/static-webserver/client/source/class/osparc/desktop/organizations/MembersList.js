@@ -105,21 +105,21 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         alignY: "middle"
       }));
 
-      const userEmail = new qx.ui.form.TextField().set({
+      const newMemberUserName = new qx.ui.form.TextField().set({
         required: true,
-        placeholder: this.tr(" New Member's email")
+        placeholder: this.tr(" New Member's username")
       });
-      hBox.add(userEmail, {
+      hBox.add(newMemberUserName, {
         flex: 1
       });
 
       const validator = new qx.ui.form.validation.Manager();
-      validator.add(userEmail, qx.util.Validate.email());
+      validator.add(newMemberUserName, qx.util.Validate.email());
 
       const addBtn = new qx.ui.form.Button(this.tr("Add"));
       addBtn.addListener("execute", function() {
         if (validator.validate()) {
-          this.__addMember(userEmail.getValue());
+          this.__addMember(newMemberUserName.getValue());
         }
       }, this);
       hBox.add(addBtn);
@@ -217,7 +217,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const canIDelete = organization.getAccessRights()["delete"];
 
       const introText = canIWrite ?
-        this.tr("You can add new members and promote or demote existing ones.") :
+        this.tr("You can add new members and promote or demote existing ones.<br>In order to add new members, type their username or email if it's public.") :
         this.tr("You can't add new members to this Organization. Please contact an Administrator or Manager.");
       this.__introLabel.setValue(introText);
 
@@ -310,7 +310,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const orgId = this.__currentOrg.getGroupId();
       const groupsStore = osparc.store.Groups.getInstance();
-      groupsStore.postMember(orgId, orgMemberEmail)
+      groupsStore.addMember(orgId, orgMemberEmail)
         .then(newMember => {
           const text = orgMemberEmail + this.tr(" successfully added");
           osparc.FlashMessenger.getInstance().logAs(text);

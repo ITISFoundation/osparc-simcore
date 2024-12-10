@@ -330,16 +330,19 @@ qx.Class.define("osparc.store.Groups", {
     // CRUD GROUP
 
     // CRUD GROUP MEMBERS
-    postMember: function(orgId, newMemberEmail) {
+    addMember: function(orgId, newMemberUserName, newMemberEmail = null) {
       const gid = parseInt(orgId);
       const params = {
         url: {
           "gid": gid
         },
-        data: {
-          "email": newMemberEmail
-        }
+        data: {},
       };
+      if (newMemberEmail) {
+        params.data["email"] = newMemberEmail;
+      } else {
+        params.data["userName"] = newMemberUserName;
+      }
       return osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
           // the backend doesn't return the user back,
