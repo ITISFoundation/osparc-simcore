@@ -67,8 +67,8 @@ class GroupGet(OutputSchema):
         dict[str, str],
         Field(
             default_factory=dict,
-            description="Maps user's column and regular expression",
             alias="inclusionRules",
+            deprecated=True,
         ),
     ] = DEFAULT_FACTORY
 
@@ -84,9 +84,8 @@ class GroupGet(OutputSchema):
                             "name",
                             "description",
                             "thumbnail",
-                            "inclusion_rules",
                         },
-                        exclude={"access_rights"},
+                        exclude={"access_rights", "inclusion_rules"},
                         exclude_unset=True,
                         by_alias=False,
                     ),
@@ -125,7 +124,6 @@ class GroupGet(OutputSchema):
                     "label": "SPARCi",
                     "description": "Stimulating Peripheral Activity to Relieve Conditions",
                     "thumbnail": "https://placekitten.com/15/15",
-                    "inclusionRules": {"email": r"@(sparc)+\.(io|com|us)$"},
                     "accessRights": {"read": True, "write": True, "delete": True},
                 },
             ]
