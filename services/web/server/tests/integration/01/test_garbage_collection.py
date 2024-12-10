@@ -282,7 +282,7 @@ async def get_group(client: TestClient, user: dict):
     """Creates a group for a given user"""
     assert client.app
 
-    return await create_standard_group(
+    group, _ = await create_standard_group(
         app=client.app,
         user_id=user["id"],
         create=StandardGroupCreate.model_validate(
@@ -293,6 +293,7 @@ async def get_group(client: TestClient, user: dict):
             }
         ),
     )
+    return group.model_dump(mode="json")
 
 
 async def invite_user_to_group(client: TestClient, owner, invitee, group):
@@ -303,7 +304,7 @@ async def invite_user_to_group(client: TestClient, owner, invitee, group):
         client.app,
         owner["id"],
         group["gid"],
-        new_user_id=invitee["id"],
+        new_by_user_id=invitee["id"],
     )
 
 

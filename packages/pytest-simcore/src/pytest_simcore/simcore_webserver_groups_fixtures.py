@@ -28,7 +28,9 @@ from simcore_service_webserver.groups._groups_api import (
 
 
 def _groupget_model_dump(group, access_rights) -> dict[str, Any]:
-    return GroupGet.from_model(group, access_rights).model_dump(mode="json")
+    return GroupGet.from_model(group, access_rights).model_dump(
+        mode="json", by_alias=True
+    )
 
 
 async def _create_organization(
@@ -93,7 +95,7 @@ async def standard_groups_owner(
             app=client.app,
             user_id=owner_user["id"],
             group_id=sparc_group["gid"],
-            new_user_id=logged_user["id"],
+            new_by_user_id=logged_user["id"],
         )
 
         # adds logged_user  to team-black group
@@ -101,7 +103,7 @@ async def standard_groups_owner(
             app=client.app,
             user_id=owner_user["id"],
             group_id=team_black_group["gid"],
-            new_user_id=logged_user["id"],
+            new_by_user_id=logged_user["id"],
         )
 
         yield owner_user

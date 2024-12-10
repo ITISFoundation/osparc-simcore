@@ -193,9 +193,9 @@ async def add_group_user(request: web.Request):
         request.app,
         req_ctx.user_id,
         path_params.gid,
-        new_user_id=added.uid,
-        new_user_name=added.user_name,
-        new_user_email=added.email,
+        new_by_user_id=added.uid,
+        new_by_user_name=added.user_name,
+        new_by_user_email=added.email,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

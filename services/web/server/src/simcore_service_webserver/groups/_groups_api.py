@@ -235,9 +235,11 @@ async def add_user_in_group(
     user_id: UserID,
     group_id: GroupID,
     *,
-    new_user_id: UserID | None = None,
-    new_user_name: IDStr | None = None,
-    new_user_email: EmailStr | None = None,
+    # identifies
+    new_by_user_id: UserID | None = None,
+    new_by_user_name: IDStr | None = None,
+    new_by_user_email: EmailStr | None = None,
+    # payload
     access_rights: AccessRightsDict | None = None,
 ) -> None:
     """Adds new_user (either by id or email) in group (with gid) owned by user_id
@@ -246,17 +248,17 @@ async def add_user_in_group(
         UserInGroupNotFoundError
         GroupsException
     """
-    if not _only_one_true(new_user_id, new_user_name, new_user_email):
+    if not _only_one_true(new_by_user_id, new_by_user_name, new_by_user_email):
         msg = "Invalid method call, required one of these: user id, username or user email, none provided"
         raise GroupsError(msg=msg)
 
-    if new_user_email:
+    if new_by_user_email:
         user = await _groups_db.get_user_from_email(
-            app, email=new_user_email, caller_user_id=user_id
+            app, email=new_by_user_email, caller_user_id=user_id
         )
-        new_user_id = user.id
+        new_by_user_id = user.id
 
-    if not new_user_id:
+    if not new_by_user_id:
         msg = "Missing new user in arguments"
         raise GroupsError(msg=msg)
 
@@ -264,6 +266,6 @@ async def add_user_in_group(
         app,
         user_id=user_id,
         group_id=group_id,
-        new_user_id=new_user_id,
+        new_user_id=new_by_user_id,
         access_rights=access_rights,
     )
