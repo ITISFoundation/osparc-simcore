@@ -12,8 +12,8 @@ from models_library.licensed_items import LicensedResourceType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
-from simcore_service_webserver.catalog.licenses import _licensed_items_db
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.licenses import _licensed_items_db
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -62,5 +62,5 @@ async def test_licensed_items_db_crud(
     url = client.app.router["purchase_licensed_item"].url_for(
         licensed_item_id=f"{_licensed_item_id}"
     )
-    resp = await client.post(f"{url}", json={"wallet_id": 1, "num_of_seeds": 5})
+    resp = await client.post(f"{url}", json={"wallet_id": 1, "num_of_seats": 5})
     # NOTE: Not yet implemented

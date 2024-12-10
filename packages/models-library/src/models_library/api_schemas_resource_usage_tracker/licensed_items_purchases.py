@@ -32,9 +32,9 @@ class LicensedItemPurchaseGet(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "licensed_item_purchase_id": 1,
+                    "licensed_item_purchase_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
                     "product_name": "osparc",
-                    "licensed_item_id": "Special Pricing Plan for Sleeper",
+                    "licensed_item_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
                     "wallet_id": 1,
                     "wallet_name": "My Wallet",
                     "pricing_unit_cost_id": 1,
