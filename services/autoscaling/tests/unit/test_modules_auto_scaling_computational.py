@@ -184,11 +184,11 @@ def ec2_instance_custom_tags(
 @pytest.fixture
 def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
     def _do(
-        ec2_instance_type: InstanceTypeType | None, ram: ByteSize
+        ec2_instance_type: InstanceTypeType | None, task_resource: Resources
     ) -> DaskTaskResources:
         resources = DaskTaskResources(
             {
-                "RAM": int(ram),
+                "RAM": int(task_resource.ram),
             }
         )
         if ec2_instance_type is not None:
@@ -228,11 +228,11 @@ def mock_dask_is_worker_connected(mocker: MockerFixture) -> mock.Mock:
 async def _create_task_with_resources(
     ec2_client: EC2Client,
     dask_task_imposed_ec2_type: InstanceTypeType | None,
-    dask_ram: ByteSize | None,
+    task_resources: Resources | None,
     create_dask_task_resources: Callable[..., DaskTaskResources],
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
 ) -> distributed.Future:
-    if dask_task_imposed_ec2_type and not dask_ram:
+    if dask_task_imposed_ec2_type and not task_resources:
         instance_types = await ec2_client.describe_instance_types(
             InstanceTypes=[dask_task_imposed_ec2_type]
         )
@@ -241,11 +241,15 @@ async def _create_task_with_resources(
         assert instance_types["InstanceTypes"]
         assert "MemoryInfo" in instance_types["InstanceTypes"][0]
         assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
-        dask_ram = TypeAdapter(ByteSize).validate_python(
-            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
+        task_resources = Resources(
+            cpus=1,
+            ram=TypeAdapter(ByteSize).validate_python(
+                f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
+            ),
         )
+
     dask_task_resources = create_dask_task_resources(
-        dask_task_imposed_ec2_type, dask_ram
+        dask_task_imposed_ec2_type, task_resources
     )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
@@ -254,9 +258,10 @@ async def _create_task_with_resources(
 
 @dataclass(frozen=True)
 class _ScaleUpParams:
-    task_resources: Resources
+    imposed_instance_type: InstanceTypeType | None
+    task_resources: Resources | None
     num_tasks: int
-    expected_instance_type: str
+    expected_instance_type: InstanceTypeType
     expected_num_instances: int
 
 
@@ -344,32 +349,52 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
     )
 
 
-@pytest.mark.acceptance_test()
+@pytest.mark.acceptance_test
 @pytest.mark.parametrize(
-    "dask_task_imposed_ec2_type, dask_ram, expected_ec2_type",
+    "scale_up_params",
     [
         pytest.param(
-            None,
-            TypeAdapter(ByteSize).validate_python("128Gib"),
-            "r5n.4xlarge",
+            _ScaleUpParams(
+                imposed_instance_type=None,
+                task_resources=Resources(
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                ),
+                num_tasks=1,
+                expected_instance_type="r5n.4xlarge",
+                expected_num_instances=1,
+            ),
             id="No explicit instance defined",
         ),
         pytest.param(
-            "g4dn.2xlarge",
-            None,
-            "g4dn.2xlarge",
+            _ScaleUpParams(
+                imposed_instance_type="g4dn.2xlarge",
+                task_resources=None,
+                num_tasks=1,
+                expected_instance_type="g4dn.2xlarge",
+                expected_num_instances=1,
+            ),
             id="Explicitely ask for g4dn.2xlarge and use all the resources",
         ),
         pytest.param(
-            "r5n.8xlarge",
-            TypeAdapter(ByteSize).validate_python("116Gib"),
-            "r5n.8xlarge",
+            _ScaleUpParams(
+                imposed_instance_type="r5n.8xlarge",
+                task_resources=Resources(
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("116Gib")
+                ),
+                num_tasks=1,
+                expected_instance_type="r5n.8xlarge",
+                expected_num_instances=1,
+            ),
             id="Explicitely ask for r5n.8xlarge and set the resources",
         ),
         pytest.param(
-            "r5n.8xlarge",
-            None,
-            "r5n.8xlarge",
+            _ScaleUpParams(
+                imposed_instance_type="r5n.8xlarge",
+                task_resources=None,
+                num_tasks=1,
+                expected_instance_type="r5n.8xlarge",
+                expected_num_instances=1,
+            ),
             id="Explicitely ask for r5n.8xlarge and use all the resources",
         ),
     ],
@@ -392,11 +417,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mocker: MockerFixture,
     dask_spec_local_cluster: distributed.SpecCluster,
     create_dask_task_resources: Callable[..., DaskTaskResources],
-    dask_task_imposed_ec2_type: InstanceTypeType | None,
-    dask_ram: ByteSize | None,
-    expected_ec2_type: InstanceTypeType,
     with_drain_nodes_labelled: bool,
     ec2_instance_custom_tags: dict[str, str],
+    scale_up_params: _ScaleUpParams,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -405,8 +428,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # create a task that needs more power
     dask_future = await _create_task_with_resources(
         ec2_client,
-        dask_task_imposed_ec2_type,
-        dask_ram,
+        scale_up_params.imposed_instance_type,
+        scale_up_params.task_resources,
         create_dask_task_resources,
         create_dask_task,
     )
@@ -420,8 +443,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -457,8 +480,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     instances = await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -470,7 +493,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_find_node_with_name_returns_fake_node.assert_called_once()
     mock_docker_find_node_with_name_returns_fake_node.reset_mock()
     expected_docker_node_tags = {
-        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: expected_ec2_type
+        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: scale_up_params.expected_instance_type
     }
     assert mock_docker_tag_node.call_count == 3
     assert fake_node.spec
@@ -539,7 +562,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # now we have 1 monitored node that needs to be mocked
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
     fake_attached_node.status = NodeStatus(
-        State=NodeState.ready, Message=None, Addr=None
+        state=NodeState.ready, message=None, addr=None
     )
     fake_attached_node.spec.availability = Availability.active
     assert fake_attached_node.description
@@ -578,8 +601,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -662,8 +685,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -691,8 +714,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -709,8 +732,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -741,8 +764,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="terminated",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -828,6 +851,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
     [
         pytest.param(
             _ScaleUpParams(
+                imposed_instance_type=None,
                 task_resources=Resources(
                     cpus=5, ram=TypeAdapter(ByteSize).validate_python("36Gib")
                 ),
@@ -899,13 +923,6 @@ async def test_cluster_scaling_up_starts_multiple_instances(
         instances_pending=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
-
-
-async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
-    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
-    minimal_configuration: None,
-):
-    ...
 
 
 async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and_not_more(

@@ -244,7 +244,7 @@ async def spied_cluster_analysis(mocker: MockerFixture) -> MockType:
 
 @dataclass(frozen=True)
 class _ScaleUpParams:
-    imposed_instance_type: str | None
+    imposed_instance_type: InstanceTypeType | None
     service_resources: Resources
     num_services: int
     expected_instance_type: InstanceTypeType
@@ -730,7 +730,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # now we have 1 monitored node that needs to be mocked
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
     fake_attached_node.status = NodeStatus(
-        State=NodeState.ready, Message=None, Addr=None
+        state=NodeState.ready, message=None, addr=None
     )
     fake_attached_node.spec.availability = Availability.active
     fake_attached_node.description.hostname = internal_dns_name
@@ -1492,6 +1492,9 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     for instance in reservation1["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == scale_up_params1.expected_instance_type
+        assert "InstanceId" in instance
+        assert "State" in instance
+        assert "Name" in instance["State"]
         if instance["InstanceId"] == drained_machine_instance_id:
             assert instance["State"]["Name"] == "terminated"
         else:
