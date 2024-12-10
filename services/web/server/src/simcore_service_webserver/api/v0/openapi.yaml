@@ -396,6 +396,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_ApiKeyGet__'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
         '404':
           description: Not Found
           content:
@@ -421,6 +427,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ApiKeyCreateResponse_'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
         '404':
           description: Not Found
           content:
@@ -450,6 +462,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ApiKeyGet_'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
         '404':
           content:
             application/json:
@@ -474,6 +492,12 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
         '404':
           content:
             application/json:
@@ -6765,6 +6789,11 @@ components:
       title: ApiKeyCreateRequest
     ApiKeyCreateResponse:
       properties:
+        id:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Id
         displayName:
           type: string
           minLength: 3
@@ -6777,11 +6806,6 @@ components:
           title: Expiration
           description: Time delta from creation time to expiration. If None, then
             it does not expire.
-        id:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Id
         apiBaseUrl:
           type: string
           title: Apibaseurl
@@ -6793,8 +6817,8 @@ components:
           title: Apisecret
       type: object
       required:
-      - displayName
       - id
+      - displayName
       - apiBaseUrl
       - apiKey
       - apiSecret
