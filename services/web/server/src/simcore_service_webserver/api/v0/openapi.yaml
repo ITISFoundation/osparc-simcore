@@ -11539,6 +11539,7 @@ components:
       type: string
       enum:
       - TIER
+      - LICENSE
       title: PricingPlanClassification
     PricingPlanToServiceAdminGet:
       properties:
