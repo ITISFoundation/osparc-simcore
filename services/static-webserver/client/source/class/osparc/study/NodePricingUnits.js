@@ -117,21 +117,26 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                 .then(preselectedPricingUnit => {
                   if (pricingPlanData && "pricingUnits" in pricingPlanData && pricingPlanData["pricingUnits"].length) {
                     const pricingUnitsData = pricingPlanData["pricingUnits"];
-                    const pricingUnitButtons = this.__pricingUnits = new osparc.study.PricingUnitTiers(pricingUnitsData, preselectedPricingUnit);
+                    const pricingUnitTiers = this.__pricingUnits = new osparc.study.PricingUnitTiers(pricingUnitsData, preselectedPricingUnit);
                     if (inGroupBox) {
                       const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
-                      pricingUnitsLayout.add(pricingUnitButtons);
+                      pricingUnitsLayout.add(pricingUnitTiers);
                       this._add(pricingUnitsLayout);
                     } else {
-                      this._add(pricingUnitButtons);
+                      this._add(pricingUnitTiers);
                     }
-                    pricingUnitButtons.addListener("changeSelectedUnitId", e => {
+                    pricingUnitTiers.addListener("changeSelectedUnitId", e => {
                       if (this.isPatchNode()) {
-                        pricingUnitButtons.setEnabled(false);
+                        pricingUnitTiers.setEnabled(false);
                         const pricingPlanId = this.getPricingPlanId();
                         const selectedPricingUnitId = e.getData();
                         this.self().patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId)
-                          .finally(() => pricingUnitButtons.setEnabled(true));
+                          // .then(() => )
+                          .catch(err => {
+                            const msg = err.message || this.tr("Cannot change Tier");
+                            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                          })
+                          .finally(() => pricingUnitTiers.setEnabled(true));
                       }
                     });
                   }
