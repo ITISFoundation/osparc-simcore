@@ -34,13 +34,20 @@ qx.Class.define("osparc.study.PricingUnitTiers", {
       check: "Number",
       init: null,
       nullable: false,
-      event: "changeSelectedUnitId"
+      event: "changeSelectedUnitId",
+      apply: "__applySelectedUnitId",
     }
   },
 
+  events: {
+    "selectPricingUnitRequested": "qx.event.type.Event",
+  },
+
   members: {
+    __pricingUnitTiers: null,
+
     __buildLayout: function(pricingUnitsData, preselectedPricingUnit, changeSelectionAllowed) {
-      const pricingUnitTiers = [];
+      const pricingUnitTiers = this.__pricingUnitTiers = [];
       pricingUnitsData.forEach(pricingUnitData => {
         const pricingUnit = new osparc.data.model.PricingUnit(pricingUnitData);
         const pricingUnitTier = new osparc.study.PricingUnitTier(pricingUnit).set({
@@ -67,14 +74,15 @@ qx.Class.define("osparc.study.PricingUnitTiers", {
       pricingUnitTiers.forEach(pricingUnitTier => {
         pricingUnitTier.addListener("selectPricingUnit", () => {
           if (changeSelectionAllowed) {
-            // select and unselect the rest
-            pricingUnitTiers.forEach(puTIer => puTIer.setSelected(puTIer === pricingUnitTier));
-            // and save selection
-            const selectedUnitId = pricingUnitTier.getUnitData().getPricingUnitId();
-            this.setSelectedUnitId(selectedUnitId);
+            this.fireDataEvent("selectPricingUnitRequested", pricingUnitTier.getUnitData().getPricingUnitId());
           }
         });
       });
-    }
+    },
+
+    __applySelectedUnitId: function(selectedUnitId) {
+      // select and unselect the rest
+      this.__pricingUnitTiers.forEach(puTIer => puTIer.setSelected(puTIer.getUnitData().getPricingUnitId() === selectedUnitId));
+    },
   }
 });

@@ -105,6 +105,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             alignY: "middle",
             allowGrowY: false,
             minWidth: 160,
+          });
+          control.getChildControl("textfield").set({
             backgroundColor: "transparent",
           });
           this.addListener("appear", () => control.getChildControl("textfield").focus());

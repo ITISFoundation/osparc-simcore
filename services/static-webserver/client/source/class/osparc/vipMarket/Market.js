@@ -29,18 +29,22 @@ qx.Class.define("osparc.vipMarket.Market", {
     [{
       category: "humanWhole",
       label: "Humans",
+      icon: "@FontAwesome5Solid/users/20",
       url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanWholeBody",
     }, {
       category: "humanRegion",
       label: "Humans (Region)",
+      icon: "@FontAwesome5Solid/users/20",
       url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanBodyRegion",
     }, {
       category: "animalWhole",
       label: "Animals",
+      icon: "@FontAwesome5Solid/users/20",
       url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnimalWholeBody",
     }, {
       category: "compPhantom",
       label: "Phantoms",
+      icon: "@FontAwesome5Solid/users/20",
       url: "https://speag.swiss/PD_DirectDownload/getDownloadableItems/ComputationalPhantom",
     }].forEach(marketInfo => {
       this.__buildViPMarketPage(marketInfo);
@@ -49,13 +53,11 @@ qx.Class.define("osparc.vipMarket.Market", {
 
   members: {
     __buildViPMarketPage: function(marketInfo) {
-      const title = marketInfo["label"];
-      const iconSrc = "@FontAwesome5Solid/users/20";
       const vipMarketView = new osparc.vipMarket.VipMarket();
       vipMarketView.set({
         metadataUrl: marketInfo["url"],
       });
-      const page = this.addTab(title, iconSrc, vipMarketView);
+      const page = this.addTab(marketInfo["label"], marketInfo["icon"], vipMarketView);
       page.category = marketInfo["category"];
       return page;
     },
