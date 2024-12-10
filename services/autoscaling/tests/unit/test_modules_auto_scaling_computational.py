@@ -11,10 +11,10 @@ import asyncio
 import datetime
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Awaitable, cast
+from typing import Any, cast
 from unittest import mock
 
 import arrow
@@ -32,11 +32,11 @@ from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import NodeState, NodeStatus
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, TypeAdapter
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_computational_ec2_instances
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
-from simcore_service_autoscaling.models import EC2InstanceData
+from simcore_service_autoscaling.models import Cluster, EC2InstanceData
 from simcore_service_autoscaling.modules.auto_scaling_core import auto_scale_cluster
 from simcore_service_autoscaling.modules.auto_scaling_mode_computational import (
     ComputationalAutoscaling,
@@ -264,6 +264,19 @@ class _ScaleUpParams:
     num_tasks: int
     expected_instance_type: InstanceTypeType
     expected_num_instances: int
+
+
+def _assert_cluster_state(
+    spied_cluster_analysis: MockType, *, expected_calls: int, expected_num_machines: int
+) -> None:
+    assert spied_cluster_analysis.call_count > 0
+
+    assert isinstance(spied_cluster_analysis.spy_return, Cluster)
+    assert (
+        spied_cluster_analysis.spy_return.total_number_of_machines()
+        == expected_num_machines
+    )
+    print("current cluster state:", spied_cluster_analysis.spy_return)
 
 
 def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResources:
@@ -889,7 +902,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
     ],
 )
 async def test_cluster_scaling_up_starts_multiple_instances(
-    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -957,7 +970,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     ],
 )
 async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and_not_more(
-    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -1038,7 +1051,7 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
 
 
 async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_starts_max_instances_and_not_more(
-    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -1295,3 +1308,92 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     assert (
         all_instances["Reservations"][1]["Instances"][0]["State"]["Name"] == "running"
     )
+
+
+@pytest.mark.parametrize(
+    "with_docker_join_drained", ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"], indirect=True
+)
+@pytest.mark.parametrize(
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "scale_up_params1, scale_up_params2",
+    [
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                task_resources=Resources(
+                    cpus=16, ram=TypeAdapter(ByteSize).validate_python("30Gib")
+                ),
+                num_tasks=12,
+                expected_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                expected_num_instances=10,
+            ),
+            _ScaleUpParams(
+                imposed_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
+                task_resources=Resources(
+                    cpus=32, ram=TypeAdapter(ByteSize).validate_python("20480MB")
+                ),
+                num_tasks=7,
+                expected_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
+                expected_num_instances=7,
+            ),
+            id="A batch of services requiring g3.4xlarge and a batch requiring g4dn.8xlarge",
+        ),
+    ],
+)
+async def test_cluster_adapts_machines_on_the_fly(
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
+    minimal_configuration: None,
+    ec2_client: EC2Client,
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+    create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
+    ec2_instance_custom_tags: dict[str, str],
+    scale_up_params1: _ScaleUpParams,
+    scale_up_params2: _ScaleUpParams,
+    mock_docker_tag_node: mock.Mock,
+    spied_cluster_analysis: MockType,
+    mocker: MockerFixture,
+):
+    # pre-requisites
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES > 0
+    assert (
+        scale_up_params1.num_tasks
+        >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    ), "this test requires to run a first batch of more services than the maximum number of instances allowed"
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+    #
+    # 1. create the first batch of services requiring the initial machines
+    first_batch_tasks = await create_tasks_batch(scale_up_params1)
+    assert first_batch_tasks
+
+    # it will only scale once and do nothing else
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    await assert_autoscaled_computational_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params1.expected_num_instances,
+        expected_instance_type=scale_up_params1.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+    )
+
+    _assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=0,
+    )
+    # mocked_associate_ec2_instances_with_nodes.assert_called_once_with([], [])
+    # mocked_associate_ec2_instances_with_nodes.reset_mock()
+    # mocked_associate_ec2_instances_with_nodes.side_effect = _create_fake_association(
+    #     create_fake_node, None, None
+    # )

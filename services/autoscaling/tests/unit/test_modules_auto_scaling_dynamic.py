@@ -373,7 +373,7 @@ async def test_cluster_scaling_with_no_services_does_nothing(
 
 
 async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
-    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     mock_machines_buffer: int,
     app_settings: ApplicationSettings,
@@ -1165,7 +1165,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
     ],
 )
 async def test_cluster_scaling_up_starts_multiple_instances(
-    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -1257,7 +1257,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     ],
 )
 async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
-    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     ec2_client: EC2Client,
     initialized_app: FastAPI,

@@ -892,7 +892,7 @@ def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def patch_ec2_client_launch_instancess_min_number_of_instances(
+def patch_ec2_client_launch_instances_min_number_of_instances(
     mocker: MockerFixture,
 ) -> mock.Mock:
     """the moto library always returns min number of instances instead of max number of instances which makes
