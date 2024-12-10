@@ -178,7 +178,11 @@ def app_with_docker_join_drained(
 @pytest.fixture(scope="session")
 def fake_ssm_settings() -> SSMSettings:
     assert "json_schema_extra" in SSMSettings.model_config
-    return SSMSettings(**SSMSettings.model_config["json_schema_extra"]["examples"][0])
+    assert isinstance(SSMSettings.model_config["json_schema_extra"], dict)
+    assert isinstance(SSMSettings.model_config["json_schema_extra"]["examples"], list)
+    return SSMSettings.model_validate(
+        SSMSettings.model_config["json_schema_extra"]["examples"][0]
+    )
 
 
 @pytest.fixture
@@ -222,6 +226,11 @@ def app_environment(
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
         return setenvs_from_dict(monkeypatch, {**external_envfile_dict})
 
+    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
+    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
+    assert isinstance(
+        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
+    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -265,6 +274,11 @@ def mocked_ec2_instances_envs(
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
     aws_instance_profile: str,
 ) -> EnvVarsDict:
+    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
+    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
+    assert isinstance(
+        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
+    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -273,10 +287,13 @@ def mocked_ec2_instances_envs(
             "EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
-                    ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                            "examples"
-                        ]
+                    ec2_type_name: cast(
+                        dict,
+                        random.choice(  # noqa: S311
+                            EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                                "examples"
+                            ]
+                        ),
                     )
                     | {"ami_id": aws_ami_id}
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
@@ -493,22 +510,23 @@ def create_fake_node(faker: Faker) -> Callable[..., DockerNode]:
     def _creator(**node_overrides) -> DockerNode:
         default_config = {
             "ID": faker.uuid4(),
-            "Version": ObjectVersion(Index=faker.pyint()),
+            "Version": ObjectVersion(index=faker.pyint()),
             "CreatedAt": datetime.datetime.now(tz=datetime.UTC).isoformat(),
             "UpdatedAt": datetime.datetime.now(tz=datetime.UTC).isoformat(),
             "Description": NodeDescription(
-                Hostname=faker.pystr(),
-                Resources=ResourceObject(
-                    NanoCPUs=int(9 * 1e9), MemoryBytes=256 * 1024 * 1024 * 1024
+                hostname=faker.pystr(),
+                resources=ResourceObject(
+                    nano_cp_us=int(9 * 1e9),
+                    memory_bytes=TypeAdapter(ByteSize).validate_python("256GiB"),
                 ),
             ),
             "Spec": NodeSpec(
-                Name=None,
-                Labels=faker.pydict(allowed_types=(str,)),
-                Role=None,
-                Availability=Availability.drain,
+                name=None,
+                labels=faker.pydict(allowed_types=(str,)),
+                role=None,
+                availability=Availability.drain,
             ),
-            "Status": NodeStatus(State=NodeState.unknown, Message=None, Addr=None),
+            "Status": NodeStatus(state=NodeState.unknown, message=None, addr=None),
         }
         default_config.update(**node_overrides)
         return DockerNode(**default_config)
@@ -706,6 +724,7 @@ async def _assert_wait_for_service_state(
             after=after_log(ctx.logger, logging.DEBUG),
         )
         async def _() -> None:
+            assert service.id
             services = await async_docker_client.services.list(
                 filters={"id": service.id}
             )
