@@ -2,6 +2,8 @@
 
 """
 
+import warnings
+
 import sqlalchemy as sa
 
 from ._protocols import AiopgConnection, DBConnection
@@ -76,6 +78,13 @@ async def get_or_create_product_group(
     """
     Returns group_id of a product. Creates it if undefined
     """
+    warnings.warn(
+        f"{__name__}.get_or_create_product_group uses aiopg which has been deprecated in this repo. Please use the asyncpg equivalent version instead"
+        "See https://github.com/ITISFoundation/osparc-simcore/issues/4529",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+
     async with connection.begin():
         group_id = await execute_get_or_create_product_group(
             connection, product_name=product_name
