@@ -17,9 +17,9 @@ from simcore_service_autoscaling.utils.utils_docker import (
 
 
 def assert_cluster_state(
-    spied_cluster_analysis: MockType, *, expected_num_machines: int
+    spied_cluster_analysis: MockType, *, expected_calls: int, expected_num_machines: int
 ) -> Cluster:
-    assert spied_cluster_analysis.call_count > 0
+    assert spied_cluster_analysis.call_count == expected_calls
 
     assert isinstance(spied_cluster_analysis.spy_return, Cluster)
     assert (
