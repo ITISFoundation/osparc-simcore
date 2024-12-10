@@ -3,6 +3,7 @@ from typing import cast
 import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.wallets import WalletID
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.resource_tracker_licensed_items_purchases import (
     resource_tracker_licensed_items_purchases,
@@ -30,6 +31,7 @@ _SELECTION_ARGS = (
     resource_tracker_licensed_items_purchases.c.pricing_unit_cost,
     resource_tracker_licensed_items_purchases.c.start_at,
     resource_tracker_licensed_items_purchases.c.expire_at,
+    resource_tracker_licensed_items_purchases.c.num_of_seats,
     resource_tracker_licensed_items_purchases.c.purchased_by_user,
     resource_tracker_licensed_items_purchases.c.purchased_at,
     resource_tracker_licensed_items_purchases.c.modified,
@@ -58,6 +60,7 @@ async def create(
                 pricing_unit_cost=data.pricing_unit_cost,
                 start_at=data.start_at,
                 expire_at=data.expire_at,
+                num_of_seats=data.num_of_seats,
                 purchased_by_user=data.purchased_by_user,
                 purchased_at=data.purchased_at,
                 modified=sa.func.now(),
@@ -73,6 +76,7 @@ async def list_(
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
+    filter_wallet_id: WalletID,
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
@@ -80,7 +84,13 @@ async def list_(
     base_query = (
         sa.select(*_SELECTION_ARGS)
         .select_from(resource_tracker_licensed_items_purchases)
-        .where(resource_tracker_licensed_items_purchases.c.product_name == product_name)
+        .where(
+            (resource_tracker_licensed_items_purchases.c.product_name == product_name)
+            & (
+                resource_tracker_licensed_items_purchases.c.wallet_id
+                == filter_wallet_id
+            )
+        )
     )
 
     # Select total count from base_query

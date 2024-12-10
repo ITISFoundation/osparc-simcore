@@ -16,12 +16,13 @@ class LicensedItemsPurchasesDB(BaseModel):
     licensed_item_purchase_id: LicensedItemPurchaseID
     product_name: ProductName
     licensed_item_id: LicensedItemID
-    wallet_id: WalletID | None
-    wallet_name: str | None
+    wallet_id: WalletID
+    wallet_name: str
     pricing_unit_cost_id: PricingUnitCostId
     pricing_unit_cost: Decimal
     start_at: datetime
-    expire_at: datetime | None
+    expire_at: datetime
+    num_of_seats: int
     purchased_by_user: UserID
     purchased_at: datetime
     modified: datetime
@@ -32,14 +33,14 @@ class LicensedItemsPurchasesDB(BaseModel):
 class CreateLicensedItemsPurchasesDB(BaseModel):
     product_name: ProductName
     licensed_item_id: LicensedItemID
-    wallet_id: WalletID | None
-    wallet_name: str | None
+    wallet_id: WalletID
+    wallet_name: str
     pricing_unit_cost_id: PricingUnitCostId
     pricing_unit_cost: Decimal
     start_at: datetime
-    expire_at: datetime | None
+    expire_at: datetime
+    num_of_seats: int
     purchased_by_user: UserID
     purchased_at: datetime
-    modified: datetime
 
     model_config = ConfigDict(from_attributes=True)

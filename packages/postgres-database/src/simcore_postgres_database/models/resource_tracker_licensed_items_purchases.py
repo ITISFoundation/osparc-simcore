@@ -63,6 +63,11 @@ resource_tracker_licensed_items_purchases = sa.Table(
         server_default=sa.sql.func.now(),
     ),
     sa.Column(
+        "num_of_seats",
+        sa.SmallInteger,
+        nullable=False,
+    ),
+    sa.Column(
         "purchased_by_user",
         sa.BigInteger,
         nullable=False,

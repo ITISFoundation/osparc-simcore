@@ -49,6 +49,6 @@ class LicensedItemsListQueryParams(
 
 class LicensedItemsBodyParams(BaseModel):
     wallet_id: WalletID
-    num_of_seeds: int
+    num_of_seats: int
 
     model_config = ConfigDict(extra="forbid")
