@@ -28,6 +28,7 @@ qx.Class.define("osparc.data.model.User", {
   construct: function(userData) {
     this.base(arguments);
 
+    // OM remove this
     if (!userData["username"]) {
       userData["username"] = "odeimaiz";
     }
