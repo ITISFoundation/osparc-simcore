@@ -17,7 +17,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
 
 
 def assert_cluster_state(
-    spied_cluster_analysis: MockType, *, expected_calls: int, expected_num_machines: int
+    spied_cluster_analysis: MockType, *, expected_num_machines: int
 ) -> Cluster:
     assert spied_cluster_analysis.call_count > 0
 
@@ -38,7 +38,7 @@ def create_fake_association(
     fake_node_to_instance_map = {}
 
     async def _fake_node_creator(
-        nodes: list[Node], ec2_instances: list[EC2InstanceData]
+        _nodes: list[Node], ec2_instances: list[EC2InstanceData]
     ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
         def _create_fake_node_with_labels(instance: EC2InstanceData) -> Node:
             if instance not in fake_node_to_instance_map:
