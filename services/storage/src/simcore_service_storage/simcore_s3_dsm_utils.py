@@ -14,7 +14,7 @@ from servicelib.utils import ensure_ends_with
 
 from . import db_file_meta_data
 from .exceptions import FileMetaDataNotFoundError
-from .models import FileMetaData, FileMetaDataAtDB
+from .models import FileMetaData, FileMetaDataAtDB, UserID
 from .utils import convert_db_to_model
 
 
@@ -119,3 +119,20 @@ async def get_directory_file_id(
     directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
 
     return directory_file_id if directory_file_id_fmd else None
+
+
+async def find_enclosing_file(
+    conn: SAConnection, user_id: UserID, file_id: SimcoreS3FileID
+) -> FileMetaDataAtDB | None:
+    kwnon_files = {
+        Path(known_file.file_id): known_file
+        for known_file in await db_file_meta_data.list_fmds(conn, user_id=user_id)
+    }
+    current_path = Path(file_id)
+    while current_path and current_path != Path(current_path).parent:
+        if current_path in kwnon_files:
+            return kwnon_files.get(current_path)
+
+        current_path = Path(current_path).parent
+
+    return None

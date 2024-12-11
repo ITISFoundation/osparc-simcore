@@ -79,7 +79,11 @@ from .models import (
 from .s3 import get_s3_client
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
-from .simcore_s3_dsm_utils import expand_directory, get_directory_file_id
+from .simcore_s3_dsm_utils import (
+    expand_directory,
+    find_enclosing_file,
+    get_directory_file_id,
+)
 from .utils import (
     convert_db_to_model,
     download_to_file_or_raise,
@@ -499,22 +503,6 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return link
 
-    async def __find_enclosing_file(
-        self, conn: SAConnection, user_id: UserID, file_id: SimcoreS3FileID
-    ) -> FileMetaDataAtDB | None:
-        kwnon_files = {
-            Path(known_file.file_id): known_file
-            for known_file in await db_file_meta_data.list_fmds(conn, user_id=user_id)
-        }
-        current_path = Path(file_id)
-        while current_path and current_path != Path(current_path).parent:
-            if current_path in kwnon_files:
-                return kwnon_files.get(current_path)
-
-            current_path = Path(current_path).parent
-
-        return None
-
     async def delete_file(
         self,
         user_id: UserID,
@@ -539,7 +527,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 if not can.delete:
                     raise FileAccessRightError(access_right="delete", file_id=file_id)
 
-            enclosing_file = await self.__find_enclosing_file(conn, user_id, file_id)
+            enclosing_file = await find_enclosing_file(conn, user_id, file_id)
             if enclosing_file and enclosing_file.file_id == file_id:
                 await db_file_meta_data.delete(conn, [file_id])
 
