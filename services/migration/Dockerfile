@@ -62,7 +62,7 @@ WORKDIR /build/packages/postgres-database
 
 # install only base 3rd party dependencies
 RUN \
-  --mount=type=bind,source=packages/postgres-database,target=/build/packages/postgres-database,rw \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=cache,target=/root/.cache/uv \
   uv pip install \
   --requirement requirements/prod.txt \

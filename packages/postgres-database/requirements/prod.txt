@@ -8,4 +8,5 @@
 --requirement _base.txt
 --requirement _migration.txt
 
+simcore-common-library @ ../common-library/
 simcore-postgres-database @ .
