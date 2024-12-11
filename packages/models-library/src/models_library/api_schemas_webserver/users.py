@@ -1,7 +1,7 @@
 import re
 from datetime import date
 from enum import Enum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Self
 from uuid import UUID
 
 from common_library.basic_types import DEFAULT_FACTORY
@@ -11,52 +11,16 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
 from ..products import ProductName
-from ..users import FirstNameStr, LastNameStr, UserID
-from ._base import InputSchema, OutputSchema
+from ..users import (
+    FirstNameStr,
+    LastNameStr,
+    UserID,
+    UserPermission,
+    UserThirdPartyToken,
+)
+from ._base import InputSchema, InputSchemaWithoutCamelCase, OutputSchema
 from .groups import MyGroupsGet
 from .users_preferences import AggregatedPreferences
-
-
-#
-# THIRD-PARTY TOKENS
-#
-class UserThirdPartyToken(BaseModel):
-    """
-    Tokens used to access third-party services connected to osparc (e.g. pennsieve, scicrunch, etc)
-    """
-
-    service: Annotated[
-        str,
-        Field(description="uniquely identifies the service where this token is used"),
-    ]
-    token_key: Annotated[UUID, Field(..., description="basic token key")]
-    token_secret: UUID | None = None
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "service": "github-api-v1",
-                "token_key": "5f21abf5-c596-47b7-bfd1-c0e436ef1107",
-            }
-        }
-    )
-
-
-class MyTokenCreate(UserThirdPartyToken):
-    ...
-
-
-#
-# PERMISSIONS
-#
-class UserPermission(BaseModel):
-    name: str
-    allowed: bool
-
-
-class MyPermissionGet(UserPermission, OutputSchema):
-    ...
-
 
 #
 # MY PROFILE
@@ -237,3 +201,38 @@ class UserGet(OutputSchema):
             msg = f"{registered=} and {status=} is not allowed"
             raise ValueError(msg)
         return v
+
+
+#
+# THIRD-PARTY TOKENS
+#
+
+
+class MyTokenCreate(InputSchemaWithoutCamelCase):
+    service: Annotated[
+        str,
+        Field(description="uniquely identifies the service where this token is used"),
+    ]
+    token_key: Annotated[UUID, Field(..., description="basic token key")]
+    token_secret: UUID | None = None
+
+    def to_model(self) -> UserThirdPartyToken:
+        return UserThirdPartyToken(
+            service=self.service,
+            token_key=self.token_key,
+            token_secret=self.token_secret,
+        )
+
+
+#
+# PERMISSIONS
+#
+
+
+class MyPermissionGet(OutputSchema):
+    name: str
+    allowed: bool
+
+    @classmethod
+    def from_model(cls, permission: UserPermission) -> Self:
+        return cls(name=permission.name, allowed=permission.allowed)
