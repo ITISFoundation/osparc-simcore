@@ -21,8 +21,8 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _users_service, api
-from ._constants import FMSG_MISSING_CONFIG_WITH_OEC
-from ._schemas import PreRegisteredUserGet, UsersRequestContext
+from .common._constants import FMSG_MISSING_CONFIG_WITH_OEC
+from .common._schemas import PreRegisteredUserGet, UsersRequestContext
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,

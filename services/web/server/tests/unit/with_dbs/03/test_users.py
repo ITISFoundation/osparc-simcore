@@ -34,7 +34,7 @@ from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_service_webserver.users._preferences_api import (
     get_frontend_user_preferences_aggregation,
 )
-from simcore_service_webserver.users._schemas import (
+from simcore_service_webserver.users.common._schemas import (
     MAX_BYTES_SIZE_EXTRAS,
     PreRegisteredUserGet,
 )

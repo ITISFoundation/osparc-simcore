@@ -2,7 +2,7 @@ import logging
 
 import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver.users import PreRegisteredUserGet, UserGet
+from models_library.api_schemas_webserver.users import UserGet
 from models_library.emails import LowerCaseEmailStr
 from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName
@@ -12,7 +12,8 @@ from simcore_postgres_database.models.users import UserStatus
 
 from ..db.plugin import get_asyncpg_engine
 from . import _users_repository
-from ._models import UserCredentialsTuple
+from .common._models import UserCredentialsTuple
+from .common._schemas import PreRegisteredUserGet
 from .exceptions import AlreadyPreRegisteredError
 from .schemas import Permission
 
@@ -58,17 +59,17 @@ async def set_user_as_deleted(app: web.Application, *, user_id: UserID) -> None:
     )
 
 
-def _glob_to_sql_like(glob_pattern: str) -> str:
-    # Escape SQL LIKE special characters in the glob pattern
-    sql_like_pattern = glob_pattern.replace("%", r"\%").replace("_", r"\_")
-    # Convert glob wildcards to SQL LIKE wildcards
-    return sql_like_pattern.replace("*", "%").replace("?", "_")
-
-
 async def search_users(
     app: web.Application, email_glob: str, *, include_products: bool = False
 ) -> list[UserGet]:
     # NOTE: this search is deploy-wide i.e. independent of the product!
+
+    def _glob_to_sql_like(glob_pattern: str) -> str:
+        # Escape SQL LIKE special characters in the glob pattern
+        sql_like_pattern = glob_pattern.replace("%", r"\%").replace("_", r"\_")
+        # Convert glob wildcards to SQL LIKE wildcards
+        return sql_like_pattern.replace("*", "%").replace("?", "_")
+
     rows = await _users_repository.search_users_and_get_profile(
         get_asyncpg_engine(app), email_like=_glob_to_sql_like(email_glob)
     )
