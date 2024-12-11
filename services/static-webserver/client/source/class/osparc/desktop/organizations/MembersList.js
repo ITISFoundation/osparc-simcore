@@ -70,8 +70,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       if (sorted !== 0) {
         return sorted;
       }
-      if (("email" in a) && ("email" in b)) {
-        return a["email"].localeCompare(b["email"]);
+      if (("label" in a) && ("label" in b)) {
+        return a["label"].localeCompare(b["label"]);
       }
       return 0;
     }
@@ -105,22 +105,17 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         alignY: "middle"
       }));
 
-      const userEmail = new qx.ui.form.TextField().set({
+      const newMemberUserName = new qx.ui.form.TextField().set({
         required: true,
-        placeholder: this.tr(" New Member's email")
+        placeholder: this.tr(" New Member's username")
       });
-      hBox.add(userEmail, {
+      hBox.add(newMemberUserName, {
         flex: 1
       });
 
-      const validator = new qx.ui.form.validation.Manager();
-      validator.add(userEmail, qx.util.Validate.email());
-
       const addBtn = new qx.ui.form.Button(this.tr("Add"));
       addBtn.addListener("execute", function() {
-        if (validator.validate()) {
-          this.__addMember(userEmail.getValue());
-        }
+        this.__addMember(newMemberUserName.getValue());
       }, this);
       hBox.add(addBtn);
 
@@ -154,9 +149,9 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           ctrl.bindProperty("userId", "model", null, item, id);
           ctrl.bindProperty("userId", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
-          ctrl.bindProperty("name", "title", null, item, id);
+          ctrl.bindProperty("label", "title", null, item, id);
+          ctrl.bindProperty("description", "subtitleMD", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
-          ctrl.bindProperty("email", "subtitleMD", null, item, id);
           ctrl.bindProperty("options", "options", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
@@ -217,7 +212,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const canIDelete = organization.getAccessRights()["delete"];
 
       const introText = canIWrite ?
-        this.tr("You can add new members and promote or demote existing ones.") :
+        this.tr("You can add new members and promote or demote existing ones.<br>In order to add new members, type their username or email if this is public.") :
         this.tr("You can't add new members to this Organization. Please contact an Administrator or Manager.");
       this.__introLabel.setValue(introText);
 
@@ -225,15 +220,17 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         enabled: canIWrite
       });
 
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const membersList = [];
       const groupMembers = organization.getGroupMembers();
       Object.values(groupMembers).forEach(groupMember => {
+        const gid = parseInt(groupMember.getGroupId());
         const member = {};
-        member["userId"] = groupMember.getUserId();
-        member["groupId"] = groupMember.getGroupId();
+        member["userId"] = gid === myGroupId ? osparc.auth.Data.getInstance().getUserId() : groupMember.getUserId();
+        member["groupId"] = gid;
         member["thumbnail"] = groupMember.getThumbnail();
-        member["name"] = groupMember.getLabel();
-        member["email"] = groupMember.getEmail();
+        member["label"] = groupMember.getLabel();
+        member["description"] = gid === myGroupId ? osparc.auth.Data.getInstance().getEmail() : groupMember.getDescription();
         member["accessRights"] = groupMember.getAccessRights();
         let options = [];
         if (canIDelete) {
@@ -287,7 +284,6 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         }
         // Let me go?
         const openStudy = osparc.store.Store.getInstance().getCurrentStudy();
-        const myGroupId = osparc.store.Groups.getInstance().getMyGroupId();
         if (
           openStudy === null &&
           canIWrite &&
@@ -303,16 +299,18 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
     },
 
-    __addMember: async function(orgMemberEmail) {
+    __addMember: async function(newMemberIdentifier) {
       if (this.__currentOrg === null) {
         return;
       }
 
       const orgId = this.__currentOrg.getGroupId();
       const groupsStore = osparc.store.Groups.getInstance();
-      groupsStore.postMember(orgId, orgMemberEmail)
+      const isEmail = osparc.utils.Utils.isEmail(newMemberIdentifier);
+      const request = isEmail ? groupsStore.addMember(orgId, null, newMemberIdentifier) : groupsStore.addMember(orgId, newMemberIdentifier);
+      request
         .then(newMember => {
-          const text = orgMemberEmail + this.tr(" successfully added");
+          const text = newMemberIdentifier + this.tr(" successfully added");
           osparc.FlashMessenger.getInstance().logAs(text);
           this.__reloadOrgMembers();
 
