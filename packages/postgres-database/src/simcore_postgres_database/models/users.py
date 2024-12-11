@@ -161,7 +161,7 @@ users = sa.Table(
         "privacy_hide_email",
         sa.Boolean,
         nullable=False,
-        server_default=expression.true(),
+        server_default=expression.false(),
         doc="If true, it hides users.email to others",
     ),
     #

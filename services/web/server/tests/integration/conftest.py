@@ -15,7 +15,6 @@
 import json
 import logging
 import sys
-from collections.abc import AsyncIterable
 from copy import deepcopy
 from pathlib import Path
 from string import Template
@@ -27,13 +26,6 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
 from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.docker import get_service_published_port
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
-from simcore_service_webserver.groups.api import (
-    add_user_in_group,
-    create_user_group,
-    delete_user_group,
-    list_user_groups_with_read_access,
-)
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -175,72 +167,6 @@ def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
         "simcore_service_webserver.garbage_collector._core.remove_orphaned_services",
         return_value="",
     )
-
-
-@pytest.fixture
-async def primary_group(client, logged_user: UserInfoDict) -> dict[str, str]:
-    primary_group, _, _ = await list_user_groups_with_read_access(
-        client.app, logged_user["id"]
-    )
-    return primary_group
-
-
-@pytest.fixture
-async def standard_groups(
-    client, logged_user: UserInfoDict
-) -> AsyncIterable[list[dict[str, str]]]:
-    # create a separate admin account to create some standard groups for the logged user
-    sparc_group = {
-        "gid": "5",  # this will be replaced
-        "label": "SPARC",
-        "description": "Stimulating Peripheral Activity to Relieve Conditions",
-        "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
-    }
-    team_black_group = {
-        "gid": "5",  # this will be replaced
-        "label": "team Black",
-        "description": "THE incredible black team",
-        "thumbnail": None,
-    }
-    async with NewUser(
-        {"name": f"{logged_user['name']}_admin", "role": "USER"}, client.app
-    ) as admin_user:
-        sparc_group = await create_user_group(client.app, admin_user["id"], sparc_group)
-        team_black_group = await create_user_group(
-            client.app, admin_user["id"], team_black_group
-        )
-        await add_user_in_group(
-            client.app,
-            admin_user["id"],
-            int(sparc_group["gid"]),
-            new_user_id=logged_user["id"],
-        )
-        await add_user_in_group(
-            client.app,
-            admin_user["id"],
-            int(team_black_group["gid"]),
-            new_user_email=logged_user["email"],
-        )
-
-        _, standard_groups, _ = await list_user_groups_with_read_access(
-            client.app, logged_user["id"]
-        )
-
-        yield standard_groups
-
-        # clean groups
-        await delete_user_group(client.app, admin_user["id"], int(sparc_group["gid"]))
-        await delete_user_group(
-            client.app, admin_user["id"], int(team_black_group["gid"])
-        )
-
-
-@pytest.fixture
-async def all_group(client, logged_user) -> dict[str, str]:
-    _, _, all_group = await list_user_groups_with_read_access(
-        client.app, logged_user["id"]
-    )
-    return all_group
 
 
 @pytest.fixture(scope="session")

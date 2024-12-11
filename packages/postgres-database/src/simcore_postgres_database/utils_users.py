@@ -36,6 +36,10 @@ def _generate_random_chars(length=5) -> str:
     return "".join(secrets.choice(string.digits) for _ in range(length - 1))
 
 
+def generate_alternative_username(username) -> str:
+    return f"{username}_{_generate_random_chars()}"
+
+
 class UsersRepo:
     @staticmethod
     async def new_user(
@@ -61,7 +65,7 @@ class UsersRepo:
                     users.insert().values(**data).returning(users.c.id)
                 )
             except UniqueViolation:  # noqa: PERF203
-                data["name"] = f'{data["name"]}_{_generate_random_chars()}'
+                data["name"] = generate_alternative_username(data["name"])
 
         result = await conn.execute(
             sa.select(
