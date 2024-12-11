@@ -499,13 +499,17 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return link
 
-    def find_enclosing(self, file_id: str, kwnown_file_ids: list[str]) -> str | None:
+    async def __find_enclosing_file(
+        self, conn: SAConnection, user_id: UserID, file_id: SimcoreS3FileID
+    ) -> FileMetaDataAtDB | None:
+        kwnon_files = {
+            Path(known_file.file_id): known_file
+            for known_file in await db_file_meta_data.list_fmds(conn, user_id=user_id)
+        }
         current_path = Path(file_id)
-        kwnon_file_paths = [Path(file_id) for file_id in kwnown_file_ids]
-
         while current_path and current_path != Path(current_path).parent:
-            if current_path in kwnon_file_paths:
-                return f"{current_path}"
+            if current_path in kwnon_files:
+                return kwnon_files.get(current_path)
 
             current_path = Path(current_path).parent
 
@@ -535,33 +539,14 @@ class SimcoreS3DataManager(BaseDataManager):
                 if not can.delete:
                     raise FileAccessRightError(access_right="delete", file_id=file_id)
 
-        # NOTE: deleting might be slow, so better ensure we release the connection
-        async with self.engine.acquire() as conn:
-            enclosing_file_id = self.find_enclosing(
-                file_id,
-                [
-                    known_file.file_id
-                    for known_file in await db_file_meta_data.list_fmds(
-                        conn, user_id=user_id
-                    )
-                ],
-            )
-
-            enclosing_file = await db_file_meta_data.get(
-                conn, TypeAdapter(SimcoreS3FileID).validate_python(enclosing_file_id)
-            )
-
-            if await db_file_meta_data.exists(conn, file_id):
+            enclosing_file = await self.__find_enclosing_file(conn, user_id, file_id)
+            if enclosing_file and enclosing_file.file_id == file_id:
                 await db_file_meta_data.delete(conn, [file_id])
 
-            await get_s3_client(self.app).delete_objects_recursively(
-                bucket=enclosing_file.bucket_name,
-                prefix=(
-                    ensure_ends_with(enclosing_file.file_id, "/")
-                    if enclosing_file.is_directory and enclosing_file_id == file_id
-                    else file_id
-                ),
-            )
+        await get_s3_client(self.app).delete_objects_recursively(
+            bucket=self.simcore_bucket_name,
+            prefix=file_id,
+        )
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
