@@ -40,7 +40,7 @@ qx.Class.define("osparc.utils.Avatar", {
 
     __getUrl: function(email, username, size = 100) {
       if (email == null) {
-        return `https://ui-avatars.com/api/${username}/${size}`;
+        email = "";
       }
       // MD5 (Message-Digest Algorithm) by WebToolkit
       const MD5 = function(s) {
@@ -261,9 +261,8 @@ qx.Class.define("osparc.utils.Avatar", {
       };
 
       const emailHash = MD5(email);
-      const defaultImageUrl = `https://ui-avatars.com/api/${username}/${size}/`;
-      // return `https://www.gravatar.com/avatar/${emailHash}?d=${defaultImageUrl}&s=${size}&r=g`;
-      return `https://www.gravatar.com/avatar/${emailHash}?d=${defaultImageUrl}&s=${size}`;
+      const defaultImageUrl = `https://ui-avatars.com/api/${username}/${size}`;
+      return `https://www.gravatar.com/avatar/${emailHash}?d=${defaultImageUrl}&s=${size}&r=g`;
     },
   }
 });
