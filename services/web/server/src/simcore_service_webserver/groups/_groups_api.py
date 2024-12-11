@@ -4,13 +4,14 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.groups import (
     AccessRightsDict,
     Group,
+    GroupID,
     GroupMember,
     GroupsByTypeTuple,
     StandardGroupCreate,
     StandardGroupUpdate,
 )
 from models_library.products import ProductName
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from pydantic import EmailStr
 
 from ..users.api import get_user

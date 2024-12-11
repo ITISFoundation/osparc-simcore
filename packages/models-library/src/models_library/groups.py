@@ -7,10 +7,12 @@ from pydantic.types import PositiveInt
 from typing_extensions import TypedDict
 
 from .basic_types import IDStr
-from .users import GroupID, UserID
+from .users import UserID
 from .utils.common_validators import create_enums_pre_validator
 
 EVERYONE_GROUP_ID: Final[int] = 1
+
+GroupID: TypeAlias = PositiveInt
 
 
 __all__: tuple[str, ...] = ("GroupID",)

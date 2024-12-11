@@ -7,13 +7,14 @@ from models_library.basic_types import IDStr
 from models_library.groups import (
     AccessRightsDict,
     Group,
+    GroupID,
     GroupInfoTuple,
     GroupMember,
     GroupsByTypeTuple,
     StandardGroupCreate,
     StandardGroupUpdate,
 )
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.utils_products import execute_get_or_create_product_group

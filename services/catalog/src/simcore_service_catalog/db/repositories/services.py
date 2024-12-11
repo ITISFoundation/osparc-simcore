@@ -10,10 +10,10 @@ from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
-from models_library.groups import GroupAtDB, GroupTypeInModel
+from models_library.groups import GroupAtDB, GroupID, GroupTypeInModel
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import PositiveInt, TypeAdapter, ValidationError
 from simcore_postgres_database.utils_services import create_select_latest_services_query

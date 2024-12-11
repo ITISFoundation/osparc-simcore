@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 from models_library.api_schemas_webserver.wallets import PaymentID
-from models_library.users import GroupID, UserID
+from models_library.groups import GroupID
+from models_library.users import UserID
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users

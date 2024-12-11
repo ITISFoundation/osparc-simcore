@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl, NonNegativeInt
 
 from ..boot_options import BootOptions
 from ..emails import LowerCaseEmailStr
+from ..groups import GroupID
 from ..services_access import ServiceAccessRights, ServiceGroupAccessRightsV2
 from ..services_authoring import Author
 from ..services_enums import ServiceType
@@ -18,7 +19,6 @@ from ..services_metadata_published import (
 )
 from ..services_resources import ServiceResourcesDict
 from ..services_types import ServiceKey, ServiceVersion
-from ..users import GroupID
 from ..utils.change_case import snake_to_camel
 
 

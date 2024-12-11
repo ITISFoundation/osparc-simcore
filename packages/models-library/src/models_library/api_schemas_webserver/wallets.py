@@ -5,7 +5,7 @@ from typing import Literal, TypeAlias
 from pydantic import ConfigDict, Field, HttpUrl, ValidationInfo, field_validator
 
 from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
-from ..users import GroupID
+from ..groups import GroupID
 from ..wallets import WalletID, WalletStatus
 from ._base import InputSchema, OutputSchema
 
