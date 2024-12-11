@@ -11,10 +11,10 @@ from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
     PermissionGet,
-    SearchQueryParams,
     ThirdPartyToken,
     TokenCreate,
     UserGet,
+    UsersSearchQueryParams,
 )
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
@@ -146,7 +146,7 @@ async def list_user_permissions():
         "po",
     ],
 )
-async def search_users(_params: Annotated[SearchQueryParams, Depends()]):
+async def search_users(_params: Annotated[UsersSearchQueryParams, Depends()]):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
 
