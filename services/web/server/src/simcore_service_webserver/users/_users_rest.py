@@ -2,7 +2,12 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.users import MyProfileGet, MyProfilePatch
+from models_library.api_schemas_webserver.users import (
+    MyProfileGet,
+    MyProfilePatch,
+    PreRegisteredUserGet,
+    SearchQueryParams,
+)
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -18,7 +23,7 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _users_service, api
 from ._constants import FMSG_MISSING_CONFIG_WITH_OEC
-from ._schemas import PreUserProfile, SearchQueryParams, UsersRequestContext
+from ._schemas import UsersRequestContext
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
@@ -65,9 +70,11 @@ def _handle_users_exceptions(handler: Handler):
 @_handle_users_exceptions
 async def get_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
+
     profile: MyProfileGet = await api.get_user_profile(
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
+
     return envelope_json_response(profile)
 
 
@@ -119,7 +126,7 @@ async def search_users(request: web.Request) -> web.Response:
 @_handle_users_exceptions
 async def pre_register_user(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
-    pre_user_profile = await parse_request_body_as(PreUserProfile, request)
+    pre_user_profile = await parse_request_body_as(PreRegisteredUserGet, request)
 
     try:
         user_profile = await _users_service.pre_register_user(

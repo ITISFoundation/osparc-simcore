@@ -7,7 +7,13 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
-from models_library.api_schemas_webserver.users import MyProfileGet, MyProfilePatch
+from models_library.api_schemas_webserver.users import (
+    MyProfileGet,
+    MyProfilePatch,
+    PreRegisteredUserGet,
+    SearchQueryParams,
+    UserGet,
+)
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
 from models_library.user_preferences import PreferenceIdentifier
@@ -19,11 +25,6 @@ from simcore_service_webserver.users._notifications import (
 )
 from simcore_service_webserver.users._notifications_handlers import (
     _NotificationPathParams,
-)
-from simcore_service_webserver.users._schemas import (
-    PreUserProfile,
-    SearchQueryParams,
-    UserProfile,
 )
 from simcore_service_webserver.users._tokens_handlers import _TokenPathParams
 from simcore_service_webserver.users.schemas import (
@@ -66,8 +67,8 @@ async def replace_my_profile(_profile: MyProfilePatch):
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def set_frontend_preference(
-    preference_id: PreferenceIdentifier,  # noqa: ARG001
-    body_item: PatchRequestBody,  # noqa: ARG001
+    preference_id: PreferenceIdentifier,
+    body_item: PatchRequestBody,
 ):
     ...
 
@@ -142,7 +143,7 @@ async def list_user_permissions():
 
 @router.get(
     "/users:search",
-    response_model=Envelope[list[UserProfile]],
+    response_model=Envelope[list[UserGet]],
     tags=[
         "po",
     ],
@@ -154,10 +155,10 @@ async def search_users(_params: Annotated[SearchQueryParams, Depends()]):
 
 @router.post(
     "/users:pre-register",
-    response_model=Envelope[UserProfile],
+    response_model=Envelope[UserGet],
     tags=[
         "po",
     ],
 )
-async def pre_register_user(_body: PreUserProfile):
+async def pre_register_user(_body: PreRegisteredUserGet):
     ...
