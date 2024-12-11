@@ -60,6 +60,19 @@ class WalletGetPermissions(WalletGet):
     write: bool
     delete: bool
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    **WalletGet.model_config["json_schema_extra"]["examples"][0],  # type: ignore
+                    "read": True,
+                    "write": True,
+                    "delete": True,
+                }
+            ]
+        }
+    )
+
 
 class CreateWalletBodyParams(OutputSchema):
     name: str
