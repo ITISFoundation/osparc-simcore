@@ -271,8 +271,10 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                   .then(() => {
                     const found = this.__anatomicalModels.find(model => model["ID"] === modelId);
                     if (found) {
+                      const expirationDate = new Date();
+                      expirationDate.setMonth(expirationDate.getMonth() + 1)
                       found["purchased"] = {
-                        expiresAt: new Date(), // get this info from the response
+                        expiresAt: expirationDate, // get this info from the response
                         numberOfSeats, // get this info from the response
                       };
                       this.__populateModels();
