@@ -17,8 +17,7 @@ from .utils_repos import pass_or_acquire_connection
 _logger = logging.getLogger(__name__)
 
 _WARNING_FMSG = (
-    f"{__name__}.{{}} uses aiopg which has been deprecated in this repo. "
-    "Use {{}} instead. "
+    f"{__name__}.{{}} uses aiopg which has been deprecated in this repo. Use {{}} instead. "
     "SEE https://github.com/ITISFoundation/osparc-simcore/issues/4529"
 )
 
@@ -44,7 +43,7 @@ class GroupExtraProperties(FromRowMixin):
     enable_efs: bool
 
 
-async def _list_table_entries_ordered_by_group_type_query(
+async def _list_table_entries_ordered_by_group_type_stmt(
     user_id: int, product_name: str
 ):
     return (
@@ -76,23 +75,6 @@ async def _list_table_entries_ordered_by_group_type_query(
         )
         .alias()
     )
-
-
-async def _list_table_entries_ordered_by_group_type(
-    connection: SAConnection, user_id: int, product_name: str
-) -> list[RowProxy]:
-    list_stmt = _list_table_entries_ordered_by_group_type_query(
-        user_id=user_id, product_name=product_name
-    )
-
-    result = await connection.execute(
-        sa.select(list_stmt).order_by(list_stmt.c.type_order)
-    )
-    assert result  # nosec
-
-    rows: list[RowProxy] | None = await result.fetchall()
-    assert rows is not None  # nosec
-    return rows
 
 
 def _merge_extra_properties_booleans(
@@ -206,9 +188,18 @@ class GroupExtraPropertiesRepo:
             stacklevel=1,
         )
 
-        rows = await _list_table_entries_ordered_by_group_type(
-            connection, user_id, product_name
+        list_stmt = _list_table_entries_ordered_by_group_type_stmt(
+            user_id=user_id, product_name=product_name
         )
+
+        result = await connection.execute(
+            sa.select(list_stmt).order_by(list_stmt.c.type_order)
+        )
+        assert result  # nosec
+
+        rows: list[RowProxy] | None = await result.fetchall()
+        assert rows is not None  # nosec
+
         return GroupExtraPropertiesRepo._aggregate(rows, user_id, product_name)
 
     @staticmethod
@@ -221,7 +212,7 @@ class GroupExtraPropertiesRepo:
     ) -> GroupExtraProperties:
         async with pass_or_acquire_connection(engine, connection) as conn:
 
-            list_stmt = _list_table_entries_ordered_by_group_type_query(
+            list_stmt = _list_table_entries_ordered_by_group_type_stmt(
                 user_id=user_id, product_name=product_name
             )
             result = await conn.stream(
