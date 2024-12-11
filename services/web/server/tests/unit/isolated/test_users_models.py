@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 from faker import Faker
+from models_library.api_schemas_webserver.schemas import ThirdPartyToken
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
@@ -21,7 +22,6 @@ from pydantic import BaseModel
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.users.common._models import ToUserUpdateDB
-from simcore_service_webserver.users.schemas import ThirdPartyToken
 
 
 @pytest.mark.parametrize(

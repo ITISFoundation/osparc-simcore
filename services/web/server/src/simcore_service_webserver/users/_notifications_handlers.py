@@ -3,6 +3,7 @@ import logging
 
 import redis.asyncio as aioredis
 from aiohttp import web
+from models_library.api_schemas_webserver.users import Permission, PermissionGet
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -27,7 +28,6 @@ from ._notifications import (
     get_notification_key,
 )
 from .common._schemas import UsersRequestContext
-from .schemas import Permission, PermissionGet
 
 _logger = logging.getLogger(__name__)
 

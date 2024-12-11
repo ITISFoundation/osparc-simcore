@@ -4,6 +4,7 @@
 """
 import sqlalchemy as sa
 from aiohttp import web
+from models_library.api_schemas_webserver.users import ThirdPartyToken, TokenCreate
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from sqlalchemy import and_, literal_column
@@ -11,7 +12,6 @@ from sqlalchemy import and_, literal_column
 from ..db.models import tokens
 from ..db.plugin import get_database_engine
 from .exceptions import TokenNotFoundError
-from .schemas import ThirdPartyToken, TokenCreate
 
 
 async def create_token(

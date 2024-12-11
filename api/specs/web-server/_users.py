@@ -10,7 +10,10 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
+    PermissionGet,
     SearchQueryParams,
+    ThirdPartyToken,
+    TokenCreate,
     UserGet,
 )
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
@@ -27,11 +30,6 @@ from simcore_service_webserver.users._notifications_handlers import (
 )
 from simcore_service_webserver.users._tokens_handlers import _TokenPathParams
 from simcore_service_webserver.users.common._schemas import PreRegisteredUserGet
-from simcore_service_webserver.users.schemas import (
-    PermissionGet,
-    ThirdPartyToken,
-    TokenCreate,
-)
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["user"])
 

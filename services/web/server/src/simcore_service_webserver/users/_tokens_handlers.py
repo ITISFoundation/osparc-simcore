@@ -2,6 +2,7 @@ import functools
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_webserver.users import TokenCreate
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -17,7 +18,6 @@ from ..utils_aiohttp import envelope_json_response
 from . import _tokens
 from .common._schemas import UsersRequestContext
 from .exceptions import TokenNotFoundError
-from .schemas import TokenCreate
 
 _logger = logging.getLogger(__name__)
 

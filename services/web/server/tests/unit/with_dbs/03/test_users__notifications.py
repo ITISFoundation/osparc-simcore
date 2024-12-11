@@ -17,6 +17,7 @@ from typing import Any
 import pytest
 import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_webserver.schemas import PermissionGet
 from models_library.products import ProductName
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -36,7 +37,6 @@ from simcore_service_webserver.users._notifications import (
 from simcore_service_webserver.users._notifications_handlers import (
     _get_user_notifications,
 )
-from simcore_service_webserver.users.schemas import PermissionGet
 
 
 @pytest.fixture

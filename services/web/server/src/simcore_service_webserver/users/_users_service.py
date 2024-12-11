@@ -2,7 +2,7 @@ import logging
 
 import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver.users import UserGet
+from models_library.api_schemas_webserver.users import Permission, UserGet
 from models_library.emails import LowerCaseEmailStr
 from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName
@@ -15,7 +15,6 @@ from . import _users_repository
 from .common._models import UserCredentialsTuple
 from .common._schemas import PreRegisteredUserGet
 from .exceptions import AlreadyPreRegisteredError
-from .schemas import Permission
 
 _logger = logging.getLogger(__name__)
 
