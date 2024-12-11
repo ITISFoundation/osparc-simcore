@@ -98,9 +98,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
     },
 
     purchased: {
-      check: "Boolean",
-      init: false,
+      check: "Object",
       nullable: true,
+      init: null,
       event: "changePurchased",
       apply: "__applyPurchased",
     },

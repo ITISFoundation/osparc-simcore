@@ -918,7 +918,11 @@ qx.Class.define("osparc.data.Resources", {
           putAutoRecharge: {
             method: "PUT",
             url: statics.API + "/wallets/{walletId}/auto-recharge"
-          }
+          },
+          purchases: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/licensed-items-purchases"
+          },
         }
       },
       /*

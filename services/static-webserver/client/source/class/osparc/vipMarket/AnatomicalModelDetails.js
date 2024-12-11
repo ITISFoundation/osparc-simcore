@@ -191,6 +191,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
               this.fireDataEvent("modelPurchaseRequested", {
                 modelId: anatomicalModelsData["modelId"],
                 licensedItemId: anatomicalModelsData["licensedItemId"],
+                pricingPlanId: anatomicalModelsData["pricingPlanId"],
                 pricingUnitId: pricingUnit.getPricingUnitId(),
               });
             }, this);

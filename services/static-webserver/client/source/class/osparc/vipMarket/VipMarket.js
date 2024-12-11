@@ -55,9 +55,6 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           } else {
             curatedModel[key] = model[key];
           }
-          if (key === "ID") {
-            curatedModel["purchased"] = model["ID"] < 4;
-          }
         });
         anatomicalModels.push(curatedModel);
       });
@@ -67,7 +64,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
 
   members: {
     __anatomicalModels: null,
-    __licensedItems: null,
+    __purchasedItems: null,
     __anatomicalModelsModel: null,
 
     _createChildControlImpl: function(id) {
@@ -191,14 +188,30 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         .then(anatomicalModelsRaw => {
           const allAnatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
 
-          osparc.data.Resources.get("market")
-            .then(licensedItems => {
-              this.__licensedItems = licensedItems;
+          const store = osparc.store.Store.getInstance();
+          const contextWallet = store.getContextWallet();
+          if (!contextWallet) {
+            return;
+          }
+          const walletId = contextWallet.getWalletId();
+          const purchasesParams = {
+            url: {
+              walletId
+            }
+          };
+          Promise.all([
+            osparc.data.Resources.get("market"),
+            osparc.data.Resources.fetch("wallets", "purchases", purchasesParams),
+          ])
+            .then(values => {
+              const licensedItems = values[0];
+              const purchasedItems = values[1];
+              this.__purchasedItems = purchasedItems;
 
               this.__anatomicalModels = [];
               allAnatomicalModels.forEach(model => {
                 const modelId = model["ID"];
-                const licensedItem = this.__licensedItems.find(licItem => licItem["name"] == modelId);
+                const licensedItem = licensedItems.find(licItem => licItem["name"] == modelId);
                 if (licensedItem) {
                   const anatomicalModel = {};
                   anatomicalModel["modelId"] = model["ID"];
@@ -212,7 +225,14 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                   anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
                   anatomicalModel["pricingPlanId"] = licensedItem["pricingPlanId"];
                   // attach leased data
-                  anatomicalModel["purchased"] = model["purchased"];
+                  anatomicalModel["purchased"] = null; // default
+                  const purchasedItemFound = purchasedItems.find(purchasedItem => purchasedItem["licensedItemId"] === licensedItem["licensedItemId"])
+                  if (purchasedItemFound) {
+                    anatomicalModel["purchased"] = {
+                      expiresAt: new Date(purchasedItemFound["expireAt"]),
+                      numberOfSeats: purchasedItemFound["numOfSeats"],
+                    }
+                  }
                   this.__anatomicalModels.push(anatomicalModel);
                 }
               });
@@ -221,18 +241,42 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
 
               const anatomicModelDetails = this.getChildControl("models-details");
               anatomicModelDetails.addListener("modelPurchaseRequested", e => {
+                if (!contextWallet) {
+                  return;
+                }
                 const {
                   modelId,
                   licensedItemId,
+                  pricingPlanId,
                   pricingUnitId,
                 } = e.getData();
-                console.log("purchase", licensedItemId, pricingUnitId);
-                const found = this.__anatomicalModels.find(model => model["ID"] === modelId);
-                if (found) {
-                  found["purchased"] = true;
-                  this.__populateModels();
-                  anatomicModelDetails.setAnatomicalModelsData(found);
+                const params = {
+                  url: {
+                    licensedItemId
+                  },
+                  data: {
+                    "wallet_id": walletId,
+                    "pricing_plan_id": pricingPlanId,
+                    "pricing_unit_id": pricingUnitId,
+                    "num_of_seats": 1, // it might not be used
+                  },
                 }
+                osparc.data.Resources.fetch("market", "purchase", params)
+                  .then(() => {
+                    const found = this.__anatomicalModels.find(model => model["ID"] === modelId);
+                    if (found) {
+                      found["purchased"] = {
+                        expiresAt: new Date(),
+                        numberOfSeats: 1,
+                      };
+                      this.__populateModels();
+                      anatomicModelDetails.setAnatomicalModelsData(found);
+                    }
+                  })
+                  .catch(err => {
+                    const msg = err.message || this.tr("Cannot purchase model");
+                    osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                  });
               }, this);
 
               anatomicModelDetails.addListener("modelImportRequested", e => {
@@ -253,9 +297,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const sortModel = sortBy => {
         models.sort((a, b) => {
           // first criteria
-          if (b["purchased"] !== a["purchased"]) {
+          if (Boolean(b["purchased"]) !== Boolean(a["purchased"])) {
             // leased first
-            return b["purchased"] - a["purchased"];
+            return Boolean(b["purchased"]) - Boolean(a["purchased"]);
           }
           // second criteria
           if (sortBy) {
