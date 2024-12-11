@@ -252,25 +252,29 @@ qx.Class.define("osparc.widget.PersistentIframe", {
 
     __attachTriggerers: function() {
       this.postThemeSwitch = theme => {
-        const iframe = this._getIframeElement();
-        if (iframe) {
-          const iframeDomEl = iframe.getDomElement();
-          const iframeSource = iframe.getSource();
-          if (iframeDomEl && iframeSource) {
-            const msg = "osparc;theme=" + theme;
-            try {
-              iframeDomEl.contentWindow.postMessage(msg, iframeSource);
-            } catch (err) {
-              console.log(`Failed posting message ${msg} to iframe ${iframeSource}\n${err.message}`);
-            }
-          }
-        }
+        const msg = "osparc;theme=" + theme;
+        this.sendMessageToIframe(msg);
       };
 
       this.themeSwitchHandler = msg => {
         this.postThemeSwitch(msg.getData());
       };
       qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler);
+    },
+
+    sendMessageToIframe: function(msg) {
+      const iframe = this._getIframeElement();
+      if (iframe) {
+        const iframeDomEl = iframe.getDomElement();
+        const iframeSource = iframe.getSource();
+        if (iframeDomEl && iframeSource) {
+          try {
+            iframeDomEl.contentWindow.postMessage(msg, iframeSource);
+          } catch (err) {
+            console.log(`Failed posting message ${msg} to iframe ${iframeSource}\n${err.message}`);
+          }
+        }
+      }
     },
 
     __attachListeners: function() {
@@ -282,7 +286,9 @@ qx.Class.define("osparc.widget.PersistentIframe", {
             window.addEventListener("message", message => {
               const data = message.data;
               if (data) {
-                this.__handleIframeMessage(data);
+                const origin = new URL(message.origin).hostname; // nodeId.services.deployment
+                const nodeId = origin.split(".")[0];
+                this.__handleIframeMessage(data, nodeId);
               }
             });
           }
@@ -290,19 +296,27 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       }, this);
     },
 
-    __handleIframeMessage: function(data) {
+    __handleIframeMessage: function(data, nodeId) {
       if (data["type"] && data["message"]) {
-        if (data["type"] === "theme") {
-          // switch theme driven by the iframe
-          const message = data["message"];
-          if (message.includes("osparc;theme=")) {
-            const themeName = message.replace("osparc;theme=", "");
-            const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
-            const themeFound = validThemes.find(theme => theme.basename === themeName);
-            const themeManager = qx.theme.manager.Meta.getInstance();
-            if (themeFound !== themeManager.getTheme()) {
-              themeManager.setTheme(themeFound);
+        switch (data["type"]) {
+          case "theme": {
+            // switch theme driven by the iframe
+            const message = data["message"];
+            if (message.includes("osparc;theme=")) {
+              const themeName = message.replace("osparc;theme=", "");
+              const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
+              const themeFound = validThemes.find(theme => theme.basename === themeName);
+              const themeManager = qx.theme.manager.Meta.getInstance();
+              if (themeFound !== themeManager.getTheme()) {
+                themeManager.setTheme(themeFound);
+              }
             }
+            break;
+          }
+          case "openMarket": {
+            const category = data["message"] && data["message"]["category"];
+            osparc.vipMarket.MarketWindow.openWindow(nodeId, category);
+            break;
           }
         }
       }
