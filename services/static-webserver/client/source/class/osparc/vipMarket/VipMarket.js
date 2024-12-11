@@ -250,6 +250,12 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                   pricingPlanId,
                   pricingUnitId,
                 } = e.getData();
+                let numberOfSeats = null;
+                const pricingUnit = osparc.store.Pricing.getInstance().getPricingUnit(pricingPlanId, pricingUnitId);
+                if (pricingUnit) {
+                  const split = pricingUnit.getName().split(" ");
+                  numberOfSeats = parseInt(split[0]);
+                }
                 const params = {
                   url: {
                     licensedItemId
@@ -258,7 +264,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                     "wallet_id": walletId,
                     "pricing_plan_id": pricingPlanId,
                     "pricing_unit_id": pricingUnitId,
-                    "num_of_seats": 1, // it might not be used
+                    "num_of_seats": numberOfSeats, // this should go away
                   },
                 }
                 osparc.data.Resources.fetch("market", "purchase", params)
@@ -266,8 +272,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                     const found = this.__anatomicalModels.find(model => model["ID"] === modelId);
                     if (found) {
                       found["purchased"] = {
-                        expiresAt: new Date(),
-                        numberOfSeats: 1,
+                        expiresAt: new Date(), // get this info from the response
+                        numberOfSeats, // get this info from the response
                       };
                       this.__populateModels();
                       anatomicModelDetails.setAnatomicalModelsData(found);

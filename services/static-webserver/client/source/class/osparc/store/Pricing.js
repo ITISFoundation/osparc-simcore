@@ -106,6 +106,22 @@ qx.Class.define("osparc.store.Pricing", {
       return this.pricingPlansCached.find(f => f.getPricingPlanId() === pricingPlanId);
     },
 
+    getPricingUnits: function(pricingPlanId) {
+      const pricingPlan = this.getPricingPlan(pricingPlanId);
+      if (pricingPlan) {
+        return pricingPlan.getPricingUnits();
+      }
+      return null;
+    },
+
+    getPricingUnit: function(pricingPlanId, pricingUnitId) {
+      const pricingPlan = this.getPricingPlan(pricingPlanId);
+      if (pricingPlan) {
+        return pricingPlan.getPricingUnits().find(pricingUnit => pricingUnit.getPricingUnitId() === pricingUnitId);
+      }
+      return null;
+    },
+
     __addToCache: function(pricingPlanData) {
       let pricingPlan = this.pricingPlansCached.find(f => f.getPricingPlanId() === pricingPlanData["pricingPlanId"]);
       if (pricingPlan) {
