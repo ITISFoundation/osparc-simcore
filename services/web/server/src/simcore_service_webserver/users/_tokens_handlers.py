@@ -2,7 +2,7 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.users import MyTokenCreate
+from models_library.api_schemas_webserver.users import MyTokenCreate, MyTokenGet
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -46,7 +46,7 @@ def _handle_tokens_errors(handler: Handler):
 async def list_tokens(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     all_tokens = await _tokens.list_tokens(request.app, req_ctx.user_id)
-    return envelope_json_response(all_tokens)
+    return envelope_json_response([MyTokenGet.from_model(t) for t in all_tokens])
 
 
 @routes.post(f"/{API_VTAG}/me/tokens", name="create_token")
@@ -56,8 +56,12 @@ async def list_tokens(request: web.Request) -> web.Response:
 async def create_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     token_create = await parse_request_body_as(MyTokenCreate, request)
-    await _tokens.create_token(request.app, req_ctx.user_id, token_create)
-    return envelope_json_response(token_create, web.HTTPCreated)
+
+    token = await _tokens.create_token(
+        request.app, req_ctx.user_id, token_create.to_model()
+    )
+
+    return envelope_json_response(MyTokenGet.from_model(token), web.HTTPCreated)
 
 
 class _TokenPathParams(BaseModel):
@@ -71,10 +75,12 @@ class _TokenPathParams(BaseModel):
 async def get_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     req_path_params = parse_request_path_parameters_as(_TokenPathParams, request)
+
     token = await _tokens.get_token(
         request.app, req_ctx.user_id, req_path_params.service
     )
-    return envelope_json_response(token)
+
+    return envelope_json_response(MyTokenGet.from_model(token))
 
 
 @routes.delete(f"/{API_VTAG}/me/tokens/{{service}}", name="delete_token")
@@ -84,5 +90,7 @@ async def get_token(request: web.Request) -> web.Response:
 async def delete_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     req_path_params = parse_request_path_parameters_as(_TokenPathParams, request)
+
     await _tokens.delete_token(request.app, req_ctx.user_id, req_path_params.service)
+
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
