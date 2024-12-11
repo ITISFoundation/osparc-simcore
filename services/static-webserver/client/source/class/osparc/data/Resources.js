@@ -1254,14 +1254,18 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
-       * MARKET
+       * LICENSED ITEMS
        */
-      "market": {
-        useCache: false,
+      "licensedItems": {
+        useCache: true,
         endpoints: {
           get: {
             method: "GET",
             url: statics.API + "/catalog/licensed-items"
+          },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/catalog/licensed-items?offset={offset}&limit={limit}"
           },
           purchase: {
             method: "POST",

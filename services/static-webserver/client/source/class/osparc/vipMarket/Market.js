@@ -26,29 +26,32 @@ qx.Class.define("osparc.vipMarket.Market", {
     });
     this.addWidgetOnTopOfTheTabs(miniWallet);
 
-    [{
-      category: "humanWhole",
-      label: "Humans",
-      icon: "@FontAwesome5Solid/users/20",
-      url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanWholeBody",
-    }, {
-      category: "humanRegion",
-      label: "Humans (Region)",
-      icon: "@FontAwesome5Solid/users/20",
-      url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanBodyRegion",
-    }, {
-      category: "animalWhole",
-      label: "Animals",
-      icon: "@FontAwesome5Solid/users/20",
-      url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnimalWholeBody",
-    }, {
-      category: "compPhantom",
-      label: "Phantoms",
-      icon: "@FontAwesome5Solid/users/20",
-      url: "https://speag.swiss/PD_DirectDownload/getDownloadableItems/ComputationalPhantom",
-    }].forEach(marketInfo => {
-      this.__buildViPMarketPage(marketInfo);
-    });
+    osparc.data.Resources.getInstance().getAllPages("licensedItems")
+      .then(() => {
+        [{
+          category: "humanWhole",
+          label: "Humans",
+          icon: "@FontAwesome5Solid/users/20",
+          url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanWholeBody",
+        }, {
+          category: "humanRegion",
+          label: "Humans (Region)",
+          icon: "@FontAwesome5Solid/users/20",
+          url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanBodyRegion",
+        }, {
+          category: "animalWhole",
+          label: "Animals",
+          icon: "@FontAwesome5Solid/users/20",
+          url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnimalWholeBody",
+        }, {
+          category: "compPhantom",
+          label: "Phantoms",
+          icon: "@FontAwesome5Solid/users/20",
+          url: "https://speag.swiss/PD_DirectDownload/getDownloadableItems/ComputationalPhantom",
+        }].forEach(marketInfo => {
+          this.__buildViPMarketPage(marketInfo);
+        });
+      });
   },
 
   properties: {

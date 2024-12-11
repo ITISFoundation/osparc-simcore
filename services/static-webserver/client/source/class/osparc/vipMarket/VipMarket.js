@@ -208,7 +208,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             }
           };
           Promise.all([
-            osparc.data.Resources.get("market"),
+            osparc.data.Resources.get("licensedItems"),
             osparc.data.Resources.fetch("wallets", "purchases", purchasesParams),
           ])
             .then(values => {
@@ -277,7 +277,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                     "num_of_seats": numberOfSeats, // this should go away
                   },
                 }
-                osparc.data.Resources.fetch("market", "purchase", params)
+                osparc.data.Resources.fetch("licensedItems", "purchase", params)
                   .then(() => {
                     const expirationDate = new Date();
                     expirationDate.setMonth(expirationDate.getMonth() + 1); // rented for one month
