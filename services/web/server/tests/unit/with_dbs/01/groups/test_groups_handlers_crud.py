@@ -10,7 +10,11 @@ from typing import AsyncIterable
 
 import pytest
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_webserver.groups import GroupGet, MyGroupsGet
+from models_library.api_schemas_webserver.groups import (
+    GroupGet,
+    GroupUserGet,
+    MyGroupsGet,
+)
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
@@ -19,6 +23,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
 )
 from servicelib.aiohttp import status
+from servicelib.status_codes_utils import is_2xx_success
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
 
@@ -219,9 +224,11 @@ async def test_group_creation_workflow(
     assert f"{group.gid}" in error["message"]
 
 
+@pytest.fixture
 async def other_user(
     client: TestClient, logged_user: UserInfoDict, is_private_user: bool
 ) -> AsyncIterable[UserInfoDict]:
+    # new user different from logged_user
     async with NewUser(
         {
             "name": f"other_than_{logged_user['name']}",
@@ -233,6 +240,9 @@ async def other_user(
         yield user
 
 
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-simcore/pull/6917"
+)
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize("is_private_user", [True, False])
 @pytest.mark.parametrize("add_user_by", ["user_email", "user_id", "user_name"])
@@ -248,13 +258,15 @@ async def test_create_organization_and_add_users(
     assert logged_user["id"] != 0
     assert logged_user["role"] == user_role.value
 
+    # CREATE GROUP
     url = client.app.router["create_group"].url_for()
-    new_group_data = {
-        "label": "Amies sans-frontiers",
-        "description": "A desperate attempt to make some friends",
-    }
-
-    resp = await client.post(f"{url}", json=new_group_data)
+    resp = await client.post(
+        f"{url}",
+        json={
+            "label": "Amies sans-frontiers",
+            "description": "A desperate attempt to make some friends",
+        },
+    )
     data, error = await assert_status(resp, status.HTTP_201_CREATED)
 
     assert not error
@@ -269,17 +281,17 @@ async def test_create_organization_and_add_users(
     assert user_name != logged_user["name"]
     assert user_email != logged_user["email"]
 
-    # add user
+    # ADD new user to GROUP
     url = client.app.router["add_group_user"].url_for(gid=f"{group.gid}")
 
     expected_status = status.HTTP_204_NO_CONTENT
     match add_user_by:
         case "user_email":
-            param = {"email": user_name}
+            param = {"email": user_email}
             if is_private_user:
-                expected_status = status.HTTP_409_CONFLICT
+                expected_status = status.HTTP_404_NOT_FOUND
         case "user_id":
-            param = {"uid": user_name}
+            param = {"uid": user_id}
         case "user_name":
             param = {"userName": user_name}
         case _:
@@ -288,8 +300,18 @@ async def test_create_organization_and_add_users(
     response = await client.post(f"{url}", json=param)
     await assert_status(response, expected_status)
 
-    url = client.app.router["delete_group_user"].url_for(
-        gid=f"{group.gid}", uid=f"{user_id}"
-    )
-    response = await client.delete(f"{url}")
-    await assert_status(response, status.HTTP_204_NO_CONTENT)
+    # LIST USERS in GROUP
+    url = client.app.router["get_all_group_users"].url_for(gid=f"{group.gid}")
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+
+    group_members = TypeAdapter(list[GroupUserGet]).validate_python(data)
+    if is_2xx_success(expected_status):
+        assert user_id in [
+            u.id for u in group_members
+        ], "failed to add other-user to the group!"
+
+    # DELETE GROUP
+    url = client.app.router["delete_group"].url_for(gid=f"{group.gid}")
+    resp = await client.delete(f"{url}")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
