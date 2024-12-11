@@ -13,6 +13,8 @@ from sqlalchemy.sql import func
 from ._common import RefActions
 from .base import metadata
 
+__all__: tuple[str, ...] = ("GroupType",)
+
 groups = sa.Table(
     "groups",
     metadata,
