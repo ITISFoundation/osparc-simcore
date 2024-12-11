@@ -15,9 +15,9 @@ from models_library.licensed_items import (
 from models_library.rest_ordering import OrderBy
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
-from simcore_service_webserver.catalog.licenses import _licensed_items_db
-from simcore_service_webserver.catalog.licenses.errors import LicensedItemNotFoundError
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.licenses import _licensed_items_db
+from simcore_service_webserver.licenses.errors import LicensedItemNotFoundError
 from simcore_service_webserver.projects.models import ProjectDict
 
 
