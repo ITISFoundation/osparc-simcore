@@ -640,7 +640,7 @@ qx.Class.define("osparc.store.Store", {
         }
         const classifierPromises = [];
         orgs.forEach(org => {
-          classifierPromises.push(this.__getOrgClassifiers(org["gid"], !reload));
+          classifierPromises.push(this.__getOrgClassifiers(org.getGroupId(), !reload));
         });
         Promise.all(classifierPromises)
           .then(orgsClassifiersMD => {
