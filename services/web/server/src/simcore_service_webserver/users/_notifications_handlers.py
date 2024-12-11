@@ -26,7 +26,7 @@ from ._notifications import (
     UserNotificationPatch,
     get_notification_key,
 )
-from ._schemas import UsersRequestContext
+from .common._schemas import UsersRequestContext
 from .schemas import Permission, PermissionGet
 
 _logger = logging.getLogger(__name__)

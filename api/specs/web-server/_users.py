@@ -25,8 +25,8 @@ from simcore_service_webserver.users._notifications import (
 from simcore_service_webserver.users._notifications_handlers import (
     _NotificationPathParams,
 )
-from simcore_service_webserver.users._schemas import PreRegisteredUserGet
 from simcore_service_webserver.users._tokens_handlers import _TokenPathParams
+from simcore_service_webserver.users.common._schemas import PreRegisteredUserGet
 from simcore_service_webserver.users.schemas import (
     PermissionGet,
     ThirdPartyToken,

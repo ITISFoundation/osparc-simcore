@@ -37,13 +37,13 @@ from ..db.plugin import get_asyncpg_engine
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _users_repository
-from ._models import ToUserUpdateDB
 from ._preferences_api import get_frontend_user_preferences_aggregation
 from ._users_service import (
     get_user_credentials,
     get_user_invoice_address,
     set_user_as_deleted,
 )
+from .common._models import ToUserUpdateDB
 from .exceptions import (
     MissingGroupExtraPropertiesForProductError,
     UserNameDuplicateError,
