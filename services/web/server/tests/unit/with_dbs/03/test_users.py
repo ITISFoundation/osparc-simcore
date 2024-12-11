@@ -18,7 +18,7 @@ from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
-from models_library.api_schemas_webserver.users import ProfileGet
+from models_library.api_schemas_webserver.users import MyProfileGet
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -117,7 +117,7 @@ async def test_get_profile(
     resp = await client.get(f"{url}")
     data, error = await assert_status(resp, status.HTTP_200_OK)
 
-    resp_model = Envelope[ProfileGet].model_validate(await resp.json())
+    resp_model = Envelope[MyProfileGet].model_validate(await resp.json())
 
     assert resp_model.data.model_dump(**RESPONSE_MODEL_POLICY, mode="json") == data
     assert resp_model.error is None
@@ -202,7 +202,7 @@ async def test_profile_workflow(
     url = client.app.router["get_my_profile"].url_for()
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    my_profile = ProfileGet.model_validate(data)
+    my_profile = MyProfileGet.model_validate(data)
 
     url = client.app.router["update_my_profile"].url_for()
     resp = await client.patch(
@@ -218,7 +218,7 @@ async def test_profile_workflow(
     url = client.app.router["get_my_profile"].url_for()
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    updated_profile = ProfileGet.model_validate(data)
+    updated_profile = MyProfileGet.model_validate(data)
 
     assert updated_profile.first_name != my_profile.first_name
     assert updated_profile.last_name == my_profile.last_name

@@ -64,6 +64,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.hypothesis_type_strategies",
+    "pytest_simcore.openapi_specs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
@@ -74,8 +75,8 @@ pytest_plugins = [
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
     "pytest_simcore.simcore_service_library_fixtures",
     "pytest_simcore.simcore_services",
+    "pytest_simcore.simcore_webserver_groups_fixtures",
     "pytest_simcore.socketio_client",
-    "pytest_simcore.openapi_specs",
 ]
 
 

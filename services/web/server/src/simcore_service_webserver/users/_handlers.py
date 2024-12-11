@@ -2,7 +2,7 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.users import ProfileGet, ProfileUpdate
+from models_library.api_schemas_webserver.users import MyProfileGet, MyProfilePatch
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
@@ -74,7 +74,7 @@ def _handle_users_exceptions(handler: Handler):
 @_handle_users_exceptions
 async def get_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
-    profile: ProfileGet = await api.get_user_profile(
+    profile: MyProfileGet = await api.get_user_profile(
         request.app, req_ctx.user_id, req_ctx.product_name
     )
     return envelope_json_response(profile)
@@ -89,7 +89,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
 @_handle_users_exceptions
 async def update_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
-    profile_update = await parse_request_body_as(ProfileUpdate, request)
+    profile_update = await parse_request_body_as(MyProfilePatch, request)
 
     await api.update_user_profile(
         request.app, user_id=req_ctx.user_id, update=profile_update

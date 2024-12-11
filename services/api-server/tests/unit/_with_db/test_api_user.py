@@ -9,7 +9,7 @@ import httpx
 import pytest
 import respx
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.users import ProfileGet as WebProfileGet
+from models_library.api_schemas_webserver.users import MyProfileGet as WebProfileGet
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.core.settings import ApplicationSettings
