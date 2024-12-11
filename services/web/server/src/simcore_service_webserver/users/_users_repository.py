@@ -77,14 +77,12 @@ async def list_user_permissions(
         name="override_services_specifications",
         allowed=False,
     )
+    engine = get_asyncpg_engine(app)
     with contextlib.suppress(GroupExtraPropertiesNotFoundError):
-        async with pass_or_acquire_connection(
-            get_asyncpg_engine(app), connection
-        ) as conn:
+        async with pass_or_acquire_connection(engine, connection) as conn:
             user_group_extra_properties = (
-                # TODO: adapt to asyncpg
-                await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-                    conn, user_id=user_id, product_name=product_name
+                await GroupExtraPropertiesRepo.get_aggregated_properties_for_user_v2(
+                    engine, conn, user_id=user_id, product_name=product_name
                 )
             )
         override_services_specifications.allowed = (
