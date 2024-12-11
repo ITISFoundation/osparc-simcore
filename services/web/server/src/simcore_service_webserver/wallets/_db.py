@@ -6,8 +6,9 @@
 import logging
 
 from aiohttp import web
+from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.wallet_to_groups import wallet_to_groups

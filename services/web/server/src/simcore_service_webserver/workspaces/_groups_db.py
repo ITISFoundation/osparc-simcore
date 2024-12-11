@@ -8,7 +8,7 @@ import logging
 from datetime import datetime
 
 from aiohttp import web
-from models_library.users import GroupID
+from models_library.groups import GroupID
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, ConfigDict
 from simcore_postgres_database.models.workspaces_access_rights import (

@@ -10,7 +10,8 @@ from typing import Any
 
 import pytest
 from fastapi import FastAPI
-from models_library.users import GroupID, UserID
+from models_library.groups import GroupID
+from models_library.users import UserID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
