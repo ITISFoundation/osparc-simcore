@@ -209,7 +209,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       }));
 
       anatomicalModelsData["purchases"].forEach(purchase => {
-        const seatsText = "seat" + purchase["numberOfSeats"] > 1 ? "s" : "";
+        const seatsText = "seat" + (purchase["numberOfSeats"] > 1 ? "s" : "");
         const entry = new qx.ui.basic.Label().set({
           value: `${purchase["numberOfSeats"]} ${seatsText} avaialable until ${osparc.utils.Utils.formatDate(purchase["expiresAt"])}`
         });
