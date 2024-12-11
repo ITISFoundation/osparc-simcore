@@ -22,7 +22,10 @@ class UserNotFoundError(UsersBaseError):
 
 
 class UserNameDuplicateError(UsersBaseError):
-    msg_template = "Username {user_name} is already in use. Violates unique constraint"
+    msg_template = (
+        "The username '{user_name}' is already taken. "
+        "Consider using '{alternative_user_name}' instead."
+    )
 
 
 class TokenNotFoundError(UsersBaseError):
