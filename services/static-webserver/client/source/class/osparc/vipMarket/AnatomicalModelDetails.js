@@ -21,7 +21,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.VBox(20);
+    const layout = new qx.ui.layout.VBox(15);
     this._setLayout(layout);
 
     this.__poplulateLayout();
@@ -49,11 +49,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       if (anatomicalModelsData) {
         const modelInfo = this.__createModelInfo(anatomicalModelsData);
         const pricingUnits = this.__createPricingUnits(anatomicalModelsData);
-        const purchasesSection = this.__createPurchasesSection(anatomicalModelsData);
-        const importButton = this.__createImportButton(anatomicalModelsData);
+        const importButton = this.__createImportSection(anatomicalModelsData);
         this._add(modelInfo);
         this._add(pricingUnits);
-        this._add(purchasesSection);
         this._add(importButton);
       } else {
         const selectModelLabel = new qx.ui.basic.Label().set({
@@ -205,19 +203,19 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       return pricingUnitsLayout;
     },
 
-    __createPurchasesSection: function(anatomicalModelsData) {
-      console.log("anatomicalModelsData", anatomicalModelsData);
-      const purchasesSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+    __createImportSection: function(anatomicalModelsData) {
+      const importSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignX: "center"
       }));
-      anatomicalModelsData["purchases"].forEach(purchase => {
-        const entry = new qx.ui.basic.Label("hey");
-        purchasesSection.push(entry);
-      });
-      return purchasesSection;
-    },
 
-    __createImportButton: function(anatomicalModelsData) {
+      anatomicalModelsData["purchases"].forEach(purchase => {
+        const seatsText = "seat" + purchase["numberOfSeats"] > 1 ? "s" : "";
+        const entry = new qx.ui.basic.Label().set({
+          value: `${purchase["numberOfSeats"]} ${seatsText} avaialable until ${osparc.utils.Utils.formatDate(purchase["expiresAt"])}`
+        });
+        importSection.add(entry);
+      });
+
       const importButton = new qx.ui.form.Button().set({
         label: this.tr("Import"),
         appearance: "strong-button",
@@ -231,7 +229,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
           modelId: anatomicalModelsData["modelId"]
         });
       }, this);
-      return importButton;
+      importSection.add(importButton);
+      return importSection;
     },
   }
 });
