@@ -47,7 +47,7 @@ class WalletGetWithAvailableCredits(WalletGet):
         json_schema_extra={
             "examples": [
                 {
-                    **WalletGet.model_config["json_schema_extra"]["examples"][0],
+                    **WalletGet.model_config["json_schema_extra"]["examples"][0],  # type: ignore
                     "available_credits": 10.5,
                 }
             ]
