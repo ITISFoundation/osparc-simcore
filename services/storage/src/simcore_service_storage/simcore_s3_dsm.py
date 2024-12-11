@@ -528,8 +528,13 @@ class SimcoreS3DataManager(BaseDataManager):
                     raise FileAccessRightError(access_right="delete", file_id=file_id)
 
             enclosing_file = await find_enclosing_file(conn, user_id, file_id)
-            if enclosing_file and enclosing_file.file_id == file_id:
-                await db_file_meta_data.delete(conn, [file_id])
+            if enclosing_file:
+                if enclosing_file.file_id == file_id:
+                    await db_file_meta_data.delete(conn, [file_id])
+                else:
+                    await db_file_meta_data.upsert(
+                        conn, self._update_database_from_storage(enclosing_file)
+                    )
 
         await get_s3_client(self.app).delete_objects_recursively(
             bucket=self.simcore_bucket_name,
