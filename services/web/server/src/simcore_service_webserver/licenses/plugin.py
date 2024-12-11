@@ -7,7 +7,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import _licensed_items_handlers
+from . import _licensed_items_handlers, _licensed_items_purchases_handlers
 
 _logger = logging.getLogger(__name__)
 
@@ -24,3 +24,4 @@ def setup_licenses(app: web.Application):
 
     # routes
     app.router.add_routes(_licensed_items_handlers.routes)
+    app.router.add_routes(_licensed_items_purchases_handlers.routes)
