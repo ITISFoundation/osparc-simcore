@@ -231,6 +231,7 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     getOrganization: function(groupId) {
+      groupId = parseInt(groupId);
       if (groupId && groupId in this.getOrganizations()) {
         return this.getOrganizations()[groupId];
       }
