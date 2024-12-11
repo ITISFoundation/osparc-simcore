@@ -86,8 +86,6 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
             follow_redirects=True,
         )
 
-    @retry_on_errors()
-    @expect_status(status.HTTP_200_OK)
     async def delete_dynamic_service(
         self,
         *,
