@@ -33,6 +33,13 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
   },
 
   properties: {
+    openBy: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeOpenBy",
+    },
+
     anatomicalModelsData: {
       check: "Object",
       init: null,
@@ -223,6 +230,9 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         center: true,
         maxWidth: 200,
         alignX: "center",
+      });
+      this.bind("openBy", importButton, "visibility", {
+        converter: openBy => openBy ? "visible" : "excluded"
       });
       importButton.addListener("execute", () => {
         this.fireDataEvent("modelImportRequested", {
