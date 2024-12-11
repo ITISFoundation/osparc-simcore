@@ -10636,7 +10636,7 @@ components:
             read: true
             write: false
           description: Open to all users
-          gid: '0'
+          gid: 1
           label: All
         me:
           accessRights:
