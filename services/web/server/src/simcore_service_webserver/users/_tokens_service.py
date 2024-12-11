@@ -4,7 +4,6 @@
 """
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.api_schemas_webserver.users import UserThirdPartyToken
 from models_library.users import UserID, UserThirdPartyToken
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from sqlalchemy import and_, literal_column

@@ -18,7 +18,12 @@ from ..users import (
     UserPermission,
     UserThirdPartyToken,
 )
-from ._base import InputSchema, InputSchemaWithoutCamelCase, OutputSchema
+from ._base import (
+    InputSchema,
+    InputSchemaWithoutCamelCase,
+    OutputSchema,
+    OutputSchemaWithoutCamelCase,
+)
 from .groups import MyGroupsGet
 from .users_preferences import AggregatedPreferences
 
@@ -224,7 +229,7 @@ class MyTokenCreate(InputSchemaWithoutCamelCase):
         )
 
 
-class MyTokenGet(OutputSchema):
+class MyTokenGet(OutputSchemaWithoutCamelCase):
     service: str
     token_key: UUID
     token_secret: Annotated[
