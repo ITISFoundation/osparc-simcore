@@ -26,7 +26,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let image = osparc.utils.Avatar.getUrl(userEmail);
+ *   let image = osparc.utils.Avatar.emailToThumbnail(userEmail);
  * </pre>
  */
 
@@ -34,13 +34,16 @@ qx.Class.define("osparc.utils.Avatar", {
   type: "static",
 
   statics: {
-    emailToThumbnail: function(email) {
-      return this.getUrl(email, 32)
+    emailToThumbnail: function(email, username) {
+      return this.__getUrl(email, username, 32);
     },
 
-    getUrl: function(email = "", size = 100, defIcon = "identicon", rating = "g") {
+    __getUrl: function(email, username, size = 100) {
+      if (email == null) {
+        return `https://ui-avatars.com/api/${username}/${size}`;
+      }
       // MD5 (Message-Digest Algorithm) by WebToolkit
-      let MD5 = function(s) {
+      const MD5 = function(s) {
         function L(k, d) {
           return (k << d) | (k >>> (32 - d));
         }
@@ -257,8 +260,10 @@ qx.Class.define("osparc.utils.Avatar", {
         return i.toLowerCase();
       };
 
-      return "https://secure.gravatar.com/avatar/" + MD5(email) + "?s=" + size + "&d=" + defIcon + "&r=" + rating;
-    }
-
+      const emailHash = MD5(email);
+      const defaultImageUrl = `https://ui-avatars.com/api/${username}/${size}/`;
+      // return `https://www.gravatar.com/avatar/${emailHash}?d=${defaultImageUrl}&s=${size}&r=g`;
+      return `https://www.gravatar.com/avatar/${emailHash}?d=${defaultImageUrl}&s=${size}`;
+    },
   }
 });

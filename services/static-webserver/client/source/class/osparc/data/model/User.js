@@ -39,7 +39,7 @@ qx.Class.define("osparc.data.model.User", {
     if (userData["login"]) {
       description += userData["login"];
     }
-    const thumbnail = osparc.utils.Avatar.emailToThumbnail(userData["login"]);
+    const thumbnail = osparc.utils.Avatar.emailToThumbnail(userData["login"], userData["userName"]);
     this.set({
       userId: parseInt(userData["id"]),
       groupId: parseInt(userData["gid"]),
