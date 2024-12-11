@@ -5,7 +5,6 @@ from aiohttp import web
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
-    PreRegisteredUserGet,
     SearchQueryParams,
 )
 from servicelib.aiohttp import status
@@ -23,7 +22,7 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _users_service, api
 from ._constants import FMSG_MISSING_CONFIG_WITH_OEC
-from ._schemas import UsersRequestContext
+from ._schemas import PreRegisteredUserGet, UsersRequestContext
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,

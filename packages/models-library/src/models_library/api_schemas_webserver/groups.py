@@ -2,7 +2,6 @@ from contextlib import suppress
 from typing import Annotated, Any, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.groups import EVERYONE_GROUP_ID
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -17,6 +16,7 @@ from pydantic import (
 
 from ..emails import LowerCaseEmailStr
 from ..groups import (
+    EVERYONE_GROUP_ID,
     AccessRightsDict,
     Group,
     GroupID,

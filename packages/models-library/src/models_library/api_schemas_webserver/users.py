@@ -1,29 +1,18 @@
 import re
-import sys
-from contextlib import suppress
 from datetime import date
 from enum import Enum
-from typing import Annotated, Any, Final, Literal
+from typing import Annotated, Any, Literal
 
-import pycountry
-from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
-from models_library.api_schemas_webserver.groups import MyGroupsGet
-from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
-from models_library.basic_types import IDStr
-from models_library.emails import LowerCaseEmailStr
-from models_library.products import ProductName
-from models_library.users import FirstNameStr, LastNameStr, UserID
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    ValidationInfo,
-    field_validator,
-    model_validator,
-)
-from simcore_postgres_database.models.users import UserStatus
+from common_library.users_enums import UserStatus
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
+from ..basic_types import IDStr
+from ..emails import LowerCaseEmailStr
+from ..products import ProductName
+from ..users import FirstNameStr, LastNameStr, UserID
 from ._base import InputSchema, OutputSchema
+from .groups import MyGroupsGet
+from .users_preferences import AggregatedPreferences
 
 
 class MyProfilePrivacyGet(OutputSchema):
@@ -187,86 +176,3 @@ class UserGet(OutputSchema):
             msg = f"{registered=} and {status=} is not allowed"
             raise ValueError(msg)
         return v
-
-
-MAX_BYTES_SIZE_EXTRAS: Final[int] = 512
-
-
-class PreRegisteredUserGet(InputSchema):
-    first_name: str
-    last_name: str
-    email: LowerCaseEmailStr
-    institution: str | None = Field(
-        default=None, description="company, university, ..."
-    )
-    phone: str | None
-    # billing details
-    address: str
-    city: str
-    state: str | None = Field(default=None)
-    postal_code: str
-    country: str
-    extras: Annotated[
-        dict[str, Any],
-        Field(
-            default_factory=dict,
-            description="Keeps extra information provided in the request form. At most MAX_NUM_EXTRAS fields",
-        ),
-    ]
-
-    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
-
-    @model_validator(mode="before")
-    @classmethod
-    def _preprocess_aliases_and_extras(cls, values):
-        # multiple aliases for "institution"
-        alias_by_priority = ("companyName", "company", "university", "universityName")
-        if "institution" not in values:
-
-            for alias in alias_by_priority:
-                if alias in values:
-                    values["institution"] = values.pop(alias)
-
-        # collect extras
-        extra_fields = {}
-        field_names_and_aliases = (
-            set(cls.model_fields.keys())
-            | {f.alias for f in cls.model_fields.values() if f.alias}
-            | set(alias_by_priority)
-        )
-        for key, value in values.items():
-            if key not in field_names_and_aliases:
-                extra_fields[key] = value
-                if sys.getsizeof(extra_fields) > MAX_BYTES_SIZE_EXTRAS:
-                    extra_fields.pop(key)
-                    break
-
-        for key in extra_fields:
-            values.pop(key)
-
-        values.setdefault("extras", {})
-        values["extras"].update(extra_fields)
-
-        return values
-
-    @field_validator("first_name", "last_name", "institution", mode="before")
-    @classmethod
-    def _pre_normalize_given_names(cls, v):
-        if v:
-            with suppress(Exception):  # skip if funny characters
-                name = re.sub(r"\s+", " ", v)
-                return re.sub(r"\b\w+\b", lambda m: m.group(0).capitalize(), name)
-        return v
-
-    @field_validator("country", mode="before")
-    @classmethod
-    def _pre_check_and_normalize_country(cls, v):
-        if v:
-            try:
-                return pycountry.countries.lookup(v).name
-            except LookupError as err:
-                raise ValueError(v) from err
-        return v
-
-
-assert set(PreRegisteredUserGet.model_fields).issubset(UserGet.model_fields)  # nosec
