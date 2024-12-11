@@ -10118,10 +10118,12 @@ components:
       properties:
         id:
           anyOf:
-          - type: string
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
           - type: 'null'
           title: Id
-          description: the user id
+          description: the user's id
         userName:
           type: string
           maxLength: 100
@@ -10129,7 +10131,9 @@ components:
           title: Username
         gid:
           anyOf:
-          - type: string
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
           - type: 'null'
           title: Gid
           description: the user primary gid
