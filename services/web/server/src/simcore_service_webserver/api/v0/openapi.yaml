@@ -3105,6 +3105,7 @@ paths:
     get:
       tags:
       - licenses
+      - wallets
       summary: List Wallet Licensed Items Purchases
       operationId: list_wallet_licensed_items_purchases
       parameters:
@@ -3145,7 +3146,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_LicensedItemPurchaseGet__'
+                $ref: '#/components/schemas/Page_LicensedItemPurchaseGet_'
         '404':
           content:
             application/json:
@@ -8869,22 +8870,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[LicensedItemGet]]
-    Envelope_list_LicensedItemPurchaseGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/LicensedItemPurchaseGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[LicensedItemPurchaseGet]]
     Envelope_list_OsparcCreditsAggregatedByServiceGet__:
       properties:
         data:
@@ -11431,6 +11416,24 @@ components:
       - _links
       - data
       title: Page[CheckpointApiModel]
+    Page_LicensedItemPurchaseGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/LicensedItemPurchaseGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[LicensedItemPurchaseGet]
     Page_PaymentTransaction_:
       properties:
         _meta:
