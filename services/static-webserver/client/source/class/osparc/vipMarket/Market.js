@@ -29,22 +29,22 @@ qx.Class.define("osparc.vipMarket.Market", {
     osparc.data.Resources.getInstance().getAllPages("licensedItems")
       .then(() => {
         [{
-          category: "humanWhole",
+          category: "human",
           label: "Humans",
           icon: "@FontAwesome5Solid/users/20",
           url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanWholeBody",
         }, {
-          category: "humanRegion",
+          category: "human_region",
           label: "Humans (Region)",
           icon: "@FontAwesome5Solid/users/20",
           url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanBodyRegion",
         }, {
-          category: "animalWhole",
+          category: "animal",
           label: "Animals",
           icon: "@FontAwesome5Solid/users/20",
           url: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnimalWholeBody",
         }, {
-          category: "compPhantom",
+          category: "phantom",
           label: "Phantoms",
           icon: "@FontAwesome5Solid/users/20",
           url: "https://speag.swiss/PD_DirectDownload/getDownloadableItems/ComputationalPhantom",
