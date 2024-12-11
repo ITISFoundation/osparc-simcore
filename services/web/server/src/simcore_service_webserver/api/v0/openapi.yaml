@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.49.0
+  version: 0.50.0
 servers:
 - url: ''
   description: webserver
@@ -2413,108 +2413,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
-  /v0/catalog/licensed-items:
-    get:
-      tags:
-      - licenses
-      - catalog
-      summary: List Licensed Items
-      operationId: list_licensed_items
-      parameters:
-      - name: order_by
-        in: query
-        required: false
-        schema:
-          type: string
-          contentMediaType: application/json
-          contentSchema: {}
-          default: '{"field":"modified","direction":"desc"}'
-          title: Order By
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 20
-          title: Limit
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_LicensedItemGet__'
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-  /v0/catalog/licensed-items/{licensed_item_id}:
-    get:
-      tags:
-      - licenses
-      - catalog
-      summary: Get Licensed Item
-      operationId: get_licensed_item
-      parameters:
-      - name: licensed_item_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Licensed Item Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_LicensedItemGet_'
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-  /v0/catalog/licensed-items/{licensed_item_id}:purchase:
-    post:
-      tags:
-      - licenses
-      - catalog
-      summary: Purchase Licensed Item
-      operationId: purchase_licensed_item
-      parameters:
-      - name: licensed_item_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Licensed Item Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LicensedItemsBodyParams'
-      responses:
-        '204':
-          description: Successful Response
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
   /v0/computations/{project_id}:
     get:
       tags:
@@ -3083,6 +2981,277 @@ paths:
           content:
             application/json:
               schema: {}
+  /v0/catalog/licensed-items:
+    get:
+      tags:
+      - licenses
+      - catalog
+      summary: List Licensed Items
+      operationId: list_licensed_items
+      parameters:
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"modified","direction":"desc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_LicensedItemGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+  /v0/catalog/licensed-items/{licensed_item_id}:
+    get:
+      tags:
+      - licenses
+      - catalog
+      summary: Get Licensed Item
+      operationId: get_licensed_item
+      parameters:
+      - name: licensed_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Licensed Item Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_LicensedItemGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+  /v0/catalog/licensed-items/{licensed_item_id}:purchase:
+    post:
+      tags:
+      - licenses
+      - catalog
+      summary: Purchase Licensed Item
+      operationId: purchase_licensed_item
+      parameters:
+      - name: licensed_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Licensed Item Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicensedItemsBodyParams'
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+  /v0/wallets/{wallet_id}/licensed-items-purchases:
+    get:
+      tags:
+      - licenses
+      - wallets
+      summary: List Wallet Licensed Items Purchases
+      operationId: list_wallet_licensed_items_purchases
+      parameters:
+      - name: wallet_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Wallet Id
+          minimum: 0
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"purchased_at","direction":"desc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_LicensedItemPurchaseGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+  /v0/licensed-items-purchases/{licensed_item_purchase_id}:
+    get:
+      tags:
+      - licenses
+      summary: Get Licensed Item Purchase
+      operationId: get_licensed_item_purchase
+      parameters:
+      - name: licensed_item_purchase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Licensed Item Purchase Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_LicensedItemPurchaseGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
   /v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations:
     get:
       tags:
@@ -7951,6 +8120,19 @@ components:
           title: Error
       type: object
       title: Envelope[LicensedItemGet]
+    Envelope_LicensedItemPurchaseGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/LicensedItemPurchaseGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[LicensedItemPurchaseGet]
     Envelope_Log_:
       properties:
         data:
@@ -9851,8 +10033,10 @@ components:
       properties:
         gid:
           type: integer
+          exclusiveMinimum: true
           title: Gid
           description: the group ID
+          minimum: 0
         label:
           type: string
           title: Label
@@ -9934,10 +10118,12 @@ components:
       properties:
         id:
           anyOf:
-          - type: string
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
           - type: 'null'
           title: Id
-          description: the user id
+          description: the user's id
         userName:
           type: string
           maxLength: 100
@@ -9945,7 +10131,9 @@ components:
           title: Username
         gid:
           anyOf:
-          - type: string
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
           - type: 'null'
           title: Gid
           description: the user primary gid
@@ -10178,6 +10366,71 @@ components:
       - createdAt
       - modifiedAt
       title: LicensedItemGet
+    LicensedItemPurchaseGet:
+      properties:
+        licensedItemPurchaseId:
+          type: string
+          format: uuid
+          title: Licenseditempurchaseid
+        productName:
+          type: string
+          title: Productname
+        licensedItemId:
+          type: string
+          format: uuid
+          title: Licenseditemid
+        walletId:
+          type: integer
+          exclusiveMinimum: true
+          title: Walletid
+          minimum: 0
+        pricingUnitCostId:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricingunitcostid
+          minimum: 0
+        pricingUnitCost:
+          type: string
+          title: Pricingunitcost
+        startAt:
+          type: string
+          format: date-time
+          title: Startat
+        expireAt:
+          type: string
+          format: date-time
+          title: Expireat
+        numOfSeats:
+          type: integer
+          title: Numofseats
+        purchasedByUser:
+          type: integer
+          exclusiveMinimum: true
+          title: Purchasedbyuser
+          minimum: 0
+        purchasedAt:
+          type: string
+          format: date-time
+          title: Purchasedat
+        modifiedAt:
+          type: string
+          format: date-time
+          title: Modifiedat
+      type: object
+      required:
+      - licensedItemPurchaseId
+      - productName
+      - licensedItemId
+      - walletId
+      - pricingUnitCostId
+      - pricingUnitCost
+      - startAt
+      - expireAt
+      - numOfSeats
+      - purchasedByUser
+      - purchasedAt
+      - modifiedAt
+      title: LicensedItemPurchaseGet
     LicensedItemsBodyParams:
       properties:
         wallet_id:
@@ -10185,14 +10438,26 @@ components:
           exclusiveMinimum: true
           title: Wallet Id
           minimum: 0
-        num_of_seeds:
+        pricing_plan_id:
           type: integer
-          title: Num Of Seeds
+          exclusiveMinimum: true
+          title: Pricing Plan Id
+          minimum: 0
+        pricing_unit_id:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricing Unit Id
+          minimum: 0
+        num_of_seats:
+          type: integer
+          title: Num Of Seats
       additionalProperties: false
       type: object
       required:
       - wallet_id
-      - num_of_seeds
+      - pricing_plan_id
+      - pricing_unit_id
+      - num_of_seats
       title: LicensedItemsBodyParams
     LicensedResourceType:
       type: string
@@ -11229,6 +11494,24 @@ components:
       - _links
       - data
       title: Page[CheckpointApiModel]
+    Page_LicensedItemPurchaseGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/LicensedItemPurchaseGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[LicensedItemPurchaseGet]
     Page_PaymentTransaction_:
       properties:
         _meta:

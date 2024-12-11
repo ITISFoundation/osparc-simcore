@@ -11,6 +11,9 @@ from models_library.resource_tracker import (
     PricingUnitId,
     ServiceRunId,
 )
+from models_library.resource_tracker_licensed_items_purchases import (
+    LicensedItemPurchaseID,
+)
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict
@@ -32,6 +35,7 @@ class CreditTransactionCreate(BaseModel):
     payment_transaction_id: str | None
     created_at: datetime
     last_heartbeat_at: datetime
+    licensed_item_purchase_id: LicensedItemPurchaseID | None
 
 
 class CreditTransactionCreditsUpdate(BaseModel):

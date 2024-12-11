@@ -2,6 +2,7 @@ from contextlib import suppress
 from typing import Annotated, Any, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
+from models_library.groups import EVERYONE_GROUP_ID
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -14,16 +15,16 @@ from pydantic import (
     model_validator,
 )
 
-from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
 from ..groups import (
     AccessRightsDict,
     Group,
+    GroupID,
     GroupMember,
     StandardGroupCreate,
     StandardGroupUpdate,
 )
-from ..users import UserID
+from ..users import UserID, UserNameID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
 from ._base import InputSchema, OutputSchema
 
@@ -55,7 +56,7 @@ class GroupAccessRights(BaseModel):
 
 
 class GroupGet(OutputSchema):
-    gid: int = Field(..., description="the group ID")
+    gid: GroupID = Field(..., description="the group ID")
     label: str = Field(..., description="the group name")
     description: str = Field(..., description="the group description")
     thumbnail: AnyUrl | None = Field(
@@ -114,7 +115,7 @@ class GroupGet(OutputSchema):
                     "accessRights": {"read": True, "write": False, "delete": False},
                 },
                 {
-                    "gid": "0",
+                    "gid": "1",
                     "label": "All",
                     "description": "Open to all users",
                     "accessRights": {"read": True, "write": True, "delete": True},
@@ -214,7 +215,7 @@ class MyGroupsGet(OutputSchema):
                     },
                 ],
                 "all": {
-                    "gid": "0",
+                    "gid": EVERYONE_GROUP_ID,
                     "label": "All",
                     "description": "Open to all users",
                     "accessRights": {"read": True, "write": False, "delete": False},
@@ -228,13 +229,11 @@ class GroupUserGet(BaseModel):
     # OutputSchema
 
     # Identifiers
-    id: Annotated[
-        str | None, Field(description="the user id", coerce_numbers_to_str=True)
-    ] = None
-    user_name: Annotated[IDStr, Field(alias="userName")]
+    id: Annotated[UserID | None, Field(description="the user's id")] = None
+    user_name: Annotated[UserNameID, Field(alias="userName")]
     gid: Annotated[
-        str | None,
-        Field(description="the user primary gid", coerce_numbers_to_str=True),
+        GroupID | None,
+        Field(description="the user primary gid"),
     ] = None
 
     # Private Profile
@@ -296,7 +295,7 @@ class GroupUserAdd(InputSchema):
     """
 
     uid: UserID | None = None
-    user_name: Annotated[IDStr | None, Field(alias="userName")] = None
+    user_name: Annotated[UserNameID | None, Field(alias="userName")] = None
     email: Annotated[
         LowerCaseEmailStr | None,
         Field(

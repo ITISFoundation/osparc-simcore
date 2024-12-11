@@ -4,6 +4,7 @@
 import enum
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import UUID
 
 from ._common import (
     NUMERIC_KWARGS,
@@ -26,6 +27,7 @@ class CreditTransactionClassification(str, enum.Enum):
     DEDUCT_SERVICE_RUN = (
         "DEDUCT_SERVICE_RUN"  # computational/dynamic service run costs)
     )
+    DEDUCT_LICENSE_PURCHASE = "DEDUCT_LICENSE_PURCHASE"
 
 
 resource_tracker_credit_transactions = sa.Table(
@@ -117,7 +119,13 @@ resource_tracker_credit_transactions = sa.Table(
         "payment_transaction_id",
         sa.String,
         nullable=True,
-        doc="Service run id connected with this transaction",
+        doc="Payment transaction id connected with this transaction",
+    ),
+    sa.Column(
+        "licensed_item_purchase_id",
+        UUID(as_uuid=True),
+        nullable=True,
+        doc="Licensed item purchase id connected with this transaction",
     ),
     column_created_datetime(timezone=True),
     sa.Column(
