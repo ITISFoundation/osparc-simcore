@@ -87,12 +87,5 @@ qx.Class.define("osparc.data.model.PricingUnit", {
       init: null,
       event: "changeSpecificInfo",
     },
-
-    purchased: {
-      check: "Object",
-      nullable: true,
-      init: null,
-      event: "changePurchased",
-    },
   },
 });

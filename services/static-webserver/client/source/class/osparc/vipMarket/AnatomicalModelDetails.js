@@ -49,6 +49,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       if (anatomicalModelsData) {
         const modelInfo = this.__createModelInfo(anatomicalModelsData);
         const pricingUnits = this.__createPricingUnits(anatomicalModelsData);
+        // const purchasedSection = this.__createPurchasedSection(anatomicalModelsData);
         const importButton = this.__createImportButton(anatomicalModelsData);
         this._add(modelInfo);
         this._add(pricingUnits);
@@ -203,6 +204,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       return pricingUnitsLayout;
     },
 
+    __createPurchasedSection: function(anatomicalModelsData) {
+      console.log("anatomicalModelsData", anatomicalModelsData);
+    },
+
     __createImportButton: function(anatomicalModelsData) {
       const importButton = new qx.ui.form.Button().set({
         label: this.tr("Import"),
@@ -210,7 +215,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         center: true,
         maxWidth: 200,
         alignX: "center",
-        visibility: anatomicalModelsData["purchased"] ? "visible" : "excluded",
+        visibility: anatomicalModelsData["purchased"].length ? "visible" : "excluded",
       });
       importButton.addListener("execute", () => {
         this.fireDataEvent("modelImportRequested", {

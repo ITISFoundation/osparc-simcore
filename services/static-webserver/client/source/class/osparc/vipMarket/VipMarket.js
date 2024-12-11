@@ -225,13 +225,15 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                   anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
                   anatomicalModel["pricingPlanId"] = licensedItem["pricingPlanId"];
                   // attach leased data
-                  anatomicalModel["purchased"] = null; // default
-                  const purchasedItemFound = purchasedItems.find(purchasedItem => purchasedItem["licensedItemId"] === licensedItem["licensedItemId"])
-                  if (purchasedItemFound) {
-                    anatomicalModel["purchased"] = {
-                      expiresAt: new Date(purchasedItemFound["expireAt"]),
-                      numberOfSeats: purchasedItemFound["numOfSeats"],
-                    }
+                  anatomicalModel["purchased"] = []; // default
+                  const purchasedItemsFound = purchasedItems.filter(purchasedItem => purchasedItem["licensedItemId"] === licensedItem["licensedItemId"]);
+                  if (purchasedItemsFound.length) {
+                    purchasedItemsFound.forEach(purchasedItemFound => {
+                      anatomicalModel["purchased"].push({
+                        expiresAt: new Date(purchasedItemFound["expireAt"]),
+                        numberOfSeats: purchasedItemFound["numOfSeats"],
+                      })
+                    });
                   }
                   this.__anatomicalModels.push(anatomicalModel);
                 }
@@ -273,10 +275,10 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                     if (found) {
                       const expirationDate = new Date();
                       expirationDate.setMonth(expirationDate.getMonth() + 1)
-                      found["purchased"] = {
+                      found["purchased"].push({
                         expiresAt: expirationDate, // get this info from the response
                         numberOfSeats, // get this info from the response
-                      };
+                      });
                       this.__populateModels();
                       anatomicModelDetails.setAnatomicalModelsData(found);
                     }
@@ -305,9 +307,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const sortModel = sortBy => {
         models.sort((a, b) => {
           // first criteria
-          if (Boolean(b["purchased"]) !== Boolean(a["purchased"])) {
+          if (b["purchased"].length !== a["purchased"].length) {
             // leased first
-            return Boolean(b["purchased"]) - Boolean(a["purchased"]);
+            return b["purchased"].length - a["purchased"].length;
           }
           // second criteria
           if (sortBy) {
