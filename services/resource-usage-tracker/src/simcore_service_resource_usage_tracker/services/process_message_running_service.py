@@ -143,6 +143,7 @@ async def _process_start_event(
             transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
             service_run_id=service_run_id,
             payment_transaction_id=None,
+            licensed_item_purchase_id=None,
             created_at=msg.created_at,
             last_heartbeat_at=msg.created_at,
         )

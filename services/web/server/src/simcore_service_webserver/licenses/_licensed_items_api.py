@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 
 import logging
+from datetime import UTC, datetime, timedelta
 
 from aiohttp import web
 from models_library.api_schemas_webserver.licensed_items import (
@@ -9,11 +10,21 @@ from models_library.api_schemas_webserver.licensed_items import (
 )
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
+from models_library.resource_tracker_licensed_items_purchases import (
+    LicensedItemsPurchasesCreate,
+)
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
+    licensed_items_purchases,
+)
 
-from . import _licensed_items_db
+from ..rabbitmq import get_rabbitmq_rpc_client
+from ..resource_usage.api import get_pricing_plan_unit
+from ..users.api import get_user
+from ..wallets.api import get_wallet_with_available_credits_by_user_and_wallet
+from . import _licensed_items_api, _licensed_items_db
 from ._models import LicensedItemsBodyParams
 
 _logger = logging.getLogger(__name__)
@@ -74,4 +85,47 @@ async def purchase_licensed_item(
     licensed_item_id: LicensedItemID,
     body_params: LicensedItemsBodyParams,
 ) -> None:
-    raise NotImplementedError
+    # Check user wallet permissions
+    wallet = await get_wallet_with_available_credits_by_user_and_wallet(
+        app, user_id=user_id, wallet_id=body_params.wallet_id, product_name=product_name
+    )
+
+    licensed_item = await _licensed_items_api.get_licensed_item(
+        app, licensed_item_id=licensed_item_id, product_name=product_name
+    )
+
+    if licensed_item.pricing_plan_id != body_params.pricing_plan_id:
+        raise ValueError("You are lying!")
+
+    pricing_unit = await get_pricing_plan_unit(
+        app,
+        product_name=product_name,
+        pricing_plan_id=body_params.pricing_plan_id,
+        pricing_unit_id=body_params.pricing_unit_id,
+    )
+
+    # Check whether wallet has enough credits
+    if wallet.available_credits - pricing_unit.current_cost_per_unit < 0:
+        raise ValueError("Not enough credits!")
+
+    user = await get_user(app, user_id=user_id)
+
+    _data = LicensedItemsPurchasesCreate(
+        product_name=product_name,
+        licensed_item_id=licensed_item_id,
+        wallet_id=wallet.wallet_id,
+        wallet_name=wallet.name,
+        pricing_plan_id=body_params.pricing_plan_id,
+        pricing_unit_id=body_params.pricing_unit_id,
+        pricing_unit_cost_id=pricing_unit.current_cost_per_unit_id,
+        pricing_unit_cost=pricing_unit.current_cost_per_unit,
+        start_at=datetime.now(tz=UTC),
+        expire_at=datetime.now(tz=UTC)
+        + timedelta(days=30),  # <-- Temporary agreement with OM for proof of concept
+        num_of_seats=body_params.num_of_seats,
+        purchased_by_user=user_id,
+        user_email=user["email"],
+        purchased_at=datetime.now(tz=UTC),
+    )
+    rpc_client = get_rabbitmq_rpc_client(app)
+    await licensed_items_purchases.create_licensed_item_purchase(rpc_client, data=_data)

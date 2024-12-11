@@ -1,7 +1,7 @@
 """add cols to licensed_items_purchases table
 
 Revision ID: 8fa15c4c3977
-Revises: 4d007819e61a
+Revises: 5e27063c3ac9
 Create Date: 2024-12-10 06:42:23.319239+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "8fa15c4c3977"
-down_revision = "4d007819e61a"
+down_revision = "5e27063c3ac9"
 branch_labels = None
 depends_on = None
 

@@ -2,6 +2,7 @@ import logging
 
 from models_library.basic_types import IDStr
 from models_library.licensed_items import LicensedItemID
+from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemPurchaseID,
 )
@@ -52,6 +53,8 @@ class LicensedItemsListQueryParams(
 
 class LicensedItemsBodyParams(BaseModel):
     wallet_id: WalletID
+    pricing_plan_id: PricingPlanId
+    pricing_unit_id: PricingUnitId
     num_of_seats: int
 
     model_config = ConfigDict(extra="forbid")

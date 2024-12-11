@@ -43,6 +43,7 @@ async def create_credit_transaction(
         transaction_classification=CreditClassification.ADD_WALLET_TOP_UP,
         service_run_id=None,
         payment_transaction_id=credit_transaction_create_body.payment_transaction_id,
+        licensed_item_purchase_id=None,
         created_at=credit_transaction_create_body.created_at,
         last_heartbeat_at=credit_transaction_create_body.created_at,
     )

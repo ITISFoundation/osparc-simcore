@@ -57,5 +57,5 @@ async def create_licensed_item_purchase(
     app: FastAPI, *, data: LicensedItemsPurchasesCreate
 ) -> LicensedItemPurchaseGet:
     return await licensed_items_purchases.create_licensed_item_purchase(
-        db_engine=app.state.engine, data=data
+        rabbitmq_client=app.state.rabbitmq_client, db_engine=app.state.engine, data=data
     )
