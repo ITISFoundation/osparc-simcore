@@ -1869,13 +1869,12 @@ async def get_project_inactivity(
     app: web.Application, project_id: ProjectID
 ) -> GetProjectInactivityResponse:
     project_settings: ProjectsSettings = get_plugin_settings(app)
-    project_inactivity = await director_v2_api.get_project_inactivity(
+    return await dynamic_scheduler_api.get_project_inactivity(
         app,
-        project_id,
+        project_id=project_id,
         # NOTE: project is considered inactive if all services exposing an /inactivity
         # endpoint were inactive since at least PROJECTS_INACTIVITY_INTERVAL
         max_inactivity_seconds=int(
             project_settings.PROJECTS_INACTIVITY_INTERVAL.total_seconds()
         ),
     )
-    return GetProjectInactivityResponse.model_validate(project_inactivity)

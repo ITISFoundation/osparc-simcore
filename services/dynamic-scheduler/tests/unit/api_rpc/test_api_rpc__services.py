@@ -9,7 +9,10 @@ import respx
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
+    GetProjectInactivityResponse,
+)
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
@@ -490,3 +493,37 @@ async def test_stop_dynamic_service_serializes_generic_errors(
             ),
             timeout_s=5,
         )
+
+
+@pytest.fixture
+def inactivity_response() -> GetProjectInactivityResponse:
+    return TypeAdapter(GetProjectInactivityResponse).validate_python(
+        GetProjectInactivityResponse.model_json_schema()["example"]
+    )
+
+
+@pytest.fixture
+def mock_director_v2_get_project_inactivity(
+    project_id: ProjectID, inactivity_response: GetProjectInactivityResponse
+) -> Iterator[None]:
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.get(f"/dynamic_services/projects/{project_id}/inactivity").respond(
+            status.HTTP_200_OK, text=inactivity_response.model_dump_json()
+        )
+        yield None
+
+
+async def test_get_project_inactivity(
+    mock_director_v2_get_project_inactivity: None,
+    rpc_client: RabbitMQRPCClient,
+    project_id: ProjectID,
+    inactivity_response: GetProjectInactivityResponse,
+):
+    result = await services.get_project_inactivity(
+        rpc_client, project_id=project_id, max_inactivity_seconds=5
+    )
+    assert result == inactivity_response

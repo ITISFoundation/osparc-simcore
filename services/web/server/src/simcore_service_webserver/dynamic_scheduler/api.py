@@ -3,7 +3,10 @@ from contextlib import AsyncExitStack
 from functools import partial
 
 from aiohttp import web
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
+    GetProjectInactivityResponse,
+)
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
@@ -19,6 +22,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
 from models_library.users import UserID
+from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient, RPCServerError
@@ -148,3 +152,16 @@ async def stop_dynamic_services_in_project(
         ]
 
         await logged_gather(*services_to_stop)
+
+
+async def get_project_inactivity(
+    app: web.Application,
+    *,
+    project_id: ProjectID,
+    max_inactivity_seconds: NonNegativeInt,
+) -> GetProjectInactivityResponse:
+    return await services.get_project_inactivity(
+        get_rabbitmq_rpc_client(app),
+        project_id=project_id,
+        max_inactivity_seconds=max_inactivity_seconds,
+    )
