@@ -9851,8 +9851,10 @@ components:
       properties:
         gid:
           type: integer
+          exclusiveMinimum: true
           title: Gid
           description: the group ID
+          minimum: 0
         label:
           type: string
           title: Label
