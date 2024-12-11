@@ -69,9 +69,9 @@ async def request_retrieve_dyn_service(
 async def restart_dynamic_service(app: web.Application, node_uuid: str) -> None:
     """Restarts the user service(s) started by the the node_uuid's sidecar
 
-    NOTE that this operation will NOT restart all sidecar services
-    (``simcore-service-dynamic-sidecar`` or ``reverse-proxy caddy`` services) but
-    ONLY user services.
+    NOTE: this operation will NOT restart
+    sidecar services (``dy-sidecar`` or ``dy-proxy`` services),
+    but ONLY user services (the ones defined by the compose spec).
     """
     settings: DirectorV2Settings = get_plugin_settings(app)
     await request_director_v2(
