@@ -29,8 +29,10 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
-from models_library.api_schemas_webserver.users import ProfileGet as WebProfileGet
-from models_library.api_schemas_webserver.users import ProfileUpdate as WebProfileUpdate
+from models_library.api_schemas_webserver.users import MyProfileGet as WebProfileGet
+from models_library.api_schemas_webserver.users import (
+    MyProfilePatch as WebProfileUpdate,
+)
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -351,7 +353,7 @@ class AuthSession:
             show_hidden=True,
             # WARNING: better way to match jobs with projects (Next PR if this works fine!)
             # WARNING: search text has a limit that I needed to increase for the example!
-            search=urllib.parse.quote(solver_name, safe=""),
+            search=solver_name,
         )
 
     async def get_projects_page(self, *, limit: int, offset: int):

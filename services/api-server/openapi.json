@@ -5548,6 +5548,7 @@
           "urls": {
             "items": {
               "type": "string",
+              "minLength": 1,
               "format": "uri"
             },
             "type": "array",
@@ -6161,6 +6162,7 @@
           },
           "download_link": {
             "type": "string",
+            "minLength": 1,
             "format": "uri",
             "title": "Download Link"
           }
@@ -6469,7 +6471,8 @@
       "PricingPlanClassification": {
         "type": "string",
         "enum": [
-          "TIER"
+          "TIER",
+          "LICENSE"
         ],
         "title": "PricingPlanClassification"
       },

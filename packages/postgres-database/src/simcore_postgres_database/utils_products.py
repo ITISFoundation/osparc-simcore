@@ -2,6 +2,8 @@
 
 """
 
+import warnings
+
 import sqlalchemy as sa
 
 from ._protocols import AiopgConnection, DBConnection
@@ -37,36 +39,54 @@ async def get_product_group_id(
     return None if group_id is None else _GroupID(group_id)
 
 
+async def execute_get_or_create_product_group(conn, product_name: str) -> int:
+    #
+    # NOTE: Separated so it can be used in asyncpg and aiopg environs while both
+    #       coexist
+    #
+    group_id: int | None = await conn.scalar(
+        sa.select(products.c.group_id)
+        .where(products.c.name == product_name)
+        .with_for_update(read=True)
+        # a `FOR SHARE` lock: locks changes in the product until transaction is done.
+        # Read might return in None, but it is OK
+    )
+    if group_id is None:
+        group_id = await conn.scalar(
+            groups.insert()
+            .values(
+                name=product_name,
+                description=f"{product_name} product group",
+                type=GroupType.STANDARD,
+            )
+            .returning(groups.c.gid)
+        )
+        assert group_id  # nosec
+
+        await conn.execute(
+            products.update()
+            .where(products.c.name == product_name)
+            .values(group_id=group_id)
+        )
+
+    return group_id
+
+
 async def get_or_create_product_group(
     connection: AiopgConnection, product_name: str
 ) -> _GroupID:
     """
     Returns group_id of a product. Creates it if undefined
     """
+    warnings.warn(
+        f"{__name__}.get_or_create_product_group uses aiopg which has been deprecated in this repo. Please use the asyncpg equivalent version instead"
+        "See https://github.com/ITISFoundation/osparc-simcore/issues/4529",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+
     async with connection.begin():
-        group_id = await connection.scalar(
-            sa.select(products.c.group_id)
-            .where(products.c.name == product_name)
-            .with_for_update(read=True)
-            # a `FOR SHARE` lock: locks changes in the product until transaction is done.
-            # Read might return in None, but it is OK
+        group_id = await execute_get_or_create_product_group(
+            connection, product_name=product_name
         )
-        if group_id is None:
-            group_id = await connection.scalar(
-                groups.insert()
-                .values(
-                    name=product_name,
-                    description=f"{product_name} product group",
-                    type=GroupType.STANDARD,
-                )
-                .returning(groups.c.gid)
-            )
-            assert group_id  # nosec
-
-            await connection.execute(
-                products.update()
-                .where(products.c.name == product_name)
-                .values(group_id=group_id)
-            )
-
         return _GroupID(group_id)

@@ -19,7 +19,6 @@ from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, I
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -47,7 +46,7 @@ from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
 from redis import Redis
@@ -69,12 +68,6 @@ from simcore_postgres_database.utils_products import (
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.db.plugin import get_database_engine
-from simcore_service_webserver.groups.api import (
-    add_user_in_group,
-    create_user_group,
-    delete_user_group,
-    list_user_groups_with_read_access,
-)
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.statics._constants import (
     FRONTEND_APP_DEFAULT,
@@ -590,97 +583,6 @@ async def redis_locks_client(
 
 # SOCKETS FIXTURES  --------------------------------------------------------
 # Moved to packages/pytest-simcore/src/pytest_simcore/websocket_client.py
-
-
-# USER GROUP FIXTURES -------------------------------------------------------
-
-
-@pytest.fixture
-async def primary_group(
-    client: TestClient,
-    logged_user: UserInfoDict,
-) -> dict[str, Any]:
-    assert client.app
-    primary_group, _, _ = await list_user_groups_with_read_access(
-        client.app, logged_user["id"]
-    )
-    return primary_group
-
-
-@pytest.fixture
-async def standard_groups(
-    client: TestClient,
-    logged_user: UserInfoDict,
-) -> AsyncIterator[list[dict[str, Any]]]:
-    assert client.app
-    sparc_group = {
-        "gid": "5",  # this will be replaced
-        "label": "SPARC",
-        "description": "Stimulating Peripheral Activity to Relieve Conditions",
-        "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
-        "inclusionRules": {"email": r"@(sparc)+\.(io|com)$"},
-    }
-    team_black_group = {
-        "gid": "5",  # this will be replaced
-        "label": "team Black",
-        "description": "THE incredible black team",
-        "thumbnail": None,
-        "inclusionRules": {"email": r"@(black)+\.(io|com)$"},
-    }
-
-    # create a separate account to own standard groups
-    async with NewUser(
-        {"name": f"{logged_user['name']}_groups_owner", "role": "USER"}, client.app
-    ) as owner_user:
-        # creates two groups
-        sparc_group = await create_user_group(
-            app=client.app,
-            user_id=owner_user["id"],
-            new_group=sparc_group,
-        )
-        team_black_group = await create_user_group(
-            app=client.app,
-            user_id=owner_user["id"],
-            new_group=team_black_group,
-        )
-
-        # adds logged_user  to sparc group
-        await add_user_in_group(
-            app=client.app,
-            user_id=owner_user["id"],
-            gid=sparc_group["gid"],
-            new_user_id=logged_user["id"],
-        )
-
-        # adds logged_user  to team-black group
-        await add_user_in_group(
-            app=client.app,
-            user_id=owner_user["id"],
-            gid=team_black_group["gid"],
-            new_user_email=logged_user["email"],
-        )
-
-        _, std_groups, _ = await list_user_groups_with_read_access(
-            client.app, logged_user["id"]
-        )
-
-        yield std_groups
-
-        # clean groups
-        await delete_user_group(client.app, owner_user["id"], sparc_group["gid"])
-        await delete_user_group(client.app, owner_user["id"], team_black_group["gid"])
-
-
-@pytest.fixture
-async def all_group(
-    client: TestClient,
-    logged_user: UserInfoDict,
-) -> dict[str, str]:
-    assert client.app
-    _, _, all_group = await list_user_groups_with_read_access(
-        client.app, logged_user["id"]
-    )
-    return all_group
 
 
 @pytest.fixture
