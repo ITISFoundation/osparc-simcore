@@ -64,7 +64,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
 
   members: {
     __anatomicalModels: null,
-    __purchasedItems: null,
+    __purchasesItems: null,
     __anatomicalModelsModel: null,
 
     _createChildControlImpl: function(id) {
@@ -150,7 +150,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           ctrl.bindProperty("date", "date", null, item, id);
           ctrl.bindProperty("licensedItemId", "licensedItemId", null, item, id);
           ctrl.bindProperty("pricingPlanId", "pricingPlanId", null, item, id);
-          ctrl.bindProperty("purchased", "purchased", null, item, id);
+          ctrl.bindProperty("purchases", "purchases", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("vipModels");
@@ -205,8 +205,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           ])
             .then(values => {
               const licensedItems = values[0];
-              const purchasedItems = values[1];
-              this.__purchasedItems = purchasedItems;
+              const purchasesItems = values[1];
+              this.__purchasesItems = purchasesItems;
 
               this.__anatomicalModels = [];
               allAnatomicalModels.forEach(model => {
@@ -225,13 +225,13 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                   anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
                   anatomicalModel["pricingPlanId"] = licensedItem["pricingPlanId"];
                   // attach leased data
-                  anatomicalModel["purchased"] = []; // default
-                  const purchasedItemsFound = purchasedItems.filter(purchasedItem => purchasedItem["licensedItemId"] === licensedItem["licensedItemId"]);
-                  if (purchasedItemsFound.length) {
-                    purchasedItemsFound.forEach(purchasedItemFound => {
-                      anatomicalModel["purchased"].push({
-                        expiresAt: new Date(purchasedItemFound["expireAt"]),
-                        numberOfSeats: purchasedItemFound["numOfSeats"],
+                  anatomicalModel["purchases"] = []; // default
+                  const purchasesItemsFound = purchasesItems.filter(purchasesItem => purchasesItem["licensedItemId"] === licensedItem["licensedItemId"]);
+                  if (purchasesItemsFound.length) {
+                    purchasesItemsFound.forEach(purchasesItemFound => {
+                      anatomicalModel["purchases"].push({
+                        expiresAt: new Date(purchasesItemFound["expireAt"]),
+                        numberOfSeats: purchasesItemFound["numOfSeats"],
                       })
                     });
                   }
@@ -275,7 +275,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                     if (found) {
                       const expirationDate = new Date();
                       expirationDate.setMonth(expirationDate.getMonth() + 1)
-                      found["purchased"].push({
+                      found["purchases"].push({
                         expiresAt: expirationDate, // get this info from the response
                         numberOfSeats, // get this info from the response
                       });
@@ -307,9 +307,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       const sortModel = sortBy => {
         models.sort((a, b) => {
           // first criteria
-          if (b["purchased"].length !== a["purchased"].length) {
+          if (b["purchases"].length !== a["purchases"].length) {
             // leased first
-            return b["purchased"].length - a["purchased"].length;
+            return b["purchases"].length - a["purchases"].length;
           }
           // second criteria
           if (sortBy) {
