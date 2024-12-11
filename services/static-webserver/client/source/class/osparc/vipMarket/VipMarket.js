@@ -124,7 +124,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           break;
         case "models-details":
           control = new osparc.vipMarket.AnatomicalModelDetails().set({
-            padding: 10,
+            padding: 5,
           });
           this.getChildControl("right-side").add(control, {
             flex: 1
