@@ -22,8 +22,8 @@ from simcore_service_webserver.users._notifications_handlers import (
 )
 from simcore_service_webserver.users._schemas import (
     PreUserProfile,
+    SearchQueryParams,
     UserProfile,
-    _SearchQueryParams,
 )
 from simcore_service_webserver.users._tokens_handlers import _TokenPathParams
 from simcore_service_webserver.users.schemas import (
@@ -147,7 +147,7 @@ async def list_user_permissions():
         "po",
     ],
 )
-async def search_users(_params: Annotated[_SearchQueryParams, Depends()]):
+async def search_users(_params: Annotated[SearchQueryParams, Depends()]):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
 

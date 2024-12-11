@@ -18,7 +18,7 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _users_service, api
 from ._constants import FMSG_MISSING_CONFIG_WITH_OEC
-from ._schemas import PreUserProfile, UsersRequestContext, _SearchQueryParams
+from ._schemas import PreUserProfile, SearchQueryParams, UsersRequestContext
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
@@ -100,8 +100,8 @@ async def search_users(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    query_params: _SearchQueryParams = parse_request_query_parameters_as(
-        _SearchQueryParams, request
+    query_params: SearchQueryParams = parse_request_query_parameters_as(
+        SearchQueryParams, request
     )
 
     found = await _users_service.search_users(
