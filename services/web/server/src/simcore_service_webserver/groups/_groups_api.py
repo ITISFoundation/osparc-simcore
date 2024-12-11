@@ -258,14 +258,11 @@ async def add_user_in_group(
         )
         new_by_user_id = user.id
 
-    if not new_by_user_id:
-        msg = "Missing new user in arguments"
-        raise GroupsError(msg=msg)
-
     return await _groups_db.add_new_user_in_group(
         app,
         user_id=user_id,
         group_id=group_id,
         new_user_id=new_by_user_id,
+        new_user_name=new_by_user_name,
         access_rights=access_rights,
     )

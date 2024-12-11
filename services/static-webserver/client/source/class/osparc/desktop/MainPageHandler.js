@@ -94,7 +94,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
         lockedBy = studyData["state"]["locked"]["owner"];
       }
       if (locked && lockedBy["user_id"] !== osparc.auth.Data.getInstance().getUserId()) {
-        const msg = `${studyAlias} ${qx.locale.Manager.tr("is already open by")} ${
+        const msg = `${studyAlias} ${qx.locale.Manager.tr("is already open by")} ${ // it will be replaced "userName"
           "first_name" in lockedBy && lockedBy["first_name"] != null ?
             lockedBy["first_name"] :
             qx.locale.Manager.tr("another user.")
