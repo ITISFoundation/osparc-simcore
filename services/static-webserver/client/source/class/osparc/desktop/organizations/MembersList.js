@@ -307,7 +307,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const orgId = this.__currentOrg.getGroupId();
       const groupsStore = osparc.store.Groups.getInstance();
       const isEmail = osparc.utils.Utils.isEmail(newMemberIdentifier);
-      isEmail ? groupsStore.addMember(orgId, null, newMemberIdentifier) : groupsStore.addMember(orgId, newMemberIdentifier)
+      const request = isEmail ? groupsStore.addMember(orgId, null, newMemberIdentifier) : groupsStore.addMember(orgId, newMemberIdentifier);
+      request
         .then(newMember => {
           const text = newMemberIdentifier + this.tr(" successfully added");
           osparc.FlashMessenger.getInstance().logAs(text);
