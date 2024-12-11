@@ -228,13 +228,11 @@ class GroupUserGet(BaseModel):
     # OutputSchema
 
     # Identifiers
-    id: Annotated[
-        UserID | None, Field(description="the user id", coerce_numbers_to_str=True)
-    ] = None
+    id: Annotated[UserID | None, Field(description="the user's id")] = None
     user_name: Annotated[UserNameID, Field(alias="userName")]
     gid: Annotated[
         GroupID | None,
-        Field(description="the user primary gid", coerce_numbers_to_str=True),
+        Field(description="the user primary gid"),
     ] = None
 
     # Private Profile
