@@ -10,7 +10,7 @@ from collections.abc import Callable
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
-from simcore_postgres_database.models.groups import GroupType, groups
+from simcore_postgres_database.models.groups import GroupTypeEnum, groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.utils_products import (
     get_default_product_name,
@@ -61,7 +61,7 @@ async def test_get_or_create_group_product(
             product_group = await result.first()
 
             # check product's group
-            assert product_group.type == GroupType.STANDARD
+            assert product_group.type == GroupTypeEnum.STANDARD
             assert product_group.name == product_row.name
             assert product_group.description == f"{product_row.name} product group"
 

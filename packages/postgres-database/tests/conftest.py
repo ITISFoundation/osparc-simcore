@@ -33,7 +33,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesRepo,
 )
 from simcore_postgres_database.webserver_models import (
-    GroupType,
+    GroupTypeEnum,
     groups,
     user_to_groups,
     users,
@@ -237,7 +237,7 @@ def create_fake_group(
 
     async def _creator(conn: SAConnection, **overrides) -> RowProxy:
         if "type" not in overrides:
-            overrides["type"] = GroupType.STANDARD
+            overrides["type"] = GroupTypeEnum.STANDARD
         result: ResultProxy = await conn.execute(
             groups.insert()
             .values(**random_group(**overrides))
@@ -281,7 +281,7 @@ def create_fake_user(
         created_ids.append(user.id)
 
         if group:
-            assert group.type == GroupType.STANDARD.name
+            assert group.type == GroupTypeEnum.STANDARD.name
             result = await conn.execute(
                 user_to_groups.insert().values(uid=user.id, gid=group.gid)
             )

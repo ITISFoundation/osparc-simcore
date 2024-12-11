@@ -1,7 +1,7 @@
 from typing import Annotated, Final, NamedTuple, TypeAlias
 
 from common_library.basic_types import DEFAULT_FACTORY
-from common_library.groups_enums import GroupType as GroupTypeEnum
+from common_library.groups_enums import GroupTypeEnum as GroupTypeEnum
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic.types import PositiveInt
 from typing_extensions import TypedDict

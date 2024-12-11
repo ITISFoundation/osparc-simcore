@@ -7,7 +7,7 @@ from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 
 from ...exceptions.errors import UninitializedGroupError
-from ..tables import GroupType, groups, user_to_groups, users
+from ..tables import GroupTypeEnum, groups, user_to_groups, users
 from ._base import BaseRepository
 
 
@@ -30,12 +30,12 @@ class GroupsRepository(BaseRepository):
     async def get_everyone_group(self) -> GroupAtDB:
         async with self.db_engine.connect() as conn:
             result = await conn.execute(
-                sa.select(groups).where(groups.c.type == GroupType.EVERYONE)
+                sa.select(groups).where(groups.c.type == GroupTypeEnum.EVERYONE)
             )
             row = result.first()
         if not row:
             raise UninitializedGroupError(
-                group=GroupType.EVERYONE, repo_cls=GroupsRepository
+                group=GroupTypeEnum.EVERYONE, repo_cls=GroupsRepository
             )
         return GroupAtDB.model_validate(row)
 

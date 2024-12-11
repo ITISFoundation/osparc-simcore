@@ -4,7 +4,7 @@
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
     ConfirmationAction,
-    GroupType,
+    GroupTypeEnum,
     UserRole,
     UserStatus,
     api_keys,
@@ -28,7 +28,7 @@ __all__: tuple[str, ...] = (
     "confirmations",
     "group_classifiers",
     "groups",
-    "GroupType",
+    "GroupTypeEnum",
     "metadata",
     "products",
     "projects",

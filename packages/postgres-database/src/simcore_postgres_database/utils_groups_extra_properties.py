@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 
-from .models.groups import GroupType, groups, user_to_groups
+from .models.groups import GroupTypeEnum, groups, user_to_groups
 from .models.groups_extra_properties import groups_extra_properties
 from .utils_models import FromRowMixin
 
@@ -44,9 +44,9 @@ async def _list_table_entries_ordered_by_group_type(
             groups.c.type,
             sa.case(
                 # NOTE: the ordering is important for the aggregation afterwards
-                (groups.c.type == GroupType.EVERYONE, sa.literal(3)),
-                (groups.c.type == GroupType.STANDARD, sa.literal(2)),
-                (groups.c.type == GroupType.PRIMARY, sa.literal(1)),
+                (groups.c.type == GroupTypeEnum.EVERYONE, sa.literal(3)),
+                (groups.c.type == GroupTypeEnum.STANDARD, sa.literal(2)),
+                (groups.c.type == GroupTypeEnum.PRIMARY, sa.literal(1)),
                 else_=sa.literal(4),
             ).label("type_order"),
         )
@@ -124,10 +124,10 @@ class GroupExtraPropertiesRepo:
         for row in rows:
             group_extra_properties = GroupExtraProperties.from_row(row)
             match row.type:
-                case GroupType.PRIMARY:
+                case GroupTypeEnum.PRIMARY:
                     # this always has highest priority
                     return group_extra_properties
-                case GroupType.STANDARD:
+                case GroupTypeEnum.STANDARD:
                     if merged_standard_extra_properties:
                         merged_standard_extra_properties = (
                             _merge_extra_properties_booleans(
@@ -137,7 +137,7 @@ class GroupExtraPropertiesRepo:
                         )
                     else:
                         merged_standard_extra_properties = group_extra_properties
-                case GroupType.EVERYONE:
+                case GroupTypeEnum.EVERYONE:
                     # if there are standard properties, they take precedence
                     return (
                         merged_standard_extra_properties
