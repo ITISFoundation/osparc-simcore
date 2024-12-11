@@ -27,13 +27,13 @@ class WalletGet(OutputSchema):
             "examples": [
                 {
                     "wallet_id": 1,
-                    "name": "pm_0987654321",
-                    "description": "https://example.com/payment-method/form",
-                    "owner": "https://example.com/payment-method/form",
+                    "name": "My wallet",
+                    "description": "My description",
+                    "owner": 1,
                     "thumbnail": "https://example.com/payment-method/form",
-                    "status": "https://example.com/payment-method/form",
-                    "created": "https://example.com/payment-method/form",
-                    "modified": "https://example.com/payment-method/form",
+                    "status": "ACTIVE",
+                    "created": "2024-03-25T00:00:00",
+                    "modified": "2024-03-25T00:00:00",
                 }
             ]
         },

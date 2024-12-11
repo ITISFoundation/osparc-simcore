@@ -6,13 +6,13 @@ from models_library.api_schemas_resource_usage_tracker import (
 )
 from models_library.api_schemas_resource_usage_tracker.licensed_items_purchases import (
     LicensedItemPurchaseGet,
-    LicensedItemPurchaseID,
     LicensedItemsPurchasesPage,
 )
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.resource_tracker_licensed_items_purchases import (
+    LicensedItemPurchaseID,
     LicensedItemsPurchasesCreate,
 )
 from models_library.rest_ordering import OrderBy
