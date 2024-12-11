@@ -12,9 +12,9 @@ from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
     MyTokenCreate,
+    MyTokenGet,
     UserGet,
     UsersSearchQueryParams,
-    UserThirdPartyToken,
 )
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
@@ -73,7 +73,7 @@ async def set_frontend_preference(
 
 @router.get(
     "/me/tokens",
-    response_model=Envelope[list[UserThirdPartyToken]],
+    response_model=Envelope[list[MyTokenGet]],
 )
 async def list_tokens():
     ...
@@ -81,7 +81,7 @@ async def list_tokens():
 
 @router.post(
     "/me/tokens",
-    response_model=Envelope[UserThirdPartyToken],
+    response_model=Envelope[MyTokenGet],
     status_code=status.HTTP_201_CREATED,
 )
 async def create_token(_token: MyTokenCreate):
@@ -90,7 +90,7 @@ async def create_token(_token: MyTokenCreate):
 
 @router.get(
     "/me/tokens/{service}",
-    response_model=Envelope[UserThirdPartyToken],
+    response_model=Envelope[MyTokenGet],
 )
 async def get_token(_params: Annotated[_TokenPathParams, Depends()]):
     ...

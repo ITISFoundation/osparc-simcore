@@ -4,11 +4,8 @@
 """
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.api_schemas_webserver.users import (
-    MyTokenCreate,
-    UserThirdPartyToken,
-)
-from models_library.users import UserID
+from models_library.api_schemas_webserver.users import UserThirdPartyToken
+from models_library.users import UserID, UserThirdPartyToken
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from sqlalchemy import and_, literal_column
 
@@ -18,7 +15,7 @@ from .exceptions import TokenNotFoundError
 
 
 async def create_token(
-    app: web.Application, user_id: UserID, token: MyTokenCreate
+    app: web.Application, user_id: UserID, token: UserThirdPartyToken
 ) -> UserThirdPartyToken:
     async with get_database_engine(app).acquire() as conn:
         await conn.execute(

@@ -213,8 +213,8 @@ class MyTokenCreate(InputSchemaWithoutCamelCase):
         str,
         Field(description="uniquely identifies the service where this token is used"),
     ]
-    token_key: Annotated[UUID, Field(..., description="basic token key")]
-    token_secret: UUID | None = None
+    token_key: UUID
+    token_secret: UUID
 
     def to_model(self) -> UserThirdPartyToken:
         return UserThirdPartyToken(
@@ -222,6 +222,18 @@ class MyTokenCreate(InputSchemaWithoutCamelCase):
             token_key=self.token_key,
             token_secret=self.token_secret,
         )
+
+
+class MyTokenGet(OutputSchema):
+    service: str
+    token_key: UUID
+    token_secret: Annotated[
+        UUID | None, Field(deprecated=True, description="Will be removed")
+    ] = None
+
+    @classmethod
+    def from_model(cls, token: UserThirdPartyToken) -> Self:
+        return cls(service=token.service, token_key=token.token_key, token_secret=None)
 
 
 #
