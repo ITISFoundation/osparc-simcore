@@ -13,6 +13,9 @@ from .utils.common_validators import create_enums_pre_validator
 EVERYONE_GROUP_ID: Final[int] = 1
 
 
+__all__: tuple[str, ...] = ("GroupID",)
+
+
 class GroupTypeInModel(str, enum.Enum):
     """
     standard: standard group, e.g. any group that is not a primary group or special group such as the everyone group
