@@ -66,24 +66,6 @@ async def request_retrieve_dyn_service(
 
 
 @log_decorator(logger=_log)
-async def restart_dynamic_service(app: web.Application, node_uuid: str) -> None:
-    """Restarts the user service(s) started by the the node_uuid's sidecar
-
-    NOTE: this operation will NOT restart
-    sidecar services (``dy-sidecar`` or ``dy-proxy`` services),
-    but ONLY user services (the ones defined by the compose spec).
-    """
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    await request_director_v2(
-        app,
-        "POST",
-        url=settings.base_url / f"dynamic_services/{node_uuid}:restart",
-        expected_status=web.HTTPOk,
-        timeout=settings.DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT,
-    )
-
-
-@log_decorator(logger=_log)
 async def update_dynamic_service_networks_in_project(
     app: web.Application, project_id: ProjectID
 ) -> None:

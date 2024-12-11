@@ -124,3 +124,8 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
             "/dynamic_services",
             params=as_dict_exclude_unset(user_id=user_id, project_id=project_id),
         )
+
+    @retry_on_errors()
+    @expect_status(status.HTTP_204_NO_CONTENT)
+    async def post_restart(self, *, node_id: NodeID) -> Response:
+        return await self.client.post(f"/dynamic_services/{node_id}:restart")

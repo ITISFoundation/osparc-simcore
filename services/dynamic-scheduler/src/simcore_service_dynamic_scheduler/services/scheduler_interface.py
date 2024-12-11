@@ -73,3 +73,12 @@ async def stop_dynamic_service(
     )
 
     await set_request_as_stopped(app, dynamic_service_stop)
+
+
+async def restart_user_services(app: FastAPI, *, node_id: NodeID) -> None:
+    settings: ApplicationSettings = app.state.settings
+    if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
+        raise NotImplementedError
+
+    director_v2_client = DirectorV2Client.get_from_app_state(app)
+    await director_v2_client.restart_user_services(node_id=node_id)

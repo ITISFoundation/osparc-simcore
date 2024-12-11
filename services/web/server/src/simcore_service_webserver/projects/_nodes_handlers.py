@@ -412,7 +412,9 @@ async def restart_node(request: web.Request) -> web.Response:
 
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
-    await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
+    await dynamic_scheduler_api.restart_user_services(
+        request.app, node_id=path_params.node_id
+    )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
