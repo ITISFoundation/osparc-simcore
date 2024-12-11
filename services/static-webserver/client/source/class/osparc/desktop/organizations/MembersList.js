@@ -304,16 +304,16 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
     },
 
-    __addMember: async function(orgMemberEmail) {
+    __addMember: async function(newMemberIdentifier) {
       if (this.__currentOrg === null) {
         return;
       }
 
       const orgId = this.__currentOrg.getGroupId();
       const groupsStore = osparc.store.Groups.getInstance();
-      groupsStore.addMember(orgId, orgMemberEmail)
+      groupsStore.addMember(orgId, newMemberIdentifier)
         .then(newMember => {
-          const text = orgMemberEmail + this.tr(" successfully added");
+          const text = newMemberIdentifier + this.tr(" successfully added");
           osparc.FlashMessenger.getInstance().logAs(text);
           this.__reloadOrgMembers();
 
