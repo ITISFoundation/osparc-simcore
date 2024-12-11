@@ -618,7 +618,7 @@ qx.Class.define("osparc.store.Store", {
     __getOrgClassifiers: function(orgId, useCache = false) {
       const params = {
         url: {
-          "gid": orgId
+          "gid": parseInt(orgId)
         }
       };
       return osparc.data.Resources.get("classifiers", params, useCache);
