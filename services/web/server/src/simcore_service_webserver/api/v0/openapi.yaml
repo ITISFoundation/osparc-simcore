@@ -3031,6 +3031,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
   /v0/catalog/licensed-items/{licensed_item_id}:
     get:
       tags:
@@ -3065,6 +3077,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
   /v0/catalog/licensed-items/{licensed_item_id}:purchase:
     post:
       tags:
@@ -3101,6 +3125,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
   /v0/wallets/{wallet_id}/licensed-items-purchases:
     get:
       tags:
@@ -3159,6 +3195,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
   /v0/licensed-items-purchases/{licensed_item_purchase_id}:
     get:
       tags:
@@ -3192,6 +3240,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
   /v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations:
     get:
       tags:
