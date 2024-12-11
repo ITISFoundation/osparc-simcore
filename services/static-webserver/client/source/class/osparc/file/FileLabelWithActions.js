@@ -89,23 +89,33 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     setItemSelected: function(selectedItem) {
-      const isFile = osparc.file.FilesTree.isFile(selectedItem);
-      this.getChildControl("download-button").setEnabled(isFile);
-      this.getChildControl("delete-button").setEnabled(isFile);
-      const selectedLabel = this.getChildControl("selected-label");
-      if (isFile) {
-        this.__selection = selectedItem;
-        selectedLabel.set({
-          value: selectedItem.getLabel(),
-          toolTipText: selectedItem.getFileId()
-        });
+      if (selectedItem) {
+        const isFile = osparc.file.FilesTree.isFile(selectedItem);
+        this.getChildControl("download-button").setEnabled(isFile);
+        this.getChildControl("delete-button").setEnabled(isFile);
+        const selectedLabel = this.getChildControl("selected-label");
+        if (isFile) {
+          this.__selection = selectedItem;
+          selectedLabel.set({
+            value: selectedItem.getLabel(),
+            toolTipText: selectedItem.getFileId()
+          });
+        } else {
+          this.__selection = null;
+          selectedLabel.set({
+            value: "",
+            toolTipText: ""
+          });
+        }
       } else {
-        this.__selection = null;
-        selectedLabel.set({
-          value: "",
-          toolTipText: ""
-        });
+        this.resetItemSelected();
       }
+    },
+
+    resetItemSelected: function() {
+      this.getChildControl("download-button").setEnabled(false);
+      this.getChildControl("delete-button").setEnabled(false);
+      this.getChildControl("selected-label").resetValue();
     },
 
     getItemSelected: function() {

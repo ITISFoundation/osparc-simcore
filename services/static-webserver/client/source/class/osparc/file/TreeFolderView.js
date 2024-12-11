@@ -106,6 +106,8 @@ qx.Class.define("osparc.file.TreeFolderView", {
         const selectionData = e.getData();
         if (selectionData) {
           selectedFileLayout.setItemSelected(selectionData);
+        } else {
+          selectedFileLayout.resetItemSelected(selectionData);
         }
       }, this);
 

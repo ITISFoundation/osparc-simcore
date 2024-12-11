@@ -239,9 +239,11 @@ qx.Class.define("osparc.file.FolderContent", {
       this.setSelection([this.getSelectables()[this.getMode() === "icons" ? 0 : 1]]);
     },
 
-    __itemTapped: function(entry) {
+    __itemTapped: function(entry, buttonSelected) {
       if (this.isMultiSelect()) {
         this.fireDataEvent("multiSelectionChanged", entry);
+      } else if (buttonSelected === false) {
+        this.fireDataEvent("selectionChanged", null);
       } else {
         this.fireDataEvent("selectionChanged", entry);
       }
@@ -256,7 +258,7 @@ qx.Class.define("osparc.file.FolderContent", {
 
     __attachListenersToGridItem: function(btn, entry) {
       btn.addListener("tap", () => {
-        this.__itemTapped(entry);
+        this.__itemTapped(entry, btn.getValue());
         // folders can't be selected
         if (osparc.file.FilesTree.isDir(entry)) {
           btn.setValue(false);
