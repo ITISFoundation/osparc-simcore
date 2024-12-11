@@ -39,9 +39,7 @@ qx.Class.define("osparc.utils.Avatar", {
     },
 
     __getUrl: function(email, username, size = 100) {
-      if (email == null) {
-        email = "";
-      }
+      email = email || "";
       // MD5 (Message-Digest Algorithm) by WebToolkit
       const MD5 = function(s) {
         function L(k, d) {
