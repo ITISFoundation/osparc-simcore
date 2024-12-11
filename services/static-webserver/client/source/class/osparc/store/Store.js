@@ -222,7 +222,7 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
-    market: {
+    licensedItems: {
       check: "Array",
       init: []
     },
