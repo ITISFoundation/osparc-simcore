@@ -117,13 +117,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,
         Field(
-            default=LogLevel.WARNING.value,
             validation_alias=AliasChoices(
                 "WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
             ),
             # NOTE: suffix '_LOGLEVEL' is used overall
         ),
-    ]
+    ] = LogLevel.WARNING
     WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         validation_alias=AliasChoices(
@@ -271,6 +270,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_DB_LISTENER: bool = True
     WEBSERVER_FOLDERS: bool = True
     WEBSERVER_GROUPS: bool = True
+    WEBSERVER_LICENSES: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_NOTIFICATIONS: bool = Field(default=True)
     WEBSERVER_PRODUCTS: bool = True

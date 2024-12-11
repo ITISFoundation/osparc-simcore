@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import ConstrainedStr
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
@@ -144,11 +145,14 @@ class Project(BaseProjectModel):
 
     # Classification
     tags: list[int] | None = []
-    classifiers: list[ClassifierID] | None = Field(
-        default_factory=list,
-        description="Contains the reference to the project classifiers",
-        examples=["some:id:to:a:classifier"],
-    )
+    classifiers: Annotated[
+        list[ClassifierID] | None,
+        Field(
+            default_factory=list,
+            description="Contains the reference to the project classifiers",
+            examples=["some:id:to:a:classifier"],
+        ),
+    ] = DEFAULT_FACTORY
 
     # Project state (SEE projects_state.py)
     state: ProjectState | None = None

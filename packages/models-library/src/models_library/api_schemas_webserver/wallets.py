@@ -1,15 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Literal, TypeAlias
+from typing import Literal, TypeAlias
 
-from pydantic import (
-    ConfigDict,
-    Field,
-    HttpUrl,
-    PlainSerializer,
-    ValidationInfo,
-    field_validator,
-)
+from pydantic import ConfigDict, Field, HttpUrl, ValidationInfo, field_validator
 
 from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
 from ..users import GroupID
@@ -20,24 +13,65 @@ from ._base import InputSchema, OutputSchema
 class WalletGet(OutputSchema):
     wallet_id: WalletID
     name: IDStr
-    description: str | None
+    description: str | None = None
     owner: GroupID
-    thumbnail: str | None
+    thumbnail: str | None = None
     status: WalletStatus
     created: datetime
     modified: datetime
 
-    model_config = ConfigDict(from_attributes=True, frozen=False)
+    model_config = ConfigDict(
+        from_attributes=True,
+        frozen=False,
+        json_schema_extra={
+            "examples": [
+                {
+                    "wallet_id": 1,
+                    "name": "My wallet",
+                    "description": "My description",
+                    "owner": 1,
+                    "thumbnail": "https://example.com/payment-method/form",
+                    "status": "ACTIVE",
+                    "created": "2024-03-25T00:00:00",
+                    "modified": "2024-03-25T00:00:00",
+                }
+            ]
+        },
+    )
 
 
 class WalletGetWithAvailableCredits(WalletGet):
-    available_credits: Annotated[Decimal, PlainSerializer(float)]
+    available_credits: Decimal
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    **WalletGet.model_config["json_schema_extra"]["examples"][0],  # type: ignore
+                    "available_credits": 10.5,
+                }
+            ]
+        }
+    )
 
 
 class WalletGetPermissions(WalletGet):
     read: bool
     write: bool
     delete: bool
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    **WalletGet.model_config["json_schema_extra"]["examples"][0],  # type: ignore
+                    "read": True,
+                    "write": True,
+                    "delete": True,
+                }
+            ]
+        }
+    )
 
 
 class CreateWalletBodyParams(OutputSchema):

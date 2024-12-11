@@ -46,7 +46,7 @@ class _ComputationStarted(BaseModel):
         ..., description="ID for created pipeline (=project identifier)"
     )
     ref_ids: list[CommitID] = Field(
-        None, description="Checkpoints IDs for created pipeline"
+        default_factory=list, description="Checkpoints IDs for created pipeline"
     )
 
 

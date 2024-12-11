@@ -59,6 +59,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "folder.delete",
             "folder.access_rights.update",
             "groups.*",
+            "catalog/licensed-items.*",
             "product.price.read",
             "project.folders.*",
             "project.access_rights.update",

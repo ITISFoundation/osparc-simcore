@@ -58,15 +58,6 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       this.__folderRemoved(folder);
     }, this);
 
-    osparc.store.Folders.getInstance().addListener("folderMoved", e => {
-      const {
-        folder,
-        oldParentFolderId,
-      } = e.getData();
-      this.__folderRemoved(folder, oldParentFolderId);
-      this.__folderAdded(folder);
-    }, this);
-
     osparc.store.Workspaces.getInstance().addListener("workspaceAdded", e => {
       const workspace = e.getData();
       this.__addWorkspace(workspace);
@@ -299,25 +290,22 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       }
     },
 
-    __folderRemoved: function(folder, oldParentFolderId) {
+    __folderRemoved: function(folder) {
       // eslint-disable-next-line no-negated-condition
-      const parentModel = this.__getModel(folder.getWorkspaceId(), oldParentFolderId !== undefined ? oldParentFolderId : folder.getParentFolderId());
+      const parentModel = this.__getModel(folder.getWorkspaceId(), folder.getParentFolderId());
       if (parentModel) {
-        const idx = parentModel.getChildren().toArray().findIndex(c => folder.getWorkspaceId() === c.getWorkspaceId() && folder.getFolderId() === c.getFolderId());
+        const idx = parentModel.getChildren().toArray().findIndex(c => "getWorkspaceId" in c && folder.getWorkspaceId() === c.getWorkspaceId() && folder.getFolderId() === c.getFolderId());
         if (idx > -1) {
           parentModel.getChildren().removeAt(idx);
         }
       }
 
-      if (oldParentFolderId === undefined) {
-        // it was removed, not moved
-        // remove it from the cached models
-        const modelFound = this.__getModel(folder.getWorkspaceId(), folder.getFolderId());
-        if (modelFound) {
-          const index = this.__models.indexOf(modelFound);
-          if (index > -1) { // only splice array when item is found
-            this.__models.splice(index, 1); // 2nd parameter means remove one item only
-          }
+      // remove it from the cached models
+      const modelFound = this.__getModel(folder.getWorkspaceId(), folder.getFolderId());
+      if (modelFound) {
+        const index = this.__models.indexOf(modelFound);
+        if (index > -1) { // only splice array when item is found
+          this.__models.splice(index, 1); // 2nd parameter means remove one item only
         }
       }
     },

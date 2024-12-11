@@ -9,7 +9,7 @@ import functools
 import traceback
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from dataclasses import dataclass
-from typing import Any, NoReturn
+from typing import Any, NoReturn, cast
 from unittest import mock
 from uuid import uuid4
 
@@ -91,7 +91,7 @@ async def _assert_wait_for_task_status(
     job_id: str,
     dask_client: DaskClient,
     expected_status: DaskClientTaskState,
-    timeout: int | None = None,
+    timeout: int | None = None,  # noqa: ASYNC109
 ):
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -104,24 +104,20 @@ async def _assert_wait_for_task_status(
                 f"waiting for task to be {expected_status=}, "
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
-            current_task_status = (await dask_client.get_tasks_status([job_id]))[0]
-            assert isinstance(current_task_status, DaskClientTaskState)
-            print(f"{current_task_status=} vs {expected_status=}")
-            if (
-                current_task_status is DaskClientTaskState.ERRED
-                and expected_status
-                not in [
-                    DaskClientTaskState.ERRED,
-                    DaskClientTaskState.LOST,
-                ]
-            ):
+            got = (await dask_client.get_tasks_status([job_id]))[0]
+            assert isinstance(got, DaskClientTaskState)
+            print(f"{got=} vs {expected_status=}")
+            if got is DaskClientTaskState.ERRED and expected_status not in [
+                DaskClientTaskState.ERRED,
+                DaskClientTaskState.LOST,
+            ]:
                 try:
                     # we can fail fast here
                     # this will raise and we catch the Assertion to not reraise too long
                     await dask_client.get_task_result(job_id)
                 except AssertionError as exc:
                     raise RuntimeError from exc
-            assert current_task_status is expected_status
+            assert got is expected_status
 
 
 @pytest.fixture
@@ -364,7 +360,9 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
 async def test_dask_does_not_report_base_exception_in_task(dask_client: DaskClient):
     def fct_that_raise_base_exception() -> NoReturn:
         err_msg = "task triggers a base exception, but dask does not care..."
-        raise BaseException(err_msg)  # pylint: disable=broad-exception-raised
+        raise BaseException(  # pylint: disable=broad-exception-raised  # noqa: TRY002
+            err_msg
+        )
 
     future = dask_client.backend.client.submit(fct_that_raise_base_exception)
     # NOTE: Since asyncio.CancelledError is derived from BaseException and the worker code checks Exception only
@@ -402,7 +400,7 @@ def comp_run_metadata(faker: Faker) -> RunMetadataDict:
     return RunMetadataDict(
         product_name=faker.pystr(),
         simcore_user_agent=faker.pystr(),
-    ) | faker.pydict(allowed_types=(str,))
+    ) | cast(dict[str, str], faker.pydict(allowed_types=(str,)))
 
 
 @pytest.fixture
@@ -418,6 +416,9 @@ def task_labels(comp_run_metadata: RunMetadataDict) -> ContainerLabelsDict:
 
 @pytest.fixture
 def hardware_info() -> HardwareInfo:
+    assert "json_schema_extra" in HardwareInfo.model_config
+    assert isinstance(HardwareInfo.model_config["json_schema_extra"], dict)
+    assert isinstance(HardwareInfo.model_config["json_schema_extra"]["examples"], list)
     return HardwareInfo.model_validate(
         HardwareInfo.model_config["json_schema_extra"]["examples"][0]
     )
@@ -476,7 +477,9 @@ async def test_send_computation_task(
     assert node_params.node_requirements.ram
     assert "product_name" in comp_run_metadata
     assert "simcore_user_agent" in comp_run_metadata
-    assert image_params.fake_tasks[node_id].node_requirements is not None
+    node_requirements = image_params.fake_tasks[node_id].node_requirements
+    assert node_requirements
+
     node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
@@ -491,8 +494,8 @@ async def test_send_computation_task(
                 f"{to_simcore_runtime_docker_label_key('user-id')}": f"{user_id}",
                 f"{to_simcore_runtime_docker_label_key('project-id')}": f"{project_id}",
                 f"{to_simcore_runtime_docker_label_key('node-id')}": f"{node_id}",
-                f"{to_simcore_runtime_docker_label_key('cpu-limit')}": f"{image_params.fake_tasks[node_id].node_requirements.cpu}",
-                f"{to_simcore_runtime_docker_label_key('memory-limit')}": f"{image_params.fake_tasks[node_id].node_requirements.ram}",
+                f"{to_simcore_runtime_docker_label_key('cpu-limit')}": f"{node_requirements.cpu}",
+                f"{to_simcore_runtime_docker_label_key('memory-limit')}": f"{node_requirements.ram}",
                 f"{to_simcore_runtime_docker_label_key('product-name')}": f"{comp_run_metadata['product_name']}",
                 f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": f"{comp_run_metadata['simcore_user_agent']}",
                 f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": "undefined-label",
@@ -605,7 +608,9 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     )
     assert published_computation_task[0].node_id in image_params.fake_tasks
     # creating a new future shows that it is not done????
-    assert not distributed.Future(published_computation_task[0].job_id).done()
+    assert not distributed.Future(
+        published_computation_task[0].job_id, client=dask_client.backend.client
+    ).done()
 
     # as the task is published on the dask-scheduler when sending, it shall still be published on the dask scheduler
     list_of_persisted_datasets = await dask_client.backend.client.list_datasets()  # type: ignore
@@ -628,7 +633,9 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     assert isinstance(task_result, TaskOutputData)
     assert task_result.get("some_output_key") == 123
     # try to create another future and this one is already done
-    assert distributed.Future(published_computation_task[0].job_id).done()
+    assert distributed.Future(
+        published_computation_task[0].job_id, client=dask_client.backend.client
+    ).done()
 
 
 async def test_abort_computation_tasks(
@@ -1013,9 +1020,6 @@ async def test_get_tasks_status(
     assert len(published_computation_task) == 1
 
     assert published_computation_task[0].node_id in cpu_image.fake_tasks
-    # let's get a dask future for the task here so dask will not remove the task from the scheduler at the end
-    computation_future = distributed.Future(key=published_computation_task[0].job_id)
-    assert computation_future
 
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
@@ -1034,15 +1038,11 @@ async def test_get_tasks_status(
     )
     # release the task results
     await dask_client.release_task_result(published_computation_task[0].job_id)
-    # the task is still present since we hold a future here
-    await _assert_wait_for_task_status(
-        published_computation_task[0].job_id,
-        dask_client,
-        DaskClientTaskState.ERRED if fail_remote_fct else DaskClientTaskState.SUCCESS,
-    )
 
-    # removing the future will let dask eventually delete the task from its memory, so its status becomes undefined
-    del computation_future
+    await asyncio.sleep(
+        5  # NOTE: here we wait to be sure that the dask-scheduler properly updates its state
+    )
+    # the task is gone, since the distributed Variable was removed above
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
@@ -1103,9 +1103,13 @@ async def test_dask_sub_handlers(
     assert len(published_computation_task) == 1
 
     assert published_computation_task[0].node_id in cpu_image.fake_tasks
-    computation_future = distributed.Future(published_computation_task[0].job_id)
+    computation_future = distributed.Future(
+        published_computation_task[0].job_id, client=dask_client.backend.client
+    )
     print("--> waiting for job to finish...")
-    await distributed.wait(computation_future, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
+    await distributed.wait(
+        computation_future, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
+    )
     assert computation_future.done()
     print("job finished, now checking that we received the publications...")
 

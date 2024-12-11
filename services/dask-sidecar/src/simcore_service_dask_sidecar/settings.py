@@ -16,12 +16,11 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     LOG_LEVEL: Annotated[
         LogLevel,
         Field(
-            LogLevel.INFO.value,
             validation_alias=AliasChoices(
                 "DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
             ),
         ),
-    ]
+    ] = LogLevel.INFO
 
     # sidecar config ---
 

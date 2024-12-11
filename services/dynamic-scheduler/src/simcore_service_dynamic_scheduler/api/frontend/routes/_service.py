@@ -14,7 +14,7 @@ from simcore_service_dynamic_scheduler.services.rabbitmq import get_rabbitmq_rpc
 
 from ....core.settings import ApplicationSettings
 from ....services.service_tracker import get_tracked_service, remove_tracked_service
-from .._utils import get_parent_app
+from .._utils import get_parent_app, get_settings
 from ._render_utils import base_page
 
 router = APIRouter()
@@ -25,9 +25,9 @@ def _render_remove_from_tracking(node_id):
 
         async def remove_from_tracking():
             confirm_dialog.close()
-            await httpx.AsyncClient(timeout=10).get(
-                f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}/tracker:remove"
-            )
+
+            url = f"http://localhost:{DEFAULT_FASTAPI_PORT}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}service/{node_id}/tracker:remove"
+            await httpx.AsyncClient(timeout=10).get(f"{url}")
 
             ui.notify(f"Service {node_id} removed from tracking")
             ui.navigate.to("/")

@@ -4,6 +4,7 @@ from typing import Annotated, Any, ClassVar, Literal, TypeAlias
 from common_library.pydantic_fields_extension import get_type
 from pydantic import BaseModel, Field
 from pydantic._internal._model_construction import ModelMetaclass
+from pydantic.fields import FieldInfo
 
 from .services import ServiceKey, ServiceVersion
 from .utils.enums import StrAutoEnum
@@ -74,10 +75,12 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
 
     @classmethod
     def get_default_value(cls) -> Any:
+        value_field: FieldInfo = dict(cls.model_fields)["value"]
+
         return (
-            cls.model_fields["value"].default_factory()
-            if cls.model_fields["value"].default_factory
-            else cls.model_fields["value"].default
+            value_field.default_factory()  # type: ignore[call-arg]
+            if callable(value_field.default_factory)
+            else value_field.default
         )
 
 

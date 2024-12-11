@@ -16,7 +16,10 @@ from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import Any, NotRequired, TypeAlias, TypedDict, TypeVar
 
+from settings_library.tracing import TracingSettings
+
 from .logging_utils_filtering import GeneralLogFilter, LoggerName, MessageSubstring
+from .tracing import setup_log_tracing
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
@@ -121,11 +124,11 @@ def config_all_loggers(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+    tracing_settings: TracingSettings | None,
 ) -> None:
     """
     Applies common configuration to ALL registered loggers
     """
-    fmt = DEFAULT_FORMATTING
     the_manager: logging.Manager = logging.Logger.manager
     root_logger = logging.getLogger()
 
@@ -133,8 +136,29 @@ def config_all_loggers(
         logging.getLogger(name) for name in the_manager.loggerDict
     ]
 
+    fmt = DEFAULT_FORMATTING
+    if tracing_settings is not None:
+        fmt = (
+            "log_level=%(levelname)s "
+            "| log_timestamp=%(asctime)s "
+            "| log_source=%(name)s:%(funcName)s(%(lineno)d) "
+            "| log_uid=%(log_uid)s "
+            "| log_oec=%(log_oec)s"
+            "| log_trace_id=%(otelTraceID)s "
+            "| log_span_id=%(otelSpanID)s "
+            "| log_resource.service.name=%(otelServiceName)s "
+            "| log_trace_sampled=%(otelTraceSampled)s] "
+            "| log_msg=%(message)s"
+        )
+        setup_log_tracing(tracing_settings=tracing_settings)
     if log_format_local_dev_enabled:
         fmt = LOCAL_FORMATTING
+        if tracing_settings is not None:
+            fmt = (
+                "%(levelname)s: [%(asctime)s/%(processName)s] "
+                "[log_trace_id=%(otelTraceID)s log_span_id=%(otelSpanID)s log_resource.service.name=%(otelServiceName)s log_trace_sampled=%(otelTraceSampled)s] "
+                "[%(name)s:%(funcName)s(%(lineno)d)] -  %(message)s"
+            )
 
     for logger in loggers:
         _set_logging_handler(

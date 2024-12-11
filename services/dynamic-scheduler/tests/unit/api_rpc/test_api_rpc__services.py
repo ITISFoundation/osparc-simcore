@@ -20,6 +20,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
@@ -108,6 +109,15 @@ def mock_director_v2_service_state(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
+        mock.get("/dynamic_services").respond(
+            status.HTTP_200_OK,
+            text=json.dumps(
+                jsonable_encoder(
+                    DynamicServiceGet.model_config["json_schema_extra"]["examples"]
+                )
+            ),
+        )
+
         mock.get(f"/dynamic_services/{node_id_new_style}").respond(
             status.HTTP_200_OK, text=service_status_new_style.model_dump_json()
         )
@@ -133,12 +143,35 @@ def mock_director_v2_service_state(
         yield None
 
 
+@pytest.fixture(
+    params=[
+        False,
+        pytest.param(
+            True,
+            marks=pytest.mark.xfail(
+                reason="INTERNAL scheduler implementation is missing"
+            ),
+        ),
+    ]
+)
+def use_internal_scheduler(request: pytest.FixtureRequest) -> bool:
+    return request.param
+
+
 @pytest.fixture
 def app_environment(
     app_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
+    use_internal_scheduler: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER": f"{use_internal_scheduler}",
+        },
+    )
     return app_environment
 
 
@@ -151,6 +184,17 @@ async def rpc_client(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ) -> RabbitMQRPCClient:
     return await rabbitmq_rpc_client("client")
+
+
+async def test_list_tracked_dynamic_services(rpc_client: RabbitMQRPCClient):
+    results = await services.list_tracked_dynamic_services(
+        rpc_client, user_id=None, project_id=None
+    )
+    assert len(results) == 2
+    assert results == [
+        TypeAdapter(DynamicServiceGet).validate_python(x)
+        for x in DynamicServiceGet.model_config["json_schema_extra"]["examples"]
+    ]
 
 
 async def test_get_state(

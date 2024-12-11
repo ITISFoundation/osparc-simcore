@@ -14,8 +14,9 @@ integrates with osparc.
 
 import logging
 from pathlib import Path
-from typing import Any, Final, Literal
+from typing import Annotated, Any, Final, Literal
 
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import SHA256Str
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.service_settings_labels import (
@@ -215,7 +216,10 @@ class RuntimeConfig(BaseModel):
 
     restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
-    callbacks_mapping: CallbacksMapping | None = Field(default_factory=dict)
+    callbacks_mapping: Annotated[
+        CallbacksMapping | None, Field(default_factory=dict)
+    ] = DEFAULT_FACTORY
+
     paths_mapping: PathMappingsLabel | None = None
 
     user_preferences_path: Path | None = None
@@ -226,11 +230,13 @@ class RuntimeConfig(BaseModel):
 
     containers_allowed_outgoing_internet: set[str] | None = None
 
-    settings: list[SettingsItem] = Field(default_factory=list)
+    settings: Annotated[
+        list[SettingsItem], Field(default_factory=list)
+    ] = DEFAULT_FACTORY
 
     @model_validator(mode="before")
     @classmethod
-    def ensure_compatibility(cls, v):
+    def _ensure_compatibility(cls, v):
         # NOTE: if changes are applied to `DynamicSidecarServiceLabels`
         # these are also validated when ooil runs.
         try:

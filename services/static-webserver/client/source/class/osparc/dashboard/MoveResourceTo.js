@@ -30,9 +30,9 @@ qx.Class.define("osparc.dashboard.MoveResourceTo", {
 
     const workspacesAndFoldersTree = this.getChildControl("workspaces-and-folders-tree");
     this.getChildControl("cancel-btn");
-    const moveButton = this.getChildControl("move-btn");
 
-    moveButton.setEnabled(false);
+    const moveButton = this.getChildControl("move-btn");
+    moveButton.setEnabled(currentWorkspaceId !== null || currentFolderId !== null); // disable if current location is My Workspace's root
     workspacesAndFoldersTree.getSelection().addListener("change", () => {
       const selection = workspacesAndFoldersTree.getSelection();
       if (selection.getLength() > 0) {

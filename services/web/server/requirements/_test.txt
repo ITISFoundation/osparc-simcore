@@ -224,7 +224,7 @@ types-passlib==1.7.7.20240819
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20240917
     # via -r requirements/_test.in
-typing-extensions==4.12.0
+typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   asyncpg-stubs

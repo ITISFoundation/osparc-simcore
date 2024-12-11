@@ -674,7 +674,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     __showBlockedCardFromStatus: function(lockedStatus) {
       const status = lockedStatus["status"];
       const owner = lockedStatus["owner"];
-      let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"] || this.tr("A user"), owner["last_name"] || "");
+      let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"] || this.tr("A user"), owner["last_name"] || ""); // it will be replaced by "userName"
       let image = null;
       switch (status) {
         case "CLOSING":

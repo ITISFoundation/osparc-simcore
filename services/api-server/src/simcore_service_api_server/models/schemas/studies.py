@@ -1,14 +1,15 @@
 from typing import Annotated, TypeAlias
 
 from models_library import projects, projects_nodes_io
-from pydantic import AnyUrl, BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field
+from simcore_service_api_server.models._utils_pydantic import UriSchema
 
 from .. import api_resources
 from . import solvers
 
 StudyID: TypeAlias = projects.ProjectID
 NodeName: TypeAlias = str
-DownloadLink: TypeAlias = AnyUrl
+DownloadLink: TypeAlias = Annotated[AnyHttpUrl, UriSchema()]
 
 
 class Study(BaseModel):
@@ -48,7 +49,7 @@ class StudyPort(solvers.SolverPort):
 
 class LogLink(BaseModel):
     node_name: NodeName
-    download_link: Annotated[DownloadLink, StringConstraints(max_length=65536)]
+    download_link: DownloadLink
 
 
 class JobLogsMap(BaseModel):

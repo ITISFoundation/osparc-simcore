@@ -78,7 +78,7 @@ async def get_new_project_owner_gid(
     standard_groups = {}  # groups of users, multiple users can be part of this
     primary_groups = {}  # each individual user has a unique primary group
     for other_gid in other_users_access_rights:
-        group: Group | None = await get_group_from_gid(app=app, gid=int(other_gid))
+        group: Group | None = await get_group_from_gid(app=app, group_id=int(other_gid))
 
         # only process for users and groups with write access right
         if group is None:

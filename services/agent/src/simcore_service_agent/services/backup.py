@@ -161,7 +161,6 @@ async def _store_in_s3(
         f"{settings.AGENT_VOLUMES_CLEANUP_PARALLELISM}",
         # below two options reduce to a minimum the memory footprint
         # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
-        "--use-mmap",  # docs https://rclone.org/docs/#use-mmap
         "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
         "0M",
         "--stats",

@@ -1,5 +1,7 @@
 import os
+from decimal import Decimal
 from functools import cached_property
+from typing import Annotated
 
 from aiohttp import web
 from models_library.basic_types import NonNegativeDecimal
@@ -56,21 +58,27 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
         description="FAKE Base url to the payment gateway",
     )
 
-    PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: NonNegativeDecimal = Field(
-        default=100,
-        description="Minimum balance in credits to top-up for auto-recharge",
-        # NOTE: Using credits (instead of USD) simplify RUT monitoring which is reponsible to trigger auto-recharge
-    )
+    PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: Annotated[
+        NonNegativeDecimal,
+        Field(
+            description="Minimum balance in credits to top-up for auto-recharge"
+            # NOTE: Using credits (instead of USD) simplify RUT monitoring which is reponsible to trigger auto-recharge
+        ),
+    ] = Decimal(100)
 
-    PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT: NonNegativeDecimal = Field(
-        default=100,
-        description="Default value in USD on the amount to top-up for auto-recharge (`top_up_amount_in_usd`)",
-    )
+    PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT: Annotated[
+        NonNegativeDecimal,
+        Field(
+            description="Default value in USD on the amount to top-up for auto-recharge (`top_up_amount_in_usd`)",
+        ),
+    ] = Decimal(100)
 
-    PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: NonNegativeDecimal | None = Field(
-        default=10000,
-        description="Default value in USD for the montly limit for auto-recharge (`monthly_limit_in_usd`)",
-    )
+    PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: Annotated[
+        NonNegativeDecimal | None,
+        Field(
+            description="Default value in USD for the montly limit for auto-recharge (`mont] = hly_limit_in_usd`)",
+        ),
+    ] = Decimal(10_000)
 
     @cached_property
     def api_base_url(self) -> str:

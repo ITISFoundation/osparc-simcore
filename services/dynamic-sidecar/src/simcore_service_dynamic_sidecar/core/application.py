@@ -119,6 +119,7 @@ def setup_logger(settings: ApplicationSettings):
     config_all_loggers(
         log_format_local_dev_enabled=settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.DY_SIDECAR_LOG_FILTER_MAPPING,
+        tracing_settings=settings.DYNAMIC_SIDECAR_TRACING,
     )
 
 

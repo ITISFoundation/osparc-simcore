@@ -1931,7 +1931,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServicePricingPlanGet"
+                  "$ref": "#/components/schemas/ServicePricingPlanGetLegacy"
                 }
               }
             }
@@ -2650,6 +2650,7 @@
                   "type": "null"
                 }
               ],
+              "deprecated": true,
               "title": "Cluster Id"
             },
             "deprecated": true
@@ -3789,7 +3790,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
+                  "$ref": "#/components/schemas/WalletGetWithAvailableCreditsLegacy"
                 }
               }
             }
@@ -3928,7 +3929,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PricingUnitGet"
+                  "$ref": "#/components/schemas/PricingUnitGetLegacy"
                 }
               }
             }
@@ -4628,6 +4629,7 @@
                   "type": "null"
                 }
               ],
+              "deprecated": true,
               "title": "Cluster Id"
             },
             "deprecated": true
@@ -5119,7 +5121,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
+                  "$ref": "#/components/schemas/WalletGetWithAvailableCreditsLegacy"
                 }
               }
             }
@@ -5232,7 +5234,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
+                  "$ref": "#/components/schemas/WalletGetWithAvailableCreditsLegacy"
                 }
               }
             }
@@ -5334,7 +5336,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetCreditPrice"
+                  "$ref": "#/components/schemas/GetCreditPriceLegacy"
                 }
               }
             }
@@ -5546,7 +5548,6 @@
           "urls": {
             "items": {
               "type": "string",
-              "maxLength": 65536,
               "minLength": 1,
               "format": "uri"
             },
@@ -5565,7 +5566,7 @@
         ],
         "title": "FileUploadData"
       },
-      "GetCreditPrice": {
+      "GetCreditPriceLegacy": {
         "properties": {
           "productName": {
             "type": "string",
@@ -5604,7 +5605,7 @@
           "usdPerCredit",
           "minPaymentAmountUsd"
         ],
-        "title": "GetCreditPrice"
+        "title": "GetCreditPriceLegacy"
       },
       "Groups": {
         "properties": {
@@ -6161,7 +6162,6 @@
           },
           "download_link": {
             "type": "string",
-            "maxLength": 65536,
             "minLength": 1,
             "format": "uri",
             "title": "Download Link"
@@ -6203,14 +6203,14 @@
           },
           "docs_url": {
             "type": "string",
-            "maxLength": 65536,
+            "maxLength": 2083,
             "minLength": 1,
             "format": "uri",
             "title": "Docs Url"
           },
           "docs_dev_url": {
             "type": "string",
-            "maxLength": 65536,
+            "maxLength": 2083,
             "minLength": 1,
             "format": "uri",
             "title": "Docs Dev Url"
@@ -6471,12 +6471,12 @@
       "PricingPlanClassification": {
         "type": "string",
         "enum": [
-          "TIER"
+          "TIER",
+          "LICENSE"
         ],
-        "const": "TIER",
         "title": "PricingPlanClassification"
       },
-      "PricingUnitGet": {
+      "PricingUnitGetLegacy": {
         "properties": {
           "pricingUnitId": {
             "type": "integer",
@@ -6493,6 +6493,7 @@
           },
           "currentCostPerUnit": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Currentcostperunit"
           },
           "default": {
@@ -6508,7 +6509,7 @@
           "currentCostPerUnit",
           "default"
         ],
-        "title": "PricingUnitGet"
+        "title": "PricingUnitGetLegacy"
       },
       "Profile": {
         "properties": {
@@ -6650,7 +6651,7 @@
         "title": "RunningState",
         "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
       },
-      "ServicePricingPlanGet": {
+      "ServicePricingPlanGetLegacy": {
         "properties": {
           "pricingPlanId": {
             "type": "integer",
@@ -6680,7 +6681,7 @@
           },
           "pricingUnits": {
             "items": {
-              "$ref": "#/components/schemas/PricingUnitGet"
+              "$ref": "#/components/schemas/PricingUnitGetLegacy"
             },
             "type": "array",
             "title": "Pricingunits"
@@ -6696,7 +6697,7 @@
           "pricingPlanKey",
           "pricingUnits"
         ],
-        "title": "ServicePricingPlanGet"
+        "title": "ServicePricingPlanGetLegacy"
       },
       "Solver": {
         "properties": {
@@ -7037,7 +7038,7 @@
         ],
         "title": "ValidationError"
       },
-      "WalletGetWithAvailableCredits": {
+      "WalletGetWithAvailableCreditsLegacy": {
         "properties": {
           "walletId": {
             "type": "integer",
@@ -7094,6 +7095,7 @@
           },
           "availableCredits": {
             "type": "number",
+            "minimum": 0.0,
             "title": "Availablecredits"
           }
         },
@@ -7101,15 +7103,13 @@
         "required": [
           "walletId",
           "name",
-          "description",
           "owner",
-          "thumbnail",
           "status",
           "created",
           "modified",
           "availableCredits"
         ],
-        "title": "WalletGetWithAvailableCredits"
+        "title": "WalletGetWithAvailableCreditsLegacy"
       },
       "WalletStatus": {
         "type": "string",

@@ -6,6 +6,7 @@ from models_library.api_schemas_payments.errors import (
     PaymentMethodNotFoundError,
     PaymentNotFoundError,
 )
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.logging_utils import log_context
 
 from ..._constants import ACKED, PGDB
@@ -77,18 +78,36 @@ async def acknowledge_payment(
     )
 
     if ack.saved:
-        inserted = await payments_methods.insert_payment_method(
-            repo=repo_methods,
-            payment_method_id=ack.saved.payment_method_id,
-            user_id=transaction.user_id,
-            wallet_id=transaction.wallet_id,
-            ack=ack.saved,
-        )
-        background_tasks.add_task(
-            payments_methods.on_payment_method_completed,
-            payment_method=inserted,
-            notifier=notifier,
-        )
+        if ack.saved.payment_method_id is None or not ack.saved.success:
+            _logger.error(
+                **create_troubleshotting_log_kwargs(
+                    f"Got ack that {payment_id=} was completed but failed to save the payment-method used for the payment as requested.",
+                    error=RuntimeError("Failed to save payment-method after payment"),
+                    error_context={
+                        "ack": ack,
+                        "user_id": transaction.user_id,
+                        "payment_id": payment_id,
+                        "transaction": transaction,
+                    },
+                    tip="This issue is not critical. Since the payment-method could not be saved, "
+                    "the user cannot use it in following payments and will have to re-introduce it manually"
+                    "SEE https://github.com/ITISFoundation/osparc-simcore/issues/6902",
+                )
+            )
+        else:
+            inserted = await payments_methods.insert_payment_method(
+                repo=repo_methods,
+                payment_method_id=ack.saved.payment_method_id,
+                user_id=transaction.user_id,
+                wallet_id=transaction.wallet_id,
+                ack=ack.saved,
+            )
+
+            background_tasks.add_task(
+                payments_methods.on_payment_method_completed,
+                payment_method=inserted,
+                notifier=notifier,
+            )
 
 
 @router.post("/payments-methods/{payment_method_id}:ack")

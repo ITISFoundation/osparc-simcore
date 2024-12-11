@@ -94,9 +94,9 @@ qx.Class.define("osparc.store.Groups", {
           this.setGroupMe(groupMe);
           const myAuthData = osparc.auth.Data.getInstance();
           groupMe.set({
-            label: osparc.data.model.User.namesToLabel(myAuthData.getFirstName(), myAuthData.getLastName()),
-            description: myAuthData.getEmail(),
-            thumbnail: osparc.data.model.User.emailToThumbnail(myAuthData.getEmail()),
+            label: myAuthData.getUsername(),
+            description: `${myAuthData.getFirstName()} ${myAuthData.getLastName()} - ${myAuthData.getEmail()}`,
+            thumbnail: osparc.utils.Avatar.emailToThumbnail(myAuthData.getEmail()),
           })
           return orgs;
         });
@@ -115,7 +115,7 @@ qx.Class.define("osparc.store.Groups", {
             // reset group's group members
             group.setGroupMembers({});
             orgMembers.forEach(orgMember => {
-              const user = new osparc.data.model.User(orgMember);
+              const user = new osparc.data.model.UserMember(orgMember);
               this.__addToUsersCache(user, groupId);
             });
           }
@@ -231,6 +231,7 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     getOrganization: function(groupId) {
+      groupId = parseInt(groupId);
       if (groupId && groupId in this.getOrganizations()) {
         return this.getOrganizations()[groupId];
       }
@@ -257,6 +258,14 @@ qx.Class.define("osparc.store.Groups", {
       const org = this.getGroup(orgId);
       if (org) {
         return org.getGroupMemberByUserId(userId);
+      }
+      return null;
+    },
+
+    getGroupMemberByUsername: function(orgId, username) {
+      const org = this.getGroup(orgId);
+      if (org) {
+        return org.getGroupMemberByUsername(username);
       }
       return null;
     },
@@ -330,16 +339,19 @@ qx.Class.define("osparc.store.Groups", {
     // CRUD GROUP
 
     // CRUD GROUP MEMBERS
-    postMember: function(orgId, newMemberEmail) {
+    addMember: function(orgId, username, email = null) {
       const gid = parseInt(orgId);
       const params = {
         url: {
           "gid": gid
         },
-        data: {
-          "email": newMemberEmail
-        }
+        data: {},
       };
+      if (email) {
+        params.data["email"] = email;
+      } else {
+        params.data["userName"] = username;
+      }
       return osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
           // the backend doesn't return the user back,
@@ -347,7 +359,7 @@ qx.Class.define("osparc.store.Groups", {
           return this.__fetchGroupMembers(gid);
         })
         .then(() => {
-          const groupMember = this.getGroupMemberByLogin(gid, newMemberEmail);
+          const groupMember = email ? this.getGroupMemberByLogin(gid, email) : this.getGroupMemberByUsername(gid, username);
           if (groupMember) {
             return groupMember;
           }

@@ -293,10 +293,8 @@ qx.Class.define("osparc.share.Collaborators", {
           ctrl.bindProperty("gid", "key", null, item, id);
           ctrl.bindProperty("collabType", "collabType", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
-          ctrl.bindProperty("name", "title", null, item, id); // user
-          ctrl.bindProperty("label", "title", null, item, id); // organization
-          ctrl.bindProperty("login", "subtitleMD", null, item, id); // user
-          ctrl.bindProperty("description", "subtitle", null, item, id); // organization
+          ctrl.bindProperty("label", "title", null, item, id);
+          ctrl.bindProperty("description", "subtitleMD", null, item, id);
           ctrl.bindProperty("resourceType", "resourceType", null, item, id); // Resource type
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
@@ -409,15 +407,11 @@ qx.Class.define("osparc.share.Collaborators", {
           const collaborator = {
             "gid": collab.getGroupId(),
             "thumbnail": collab.getThumbnail(),
+            "label": collab.getLabel(),
+            "description": collab.getDescription(),
           };
-          if ("getUserId" in collab) {
-            // user
-            collaborator["name"] = collab.getLabel();
-            collaborator["login"] = collab.getLogin();
-          } else {
-            // org/group
-            collaborator["label"] = collab.getLabel();
-            collaborator["description"] = collab.getDescription();
+          if (!("getUserId" in collab)) {
+            // orgnanization
             if (everyoneGIds.includes(parseInt(gid))) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
             } else if (!collaborator["thumbnail"]) {

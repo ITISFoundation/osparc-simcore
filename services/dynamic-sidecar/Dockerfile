@@ -108,8 +108,7 @@ FROM base AS build
 
 ENV SC_BUILD_TARGET=build
 
-RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -187,7 +186,7 @@ RUN chmod +x services/dynamic-sidecar/docker/*.sh
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
-  --start-period=30s \
+  --start-period=180s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/health"]

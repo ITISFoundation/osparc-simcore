@@ -70,7 +70,6 @@ def setup_tracing(
     ):
         _logger.warning("Skipping opentelemetry tracing setup")
         return
-
     # Set up the tracer provider
     resource = Resource(attributes={"service.name": service_name})
     trace.set_tracer_provider(TracerProvider(resource=resource))

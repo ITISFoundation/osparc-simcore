@@ -16,9 +16,7 @@ class CapturedParameterSchema(BaseModel):
     allOf: list["CapturedParameterSchema"] | None = None
     oneOf: list["CapturedParameterSchema"] | None = None
 
-    class Config:
-        validate_always = True
-        allow_population_by_field_name = True
+    model_config = ConfigDict(validate_default=True, populate_by_name=True)
 
     @field_validator("type_", mode="before")
     @classmethod

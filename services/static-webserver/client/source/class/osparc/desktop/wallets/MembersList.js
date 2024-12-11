@@ -70,8 +70,8 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       if (sorted !== 0) {
         return sorted;
       }
-      if (("login" in a) && ("login" in b)) {
-        return a["login"].localeCompare(b["login"]);
+      if (("label" in a) && ("label" in b)) {
+        return a["label"].localeCompare(b["label"]);
       }
       return 0;
     }
@@ -170,9 +170,9 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
           ctrl.bindProperty("userId", "key", null, item, id);
           ctrl.bindProperty("groupId", "gid", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
-          ctrl.bindProperty("name", "title", null, item, id);
+          ctrl.bindProperty("label", "title", null, item, id);
+          ctrl.bindProperty("description", "subtitleMD", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
-          ctrl.bindProperty("login", "subtitleMD", null, item, id);
           ctrl.bindProperty("options", "options", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
@@ -222,8 +222,8 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
           collaborator["userId"] = gid === myGroupId ? osparc.auth.Data.getInstance().getUserId() : collab.getUserId();
           collaborator["groupId"] = collab.getGroupId();
           collaborator["thumbnail"] = collab.getThumbnail();
-          collaborator["name"] = collab.getLabel();
-          collaborator["login"] = gid === myGroupId ? osparc.auth.Data.getInstance().getEmail() : collab.getLogin();
+          collaborator["label"] = collab.getLabel();
+          collaborator["description"] = gid === myGroupId ? osparc.auth.Data.getInstance().getEmail() : collab.getDescription();
           collaborator["accessRights"] = {
             read: accessRights["read"],
             write: accessRights["write"],

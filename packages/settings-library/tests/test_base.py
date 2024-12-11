@@ -8,6 +8,7 @@ import json
 from collections.abc import Callable
 from typing import Any
 
+import pydantic
 import pytest
 import settings_library.base
 from pydantic import BaseModel, ValidationError
@@ -22,6 +23,8 @@ from settings_library.base import (
     DefaultFromEnvFactoryError,
 )
 from settings_library.email import SMTPSettings
+
+pydantic_version = ".".join(pydantic.__version__.split(".")[:2])
 
 S2 = json.dumps({"S_VALUE": 2})
 S3 = json.dumps({"S_VALUE": 3})
@@ -180,7 +183,7 @@ def test_create_settings_class_without_environ_fails(
         "loc": ("S_VALUE",),
         "msg": "Field required",
         "type": "missing",
-        "url": "https://errors.pydantic.dev/2.9/v/missing",
+        "url": f"https://errors.pydantic.dev/{pydantic_version}/v/missing",
     }
 
 
@@ -310,7 +313,7 @@ def test_how_settings_parse_null_environs(monkeypatch: pytest.MonkeyPatch):
         "loc": ("INT_VALUE_TO_NOTHING",),
         "msg": "Input should be a valid integer, unable to parse string as an integer",
         "type": "int_parsing",
-        "url": "https://errors.pydantic.dev/2.9/v/int_parsing",
+        "url": f"https://errors.pydantic.dev/{pydantic_version}/v/int_parsing",
     }
 
 

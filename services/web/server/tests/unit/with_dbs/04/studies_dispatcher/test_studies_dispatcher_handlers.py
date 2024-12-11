@@ -5,24 +5,24 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import json
 import re
 import urllib.parse
 from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
-import simcore_service_webserver.studies_dispatcher._redirects_handlers
+import simcore_service_webserver.studies_dispatcher
 import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
-from common_library.json_serialization import json_dumps
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from pydantic import BaseModel, ByteSize, TypeAdapter
+from pydantic import BaseModel, ByteSize, TypeAdapter, ValidationError
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
-from pytest_simcore.pydantic_models import iter_model_examples_in_module
+from pytest_simcore.pydantic_models import walk_model_examples_in_package
 from servicelib.aiohttp import status
 from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
@@ -235,16 +235,19 @@ async def test_api_list_supported_filetypes(client: TestClient):
 
 @pytest.mark.parametrize(
     "model_cls, example_name, example_data",
-    iter_model_examples_in_module(
-        simcore_service_webserver.studies_dispatcher._redirects_handlers
-    ),
+    walk_model_examples_in_package(simcore_service_webserver.studies_dispatcher),
 )
 def test_model_examples(
     model_cls: type[BaseModel], example_name: int, example_data: Any
 ):
-    print(example_name, ":", json_dumps(example_data))
-    model = model_cls.model_validate(example_data)
-    assert model
+    try:
+        assert model_cls.model_validate(example_data) is not None
+    except ValidationError as err:
+        pytest.fail(
+            f"{example_name} is invalid {model_cls.__module__}.{model_cls.__name__}:"
+            f"\n{json.dumps(example_data, indent=1)}"
+            f"\nError: {err}"
+        )
 
 
 async def test_api_list_services(client: TestClient):
@@ -421,7 +424,6 @@ async def test_dispatch_study_anonymously(
 
         data, _ = await assert_status(response, status.HTTP_200_OK)
         assert data["login"].endswith("guest-at-osparc.io")
-        assert data["gravatar_id"]
         assert data["role"].upper() == UserRole.GUEST.name
 
         # guest user only a copy of the template project

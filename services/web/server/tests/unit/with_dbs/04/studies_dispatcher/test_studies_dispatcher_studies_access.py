@@ -282,7 +282,6 @@ async def test_access_study_anonymously(
 
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["login"].endswith("guest-at-osparc.io")
-    assert data["gravatar_id"]
     assert data["role"].upper() == UserRole.GUEST.name
 
     # guest user only a copy of the template project
@@ -448,7 +447,6 @@ async def test_guest_user_is_not_garbage_collected(
 
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert data["login"].endswith("guest-at-osparc.io")
-        assert data["gravatar_id"]
         assert data["role"].upper() == UserRole.GUEST.name
 
         # guest user only a copy of the template project

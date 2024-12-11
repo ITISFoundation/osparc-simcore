@@ -170,14 +170,7 @@ class FileQueryParams(FileParams):
 
 
 class ServiceAndFileParams(FileQueryParams, ServiceParams):
-    model_config = ConfigDict(
-        json_schema_extra={
-            "allOf": [
-                {"$ref": "#/definitions/FileParams"},
-                {"$ref": "#/definitions/ServiceParams"},
-            ]
-        }
-    )
+    ...
 
 
 class ViewerQueryParams(BaseModel):

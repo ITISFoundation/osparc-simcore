@@ -55,6 +55,14 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    announcements: {
+      check: "Array",
+      init: []
+    },
+    maintenance: {
+      check: "Object",
+      init: {}
+    },
     currentStudy: {
       check: "osparc.data.model.Study",
       init: null,
@@ -110,10 +118,6 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: [],
       event: "changeIterations"
-    },
-    maintenance: {
-      check: "Object",
-      init: {}
     },
     templates: {
       check: "Array",

@@ -47,7 +47,11 @@ from ._constants import (
     MSG_BILLING_DETAILS_NOT_DEFINED_ERROR,
     MSG_PRICE_NOT_DEFINED_ERROR,
 )
-from .errors import WalletAccessForbiddenError, WalletNotFoundError
+from .errors import (
+    WalletAccessForbiddenError,
+    WalletNotEnoughCreditsError,
+    WalletNotFoundError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -86,6 +90,9 @@ def handle_wallets_exceptions(handler: Handler):
 
         except ProductPriceNotDefinedError as exc:
             raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR) from exc
+
+        except WalletNotEnoughCreditsError as exc:
+            raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
 
         except BillingDetailsNotFoundError as exc:
 

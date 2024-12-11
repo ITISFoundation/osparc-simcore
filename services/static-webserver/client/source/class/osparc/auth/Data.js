@@ -26,24 +26,6 @@ qx.Class.define("osparc.auth.Data", {
 
   properties: {
     /**
-     *  User Id
-     */
-    userId: {
-      init: null,
-      nullable: false,
-      check: "Number"
-    },
-
-    /**
-     *  Group ID
-     */
-    groupId: {
-      init: null,
-      nullable: false,
-      check: "Number"
-    },
-
-    /**
      *  Basic authentification with a token
     */
     auth: {
@@ -51,29 +33,6 @@ qx.Class.define("osparc.auth.Data", {
       nullable: true,
       check: "osparc.io.request.authentication.Token",
       apply: "__applyAuth"
-    },
-
-    /**
-     *  Email of logged in user, otherwise null
-    */
-    email: {
-      init: null,
-      nullable: true,
-      check: "String"
-    },
-
-    firstName: {
-      init: "",
-      nullable: true,
-      check: "String",
-      event: "changeFirstName"
-    },
-
-    lastName: {
-      init: "",
-      nullable: true,
-      check: "String",
-      event: "changeLastName"
     },
 
     role: {
@@ -91,19 +50,64 @@ qx.Class.define("osparc.auth.Data", {
       event: "changeGuest"
     },
 
+    loggedIn: {
+      check: "Boolean",
+      nullable: false,
+      init: false,
+      event: "changeLoggedIn",
+    },
+
+    /**
+     *  User Id
+     */
+    userId: {
+      init: null,
+      nullable: false,
+      check: "Number"
+    },
+
+    /**
+     *  Group ID
+     */
+    groupId: {
+      init: null,
+      nullable: false,
+      check: "Number"
+    },
+
+    username: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeUsername",
+    },
+
+    email: {
+      init: null,
+      nullable: true, // email of logged in user, otherwise null
+      check: "String"
+    },
+
+    firstName: {
+      init: "",
+      nullable: true,
+      check: "String",
+      event: "changeFirstName"
+    },
+
+    lastName: {
+      init: "",
+      nullable: true,
+      check: "String",
+      event: "changeLastName"
+    },
+
     expirationDate: {
       init: null,
       nullable: true,
       check: "Date",
       event: "changeExpirationDate"
     },
-
-    loggedIn: {
-      check: "Boolean",
-      nullable: false,
-      init: false,
-      event: "changeLoggedIn",
-    }
   },
 
   members: {
@@ -135,16 +139,12 @@ qx.Class.define("osparc.auth.Data", {
       return osparc.utils.Utils.cookie.getCookie("user") === "logout";
     },
 
-    getUserName: function() {
+    getFriendlyUsername: function() {
       const firstName = this.getFirstName();
       if (firstName) {
         return firstName;
       }
-      const email = this.getEmail();
-      if (email) {
-        return osparc.utils.Utils.getNameFromEmail(email);
-      }
-      return "user";
+      return this.getUsername();
     },
 
     getFriendlyRole: function() {

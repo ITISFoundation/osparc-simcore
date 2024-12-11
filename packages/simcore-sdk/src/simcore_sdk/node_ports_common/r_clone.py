@@ -8,10 +8,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Final
 
-from common_library.errors_classes import OsparcErrorMixin
-
 from aiocache import cached  # type: ignore[import-untyped]
 from aiofiles import tempfile
+from common_library.errors_classes import OsparcErrorMixin
 from models_library.basic_types import IDStr
 from pydantic import AnyUrl, BaseModel, ByteSize
 from servicelib.progress_bar import ProgressBarData
@@ -207,7 +206,6 @@ async def _sync_sources(
             f"{r_clone_settings.R_CLONE_OPTION_TRANSFERS}",
             # below two options reduce to a minimum the memory footprint
             # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
-            "--use-mmap",  # docs https://rclone.org/docs/#use-mmap
             "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
             r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
             "--use-json-log",
