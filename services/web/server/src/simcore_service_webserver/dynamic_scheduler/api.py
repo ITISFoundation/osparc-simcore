@@ -162,6 +162,6 @@ async def restart_user_services(app: web.Application, *, node_id: NodeID) -> Non
         get_rabbitmq_rpc_client(app),
         node_id=node_id,
         timeout_s=int(
-            settings.DYNAMIC_SCHEDULER_RESTART_DYNAMIC_SERVICE_TIMEOUT.total_seconds()
+            settings.DYNAMIC_SCHEDULER_RESTART_USER_SERVICES_TIMEOUT.total_seconds()
         ),
     )

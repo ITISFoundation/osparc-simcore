@@ -26,12 +26,8 @@ class DynamicSchedulerSettings(BaseCustomSettings, MixinServiceSettings):
         ),
     )
 
-    DYNAMIC_SCHEDULER_RESTART_DYNAMIC_SERVICE_TIMEOUT: datetime.timedelta = Field(
-        datetime.timedelta(minutes=1),
-        description="timeout of containers restart",
-        validation_alias=AliasChoices(
-            "DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT",
-        ),
+    DYNAMIC_SCHEDULER_RESTART_USER_SERVICES_TIMEOUT: datetime.timedelta = Field(
+        datetime.timedelta(minutes=1), description="timeout for user services restart"
     )
 
 
