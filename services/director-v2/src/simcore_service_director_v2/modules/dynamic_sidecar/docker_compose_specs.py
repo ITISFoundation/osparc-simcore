@@ -20,6 +20,7 @@ from models_library.services_resources import (
     ResourceValue,
     ServiceResourcesDict,
 )
+from models_library.services_types import RunID
 from models_library.users import UserID
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from pydantic import ByteSize
@@ -278,6 +279,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     node_id: NodeID,
     simcore_user_agent: str,
     swarm_stack_name: str,
+    run_id: RunID,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -350,6 +352,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
             product_name=product_name,
             project_id=project_id,
             node_id=node_id,
+            run_id=run_id,
         )
 
         add_egress_configuration(
@@ -388,6 +391,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         product_name=product_name,
         project_id=project_id,
         node_id=node_id,
+        run_id=run_id,
     )
 
     stringified_service_spec: str = replace_env_vars_in_compose_spec(

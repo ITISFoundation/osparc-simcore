@@ -48,7 +48,9 @@ from simcore_service_director_v2.utils.osparc_variables import (
 def session_context(faker: Faker) -> ContextDict:
     return ContextDict(
         app=FastAPI(),
-        service_key=TypeAdapter(ServiceKey).validate_python("simcore/services/dynamic/foo"),
+        service_key=TypeAdapter(ServiceKey).validate_python(
+            "simcore/services/dynamic/foo"
+        ),
         service_version=TypeAdapter(ServiceVersion).validate_python("1.2.3"),
         compose_spec=generate_fake_docker_compose(faker),
         product_name=faker.word(),
@@ -101,7 +103,8 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
 
     # All values extracted from the context MUST be SubstitutionValue
     assert {
-        key: TypeAdapter(SubstitutionValue).validate_python(value) for key, value in environs.items()
+        key: TypeAdapter(SubstitutionValue).validate_python(value)
+        for key, value in environs.items()
     }
 
     for osparc_variable_name, context_name in [
@@ -170,6 +173,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
         "user_role": "${OSPARC_VARIABLE_USER_ROLE}",
         "api_key": "${OSPARC_VARIABLE_API_KEY}",
         "api_secret": "${OSPARC_VARIABLE_API_SECRET}",
+        "run_id": "${OSPARC_VARIABLE_RUN_ID}",
     }
     print("SPECS\n", specs)
 
@@ -180,6 +184,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
         product_name="a_product",
         project_id=faker.uuid4(cast_to=None),
         node_id=faker.uuid4(cast_to=None),
+        run_id="some_run_id",
     )
     print("REPLACED SPECS\n", replaced_specs)
 
