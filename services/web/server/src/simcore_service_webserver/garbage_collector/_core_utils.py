@@ -2,7 +2,7 @@ import logging
 
 import asyncpg.exceptions
 from aiohttp import web
-from models_library.groups import Group, GroupID, GroupTypeEnum
+from models_library.groups import Group, GroupID, GroupType
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from simcore_postgres_database.errors import DatabaseError
@@ -86,9 +86,9 @@ async def get_new_project_owner_gid(
         if access_rights[other_gid]["write"] is not True:
             continue
 
-        if group.group_type == GroupTypeEnum.STANDARD:
+        if group.group_type == GroupType.STANDARD:
             standard_groups[other_gid] = access_rights[other_gid]
-        elif group.group_type == GroupTypeEnum.PRIMARY:
+        elif group.group_type == GroupType.PRIMARY:
             primary_groups[other_gid] = access_rights[other_gid]
 
     _logger.debug(

@@ -24,11 +24,7 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr, TypeAdapter, ValidationError
-from simcore_postgres_database.models.groups import (
-    GroupTypeEnum,
-    groups,
-    user_to_groups,
-)
+from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
 from simcore_postgres_database.models.users import UserRole, users
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
@@ -125,13 +121,13 @@ async def get_user_profile(
                 }
                 assert user_profile["id"] == user_id  # nosec
 
-            if row.groups_type == GroupTypeEnum.EVERYONE:
+            if row.groups_type == GroupType.EVERYONE:
                 everyone_group = _convert_groups_db_to_schema(
                     row,
                     prefix="groups_",
                     accessRights=row["user_to_groups_access_rights"],
                 )
-            elif row.groups_type == GroupTypeEnum.PRIMARY:
+            elif row.groups_type == GroupType.PRIMARY:
                 user_primary_group = _convert_groups_db_to_schema(
                     row,
                     prefix="groups_",

@@ -6,7 +6,7 @@
 
 
 import sqlalchemy as sa
-from common_library.groups_enums import GroupTypeEnum
+from common_library.groups_enums import GroupType
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
@@ -27,7 +27,7 @@ groups = sa.Table(
     sa.Column("description", sa.String, nullable=False, doc="Short description"),
     sa.Column(
         "type",
-        sa.Enum(GroupTypeEnum),
+        sa.Enum(GroupType),
         nullable=False,
         server_default="STANDARD",
         doc="Classification of the group based on GroupType enum",

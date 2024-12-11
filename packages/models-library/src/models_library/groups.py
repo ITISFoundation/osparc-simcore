@@ -1,7 +1,7 @@
 from typing import Annotated, Final, NamedTuple, TypeAlias
 
 from common_library.basic_types import DEFAULT_FACTORY
-from common_library.groups_enums import GroupTypeEnum as GroupTypeEnum
+from common_library.groups_enums import GroupType as GroupType
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic.types import PositiveInt
 from typing_extensions import TypedDict
@@ -14,14 +14,14 @@ EVERYONE_GROUP_ID: Final[int] = 1
 
 GroupID: TypeAlias = PositiveInt
 
-__all__: tuple[str, ...] = ("GroupTypeEnum",)
+__all__: tuple[str, ...] = ("GroupType",)
 
 
 class Group(BaseModel):
     gid: PositiveInt
     name: str
     description: str
-    group_type: Annotated[GroupTypeEnum, Field(alias="type")]
+    group_type: Annotated[GroupType, Field(alias="type")]
     thumbnail: str | None
 
     inclusion_rules: Annotated[
@@ -32,7 +32,7 @@ class Group(BaseModel):
     ] = DEFAULT_FACTORY
 
     _from_equivalent_enums = field_validator("group_type", mode="before")(
-        create_enums_pre_validator(GroupTypeEnum)
+        create_enums_pre_validator(GroupType)
     )
 
     model_config = ConfigDict(populate_by_name=True)

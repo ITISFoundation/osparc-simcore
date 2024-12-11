@@ -11,11 +11,7 @@ import pytest
 import sqlalchemy
 from aiopg.sa.result import RowProxy
 from faker import Faker
-from simcore_postgres_database.models.groups import (
-    GroupTypeEnum,
-    groups,
-    user_to_groups,
-)
+from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
@@ -108,7 +104,7 @@ async def test_get(
 @pytest.fixture
 async def everyone_group_id(connection: aiopg.sa.connection.SAConnection) -> int:
     result = await connection.scalar(
-        sqlalchemy.select(groups.c.gid).where(groups.c.type == GroupTypeEnum.EVERYONE)
+        sqlalchemy.select(groups.c.gid).where(groups.c.type == GroupType.EVERYONE)
     )
     assert result
     return result

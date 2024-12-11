@@ -12,7 +12,7 @@ from models_library.groups import (
     AccessRightsDict,
     Group,
     GroupMember,
-    GroupTypeEnum,
+    GroupType,
     StandardGroupCreate,
     StandardGroupUpdate,
 )
@@ -54,7 +54,7 @@ def test_output_schemas_from_models(faker: Faker):
         gid=1,
         name=faker.word(),
         description=faker.sentence(),
-        group_type=GroupTypeEnum.STANDARD,
+        group_type=GroupType.STANDARD,
         thumbnail=None,
     )
     output_schema = GroupGet.from_model(

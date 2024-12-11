@@ -9,7 +9,7 @@ from .models.classifiers import group_classifiers
 from .models.comp_pipeline import StateType, comp_pipeline
 from .models.comp_tasks import DB_CHANNEL_NAME, NodeClass, comp_tasks
 from .models.confirmations import ConfirmationAction, confirmations
-from .models.groups import GroupTypeEnum, groups, user_to_groups
+from .models.groups import GroupType, groups, user_to_groups
 from .models.products import products
 from .models.projects import ProjectType, projects
 from .models.projects_tags import projects_tags
@@ -28,7 +28,7 @@ __all__ = (
     "DB_CHANNEL_NAME",
     "group_classifiers",
     "groups",
-    "GroupTypeEnum",
+    "GroupType",
     "NodeClass",
     "products",
     "projects",

@@ -10,7 +10,7 @@ import pytest
 import sqlalchemy as sa
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_group
-from simcore_postgres_database.models.groups import GroupTypeEnum, groups
+from simcore_postgres_database.models.groups import GroupType, groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.services import (
     services_access_rights,
@@ -165,12 +165,12 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
         # GROUPS
         product_gid = conn.execute(
             groups.insert()
-            .values(**random_group(type=GroupTypeEnum.STANDARD, name="osparc group"))
+            .values(**random_group(type=GroupType.STANDARD, name="osparc group"))
             .returning(groups.c.gid)
         ).scalar()
 
         everyone_gid = conn.execute(
-            sa.select(groups.c.gid).where(groups.c.type == GroupTypeEnum.EVERYONE)
+            sa.select(groups.c.gid).where(groups.c.type == GroupType.EVERYONE)
         ).scalar()
 
         assert product_gid != everyone_gid

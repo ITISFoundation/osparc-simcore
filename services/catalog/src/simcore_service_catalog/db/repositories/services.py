@@ -10,7 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
-from models_library.groups import GroupAtDB, GroupID, GroupTypeEnum
+from models_library.groups import GroupAtDB, GroupID, GroupType
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -597,16 +597,16 @@ class ServicesRepository(BaseRepository):
                         continue
                     # filter by group type
                     group = gid_to_group_map[row.gid]
-                    if (group.group_type == GroupTypeEnum.STANDARD) and _is_newer(
+                    if (group.group_type == GroupType.STANDARD) and _is_newer(
                         teams_specs.get(db_service_spec.gid),
                         db_service_spec,
                     ):
                         teams_specs[db_service_spec.gid] = db_service_spec
-                    elif (group.group_type == GroupTypeEnum.EVERYONE) and _is_newer(
+                    elif (group.group_type == GroupType.EVERYONE) and _is_newer(
                         everyone_specs, db_service_spec
                     ):
                         everyone_specs = db_service_spec
-                    elif (group.group_type == GroupTypeEnum.PRIMARY) and _is_newer(
+                    elif (group.group_type == GroupType.PRIMARY) and _is_newer(
                         primary_specs, db_service_spec
                     ):
                         primary_specs = db_service_spec

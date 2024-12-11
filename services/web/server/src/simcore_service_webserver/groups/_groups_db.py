@@ -3,6 +3,7 @@ from copy import deepcopy
 
 import sqlalchemy as sa
 from aiohttp import web
+from common_library.groups_enums import GroupType
 from models_library.basic_types import IDStr
 from models_library.groups import (
     AccessRightsDict,
@@ -16,7 +17,6 @@ from models_library.groups import (
 )
 from models_library.users import UserID
 from simcore_postgres_database.errors import UniqueViolation
-from simcore_postgres_database.models.groups import GroupTypeEnum
 from simcore_postgres_database.utils_products import execute_get_or_create_product_group
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -27,7 +27,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ..db.models import GroupTypeEnum, groups, user_to_groups, users
+from ..db.models import GroupType, groups, user_to_groups, users
 from ..db.plugin import get_asyncpg_engine
 from ..users.exceptions import UserNotFoundError
 from .exceptions import (
@@ -172,16 +172,16 @@ async def get_all_user_groups_with_read_access(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(query)
         async for row in result:
-            if row.type == GroupTypeEnum.EVERYONE:
+            if row.type == GroupType.EVERYONE:
                 assert row.access_rights["read"]  # nosec
                 everyone_group = _to_group_info_tuple(row)
 
-            elif row.type == GroupTypeEnum.PRIMARY:
+            elif row.type == GroupType.PRIMARY:
                 assert row.access_rights["read"]  # nosec
                 primary_group = _to_group_info_tuple(row)
 
             else:
-                assert row.type == GroupTypeEnum.STANDARD  # nosec
+                assert row.type == GroupType.STANDARD  # nosec
                 # only add if user has read access
                 if row.access_rights["read"]:
                     standard_groups.append(_to_group_info_tuple(row))
@@ -311,7 +311,7 @@ async def create_standard_group(
             groups.insert()
             .values(
                 **create.model_dump(mode="json", exclude_unset=True),
-                type=GroupTypeEnum.STANDARD,
+                type=GroupType.STANDARD,
             )
             .returning(*_GROUP_COLUMNS)
         )
@@ -357,9 +357,7 @@ async def update_standard_group(
             # pylint: disable=no-value-for-parameter
             groups.update()
             .values(**values)
-            .where(
-                (groups.c.gid == row.gid) & (groups.c.type == GroupTypeEnum.STANDARD)
-            )
+            .where((groups.c.gid == row.gid) & (groups.c.type == GroupType.STANDARD))
             .returning(*_GROUP_COLUMNS)
         )
         row = await result.fetchone()
@@ -385,7 +383,7 @@ async def delete_standard_group(
         await conn.execute(
             # pylint: disable=no-value-for-parameter
             groups.delete().where(
-                (groups.c.gid == group.gid) & (groups.c.type == GroupTypeEnum.STANDARD)
+                (groups.c.gid == group.gid) & (groups.c.type == GroupType.STANDARD)
             )
         )
 

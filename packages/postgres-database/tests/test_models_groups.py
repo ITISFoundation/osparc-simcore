@@ -16,7 +16,7 @@ from psycopg2.errors import ForeignKeyViolation, RaiseException, UniqueViolation
 from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
-    GroupTypeEnum,
+    GroupType,
     groups,
     user_to_groups,
     users,
@@ -74,7 +74,7 @@ async def test_all_group(
     assert groups_count == 1
 
     result = await connection.execute(
-        groups.select().where(groups.c.type == GroupTypeEnum.EVERYONE)
+        groups.select().where(groups.c.type == GroupType.EVERYONE)
     )
     all_group_gid = (await result.fetchone()).gid
     assert all_group_gid == 1  # it's the first group so it gets a 1
@@ -108,7 +108,7 @@ async def test_all_group(
     groups_count = await connection.scalar(select(func.count()).select_from(groups))
     assert groups_count == 1
     result = await connection.execute(
-        groups.select().where(groups.c.type == GroupTypeEnum.EVERYONE)
+        groups.select().where(groups.c.type == GroupType.EVERYONE)
     )
     all_group_gid = (await result.fetchone()).gid
     assert all_group_gid == 1  # it's the first group so it gets a 1
@@ -130,7 +130,7 @@ async def test_own_group(
 
     # now check there is a primary group
     result = await connection.execute(
-        groups.select().where(groups.c.type == GroupTypeEnum.PRIMARY)
+        groups.select().where(groups.c.type == GroupType.PRIMARY)
     )
     primary_group: RowProxy = await result.fetchone()
     assert primary_group.gid == user.primary_gid

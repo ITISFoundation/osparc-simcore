@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import select
 from sqlalchemy.sql.selectable import CompoundSelect, Select
 
-from ..db.models import GroupTypeEnum, groups, projects_tags, user_to_groups, users
+from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
 from .exceptions import (
@@ -112,7 +112,7 @@ class BaseProjectDB:
     @classmethod
     async def _get_everyone_group(cls, conn: SAConnection) -> RowProxy:
         result = await conn.execute(
-            sa.select(groups).where(groups.c.type == GroupTypeEnum.EVERYONE)
+            sa.select(groups).where(groups.c.type == GroupType.EVERYONE)
         )
         row = await result.first()
         assert row is not None  # nosec

@@ -142,12 +142,12 @@ def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
 
 def random_group(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     from simcore_postgres_database.models.groups import groups
-    from simcore_postgres_database.webserver_models import GroupTypeEnum
+    from simcore_postgres_database.webserver_models import GroupType
 
     data = {
         "name": fake.company(),
         "description": fake.text(),
-        "type": GroupTypeEnum.STANDARD.name,
+        "type": GroupType.STANDARD.name,
     }
 
     assert set(data.keys()).issubset({c.name for c in groups.columns})  # nosec

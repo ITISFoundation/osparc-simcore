@@ -7,7 +7,7 @@ import warnings
 import sqlalchemy as sa
 
 from ._protocols import AiopgConnection, DBConnection
-from .models.groups import GroupTypeEnum, groups
+from .models.groups import GroupType, groups
 from .models.products import products
 
 # NOTE: outside this module, use instead packages/models-library/src/models_library/users.py
@@ -57,7 +57,7 @@ async def execute_get_or_create_product_group(conn, product_name: str) -> int:
             .values(
                 name=product_name,
                 description=f"{product_name} product group",
-                type=GroupTypeEnum.STANDARD,
+                type=GroupType.STANDARD,
             )
             .returning(groups.c.gid)
         )
