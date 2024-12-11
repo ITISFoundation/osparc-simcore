@@ -18,12 +18,7 @@ from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
-from models_library.api_schemas_webserver.users import (
-    MAX_BYTES_SIZE_EXTRAS,
-    MyProfileGet,
-    PreRegisteredUserGet,
-    UserGet,
-)
+from models_library.api_schemas_webserver.users import MyProfileGet, UserGet
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -38,6 +33,10 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_service_webserver.users._preferences_api import (
     get_frontend_user_preferences_aggregation,
+)
+from simcore_service_webserver.users._schemas import (
+    MAX_BYTES_SIZE_EXTRAS,
+    PreRegisteredUserGet,
 )
 
 

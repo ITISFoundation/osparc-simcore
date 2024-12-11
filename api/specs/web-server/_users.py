@@ -10,7 +10,6 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
-    PreRegisteredUserGet,
     SearchQueryParams,
     UserGet,
 )
@@ -26,6 +25,7 @@ from simcore_service_webserver.users._notifications import (
 from simcore_service_webserver.users._notifications_handlers import (
     _NotificationPathParams,
 )
+from simcore_service_webserver.users._schemas import PreRegisteredUserGet
 from simcore_service_webserver.users._tokens_handlers import _TokenPathParams
 from simcore_service_webserver.users.schemas import (
     PermissionGet,
