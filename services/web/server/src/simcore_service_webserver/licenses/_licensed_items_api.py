@@ -24,8 +24,10 @@ from ..rabbitmq import get_rabbitmq_rpc_client
 from ..resource_usage.api import get_pricing_plan_unit
 from ..users.api import get_user
 from ..wallets.api import get_wallet_with_available_credits_by_user_and_wallet
+from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _licensed_items_api, _licensed_items_db
 from ._models import LicensedItemsBodyParams
+from .errors import LicensedItemPricingPlanMatchError
 
 _logger = logging.getLogger(__name__)
 
@@ -95,7 +97,10 @@ async def purchase_licensed_item(
     )
 
     if licensed_item.pricing_plan_id != body_params.pricing_plan_id:
-        raise ValueError("You are lying!")
+        raise LicensedItemPricingPlanMatchError(
+            pricing_plan_id=body_params.pricing_plan_id,
+            licensed_item_id=licensed_item_id,
+        )
 
     pricing_unit = await get_pricing_plan_unit(
         app,
@@ -106,7 +111,9 @@ async def purchase_licensed_item(
 
     # Check whether wallet has enough credits
     if wallet.available_credits - pricing_unit.current_cost_per_unit < 0:
-        raise ValueError("Not enough credits!")
+        raise WalletNotEnoughCreditsError(
+            reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
+        )
 
     user = await get_user(app, user_id=user_id)
 

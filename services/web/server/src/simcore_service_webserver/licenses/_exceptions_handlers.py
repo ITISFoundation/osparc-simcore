@@ -9,7 +9,8 @@ from ..exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from .errors import LicensedItemNotFoundError
+from ..wallets.errors import WalletNotEnoughCreditsError
+from .errors import LicensedItemNotFoundError, LicensedItemPricingPlanMatchError
 
 _logger = logging.getLogger(__name__)
 
@@ -22,6 +23,14 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     WalletAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         "Wallet {wallet_id} forbidden.",
+    ),
+    WalletNotEnoughCreditsError: HttpErrorInfo(
+        status.HTTP_402_PAYMENT_REQUIRED,
+        "Not enough credits in the wallet.",
+    ),
+    LicensedItemPricingPlanMatchError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        "The provided pricing plan does not match the one associated with the licensed item.",
     ),
 }
 
