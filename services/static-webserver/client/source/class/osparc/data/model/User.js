@@ -43,11 +43,11 @@ qx.Class.define("osparc.data.model.User", {
     this.set({
       userId: parseInt(userData["id"]),
       groupId: parseInt(userData["gid"]),
-      username: userData["username"],
+      username: userData["userName"],
       firstName: userData["first_name"],
       lastName: userData["last_name"],
       email: userData["login"],
-      label: userData["username"],
+      label: userData["userName"],
       description,
       thumbnail,
     });
