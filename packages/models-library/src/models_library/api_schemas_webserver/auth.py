@@ -1,10 +1,12 @@
 from datetime import timedelta
-from typing import Any
+from typing import Annotated, Any
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from models_library.basic_types import IDStr
+from pydantic import AliasGenerator, ConfigDict, Field, HttpUrl, SecretStr
+from pydantic.alias_generators import to_camel
 
 from ..emails import LowerCaseEmailStr
-from ._base import InputSchema
+from ._base import InputSchema, OutputSchema
 
 
 class AccountRequestInfo(InputSchema):
@@ -51,42 +53,97 @@ class UnregisterCheck(InputSchema):
 #
 
 
-class ApiKeyCreate(BaseModel):
-    display_name: str = Field(..., min_length=3)
+class ApiKeyCreateRequest(InputSchema):
+    display_name: Annotated[str, Field(..., min_length=3)]
     expiration: timedelta | None = Field(
         None,
         description="Time delta from creation time to expiration. If None, then it does not expire.",
     )
 
     model_config = ConfigDict(
+        alias_generator=AliasGenerator(
+            validation_alias=to_camel,
+        ),
+        from_attributes=True,
         json_schema_extra={
             "examples": [
                 {
-                    "display_name": "test-api-forever",
+                    "displayName": "test-api-forever",
                 },
                 {
-                    "display_name": "test-api-for-one-day",
+                    "displayName": "test-api-for-one-day",
                     "expiration": 60 * 60 * 24,
                 },
                 {
-                    "display_name": "test-api-for-another-day",
+                    "displayName": "test-api-for-another-day",
                     "expiration": "24:00:00",
                 },
             ]
-        }
+        },
     )
 
 
-class ApiKeyGet(BaseModel):
-    display_name: str = Field(..., min_length=3)
+class ApiKeyCreateResponse(OutputSchema):
+    id: IDStr
+    display_name: Annotated[str, Field(..., min_length=3)]
+    expiration: timedelta | None = Field(
+        None,
+        description="Time delta from creation time to expiration. If None, then it does not expire.",
+    )
+    api_base_url: HttpUrl
     api_key: str
     api_secret: str
 
     model_config = ConfigDict(
+        alias_generator=AliasGenerator(
+            serialization_alias=to_camel,
+        ),
         from_attributes=True,
         json_schema_extra={
             "examples": [
-                {"display_name": "myapi", "api_key": "key", "api_secret": "secret"},
+                {
+                    "id": "42",
+                    "display_name": "test-api-forever",
+                    "api_base_url": "http://api.osparc.io/v0",  # NOSONAR
+                    "api_key": "key",
+                    "api_secret": "secret",
+                },
+                {
+                    "id": "48",
+                    "display_name": "test-api-for-one-day",
+                    "expiration": 60 * 60 * 24,
+                    "api_base_url": "http://api.sim4life.io/v0",  # NOSONAR
+                    "api_key": "key",
+                    "api_secret": "secret",
+                },
+                {
+                    "id": "54",
+                    "display_name": "test-api-for-another-day",
+                    "expiration": "24:00:00",
+                    "api_base_url": "http://api.osparc-master.io/v0",  # NOSONAR
+                    "api_key": "key",
+                    "api_secret": "secret",
+                },
+            ]
+        },
+    )
+
+
+class ApiKeyGet(OutputSchema):
+    id: IDStr
+    display_name: Annotated[str, Field(..., min_length=3)]
+
+    model_config = ConfigDict(
+        alias_generator=AliasGenerator(
+            serialization_alias=to_camel,
+        ),
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": "42",
+                    "display_name": "myapi",
+                },
             ]
         },
     )

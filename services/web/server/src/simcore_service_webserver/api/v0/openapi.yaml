@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.48.0
+  version: 0.49.0
 servers:
 - url: ''
   description: webserver
@@ -369,73 +369,6 @@ paths:
                 $ref: '#/components/schemas/Envelope_Log_'
         3XX:
           description: redirection to specific ui application page
-  /v0/auth/api-keys:
-    get:
-      tags:
-      - auth
-      summary: List Api Keys
-      description: lists display names of API keys by this user
-      operationId: list_api_keys
-      responses:
-        '200':
-          description: returns the display names of API keys
-          content:
-            application/json:
-              schema:
-                items:
-                  type: string
-                type: array
-                title: Response 200 List Api Keys
-        '400':
-          description: key name requested is invalid
-        '401':
-          description: requires login to  list keys
-        '403':
-          description: not enough permissions to list keys
-    post:
-      tags:
-      - auth
-      summary: Create Api Key
-      description: creates API keys to access public API
-      operationId: create_api_key
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiKeyCreate'
-        required: true
-      responses:
-        '200':
-          description: Authorization granted returning API key
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiKeyGet'
-        '400':
-          description: key name requested is invalid
-        '401':
-          description: requires login to  list keys
-        '403':
-          description: not enough permissions to list keys
-    delete:
-      tags:
-      - auth
-      summary: Delete Api Key
-      description: deletes API key by name
-      operationId: delete_api_key
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiKeyCreate'
-        required: true
-      responses:
-        '204':
-          description: api key successfully deleted
-        '401':
-          description: requires login to  delete a key
-        '403':
-          description: not enough permissions to delete a key
   /v0/auth/captcha:
     get:
       tags:
@@ -449,6 +382,128 @@ paths:
             application/json:
               schema: {}
             image/png: {}
+  /v0/auth/api-keys:
+    get:
+      tags:
+      - auth
+      summary: List Api Keys
+      description: lists API keys by this user
+      operationId: list_api_keys
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_ApiKeyGet__'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+    post:
+      tags:
+      - auth
+      summary: Create Api Key
+      description: creates API keys to access public API
+      operationId: create_api_key
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyCreateRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ApiKeyCreateResponse_'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+  /v0/auth/api-keys/{api_key_id}:
+    get:
+      tags:
+      - auth
+      summary: Get Api Key
+      description: returns the API Key with the given ID
+      operationId: get_api_key
+      parameters:
+      - name: api_key_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+          title: Api Key Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ApiKeyGet_'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+    delete:
+      tags:
+      - auth
+      summary: Delete Api Key
+      description: deletes the API key with the given ID
+      operationId: delete_api_key
+      parameters:
+      - name: api_key_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+          title: Api Key Id
+      responses:
+        '204':
+          description: Successful Response
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Conflict
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
   /v0/groups:
     get:
       tags:
@@ -579,7 +634,8 @@ paths:
       tags:
       - groups
       summary: Add Group User
-      description: Adds a user to an organization group
+      description: Adds a user to an organization group using their username, user
+        ID, or email (subject to privacy settings)
       operationId: add_group_user
       parameters:
       - name: gid
@@ -1086,7 +1142,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ProfileGet_'
+                $ref: '#/components/schemas/Envelope_MyProfileGet_'
     put:
       tags:
       - user
@@ -1097,7 +1153,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProfileUpdate'
+              $ref: '#/components/schemas/MyProfilePatch'
         required: true
       responses:
         '204':
@@ -1112,7 +1168,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProfileUpdate'
+              $ref: '#/components/schemas/MyProfilePatch'
         required: true
       responses:
         '204':
@@ -6714,12 +6770,12 @@ components:
       - link
       - widgets
       title: Announcement
-    ApiKeyCreate:
+    ApiKeyCreateRequest:
       properties:
-        display_name:
+        displayName:
           type: string
           minLength: 3
-          title: Display Name
+          title: Displayname
         expiration:
           anyOf:
           - type: string
@@ -6730,25 +6786,59 @@ components:
             it does not expire.
       type: object
       required:
-      - display_name
-      title: ApiKeyCreate
-    ApiKeyGet:
+      - displayName
+      title: ApiKeyCreateRequest
+    ApiKeyCreateResponse:
       properties:
-        display_name:
+        id:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Id
+        displayName:
           type: string
           minLength: 3
-          title: Display Name
-        api_key:
+          title: Displayname
+        expiration:
+          anyOf:
+          - type: string
+            format: duration
+          - type: 'null'
+          title: Expiration
+          description: Time delta from creation time to expiration. If None, then
+            it does not expire.
+        apiBaseUrl:
           type: string
-          title: Api Key
-        api_secret:
+          title: Apibaseurl
+        apiKey:
           type: string
-          title: Api Secret
+          title: Apikey
+        apiSecret:
+          type: string
+          title: Apisecret
       type: object
       required:
-      - display_name
-      - api_key
-      - api_secret
+      - id
+      - displayName
+      - apiBaseUrl
+      - apiKey
+      - apiSecret
+      title: ApiKeyCreateResponse
+    ApiKeyGet:
+      properties:
+        id:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Id
+        displayName:
+          type: string
+          minLength: 3
+          title: Displayname
+      type: object
+      required:
+      - id
+      - displayName
       title: ApiKeyGet
     AppStatusCheck:
       properties:
@@ -7575,6 +7665,32 @@ components:
           title: Error
       type: object
       title: Envelope[AnyUrl]
+    Envelope_ApiKeyCreateResponse_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ApiKeyCreateResponse'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ApiKeyCreateResponse]
+    Envelope_ApiKeyGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/ApiKeyGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[ApiKeyGet]
     Envelope_AppStatusCheck_:
       properties:
         data:
@@ -7874,6 +7990,19 @@ components:
           title: Error
       type: object
       title: Envelope[MyGroupsGet]
+    Envelope_MyProfileGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/MyProfileGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[MyProfileGet]
     Envelope_NodeCreated_:
       properties:
         data:
@@ -7991,19 +8120,6 @@ components:
           title: Error
       type: object
       title: Envelope[PricingUnitGet]
-    Envelope_ProfileGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/ProfileGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[ProfileGet]
     Envelope_ProjectGet_:
       properties:
         data:
@@ -8536,6 +8652,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[Announcement]]
+    Envelope_list_ApiKeyGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ApiKeyGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[ApiKeyGet]]
     Envelope_list_DatasetMetaData__:
       properties:
         data:
@@ -9742,7 +9874,7 @@ components:
             type: string
           type: object
           title: Inclusionrules
-          description: Maps user's column and regular expression
+          deprecated: true
       type: object
       required:
       - gid
@@ -9780,12 +9912,21 @@ components:
             minimum: 0
           - type: 'null'
           title: Uid
+        userName:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Username
         email:
           anyOf:
           - type: string
             format: email
           - type: 'null'
           title: Email
+          description: Accessible only if the user has opted to share their email
+            in privacy settings
       type: object
       title: GroupUserAdd
       description: "Identify the user with either `email` or `uid` \u2014 only one."
@@ -9797,41 +9938,48 @@ components:
           - type: 'null'
           title: Id
           description: the user id
-        login:
-          anyOf:
-          - type: string
-            format: email
-          - type: 'null'
-          title: Login
-          description: the user login email
-        first_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: First Name
-          description: the user first name
-        last_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Last Name
-          description: the user last name
-        gravatar_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Gravatar Id
-          description: the user gravatar id hash
+        userName:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Username
         gid:
           anyOf:
           - type: string
           - type: 'null'
           title: Gid
           description: the user primary gid
+        login:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Login
+          description: the user's email, if privacy settings allows
+        first_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: First Name
+          description: If privacy settings allows
+        last_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Name
+          description: If privacy settings allows
+        gravatar_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Gravatar Id
+          description: the user gravatar id hash
+          deprecated: true
         accessRights:
           $ref: '#/components/schemas/GroupAccessRights'
       type: object
       required:
+      - userName
       - accessRights
       title: GroupUserGet
       example:
@@ -9845,6 +9993,7 @@ components:
         id: '1'
         last_name: Smith
         login: mr.smith@matrix.com
+        userName: mrmith
     GroupUserUpdate:
       properties:
         accessRights:
@@ -10248,6 +10397,136 @@ components:
           description: Some foundation
           gid: '16'
           label: Blue Fundation
+    MyProfileGet:
+      properties:
+        id:
+          type: integer
+          exclusiveMinimum: true
+          title: Id
+          minimum: 0
+        userName:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Username
+          description: Unique username identifier
+        first_name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: First Name
+        last_name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Last Name
+        login:
+          type: string
+          format: email
+          title: Login
+        role:
+          type: string
+          enum:
+          - ANONYMOUS
+          - GUEST
+          - USER
+          - TESTER
+          - PRODUCT_OWNER
+          - ADMIN
+          title: Role
+        groups:
+          anyOf:
+          - $ref: '#/components/schemas/MyGroupsGet'
+          - type: 'null'
+        gravatar_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Gravatar Id
+          deprecated: true
+        expirationDate:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Expirationdate
+          description: If user has a trial account, it sets the expiration date, otherwise
+            None
+        privacy:
+          $ref: '#/components/schemas/MyProfilePrivacyGet'
+        preferences:
+          additionalProperties:
+            $ref: '#/components/schemas/Preference'
+          type: object
+          title: Preferences
+      type: object
+      required:
+      - id
+      - userName
+      - login
+      - role
+      - privacy
+      - preferences
+      title: MyProfileGet
+    MyProfilePatch:
+      properties:
+        first_name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: First Name
+        last_name:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Last Name
+        userName:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Username
+        privacy:
+          anyOf:
+          - $ref: '#/components/schemas/MyProfilePrivacyPatch'
+          - type: 'null'
+      type: object
+      title: MyProfilePatch
+      example:
+        first_name: Pedro
+        last_name: Crespo
+    MyProfilePrivacyGet:
+      properties:
+        hideFullname:
+          type: boolean
+          title: Hidefullname
+        hideEmail:
+          type: boolean
+          title: Hideemail
+      type: object
+      required:
+      - hideFullname
+      - hideEmail
+      title: MyProfilePrivacyGet
+    MyProfilePrivacyPatch:
+      properties:
+        hideFullname:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hidefullname
+        hideEmail:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hideemail
+      type: object
+      title: MyProfilePrivacyPatch
     Node-Input:
       properties:
         key:
@@ -11530,136 +11809,6 @@ components:
       - currentCostPerUnit
       - default
       title: PricingUnitGet
-    ProfileGet:
-      properties:
-        id:
-          type: integer
-          exclusiveMinimum: true
-          title: Id
-          minimum: 0
-        userName:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Username
-          description: Unique username identifier
-        first_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: First Name
-        last_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: Last Name
-        login:
-          type: string
-          format: email
-          title: Login
-        role:
-          type: string
-          enum:
-          - ANONYMOUS
-          - GUEST
-          - USER
-          - TESTER
-          - PRODUCT_OWNER
-          - ADMIN
-          title: Role
-        groups:
-          anyOf:
-          - $ref: '#/components/schemas/MyGroupsGet'
-          - type: 'null'
-        gravatar_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Gravatar Id
-          deprecated: true
-        expirationDate:
-          anyOf:
-          - type: string
-            format: date
-          - type: 'null'
-          title: Expirationdate
-          description: If user has a trial account, it sets the expiration date, otherwise
-            None
-        privacy:
-          $ref: '#/components/schemas/ProfilePrivacyGet'
-        preferences:
-          additionalProperties:
-            $ref: '#/components/schemas/Preference'
-          type: object
-          title: Preferences
-      type: object
-      required:
-      - id
-      - userName
-      - login
-      - role
-      - privacy
-      - preferences
-      title: ProfileGet
-    ProfilePrivacyGet:
-      properties:
-        hideFullname:
-          type: boolean
-          title: Hidefullname
-        hideEmail:
-          type: boolean
-          title: Hideemail
-      type: object
-      required:
-      - hideFullname
-      - hideEmail
-      title: ProfilePrivacyGet
-    ProfilePrivacyUpdate:
-      properties:
-        hideFullname:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Hidefullname
-        hideEmail:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Hideemail
-      type: object
-      title: ProfilePrivacyUpdate
-    ProfileUpdate:
-      properties:
-        first_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: First Name
-        last_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: Last Name
-        userName:
-          anyOf:
-          - type: string
-            maxLength: 100
-            minLength: 1
-          - type: 'null'
-          title: Username
-        privacy:
-          anyOf:
-          - $ref: '#/components/schemas/ProfilePrivacyUpdate'
-          - type: 'null'
-      type: object
-      title: ProfileUpdate
-      example:
-        first_name: Pedro
-        last_name: Crespo
     ProjectCopyOverride:
       properties:
         name:
