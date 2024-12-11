@@ -17,7 +17,7 @@ from typing import Any
 import pytest
 import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_webserver.schemas import PermissionGet
+from models_library.api_schemas_webserver.users import MyPermissionGet
 from models_library.products import ProductName
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -450,7 +450,7 @@ async def test_list_permissions(
     data, error = await assert_status(resp, expected_response)
     if data:
         assert not error
-        list_of_permissions = TypeAdapter(list[PermissionGet]).validate_python(data)
+        list_of_permissions = TypeAdapter(list[MyPermissionGet]).validate_python(data)
         assert (
             len(list_of_permissions) == 1
         ), "for now there is only 1 permission, but when we sync frontend/backend permissions there will be more"
@@ -481,7 +481,7 @@ async def test_list_permissions_with_overriden_extra_properties(
     data, error = await assert_status(resp, expected_response)
     assert data
     assert not error
-    list_of_permissions = TypeAdapter(list[PermissionGet]).validate_python(data)
+    list_of_permissions = TypeAdapter(list[MyPermissionGet]).validate_python(data)
     filtered_permissions = list(
         filter(
             lambda x: x.name == "override_services_specifications", list_of_permissions
