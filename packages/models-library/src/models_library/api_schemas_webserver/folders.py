@@ -3,8 +3,8 @@ from typing import NamedTuple
 
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
+from models_library.groups import GroupID
 from models_library.projects_access import AccessRights
-from models_library.users import GroupID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from pydantic import ConfigDict, PositiveInt, field_validator
 

@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.users import GroupID
+from models_library.groups import GroupID
 from models_library.workspaces import WorkspaceID
 from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,

@@ -6,7 +6,7 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.users import GroupID
+from models_library.groups import GroupID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp import status
