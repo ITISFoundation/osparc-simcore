@@ -35,10 +35,10 @@ class GroupExtraProperties(FromRowMixin):
     enable_efs: bool
 
 
-async def _list_table_entries_ordered_by_group_type(
-    connection: SAConnection, user_id: int, product_name: str
-) -> list[RowProxy]:
-    list_stmt = (
+async def _list_table_entries_ordered_by_group_type_query(
+    user_id: int, product_name: str
+):
+    return (
         sa.select(
             groups_extra_properties,
             groups.c.type,
@@ -66,6 +66,14 @@ async def _list_table_entries_ordered_by_group_type(
             & (user_to_groups.c.uid == user_id)
         )
         .alias()
+    )
+
+
+async def _list_table_entries_ordered_by_group_type(
+    connection: SAConnection, user_id: int, product_name: str
+) -> list[RowProxy]:
+    list_stmt = _list_table_entries_ordered_by_group_type_query(
+        user_id=user_id, product_name=product_name
     )
 
     result = await connection.execute(
@@ -106,7 +114,7 @@ class GroupExtraPropertiesRepo:
         result = await connection.execute(get_stmt)
         assert result  # nosec
         if row := await result.first():
-            return GroupExtraProperties.from_row(row)
+            return GroupExtraProperties.from_row_proxy(row)
         msg = f"Properties for group {gid} not found"
         raise GroupExtraPropertiesNotFoundError(msg)
 
@@ -122,7 +130,7 @@ class GroupExtraPropertiesRepo:
         )
         merged_standard_extra_properties = None
         for row in rows:
-            group_extra_properties = GroupExtraProperties.from_row(row)
+            group_extra_properties = GroupExtraProperties.from_row_proxy(row)
             match row.type:
                 case GroupType.PRIMARY:
                     # this always has highest priority
