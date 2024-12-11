@@ -532,9 +532,8 @@ class SimcoreS3DataManager(BaseDataManager):
                 if enclosing_file.file_id == file_id:
                     await db_file_meta_data.delete(conn, [file_id])
                 else:
-                    await db_file_meta_data.upsert(
-                        conn, await self._update_database_from_storage(enclosing_file)
-                    )
+                    enclosing_file.file_size = UNDEFINED_SIZE_TYPE
+                    await db_file_meta_data.upsert(conn, enclosing_file)
 
         await get_s3_client(self.app).delete_objects_recursively(
             bucket=self.simcore_bucket_name,
