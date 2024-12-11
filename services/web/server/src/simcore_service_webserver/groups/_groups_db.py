@@ -656,19 +656,19 @@ async def add_new_user_in_group(
         )
         _check_group_permissions(group, user_id, group_id, "write")
 
-        query = sa.select(sa.func.count())
-        if new_user_id:
+        query = sa.select(users.c.id)
+        if new_user_id is not None:
             query = query.where(users.c.id == new_user_id)
-        elif new_user_name:
+
+        elif new_user_name is not None:
             query = query.where(users.c.name == new_user_name)
         else:
-            msg = "Either user name or id but none provided"
+            msg = "Expected either user-name or user-ID but none was provided"
             raise ValueError(msg)
 
         # now check the new user exists
-        users_count = await conn.scalar(query)
-        if not users_count:
-            assert new_user_id is not None  # nosec
+        new_user_id = await conn.scalar(query)
+        if not new_user_id:
             raise UserInGroupNotFoundError(uid=new_user_id, gid=group_id)
 
         # add the new user to the group now
