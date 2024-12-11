@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
-    SearchQueryParams,
+    UsersSearchQueryParams,
 )
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -106,8 +106,8 @@ async def search_users(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    query_params: SearchQueryParams = parse_request_query_parameters_as(
-        SearchQueryParams, request
+    query_params: UsersSearchQueryParams = parse_request_query_parameters_as(
+        UsersSearchQueryParams, request
     )
 
     found = await _users_service.search_users(

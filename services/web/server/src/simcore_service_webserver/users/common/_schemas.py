@@ -1,6 +1,7 @@
 """ input/output datasets used in the rest-API
 
-NOTE: Most of the model schemas are in `models_library.api_schemas_webserver.users`, the rest (hidden or needs a dependency) is here
+NOTE: Most of the model schemas are in `models_library.api_schemas_webserver.users`,
+the rest (hidden or needs a dependency) is here
 """
 
 
@@ -48,7 +49,7 @@ class PreRegisteredUserGet(InputSchema):
         dict[str, Any],
         Field(
             default_factory=dict,
-            description="Keeps extra information provided in the request form. At most MAX_NUM_EXTRAS fields",
+            description="Keeps extra information provided in the request form.",
         ),
     ]
 

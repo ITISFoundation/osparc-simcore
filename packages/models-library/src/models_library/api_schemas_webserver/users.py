@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
+from common_library.basic_types import DEFAULT_FACTORY
 from common_library.users_enums import UserStatus
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
@@ -17,17 +18,18 @@ from .users_preferences import AggregatedPreferences
 
 
 #
-# TOKENS resource
+# THIRD-PARTY TOKENS
 #
 class ThirdPartyToken(BaseModel):
     """
     Tokens used to access third-party services connected to osparc (e.g. pennsieve, scicrunch, etc)
     """
 
-    service: str = Field(
-        ..., description="uniquely identifies the service where this token is used"
-    )
-    token_key: UUID = Field(..., description="basic token key")
+    service: Annotated[
+        str,
+        Field(description="uniquely identifies the service where this token is used"),
+    ]
+    token_key: Annotated[UUID, Field(..., description="basic token key")]
     token_secret: UUID | None = None
 
     model_config = ConfigDict(
@@ -45,7 +47,7 @@ class TokenCreate(ThirdPartyToken):
 
 
 #
-# Permissions
+# PERMISSIONS
 #
 class Permission(BaseModel):
     name: str
@@ -57,7 +59,7 @@ class PermissionGet(Permission, OutputSchema):
 
 
 #
-# My Profile
+# MY PROFILE
 #
 
 
@@ -179,16 +181,19 @@ class MyProfilePatch(BaseModel):
 
 
 #
-# User
+# USER
 #
 
 
-class SearchQueryParams(BaseModel):
-    email: str = Field(
-        min_length=3,
-        max_length=200,
-        description="complete or glob pattern for an email",
-    )
+class UsersSearchQueryParams(BaseModel):
+    email: Annotated[
+        str,
+        Field(
+            min_length=3,
+            max_length=200,
+            description="complete or glob pattern for an email",
+        ),
+    ]
 
 
 class UserGet(OutputSchema):
@@ -199,24 +204,29 @@ class UserGet(OutputSchema):
     phone: str | None
     address: str | None
     city: str | None
-    state: str | None = Field(description="State, province, canton, ...")
+    state: Annotated[str | None, Field(description="State, province, canton, ...")]
     postal_code: str | None
     country: str | None
-    extras: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Keeps extra information provided in the request form",
-    )
+    extras: Annotated[
+        dict[str, Any],
+        Field(
+            default_factory=dict,
+            description="Keeps extra information provided in the request form",
+        ),
+    ] = DEFAULT_FACTORY
 
     # authorization
-    invited_by: str | None = Field(default=None)
+    invited_by: str | None = None
 
     # user status
     registered: bool
     status: UserStatus | None
-    products: list[ProductName] | None = Field(
-        default=None,
-        description="List of products this users is included or None if fields is unset",
-    )
+    products: Annotated[
+        list[ProductName] | None,
+        Field(
+            description="List of products this users is included or None if fields is unset",
+        ),
+    ]
 
     @field_validator("status")
     @classmethod
