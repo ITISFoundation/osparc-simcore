@@ -181,7 +181,8 @@ class SimcoreEC2API:
             )
             instance_ids = [i["InstanceId"] for i in instances["Instances"]]
             _logger.info(
-                "New instances launched: %s, waiting for them to start now...",
+                "%s New instances launched: %s, waiting for them to start now...",
+                len(instance_ids),
                 instance_ids,
             )
 
