@@ -533,7 +533,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     await db_file_meta_data.delete(conn, [file_id])
                 else:
                     await db_file_meta_data.upsert(
-                        conn, self._update_database_from_storage(enclosing_file)
+                        conn, await self._update_database_from_storage(enclosing_file)
                     )
 
         await get_s3_client(self.app).delete_objects_recursively(
