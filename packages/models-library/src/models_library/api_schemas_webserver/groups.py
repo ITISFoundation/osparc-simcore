@@ -14,16 +14,16 @@ from pydantic import (
     model_validator,
 )
 
-from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
 from ..groups import (
     AccessRightsDict,
     Group,
+    GroupID,
     GroupMember,
     StandardGroupCreate,
     StandardGroupUpdate,
 )
-from ..users import UserID
+from ..users import UserID, UserNameID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
 from ._base import InputSchema, OutputSchema
 
@@ -55,7 +55,7 @@ class GroupAccessRights(BaseModel):
 
 
 class GroupGet(OutputSchema):
-    gid: int = Field(..., description="the group ID")
+    gid: GroupID = Field(..., description="the group ID")
     label: str = Field(..., description="the group name")
     description: str = Field(..., description="the group description")
     thumbnail: AnyUrl | None = Field(
@@ -229,11 +229,11 @@ class GroupUserGet(BaseModel):
 
     # Identifiers
     id: Annotated[
-        str | None, Field(description="the user id", coerce_numbers_to_str=True)
+        UserID | None, Field(description="the user id", coerce_numbers_to_str=True)
     ] = None
-    user_name: Annotated[IDStr, Field(alias="userName")]
+    user_name: Annotated[UserNameID, Field(alias="userName")]
     gid: Annotated[
-        str | None,
+        GroupID | None,
         Field(description="the user primary gid", coerce_numbers_to_str=True),
     ] = None
 
@@ -296,7 +296,7 @@ class GroupUserAdd(InputSchema):
     """
 
     uid: UserID | None = None
-    user_name: Annotated[IDStr | None, Field(alias="userName")] = None
+    user_name: Annotated[UserNameID | None, Field(alias="userName")] = None
     email: Annotated[
         LowerCaseEmailStr | None,
         Field(
