@@ -10372,6 +10372,16 @@ components:
           exclusiveMinimum: true
           title: Wallet Id
           minimum: 0
+        pricing_plan_id:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricing Plan Id
+          minimum: 0
+        pricing_unit_id:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricing Unit Id
+          minimum: 0
         num_of_seats:
           type: integer
           title: Num Of Seats
@@ -10379,6 +10389,8 @@ components:
       type: object
       required:
       - wallet_id
+      - pricing_plan_id
+      - pricing_unit_id
       - num_of_seats
       title: LicensedItemsBodyParams
     LicensedResourceType:
