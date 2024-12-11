@@ -16,6 +16,12 @@ from .utils_repos import pass_or_acquire_connection
 
 _logger = logging.getLogger(__name__)
 
+_WARNING_FMSG = (
+    f"{__name__}.{{}} uses aiopg which has been deprecated in this repo. "
+    "Use {{}} instead. "
+    "SEE https://github.com/ITISFoundation/osparc-simcore/issues/4529"
+)
+
 
 class GroupExtraPropertiesError(Exception):
     ...
@@ -118,9 +124,7 @@ class GroupExtraPropertiesRepo:
         connection: SAConnection, *, gid: int, product_name: str
     ) -> GroupExtraProperties:
         warnings.warn(
-            f"{__name__}.get_v2 uses aiopg which has been deprecated in this repo."
-            "Use get_v2 instead. "
-            "See https://github.com/ITISFoundation/osparc-simcore/issues/4529",
+            _WARNING_FMSG.format("get", "get_v2"),
             DeprecationWarning,
             stacklevel=1,
         )
@@ -194,9 +198,10 @@ class GroupExtraPropertiesRepo:
         product_name: str,
     ) -> GroupExtraProperties:
         warnings.warn(
-            f"{__name__}.get_aggregated_properties_for_user uses aiopg which has been deprecated in this repo. "
-            "Use get_aggregated_properties_for_user_v2 instead. "
-            "See https://github.com/ITISFoundation/osparc-simcore/issues/4529",
+            _WARNING_FMSG.format(
+                "get_aggregated_properties_for_user",
+                "get_aggregated_properties_for_user_v2",
+            ),
             DeprecationWarning,
             stacklevel=1,
         )
