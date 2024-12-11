@@ -25,7 +25,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodePatch,
     NodeRetrieve,
 )
-from models_library.groups import EVERYONE_GROUP_ID, Group, GroupID, GroupTypeInModel
+from models_library.groups import EVERYONE_GROUP_ID, Group, GroupID, GroupTypeEnum
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKeyVersion
@@ -566,7 +566,7 @@ async def get_project_services_access_for_gid(
         raise GroupNotFoundError(gid=query_params.for_gid)
 
     # Update groups to compare based on the type of sharing group
-    if _sharing_with_group.group_type == GroupTypeInModel.PRIMARY:
+    if _sharing_with_group.group_type == GroupTypeEnum.PRIMARY:
         _user_id = await get_user_id_from_gid(
             app=request.app, primary_gid=query_params.for_gid
         )
@@ -575,7 +575,7 @@ async def get_project_services_access_for_gid(
         )
         groups_to_compare.update(set(user_groups_ids))
         groups_to_compare.add(query_params.for_gid)
-    elif _sharing_with_group.group_type == GroupTypeInModel.STANDARD:
+    elif _sharing_with_group.group_type == GroupTypeEnum.STANDARD:
         groups_to_compare = {query_params.for_gid}
 
     # Initialize a list for inaccessible services
