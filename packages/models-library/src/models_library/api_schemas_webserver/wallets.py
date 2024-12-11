@@ -20,11 +20,39 @@ class WalletGet(OutputSchema):
     created: datetime
     modified: datetime
 
-    model_config = ConfigDict(from_attributes=True, frozen=False)
+    model_config = ConfigDict(
+        from_attributes=True,
+        frozen=False,
+        json_schema_extra={
+            "examples": [
+                {
+                    "wallet_id": 1,
+                    "name": "pm_0987654321",
+                    "description": "https://example.com/payment-method/form",
+                    "owner": "https://example.com/payment-method/form",
+                    "thumbnail": "https://example.com/payment-method/form",
+                    "status": "https://example.com/payment-method/form",
+                    "created": "https://example.com/payment-method/form",
+                    "modified": "https://example.com/payment-method/form",
+                }
+            ]
+        },
+    )
 
 
 class WalletGetWithAvailableCredits(WalletGet):
     available_credits: Decimal
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    **WalletGet.model_config["json_schema_extra"]["examples"][0],
+                    "available_credits": 10.5,
+                }
+            ]
+        }
+    )
 
 
 class WalletGetPermissions(WalletGet):
