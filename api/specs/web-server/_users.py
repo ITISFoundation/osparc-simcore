@@ -8,13 +8,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
+    MyPermissionGet,
     MyProfileGet,
     MyProfilePatch,
-    PermissionGet,
-    ThirdPartyToken,
-    TokenCreate,
+    MyTokenCreate,
     UserGet,
     UsersSearchQueryParams,
+    UserThirdPartyToken,
 )
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
@@ -73,7 +73,7 @@ async def set_frontend_preference(
 
 @router.get(
     "/me/tokens",
-    response_model=Envelope[list[ThirdPartyToken]],
+    response_model=Envelope[list[UserThirdPartyToken]],
 )
 async def list_tokens():
     ...
@@ -81,16 +81,16 @@ async def list_tokens():
 
 @router.post(
     "/me/tokens",
-    response_model=Envelope[ThirdPartyToken],
+    response_model=Envelope[UserThirdPartyToken],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_token(_token: TokenCreate):
+async def create_token(_token: MyTokenCreate):
     ...
 
 
 @router.get(
     "/me/tokens/{service}",
-    response_model=Envelope[ThirdPartyToken],
+    response_model=Envelope[UserThirdPartyToken],
 )
 async def get_token(_params: Annotated[_TokenPathParams, Depends()]):
     ...
@@ -133,7 +133,7 @@ async def mark_notification_as_read(
 
 @router.get(
     "/me/permissions",
-    response_model=Envelope[list[PermissionGet]],
+    response_model=Envelope[list[MyPermissionGet]],
 )
 async def list_user_permissions():
     ...

@@ -2,7 +2,7 @@ import logging
 
 import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver.users import Permission, UserGet
+from models_library.api_schemas_webserver.users import UserGet, UserPermission
 from models_library.emails import LowerCaseEmailStr
 from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName
@@ -24,8 +24,8 @@ async def list_user_permissions(
     *,
     user_id: UserID,
     product_name: ProductName,
-) -> list[Permission]:
-    permissions: list[Permission] = await _users_repository.list_user_permissions(
+) -> list[UserPermission]:
+    permissions: list[UserPermission] = await _users_repository.list_user_permissions(
         app, user_id=user_id, product_name=product_name
     )
     return permissions

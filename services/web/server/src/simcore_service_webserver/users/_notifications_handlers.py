@@ -3,7 +3,7 @@ import logging
 
 import redis.asyncio as aioredis
 from aiohttp import web
-from models_library.api_schemas_webserver.users import Permission, PermissionGet
+from models_library.api_schemas_webserver.users import MyPermissionGet, UserPermission
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -125,12 +125,12 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
 @permission_required("user.permissions.read")
 async def list_user_permissions(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
-    list_permissions: list[Permission] = await _users_service.list_user_permissions(
+    list_permissions: list[UserPermission] = await _users_service.list_user_permissions(
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
     return envelope_json_response(
         [
-            PermissionGet.model_construct(
+            MyPermissionGet.model_construct(
                 _fields_set=p.model_fields_set, **p.model_dump()
             )
             for p in list_permissions

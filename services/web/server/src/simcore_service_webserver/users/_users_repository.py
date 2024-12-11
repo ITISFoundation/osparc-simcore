@@ -2,7 +2,7 @@ import contextlib
 
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.api_schemas_webserver.users import Permission
+from models_library.api_schemas_webserver.users import UserPermission
 from models_library.users import GroupID, UserBillingDetails, UserID
 from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
@@ -73,8 +73,8 @@ async def list_user_permissions(
     *,
     user_id: UserID,
     product_name: str,
-) -> list[Permission]:
-    override_services_specifications = Permission(
+) -> list[UserPermission]:
+    override_services_specifications = UserPermission(
         name="override_services_specifications",
         allowed=False,
     )

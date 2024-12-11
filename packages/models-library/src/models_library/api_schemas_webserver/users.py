@@ -20,7 +20,7 @@ from .users_preferences import AggregatedPreferences
 #
 # THIRD-PARTY TOKENS
 #
-class ThirdPartyToken(BaseModel):
+class UserThirdPartyToken(BaseModel):
     """
     Tokens used to access third-party services connected to osparc (e.g. pennsieve, scicrunch, etc)
     """
@@ -42,19 +42,19 @@ class ThirdPartyToken(BaseModel):
     )
 
 
-class TokenCreate(ThirdPartyToken):
+class MyTokenCreate(UserThirdPartyToken):
     ...
 
 
 #
 # PERMISSIONS
 #
-class Permission(BaseModel):
+class UserPermission(BaseModel):
     name: str
     allowed: bool
 
 
-class PermissionGet(Permission, OutputSchema):
+class MyPermissionGet(UserPermission, OutputSchema):
     ...
 
 
