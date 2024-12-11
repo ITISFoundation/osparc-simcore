@@ -21,6 +21,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from models_library.groups import EVERYONE_GROUP_ID, StandardGroupCreate
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
@@ -35,11 +36,8 @@ from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import _core as gc_core
 from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
-from simcore_service_webserver.groups.api import (
-    add_user_in_group,
-    create_user_group,
-    list_user_groups_with_read_access,
-)
+from simcore_service_webserver.groups._groups_api import create_standard_group
+from simcore_service_webserver.groups.api import add_user_in_group
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
@@ -261,13 +259,12 @@ async def get_template_project(
 ):
     """returns a tempalte shared with all"""
     assert client.app
-    _, _, all_group = await list_user_groups_with_read_access(client.app, user["id"])
 
     # the information comes from a file, randomize it
     project_data["name"] = f"Fake template {uuid4()}"
     project_data["uuid"] = f"{uuid4()}"
     project_data["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": False, "delete": False}
+        str(EVERYONE_GROUP_ID): {"read": True, "write": False, "delete": False}
     }
     if access_rights is not None:
         project_data["accessRights"].update(access_rights)
@@ -281,22 +278,33 @@ async def get_template_project(
     )
 
 
-async def get_group(client: TestClient, user):
+async def get_group(client: TestClient, user: dict):
     """Creates a group for a given user"""
-    return await create_user_group(
+    assert client.app
+
+    group, _ = await create_standard_group(
         app=client.app,
         user_id=user["id"],
-        new_group={"label": uuid4(), "description": uuid4(), "thumbnail": None},
+        create=StandardGroupCreate.model_validate(
+            {
+                "name": f"name-{uuid4()}",
+                "description": f"desc-{uuid4()}",
+                "thumbnail": None,
+            }
+        ),
     )
+    return group.model_dump(mode="json")
 
 
 async def invite_user_to_group(client: TestClient, owner, invitee, group):
     """Invite a user to a group on which the owner has writes over"""
+    assert client.app
+
     await add_user_in_group(
         client.app,
         owner["id"],
         group["gid"],
-        new_user_id=invitee["id"],
+        new_by_user_id=invitee["id"],
     )
 
 

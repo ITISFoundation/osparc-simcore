@@ -15,9 +15,9 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from models_library.api_schemas_webserver.users import (
-    ProfileGet,
-    ProfilePrivacyGet,
-    ProfileUpdate,
+    MyProfileGet,
+    MyProfilePatch,
+    MyProfilePrivacyGet,
 )
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
@@ -28,9 +28,9 @@ from simcore_postgres_database.models.users import UserRole, users
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
 )
+from simcore_postgres_database.utils_users import generate_alternative_username
 
 from ..db.plugin import get_database_engine
-from ..groups.models import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _db
@@ -46,6 +46,29 @@ from .exceptions import (
 _logger = logging.getLogger(__name__)
 
 
+_GROUPS_SCHEMA_TO_DB = {
+    "gid": "gid",
+    "label": "name",
+    "description": "description",
+    "thumbnail": "thumbnail",
+    "accessRights": "access_rights",
+}
+
+
+def _convert_groups_db_to_schema(
+    db_row: RowProxy, *, prefix: str | None = "", **kwargs
+) -> dict:
+    # NOTE: Deprecated. has to be replaced with
+    converted_dict = {
+        k: db_row[f"{prefix}{v}"]
+        for k, v in _GROUPS_SCHEMA_TO_DB.items()
+        if f"{prefix}{v}" in db_row
+    }
+    converted_dict.update(**kwargs)
+    converted_dict["inclusionRules"] = {}
+    return converted_dict
+
+
 def _parse_as_user(user_id: Any) -> UserID:
     try:
         return TypeAdapter(UserID).validate_python(user_id)
@@ -55,7 +78,7 @@ def _parse_as_user(user_id: Any) -> UserID:
 
 async def get_user_profile(
     app: web.Application, user_id: UserID, product_name: ProductName
-) -> ProfileGet:
+) -> MyProfileGet:
     """
     :raises UserNotFoundError:
     :raises MissingGroupExtraPropertiesForProductError: when product is not properly configured
@@ -63,7 +86,7 @@ async def get_user_profile(
 
     engine = get_database_engine(app)
     user_profile: dict[str, Any] = {}
-    user_primary_group = all_group = {}
+    user_primary_group = everyone_group = {}
     user_standard_groups = []
     user_id = _parse_as_user(user_id)
 
@@ -98,20 +121,20 @@ async def get_user_profile(
                 assert user_profile["id"] == user_id  # nosec
 
             if row.groups_type == GroupType.EVERYONE:
-                all_group = convert_groups_db_to_schema(
+                everyone_group = _convert_groups_db_to_schema(
                     row,
                     prefix="groups_",
                     accessRights=row["user_to_groups_access_rights"],
                 )
             elif row.groups_type == GroupType.PRIMARY:
-                user_primary_group = convert_groups_db_to_schema(
+                user_primary_group = _convert_groups_db_to_schema(
                     row,
                     prefix="groups_",
                     accessRights=row["user_to_groups_access_rights"],
                 )
             else:
                 user_standard_groups.append(
-                    convert_groups_db_to_schema(
+                    _convert_groups_db_to_schema(
                         row,
                         prefix="groups_",
                         accessRights=row["user_to_groups_access_rights"],
@@ -136,7 +159,7 @@ async def get_user_profile(
     if user_profile.get("expiration_date"):
         optional["expiration_date"] = user_profile["expiration_date"]
 
-    return ProfileGet(
+    return MyProfileGet(
         id=user_profile["id"],
         user_name=user_profile["user_name"],
         first_name=user_profile["first_name"],
@@ -146,9 +169,9 @@ async def get_user_profile(
         groups={  # type: ignore[arg-type]
             "me": user_primary_group,
             "organizations": user_standard_groups,
-            "all": all_group,
+            "all": everyone_group,
         },
-        privacy=ProfilePrivacyGet(
+        privacy=MyProfilePrivacyGet(
             hide_fullname=user_profile["privacy_hide_fullname"],
             hide_email=user_profile["privacy_hide_email"],
         ),
@@ -161,7 +184,7 @@ async def update_user_profile(
     app: web.Application,
     *,
     user_id: UserID,
-    update: ProfileUpdate,
+    update: MyProfilePatch,
 ) -> None:
     """
     Raises:
@@ -180,8 +203,13 @@ async def update_user_profile(
                 assert resp.rowcount == 1  # nosec
 
             except db_errors.UniqueViolation as err:
+                user_name = updated_values.get("name")
+
                 raise UserNameDuplicateError(
-                    user_name=updated_values.get("name")
+                    user_name=user_name,
+                    alternative_user_name=generate_alternative_username(user_name),
+                    user_id=user_id,
+                    updated_values=updated_values,
                 ) from err
 
 
