@@ -217,22 +217,21 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         importSection.add(entry);
       });
 
-      /*
       const importButton = new qx.ui.form.Button().set({
         label: this.tr("Import"),
         appearance: "strong-button",
         center: true,
         maxWidth: 200,
         alignX: "center",
-        visibility: anatomicalModelsData["purchases"].length ? "visible" : "excluded",
       });
       importButton.addListener("execute", () => {
         this.fireDataEvent("modelImportRequested", {
           modelId: anatomicalModelsData["modelId"]
         });
       }, this);
-      importSection.add(importButton);
-      */
+      if (anatomicalModelsData["purchases"].length) {
+        importSection.add(importButton);
+      }
       return importSection;
     },
   }

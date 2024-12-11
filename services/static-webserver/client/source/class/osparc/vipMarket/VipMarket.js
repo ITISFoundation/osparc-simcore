@@ -27,6 +27,13 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
   },
 
   properties: {
+    openBy: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeOpenBy",
+    },
+
     metadataUrl: {
       check: "String",
       init: null,
@@ -300,7 +307,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                 const {
                   modelId
                 } = e.getData();
-                console.log("Import", modelId);
+                this.__sendImportModelMessage(modelId);
               }, this);
             });
         })
@@ -348,6 +355,27 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         sortModel(sortBy);
         models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
       }, this);
+    },
+
+    __sendImportModelMessage: function(modelId) {
+      const nodeId = this.getOpenBy();
+      if (nodeId) {
+        const store = osparc.store.Store.getInstance();
+        const currentStudy = store.getCurrentStudy();
+        if (!currentStudy) {
+          return;
+        }
+        const node = currentStudy.getWorkbench().getNode(nodeId);
+        if (node && node.getIFrame()) {
+          const msg = {
+            "type": "importModel",
+            "message": {
+              "modelId": modelId,
+            },
+          };
+          node.getIFrame().sendMessageToIframe(msg);
+        }
+      }
     },
   }
 });

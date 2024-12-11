@@ -51,12 +51,22 @@ qx.Class.define("osparc.vipMarket.Market", {
     });
   },
 
+  properties: {
+    openBy: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeOpenBy",
+    },
+  },
+
   members: {
     __buildViPMarketPage: function(marketInfo) {
       const vipMarketView = new osparc.vipMarket.VipMarket();
       vipMarketView.set({
         metadataUrl: marketInfo["url"],
       });
+      this.bind("openBy", vipMarketView, "openBy");
       const page = this.addTab(marketInfo["label"], marketInfo["icon"], vipMarketView);
       page.category = marketInfo["category"];
       return page;

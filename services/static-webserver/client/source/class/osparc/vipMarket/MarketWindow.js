@@ -18,9 +18,8 @@
 qx.Class.define("osparc.vipMarket.MarketWindow", {
   extend: osparc.ui.window.TabbedWindow,
 
-  construct: function() {
+  construct: function(nodeId, category) {
     this.base(arguments, "store", this.tr("Market"));
-
 
     osparc.utils.Utils.setIdToWidget(this, "storeWindow");
 
@@ -29,16 +28,22 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
     this.set({
       width,
       height
-    })
+    });
 
-    const vipMarket = this.__vipMarket = new osparc.vipMarket.Market();
+    const vipMarket = this.__vipMarket = new osparc.vipMarket.Market().set({
+      openBy: nodeId,
+    });
     this._setTabbedView(vipMarket);
+
+    if (category) {
+      vipMarket.openCategory(category);
+    }
   },
 
   statics: {
-    openWindow: function() {
+    openWindow: function(nodeId, category) {
       if (osparc.product.Utils.showS4LStore()) {
-        const storeWindow = new osparc.vipMarket.MarketWindow();
+        const storeWindow = new osparc.vipMarket.MarketWindow(nodeId, category);
         storeWindow.center();
         storeWindow.open();
         return storeWindow;
@@ -46,12 +51,4 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
       return null;
     }
   },
-
-  members: {
-    __vipMarket: null,
-
-    openCategory: function(category) {
-      return this.__vipMarket.openCategory(category);
-    },
-  }
 });
