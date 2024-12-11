@@ -31,7 +31,7 @@ class UsersRequestContext(BaseModel):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
-class _SearchQueryParams(BaseModel):
+class SearchQueryParams(BaseModel):
     email: str = Field(
         min_length=3,
         max_length=200,
