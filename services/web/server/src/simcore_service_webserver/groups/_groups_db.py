@@ -659,7 +659,6 @@ async def add_new_user_in_group(
         query = sa.select(users.c.id)
         if new_user_id is not None:
             query = query.where(users.c.id == new_user_id)
-
         elif new_user_name is not None:
             query = query.where(users.c.name == new_user_name)
         else:

@@ -6,13 +6,14 @@
 
 
 import operator
+from typing import AsyncIterable
 
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.groups import GroupGet, MyGroupsGet
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
@@ -216,3 +217,79 @@ async def test_group_creation_workflow(
     _, error = await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
     assert f"{group.gid}" in error["message"]
+
+
+async def other_user(
+    client: TestClient, logged_user: UserInfoDict, is_private_user: bool
+) -> AsyncIterable[UserInfoDict]:
+    async with NewUser(
+        {
+            "name": f"other_than_{logged_user['name']}",
+            "role": "USER",
+            "privacy_hide_email": is_private_user,
+        },
+        client.app,
+    ) as user:
+        yield user
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("is_private_user", [True, False])
+@pytest.mark.parametrize("add_user_by", ["user_email", "user_id", "user_name"])
+async def test_create_organization_and_add_users(
+    client: TestClient,
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    other_user: UserInfoDict,
+    is_private_user: bool,
+    add_user_by: str,
+):
+    assert client.app
+    assert logged_user["id"] != 0
+    assert logged_user["role"] == user_role.value
+
+    url = client.app.router["create_group"].url_for()
+    new_group_data = {
+        "label": "Amies sans-frontiers",
+        "description": "A desperate attempt to make some friends",
+    }
+
+    resp = await client.post(f"{url}", json=new_group_data)
+    data, error = await assert_status(resp, status.HTTP_201_CREATED)
+
+    assert not error
+    group = GroupGet.model_validate(data)
+
+    # i have another user
+    user_id = other_user["id"]
+    user_name = other_user["name"]
+    user_email = other_user["email"]
+
+    assert user_id != logged_user["id"]
+    assert user_name != logged_user["name"]
+    assert user_email != logged_user["email"]
+
+    # add user
+    url = client.app.router["add_group_user"].url_for(gid=f"{group.gid}")
+
+    expected_status = status.HTTP_204_NO_CONTENT
+    match add_user_by:
+        case "user_email":
+            param = {"email": user_name}
+            if is_private_user:
+                expected_status = status.HTTP_409_CONFLICT
+        case "user_id":
+            param = {"uid": user_name}
+        case "user_name":
+            param = {"userName": user_name}
+        case _:
+            pytest.fail(reason=f"parameter {add_user_by} was not accounted for")
+
+    response = await client.post(f"{url}", json=param)
+    await assert_status(response, expected_status)
+
+    url = client.app.router["delete_group_user"].url_for(
+        gid=f"{group.gid}", uid=f"{user_id}"
+    )
+    response = await client.delete(f"{url}")
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
