@@ -2,6 +2,7 @@ import contextlib
 
 import sqlalchemy as sa
 from aiohttp import web
+from models_library.api_schemas_webserver.users import Permission
 from models_library.users import GroupID, UserBillingDetails, UserID
 from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
@@ -24,7 +25,6 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ..db.plugin import get_asyncpg_engine
 from .exceptions import BillingDetailsNotFoundError
-from .schemas import Permission
 
 _ALL = None
 
