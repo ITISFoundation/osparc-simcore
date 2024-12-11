@@ -107,7 +107,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           });
           break;
         }
-        case "multi-select-button":
+        case "multi-select-button": {
           control = new qx.ui.form.ToggleButton(this.tr("Multiselect")).set({
             value: false,
             marginRight: 10,
@@ -115,6 +115,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           const header = this.getChildControl("header");
           header.addAt(control, 2);
           break;
+        }
         case "view-options-rgroup":
           control = new qx.ui.form.RadioGroup();
           break;
