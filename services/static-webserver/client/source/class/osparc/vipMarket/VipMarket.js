@@ -271,14 +271,21 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                 }
                 osparc.data.Resources.fetch("market", "purchase", params)
                   .then(() => {
+                    const expirationDate = new Date();
+                    expirationDate.setMonth(expirationDate.getMonth() + 1); // rented for one month
+                    const purchaseData = {
+                      expiresAt: expirationDate, // get this info from the response
+                      numberOfSeats, // get this info from the response
+                    };
+
+                    let msg = numberOfSeats;
+                    msg += " seat" + (purchaseData["numberOfSeats"] > 1 ? "s" : "");
+                    msg += " rented until " + osparc.utils.Utils.formatDate(purchaseData["expiresAt"]);
+                    osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+
                     const found = this.__anatomicalModels.find(model => model["modelId"] === modelId);
                     if (found) {
-                      const expirationDate = new Date();
-                      expirationDate.setMonth(expirationDate.getMonth() + 1); // rented for one month
-                      found["purchases"].push({
-                        expiresAt: expirationDate, // get this info from the response
-                        numberOfSeats, // get this info from the response
-                      });
+                      found["purchases"].push(purchaseData);
                       this.__populateModels();
                       anatomicModelDetails.setAnatomicalModelsData(found);
                     }
