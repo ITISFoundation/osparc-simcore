@@ -133,6 +133,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           control = new osparc.vipMarket.AnatomicalModelDetails().set({
             padding: 5,
           });
+          this.bind("openBy", control, "openBy");
           this.getChildControl("right-side").add(control, {
             flex: 1
           });
