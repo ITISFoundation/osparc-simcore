@@ -2,7 +2,7 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.users import TokenCreate
+from models_library.api_schemas_webserver.users import MyTokenCreate
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -55,7 +55,7 @@ async def list_tokens(request: web.Request) -> web.Response:
 @permission_required("user.tokens.*")
 async def create_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
-    token_create = await parse_request_body_as(TokenCreate, request)
+    token_create = await parse_request_body_as(MyTokenCreate, request)
     await _tokens.create_token(request.app, req_ctx.user_id, token_create)
     return envelope_json_response(token_create, web.HTTPCreated)
 

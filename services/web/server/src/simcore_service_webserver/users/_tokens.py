@@ -4,7 +4,10 @@
 """
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.api_schemas_webserver.users import ThirdPartyToken, TokenCreate
+from models_library.api_schemas_webserver.users import (
+    MyTokenCreate,
+    UserThirdPartyToken,
+)
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from sqlalchemy import and_, literal_column
@@ -15,8 +18,8 @@ from .exceptions import TokenNotFoundError
 
 
 async def create_token(
-    app: web.Application, user_id: UserID, token: TokenCreate
-) -> ThirdPartyToken:
+    app: web.Application, user_id: UserID, token: MyTokenCreate
+) -> UserThirdPartyToken:
     async with get_database_engine(app).acquire() as conn:
         await conn.execute(
             tokens.insert().values(
@@ -28,19 +31,21 @@ async def create_token(
         return token
 
 
-async def list_tokens(app: web.Application, user_id: UserID) -> list[ThirdPartyToken]:
-    user_tokens: list[ThirdPartyToken] = []
+async def list_tokens(
+    app: web.Application, user_id: UserID
+) -> list[UserThirdPartyToken]:
+    user_tokens: list[UserThirdPartyToken] = []
     async with get_database_engine(app).acquire() as conn:
         async for row in conn.execute(
             sa.select(tokens.c.token_data).where(tokens.c.user_id == user_id)
         ):
-            user_tokens.append(ThirdPartyToken.model_construct(**row["token_data"]))
+            user_tokens.append(UserThirdPartyToken.model_construct(**row["token_data"]))
         return user_tokens
 
 
 async def get_token(
     app: web.Application, user_id: UserID, service_id: str
-) -> ThirdPartyToken:
+) -> UserThirdPartyToken:
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             sa.select(tokens.c.token_data).where(
@@ -48,13 +53,13 @@ async def get_token(
             )
         )
         if row := await result.first():
-            return ThirdPartyToken.model_construct(**row["token_data"])
+            return UserThirdPartyToken.model_construct(**row["token_data"])
         raise TokenNotFoundError(service_id=service_id)
 
 
 async def update_token(
     app: web.Application, user_id: UserID, service_id: str, token_data: dict[str, str]
-) -> ThirdPartyToken:
+) -> UserThirdPartyToken:
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             sa.select(tokens.c.token_data, tokens.c.token_id).where(
@@ -78,7 +83,7 @@ async def update_token(
         assert resp.rowcount == 1  # nosec
         updated_token = await resp.fetchone()
         assert updated_token  # nosec
-        return ThirdPartyToken.model_construct(**updated_token["token_data"])
+        return UserThirdPartyToken.model_construct(**updated_token["token_data"])
 
 
 async def delete_token(app: web.Application, user_id: UserID, service_id: str) -> None:
