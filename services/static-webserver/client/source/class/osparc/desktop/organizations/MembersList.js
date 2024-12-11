@@ -113,14 +113,9 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         flex: 1
       });
 
-      const validator = new qx.ui.form.validation.Manager();
-      validator.add(newMemberUserName, qx.util.Validate.email());
-
       const addBtn = new qx.ui.form.Button(this.tr("Add"));
       addBtn.addListener("execute", function() {
-        if (validator.validate()) {
-          this.__addMember(newMemberUserName.getValue());
-        }
+        this.__addMember(newMemberUserName.getValue());
       }, this);
       hBox.add(addBtn);
 
@@ -217,7 +212,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const canIDelete = organization.getAccessRights()["delete"];
 
       const introText = canIWrite ?
-        this.tr("You can add new members and promote or demote existing ones.<br>In order to add new members, type their username or email if it's public.") :
+        this.tr("You can add new members and promote or demote existing ones.<br>In order to add new members, type their username or email if this is public.") :
         this.tr("You can't add new members to this Organization. Please contact an Administrator or Manager.");
       this.__introLabel.setValue(introText);
 
@@ -311,7 +306,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const orgId = this.__currentOrg.getGroupId();
       const groupsStore = osparc.store.Groups.getInstance();
-      groupsStore.addMember(orgId, newMemberIdentifier)
+      const isEmail = osparc.utils.Utils.isEmail(newMemberIdentifier);
+      isEmail ? groupsStore.addMember(orgId, null, newMemberIdentifier) : groupsStore.addMember(orgId, newMemberIdentifier)
         .then(newMember => {
           const text = newMemberIdentifier + this.tr(" successfully added");
           osparc.FlashMessenger.getInstance().logAs(text);
