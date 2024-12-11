@@ -124,14 +124,14 @@ async def get_directory_file_id(
 async def find_enclosing_file(
     conn: SAConnection, user_id: UserID, file_id: SimcoreS3FileID
 ) -> FileMetaDataAtDB | None:
-    kwnon_files = {
+    known_files = {
         Path(known_file.file_id): known_file
         for known_file in await db_file_meta_data.list_fmds(conn, user_id=user_id)
     }
     current_path = Path(file_id)
     while current_path and current_path != Path(current_path).parent:
-        if current_path in kwnon_files:
-            return kwnon_files.get(current_path)
+        if current_path in known_files:
+            return known_files.get(current_path)
 
         current_path = Path(current_path).parent
 
