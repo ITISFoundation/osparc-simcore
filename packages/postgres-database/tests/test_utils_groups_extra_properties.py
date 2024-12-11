@@ -64,7 +64,7 @@ async def create_fake_group_extra_properties(
         assert result
         row = await result.first()
         assert row
-        properties = GroupExtraProperties.from_row(row)
+        properties = GroupExtraProperties.from_row_proxy(row)
         created_properties.append((properties.group_id, properties.product_name))
         return properties
 
