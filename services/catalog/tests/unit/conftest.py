@@ -432,7 +432,7 @@ def mocked_director_service_api(
         path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
         name="get_service",
     )
-    def _get_service(request, service_key, service_version):
+    def _get_service(request: httpx.Request, service_key, service_version):
         if found := _search(service_key, service_version):
             # NOTE: this is a defect in director's API
             single_service_list = [found]

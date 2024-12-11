@@ -722,7 +722,11 @@ qx.Class.define("osparc.data.Resources", {
           getOne: {
             method: "GET",
             url: statics.API + "/me"
-          }
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/me"
+          },
         }
       },
       /*
@@ -763,7 +767,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/auth/api-keys"
+            url: statics.API + "/auth/api-keys/{apiKeyId}"
           }
         }
       },
@@ -1117,7 +1121,11 @@ qx.Class.define("osparc.data.Resources", {
           postResetPassword: {
             method: "POST",
             url: statics.API + "/auth/reset-password/{code}"
-          }
+          },
+          changeEmail: {
+            method: "POST",
+            url: statics.API + "/auth/change-email"
+          },
         }
       },
       /*

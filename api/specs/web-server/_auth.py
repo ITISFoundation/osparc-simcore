@@ -9,8 +9,6 @@ from typing import Any
 from fastapi import APIRouter, status
 from models_library.api_schemas_webserver.auth import (
     AccountRequestInfo,
-    ApiKeyCreate,
-    ApiKeyGet,
     UnregisterCheck,
 )
 from models_library.generics import Envelope
@@ -262,72 +260,6 @@ async def change_password(_body: ChangePasswordBody):
 )
 async def email_confirmation(code: str):
     """email link sent to user to confirm an action"""
-
-
-@router.get(
-    "/auth/api-keys",
-    operation_id="list_api_keys",
-    responses={
-        status.HTTP_200_OK: {
-            "description": "returns the display names of API keys",
-            "model": list[str],
-        },
-        status.HTTP_400_BAD_REQUEST: {
-            "description": "key name requested is invalid",
-        },
-        status.HTTP_401_UNAUTHORIZED: {
-            "description": "requires login to  list keys",
-        },
-        status.HTTP_403_FORBIDDEN: {
-            "description": "not enough permissions to list keys",
-        },
-    },
-)
-async def list_api_keys():
-    """lists display names of API keys by this user"""
-
-
-@router.post(
-    "/auth/api-keys",
-    operation_id="create_api_key",
-    responses={
-        status.HTTP_200_OK: {
-            "description": "Authorization granted returning API key",
-            "model": ApiKeyGet,
-        },
-        status.HTTP_400_BAD_REQUEST: {
-            "description": "key name requested is invalid",
-        },
-        status.HTTP_401_UNAUTHORIZED: {
-            "description": "requires login to  list keys",
-        },
-        status.HTTP_403_FORBIDDEN: {
-            "description": "not enough permissions to list keys",
-        },
-    },
-)
-async def create_api_key(_body: ApiKeyCreate):
-    """creates API keys to access public API"""
-
-
-@router.delete(
-    "/auth/api-keys",
-    operation_id="delete_api_key",
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses={
-        status.HTTP_204_NO_CONTENT: {
-            "description": "api key successfully deleted",
-        },
-        status.HTTP_401_UNAUTHORIZED: {
-            "description": "requires login to  delete a key",
-        },
-        status.HTTP_403_FORBIDDEN: {
-            "description": "not enough permissions to delete a key",
-        },
-    },
-)
-async def delete_api_key(_body: ApiKeyCreate):
-    """deletes API key by name"""
 
 
 @router.get(

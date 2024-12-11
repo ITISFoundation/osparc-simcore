@@ -14,7 +14,6 @@ from fastapi import FastAPI, status
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
-from models_library.api_schemas_webserver.product import GetCreditPrice
 from models_library.api_schemas_webserver.projects import (
     ProjectCreateNew,
     ProjectGet,
@@ -29,14 +28,12 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputGet,
     ProjectInputUpdate,
 )
-from models_library.api_schemas_webserver.resource_usage import (
-    PricingPlanGet,
-    PricingUnitGet,
+from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
+from models_library.api_schemas_webserver.users import MyProfileGet as WebProfileGet
+from models_library.api_schemas_webserver.users import (
+    MyProfilePatch as WebProfileUpdate,
 )
-from models_library.api_schemas_webserver.wallets import (
-    WalletGet,
-    WalletGetWithAvailableCredits,
-)
+from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -64,6 +61,7 @@ from simcore_service_api_server.exceptions.backend_errors import (
     SolverOutputNotFoundError,
     WalletNotFoundError,
 )
+from simcore_service_api_server.models.schemas.model_adapter import GetCreditPriceLegacy
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -79,7 +77,11 @@ from ..exceptions.service_errors_utils import (
 from ..models.basic_types import VersionStr
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
-from ..models.schemas.profiles import Profile, ProfileUpdate
+from ..models.schemas.model_adapter import (
+    PricingUnitGetLegacy,
+    WalletGetWithAvailableCreditsLegacy,
+)
+from ..models.schemas.profiles import Profile, ProfileUpdate, UserRoleEnum
 from ..models.schemas.solvers import SolverKeyId
 from ..models.schemas.studies import StudyPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
@@ -245,17 +247,34 @@ class AuthSession:
     async def get_me(self) -> Profile:
         response = await self.client.get("/me", cookies=self.session_cookies)
         response.raise_for_status()
-        profile: Profile | None = (
-            Envelope[Profile].model_validate_json(response.text).data
+
+        got: WebProfileGet | None = (
+            Envelope[WebProfileGet].model_validate_json(response.text).data
         )
-        assert profile is not None  # nosec
-        return profile
+        assert got is not None  # nosec
+
+        return Profile(
+            first_name=got.first_name,
+            last_name=got.last_name,
+            id=got.id,
+            login=got.login,
+            role=UserRoleEnum(got.role),
+            groups=got.groups.model_dump() if got.groups else None,  # type: ignore
+            gravatar_id=got.gravatar_id,
+        )
 
     @_exception_mapper(_PROFILE_STATUS_MAP)
     async def update_me(self, *, profile_update: ProfileUpdate) -> Profile:
-        response = await self.client.put(
+
+        update = WebProfileUpdate.model_construct(
+            _fields_set=profile_update.model_fields_set,
+            first_name=profile_update.first_name,
+            last_name=profile_update.last_name,
+        )
+
+        response = await self.client.patch(
             "/me",
-            json=profile_update.model_dump(exclude_none=True),
+            json=update.model_dump(exclude_unset=True),
             cookies=self.session_cookies,
         )
         response.raise_for_status()
@@ -334,7 +353,7 @@ class AuthSession:
             show_hidden=True,
             # WARNING: better way to match jobs with projects (Next PR if this works fine!)
             # WARNING: search text has a limit that I needed to increase for the example!
-            search=urllib.parse.quote(solver_name, safe=""),
+            search=solver_name,
         )
 
     async def get_projects_page(self, *, limit: int, offset: int):
@@ -409,14 +428,14 @@ class AuthSession:
     @_exception_mapper({status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
     async def get_project_node_pricing_unit(
         self, *, project_id: UUID, node_id: UUID
-    ) -> PricingUnitGet:
+    ) -> PricingUnitGetLegacy:
         response = await self.client.get(
             f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
             cookies=self.session_cookies,
         )
 
         response.raise_for_status()
-        data = Envelope[PricingUnitGet].model_validate_json(response.text).data
+        data = Envelope[PricingUnitGetLegacy].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -531,14 +550,14 @@ class AuthSession:
     # WALLETS -------------------------------------------------
 
     @_exception_mapper(_WALLET_STATUS_MAP)
-    async def get_default_wallet(self) -> WalletGetWithAvailableCredits:
+    async def get_default_wallet(self) -> WalletGetWithAvailableCreditsLegacy:
         response = await self.client.get(
             "/wallets/default",
             cookies=self.session_cookies,
         )
         response.raise_for_status()
         data = (
-            Envelope[WalletGetWithAvailableCredits]
+            Envelope[WalletGetWithAvailableCreditsLegacy]
             .model_validate_json(response.text)
             .data
         )
@@ -546,14 +565,16 @@ class AuthSession:
         return data
 
     @_exception_mapper(_WALLET_STATUS_MAP)
-    async def get_wallet(self, *, wallet_id: int) -> WalletGetWithAvailableCredits:
+    async def get_wallet(
+        self, *, wallet_id: int
+    ) -> WalletGetWithAvailableCreditsLegacy:
         response = await self.client.get(
             f"/wallets/{wallet_id}",
             cookies=self.session_cookies,
         )
         response.raise_for_status()
         data = (
-            Envelope[WalletGetWithAvailableCredits]
+            Envelope[WalletGetWithAvailableCreditsLegacy]
             .model_validate_json(response.text)
             .data
         )
@@ -574,13 +595,13 @@ class AuthSession:
     # PRODUCTS -------------------------------------------------
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: ProductPriceNotFoundError})
-    async def get_product_price(self) -> GetCreditPrice:
+    async def get_product_price(self) -> GetCreditPriceLegacy:
         response = await self.client.get(
             "/credits-price",
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[GetCreditPrice].model_validate_json(response.text).data
+        data = Envelope[GetCreditPriceLegacy].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 

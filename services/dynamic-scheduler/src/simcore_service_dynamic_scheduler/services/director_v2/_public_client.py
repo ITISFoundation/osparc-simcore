@@ -10,8 +10,10 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
+from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import AttachLifespanMixin, HasClientSetupInterface
@@ -114,6 +116,14 @@ class DirectorV2Client(
         )
         dict_response: dict[str, Any] = response.json()
         return TypeAdapter(RetrieveDataOutEnveloped).validate_python(dict_response)
+
+    async def list_tracked_dynamic_services(
+        self, *, user_id: UserID | None = None, project_id: ProjectID | None = None
+    ) -> list[DynamicServiceGet]:
+        response = await self.thin_client.get_dynamic_services(
+            user_id=user_id, project_id=project_id
+        )
+        return TypeAdapter(list[DynamicServiceGet]).validate_python(response.json())
 
 
 def setup_director_v2(app: FastAPI) -> None:

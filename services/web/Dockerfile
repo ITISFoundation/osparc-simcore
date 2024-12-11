@@ -21,14 +21,14 @@ LABEL maintainer=pcrespov
 # for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
 RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
   echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
   libmagic1 \
   gosu \
   && apt-get clean -y \
+  && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
   && gosu nobody true
 
@@ -78,8 +78,7 @@ FROM base AS build
 
 ENV SC_BUILD_TARGET build
 
-RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \

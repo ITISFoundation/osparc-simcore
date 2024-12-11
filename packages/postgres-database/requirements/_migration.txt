@@ -6,7 +6,7 @@ certifi==2024.8.30
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
 click==8.1.7
     # via -r requirements/_migration.in

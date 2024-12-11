@@ -12,13 +12,14 @@
 
    Authors:
      * Pedro Crespo (pcrespov)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
 /**
  *  User profile in preferences dialog
  *
- *  - user name, surname, email, avatar
+ *  - first name, last name, username, email
  *
  */
 
@@ -30,12 +31,12 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.__userProfileData = null;
-    this.__userProfileModel = null;
-
     this.__fetchProfile();
 
     this._add(this.__createProfileUser());
+    if (osparc.utils.Utils.isDevelopmentPlatform()) {
+      this._add(this.__createPrivacySection());
+    }
     if (osparc.store.StaticInfo.getInstance().is2FARequired()) {
       this._add(this.__create2FASection());
     }
@@ -46,6 +47,42 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
   members: {
     __userProfileData: null,
     __userProfileModel: null,
+    __userPrivacyData: null,
+    __userPrivacyModel: null,
+
+    __fetchProfile: function() {
+      osparc.data.Resources.getOne("profile", {}, null, false)
+        .then(profile => {
+          this.__setDataToProfile(profile);
+          this.__setDataToPrivacy(profile["privacy"]);
+        })
+        .catch(err => {
+          console.error(err);
+        });
+    },
+
+    __setDataToProfile: function(data) {
+      if (data) {
+        this.__userProfileData = data;
+        this.__userProfileModel.set({
+          "username": data["userName"] || "",
+          "firstName": data["first_name"] || "",
+          "lastName": data["last_name"] || "",
+          "email": data["login"],
+          "expirationDate": data["expirationDate"] || null,
+        });
+      }
+    },
+
+    __setDataToPrivacy: function(privacyData) {
+      if (privacyData) {
+        this.__userPrivacyData = privacyData;
+        this.__userPrivacyModel.set({
+          "hideFullname": "hideFullname" in privacyData ? privacyData["hideFullname"] : true,
+          "hideEmail": "hideEmail" in privacyData ? privacyData["hideEmail"] : true,
+        });
+      }
+    },
 
     __createProfileUser: function() {
       // layout
@@ -55,10 +92,13 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         maxWidth: 500
       });
 
+      const username = new qx.ui.form.TextField().set({
+        placeholder: this.tr("username")
+      });
+
       const firstName = new qx.ui.form.TextField().set({
         placeholder: this.tr("First Name")
       });
-
       const lastName = new qx.ui.form.TextField().set({
         placeholder: this.tr("Last Name")
       });
@@ -69,6 +109,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
 
       const form = new qx.ui.form.Form();
+      form.add(username, "Username", null, "username");
       form.add(firstName, "First Name", null, "firstName");
       form.add(lastName, "Last Name", null, "lastName");
       form.add(email, "Email", null, "email");
@@ -93,15 +134,17 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
       // binding to a model
       const raw = {
+        "username": "",
         "firstName": "",
         "lastName": "",
         "email": "",
-        "expirationDate": null
+        "expirationDate": null,
       };
 
       const model = this.__userProfileModel = qx.data.marshal.Json.createModel(raw);
       const controller = new qx.data.controller.Object(model);
 
+      controller.addTarget(username, "value", "username", true);
       controller.addTarget(email, "value", "email", true);
       controller.addTarget(firstName, "value", "firstName", true, null, {
         converter: function(data) {
@@ -136,59 +179,118 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
       updateBtn.addListener("execute", () => {
         if (!osparc.data.Permissions.getInstance().canDo("user.user.update", true)) {
-          this.__resetDataToModel();
+          this.__resetUserData();
           return;
         }
 
-        const requests = {
-          email: null,
-          names: null
-        };
-        if (this.__userProfileData["login"] !== model.getEmail()) {
-          if (emailValidator.validate()) {
-            const emailReq = new osparc.io.request.ApiRequest("/auth/change-email", "POST");
-            emailReq.setRequestData({
-              "email": model.getEmail()
-            });
-            requests.email = emailReq;
-          }
+        const patchData = {};
+        if (this.__userProfileData["username"] !== model.getUsername()) {
+          patchData["userName"] = model.getUsername();
+        }
+        if (this.__userProfileData["first_name"] !== model.getFirstName()) {
+          patchData["first_name"] = model.getFirstName();
+        }
+        if (this.__userProfileData["last_name"] !== model.getLastName()) {
+          patchData["last_name"] = model.getLastName();
         }
 
-        if (this.__userProfileData["first_name"] !== model.getFirstName() || this.__userProfileData["last_name"] !== model.getLastName()) {
+        if (Object.keys(patchData).length) {
           if (namesValidator.validate()) {
-            const profileReq = new osparc.io.request.ApiRequest("/me", "PUT");
-            profileReq.setRequestData({
-              "first_name": model.getFirstName(),
-              "last_name": model.getLastName()
-            });
-            requests.names = profileReq;
+            const params = {
+              data: patchData
+            };
+            osparc.data.Resources.fetch("profile", "patch", params)
+              .then(() => {
+                this.__setDataToProfile(Object.assign(this.__userProfileData, params.data));
+                osparc.auth.Manager.getInstance().updateProfile(this.__userProfileData);
+                const msg = this.tr("Profile updated");
+                osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+              })
+              .catch(err => {
+                this.__resetUserData();
+                const msg = err.message || this.tr("Failed to update profile");
+                osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                console.error(err);
+              });
           }
         }
+      });
 
-        Object.keys(requests).forEach(key => {
-          const req = requests[key];
-          if (req === null) {
-            return;
-          }
+      return box;
+    },
 
-          req.addListenerOnce("success", e => {
-            const reqData = e.getTarget().getRequestData();
-            this.__setDataToModel(Object.assign(this.__userProfileData, reqData));
-            osparc.auth.Manager.getInstance().updateProfile(this.__userProfileData);
-            const res = e.getTarget().getResponse();
-            const msg = (res && res.data) ? res.data : this.tr("Profile updated");
-            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-          }, this);
+    __createPrivacySection: function() {
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Privacy"));
+      box.set({
+        alignX: "left",
+        maxWidth: 500
+      });
 
-          req.addListenerOnce("fail", e => {
-            this.__resetDataToModel();
-            const msg = osparc.data.Resources.getErrorMsg(e.getTarget().getResponse()) || this.tr("Failed to update profile");
-            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-          }, this);
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("For Privacy reasons, you might want to hide your Full Name and/or the email to other users"));
+      box.add(label);
 
-          req.send();
-        });
-      }, this);
+      const hideFullname = new qx.ui.form.CheckBox().set({
+        value: true
+      });
+      const hideEmail = new qx.ui.form.CheckBox().set({
+        value: true
+      });
+
+      const form = new qx.ui.form.Form();
+      form.add(hideFullname, "Hide Full Name", null, "hideFullname");
+      form.add(hideEmail, "Hide email", null, "hideEmail");
+      box.add(new qx.ui.form.renderer.Single(form));
+
+      // binding to a model
+      const raw = {
+        "hideFullname": true,
+        "hideEmail": true,
+      };
+
+      const model = this.__userPrivacyModel = qx.data.marshal.Json.createModel(raw);
+      const controller = new qx.data.controller.Object(model);
+      controller.addTarget(hideFullname, "value", "hideFullname", true);
+      controller.addTarget(hideEmail, "value", "hideEmail", true);
+
+      const privacyBtn = new qx.ui.form.Button("Update Privacy").set({
+        appearance: "form-button",
+        alignX: "right",
+        allowGrowX: false
+      });
+      box.add(privacyBtn);
+      privacyBtn.addListener("execute", () => {
+        if (!osparc.data.Permissions.getInstance().canDo("user.user.update", true)) {
+          this.__resetPrivacyData();
+          return;
+        }
+        const patchData = {
+          "privacy": {}
+        };
+        if (this.__userPrivacyData["hideFullname"] !== model.getHideFullname()) {
+          patchData["privacy"]["hideFullname"] = model.getHideFullname();
+        }
+        if (this.__userPrivacyData["hideEmail"] !== model.getHideEmail()) {
+          patchData["privacy"]["hideEmail"] = model.getHideEmail();
+        }
+
+        if (Object.keys(patchData["privacy"]).length) {
+          const params = {
+            data: patchData
+          };
+          osparc.data.Resources.fetch("profile", "patch", params)
+            .then(() => {
+              this.__setDataToPrivacy(Object.assign(this.__userPrivacyData, params.data["privacy"]));
+              const msg = this.tr("Privacy updated");
+              osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+            })
+            .catch(err => {
+              this.__resetPrivacyData();
+              const msg = err.message || this.tr("Failed to update privacy");
+              osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+              console.error(err);
+            });
+        }
+      });
 
       return box;
     },
@@ -261,30 +363,12 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       return box;
     },
 
-    __fetchProfile: function() {
-      osparc.data.Resources.getOne("profile", {}, null, false)
-        .then(profile => {
-          this.__setDataToModel(profile);
-        })
-        .catch(err => {
-          console.error(err);
-        });
+    __resetUserData: function() {
+      this.__setDataToProfile(this.__userProfileData);
     },
 
-    __setDataToModel: function(data) {
-      if (data) {
-        this.__userProfileData = data;
-        this.__userProfileModel.set({
-          "firstName": data["first_name"] || "",
-          "lastName": data["last_name"] || "",
-          "email": data["login"],
-          "expirationDate": data["expirationDate"] || null
-        });
-      }
-    },
-
-    __resetDataToModel: function() {
-      this.__setDataToModel(this.__userProfileData);
+    __resetPrivacyData: function() {
+      this.__setDataToPrivacy(this.__userPrivacyData);
     },
 
     __createPasswordSection: function() {

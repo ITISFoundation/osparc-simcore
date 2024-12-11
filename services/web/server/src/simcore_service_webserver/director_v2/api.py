@@ -18,7 +18,6 @@ from ._core_computations import (
 )
 from ._core_dynamic_services import (
     get_project_inactivity,
-    list_dynamic_services,
     restart_dynamic_service,
     update_dynamic_service_networks_in_project,
 )
@@ -37,7 +36,6 @@ __all__: tuple[str, ...] = (
     "get_project_run_policy",
     "is_healthy",
     "is_pipeline_running",
-    "list_dynamic_services",
     "restart_dynamic_service",
     "set_project_run_policy",
     "stop_pipeline",

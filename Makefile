@@ -10,7 +10,7 @@
 .DEFAULT_GOAL := help
 
 SHELL := /bin/bash
-
+.SHELLFLAGS := -o errexit -o pipefail -c
 MAKE_C := $(MAKE) --no-print-directory --directory
 
 # Operating system
@@ -84,7 +84,7 @@ export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
-
+MAKEFILES_WITH_OPENAPI_SPECS := $(shell find . -mindepth 2 -type f -name 'Makefile' -not -path '*/.*' -exec grep -l '^openapi-specs:' {} \; | xargs realpath)
 
 get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
 
@@ -131,6 +131,12 @@ test_python_version: ## Check Python version, throw error if compilation would f
 	@.venv/bin/python ./scripts/test_python_version.py
 
 
+.PHONY: _check_venv_active
+_check_venv_active:
+	# Checking whether virtual environment was activated
+	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
+
+
 ## DOCKER BUILD -------------------------------
 #
 # - all builds are immediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
@@ -147,6 +153,7 @@ DOCKER_TARGET_PLATFORMS ?= linux/amd64
 comma := ,
 
 define _docker_compose_build
+$(eval INCLUDED_SERVICES := $(filter-out $(exclude), $(SERVICES_NAMES_TO_BUILD))) \
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production) &&\
 pushd services &&\
 $(foreach service, $(SERVICES_NAMES_TO_BUILD),\
@@ -154,7 +161,7 @@ $(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 		export $(subst -,_,$(shell echo $(service) | tr a-z A-Z))_VERSION=$(shell cat services/$(service)/VERSION);\
 	,) \
 )\
-docker buildx bake \
+docker buildx bake --allow=fs.read=.. \
 	$(if $(findstring -devel,$@),,\
 	--set *.platform=$(DOCKER_TARGET_PLATFORMS) \
 	)\
@@ -166,7 +173,7 @@ docker buildx bake \
 		)\
 	)\
 	$(if $(push),--push,) \
-	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) \
+	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),$(INCLUDED_SERVICES)) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) \
@@ -177,22 +184,20 @@ endef
 
 rebuild: build-nc # alias
 build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`
-	# Building service$(if $(target),,s) $(target)
+	# Building service$(if $(target),,s) $(target) $(if $(exclude),excluding,) $(exclude)
 	@$(_docker_compose_build)
 	# List production images
 	@docker images --filter="reference=local/*:production"
 
 load-images: guard-local-src ## loads images from local-src
-	# loading from images from $(local-src)...
-	@$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-		docker load --input $(local-src)/$(service).tar; \
-	)
+	# loading from any tar images from $(local-src)...
+	@find $(local-src) -name '*.tar' -print0 | xargs -0 -n1 -P $(shell nproc) --no-run-if-empty --verbose docker load --input
 	# all images loaded
 	@docker images
 
 build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
-	# Building services
+	# Building services $(if $(exclude),excluding,) $(exclude)
 	@$(_docker_compose_build)
 else
 ifeq ($(findstring static-webserver,$(target)),static-webserver)
@@ -573,9 +578,13 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 
 
 .PHONY: openapi-specs
-openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
-	@$(MAKE_C) services/web/server $@
-	@$(MAKE_C) services/storage $@
+openapi-specs: .env _check_venv_active ## generates and validates openapi specifications and schemas of ALL service's API
+	@for makefile in $(MAKEFILES_WITH_OPENAPI_SPECS); do \
+		echo "Generating openapi-specs using $${makefile}"; \
+		$(MAKE_C) $$(dirname $${makefile}) install-dev; \
+		$(MAKE_C) $$(dirname $${makefile}) $@; \
+		printf "%0.s=" {1..100} && printf "\n"; \
+	done
 
 
 .PHONY: settings-schema.json

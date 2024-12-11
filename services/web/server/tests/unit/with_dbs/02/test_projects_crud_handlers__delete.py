@@ -60,7 +60,7 @@ async def test_delete_project(
     user_project: ProjectDict,
     expected: ExpectedResponse,
     storage_subsystem_mock: MockedStorageSubsystem,
-    mocked_director_v2_api: dict[str, MagicMock],
+    mocked_dynamic_services_interface: dict[str, MagicMock],
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     fake_services: Callable[..., Awaitable[list[DynamicServiceGet]]],
     assert_get_same_project_caller: Callable,
@@ -70,7 +70,7 @@ async def test_delete_project(
 
     # DELETE /v0/projects/{project_id}
     fakes = await fake_services(5)
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.list_dynamic_services"
     ].return_value = fakes
 
@@ -90,7 +90,7 @@ async def test_delete_project(
         # might have finished, and therefore there is no need to waith
         await tasks[0]
 
-        mocked_director_v2_api[
+        mocked_dynamic_services_interface[
             "dynamic_scheduler.api.list_dynamic_services"
         ].assert_called_once()
 
@@ -108,7 +108,7 @@ async def test_delete_project(
             )
             for service in fakes
         ]
-        mocked_director_v2_api[
+        mocked_dynamic_services_interface[
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_has_calls(expected_calls)
 
@@ -141,7 +141,7 @@ async def test_delete_multiple_opened_project_forbidden(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    mocked_director_v2_api,
+    mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
     socketio_client_factory: Callable,
     client_session_id_factory: Callable,

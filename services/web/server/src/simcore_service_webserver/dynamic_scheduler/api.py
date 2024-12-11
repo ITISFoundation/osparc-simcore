@@ -22,17 +22,32 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
 from models_library.services import ServicePortKey
+from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
 from servicelib.utils import logged_gather
 
-from ..director_v2.api import list_dynamic_services
 from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from .settings import DynamicSchedulerSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
+
+
+async def list_dynamic_services(
+    app: web.Application,
+    *,
+    user_id: UserID | None = None,
+    project_id: ProjectID | None = None,
+) -> list[DynamicServiceGet]:
+    """
+    Returns:
+        list of currently running dynamic services
+    """
+    return await services.list_tracked_dynamic_services(
+        get_rabbitmq_rpc_client(app), user_id=user_id, project_id=project_id
+    )
 
 
 async def get_dynamic_service(
@@ -102,7 +117,7 @@ async def stop_dynamic_services_in_project(
 ) -> None:
     """Stops all dynamic services in the project"""
     running_dynamic_services = await list_dynamic_services(
-        app, user_id=user_id, project_id=project_id
+        app, user_id=user_id, project_id=ProjectID(project_id)
     )
 
     async with AsyncExitStack() as stack:

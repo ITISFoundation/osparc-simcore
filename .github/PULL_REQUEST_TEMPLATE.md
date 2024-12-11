@@ -22,6 +22,9 @@ or from https://gitmoji.dev/
 
 ## What do these changes do?
 
+<!-- Badge to openapi specs
+[![ReDoc](https://img.shields.io/badge/OpenAPI-ReDoc-85ea2d?logo=openapiinitiative)](https://redocly.github.io/redoc/?url=HERE-URL-TO-RAW-FILE)
+-->
 
 
 ## Related issue/s
@@ -31,9 +34,6 @@ or from https://gitmoji.dev/
 
 - resolves ITISFoundation/osparc-issues#428
 - fixes #26
-
-  If openapi changes are provided, optionally point to the swagger editor with new changes
-  Example [openapi.json specs](https://editor.swagger.io/?url=https://raw.githubusercontent.com/<github-username>/osparc-simcore/is1133/create-api-for-creation-of-pricing-plan/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml)
 -->
 
 

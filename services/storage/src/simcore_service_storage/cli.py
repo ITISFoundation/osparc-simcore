@@ -28,6 +28,7 @@ def run():
     config_all_loggers(
         log_format_local_dev_enabled=settings_obj.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings_obj.STORAGE_LOG_FILTER_MAPPING,
+        tracing_settings=settings_obj.STORAGE_TRACING,
     )
 
     # keep mostly quiet noisy loggers

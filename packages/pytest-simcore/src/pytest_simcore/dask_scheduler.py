@@ -72,6 +72,7 @@ async def dask_spec_local_cluster(
         asynchronous=True,
         name="pytest_dask_spec_local_cluster",
     ) as cluster:
+        print("Cluster dashboard link: ", cluster.dashboard_link)
         scheduler_address = URL(cluster.scheduler_address)
         monkeypatch.setenv(
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",

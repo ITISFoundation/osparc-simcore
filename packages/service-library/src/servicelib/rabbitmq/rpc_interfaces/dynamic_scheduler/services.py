@@ -11,9 +11,11 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.services_types import ServicePortKey
+from models_library.users import UserID
 from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -31,6 +33,24 @@ _RPC_DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = int(
 )
 
 _RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def list_tracked_dynamic_services(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    user_id: UserID | None = None,
+    project_id: ProjectID | None = None,
+) -> list[DynamicServiceGet]:
+    result = await rabbitmq_rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("list_tracked_dynamic_services"),
+        user_id=user_id,
+        project_id=project_id,
+        timeout_s=_RPC_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, list)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)

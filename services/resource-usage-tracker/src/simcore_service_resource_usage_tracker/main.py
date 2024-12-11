@@ -17,6 +17,7 @@ logging.root.setLevel(the_settings.log_level)
 config_all_loggers(
     log_format_local_dev_enabled=the_settings.RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED,
     logger_filter_mapping=the_settings.RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING,
+    tracing_settings=the_settings.RESOURCE_USAGE_TRACKER_TRACING,
 )
 
 # SINGLETON FastAPI app

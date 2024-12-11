@@ -293,7 +293,7 @@ async def test_create_node_returns_422_if_body_is_missing(
     user_project: ProjectDict,
     expected: ExpectedResponse,
     faker: Faker,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
 ):
     assert client.app
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
@@ -307,7 +307,7 @@ async def test_create_node_returns_422_if_body_is_missing(
         response = await client.post(url.path, json=partial_body)
         assert response.status == expected.unprocessable
     # this does not start anything in the backend
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.run_dynamic_service"
     ].assert_not_called()
 
@@ -324,7 +324,7 @@ async def test_create_node(
     user_project: ProjectDict,
     expected: ExpectedResponse,
     faker: Faker,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     postgres_db: sa.engine.Engine,
 ):
@@ -340,15 +340,15 @@ async def test_create_node(
     data, error = await assert_status(response, expected.created)
     if data:
         assert not error
-        mocked_director_v2_api[
+        mocked_dynamic_services_interface[
             "director_v2.api.create_or_update_pipeline"
         ].assert_called_once()
         if expect_run_service_call:
-            mocked_director_v2_api[
+            mocked_dynamic_services_interface[
                 "dynamic_scheduler.api.run_dynamic_service"
             ].assert_called_once()
         else:
-            mocked_director_v2_api[
+            mocked_dynamic_services_interface[
                 "dynamic_scheduler.api.run_dynamic_service"
             ].assert_not_called()
 
@@ -380,7 +380,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     client: TestClient,
     user_project: ProjectDict,
     expected: ExpectedResponse,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     faker: Faker,
     postgres_db: sa.engine.Engine,
@@ -413,10 +413,10 @@ async def test_create_and_delete_many_nodes_in_parallel(
     # let's count the started services
     running_services = _RunningServices()
     assert running_services.running_services_uuids == []
-    mocked_director_v2_api[
-        "director_v2.api.list_dynamic_services"
+    mocked_dynamic_services_interface[
+        "dynamic_scheduler.api.list_dynamic_services"
     ].side_effect = running_services.num_services
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.run_dynamic_service"
     ].side_effect = running_services.inc_running_services
 
@@ -437,7 +437,9 @@ async def test_create_and_delete_many_nodes_in_parallel(
 
     # but only the allowed number of services should have started
     assert (
-        mocked_director_v2_api["dynamic_scheduler.api.run_dynamic_service"].call_count
+        mocked_dynamic_services_interface[
+            "dynamic_scheduler.api.run_dynamic_service"
+        ].call_count
         == NUM_DY_SERVICES
     )
     assert len(running_services.running_services_uuids) == NUM_DY_SERVICES
@@ -471,7 +473,7 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     expected: ExpectedResponse,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     faker: Faker,
     max_amount_of_auto_started_dyn_services: int,
@@ -481,7 +483,9 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
         max_amount_of_auto_started_dyn_services
     )
     all_service_uuids = list(project["workbench"])
-    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
+    mocked_dynamic_services_interface[
+        "dynamic_scheduler.api.list_dynamic_services"
+    ].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
@@ -492,7 +496,7 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
     }
     response = await client.post(f"{ url}", json=body)
     await assert_status(response, expected.created)
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.run_dynamic_service"
     ].assert_not_called()
 
@@ -502,7 +506,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     expected: ExpectedResponse,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     faker: Faker,
     max_amount_of_auto_started_dyn_services: int,
@@ -538,10 +542,10 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     # let's count the started services
     running_services = _RunninServices()
     assert running_services.running_services_uuids == []
-    mocked_director_v2_api[
-        "director_v2.api.list_dynamic_services"
+    mocked_dynamic_services_interface[
+        "dynamic_scheduler.api.list_dynamic_services"
     ].side_effect = running_services.num_services
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.run_dynamic_service"
     ].side_effect = running_services.inc_running_services
 
@@ -561,7 +565,9 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
 
     # but only the allowed number of services should have started
     assert (
-        mocked_director_v2_api["dynamic_scheduler.api.run_dynamic_service"].call_count
+        mocked_dynamic_services_interface[
+            "dynamic_scheduler.api.run_dynamic_service"
+        ].call_count
         == max_amount_of_auto_started_dyn_services
     )
     assert (
@@ -586,14 +592,16 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     expected: ExpectedResponse,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     faker: Faker,
 ):
     assert client.app
     project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
     all_service_uuids = list(project["workbench"])
-    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
+    mocked_dynamic_services_interface[
+        "dynamic_scheduler.api.list_dynamic_services"
+    ].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
@@ -606,7 +614,7 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
     }
     response = await client.post(f"{ url}", json=body)
     await assert_status(response, expected.created)
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.run_dynamic_service"
     ].assert_called_once()
 
@@ -621,7 +629,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     user_project: ProjectDict,
     expected: ExpectedResponse,
     faker: Faker,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     node_class: str,
 ):
@@ -642,7 +650,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     assert error
     assert not data
     # this does not start anything in the backend since this node is deprecated
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.run_dynamic_service"
     ].assert_not_called()
 
@@ -660,7 +668,7 @@ async def test_delete_node(
     logged_user: dict,
     user_project: ProjectDict,
     expected: ExpectedResponse,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     storage_subsystem_mock: MockedStorageSubsystem,
     dy_service_running: bool,
@@ -682,7 +690,7 @@ async def test_delete_node(
         )
         for service_uuid in running_dy_services
     ]
-    # mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
+    # mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
     #     {"service_uuid": service_uuid} for service_uuid in running_dy_services
     # ]
     for node_id in user_project["workbench"]:
@@ -695,13 +703,15 @@ async def test_delete_node(
         if error:
             continue
 
-        mocked_director_v2_api[
-            "director_v2.api.list_dynamic_services"
+        mocked_dynamic_services_interface[
+            "dynamic_scheduler.api.list_dynamic_services"
         ].assert_called_once()
-        mocked_director_v2_api["director_v2.api.list_dynamic_services"].reset_mock()
+        mocked_dynamic_services_interface[
+            "dynamic_scheduler.api.list_dynamic_services"
+        ].reset_mock()
 
         if node_id in running_dy_services:
-            mocked_director_v2_api[
+            mocked_dynamic_services_interface[
                 "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_called_once_with(
                 mock.ANY,
@@ -713,11 +723,11 @@ async def test_delete_node(
                     save_state=False,
                 ),
             )
-            mocked_director_v2_api[
+            mocked_dynamic_services_interface[
                 "dynamic_scheduler.api.stop_dynamic_service"
             ].reset_mock()
         else:
-            mocked_director_v2_api[
+            mocked_dynamic_services_interface[
                 "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_not_called()
 
@@ -739,7 +749,7 @@ async def test_start_node(
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     user_role: UserRole,
     expected: ExpectedResponse,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     faker: Faker,
     max_amount_of_auto_started_dyn_services: int,
@@ -763,11 +773,11 @@ async def test_start_node(
         ),
     )
     if error is None:
-        mocked_director_v2_api[
+        mocked_dynamic_services_interface[
             "dynamic_scheduler.api.run_dynamic_service"
         ].assert_called_once()
     else:
-        mocked_director_v2_api[
+        mocked_dynamic_services_interface[
             "dynamic_scheduler.api.run_dynamic_service"
         ].assert_not_called()
 
@@ -778,7 +788,7 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     user_role: UserRole,
     expected: ExpectedResponse,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     faker: Faker,
     max_amount_of_auto_started_dyn_services: int,
@@ -788,7 +798,9 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
         max_amount_of_auto_started_dyn_services
     )
     all_service_uuids = list(project["workbench"])
-    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
+    mocked_dynamic_services_interface[
+        "dynamic_scheduler.api.list_dynamic_services"
+    ].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     # start the node, shall work as expected
@@ -802,7 +814,7 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
     )
     assert not data
     assert error
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.run_dynamic_service"
     ].assert_not_called()
 
@@ -814,14 +826,16 @@ async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_t
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     user_role: UserRole,
     expected: ExpectedResponse,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     faker: Faker,
 ):
     assert client.app
     project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
     all_service_uuids = list(project["workbench"])
-    mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
+    mocked_dynamic_services_interface[
+        "dynamic_scheduler.api.list_dynamic_services"
+    ].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     # start the node, shall work as expected
@@ -835,7 +849,7 @@ async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_t
     )
     assert not data
     assert not error
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.run_dynamic_service"
     ].assert_called_once()
 
@@ -846,7 +860,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     user_role: UserRole,
     expected: ExpectedResponse,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     faker: Faker,
     max_amount_of_auto_started_dyn_services: int,
@@ -868,7 +882,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
     )
     assert not data
     assert error
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.run_dynamic_service"
     ].assert_not_called()
 
@@ -883,7 +897,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
     )
     assert not data
     assert error
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.run_dynamic_service"
     ].assert_not_called()
 
@@ -894,7 +908,7 @@ async def test_stop_node(
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     user_role: UserRole,
     expected: ExpectedResponse,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     faker: Faker,
     max_amount_of_auto_started_dyn_services: int,
@@ -914,11 +928,11 @@ async def test_stop_node(
         status.HTTP_202_ACCEPTED if user_role == UserRole.GUEST else expected.accepted,
     )
     if error is None:
-        mocked_director_v2_api[
+        mocked_dynamic_services_interface[
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_called_once()
     else:
-        mocked_director_v2_api[
+        mocked_dynamic_services_interface[
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
 
