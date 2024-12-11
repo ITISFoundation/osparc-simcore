@@ -1769,7 +1769,17 @@ async def test__activate_drained_nodes_with_drained_node(
     updated_cluster = await _activate_drained_nodes(
         initialized_app, cluster_with_drained_nodes, DynamicAutoscaling()
     )
-    assert updated_cluster.active_nodes == cluster_with_drained_nodes.drained_nodes
+    # they are the same nodes, but the availability might have changed here
+    assert updated_cluster.active_nodes != cluster_with_drained_nodes.drained_nodes
+    assert (
+        updated_cluster.active_nodes[0].assigned_tasks
+        == cluster_with_drained_nodes.drained_nodes[0].assigned_tasks
+    )
+    assert (
+        updated_cluster.active_nodes[0].ec2_instance
+        == cluster_with_drained_nodes.drained_nodes[0].ec2_instance
+    )
+
     assert drained_host_node.spec
     mock_docker_tag_node.assert_called_once_with(
         mock.ANY,
