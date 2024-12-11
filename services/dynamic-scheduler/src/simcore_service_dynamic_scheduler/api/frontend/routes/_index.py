@@ -10,7 +10,7 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ....services.service_tracker import TrackedServiceModel, get_all_tracked_services
 from ....services.service_tracker._models import SchedulerServiceState
-from .._utils import get_parent_app
+from .._utils import get_parent_app, get_settings
 from ._render_utils import base_page, get_iso_formatted_date
 
 router = APIRouter()
@@ -70,9 +70,9 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
 
             async def _stop_service() -> None:
                 confirm_dialog.close()
-                await httpx.AsyncClient(timeout=10).get(
-                    f"http://localhost:{DEFAULT_FASTAPI_PORT}/service/{node_id}:stop"
-                )
+
+                url = f"http://localhost:{DEFAULT_FASTAPI_PORT}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}service/{node_id}:stop"
+                await httpx.AsyncClient(timeout=10).get(f"{url}")
 
                 ui.notify(
                     f"Submitted stop request for {node_id}. Please give the service some time to stop!"
