@@ -29,8 +29,8 @@ logger = logging.getLogger(__name__)
 
 def _setup_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
-    logging.basicConfig(level=settings.LOGLEVEL.value)  # NOSONAR
-    logging.root.setLevel(settings.LOGLEVEL.value)
+    logging.basicConfig(level=settings.LOG_LEVEL.value)  # NOSONAR
+    logging.root.setLevel(settings.LOG_LEVEL.value)
     config_all_loggers(
         log_format_local_dev_enabled=settings.AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.AGENT_VOLUMES_LOG_FILTER_MAPPING,

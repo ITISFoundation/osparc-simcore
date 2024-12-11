@@ -11,9 +11,11 @@ from models_library.projects_nodes_io import NodeID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.utils import limited_gather
 
+from ..core.settings import ApplicationSettings
 from .docker_utils import get_containers_with_prefixes, remove_container_forcefully
 
 _logger = logging.getLogger(__name__)
+_always_visible_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -31,10 +33,23 @@ class ContainersManager(SingletonInAppStateMixin):
         orphan_containers = await get_containers_with_prefixes(
             self.docker, {proxy_prefix, dy_sidecar_prefix, user_service_prefix}
         )
-
-        _logger.info(
-            "Orphan containers for node_id='%s': %s", node_id, orphan_containers
+        _logger.debug(
+            "Detected orphan containers for node_id='%s': %s",
+            node_id,
+            orphan_containers,
         )
+
+        unexpected_orphans = {
+            orphan
+            for orphan in orphan_containers
+            if orphan.startswith(user_service_prefix)
+        }
+        if unexpected_orphans:
+            _always_visible_logger.info(
+                "Unexpected orphans detected for node_id='%s': %s",
+                node_id,
+                unexpected_orphans,
+            )
 
         await limited_gather(
             *[
@@ -52,6 +67,12 @@ def get_containers_manager(app: FastAPI) -> ContainersManager:
 
 
 def setup_containers_manager(app: FastAPI) -> None:
+    settings: ApplicationSettings = app.state.settings
+
+    logging.getLogger(_always_visible_logger.name).setLevel(
+        min(logging.INFO, settings.log_level)
+    )
+
     async def _on_startup() -> None:
         ContainersManager().set_to_app_state(app)
 
