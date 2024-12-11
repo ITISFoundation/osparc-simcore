@@ -2,6 +2,7 @@ from contextlib import suppress
 from typing import Annotated, Any, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
+from models_library.groups import EVERYONE_GROUP_ID
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -114,7 +115,7 @@ class GroupGet(OutputSchema):
                     "accessRights": {"read": True, "write": False, "delete": False},
                 },
                 {
-                    "gid": "0",
+                    "gid": "1",
                     "label": "All",
                     "description": "Open to all users",
                     "accessRights": {"read": True, "write": True, "delete": True},
@@ -214,7 +215,7 @@ class MyGroupsGet(OutputSchema):
                     },
                 ],
                 "all": {
-                    "gid": "0",
+                    "gid": EVERYONE_GROUP_ID,
                     "label": "All",
                     "description": "Open to all users",
                     "accessRights": {"read": True, "write": False, "delete": False},
