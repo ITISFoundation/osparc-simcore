@@ -50,7 +50,7 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     TaskSpec,
 )
-from pydantic import ByteSize, PositiveInt, TypeAdapter
+from pydantic import ByteSize, NonNegativeInt, PositiveInt, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
@@ -1005,10 +1005,22 @@ def create_associated_instance(
 
 
 @pytest.fixture
-def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> int:
-    num_machines_in_buffer = 5
-    monkeypatch.setenv("EC2_INSTANCES_MACHINES_BUFFER", f"{num_machines_in_buffer}")
-    return num_machines_in_buffer
+def num_hot_buffer() -> NonNegativeInt:
+    return 5
+
+
+@pytest.fixture
+def with_instances_machines_hot_buffer(
+    num_hot_buffer: int,
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_MACHINES_BUFFER": f"{num_hot_buffer}",
+        },
+    )
 
 
 @pytest.fixture

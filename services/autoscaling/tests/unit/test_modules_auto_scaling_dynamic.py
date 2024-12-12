@@ -308,7 +308,7 @@ async def test_cluster_scaling_with_no_services_does_nothing(
 async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
-    mock_machines_buffer: int,
+    with_instances_machines_hot_buffer: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     aws_allowed_ec2_instance_type_names_env: list[str],
@@ -322,17 +322,13 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     instance_type_filters: Sequence[FilterTypeDef],
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    assert (
-        mock_machines_buffer
-        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-    )
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=mock_machines_buffer,
+        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
         expected_instance_type=cast(
             InstanceTypeType,
             next(
@@ -347,7 +343,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         mock_rabbitmq_post_message,
         app_settings,
         initialized_app,
-        instances_pending=mock_machines_buffer,
+        instances_pending=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
     )
     mock_rabbitmq_post_message.reset_mock()
     # calling again should attach the new nodes to the reserve, but nothing should start
@@ -357,7 +353,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=mock_machines_buffer,
+        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
         expected_instance_type=cast(
             InstanceTypeType,
             next(
@@ -376,14 +372,15 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         mock_rabbitmq_post_message,
         app_settings,
         initialized_app,
-        nodes_total=mock_machines_buffer,
-        nodes_drained=mock_machines_buffer,
-        instances_running=mock_machines_buffer,
+        nodes_total=with_instances_machines_hot_buffer,
+        nodes_drained=with_instances_machines_hot_buffer,
+        instances_running=with_instances_machines_hot_buffer,
         cluster_total_resources={
-            "cpus": mock_machines_buffer
+            "cpus": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
             * fake_node.description.resources.nano_cp_us
             / 1e9,
-            "ram": mock_machines_buffer * fake_node.description.resources.memory_bytes,
+            "ram": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+            * fake_node.description.resources.memory_bytes,
         },
     )
 
@@ -395,7 +392,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=mock_machines_buffer,
+        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
         expected_instance_type=cast(
             InstanceTypeType,
             next(
