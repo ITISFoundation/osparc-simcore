@@ -75,12 +75,6 @@ qx.Class.define("osparc.file.TreeFolderView", {
           treeFolderLayout.add(control, 1);
           break;
         }
-        case "selected-file-layout":
-          control = new osparc.file.FileLabelWithActions().set({
-            alignY: "middle"
-          });
-          this._add(control);
-          break;
       }
       return control || this.base(arguments, id);
     },
@@ -89,27 +83,16 @@ qx.Class.define("osparc.file.TreeFolderView", {
       this.getChildControl("reload-button");
       const folderTree = this.getChildControl("folder-tree");
       const folderViewer = this.getChildControl("folder-viewer");
-      const selectedFileLayout = this.getChildControl("selected-file-layout");
 
       // Connect elements
       folderTree.addListener("selectionChanged", () => {
-        const selectionData = folderTree.getSelectedItem();
-        if (selectionData) {
-          selectedFileLayout.setItemSelected(selectionData);
-          if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
-            folderViewer.setFolder(selectionData);
-          }
+        const selectedFolder = folderTree.getSelectedItem();
+        if (selectedFolder && (osparc.file.FilesTree.isDir(selectedFolder) || (selectedFolder.getChildren && selectedFolder.getChildren().length))) {
+          folderViewer.setFolder(selectedFolder);
         }
       }, this);
 
-      folderViewer.addListener("selectionChanged", e => {
-        const selectionData = e.getData();
-        if (selectionData) {
-          selectedFileLayout.setItemSelected(selectionData);
-        }
-      }, this);
-
-      folderViewer.addListener("itemSelected", e => {
+      folderViewer.addListener("openItemSelected", e => {
         const data = e.getData();
         folderTree.openNodeAndParents(data);
         folderTree.setSelection(new qx.data.Array([data]));

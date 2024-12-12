@@ -93,7 +93,7 @@ async def test_workspaces_workflow(
         resp, status.HTTP_200_OK, include_meta=True, include_links=True
     )
     assert len(data) == 1
-    assert WorkspaceGet.parse_obj(data[0]) == added_workspace
+    assert WorkspaceGet.model_validate(data[0]) == added_workspace
     assert meta["count"] == 1
     assert links
 
@@ -126,7 +126,7 @@ async def test_workspaces_workflow(
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
-    assert WorkspaceGet.parse_obj(data[0]) == replaced_workspace
+    assert WorkspaceGet.model_validate(data[0]) == replaced_workspace
 
     # DELETE a workspace
     url = client.app.router["delete_workspace"].url_for(
