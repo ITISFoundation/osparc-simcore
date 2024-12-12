@@ -22,12 +22,22 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     "changeVisibility": "qx.event.type.Data"
   },
 
+  static: {
+    isValidWidget: function(widget) {
+      // return (card instanceof qx.ui.form.ToggleButton);
+      return (
+        widget instanceof osparc.dashboard.CardBase ||
+        widget instanceof osparc.dashboard.FolderButtonBase
+      );
+    },
+  },
+
   members: {
     __lastSelectedIdx: null,
 
     // overridden
     add: function(child, options) {
-      if (child instanceof qx.ui.form.ToggleButton) {
+      if (this.self().isValidWidget(child)) {
         if (osparc.dashboard.ResourceContainerManager.cardExists(this, child)) {
           return;
         }
