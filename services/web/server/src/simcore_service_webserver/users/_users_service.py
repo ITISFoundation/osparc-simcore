@@ -22,7 +22,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 
 from ..db.plugin import get_asyncpg_engine
 from ..security.api import clean_auth_policy_cache
-from . import _preferences_api, _users_repository
+from . import _preferences_service, _users_repository
 from ._common.models import (
     FullNameDict,
     ToUserUpdateDB,
@@ -314,8 +314,10 @@ async def get_user_profile(
     user_profile = await _users_repository.get_user_profile(app, user_id=user_id)
 
     try:
-        preferences = await _preferences_api.get_frontend_user_preferences_aggregation(
-            app, user_id=user_id, product_name=product_name
+        preferences = (
+            await _preferences_service.get_frontend_user_preferences_aggregation(
+                app, user_id=user_id, product_name=product_name
+            )
         )
     except GroupExtraPropertiesNotFoundError as err:
         raise MissingGroupExtraPropertiesForProductError(
