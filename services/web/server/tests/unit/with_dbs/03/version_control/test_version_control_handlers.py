@@ -50,6 +50,7 @@ async def test_workflow(
     client: TestClient,
     user_project: ProjectDict,
     request_update_project: Callable[[TestClient, UUID], Awaitable],
+    mock_dynamic_scheduler: None,
     director_v2_service_mock: None,
 ):
     # pylint: disable=too-many-statements
