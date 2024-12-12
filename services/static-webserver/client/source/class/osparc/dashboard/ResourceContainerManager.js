@@ -129,7 +129,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           this.self().sortListByPriority(this.__nonGroupedContainer);
         }
       } else {
-        console.error("CardContainer only allows ToggleButton as its children.");
+        console.error("CardContainer only allows CardBase as its children.");
       }
     },
 
@@ -144,7 +144,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           this.__nonGroupedContainer.remove(card);
         }
       } else {
-        console.error("CardContainer only allows ToggleButton as its children.");
+        console.error("CardContainer only allows CardBase as its children.");
       }
     },
 

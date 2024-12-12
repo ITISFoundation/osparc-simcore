@@ -176,7 +176,7 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
 
     // overridden
     add: function(child, idx) {
-      if (child instanceof qx.ui.form.ToggleButton) {
+      if (osparc.dashboard.CardContainer.isValidCard(child)) {
         const container = this.getContentContainer();
         if (osparc.dashboard.ResourceContainerManager.cardExists(container, child)) {
           return;
@@ -189,7 +189,7 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
         }
         this.__childVisibilityChanged();
       } else {
-        console.error("CardContainer only allows ToggleButton as its children.");
+        console.error("CardContainer only allows CardBase as its children.");
       }
     },
 

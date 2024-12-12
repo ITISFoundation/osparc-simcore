@@ -6,7 +6,7 @@
  */
 
 /**
- * Container for GridButtonItems and ListButtonItems (ToggleButtons), with some convenient methods.
+ * Container for GridButtons and ListButtons (CardBase, FolderButtonBase and WorkspaceButtonBase), with some convenient methods.
  */
 qx.Class.define("osparc.dashboard.CardContainer", {
   extend: qx.ui.container.Composite,
@@ -24,7 +24,6 @@ qx.Class.define("osparc.dashboard.CardContainer", {
 
   statics: {
     isValidCard: function(widget) {
-      // return (card instanceof qx.ui.form.ToggleButton);
       return (
         widget instanceof osparc.dashboard.CardBase ||
         widget instanceof osparc.dashboard.FolderButtonBase ||
@@ -46,7 +45,7 @@ qx.Class.define("osparc.dashboard.CardContainer", {
         child.addListener("changeSelected", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
         child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
       } else {
-        console.error("CardContainer only allows ToggleButton as its children.");
+        console.error("CardContainer only allows CardBase as its children.");
       }
     },
 
@@ -76,7 +75,7 @@ qx.Class.define("osparc.dashboard.CardContainer", {
     /**
      * Sets the given button's select prop to true (checks it) and unchecks all other buttons. If the given button is not present,
      * every button in the container will get a unselected (unchecked).
-     * @param {qx.ui.form.ToggleButton} child Button that will be checked
+     * @param {qx.ui.form.CardBase} child Button that will be checked
      */
     selectOne: function(child) {
       this.getChildren().map(button => button.setSelected(button === child));
@@ -85,7 +84,7 @@ qx.Class.define("osparc.dashboard.CardContainer", {
 
     /**
      * Gets the index in the container of the given button.
-     * @param {qx.ui.form.ToggleButton} child Button that will be checked
+     * @param {qx.ui.form.CardBase} child Button that will be checked
      */
     getIndex: function(child) {
       return this.getChildren().findIndex(button => button === child);
