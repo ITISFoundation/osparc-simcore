@@ -72,7 +72,7 @@ def _list_filter_with_partial_file_id_stmt(
     file_id_prefix: str | None,
     partial_file_id: str | None,
     sha256_checksum: SHA256Str | None,
-    only_files: bool,
+    is_directory: bool | None = None,
     limit: int | None = None,
     offset: int | None = None,
 ):
@@ -98,8 +98,8 @@ def _list_filter_with_partial_file_id_stmt(
         conditions.append(file_meta_data.c.file_id.startswith(file_id_prefix))
     if partial_file_id:
         conditions.append(file_meta_data.c.file_id.ilike(f"%{partial_file_id}%"))
-    if only_files:
-        conditions.append(file_meta_data.c.is_directory.is_(False))
+    if is_directory is not None:
+        conditions.append(file_meta_data.c.is_directory.is_(is_directory))
     if sha256_checksum:
         conditions.append(file_meta_data.c.sha256_checksum == sha256_checksum)
 
@@ -119,7 +119,7 @@ async def list_filter_with_partial_file_id(
     file_id_prefix: str | None,
     partial_file_id: str | None,
     sha256_checksum: SHA256Str | None,
-    only_files: bool,
+    is_directory: bool | None = None,
     limit: int | None = None,
     offset: int | None = None,
 ) -> list[FileMetaDataAtDB]:
@@ -129,7 +129,7 @@ async def list_filter_with_partial_file_id(
         file_id_prefix=file_id_prefix,
         partial_file_id=partial_file_id,
         sha256_checksum=sha256_checksum,
-        only_files=only_files,
+        is_directory=is_directory,
         limit=limit,
         offset=offset,
     )

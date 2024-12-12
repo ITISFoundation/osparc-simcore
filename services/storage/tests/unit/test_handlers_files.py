@@ -1345,6 +1345,7 @@ async def test_upload_file_is_directory_and_remove_content(
     client: TestClient,
     location_id: LocationID,
     user_id: UserID,
+    faker: Faker,
 ):
     FILE_SIZE_IN_DIR = TypeAdapter(ByteSize).validate_python("1Mib")
     DIR_NAME = "some-dir"
@@ -1406,6 +1407,26 @@ async def test_upload_file_is_directory_and_remove_content(
     )
 
     assert len(list_of_files) == SUBDIR_COUNT * FILE_COUNT - 1
+
+    # DELETE NOT EXISTING
+    delete_url = (
+        client.app.router["delete_file"]
+        .url_for(
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(
+                "/".join(list_of_files[0].file_id.split("/")[:2]) + "/does_not_exist",
+                safe="",
+            ),
+        )
+        .with_query(user_id=user_id)
+    )
+    response = await client.delete(f"{delete_url}")
+    _, error = await assert_status(response, status.HTTP_204_NO_CONTENT)
+    assert error is None
+
+    list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
+        client, user_id, location_id, directory_file_upload
+    )
 
     # DIRECTORY REMOVAL
 

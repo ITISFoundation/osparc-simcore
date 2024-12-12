@@ -80,7 +80,7 @@ from .models import (
 from .s3 import get_s3_client
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
-from .simcore_s3_dsm_utils import expand_directory, get_directory_file_id, try_get_fmd
+from .simcore_s3_dsm_utils import expand_directory, get_directory_file_id
 from .utils import (
     convert_db_to_model,
     download_to_file_or_raise,
@@ -182,7 +182,6 @@ class SimcoreS3DataManager(BaseDataManager):
                 ),
                 file_id_prefix=None,
                 partial_file_id=uuid_filter,
-                only_files=False,
                 sha256_checksum=None,
             )
 
@@ -518,6 +517,11 @@ class SimcoreS3DataManager(BaseDataManager):
         # Only use this in those circumstances where a collaborator requires to delete a file (the current
         # permissions model will not allow him to do so, even though this is a legitimate action)
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
+        def _get_subpath(path: str, levels: int):
+            components = path.strip("/").split("/")
+            subpath = "/".join(components[:levels])
+            return "/" + subpath if subpath else "/"
+
         async with self.engine.acquire() as conn:
             if enforce_access_rights:
                 can: AccessRights = await get_file_access_rights(conn, user_id, file_id)
@@ -530,10 +534,23 @@ class SimcoreS3DataManager(BaseDataManager):
         )
 
         async with self.engine.acquire() as conn:
-            if await try_get_fmd(conn, file_id):
-                await db_file_meta_data.delete(conn, [file_id])
-            if parent_dir_file_id := await get_directory_file_id(conn, file_id):
-                parent_dir_fmd = await db_file_meta_data.get(conn, parent_dir_file_id)
+            try:
+                if await db_file_meta_data.get(conn, file_id):
+                    await db_file_meta_data.delete(conn, [file_id])
+            except FileMetaDataNotFoundError:
+                _logger.warning("File %s not found in database", file_id)
+
+            if parent_dir_fmds := await db_file_meta_data.list_filter_with_partial_file_id(
+                conn,
+                user_or_project_filter=UserOrProjectFilter(
+                    user_id=user_id, project_ids=[]
+                ),
+                file_id_prefix=_get_subpath(file_id, 2),
+                partial_file_id=None,
+                is_directory=True,
+                sha256_checksum=None,
+            ):
+                parent_dir_fmd = parent_dir_fmds[0]
                 parent_dir_fmd.file_size = UNDEFINED_SIZE
                 await db_file_meta_data.upsert(conn, parent_dir_fmd)
 

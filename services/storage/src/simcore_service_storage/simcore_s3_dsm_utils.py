@@ -78,16 +78,6 @@ async def expand_directory(
     return result
 
 
-async def try_get_fmd(
-    conn: SAConnection, s3_file_id: StorageFileID
-) -> FileMetaDataAtDB | None:
-    with suppress(FileMetaDataNotFoundError):
-        return await db_file_meta_data.get(
-            conn, TypeAdapter(SimcoreS3FileID).validate_python(s3_file_id)
-        )
-    return None
-
-
 def get_simcore_directory(file_id: SimcoreS3FileID) -> str:
     try:
         directory_id = SimcoreS3DirectoryID.from_simcore_s3_object(file_id)
@@ -104,7 +94,16 @@ async def get_directory_file_id(
     in the `file_meta_data` table
     """
 
-    provided_file_id_fmd = await try_get_fmd(conn, file_id)
+    async def _get_fmd(
+        conn: SAConnection, s3_file_id: StorageFileID
+    ) -> FileMetaDataAtDB | None:
+        with suppress(FileMetaDataNotFoundError):
+            return await db_file_meta_data.get(
+                conn, TypeAdapter(SimcoreS3FileID).validate_python(s3_file_id)
+            )
+        return None
+
+    provided_file_id_fmd = await _get_fmd(conn, file_id)
     if provided_file_id_fmd:
         # file_meta_data exists it is not a directory
         return None
@@ -117,6 +116,6 @@ async def get_directory_file_id(
     directory_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
         directory_file_id_str
     )
-    directory_file_id_fmd = await try_get_fmd(conn, directory_file_id)
+    directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
 
     return directory_file_id if directory_file_id_fmd else None
