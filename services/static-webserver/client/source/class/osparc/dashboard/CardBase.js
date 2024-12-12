@@ -241,6 +241,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: "Boolean",
       init: false,
       nullable: false,
+      event: "changeSelected",
     },
 
     icon: {

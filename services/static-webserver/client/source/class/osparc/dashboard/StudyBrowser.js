@@ -640,16 +640,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", e => {
           if (card.isItemNotClickable()) {
-            card.setValue(false);
+            card.setSelected(false);
           } else {
-            this.__itemClicked(card, e.getNativeEvent().shiftKey);
+            this.__studyCardClicked(card, e.getNativeEvent().shiftKey);
           }
         }, this);
         this._populateCardMenu(card);
       });
     },
 
-    __itemClicked: function(item, isShiftPressed) {
+    __studyCardClicked: function(item, isShiftPressed) {
       const studiesCont = this._resourcesContainer.getFlatList();
 
       if (isShiftPressed) {
@@ -659,13 +659,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         for (let i=minMax[0]; i<=minMax[1]; i++) {
           const card = studiesCont.getChildren()[i];
           if (card.isVisible()) {
-            card.setValue(true);
+            card.setSelected(true);
           }
         }
       }
       studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
 
-      if (!item.isMultiSelectionMode()) {
+      if (item.isMultiSelectionMode()) {
+        item.setSelected(true);
+      } else {
         const studyData = this.__getStudyData(item.getUuid(), false);
         this._openResourceDetails(studyData);
         this.resetSelection();
@@ -860,7 +862,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       newStudyBtn.setCardKey("new-study");
       newStudyBtn.subscribeToFilterGroup("searchBarFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
-      newStudyBtn.addListener("execute", () => this.__newStudyBtnClicked(newStudyBtn));
+      newStudyBtn.addListener("tap", () => this.__newStudyBtnClicked(newStudyBtn));
       this._resourcesContainer.addNonResourceCard(newStudyBtn);
     },
 
@@ -880,8 +882,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (product in newStudiesData) {
             newStudyBtn.setEnabled(true);
 
-            newStudyBtn.addListener("execute", () => {
-              newStudyBtn.setValue(false);
+            newStudyBtn.addListener("tap", () => {
               osparc.data.Resources.get("templates")
                 .then(templates => {
                   if (templates) {
@@ -930,7 +931,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
             newStudyFromServiceButton.setCardKey("new-"+key);
             osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-            newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, latestMetadata["key"], latestMetadata["version"], newButtonInfo.newStudyLabel));
+            newStudyFromServiceButton.addListener("tap", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, latestMetadata["key"], latestMetadata["version"], newButtonInfo.newStudyLabel));
             this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
           })
       }
@@ -1153,8 +1154,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const loadMoreBtn = this._loadingResourcesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
       loadMoreBtn.setCardKey("load-more");
       osparc.utils.Utils.setIdToWidget(loadMoreBtn, "studiesLoading");
-      loadMoreBtn.addListener("execute", () => {
-        loadMoreBtn.setValue(false);
+      loadMoreBtn.addListener("tap", () => {
         this._moreResourcesRequired();
       });
       return loadMoreBtn;
@@ -1324,7 +1324,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
           studyItem.setMultiSelectionMode(value);
           if (value === false) {
-            studyItem.setValue(false);
+            studyItem.setSelected(false);
           }
         }
       });
@@ -1347,7 +1347,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __newStudyBtnClicked: function(button) {
-      button.setValue(false);
       const minStudyData = osparc.data.model.Study.createMinStudyObject();
       const existingNames = this._resourcesList.map(study => study["name"]);
       const title = osparc.utils.Utils.getUniqueName(minStudyData.name, existingNames);
@@ -1388,7 +1387,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __newStudyFromServiceBtnClicked: function(button, key, version, newStudyLabel) {
-      button.setValue(false);
       this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
       const contextProps = {
         workspaceId: this.getCurrentWorkspaceId(),

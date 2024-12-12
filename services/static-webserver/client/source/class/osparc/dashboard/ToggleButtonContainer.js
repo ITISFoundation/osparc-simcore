@@ -27,7 +27,8 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
       // return (card instanceof qx.ui.form.ToggleButton);
       return (
         widget instanceof osparc.dashboard.CardBase ||
-        widget instanceof osparc.dashboard.FolderButtonBase
+        widget instanceof osparc.dashboard.FolderButtonBase ||
+        widget instanceof osparc.dashboard.WorkspaceButtonBase
       );
     },
   },
@@ -42,7 +43,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
           return;
         }
         this.base(arguments, child, options);
-        child.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
+        child.addListener("changeSelected", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
         child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
@@ -53,7 +54,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
      * Resets the selection so no toggle button is checked.
      */
     resetSelection: function() {
-      this.getChildren().map(button => button.setValue(false));
+      this.getChildren().map(button => button.setSelected(false));
       this.__lastSelectedIdx = null;
       this.fireDataEvent("changeSelection", this.getSelection());
     },
@@ -62,7 +63,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
      * Returns an array that contains all buttons that are checked.
      */
     getSelection: function() {
-      return this.getChildren().filter(button => button.getValue());
+      return this.getChildren().filter(button => button.getSelected());
     },
 
     /**
@@ -73,12 +74,12 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     },
 
     /**
-     * Sets the given button's value to true (checks it) and unchecks all other buttons. If the given button is not present,
-     * every button in the container will get a false value (unchecked).
+     * Sets the given button's select prop to true (checks it) and unchecks all other buttons. If the given button is not present,
+     * every button in the container will get a unselected (unchecked).
      * @param {qx.ui.form.ToggleButton} child Button that will be checked
      */
     selectOne: function(child) {
-      this.getChildren().map(button => button.setValue(button === child));
+      this.getChildren().map(button => button.setSelected(button === child));
       this.setLastSelectedIndex(this.getIndex(child));
     },
 

@@ -33,7 +33,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       appearance: "pb-study"
     });
 
-    this.addListener("changeValue", e => this.__itemSelected(e.getData()), this);
+    this.addListener("tap", e => this.__itemSelected(e.getData()), this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
@@ -246,7 +246,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       if (studyBrowserContext !== "trash" && newVal) {
         this.fireDataEvent("folderSelected", this.getFolderId());
       }
-      this.setValue(false);
     },
 
     __editFolder: function() {

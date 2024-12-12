@@ -33,7 +33,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       appearance: "pb-listitem"
     });
 
-    this.addListener("changeValue", e => this.__itemSelected(e.getData()), this);
+    this.addListener("tap", e => this.__itemSelected(e.getData()), this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
@@ -259,7 +259,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       if (studyBrowserContext !== "trash" && newVal) {
         this.fireDataEvent("workspaceSelected", this.getWorkspaceId());
       }
-      this.setValue(false);
     },
 
     __openShareWith: function() {

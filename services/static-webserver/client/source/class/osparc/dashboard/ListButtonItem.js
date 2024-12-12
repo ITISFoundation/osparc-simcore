@@ -29,7 +29,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
-    this.addListener("changeValue", this.__itemSelected, this);
+    this.addListener("tap", this.__itemSelected, this);
   },
 
   statics: {
@@ -275,12 +275,12 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
     __itemSelected: function() {
       if (this.isItemNotClickable()) {
-        this.setValue(false);
+        this.setSelected(false);
         return;
       }
 
       if (this.isResourceType("study") && this.isMultiSelectionMode()) {
-        const selected = this.getValue();
+        const selected = this.getSelected();
 
         const tick = this.getChildControl("tick-selected");
         tick.setVisibility(selected ? "visible" : "excluded");

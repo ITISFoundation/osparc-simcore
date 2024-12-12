@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
       appearance: "pb-new"
     });
 
-    this.addListener("changeValue", e => this.__itemSelected(e.getData()), this);
+    this.addListener("tap", e => this.__itemSelected(e.getData()), this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.NEW);
 
@@ -72,7 +72,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
         win.getChildControl("close-button").addListener("tap", () => workspaceEditor.cancel());
         workspaceEditor.addListener("cancel", () => win.close());
       }
-      this.setValue(false);
     }
   }
 });

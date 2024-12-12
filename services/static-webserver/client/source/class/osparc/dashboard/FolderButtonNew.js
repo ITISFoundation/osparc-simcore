@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
       appearance: "pb-new"
     });
 
-    this.addListener("changeValue", e => this.__itemSelected(e.getData()), this);
+    this.addListener("tap", e => this.__itemSelected(e.getData()), this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.NEW);
 
@@ -92,7 +92,6 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
         });
         folderEditor.addListener("cancel", () => win.close());
       }
-      this.setValue(false);
     }
   }
 });
