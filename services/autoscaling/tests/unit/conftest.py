@@ -28,11 +28,16 @@ from aws_library.ec2 import (
     EC2InstanceType,
     Resources,
 )
+from common_library.json_serialization import json_dumps
 from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.docker import (
+    DockerGenericTag,
+    DockerLabelKey,
+    StandardSimcoreDockerLabels,
+)
 from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
@@ -57,6 +62,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.ssm import SSMSettings
+from simcore_service_autoscaling.constants import PRE_PULLED_IMAGES_EC2_TAG_KEY
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import (
     AUTOSCALING_ENV_PREFIX,
@@ -71,8 +77,14 @@ from simcore_service_autoscaling.models import (
     DaskTaskResources,
 )
 from simcore_service_autoscaling.modules import auto_scaling_core
+from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
+    DynamicAutoscaling,
+)
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
+from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
+    get_deactivated_buffer_ec2_tags,
+)
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
@@ -81,7 +93,9 @@ from tenacity import after_log, before_sleep_log, retry
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ec2 import EC2Client
+from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
+from types_aiobotocore_ec2.type_defs import TagTypeDef
 
 pytest_plugins = [
     "pytest_simcore.aws_server",
@@ -1042,3 +1056,93 @@ async def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mo
         autospec=True,
         side_effect=_,
     )
+
+
+@pytest.fixture
+async def create_buffer_machines(
+    ec2_client: EC2Client,
+    aws_ami_id: str,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+) -> Callable[
+    [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag]],
+    Awaitable[list[str]],
+]:
+    async def _do(
+        num: int,
+        instance_type: InstanceTypeType,
+        instance_state_name: InstanceStateNameType,
+        pre_pull_images: list[DockerGenericTag],
+    ) -> list[str]:
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+
+        assert instance_state_name in [
+            "running",
+            "stopped",
+        ], "only 'running' and 'stopped' are supported for testing"
+
+        resource_tags: list[TagTypeDef] = [
+            {"Key": tag_key, "Value": tag_value}
+            for tag_key, tag_value in get_deactivated_buffer_ec2_tags(
+                initialized_app, DynamicAutoscaling()
+            ).items()
+        ]
+        if pre_pull_images is not None and instance_state_name == "stopped":
+            resource_tags.append(
+                {
+                    "Key": PRE_PULLED_IMAGES_EC2_TAG_KEY,
+                    "Value": f"{json_dumps(pre_pull_images)}",
+                }
+            )
+        with log_context(
+            logging.INFO, f"creating {num} buffer machines of {instance_type}"
+        ):
+            instances = await ec2_client.run_instances(
+                ImageId=aws_ami_id,
+                MaxCount=num,
+                MinCount=num,
+                InstanceType=instance_type,
+                KeyName=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
+                SecurityGroupIds=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                SubnetId=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
+                IamInstanceProfile={
+                    "Arn": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE
+                },
+                TagSpecifications=[
+                    {"ResourceType": "instance", "Tags": resource_tags},
+                    {"ResourceType": "volume", "Tags": resource_tags},
+                    {"ResourceType": "network-interface", "Tags": resource_tags},
+                ],
+                UserData="echo 'I am pytest'",
+            )
+            instance_ids = [
+                i["InstanceId"] for i in instances["Instances"] if "InstanceId" in i
+            ]
+
+        waiter = ec2_client.get_waiter("instance_exists")
+        await waiter.wait(InstanceIds=instance_ids)
+        instances = await ec2_client.describe_instances(InstanceIds=instance_ids)
+        assert "Reservations" in instances
+        assert instances["Reservations"]
+        assert "Instances" in instances["Reservations"][0]
+        assert len(instances["Reservations"][0]["Instances"]) == num
+        for instance in instances["Reservations"][0]["Instances"]:
+            assert "State" in instance
+            assert "Name" in instance["State"]
+            assert instance["State"]["Name"] == "running"
+
+        if instance_state_name == "stopped":
+            await ec2_client.stop_instances(InstanceIds=instance_ids)
+            instances = await ec2_client.describe_instances(InstanceIds=instance_ids)
+            assert "Reservations" in instances
+            assert instances["Reservations"]
+            assert "Instances" in instances["Reservations"][0]
+            assert len(instances["Reservations"][0]["Instances"]) == num
+            for instance in instances["Reservations"][0]["Instances"]:
+                assert "State" in instance
+                assert "Name" in instance["State"]
+                assert instance["State"]["Name"] == "stopped"
+
+        return instance_ids
+
+    return _do

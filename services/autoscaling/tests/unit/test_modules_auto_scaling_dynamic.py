@@ -24,6 +24,7 @@ from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, Resources
 from fastapi import FastAPI
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    DockerGenericTag,
     DockerLabelKey,
     StandardSimcoreDockerLabels,
 )
@@ -68,7 +69,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
 from types_aiobotocore_ec2.client import EC2Client
-from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import FilterTypeDef, InstanceTypeDef
 
 
@@ -1790,3 +1791,13 @@ async def test__activate_drained_nodes_with_drained_node(
         },
         available=True,
     )
+
+
+async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
+    minimal_configuration: None,
+    create_buffer_machines: Callable[
+        [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag]],
+        Awaitable[list[str]],
+    ],
+):
+    ...
