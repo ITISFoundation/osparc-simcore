@@ -62,9 +62,23 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=60),
+        validation_alias=AliasChoices(
+            "DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT",
+            "DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT",
+        ),
         description=(
             "Time to wait before timing out when stopping a dynamic service. "
             "Since services require data to be stopped, this operation is timed out after 1 hour"
+        ),
+    )
+
+    DYNAMIC_SCHEDULER_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=60),
+        description=(
+            "When dynamic services upload and download data from storage, "
+            "sometimes very big payloads are involved. In order to handle "
+            "such payloads it is required to have long timeouts which "
+            "allow the service to finish the operation."
         ),
     )
 

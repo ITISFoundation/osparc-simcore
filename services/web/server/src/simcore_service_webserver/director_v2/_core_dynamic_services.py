@@ -8,61 +8,14 @@ import logging
 
 from aiohttp import web
 from models_library.projects import ProjectID
-from models_library.services import ServicePortKey
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_decorator
 from yarl import URL
 
 from ._core_base import DataType, request_director_v2
-from .exceptions import DirectorServiceError
 from .settings import DirectorV2Settings, get_plugin_settings
 
 _log = logging.getLogger(__name__)
-
-
-# NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191
-@log_decorator(logger=_log)
-async def retrieve(
-    app: web.Application, service_uuid: str, port_keys: list[ServicePortKey]
-) -> DataType:
-    """Pulls data from connections to the dynamic service inputs"""
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    result = await request_director_v2(
-        app,
-        "POST",
-        url=settings.base_url / f"dynamic_services/{service_uuid}:retrieve",
-        data={"port_keys": port_keys},
-        timeout=settings.get_service_retrieve_timeout(),
-    )
-    assert isinstance(result, dict)  # nosec
-    return result
-
-
-# NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191
-# notice that this function is identical to retrieve except that it does NOT raises
-@log_decorator(logger=_log)
-async def request_retrieve_dyn_service(
-    app: web.Application, service_uuid: str, port_keys: list[str]
-) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    body = {"port_keys": port_keys}
-
-    try:
-        await request_director_v2(
-            app,
-            "POST",
-            url=settings.base_url / f"dynamic_services/{service_uuid}:retrieve",
-            data=body,
-            timeout=settings.get_service_retrieve_timeout(),
-        )
-    except DirectorServiceError as exc:
-        _log.warning(
-            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
-            service_uuid,
-            port_keys,
-            exc.status,
-            exc.reason,
-        )
 
 
 @log_decorator(logger=_log)
