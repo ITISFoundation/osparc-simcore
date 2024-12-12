@@ -6,6 +6,7 @@ from ._groups_api import (
     auto_add_user_to_groups,
     auto_add_user_to_product_group,
     get_group_from_gid,
+    get_product_group_for_user,
     is_user_by_email_in_group,
     list_all_user_groups_ids,
     list_user_groups_ids_with_read_access,
@@ -17,9 +18,10 @@ __all__: tuple[str, ...] = (
     "auto_add_user_to_groups",
     "auto_add_user_to_product_group",
     "get_group_from_gid",
+    "get_product_group_for_user",
     "is_user_by_email_in_group",
     "list_all_user_groups_ids",
-    "list_user_groups_with_read_access",
     "list_user_groups_ids_with_read_access",
+    "list_user_groups_with_read_access",
     # nopycln: file
 )

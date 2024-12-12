@@ -146,7 +146,7 @@ async def search_users(
     ]
 
 
-async def get_users_in_group(app: web.Application, gid: GroupID) -> set[UserID]:
+async def get_users_in_group(app: web.Application, *, gid: GroupID) -> set[UserID]:
     return await _users_repository.get_users_ids_in_group(
         get_asyncpg_engine(app), group_id=gid
     )

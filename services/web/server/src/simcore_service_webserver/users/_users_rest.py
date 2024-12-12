@@ -1,4 +1,5 @@
 import logging
+from contextlib import suppress
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users import (
@@ -23,6 +24,7 @@ from ..exception_handling import (
     to_exceptions_handlers_map,
 )
 from ..groups import api as groups_api
+from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -89,14 +91,14 @@ async def get_my_profile(request: web.Request) -> web.Response:
 
     my_product_group = None
 
-    # if product.group_id:
-    #     with suppress(GroupNotFoundError):
-    #         # Product is optional
-    #         my_product_group = await groups_api.get_product_group_for_user(
-    #             app=request.app,
-    #             user_id=req_ctx.user_id,
-    #             product_gid=product.group_id,
-    #         )
+    if product.group_id:
+        with suppress(GroupNotFoundError):
+            # Product is optional
+            my_product_group = await groups_api.get_product_group_for_user(
+                app=request.app,
+                user_id=req_ctx.user_id,
+                product_gid=product.group_id,
+            )
 
     my_profile, preferences = await _users_service.get_my_profile(
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
