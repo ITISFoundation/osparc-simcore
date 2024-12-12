@@ -175,13 +175,32 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     __deleteSelected: function() {
       if (this.isMultiSelect()) {
+        const requests = [];
         this.__multiSelection.forEach(selection => {
-          this.__deleteFile(selection);
+          const request = this.__deleteFile(selection);
+          if (request) {
+            requests.push(request);
+          }
         });
+        Promise.all(requests)
+          .then(datas => {
+            if (datas.length) {
+              this.fireDataEvent("fileDeleted", datas[0]);
+              osparc.FlashMessenger.getInstance().logAs(this.tr("Files successfully deleted"), "ERROR");
+            }
+          });
+        requests
       } else {
         const selection = this.getItemSelected();
         if (selection) {
-          this.__deleteFile(selection);
+          const request = this.__deleteFile(selection);
+          if (request) {
+            request
+              .then(data => {
+                this.fireDataEvent("fileDeleted", data);
+                osparc.FlashMessenger.getInstance().logAs(this.tr("File successfully deleted"), "ERROR");
+              });
+          }
         }
       }
     },
@@ -198,19 +217,12 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __deleteFile: function(file) {
-      console.log("Delete ", file);
       const fileId = file.getFileId();
       const locationId = file.getLocation();
       if (locationId !== 0 && locationId !== "0") {
         osparc.FlashMessenger.getInstance().logAs(this.tr("Only files in simcore.s3 can be deleted"));
-        return false;
       }
       const dataStore = osparc.store.Data.getInstance();
-      dataStore.addListenerOnce("deleteFile", e => {
-        if (e) {
-          this.fireDataEvent("fileDeleted", e.getData());
-        }
-      }, this);
       return dataStore.deleteFile(locationId, fileId);
     },
   }

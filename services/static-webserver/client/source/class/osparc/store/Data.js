@@ -33,7 +33,6 @@ qx.Class.define("osparc.store.Data", {
 
   events: {
     "fileCopied": "qx.event.type.Data",
-    "deleteFile": "qx.event.type.Data"
   },
 
   members: {
@@ -286,7 +285,7 @@ qx.Class.define("osparc.store.Data", {
 
     deleteFile: function(locationId, fileUuid) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
-        return false;
+        return null;
       }
 
       // Deletes File
@@ -296,22 +295,19 @@ qx.Class.define("osparc.store.Data", {
           fileUuid: encodeURIComponent(fileUuid)
         }
       };
-      osparc.data.Resources.fetch("storageFiles", "delete", params)
+      return osparc.data.Resources.fetch("storageFiles", "delete", params)
         .then(files => {
           const data = {
             data: files,
             locationId: locationId,
             fileUuid: fileUuid
           };
-          this.fireDataEvent("deleteFile", data);
+          return data;
         })
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Failed deleting file"), "ERROR");
-          this.fireDataEvent("deleteFile", null);
         });
-
-      return true;
     }
   }
 });
