@@ -71,7 +71,6 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
 
   members: {
     __anatomicalModels: null,
-    __purchasesItems: null,
     __anatomicalModelsModel: null,
 
     _createChildControlImpl: function(id) {
@@ -214,7 +213,6 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             .then(values => {
               const licensedItems = values[0];
               const purchasesItems = values[1];
-              this.__purchasesItems = purchasesItems;
 
               this.__anatomicalModels = [];
               allAnatomicalModels.forEach(model => {
