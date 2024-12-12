@@ -22,7 +22,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     "changeVisibility": "qx.event.type.Data"
   },
 
-  static: {
+  statics: {
     isValidWidget: function(widget) {
       // return (card instanceof qx.ui.form.ToggleButton);
       return (
