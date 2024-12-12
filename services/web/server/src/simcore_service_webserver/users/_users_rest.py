@@ -1,4 +1,3 @@
-import functools
 import logging
 
 from aiohttp import web
@@ -12,16 +11,19 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG
+from ..exception_handling import (
+    ExceptionToHttpErrorMap,
+    HttpErrorInfo,
+    exception_handling_decorator,
+    to_exceptions_handlers_map,
+)
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _users_service, api
-from ._common.constants import FMSG_MISSING_CONFIG_WITH_OEC
 from ._common.schemas import PreRegisteredUserGet, UsersRequestContext
 from .exceptions import (
     AlreadyPreRegisteredError,
@@ -33,35 +35,38 @@ from .exceptions import (
 _logger = logging.getLogger(__name__)
 
 
+_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    UserNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        "This user cannot be found. Either it is not registered or has enabled privacy settings.",
+    ),
+    UserNameDuplicateError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        "Username '{user_name}' is already taken. "
+        "Consider '{alternative_user_name}' instead.",
+    ),
+    AlreadyPreRegisteredError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        "Found {num_found} matches for '{email}'. Cannot pre-register existing user",
+    ),
+    MissingGroupExtraPropertiesForProductError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        "The product is not ready for use until the configuration is fully completed. "
+        "Please wait and try again. "
+        "If this issue persists, contact support indicating this support code: {error_code}.",
+    ),
+}
+
+_handle_users_exceptions = exception_handling_decorator(
+    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
+)
+
+
 routes = web.RouteTableDef()
 
-
-def _handle_users_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except UserNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except UserNameDuplicateError as exc:
-            raise web.HTTPConflict(reason=f"{exc}") from exc
-
-        except MissingGroupExtraPropertiesForProductError as exc:
-            error_code = exc.error_code()
-            user_error_msg = FMSG_MISSING_CONFIG_WITH_OEC.format(error_code=error_code)
-            _logger.exception(
-                **create_troubleshotting_log_kwargs(
-                    user_error_msg,
-                    error=exc,
-                    error_code=error_code,
-                    tip="Row in `groups_extra_properties` for this product is missing.",
-                )
-            )
-            raise web.HTTPServiceUnavailable(reason=user_error_msg) from exc
-
-    return wrapper
+#
+# MY PROFILE: /me
+#
 
 
 @routes.get(f"/{API_VTAG}/me", name="get_my_profile")
@@ -93,6 +98,10 @@ async def update_my_profile(request: web.Request) -> web.Response:
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
+
+#
+# USERS (only POs)
+#
 
 _RESPONSE_MODEL_MINIMAL_POLICY = RESPONSE_MODEL_POLICY.copy()
 _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
@@ -127,12 +136,9 @@ async def pre_register_user(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     pre_user_profile = await parse_request_body_as(PreRegisteredUserGet, request)
 
-    try:
-        user_profile = await _users_service.pre_register_user(
-            request.app, profile=pre_user_profile, creator_user_id=req_ctx.user_id
-        )
-        return envelope_json_response(
-            user_profile.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
-        )
-    except AlreadyPreRegisteredError as err:
-        raise web.HTTPConflict(reason=f"{err}") from err
+    user_profile = await _users_service.pre_register_user(
+        request.app, profile=pre_user_profile, creator_user_id=req_ctx.user_id
+    )
+    return envelope_json_response(
+        user_profile.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
+    )
