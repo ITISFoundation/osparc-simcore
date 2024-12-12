@@ -11,8 +11,9 @@ from typing import Any
 import pytest
 import sqlalchemy as sa
 from models_library.basic_types import IDStr
+from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from notifications_library._templates import get_default_named_templates
 from pydantic import validate_call
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates

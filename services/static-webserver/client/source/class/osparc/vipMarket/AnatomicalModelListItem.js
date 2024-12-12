@@ -57,7 +57,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       check: "Number",
       init: null,
       nullable: false,
-      event: "changemodelId",
+      event: "changeModelId",
     },
 
     thumbnail: {
@@ -83,12 +83,26 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       event: "changeDate",
     },
 
-    leased: {
-      check: "Boolean",
-      init: false,
-      nullable: true,
-      event: "changeLeased",
-      apply: "__applyLeased",
+    licensedItemId: {
+      check: "String",
+      init: null,
+      nullable: false,
+      event: "changeLicensedItemId",
+    },
+
+    pricingPlanId: {
+      check: "Number",
+      init: null,
+      nullable: false,
+      event: "changePricingPlanId",
+    },
+
+    purchases: {
+      check: "Array",
+      nullable: false,
+      init: [],
+      event: "changePurchases",
+      apply: "__applyPurchases",
     },
   },
 
@@ -147,8 +161,8 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
       this.getChildControl("name").setValue(value);
     },
 
-    __applyLeased: function(value) {
-      if (value) {
+    __applyPurchases: function(purchases) {
+      if (purchases.length) {
         this.setBackgroundColor("strong-main");
       }
     },
