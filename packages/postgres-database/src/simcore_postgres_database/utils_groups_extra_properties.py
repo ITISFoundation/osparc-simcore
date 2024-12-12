@@ -2,7 +2,7 @@ import datetime
 import logging
 import warnings
 from dataclasses import dataclass, fields
-from typing import Any
+from typing import Any, Callable
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -135,10 +135,10 @@ class GroupExtraPropertiesRepo:
             raise GroupExtraPropertiesNotFoundError(msg)
 
     @staticmethod
-    def _aggregate(rows, user_id, product_name):
+    def _aggregate(rows, user_id, product_name, from_row: Callable):
         merged_standard_extra_properties = None
         for row in rows:
-            group_extra_properties = GroupExtraProperties.from_row_proxy(row)
+            group_extra_properties = from_row(row)
             match row.type:
                 case GroupType.PRIMARY:
                     # this always has highest priority
@@ -198,7 +198,9 @@ class GroupExtraPropertiesRepo:
         rows: list[RowProxy] | None = await result.fetchall()
         assert rows is not None  # nosec
 
-        return GroupExtraPropertiesRepo._aggregate(rows, user_id, product_name)
+        return GroupExtraPropertiesRepo._aggregate(
+            rows, user_id, product_name, GroupExtraProperties.from_row_proxy
+        )
 
     @staticmethod
     async def get_aggregated_properties_for_user_v2(
@@ -217,4 +219,6 @@ class GroupExtraPropertiesRepo:
                 sa.select(list_stmt).order_by(list_stmt.c.type_order)
             )
             rows = [row async for row in result]
-            return GroupExtraPropertiesRepo._aggregate(rows, user_id, product_name)
+            return GroupExtraPropertiesRepo._aggregate(
+                rows, user_id, product_name, GroupExtraProperties.from_orm
+            )
