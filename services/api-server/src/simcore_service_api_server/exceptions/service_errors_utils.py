@@ -128,6 +128,7 @@ def service_exception_handler(
 
 
 def service_exception_mapper(
+    *,
     service_name: str,
     http_status_map: HttpStatusMap,
 ) -> Callable[
