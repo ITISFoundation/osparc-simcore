@@ -12,8 +12,8 @@ from simcore_postgres_database.models.users import UserStatus
 
 from ..db.plugin import get_asyncpg_engine
 from . import _users_repository
-from .common._models import UserCredentialsTuple
-from .common._schemas import PreRegisteredUserGet
+from ._common.models import UserCredentialsTuple
+from ._common.schemas import PreRegisteredUserGet
 from .exceptions import AlreadyPreRegisteredError
 
 _logger = logging.getLogger(__name__)

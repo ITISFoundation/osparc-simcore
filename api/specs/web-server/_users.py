@@ -20,6 +20,7 @@ from models_library.api_schemas_webserver.users_preferences import PatchRequestB
 from models_library.generics import Envelope
 from models_library.user_preferences import PreferenceIdentifier
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.users._common.schemas import PreRegisteredUserGet
 from simcore_service_webserver.users._notifications import (
     UserNotification,
     UserNotificationCreate,
@@ -29,7 +30,6 @@ from simcore_service_webserver.users._notifications_handlers import (
     _NotificationPathParams,
 )
 from simcore_service_webserver.users._tokens_rest import _TokenPathParams
-from simcore_service_webserver.users.common._schemas import PreRegisteredUserGet
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["user"])
 

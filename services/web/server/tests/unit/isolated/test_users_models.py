@@ -21,7 +21,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.users.common._models import ToUserUpdateDB
+from simcore_service_webserver.users._common.models import ToUserUpdateDB
 
 
 @pytest.mark.parametrize(

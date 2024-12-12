@@ -31,12 +31,12 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole, UserStatus
-from simcore_service_webserver.users._preferences_api import (
-    get_frontend_user_preferences_aggregation,
-)
-from simcore_service_webserver.users.common._schemas import (
+from simcore_service_webserver.users._common.schemas import (
     MAX_BYTES_SIZE_EXTRAS,
     PreRegisteredUserGet,
+)
+from simcore_service_webserver.users._preferences_api import (
+    get_frontend_user_preferences_aggregation,
 )
 
 

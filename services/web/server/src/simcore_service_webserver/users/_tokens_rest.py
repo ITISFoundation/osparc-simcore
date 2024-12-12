@@ -16,7 +16,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _tokens_service
-from .common._schemas import UsersRequestContext
+from ._common.schemas import UsersRequestContext
 from .exceptions import TokenNotFoundError
 
 _logger = logging.getLogger(__name__)
