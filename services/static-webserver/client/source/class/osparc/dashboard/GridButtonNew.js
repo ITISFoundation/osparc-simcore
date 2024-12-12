@@ -67,10 +67,6 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
   },
 
   members: {
-    _onToggleChange: function(e) {
-      this.setValue(false);
-    },
-
     _shouldApplyFilter: function(data) {
       return false;
     },

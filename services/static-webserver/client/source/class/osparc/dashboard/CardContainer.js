@@ -6,9 +6,9 @@
  */
 
 /**
- * Container for GridButtonItems and ListButtonItems (ToggleButtons), with some convenient methods.
+ * Container for GridButtons and ListButtons (CardBase, FolderButtonBase and WorkspaceButtonBase), with some convenient methods.
  */
-qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
+qx.Class.define("osparc.dashboard.CardContainer", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
@@ -22,20 +22,30 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     "changeVisibility": "qx.event.type.Data"
   },
 
+  statics: {
+    isValidCard: function(widget) {
+      return (
+        widget instanceof osparc.dashboard.CardBase ||
+        widget instanceof osparc.dashboard.FolderButtonBase ||
+        widget instanceof osparc.dashboard.WorkspaceButtonBase
+      );
+    },
+  },
+
   members: {
     __lastSelectedIdx: null,
 
     // overridden
     add: function(child, options) {
-      if (child instanceof qx.ui.form.ToggleButton) {
+      if (this.self().isValidCard(child)) {
         if (osparc.dashboard.ResourceContainerManager.cardExists(this, child)) {
           return;
         }
         this.base(arguments, child, options);
-        child.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
+        child.addListener("changeSelected", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
         child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
       } else {
-        console.error("ToggleButtonContainer only allows ToggleButton as its children.");
+        console.error("CardContainer only allows CardBase as its children.");
       }
     },
 
@@ -43,7 +53,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
      * Resets the selection so no toggle button is checked.
      */
     resetSelection: function() {
-      this.getChildren().map(button => button.setValue(false));
+      this.getChildren().map(button => button.setSelected(false));
       this.__lastSelectedIdx = null;
       this.fireDataEvent("changeSelection", this.getSelection());
     },
@@ -52,7 +62,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
      * Returns an array that contains all buttons that are checked.
      */
     getSelection: function() {
-      return this.getChildren().filter(button => button.getValue());
+      return this.getChildren().filter(button => button.getSelected());
     },
 
     /**
@@ -63,18 +73,18 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     },
 
     /**
-     * Sets the given button's value to true (checks it) and unchecks all other buttons. If the given button is not present,
-     * every button in the container will get a false value (unchecked).
-     * @param {qx.ui.form.ToggleButton} child Button that will be checked
+     * Sets the given button's select prop to true (checks it) and unchecks all other buttons. If the given button is not present,
+     * every button in the container will get a unselected (unchecked).
+     * @param {qx.ui.form.CardBase} child Button that will be checked
      */
     selectOne: function(child) {
-      this.getChildren().map(button => button.setValue(button === child));
+      this.getChildren().map(button => button.setSelected(button === child));
       this.setLastSelectedIndex(this.getIndex(child));
     },
 
     /**
      * Gets the index in the container of the given button.
-     * @param {qx.ui.form.ToggleButton} child Button that will be checked
+     * @param {qx.ui.form.CardBase} child Button that will be checked
      */
     getIndex: function(child) {
       return this.getChildren().findIndex(button => button === child);

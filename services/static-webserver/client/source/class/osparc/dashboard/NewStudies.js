@@ -27,7 +27,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+    const flatList = this.__flatList = new osparc.dashboard.CardContainer();
     [
       "changeSelection",
       "changeVisibility"
@@ -86,7 +86,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
           this._add(groupContainer);
         });
       } else {
-        const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+        const flatList = this.__flatList = new osparc.dashboard.CardContainer();
         osparc.utils.Utils.setIdToWidget(flatList, listId);
         [
           "changeSelection",
@@ -138,7 +138,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     },
 
     __createGroupContainer: function(groupId, headerLabel, headerColor = "text") {
-      const groupContainer = new osparc.dashboard.GroupedToggleButtonContainer().set({
+      const groupContainer = new osparc.dashboard.GroupedCardContainer().set({
         groupId: groupId.toString(),
         headerLabel,
         headerIcon: "",

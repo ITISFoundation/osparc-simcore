@@ -86,7 +86,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const cards = this._resourcesContainer.reloadCards("services");
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
-        card.addListener("execute", () => this.__itemClicked(card), this);
+        card.addListener("tap", () => this.__itemClicked(card), this);
         this._populateCardMenu(card);
       });
       osparc.filter.UIFilterController.dispatch("searchBarFilter");

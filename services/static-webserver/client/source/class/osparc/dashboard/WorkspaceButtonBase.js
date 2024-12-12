@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
-  extend: qx.ui.form.ToggleButton,
+  extend: qx.ui.core.Widget,
   implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
   include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
   type: "abstract",
@@ -24,13 +24,13 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
   construct: function() {
     this.base(arguments);
 
+    this._setLayout(new qx.ui.layout.Canvas());
+
     this.set({
       width: this.self().ITEM_WIDTH,
       height: this.self().ITEM_HEIGHT,
       padding: 0
     });
-
-    this._setLayout(new qx.ui.layout.Canvas());
 
     this.getChildControl("main-layout");
 
@@ -49,6 +49,13 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     cardKey: {
       check: "String",
       nullable: true
+    },
+
+    icon: {
+      check: "String",
+      init: null,
+      nullable: true,
+      apply: "_applyIcon",
     },
 
     resourceType: {

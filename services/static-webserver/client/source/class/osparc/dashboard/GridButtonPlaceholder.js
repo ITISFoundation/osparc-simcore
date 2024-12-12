@@ -23,9 +23,6 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.PLACEHOLDER);
 
-    // make unselectable
-    this.addListener("changeValue", () => this.setValue(false), this);
-
     this.set({
       cursor: "not-allowed"
     });
@@ -120,10 +117,6 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
 
     getBlocked: function() {
       return true;
-    },
-
-    _onToggleChange: function() {
-      this.setValue(false);
     },
 
     _shouldApplyFilter: function(data) {

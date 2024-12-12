@@ -50,10 +50,6 @@ qx.Class.define("osparc.dashboard.GridButtonLoadMore", {
       this.setEnabled(!value);
     },
 
-    _onToggleChange: function(e) {
-      this.setValue(false);
-    },
-
     _shouldApplyFilter: function() {
       return false;
     },

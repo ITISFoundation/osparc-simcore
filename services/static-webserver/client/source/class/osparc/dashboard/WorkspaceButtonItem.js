@@ -33,7 +33,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       appearance: "pb-listitem"
     });
 
-    this.addListener("changeValue", e => this.__itemSelected(e.getData()), this);
+    this.addListener("tap", this.__itemSelected, this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
@@ -181,9 +181,9 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
         const menuButton = this.getChildControl("menu-button");
         menuButton.setVisibility("visible");
 
-        const menu = new qx.ui.menu.Menu().set({
-          position: "bottom-right"
-        });
+        const menu = new qx.ui.menu.Menu();
+        menu.setPosition("bottom-right");
+        osparc.utils.Utils.prettifyMenu(menu);
 
         const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
         if (
@@ -253,13 +253,12 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       })
     },
 
-    __itemSelected: function(newVal) {
+    __itemSelected: function() {
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       // do not allow selecting workspace
-      if (studyBrowserContext !== "trash" && newVal) {
+      if (studyBrowserContext !== "trash") {
         this.fireDataEvent("workspaceSelected", this.getWorkspaceId());
       }
-      this.setValue(false);
     },
 
     __openShareWith: function() {
