@@ -4,7 +4,7 @@
 #
 # Note: context at osparc-simcore/services/static-webserver/client expected
 #
-ARG tag="latest"
+ARG tag
 FROM itisfoundation/qooxdoo-kit:${tag} AS touch
 
 WORKDIR /project
