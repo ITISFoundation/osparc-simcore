@@ -469,7 +469,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __evalSelectedButton: function() {
-      if ("getResourceType" in this && this.isResourceType("study")) {
+      if (this.isResourceType("study")) {
         const menuButton = this.getChildControl("menu-button");
         const tick = this.getChildControl("tick-selected");
         const untick = this.getChildControl("tick-unselected");
