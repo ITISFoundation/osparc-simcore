@@ -42,9 +42,10 @@ from dataclasses import dataclass
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.workspaces_access_rights import (

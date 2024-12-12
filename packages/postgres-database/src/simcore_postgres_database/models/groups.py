@@ -4,27 +4,16 @@
     - Groups have a ID, name and a list of users that belong to the group
 """
 
-import enum
 
 import sqlalchemy as sa
+from common_library.groups_enums import GroupType
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from ._common import RefActions
 from .base import metadata
 
-
-class GroupType(enum.Enum):
-    """
-    standard: standard group, e.g. any group that is not a primary group or special group such as the everyone group
-    primary: primary group, e.g. the primary group is the user own defined group that typically only contain the user (same as in linux)
-    everyone: the only group for all users
-    """
-
-    STANDARD = "standard"
-    PRIMARY = "primary"
-    EVERYONE = "everyone"
-
+__all__: tuple[str, ...] = ("GroupType",)
 
 groups = sa.Table(
     "groups",

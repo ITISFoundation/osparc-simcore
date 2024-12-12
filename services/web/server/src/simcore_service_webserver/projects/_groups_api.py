@@ -2,9 +2,10 @@ import logging
 from datetime import datetime
 
 from aiohttp import web
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from pydantic import BaseModel
 
 from ..users import api as users_api
