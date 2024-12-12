@@ -167,22 +167,23 @@ qx.Class.define("osparc.file.FolderContent", {
           if (data["lastModified"]) {
             toolTip += "<br>" + data["lastModified"];
           }
-          const item = this.self().getItemButton().set({
+          const gridItem = this.self().getItemButton().set({
             label: data["label"],
             icon: data["icon"],
             toolTipText: toolTip
           });
-          const icon = item.getChildControl("icon", true);
+          const icon = gridItem.getChildControl("icon", true);
           if (icon.getSource() === "@FontAwesome5Solid/circle-notch/12") {
             icon.setPadding(0);
             icon.setMarginRight(4);
             icon.getContentElement().addClass("rotate");
           }
           if (data["itemId"]) {
-            item.itemId = data["itemId"];
+            gridItem.itemId = data["itemId"];
           }
-          this.__attachListenersToGridItem(item, data["entry"]);
-          items.push(item);
+          gridItem.entry = data["entry"];
+          this.__attachListenersToGridItem(gridItem);
+          items.push(gridItem);
         });
       }
       return items;
@@ -253,28 +254,28 @@ qx.Class.define("osparc.file.FolderContent", {
       this.fireDataEvent("openItemSelected", entry);
     },
 
-    __attachListenersToGridItem: function(btn, entry) {
-      btn.addListener("tap", () => {
+    __attachListenersToGridItem: function(gridItem) {
+      gridItem.addListener("tap", () => {
         if (this.isMultiSelect()) {
           // pass all buttons that are selected
           const selectedFiles = [];
           const iconsLayout = this.getChildControl("icons-layout");
-          iconsLayout.getChildren().forEach(gridItem => {
-            if (osparc.file.FilesTree.isFile(gridItem) && gridItem.getValue()) {
-              selectedFiles.push(gridItem);
+          iconsLayout.getChildren().forEach(btn => {
+            if (osparc.file.FilesTree.isFile(btn.entry) && btn.getValue()) {
+              selectedFiles.push(btn);
             }
           });
-          this.__itemTapped(selectedFiles, btn.getValue());
+          this.__itemTapped(selectedFiles, gridItem.getValue());
         } else {
-          this.__itemTapped(entry, btn.getValue());
+          this.__itemTapped(gridItem.entry, gridItem.getValue());
         }
         // folders can't be selected
-        if (osparc.file.FilesTree.isDir(entry)) {
-          btn.setValue(false);
+        if (osparc.file.FilesTree.isDir(gridItem.entry)) {
+          gridItem.setValue(false);
         }
       }, this);
-      btn.addListener("dbltap", () => {
-        this.__itemDblTapped(entry);
+      gridItem.addListener("dbltap", () => {
+        this.__itemDblTapped(gridItem.entry);
       }, this);
     },
 
