@@ -376,7 +376,7 @@ async def stop_node(request: web.Request) -> web.Response:
         permission="write",
     )
 
-    user_role = await get_user_role(request.app, req_ctx.user_id)
+    user_role = await get_user_role(request.app, user_id=req_ctx.user_id)
     if user_role is None or user_role <= UserRole.GUEST:
         save_state = False
 

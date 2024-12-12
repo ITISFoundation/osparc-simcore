@@ -49,7 +49,7 @@ async def export_project(request: web.Request):
             project_uuid,
             ProjectStatus.EXPORTING,
             user_id,
-            await get_user_fullname(request.app, user_id),
+            await get_user_fullname(request.app, user_id=user_id),
         ):
             await retrieve_and_notify_project_locked_state(
                 user_id, project_uuid, request.app

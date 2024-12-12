@@ -18,7 +18,7 @@ from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
-from models_library.api_schemas_webserver.users import MyProfileGet
+from models_library.api_schemas_webserver.users import MyProfileGet, UserGet
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -31,13 +31,12 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole, UserStatus
-from simcore_service_webserver.users._preferences_api import (
-    get_frontend_user_preferences_aggregation,
-)
-from simcore_service_webserver.users._schemas import (
+from simcore_service_webserver.users._common.schemas import (
     MAX_BYTES_SIZE_EXTRAS,
-    PreUserProfile,
-    UserProfile,
+    PreRegisteredUserGet,
+)
+from simcore_service_webserver.users._preferences_service import (
+    get_frontend_user_preferences_aggregation,
 )
 
 
@@ -407,7 +406,7 @@ async def test_search_and_pre_registration(
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserProfile(
+    got = UserGet(
         **found[0],
         institution=None,
         address=None,
@@ -444,7 +443,7 @@ async def test_search_and_pre_registration(
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserProfile(**found[0], state=None, status=None)
+    got = UserGet(**found[0], state=None, status=None)
 
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": False,
@@ -467,7 +466,7 @@ async def test_search_and_pre_registration(
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserProfile(**found[0], state=None)
+    got = UserGet(**found[0], state=None)
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": True,
         "status": new_user["status"].name,
@@ -493,7 +492,7 @@ def test_preuserprofile_parse_model_from_request_form_data(
     data["comment"] = "extra comment"
 
     # pre-processors
-    pre_user_profile = PreUserProfile(**data)
+    pre_user_profile = PreRegisteredUserGet(**data)
 
     print(pre_user_profile.model_dump_json(indent=1))
 
@@ -517,11 +516,11 @@ def test_preuserprofile_parse_model_without_extras(
 ):
     required = {
         f.alias or f_name
-        for f_name, f in PreUserProfile.model_fields.items()
+        for f_name, f in PreRegisteredUserGet.model_fields.items()
         if f.is_required()
     }
     data = {k: account_request_form[k] for k in required}
-    assert not PreUserProfile(**data).extras
+    assert not PreRegisteredUserGet(**data).extras
 
 
 def test_preuserprofile_max_bytes_size_extras_limits(faker: Faker):
@@ -541,7 +540,7 @@ def test_preuserprofile_pre_given_names(
     account_request_form["firstName"] = given_name
     account_request_form["lastName"] = given_name
 
-    pre_user_profile = PreUserProfile(**account_request_form)
+    pre_user_profile = PreRegisteredUserGet(**account_request_form)
     print(pre_user_profile.model_dump_json(indent=1))
     assert pre_user_profile.first_name in ["Pedro-Luis", "Pedro Luis"]
     assert pre_user_profile.first_name == pre_user_profile.last_name

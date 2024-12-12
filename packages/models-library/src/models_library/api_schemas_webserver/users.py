@@ -1,16 +1,35 @@
 import re
 from datetime import date
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal, Self
+from uuid import UUID
 
-from models_library.api_schemas_webserver.groups import MyGroupsGet
-from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
-from models_library.basic_types import IDStr
-from models_library.emails import LowerCaseEmailStr
-from models_library.users import FirstNameStr, LastNameStr, UserID
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from common_library.basic_types import DEFAULT_FACTORY
+from common_library.users_enums import UserStatus
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from ._base import InputSchema, OutputSchema
+from ..basic_types import IDStr
+from ..emails import LowerCaseEmailStr
+from ..products import ProductName
+from ..users import (
+    FirstNameStr,
+    LastNameStr,
+    UserID,
+    UserPermission,
+    UserThirdPartyToken,
+)
+from ._base import (
+    InputSchema,
+    InputSchemaWithoutCamelCase,
+    OutputSchema,
+    OutputSchemaWithoutCamelCase,
+)
+from .groups import MyGroupsGet
+from .users_preferences import AggregatedPreferences
+
+#
+# MY PROFILE
+#
 
 
 class MyProfilePrivacyGet(OutputSchema):
@@ -128,3 +147,109 @@ class MyProfilePatch(BaseModel):
             raise ValueError(msg)
 
         return value
+
+
+#
+# USER
+#
+
+
+class UsersSearchQueryParams(BaseModel):
+    email: Annotated[
+        str,
+        Field(
+            min_length=3,
+            max_length=200,
+            description="complete or glob pattern for an email",
+        ),
+    ]
+
+
+class UserGet(OutputSchema):
+    first_name: str | None
+    last_name: str | None
+    email: LowerCaseEmailStr
+    institution: str | None
+    phone: str | None
+    address: str | None
+    city: str | None
+    state: Annotated[str | None, Field(description="State, province, canton, ...")]
+    postal_code: str | None
+    country: str | None
+    extras: Annotated[
+        dict[str, Any],
+        Field(
+            default_factory=dict,
+            description="Keeps extra information provided in the request form",
+        ),
+    ] = DEFAULT_FACTORY
+
+    # authorization
+    invited_by: str | None = None
+
+    # user status
+    registered: bool
+    status: UserStatus | None
+    products: Annotated[
+        list[ProductName] | None,
+        Field(
+            description="List of products this users is included or None if fields is unset",
+        ),
+    ]
+
+    @field_validator("status")
+    @classmethod
+    def _consistency_check(cls, v, info: ValidationInfo):
+        registered = info.data["registered"]
+        status = v
+        if not registered and status is not None:
+            msg = f"{registered=} and {status=} is not allowed"
+            raise ValueError(msg)
+        return v
+
+
+#
+# THIRD-PARTY TOKENS
+#
+
+
+class MyTokenCreate(InputSchemaWithoutCamelCase):
+    service: Annotated[
+        str,
+        Field(description="uniquely identifies the service where this token is used"),
+    ]
+    token_key: UUID
+    token_secret: UUID
+
+    def to_model(self) -> UserThirdPartyToken:
+        return UserThirdPartyToken(
+            service=self.service,
+            token_key=self.token_key,
+            token_secret=self.token_secret,
+        )
+
+
+class MyTokenGet(OutputSchemaWithoutCamelCase):
+    service: str
+    token_key: UUID
+    token_secret: Annotated[
+        UUID | None, Field(deprecated=True, description="Will be removed")
+    ] = None
+
+    @classmethod
+    def from_model(cls, token: UserThirdPartyToken) -> Self:
+        return cls(service=token.service, token_key=token.token_key, token_secret=None)
+
+
+#
+# PERMISSIONS
+#
+
+
+class MyPermissionGet(OutputSchema):
+    name: str
+    allowed: bool
+
+    @classmethod
+    def from_model(cls, permission: UserPermission) -> Self:
+        return cls(name=permission.name, allowed=permission.allowed)

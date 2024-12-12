@@ -109,7 +109,9 @@ async def open_project(request: web.Request) -> web.Response:
         project_type: ProjectType = await projects_api.get_project_type(
             request.app, path_params.project_id
         )
-        user_role: UserRole = await api.get_user_role(request.app, req_ctx.user_id)
+        user_role: UserRole = await api.get_user_role(
+            request.app, user_id=req_ctx.user_id
+        )
         if project_type is ProjectType.TEMPLATE and user_role < UserRole.USER:
             # only USERS/TESTERS can do that
             raise web.HTTPForbidden(reason="Wrong user role to open/edit a template")

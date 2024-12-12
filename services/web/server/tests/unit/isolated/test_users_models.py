@@ -16,17 +16,17 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePrivacyGet,
 )
 from models_library.generics import Envelope
+from models_library.users import UserThirdPartyToken
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.users._models import ToUserUpdateDB
-from simcore_service_webserver.users.schemas import ThirdPartyToken
+from simcore_service_webserver.users._common.models import ToUserUpdateDB
 
 
 @pytest.mark.parametrize(
     "model_cls",
-    [MyProfileGet, ThirdPartyToken],
+    [MyProfileGet, UserThirdPartyToken],
 )
 def test_user_models_examples(
     model_cls: type[BaseModel], model_cls_examples: dict[str, Any]

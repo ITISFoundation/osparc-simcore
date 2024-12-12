@@ -1,7 +1,10 @@
-from ._preferences_api import get_frontend_user_preference, set_frontend_user_preference
 from ._preferences_models import (
     PreferredWalletIdFrontendUserPreference,
     TwoFAFrontendUserPreference,
+)
+from ._preferences_service import (
+    get_frontend_user_preference,
+    set_frontend_user_preference,
 )
 from .exceptions import UserDefaultWalletNotFoundError
 

@@ -3,6 +3,8 @@ import logging
 
 import redis.asyncio as aioredis
 from aiohttp import web
+from models_library.api_schemas_webserver.users import MyPermissionGet
+from models_library.users import UserPermission
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -17,8 +19,8 @@ from ..products.api import get_product_name
 from ..redis import get_redis_user_notifications_client
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _api
-from ._handlers import UsersRequestContext
+from . import _users_service
+from ._common.schemas import UsersRequestContext
 from ._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
@@ -27,7 +29,6 @@ from ._notifications import (
     UserNotificationPatch,
     get_notification_key,
 )
-from .schemas import Permission, PermissionGet
 
 _logger = logging.getLogger(__name__)
 
@@ -125,14 +126,9 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
 @permission_required("user.permissions.read")
 async def list_user_permissions(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
-    list_permissions: list[Permission] = await _api.list_user_permissions(
-        request.app, req_ctx.user_id, req_ctx.product_name
+    list_permissions: list[UserPermission] = await _users_service.list_user_permissions(
+        request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
     return envelope_json_response(
-        [
-            PermissionGet.model_construct(
-                _fields_set=p.model_fields_set, **p.model_dump()
-            )
-            for p in list_permissions
-        ]
+        [MyPermissionGet.from_model(p) for p in list_permissions]
     )

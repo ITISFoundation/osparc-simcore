@@ -1,6 +1,9 @@
-""" models for rest api schemas, i.e. those defined in openapi.json
+""" input/output datasets used in the rest-API
 
+NOTE: Most of the model schemas are in `models_library.api_schemas_webserver.users`,
+the rest (hidden or needs a dependency) is here
 """
+
 
 import re
 import sys
@@ -8,55 +11,27 @@ from contextlib import suppress
 from typing import Annotated, Any, Final
 
 import pycountry
-from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
+from models_library.api_schemas_webserver._base import InputSchema
+from models_library.api_schemas_webserver.users import UserGet
 from models_library.emails import LowerCaseEmailStr
-from models_library.products import ProductName
-from pydantic import ConfigDict, Field, ValidationInfo, field_validator, model_validator
-from simcore_postgres_database.models.users import UserStatus
+from models_library.users import UserID
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from servicelib.request_keys import RQT_USERID_KEY
+
+from ..._constants import RQ_PRODUCT_KEY
 
 
-class UserProfile(OutputSchema):
-    first_name: str | None
-    last_name: str | None
-    email: LowerCaseEmailStr
-    institution: str | None
-    phone: str | None
-    address: str | None
-    city: str | None
-    state: str | None = Field(description="State, province, canton, ...")
-    postal_code: str | None
-    country: str | None
-    extras: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Keeps extra information provided in the request form",
-    )
-
-    # authorization
-    invited_by: str | None = Field(default=None)
-
-    # user status
-    registered: bool
-    status: UserStatus | None
-    products: list[ProductName] | None = Field(
-        default=None,
-        description="List of products this users is included or None if fields is unset",
-    )
-
-    @field_validator("status")
-    @classmethod
-    def _consistency_check(cls, v, info: ValidationInfo):
-        registered = info.data["registered"]
-        status = v
-        if not registered and status is not None:
-            msg = f"{registered=} and {status=} is not allowed"
-            raise ValueError(msg)
-        return v
+class UsersRequestContext(BaseModel):
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 MAX_BYTES_SIZE_EXTRAS: Final[int] = 512
 
 
-class PreUserProfile(InputSchema):
+class PreRegisteredUserGet(InputSchema):
+    # NOTE: validators need pycountry!
+
     first_name: str
     last_name: str
     email: LowerCaseEmailStr
@@ -74,7 +49,7 @@ class PreUserProfile(InputSchema):
         dict[str, Any],
         Field(
             default_factory=dict,
-            description="Keeps extra information provided in the request form. At most MAX_NUM_EXTRAS fields",
+            description="Keeps extra information provided in the request form.",
         ),
     ]
 
@@ -133,4 +108,5 @@ class PreUserProfile(InputSchema):
         return v
 
 
-assert set(PreUserProfile.model_fields).issubset(UserProfile.model_fields)  # nosec
+# asserts field names are in sync
+assert set(PreRegisteredUserGet.model_fields).issubset(UserGet.model_fields)  # nosec
