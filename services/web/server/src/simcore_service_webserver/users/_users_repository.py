@@ -27,6 +27,7 @@ from simcore_postgres_database.utils_users import (
     UsersRepo,
     generate_alternative_username,
 )
+from sqlalchemy import delete
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -326,6 +327,21 @@ async def get_user_billing_details(
         if not row:
             raise BillingDetailsNotFoundError(user_id=user_id)
         return UserBillingDetails.model_validate(row)
+
+
+async def delete_user_by_id(
+    engine: AsyncEngine, connection: AsyncConnection | None = None, *, user_id: UserID
+) -> bool:
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.execute(
+            delete(users)
+            .where(users.c.id == user_id)
+            .returning(users.c.id)  # Return the ID of the deleted row otherwise None
+        )
+        deleted_user = result.fetchone()
+
+        # If no row was deleted, the user did not exist
+        return bool(deleted_user)
 
 
 #
