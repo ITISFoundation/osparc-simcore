@@ -6,14 +6,17 @@ from uuid import UUID
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.users_enums import UserStatus
+from models_library.groups import AccessRightsDict
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
+from ..groups import AccessRightsDict, Group, GroupsByTypeTuple
 from ..products import ProductName
 from ..users import (
     FirstNameStr,
     LastNameStr,
+    MyProfile,
     UserID,
     UserPermission,
     UserThirdPartyToken,
@@ -23,6 +26,7 @@ from ._base import (
     InputSchemaWithoutCamelCase,
     OutputSchema,
     OutputSchemaWithoutCamelCase,
+    copy_dict,
 )
 from .groups import MyGroupsGet
 from .users_preferences import AggregatedPreferences
@@ -42,8 +46,7 @@ class MyProfilePrivacyPatch(InputSchema):
     hide_email: bool | None = None
 
 
-class MyProfileGet(BaseModel):
-    # WARNING: do not use InputSchema until front-end is updated!
+class MyProfileGet(OutputSchemaWithoutCamelCase):
     id: UserID
     user_name: Annotated[
         IDStr, Field(description="Unique username identifier", alias="userName")
@@ -94,6 +97,36 @@ class MyProfileGet(BaseModel):
         if isinstance(v, Enum):
             return v.name.upper()
         return v
+
+    @classmethod
+    def from_model(
+        cls,
+        my_profile: MyProfile,
+        my_groups_by_type: GroupsByTypeTuple,
+        my_product_group: tuple[Group, AccessRightsDict],
+        my_preferences: AggregatedPreferences,
+    ) -> Self:
+        data = copy_dict(
+            my_profile.model_dump(
+                include={
+                    "id",
+                    "user_name",
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "role",
+                    "privacy",
+                    "expiration_date",
+                },
+                exclude_unset=True,
+            ),
+            update_keys={"email": "login"},
+        )
+        return cls(
+            **data,
+            groups=MyGroupsGet.from_model(my_groups_by_type, my_product_group),
+            preferences=my_preferences,
+        )
 
 
 class MyProfilePatch(BaseModel):

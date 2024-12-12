@@ -1,8 +1,16 @@
+import datetime
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
+from common_library.users_enums import UserRole
 from models_library.basic_types import IDStr
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt, StringConstraints
+from pydantic.config import JsonDict
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
+
+from .emails import LowerCaseEmailStr
 
 UserID: TypeAlias = PositiveInt
 UserNameID: TypeAlias = IDStr
@@ -15,6 +23,40 @@ FirstNameStr: TypeAlias = Annotated[
 LastNameStr: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, max_length=255)
 ]
+
+
+class PrivacyDict(TypedDict):
+    hide_fullname: bool
+    hide_email: bool
+
+
+class MyProfile(BaseModel):
+    id: UserID
+    user_name: IDStr
+    first_name: str | None
+    last_name: str | None
+    email: LowerCaseEmailStr
+    role: UserRole
+    privacy: PrivacyDict
+    expiration_date: datetime.date | None = None
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "example": {
+                    "id": 1,
+                    "email": "PtN5Ab0uv@guest-at-osparc.io",
+                    "user_name": "PtN5Ab0uv",
+                    "first_name": "PtN5Ab0uv",
+                    "last_name": "",
+                    "role": "GUEST",
+                    "privacy": {"hide_email": True, "hide_fullname": False},
+                }
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 class UserBillingDetails(BaseModel):
