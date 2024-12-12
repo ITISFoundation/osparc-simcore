@@ -238,9 +238,9 @@ async def create_user_services(  # pylint: disable=too-many-statements
     start_duration = (
         scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_start_request()
     )
-    assert start_duration is not None  # nosec
-    get_instrumentation(app).dynamic_sidecar_metrics.start_time_duration.labels(
-        **get_metrics_labels(scheduler_data)
-    ).observe(start_duration)
+    if start_duration is not None:
+        get_instrumentation(app).dynamic_sidecar_metrics.start_time_duration.labels(
+            **get_metrics_labels(scheduler_data)
+        ).observe(start_duration)
 
     _logger.info("Internal state after creating user services %s", scheduler_data)

@@ -17,10 +17,10 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from ..._meta import API_VTAG as VTAG
-from ...login.decorators import login_required
-from ...security.decorators import permission_required
-from ...utils_aiohttp import envelope_json_response
+from .._meta import API_VTAG as VTAG
+from ..login.decorators import login_required
+from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 from . import _licensed_items_api
 from ._exceptions_handlers import handle_plugin_requests_exceptions
 from ._models import (
@@ -40,7 +40,7 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("catalog/licensed-items.*")
 @handle_plugin_requests_exceptions
-async def list_workspaces(request: web.Request):
+async def list_licensed_items(request: web.Request):
     req_ctx = LicensedItemsRequestContext.model_validate(request)
     query_params: LicensedItemsListQueryParams = parse_request_query_parameters_as(
         LicensedItemsListQueryParams, request
@@ -77,7 +77,7 @@ async def list_workspaces(request: web.Request):
 @login_required
 @permission_required("catalog/licensed-items.*")
 @handle_plugin_requests_exceptions
-async def get_workspace(request: web.Request):
+async def get_licensed_item(request: web.Request):
     req_ctx = LicensedItemsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
 

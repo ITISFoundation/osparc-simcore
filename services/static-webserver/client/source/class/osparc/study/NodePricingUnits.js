@@ -100,15 +100,10 @@ qx.Class.define("osparc.study.NodePricingUnits", {
         const studyId = this.getStudyId();
         const nodeId = this.getNodeId();
 
-        const plansParams = {
-          url: osparc.data.Resources.getServiceUrl(
-            nodeKey,
-            nodeVersion
-          )
-        };
-        osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
-          .then(pricingPlan => {
-            if (pricingPlan) {
+        const pricingStore = osparc.store.Pricing.getInstance();
+        pricingStore.fetchPricingPlansService(nodeKey, nodeVersion)
+          .then(pricingPlanData => {
+            if (pricingPlanData) {
               const unitParams = {
                 url: {
                   studyId,
@@ -116,26 +111,32 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                 }
               };
               this.set({
-                pricingPlanId: pricingPlan["pricingPlanId"]
+                pricingPlanId: pricingPlanData["pricingPlanId"]
               });
               osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
                 .then(preselectedPricingUnit => {
-                  if (pricingPlan && "pricingUnits" in pricingPlan && pricingPlan["pricingUnits"].length) {
-                    const pricingUnitButtons = this.__pricingUnits = new osparc.study.PricingUnits(pricingPlan["pricingUnits"], preselectedPricingUnit);
+                  if (pricingPlanData && "pricingUnits" in pricingPlanData && pricingPlanData["pricingUnits"].length) {
+                    const pricingUnitsData = pricingPlanData["pricingUnits"];
+                    const pricingUnitTiers = this.__pricingUnits = new osparc.study.PricingUnitTiers(pricingUnitsData, preselectedPricingUnit);
                     if (inGroupBox) {
                       const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
-                      pricingUnitsLayout.add(pricingUnitButtons);
+                      pricingUnitsLayout.add(pricingUnitTiers);
                       this._add(pricingUnitsLayout);
                     } else {
-                      this._add(pricingUnitButtons);
+                      this._add(pricingUnitTiers);
                     }
-                    pricingUnitButtons.addListener("changeSelectedUnitId", e => {
+                    pricingUnitTiers.addListener("selectPricingUnitRequested", e => {
+                      const selectedPricingUnitId = e.getData();
                       if (this.isPatchNode()) {
-                        pricingUnitButtons.setEnabled(false);
+                        pricingUnitTiers.setEnabled(false);
                         const pricingPlanId = this.getPricingPlanId();
-                        const selectedPricingUnitId = e.getData();
                         this.self().patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId)
-                          .finally(() => pricingUnitButtons.setEnabled(true));
+                          .then(() => pricingUnitTiers.setSelectedUnitId(selectedPricingUnitId))
+                          .catch(err => {
+                            const msg = err.message || this.tr("Cannot change Tier");
+                            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                          })
+                          .finally(() => pricingUnitTiers.setEnabled(true));
                       }
                     });
                   }

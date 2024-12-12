@@ -635,6 +635,17 @@ qx.Class.define("osparc.data.model.Study", {
       return !this.getUi().getSlideshow().isEmpty();
     },
 
+    sendMessageToIframe: function(nodeId, msg) {
+      if (nodeId) {
+        const node = this.getWorkbench().getNode(nodeId);
+        if (node && node.getIFrame()) {
+          node.getIFrame().sendMessageToIframe(msg);
+          return true;
+        }
+      }
+      return false;
+    },
+
     patchStudy: function(studyChanges) {
       const matches = this.self().OwnPatch.filter(el => Object.keys(studyChanges).indexOf(el) !== -1);
       if (matches.length) {

@@ -3,8 +3,9 @@ from datetime import datetime
 from typing import Annotated
 
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
+from models_library.groups import GroupID
 from models_library.rest_base import RequestParameters, StrictRequestParameters
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from pydantic import Field, PositiveInt, StringConstraints
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_tags import TagDict

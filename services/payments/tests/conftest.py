@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import simcore_service_payments
 from faker import Faker
-from models_library.users import GroupID
+from models_library.groups import GroupID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict

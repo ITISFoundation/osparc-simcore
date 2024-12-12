@@ -46,22 +46,20 @@ qx.Class.define("osparc.node.TierSelectionView", {
       tiersLayout.add(tierBox);
 
       const node = this.getNode();
-      const plansParams = {
-        url: osparc.data.Resources.getServiceUrl(
-          node.getKey(),
-          node.getVersion()
-        )
-      };
-      const studyId = node.getStudy().getUuid();
-      const nodeId = node.getNodeId();
-      osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
+      const pricingStore = osparc.store.Pricing.getInstance();
+      pricingStore.fetchPricingPlansService(node.getKey(), node.getVersion())
         .then(pricingPlans => {
           if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
-            const pUnits = pricingPlans["pricingUnits"];
-            pUnits.forEach(pUnit => {
-              const tItem = new qx.ui.form.ListItem(pUnit.unitName, null, pUnit.pricingUnitId);
+            const pricingUnits = pricingPlans["pricingUnits"].map(princingUnitData => {
+              const pricingUnit = new osparc.data.model.PricingUnit(princingUnitData);
+              return pricingUnit;
+            });
+            pricingUnits.forEach(pricingUnit => {
+              const tItem = new qx.ui.form.ListItem(pricingUnit.getName(), null, pricingUnit.getPricingUnitId());
               tierBox.add(tItem);
             });
+            const studyId = node.getStudy().getUuid();
+            const nodeId = node.getNodeId();
             const unitParams = {
               url: {
                 studyId,
@@ -81,9 +79,9 @@ qx.Class.define("osparc.node.TierSelectionView", {
               })
               .finally(() => {
                 const pUnitUIs = [];
-                pUnits.forEach(pUnit => {
-                  const pUnitUI = new osparc.study.PricingUnit(pUnit).set({
-                    allowGrowX: false
+                pricingUnits.forEach(pricingUnit => {
+                  const pUnitUI = new osparc.study.PricingUnitTier(pricingUnit).set({
+                    showEditButton: false,
                   });
                   pUnitUI.getChildControl("name").exclude();
                   pUnitUI.exclude();

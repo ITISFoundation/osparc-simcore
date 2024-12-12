@@ -21,9 +21,29 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.HBox(10));
 
     this.__buildLayout();
+  },
+
+  events: {
+    "importMessageSent": "qx.event.type.Data"
+  },
+
+  properties: {
+    openBy: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeOpenBy",
+    },
+
+    metadataUrl: {
+      check: "String",
+      init: null,
+      nullable: false,
+      apply: "__fetchModels",
+    }
   },
 
   statics: {
@@ -46,9 +66,6 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           } else {
             curatedModel[key] = model[key];
           }
-          if (key === "ID") {
-            curatedModel["leased"] = [22].includes(model[key]);
-          }
         });
         anatomicalModels.push(curatedModel);
       });
@@ -57,53 +74,94 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
   },
 
   members: {
-    __anatomicalModelsModel: null,
     __anatomicalModels: null,
-    __sortByButton: null,
+    __anatomicalModelsModel: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "left-side":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+            alignY: "middle",
+          });
+          this._add(control);
+          break;
+        case "right-side":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+            alignY: "middle",
+          });
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "toolbar-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+            alignY: "middle",
+          });
+          this.getChildControl("left-side").add(control);
+          break;
+        case "sort-button":
+          control = new osparc.vipMarket.SortModelsButtons().set({
+            alignY: "bottom",
+            maxHeight: 27,
+          });
+          this.getChildControl("toolbar-layout").add(control);
+          break;
+        case "filter-text":
+          control = new osparc.filter.TextFilter("text", "vipModels").set({
+            alignY: "middle",
+            allowGrowY: false,
+            minWidth: 160,
+          });
+          control.getChildControl("textfield").set({
+            backgroundColor: "transparent",
+          });
+          this.addListener("appear", () => control.getChildControl("textfield").focus());
+          this.getChildControl("toolbar-layout").add(control, {
+            flex: 1
+          });
+          break;
+        case "models-list":
+          control = new qx.ui.form.List().set({
+            decorator: "no-border",
+            spacing: 5,
+            minWidth: 250,
+            maxWidth: 250
+          });
+          this.getChildControl("left-side").add(control, {
+            flex: 1
+          });
+          break;
+        case "models-details":
+          control = new osparc.vipMarket.AnatomicalModelDetails().set({
+            padding: 5,
+          });
+          this.bind("openBy", control, "openBy");
+          this.getChildControl("right-side").add(control, {
+            flex: 1
+          });
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
     __buildLayout: function() {
-      const toolbarLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        alignY: "middle",
-      });
-      this._add(toolbarLayout);
-
-      const sortModelsButtons = this.__sortByButton = new osparc.vipMarket.SortModelsButtons().set({
-        alignY: "bottom",
-        maxHeight: 27,
-      });
-      toolbarLayout.add(sortModelsButtons);
-
-      const filter = new osparc.filter.TextFilter("text", "vipModels").set({
-        alignY: "middle",
-        allowGrowY: false,
-        minWidth: 170,
-      });
-      this.addListener("appear", () => filter.getChildControl("textfield").focus());
-      toolbarLayout.add(filter);
-
-      const modelsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      this._add(modelsLayout, {
-        flex: 1
-      });
-      
-      const modelsUIList = new qx.ui.form.List().set({
-        decorator: "no-border",
-        spacing: 5,
-        minWidth: 250,
-        maxWidth: 250
-      });
-      modelsLayout.add(modelsUIList)
+      this.getChildControl("sort-button");
+      this.getChildControl("filter-text");
+      const modelsUIList = this.getChildControl("models-list");
 
       const anatomicalModelsModel = this.__anatomicalModelsModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(anatomicalModelsModel, modelsUIList, "name");
       membersCtrl.setDelegate({
         createItem: () => new osparc.vipMarket.AnatomicalModelListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("id", "modelId", null, item, id);
+          ctrl.bindProperty("modelId", "modelId", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "name", null, item, id);
           ctrl.bindProperty("date", "date", null, item, id);
-          ctrl.bindProperty("leased", "leased", null, item, id);
+          ctrl.bindProperty("licensedItemId", "licensedItemId", null, item, id);
+          ctrl.bindProperty("pricingPlanId", "pricingPlanId", null, item, id);
+          ctrl.bindProperty("purchases", "purchases", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("vipModels");
@@ -117,18 +175,13 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       };
       this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(loadingModel));
 
-      const anatomicModelDetails = new osparc.vipMarket.AnatomicalModelDetails().set({
-        padding: 20,
-      });
-      modelsLayout.add(anatomicModelDetails, {
-        flex: 1
-      });
+      const anatomicModelDetails = this.getChildControl("models-details");
 
       modelsUIList.addListener("changeSelection", e => {
         const selection = e.getData();
         if (selection.length) {
           const modelId = selection[0].getModelId();
-          const modelFound = this.__anatomicalModels.find(anatomicalModel => anatomicalModel["ID"] === modelId);
+          const modelFound = this.__anatomicalModels.find(anatomicalModel => anatomicalModel["modelId"] === modelId);
           if (modelFound) {
             anatomicModelDetails.setAnatomicalModelsData(modelFound);
             return;
@@ -136,47 +189,144 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         }
         anatomicModelDetails.setAnatomicalModelsData(null);
       }, this);
+    },
 
-      fetch("https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnatomicalModels", {
+    __fetchModels: function(url) {
+      fetch(url, {
         method:"POST"
       })
         .then(resp => resp.json())
         .then(anatomicalModelsRaw => {
-          this.__anatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
-          this.__populateModels();
+          const allAnatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
 
-          anatomicModelDetails.addListener("modelLeased", e => {
-            const modelId = e.getData();
-            const found = this.__anatomicalModels.find(model => model["ID"] === modelId);
-            if (found) {
-              found["leased"] = true;
+          const store = osparc.store.Store.getInstance();
+          const contextWallet = store.getContextWallet();
+          if (!contextWallet) {
+            return;
+          }
+          const walletId = contextWallet.getWalletId();
+          const purchasesParams = {
+            url: {
+              walletId
+            }
+          };
+          Promise.all([
+            osparc.data.Resources.get("licensedItems"),
+            osparc.data.Resources.fetch("wallets", "purchases", purchasesParams),
+          ])
+            .then(values => {
+              const licensedItems = values[0];
+              const purchasesItems = values[1];
+
+              this.__anatomicalModels = [];
+              allAnatomicalModels.forEach(model => {
+                const modelId = model["ID"];
+                const licensedItem = licensedItems.find(licItem => licItem["name"] == modelId);
+                if (licensedItem) {
+                  const anatomicalModel = {};
+                  anatomicalModel["modelId"] = model["ID"];
+                  anatomicalModel["thumbnail"] = model["Thumbnail"];
+                  anatomicalModel["name"] = model["Features"]["name"] + " " + model["Features"]["version"];
+                  anatomicalModel["description"] = model["Description"];
+                  anatomicalModel["features"] = model["Features"];
+                  anatomicalModel["date"] = new Date(model["Features"]["date"]);
+                  anatomicalModel["DOI"] = model["DOI"];
+                  // attach license data
+                  anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
+                  anatomicalModel["pricingPlanId"] = licensedItem["pricingPlanId"];
+                  // attach leased data
+                  anatomicalModel["purchases"] = []; // default
+                  const purchasesItemsFound = purchasesItems.filter(purchasesItem => purchasesItem["licensedItemId"] === licensedItem["licensedItemId"]);
+                  if (purchasesItemsFound.length) {
+                    purchasesItemsFound.forEach(purchasesItemFound => {
+                      anatomicalModel["purchases"].push({
+                        expiresAt: new Date(purchasesItemFound["expireAt"]),
+                        numberOfSeats: purchasesItemFound["numOfSeats"],
+                      })
+                    });
+                  }
+                  this.__anatomicalModels.push(anatomicalModel);
+                }
+              });
+
               this.__populateModels();
-              anatomicModelDetails.setAnatomicalModelsData(found);
-            };
-          }, this);
+
+              const anatomicModelDetails = this.getChildControl("models-details");
+              anatomicModelDetails.addListener("modelPurchaseRequested", e => {
+                if (!contextWallet) {
+                  return;
+                }
+                const {
+                  modelId,
+                  licensedItemId,
+                  pricingPlanId,
+                  pricingUnitId,
+                } = e.getData();
+                let numberOfSeats = null;
+                const pricingUnit = osparc.store.Pricing.getInstance().getPricingUnit(pricingPlanId, pricingUnitId);
+                if (pricingUnit) {
+                  const split = pricingUnit.getName().split(" ");
+                  numberOfSeats = parseInt(split[0]);
+                }
+                const params = {
+                  url: {
+                    licensedItemId
+                  },
+                  data: {
+                    "wallet_id": walletId,
+                    "pricing_plan_id": pricingPlanId,
+                    "pricing_unit_id": pricingUnitId,
+                    "num_of_seats": numberOfSeats, // this should go away
+                  },
+                }
+                osparc.data.Resources.fetch("licensedItems", "purchase", params)
+                  .then(() => {
+                    const expirationDate = new Date();
+                    expirationDate.setMonth(expirationDate.getMonth() + 1); // rented for one month
+                    const purchaseData = {
+                      expiresAt: expirationDate, // get this info from the response
+                      numberOfSeats, // get this info from the response
+                    };
+
+                    let msg = numberOfSeats;
+                    msg += " seat" + (purchaseData["numberOfSeats"] > 1 ? "s" : "");
+                    msg += " rented until " + osparc.utils.Utils.formatDate(purchaseData["expiresAt"]);
+                    osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+
+                    const found = this.__anatomicalModels.find(model => model["modelId"] === modelId);
+                    if (found) {
+                      found["purchases"].push(purchaseData);
+                      this.__populateModels();
+                      anatomicModelDetails.setAnatomicalModelsData(found);
+                    }
+                  })
+                  .catch(err => {
+                    const msg = err.message || this.tr("Cannot purchase model");
+                    osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                  });
+              }, this);
+
+              anatomicModelDetails.addListener("modelImportRequested", e => {
+                const {
+                  modelId
+                } = e.getData();
+                this.__sendImportModelMessage(modelId);
+              }, this);
+            });
         })
         .catch(err => console.error(err));
     },
 
     __populateModels: function() {
-      const models = [];
-      this.__anatomicalModels.forEach(model => {
-        const anatomicalModel = {};
-        anatomicalModel["id"] = model["ID"];
-        anatomicalModel["thumbnail"] = model["Thumbnail"];
-        anatomicalModel["name"] = model["Features"]["name"] + " " + model["Features"]["version"];
-        anatomicalModel["date"] = new Date(model["Features"]["date"]);
-        anatomicalModel["leased"] = model["leased"];
-        models.push(anatomicalModel);
-      });
+      const models = this.__anatomicalModels;
 
       this.__anatomicalModelsModel.removeAll();
       const sortModel = sortBy => {
         models.sort((a, b) => {
           // first criteria
-          if (b["leased"] !== a["leased"]) {
+          if (b["purchases"].length !== a["purchases"].length) {
             // leased first
-            return b["leased"] - a["leased"];
+            return b["purchases"].length - a["purchases"].length;
           }
           // second criteria
           if (sortBy) {
@@ -184,16 +334,14 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
               if (sortBy["order"] === "down") {
                 // A -> Z
                 return a["name"].localeCompare(b["name"]);
-              } else {
-                return b["name"].localeCompare(a["name"]);
               }
+              return b["name"].localeCompare(a["name"]);
             } else if (sortBy["sort"] === "date") {
               if (sortBy["order"] === "down") {
                 // Now -> Yesterday
                 return b["date"] - a["date"];
-              } else {
-                return a["date"] - b["date"];
               }
+              return a["date"] - b["date"];
             }
           }
           // default criteria
@@ -204,12 +352,29 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       sortModel();
       models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
 
-      this.__sortByButton.addListener("sortBy", e => {
+      this.getChildControl("sort-button").addListener("sortBy", e => {
         this.__anatomicalModelsModel.removeAll();
         const sortBy = e.getData();
         sortModel(sortBy);
         models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
       }, this);
+    },
+
+    __sendImportModelMessage: function(modelId) {
+      const store = osparc.store.Store.getInstance();
+      const currentStudy = store.getCurrentStudy();
+      const nodeId = this.getOpenBy();
+      if (currentStudy && nodeId) {
+        const msg = {
+          "type": "importModel",
+          "message": {
+            "modelId": modelId,
+          },
+        };
+        if (currentStudy.sendMessageToIframe(nodeId, msg)) {
+          this.fireEvent("importMessageSent");
+        }
+      }
     },
   }
 });
