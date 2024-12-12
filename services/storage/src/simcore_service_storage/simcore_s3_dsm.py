@@ -21,6 +21,7 @@ from aws_library.s3 import (
     UploadedBytesTransferredCallback,
 )
 from models_library.api_schemas_storage import (
+    UNDEFINED_SIZE,
     UNDEFINED_SIZE_TYPE,
     LinkType,
     S3BucketName,
@@ -181,7 +182,6 @@ class SimcoreS3DataManager(BaseDataManager):
                 ),
                 file_id_prefix=None,
                 partial_file_id=uuid_filter,
-                only_files=False,
                 sha256_checksum=None,
             )
 
@@ -517,28 +517,45 @@ class SimcoreS3DataManager(BaseDataManager):
         # Only use this in those circumstances where a collaborator requires to delete a file (the current
         # permissions model will not allow him to do so, even though this is a legitimate action)
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
+        def _get_subpath(path: str, levels: int):
+            components = path.strip("/").split("/")
+            subpath = "/".join(components[:levels])
+            return "/" + subpath if subpath else "/"
+
         async with self.engine.acquire() as conn:
             if enforce_access_rights:
                 can: AccessRights = await get_file_access_rights(conn, user_id, file_id)
                 if not can.delete:
                     raise FileAccessRightError(access_right="delete", file_id=file_id)
 
-        with suppress(FileMetaDataNotFoundError):
-            # NOTE: deleting might be slow, so better ensure we release the connection
-            async with self.engine.acquire() as conn:
-                file: FileMetaDataAtDB = await db_file_meta_data.get(
-                    conn, TypeAdapter(SimcoreS3FileID).validate_python(file_id)
-                )
+        try:
             await get_s3_client(self.app).delete_objects_recursively(
-                bucket=file.bucket_name,
-                prefix=(
-                    ensure_ends_with(file.file_id, "/")
-                    if file.is_directory
-                    else file.file_id
-                ),
+                bucket=self.simcore_bucket_name,
+                prefix=file_id,
             )
-            async with self.engine.acquire() as conn:
-                await db_file_meta_data.delete(conn, [file.file_id])
+        except S3KeyNotFoundError:
+            _logger.warning("File %s not found in S3", file_id)
+
+        async with self.engine.acquire() as conn:
+            try:
+                if await db_file_meta_data.get(conn, file_id):
+                    await db_file_meta_data.delete(conn, [file_id])
+            except FileMetaDataNotFoundError:
+                _logger.warning("File %s not found in database", file_id)
+
+            if parent_dir_fmds := await db_file_meta_data.list_filter_with_partial_file_id(
+                conn,
+                user_or_project_filter=UserOrProjectFilter(
+                    user_id=user_id, project_ids=[]
+                ),
+                file_id_prefix=_get_subpath(file_id, 2),
+                partial_file_id=None,
+                is_directory=True,
+                sha256_checksum=None,
+            ):
+                parent_dir_fmd = max(parent_dir_fmds, key=lambda fmd: len(fmd.file_id))
+                parent_dir_fmd.file_size = UNDEFINED_SIZE
+                await db_file_meta_data.upsert(conn, parent_dir_fmd)
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
@@ -738,7 +755,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 ),
                 file_id_prefix=file_id_prefix,
                 partial_file_id=None,
-                only_files=True,
+                is_directory=False,
                 sha256_checksum=sha256_checksum,
                 limit=limit,
                 offset=offset,
