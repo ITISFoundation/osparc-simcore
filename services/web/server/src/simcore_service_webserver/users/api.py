@@ -1,6 +1,6 @@
 # mypy: disable-error-code=truthy-function
 
-from ._common.models import FullNameDict
+from ._common.models import FullNameDict, UserDisplayAndIdNamesTuple
 from ._users_service import (
     delete_user_without_projects,
     get_guest_user_ids_and_names,
@@ -36,5 +36,6 @@ __all__: tuple[str, ...] = (
     "update_expired_users",
     "update_user_profile",
     "FullNameDict",
+    "UserDisplayAndIdNamesTuple",
 )
 # nopycln: file
