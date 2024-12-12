@@ -135,10 +135,12 @@ class GroupExtraPropertiesRepo:
             raise GroupExtraPropertiesNotFoundError(msg)
 
     @staticmethod
-    def _aggregate(rows, user_id, product_name, from_row: Callable):
+    def _aggregate(
+        rows, user_id, product_name, from_row: Callable
+    ) -> GroupExtraProperties:
         merged_standard_extra_properties = None
         for row in rows:
-            group_extra_properties = from_row(row)
+            group_extra_properties: GroupExtraProperties = from_row(row)
             match row.type:
                 case GroupType.PRIMARY:
                     # this always has highest priority
