@@ -33,6 +33,8 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
     this.addListener("tap", this.__itemSelected, this);
+
+    this.addListener("changeSelected", this.__evalSelectedButton, this);
   },
 
   statics: {
@@ -179,11 +181,9 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     // overridden
     _applyMultiSelectionMode: function(value) {
       if (value) {
-        const menuButton = this.getChildControl("menu-button");
-        menuButton.setVisibility("excluded");
-        this.__itemSelected();
+        this.__evalSelectedButton();
       } else {
-        this.__showMenuOnly();
+        this.setSelected(false);
       }
     },
 
@@ -193,26 +193,23 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         return;
       }
 
-      if (this.isResourceType("study") && this.isMultiSelectionMode()) {
-        const selected = this.getSelected();
-
-        const tick = this.getChildControl("tick-selected");
-        tick.setVisibility(selected ? "visible" : "excluded");
-
-        const untick = this.getChildControl("tick-unselected");
-        untick.setVisibility(selected ? "excluded" : "visible");
-      } else {
-        this.__showMenuOnly();
-      }
+      this.setSelected(!this.getSelected());
     },
 
-    __showMenuOnly: function() {
+    __evalSelectedButton: function() {
+      const selected = this.getSelected();
       const menuButton = this.getChildControl("menu-button");
-      menuButton.setVisibility("visible");
       const tick = this.getChildControl("tick-selected");
-      tick.setVisibility("excluded");
       const untick = this.getChildControl("tick-unselected");
-      untick.setVisibility("excluded");
+      if (this.isResourceType("study") && this.isMultiSelectionMode()) {
+        menuButton.setVisibility("excluded");
+        tick.setVisibility(selected ? "visible" : "excluded");
+        untick.setVisibility(selected ? "excluded" : "visible");
+      } else {
+        menuButton.setVisibility("visible");
+        tick.setVisibility("excluded");
+        untick.setVisibility("excluded");
+      }
     },
 
     // overridden
