@@ -79,11 +79,7 @@ from .models import (
 from .s3 import get_s3_client
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
-from .simcore_s3_dsm_utils import (
-    expand_directory,
-    find_enclosing_file,
-    get_directory_file_id,
-)
+from .simcore_s3_dsm_utils import expand_directory, get_directory_file_id, get_fmd
 from .utils import (
     convert_db_to_model,
     download_to_file_or_raise,
@@ -527,18 +523,22 @@ class SimcoreS3DataManager(BaseDataManager):
                 if not can.delete:
                     raise FileAccessRightError(access_right="delete", file_id=file_id)
 
-            enclosing_file = await find_enclosing_file(conn, user_id, file_id)
-            if enclosing_file:
-                if enclosing_file.file_id == file_id:
-                    await db_file_meta_data.delete(conn, [file_id])
-                else:
-                    enclosing_file.file_size = UNDEFINED_SIZE_TYPE
-                    await db_file_meta_data.upsert(conn, enclosing_file)
-
         await get_s3_client(self.app).delete_objects_recursively(
             bucket=self.simcore_bucket_name,
             prefix=file_id,
         )
+
+        async with self.engine.acquire() as conn:
+            file_fmd = await get_fmd(conn, file_id)
+            if file_fmd and not file_fmd.is_directory:
+                enclosing_dir_file_id = await get_directory_file_id(conn, file_id)
+                if enclosing_dir_file_id:
+                    enclosing_dir_fmd = await db_file_meta_data.get(
+                        conn, enclosing_dir_file_id
+                    )
+                    enclosing_dir_fmd.file_size = -1
+                    await db_file_meta_data.upsert(conn, enclosing_dir_fmd)
+            await db_file_meta_data.delete(conn, [file_id])
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None

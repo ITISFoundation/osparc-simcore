@@ -14,7 +14,7 @@ from servicelib.utils import ensure_ends_with
 
 from . import db_file_meta_data
 from .exceptions import FileMetaDataNotFoundError
-from .models import FileMetaData, FileMetaDataAtDB, UserID
+from .models import FileMetaData, FileMetaDataAtDB
 from .utils import convert_db_to_model
 
 
@@ -78,6 +78,16 @@ async def expand_directory(
     return result
 
 
+async def get_fmd(
+    conn: SAConnection, s3_file_id: StorageFileID
+) -> FileMetaDataAtDB | None:
+    with suppress(FileMetaDataNotFoundError):
+        return await db_file_meta_data.get(
+            conn, TypeAdapter(SimcoreS3FileID).validate_python(s3_file_id)
+        )
+    return None
+
+
 def get_simcore_directory(file_id: SimcoreS3FileID) -> str:
     try:
         directory_id = SimcoreS3DirectoryID.from_simcore_s3_object(file_id)
@@ -94,16 +104,7 @@ async def get_directory_file_id(
     in the `file_meta_data` table
     """
 
-    async def _get_fmd(
-        conn: SAConnection, s3_file_id: StorageFileID
-    ) -> FileMetaDataAtDB | None:
-        with suppress(FileMetaDataNotFoundError):
-            return await db_file_meta_data.get(
-                conn, TypeAdapter(SimcoreS3FileID).validate_python(s3_file_id)
-            )
-        return None
-
-    provided_file_id_fmd = await _get_fmd(conn, file_id)
+    provided_file_id_fmd = await get_fmd(conn, file_id)
     if provided_file_id_fmd:
         # file_meta_data exists it is not a directory
         return None
@@ -116,23 +117,6 @@ async def get_directory_file_id(
     directory_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
         directory_file_id_str
     )
-    directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
+    directory_file_id_fmd = await get_fmd(conn, directory_file_id)
 
     return directory_file_id if directory_file_id_fmd else None
-
-
-async def find_enclosing_file(
-    conn: SAConnection, user_id: UserID, file_id: SimcoreS3FileID
-) -> FileMetaDataAtDB | None:
-    known_files = {
-        Path(known_file.file_id): known_file
-        for known_file in await db_file_meta_data.list_fmds(conn, user_id=user_id)
-    }
-    current_path = Path(file_id)
-    while current_path and current_path != Path(current_path).parent:
-        if current_path in known_files:
-            return known_files.get(current_path)
-
-        current_path = Path(current_path).parent
-
-    return None
