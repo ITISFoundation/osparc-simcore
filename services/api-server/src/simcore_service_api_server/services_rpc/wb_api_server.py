@@ -17,14 +17,14 @@ _exception_mapper = partial(service_exception_mapper, service_name="WebApiServer
 
 @dataclass
 class WbApiRpcClient:
-    _rabbitmq_rpc_client: RabbitMQRPCClient
+    _client: RabbitMQRPCClient
 
     @_exception_mapper(rpc_exception_map={})
     async def get_licensed_items(
         self, product_name: str, page_params: PaginationParams
     ) -> Page[LicensedItemGet]:
         licensed_items_page = await _get_licensed_items(
-            rabbitmq_rpc_client=self._rabbitmq_rpc_client,
+            rabbitmq_rpc_client=self._client,
             product_name=product_name,
             offset=page_params.offset,
             limit=page_params.limit,
@@ -40,6 +40,4 @@ class WbApiRpcClient:
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
-    app.state.wb_api_rpc_client = WbApiRpcClient(
-        _rabbitmq_rpc_client=rabbitmq_rmp_client
-    )
+    app.state.wb_api_rpc_client = WbApiRpcClient(_client=rabbitmq_rmp_client)
