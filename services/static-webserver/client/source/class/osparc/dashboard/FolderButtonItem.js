@@ -33,7 +33,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       appearance: "pb-study"
     });
 
-    this.addListener("tap", e => this.__itemSelected(e.getData()), this);
+    this.addListener("tap", this.__itemSelected, this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
@@ -240,10 +240,10 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       menuButton.setMenu(menu);
     },
 
-    __itemSelected: function(newVal) {
+    __itemSelected: function() {
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       // do not allow selecting workspace
-      if (studyBrowserContext !== "trash" && newVal) {
+      if (studyBrowserContext !== "trash") {
         this.fireDataEvent("folderSelected", this.getFolderId());
       }
     },
