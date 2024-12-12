@@ -563,7 +563,7 @@ qx.Class.define("osparc.file.FilePicker", {
         const selectionData = e.getData();
         this.__selectionChanged(selectionData);
       }, this);
-      folderViewer.addListener("itemSelected", e => {
+      folderViewer.addListener("openItemSelected", e => {
         const selectionData = e.getData();
         this.__selectionChanged(selectionData);
         if (osparc.file.FilesTree.isFile(selectionData)) {

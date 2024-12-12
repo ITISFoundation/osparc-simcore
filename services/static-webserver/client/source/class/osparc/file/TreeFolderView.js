@@ -92,7 +92,7 @@ qx.Class.define("osparc.file.TreeFolderView", {
         }
       }, this);
 
-      folderViewer.addListener("itemSelected", e => {
+      folderViewer.addListener("openItemSelected", e => {
         const data = e.getData();
         folderTree.openNodeAndParents(data);
         folderTree.setSelection(new qx.data.Array([data]));
