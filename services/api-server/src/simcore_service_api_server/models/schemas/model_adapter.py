@@ -7,6 +7,9 @@ from typing import Annotated
 from models_library.api_schemas_api_server.pricing_plans import (
     ServicePricingPlanGet as _ServicePricingPlanGet,
 )
+from models_library.api_schemas_webserver.licensed_items import (
+    LicensedItemGet as _LicensedItemGet,
+)
 from models_library.api_schemas_webserver.product import (
     GetCreditPrice as _GetCreditPrice,
 )
@@ -18,6 +21,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.basic_types import IDStr, NonNegativeDecimal
 from models_library.groups import GroupID
+from models_library.licensed_items import LicensedItemID, LicensedResourceType
 from models_library.resource_tracker import (
     PricingPlanClassification,
     PricingPlanId,
@@ -120,4 +124,21 @@ class ServicePricingPlanGetLegacy(BaseModel):
 
 assert set(ServicePricingPlanGetLegacy.model_fields.keys()) == set(
     _ServicePricingPlanGet.model_fields.keys()
+)
+
+
+class LicensedItemGet(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    licensed_item_id: LicensedItemID
+    name: str
+    licensed_resource_type: LicensedResourceType
+    pricing_plan_id: PricingPlanId
+    created_at: datetime
+    modified_at: datetime
+
+
+assert set(LicensedItemGet.model_fields.keys()) == set(
+    _LicensedItemGet.model_fields.keys()
 )
