@@ -6,10 +6,8 @@ from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from simcore_service_api_server.api.routes._constants import (
-    FMSG_CHANGELOG_NEW_IN_VERSION,
-)
 
+from ...api.routes._constants import FMSG_CHANGELOG_NEW_IN_VERSION
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.studies import Study, StudyID, StudyPort

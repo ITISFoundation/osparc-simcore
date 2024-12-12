@@ -7,11 +7,9 @@ from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     get_licensed_items as _get_licensed_items,
 )
-from simcore_service_api_server.exceptions.service_errors_utils import (
-    service_exception_mapper,
-)
-from simcore_service_api_server.models.pagination import PaginationParams
 
+from ..exceptions.service_errors_utils import service_exception_mapper
+from ..models.pagination import PaginationParams
 from ..models.schemas.model_adapter import LicensedItemGet
 
 _exception_mapper = partial(service_exception_mapper, service_name="WebApiServer")

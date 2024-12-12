@@ -1,12 +1,10 @@
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
-from simcore_service_api_server.exceptions.service_errors_utils import (
-    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
-)
 
 from ...api.dependencies.authentication import get_product_name
 from ...api.dependencies.webserver_rpc import get_wb_api_rpc_client
+from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.model_adapter import LicensedItemGet
 from ...services_rpc.wb_api_server import WbApiRpcClient

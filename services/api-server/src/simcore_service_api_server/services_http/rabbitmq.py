@@ -4,8 +4,8 @@ from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
-from simcore_service_api_server.core.health_checker import ApiServerHealthChecker
 
+from ..core.health_checker import ApiServerHealthChecker
 from ..services_http.log_streaming import LogDistributor
 
 _logger = logging.getLogger(__name__)

@@ -7,10 +7,10 @@ from packaging.version import Version
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
-from simcore_service_api_server.api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 
 from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
+from ..api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..services_http import catalog, director_v2, storage, webserver

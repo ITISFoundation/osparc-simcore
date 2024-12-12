@@ -10,8 +10,8 @@ import httpx
 from fastapi import HTTPException, status
 from pydantic import ValidationError
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
-from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 
+from ..exceptions.backend_errors import BaseBackEndError
 from ..models.schemas.errors import ErrorGet
 
 _logger = logging.getLogger(__name__)

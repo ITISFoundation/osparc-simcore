@@ -13,11 +13,11 @@ from models_library.services import ServiceMetaDataPublished, ServiceType
 from pydantic import ConfigDict, TypeAdapter, ValidationError
 from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
-from simcore_service_api_server.exceptions.backend_errors import (
+
+from ..exceptions.backend_errors import (
     ListSolversOrStudiesError,
     SolverOrStudyNotFoundError,
 )
-
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.basic_types import VersionStr
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort

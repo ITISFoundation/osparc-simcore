@@ -46,9 +46,18 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
 from settings_library.tracing import TracingSettings
-from simcore_service_api_server.exceptions.backend_errors import (
+from tenacity import TryAgain
+from tenacity.asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
+
+from ..core.settings import WebServerSettings
+from ..exceptions.backend_errors import (
+    ClusterNotFoundError,
     ConfigurationError,
     ForbiddenWalletError,
+    JobNotFoundError,
     ListJobsError,
     PaymentRequiredError,
     PricingPlanNotFoundError,
@@ -61,15 +70,6 @@ from simcore_service_api_server.exceptions.backend_errors import (
     SolverOutputNotFoundError,
     WalletNotFoundError,
 )
-from simcore_service_api_server.models.schemas.model_adapter import GetCreditPriceLegacy
-from tenacity import TryAgain
-from tenacity.asyncio import AsyncRetrying
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
-
-from ..core.settings import WebServerSettings
-from ..exceptions.backend_errors import ClusterNotFoundError, JobNotFoundError
 from ..exceptions.service_errors_utils import (
     service_exception_handler,
     service_exception_mapper,
@@ -78,6 +78,7 @@ from ..models.basic_types import VersionStr
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
 from ..models.schemas.model_adapter import (
+    GetCreditPriceLegacy,
     PricingUnitGetLegacy,
     WalletGetWithAvailableCreditsLegacy,
 )
