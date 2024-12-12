@@ -41,6 +41,11 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
       if (osparc.product.Utils.showS4LStore()) {
         const storeWindow = new osparc.vipMarket.MarketWindow(nodeId, category);
         storeWindow.getVipMarket().addListener("importMessageSent", () => storeWindow.close());
+        storeWindow.addListenerOnce("close", () => {
+          if (storeWindow.getVipMarket()) {
+            storeWindow.getVipMarket().sendCloseMessage();
+          }
+        });
         storeWindow.center();
         storeWindow.open();
         return storeWindow;

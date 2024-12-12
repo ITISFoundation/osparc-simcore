@@ -92,5 +92,17 @@ qx.Class.define("osparc.vipMarket.Market", {
       }
       return false;
     },
+
+    sendCloseMessage: function() {
+      const store = osparc.store.Store.getInstance();
+      const currentStudy = store.getCurrentStudy();
+      const nodeId = this.getOpenBy();
+      if (currentStudy && nodeId) {
+        const msg = {
+          "type": "closeMarket",
+        };
+        currentStudy.sendMessageToIframe(nodeId, msg);
+      }
+    },
   }
 });

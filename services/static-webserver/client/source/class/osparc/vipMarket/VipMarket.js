@@ -361,22 +361,17 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     },
 
     __sendImportModelMessage: function(modelId) {
+      const store = osparc.store.Store.getInstance();
+      const currentStudy = store.getCurrentStudy();
       const nodeId = this.getOpenBy();
-      if (nodeId) {
-        const store = osparc.store.Store.getInstance();
-        const currentStudy = store.getCurrentStudy();
-        if (!currentStudy) {
-          return;
-        }
-        const node = currentStudy.getWorkbench().getNode(nodeId);
-        if (node && node.getIFrame()) {
-          const msg = {
-            "type": "importModel",
-            "message": {
-              "modelId": modelId,
-            },
-          };
-          node.getIFrame().sendMessageToIframe(msg);
+      if (currentStudy && nodeId) {
+        const msg = {
+          "type": "importModel",
+          "message": {
+            "modelId": modelId,
+          },
+        };
+        if (currentStudy.sendMessageToIframe(nodeId, msg)) {
           this.fireEvent("importMessageSent");
         }
       }
