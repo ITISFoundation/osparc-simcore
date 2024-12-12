@@ -2,7 +2,8 @@ import contextlib
 
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.users import GroupID, UserBillingDetails, UserID, UserPermission
+from models_library.groups import GroupID
+from models_library.users import UserBillingDetails, UserID, UserPermission
 from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserStatus, users
