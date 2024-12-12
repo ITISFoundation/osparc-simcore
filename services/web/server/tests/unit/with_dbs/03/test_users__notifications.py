@@ -34,9 +34,7 @@ from simcore_service_webserver.users._notifications import (
     UserNotificationCreate,
     get_notification_key,
 )
-from simcore_service_webserver.users._notifications_handlers import (
-    _get_user_notifications,
-)
+from simcore_service_webserver.users._notifications_rest import _get_user_notifications
 
 
 @pytest.fixture

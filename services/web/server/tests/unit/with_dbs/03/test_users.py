@@ -35,7 +35,7 @@ from simcore_service_webserver.users._common.schemas import (
     MAX_BYTES_SIZE_EXTRAS,
     PreRegisteredUserGet,
 )
-from simcore_service_webserver.users._preferences_api import (
+from simcore_service_webserver.users._preferences_service import (
     get_frontend_user_preferences_aggregation,
 )
 

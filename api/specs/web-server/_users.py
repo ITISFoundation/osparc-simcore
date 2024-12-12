@@ -26,9 +26,7 @@ from simcore_service_webserver.users._notifications import (
     UserNotificationCreate,
     UserNotificationPatch,
 )
-from simcore_service_webserver.users._notifications_handlers import (
-    _NotificationPathParams,
-)
+from simcore_service_webserver.users._notifications_rest import _NotificationPathParams
 from simcore_service_webserver.users._tokens_rest import _TokenPathParams
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["user"])
