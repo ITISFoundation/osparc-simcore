@@ -43,9 +43,7 @@ class GroupExtraProperties(FromRowMixin):
     enable_efs: bool
 
 
-async def _list_table_entries_ordered_by_group_type_stmt(
-    user_id: int, product_name: str
-):
+def _list_table_entries_ordered_by_group_type_stmt(user_id: int, product_name: str):
     return (
         sa.select(
             groups_extra_properties,
