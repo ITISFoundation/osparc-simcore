@@ -222,7 +222,7 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
-    market: {
+    licensedItems: {
       check: "Array",
       init: []
     },
@@ -618,7 +618,7 @@ qx.Class.define("osparc.store.Store", {
     __getOrgClassifiers: function(orgId, useCache = false) {
       const params = {
         url: {
-          "gid": orgId
+          "gid": parseInt(orgId)
         }
       };
       return osparc.data.Resources.get("classifiers", params, useCache);
@@ -640,7 +640,7 @@ qx.Class.define("osparc.store.Store", {
         }
         const classifierPromises = [];
         orgs.forEach(org => {
-          classifierPromises.push(this.__getOrgClassifiers(org["gid"], !reload));
+          classifierPromises.push(this.__getOrgClassifiers(org.getGroupId(), !reload));
         });
         Promise.all(classifierPromises)
           .then(orgsClassifiersMD => {

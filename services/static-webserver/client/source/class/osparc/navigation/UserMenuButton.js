@@ -51,6 +51,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     const preferencesSettings = osparc.Preferences.getInstance();
     preferencesSettings.addListener("changeCreditsWarningThreshold", () => this.__updateHaloColor());
 
+    const myUsername = authData.getUsername() || "Username";
     const myEmail = authData.getEmail() || "bizzy@itis.ethz.ch";
     const icon = this.getChildControl("icon");
     authData.bind("role", this, "icon", {
@@ -64,7 +65,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         icon.getContentElement().setStyles({
           "margin-left": "-4px"
         });
-        return osparc.utils.Avatar.getUrl(myEmail, 32);
+        return osparc.utils.Avatar.emailToThumbnail(myEmail, myUsername, 32);
       }
     });
   },

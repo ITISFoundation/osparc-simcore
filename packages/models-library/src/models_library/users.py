@@ -5,7 +5,6 @@ from pydantic import BaseModel, ConfigDict, Field, PositiveInt, StringConstraint
 
 UserID: TypeAlias = PositiveInt
 UserNameID: TypeAlias = IDStr
-GroupID: TypeAlias = PositiveInt
 
 
 FirstNameStr: TypeAlias = Annotated[

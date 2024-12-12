@@ -575,9 +575,10 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         available=with_drain_nodes_labelled,
     )
     # update our fake node
+    fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
     fake_attached_node.spec.labels[
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = mock_docker_tag_node.call_args_list[0][1]["tags"][
+    ] = mock_docker_tag_node.call_args_list[2][1]["tags"][
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
     ]
     # check the activate time is later than attach time
@@ -590,13 +591,15 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
         ]
     )
+    fake_attached_node.spec.availability = Availability.active
     mock_compute_node_used_resources.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_attached_node,
     )
     mock_compute_node_used_resources.reset_mock()
     # check activate call
-    assert mock_docker_tag_node.call_args_list[1] == mock.call(
+
+    assert mock_docker_tag_node.call_args_list[2] == mock.call(
         get_docker_client(initialized_app),
         fake_attached_node,
         tags=fake_node.spec.labels
@@ -1766,7 +1769,17 @@ async def test__activate_drained_nodes_with_drained_node(
     updated_cluster = await _activate_drained_nodes(
         initialized_app, cluster_with_drained_nodes, DynamicAutoscaling()
     )
-    assert updated_cluster.active_nodes == cluster_with_drained_nodes.drained_nodes
+    # they are the same nodes, but the availability might have changed here
+    assert updated_cluster.active_nodes != cluster_with_drained_nodes.drained_nodes
+    assert (
+        updated_cluster.active_nodes[0].assigned_tasks
+        == cluster_with_drained_nodes.drained_nodes[0].assigned_tasks
+    )
+    assert (
+        updated_cluster.active_nodes[0].ec2_instance
+        == cluster_with_drained_nodes.drained_nodes[0].ec2_instance
+    )
+
     assert drained_host_node.spec
     mock_docker_tag_node.assert_called_once_with(
         mock.ANY,
