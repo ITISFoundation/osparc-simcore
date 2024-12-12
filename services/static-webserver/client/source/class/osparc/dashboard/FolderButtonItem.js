@@ -188,9 +188,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       const menuButton = this.getChildControl("menu-button");
       menuButton.setVisibility("visible");
 
-      const menu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
-      });
+      const menu = new qx.ui.menu.Menu();
+      menu.setPosition("bottom-right");
+      osparc.utils.Utils.prettifyMenu(menu);
 
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       if (
