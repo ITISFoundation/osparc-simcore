@@ -259,6 +259,7 @@ async def test_access_study_anonymously(
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
+    mock_dynamic_scheduler: None,
     director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations
@@ -309,6 +310,7 @@ async def test_access_study_by_logged_user(
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
+    mock_dynamic_scheduler: None,
     director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api: None,
     auto_delete_projects: None,
@@ -416,6 +418,7 @@ async def test_guest_user_is_not_garbage_collected(
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
+    mock_dynamic_scheduler: None,
     director_v2_service_mock: AioResponsesMock,
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations

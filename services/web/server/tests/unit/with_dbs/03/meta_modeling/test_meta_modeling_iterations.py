@@ -77,6 +77,7 @@ async def test_iterators_workflow(
     context_with_logged_user: None,
     mocker: MockerFixture,
     faker: Faker,
+    mock_dynamic_scheduler: None,
     director_v2_service_mock: None,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):

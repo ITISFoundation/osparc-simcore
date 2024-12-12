@@ -258,6 +258,7 @@ async def _delete_project(client: TestClient, project: dict) -> ClientResponse:
     ids=str,
 )
 async def test_share_project(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict,
     primary_group: dict[str, str],
@@ -984,6 +985,7 @@ async def test_get_active_project(
     ],
 )
 async def test_project_node_lifetime(  # noqa: PLR0915
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project,

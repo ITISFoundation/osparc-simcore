@@ -402,8 +402,8 @@ async def test_dispatch_study_anonymously(
         "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         return_value=None,
     )
-    mock_client_director_v2_project_networks = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._redirects_handlers.update_dynamic_service_networks_in_project",
+    mock_dynamic_scheduler_update_project_networks = mocker.patch(
+        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_api.update_projects_networks",
         return_value=None,
     )
 
@@ -443,7 +443,7 @@ async def test_dispatch_study_anonymously(
         assert guest_project["prjOwner"] == data["login"]
 
         assert mock_client_director_v2_func.called
-        assert mock_client_director_v2_project_networks.called
+        assert mock_dynamic_scheduler_update_project_networks.called
 
 
 @pytest.mark.parametrize(
@@ -468,8 +468,8 @@ async def test_dispatch_logged_in_user(
         "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         return_value=None,
     )
-    mock_client_director_v2_project_networks = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._redirects_handlers.update_dynamic_service_networks_in_project",
+    mock_dynamic_scheduler_update_project_networks = mocker.patch(
+        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_api.update_projects_networks",
         return_value=None,
     )
 
@@ -501,7 +501,7 @@ async def test_dispatch_logged_in_user(
     assert created_project["prjOwner"] == data["login"]
 
     assert mock_client_director_v2_pipline_update.called
-    assert mock_client_director_v2_project_networks.called
+    assert mock_dynamic_scheduler_update_project_networks.called
 
     # delete before exiting
     url = client.app.router["delete_project"].url_for(project_id=expected_project_id)

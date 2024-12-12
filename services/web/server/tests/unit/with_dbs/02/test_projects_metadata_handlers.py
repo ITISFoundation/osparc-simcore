@@ -114,6 +114,7 @@ async def test_custom_metadata_handlers(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_with_parent_project_node(
+    mock_dynamic_scheduler: None,
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
@@ -191,6 +192,7 @@ async def test_new_project_with_parent_project_node(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_with_invalid_parent_project_node(
+    mock_dynamic_scheduler: None,
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
@@ -274,6 +276,7 @@ async def test_new_project_with_invalid_parent_project_node(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_set_project_parent_backward_compatibility(
+    mock_dynamic_scheduler: None,
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
@@ -393,6 +396,7 @@ async def test_update_project_metadata_backward_compatibility_with_same_project_
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_update_project_metadata_s4lacad_backward_compatibility_passing_nil_parent_node_id(
+    mock_dynamic_scheduler: None,
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,

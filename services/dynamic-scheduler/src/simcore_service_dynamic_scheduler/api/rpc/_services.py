@@ -56,3 +56,8 @@ async def stop_dynamic_service(
     return await scheduler_interface.stop_dynamic_service(
         app, dynamic_service_stop=dynamic_service_stop
     )
+
+
+@router.expose()
+async def update_projects_networks(app: FastAPI, *, project_id: ProjectID) -> None:
+    await scheduler_interface.update_projects_networks(app, project_id=project_id)

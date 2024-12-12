@@ -65,6 +65,7 @@ def mock_catalog_rpc_check_for_service(mocker: MockerFixture):
     ],
 )
 async def test_patch_project_node_entrypoint_access(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -86,6 +87,7 @@ async def test_patch_project_node_entrypoint_access(
     "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
 )
 async def test_patch_project_node(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

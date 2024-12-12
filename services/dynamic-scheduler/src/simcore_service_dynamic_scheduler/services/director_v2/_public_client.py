@@ -108,6 +108,9 @@ class DirectorV2Client(
         )
         return TypeAdapter(list[DynamicServiceGet]).validate_python(response.json())
 
+    async def update_projects_networks(self, *, project_id: ProjectID) -> None:
+        await self.thin_client.patch_projects_networks(project_id=project_id)
+
 
 def setup_director_v2(app: FastAPI) -> None:
     public_client = DirectorV2Client(app)

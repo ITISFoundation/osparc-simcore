@@ -318,6 +318,7 @@ async def test_create_node_returns_422_if_body_is_missing(
 )
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_create_node(
+    mock_dynamic_scheduler: None,
     node_class: str,
     expect_run_service_call: bool,
     client: TestClient,
@@ -376,6 +377,7 @@ def standard_user_role() -> tuple[str, tuple]:
 
 @pytest.mark.parametrize(*standard_user_role())
 async def test_create_and_delete_many_nodes_in_parallel(
+    mock_dynamic_scheduler: None,
     disable_max_number_of_running_dynamic_nodes: dict[str, str],
     client: TestClient,
     user_project: ProjectDict,
@@ -395,8 +397,8 @@ async def test_create_and_delete_many_nodes_in_parallel(
         running_services_uuids: list[str] = field(default_factory=list)
 
         def num_services(
-            self, *args, **kwargs
-        ) -> list[DynamicServiceGet]:  # noqa: ARG002
+            self, *args, **kwargs  # noqa: ARG002
+        ) -> list[DynamicServiceGet]:
             return [
                 DynamicServiceGet.model_validate(
                     DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
@@ -470,6 +472,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
 
 @pytest.mark.parametrize(*standard_user_role())
 async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_many_running(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     expected: ExpectedResponse,
@@ -503,6 +506,7 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
 
 @pytest.mark.parametrize(*standard_user_role())
 async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_maximum(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     expected: ExpectedResponse,
@@ -524,8 +528,8 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
         running_services_uuids: list[str] = field(default_factory=list)
 
         async def num_services(
-            self, *args, **kwargs
-        ) -> list[dict[str, Any]]:  # noqa: ARG002
+            self, *args, **kwargs  # noqa: ARG002
+        ) -> list[dict[str, Any]]:
             return [
                 {"service_uuid": service_uuid}
                 for service_uuid in self.running_services_uuids
@@ -588,6 +592,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
 
 @pytest.mark.parametrize(*standard_user_role())
 async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
+    mock_dynamic_scheduler: None,
     disable_max_number_of_running_dynamic_nodes: dict[str, str],
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
@@ -625,6 +630,7 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
 )
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_creating_deprecated_node_returns_406_not_acceptable(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     user_project: ProjectDict,
     expected: ExpectedResponse,
@@ -664,6 +670,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
 )
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_delete_node(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict,
     user_project: ProjectDict,

@@ -148,3 +148,11 @@ async def stop_dynamic_services_in_project(
         ]
 
         await logged_gather(*services_to_stop)
+
+
+async def update_projects_networks(
+    app: web.Application, *, project_id: ProjectID
+) -> None:
+    await services.update_projects_networks(
+        get_rabbitmq_rpc_client(app), project_id=project_id
+    )

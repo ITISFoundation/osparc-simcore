@@ -490,3 +490,24 @@ async def test_stop_dynamic_service_serializes_generic_errors(
             ),
             timeout_s=5,
         )
+
+
+@pytest.fixture
+def mock_director_v2_update_projects_networks(project_id: ProjectID) -> Iterator[None]:
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.patch(f"/dynamic_services/projects/{project_id}/-/networks").respond(
+            status.HTTP_204_NO_CONTENT
+        )
+        yield None
+
+
+async def test_update_projects_networks(
+    mock_director_v2_update_projects_networks: None,
+    rpc_client: RabbitMQRPCClient,
+    project_id: ProjectID,
+):
+    await services.update_projects_networks(rpc_client, project_id=project_id)
