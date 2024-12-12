@@ -30,14 +30,10 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
       height
     });
 
-    const vipMarket = this.__vipMarket = new osparc.vipMarket.Market().set({
+    const vipMarket = this.__vipMarket = new osparc.vipMarket.Market(category).set({
       openBy: nodeId ? nodeId : null,
     });
     this._setTabbedView(vipMarket);
-
-    if (category) {
-      vipMarket.openCategory(category);
-    }
   },
 
   statics: {

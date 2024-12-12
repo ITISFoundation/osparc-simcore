@@ -18,7 +18,7 @@
 qx.Class.define("osparc.vipMarket.Market", {
   extend: osparc.ui.window.TabbedView,
 
-  construct: function() {
+  construct: function(category) {
     this.base(arguments);
 
     const miniWallet = osparc.desktop.credits.BillingCenter.createMiniWalletView().set({
@@ -51,6 +51,10 @@ qx.Class.define("osparc.vipMarket.Market", {
         }].forEach(marketInfo => {
           this.__buildViPMarketPage(marketInfo);
         });
+
+        if (category) {
+          this.openCategory(category);
+        }
       });
   },
 
