@@ -58,6 +58,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 _handle_users_exceptions = exception_handling_decorator(
+    # Transforms raised service exceptions into controller-errors (i.e. http 4XX,5XX responses)
     to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
 
