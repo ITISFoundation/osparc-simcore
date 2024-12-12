@@ -18,6 +18,7 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import setup_rpc_api_routes
+from ..services.containers_manager import setup_containers_manager
 from ..services.instrumentation import setup_instrumentation
 from ..services.rabbitmq import setup_rabbitmq
 from ..services.volumes_manager import setup_volume_manager
@@ -28,8 +29,8 @@ logger = logging.getLogger(__name__)
 
 def _setup_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
-    logging.basicConfig(level=settings.LOGLEVEL.value)  # NOSONAR
-    logging.root.setLevel(settings.LOGLEVEL.value)
+    logging.basicConfig(level=settings.LOG_LEVEL.value)  # NOSONAR
+    logging.root.setLevel(settings.LOG_LEVEL.value)
     config_all_loggers(
         log_format_local_dev_enabled=settings.AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.AGENT_VOLUMES_LOG_FILTER_MAPPING,
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
 
     setup_rabbitmq(app)
     setup_volume_manager(app)
+    setup_containers_manager(app)
     setup_rest_api(app)
     setup_rpc_api_routes(app)
 

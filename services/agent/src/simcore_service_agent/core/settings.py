@@ -11,7 +11,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
-    LOGLEVEL: LogLevel = Field(
+    LOG_LEVEL: LogLevel = Field(
         LogLevel.WARNING,
         validation_alias=AliasChoices(
             "AGENT_LOGLEVEL",
@@ -91,7 +91,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True},
     )
 
-    @field_validator("LOGLEVEL")
+    @field_validator("LOG_LEVEL")
     @classmethod
     def valid_log_level(cls, value) -> LogLevel:
         return LogLevel(cls.validate_log_level(value))

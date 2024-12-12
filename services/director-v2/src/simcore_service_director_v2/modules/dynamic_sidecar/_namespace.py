@@ -1,6 +1,7 @@
+from models_library.api_schemas_directorv2.services import (
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+)
 from models_library.projects_nodes_io import NodeID
-
-from ...constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 
 
 def get_compose_namespace(node_uuid: NodeID) -> str:
