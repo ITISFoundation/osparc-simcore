@@ -195,7 +195,7 @@ class UserGet(OutputSchema):
         Field(
             description="List of products this users is included or None if fields is unset",
         ),
-    ]
+    ] = None
 
     @field_validator("status")
     @classmethod
