@@ -531,14 +531,15 @@ class SimcoreS3DataManager(BaseDataManager):
         async with self.engine.acquire() as conn:
             file_fmd = await get_fmd(conn, file_id)
             if file_fmd and not file_fmd.is_directory:
-                enclosing_dir_file_id = await get_directory_file_id(conn, file_id)
-                if enclosing_dir_file_id:
-                    enclosing_dir_fmd = await db_file_meta_data.get(
-                        conn, enclosing_dir_file_id
-                    )
-                    enclosing_dir_fmd.file_size = -1
-                    await db_file_meta_data.upsert(conn, enclosing_dir_fmd)
-            await db_file_meta_data.delete(conn, [file_id])
+                await db_file_meta_data.delete(conn, [file_id])
+
+            enclosing_dir_file_id = await get_directory_file_id(conn, file_id)
+            if enclosing_dir_file_id:
+                enclosing_dir_fmd = await db_file_meta_data.get(
+                    conn, enclosing_dir_file_id
+                )
+                enclosing_dir_fmd.file_size = -1
+                await db_file_meta_data.upsert(conn, enclosing_dir_fmd)
 
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
