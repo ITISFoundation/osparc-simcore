@@ -128,6 +128,10 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       }
     },
 
+    setMultiItemSelected: function(multiSelectionData) {
+      console.log("multiSelectionData", multiSelectionData);
+    },
+
     resetItemSelected: function() {
       this.__selection = null;
       this.getChildControl("download-button").setEnabled(false);

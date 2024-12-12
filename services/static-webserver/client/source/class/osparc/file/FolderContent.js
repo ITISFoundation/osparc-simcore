@@ -255,7 +255,19 @@ qx.Class.define("osparc.file.FolderContent", {
 
     __attachListenersToGridItem: function(btn, entry) {
       btn.addListener("tap", () => {
-        this.__itemTapped(entry, btn.getValue());
+        if (this.isMultiSelect()) {
+          // pass all buttons that are selected
+          const selectedFiles = [];
+          const iconsLayout = this.getChildControl("icons-layout");
+          iconsLayout.getChildren().forEach(gridItem => {
+            if (osparc.file.FilesTree.isFile(gridItem) && gridItem.getValue()) {
+              selectedFiles.push(gridItem);
+            }
+          });
+          this.__itemTapped(selectedFiles, btn.getValue());
+        } else {
+          this.__itemTapped(entry, btn.getValue());
+        }
         // folders can't be selected
         if (osparc.file.FilesTree.isDir(entry)) {
           btn.setValue(false);

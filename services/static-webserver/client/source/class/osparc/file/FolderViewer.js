@@ -69,7 +69,11 @@ qx.Class.define("osparc.file.FolderViewer", {
     folderContent.addListener("requestDatasetFiles", e => this.fireDataEvent("requestDatasetFiles", e.getData()));
     folderContent.addListener("selectionChanged", e => {
       const selectionData = e.getData();
-      selectionData ? selectedFileLayout.setItemSelected(selectionData) : selectedFileLayout.resetItemSelected();
+      selectedFileLayout.setItemSelected(selectionData);
+    }, this);
+    folderContent.addListener("multiSelectionChanged", e => {
+      const multiSelectionData = e.getData();
+      selectedFileLayout.setMultiItemSelected(multiSelectionData);
     }, this);
     folderContent.addListener("openItemSelected", e => {
       const entry = e.getData();
