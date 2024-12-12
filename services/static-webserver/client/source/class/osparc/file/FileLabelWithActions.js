@@ -55,8 +55,19 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     "fileDeleted": "qx.event.type.Data"
   },
 
+  properties: {
+    multiSelect: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeMultiSelect",
+      apply: "__enableMultiSelection",
+    },
+  },
+
   members: {
     __selection: null,
+    __multiSelection: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -88,6 +99,11 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       return control || this.base(arguments, id);
     },
 
+    __enableMultiSelection: function() {
+      this.resetItemSelected();
+      this.__multiSelection = [];
+    },
+
     setItemSelected: function(selectedItem) {
       if (selectedItem) {
         const isFile = osparc.file.FilesTree.isFile(selectedItem);
@@ -113,6 +129,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     resetItemSelected: function() {
+      this.__selection = null;
       this.getChildControl("download-button").setEnabled(false);
       this.getChildControl("delete-button").setEnabled(false);
       this.getChildControl("selected-label").resetValue();
