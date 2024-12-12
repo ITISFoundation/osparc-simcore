@@ -12,6 +12,8 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.products._api import get_current_product
+from simcore_service_webserver.products._model import Product
 
 from .._meta import API_VTAG
 from ..exception_handling import (
@@ -20,6 +22,7 @@ from ..exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
+from ..groups import api as groups_api
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -74,10 +77,33 @@ routes = web.RouteTableDef()
 @login_required
 @_handle_users_exceptions
 async def get_my_profile(request: web.Request) -> web.Response:
+    product: Product = get_current_product(request)
     req_ctx = UsersRequestContext.model_validate(request)
 
-    profile: MyProfileGet = await _users_service.get_user_profile(
+    groups_by_type = await groups_api.list_user_groups_with_read_access(
+        request.app, user_id=req_ctx.user_id
+    )
+
+    assert groups_by_type.primary
+    assert groups_by_type.everyone
+
+    my_product_group = None
+
+    # if product.group_id:
+    #     with suppress(GroupNotFoundError):
+    #         # Product is optional
+    #         my_product_group = await groups_api.get_product_group_for_user(
+    #             app=request.app,
+    #             user_id=req_ctx.user_id,
+    #             product_gid=product.group_id,
+    #         )
+
+    my_profile, preferences = await _users_service.get_user_profile(
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
+    )
+
+    profile = MyProfileGet.from_model(
+        my_profile, groups_by_type, my_product_group, preferences
     )
 
     return envelope_json_response(profile)

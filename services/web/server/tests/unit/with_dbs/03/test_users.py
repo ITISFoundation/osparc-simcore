@@ -378,9 +378,7 @@ def account_request_form(faker: Faker) -> dict[str, Any]:
     }
 
     # keeps in sync fields from example and this fixture
-    assert set(form) == set(
-        AccountRequestInfo.model_config["json_schema_extra"]["example"]["form"]
-    )
+    assert set(form) == set(AccountRequestInfo.model_json_schema()["example"]["form"])
     return form
 
 

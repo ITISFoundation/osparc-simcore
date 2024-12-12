@@ -9,6 +9,7 @@ from ._groups_api import (
     is_user_by_email_in_group,
     list_all_user_groups_ids,
     list_user_groups_ids_with_read_access,
+    list_user_groups_with_read_access,
 )
 
 __all__: tuple[str, ...] = (
@@ -18,6 +19,7 @@ __all__: tuple[str, ...] = (
     "get_group_from_gid",
     "is_user_by_email_in_group",
     "list_all_user_groups_ids",
+    "list_user_groups_with_read_access",
     "list_user_groups_ids_with_read_access",
     # nopycln: file
 )

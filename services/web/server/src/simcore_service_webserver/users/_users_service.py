@@ -3,11 +3,7 @@ from typing import Any
 
 import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver.users import (
-    MyProfileGet,
-    MyProfilePatch,
-    UserGet,
-)
+from models_library.api_schemas_webserver.users import MyProfilePatch, UserGet
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import GroupID
@@ -306,12 +302,12 @@ async def update_expired_users(app: web.Application) -> list[UserID]:
 
 async def get_user_profile(
     app: web.Application, *, user_id: UserID, product_name: ProductName
-) -> MyProfileGet:
+):
     """
     :raises UserNotFoundError:
     :raises MissingGroupExtraPropertiesForProductError: when product is not properly configured
     """
-    user_profile = await _users_repository.get_user_profile(app, user_id=user_id)
+    my_profile = await _users_repository.get_my_profile(app, user_id=user_id)
 
     try:
         preferences = (
@@ -324,10 +320,7 @@ async def get_user_profile(
             user_id=user_id, product_name=product_name
         ) from err
 
-    return MyProfileGet(
-        **user_profile,
-        preferences=preferences,
-    )
+    return my_profile, preferences
 
 
 async def update_user_profile(

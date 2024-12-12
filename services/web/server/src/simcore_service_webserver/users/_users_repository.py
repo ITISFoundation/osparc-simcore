@@ -4,10 +4,15 @@ from typing import Any
 import simcore_postgres_database.errors as db_errors
 import sqlalchemy as sa
 from aiohttp import web
-from common_library.groups_enums import GroupType
 from common_library.users_enums import UserRole
 from models_library.groups import GroupID
-from models_library.users import UserBillingDetails, UserID, UserNameID, UserPermission
+from models_library.users import (
+    MyProfile,
+    UserBillingDetails,
+    UserID,
+    UserNameID,
+    UserPermission,
+)
 from pydantic import TypeAdapter, ValidationError
 from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
@@ -349,114 +354,36 @@ async def delete_user_by_id(
 #
 
 
-_GROUPS_SCHEMA_TO_DB = {
-    "gid": "gid",
-    "label": "name",
-    "description": "description",
-    "thumbnail": "thumbnail",
-    "accessRights": "access_rights",
-}
-
-
-def _convert_groups_db_to_schema(
-    db_row: Row, *, prefix: str | None = "", **kwargs
-) -> dict:
-    # NOTE: Deprecated. has to be replaced with
-    converted_dict = {
-        k: db_row[f"{prefix}{v}"]
-        for k, v in _GROUPS_SCHEMA_TO_DB.items()
-        if f"{prefix}{v}" in db_row
-    }
-    converted_dict.update(**kwargs)
-    converted_dict["inclusionRules"] = {}
-    return converted_dict
-
-
-async def get_user_profile(app: web.Application, *, user_id: UserID) -> dict[str, Any]:
-
-    user_profile: dict[str, Any] = {}
-    user_primary_group = everyone_group = {}
-    user_standard_groups = []
+async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
     user_id = _parse_as_user(user_id)
 
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
         result = await conn.stream(
-            sa.select(users, groups, user_to_groups.c.access_rights)
-            .select_from(
-                users.join(user_to_groups, users.c.id == user_to_groups.c.uid).join(
-                    groups, user_to_groups.c.gid == groups.c.gid
-                )
-            )
-            .where(users.c.id == user_id)
-            .order_by(sa.asc(groups.c.name))
-            .set_label_style(sa.LABEL_STYLE_TABLENAME_PLUS_COL)
+            sa.select(
+                # users -> MyProfile map
+                users.c.id,
+                users.c.name.label("user_name"),
+                users.c.first_name,
+                users.c.last_name,
+                users.c.email,
+                users.c.role,
+                sa.func.json_build_object(
+                    "hide_fullname",
+                    users.c.privacy_hide_fullname,
+                    "hide_email",
+                    users.c.privacy_hide_email,
+                ).label("privacy"),
+                sa.func.date(users.c.expires_at).label("expiration_date"),
+            ).where(users.c.id == user_id)
         )
+        row = await result.first()
+        if not row:
+            raise UserNotFoundError(uid=user_id)
 
-        async for row in result:
-            if not user_profile:
-                user_profile = {
-                    "id": row.users_id,
-                    "user_name": row.users_name,
-                    "first_name": row.users_first_name,
-                    "last_name": row.users_last_name,
-                    "login": row.users_email,
-                    "role": row.users_role,
-                    "privacy_hide_fullname": row.users_privacy_hide_fullname,
-                    "privacy_hide_email": row.users_privacy_hide_email,
-                    "expiration_date": (
-                        row.users_expires_at.date() if row.users_expires_at else None
-                    ),
-                }
-                assert user_profile["id"] == user_id  # nosec
+        my_profile = MyProfile.model_validate(row, from_attributes=True)
+        assert my_profile.id == user_id  # nosec
 
-            if row.groups_type == GroupType.EVERYONE:
-                everyone_group = _convert_groups_db_to_schema(
-                    row,
-                    prefix="groups_",
-                    accessRights=row["user_to_groups_access_rights"],
-                )
-            elif row.groups_type == GroupType.PRIMARY:
-                user_primary_group = _convert_groups_db_to_schema(
-                    row,
-                    prefix="groups_",
-                    accessRights=row["user_to_groups_access_rights"],
-                )
-            else:
-                user_standard_groups.append(
-                    _convert_groups_db_to_schema(
-                        row,
-                        prefix="groups_",
-                        accessRights=row["user_to_groups_access_rights"],
-                    )
-                )
-
-    if not user_profile:
-        raise UserNotFoundError(uid=user_id)
-
-    # NOTE: expirationDate null is not handled properly in front-end.
-    # https://github.com/ITISFoundation/osparc-simcore/issues/5244
-    optional = {}
-    if user_profile.get("expiration_date"):
-        optional["expiration_date"] = user_profile["expiration_date"]
-
-    return dict(
-        id=user_profile["id"],
-        user_name=user_profile["user_name"],
-        first_name=user_profile["first_name"],
-        last_name=user_profile["last_name"],
-        login=user_profile["login"],
-        role=user_profile["role"],
-        groups={
-            "me": user_primary_group,
-            "organizations": user_standard_groups,
-            "all": everyone_group,
-        },
-        privacy={
-            "hide_fullname": user_profile["privacy_hide_fullname"],
-            "hide_email": user_profile["privacy_hide_email"],
-        },
-        **optional,
-    )
+    return my_profile
 
 
 async def update_user_profile(
@@ -473,19 +400,23 @@ async def update_user_profile(
     user_id = _parse_as_user(user_id)
 
     if updated_values := update.to_db():
+        try:
 
-        async with transaction_context(engine=get_asyncpg_engine(app)) as conn:
-            query = users.update().where(users.c.id == user_id).values(**updated_values)
+            async with transaction_context(engine=get_asyncpg_engine(app)) as conn:
+                await conn.execute(
+                    users.update()
+                    .where(
+                        users.c.id == user_id,
+                    )
+                    .values(**updated_values)
+                )
 
-            try:
-                await conn.execute(query)
+        except db_errors.UniqueViolation as err:
+            user_name = updated_values.get("name")
 
-            except db_errors.UniqueViolation as err:
-                user_name = updated_values.get("name")
-
-                raise UserNameDuplicateError(
-                    user_name=user_name,
-                    alternative_user_name=generate_alternative_username(user_name),
-                    user_id=user_id,
-                    updated_values=updated_values,
-                ) from err
+            raise UserNameDuplicateError(
+                user_name=user_name,
+                alternative_user_name=generate_alternative_username(user_name),
+                user_id=user_id,
+                updated_values=updated_values,
+            ) from err
