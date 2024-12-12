@@ -45,10 +45,10 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     this.getChildControl("selected-label");
 
     const downloadBtn = this.getChildControl("download-button");
-    downloadBtn.addListener("execute", () => this.__retrieveURLAndDownload(), this);
+    downloadBtn.addListener("execute", () => this.__retrieveURLAndDownloadSelected(), this);
 
     const deleteBtn = this.getChildControl("delete-button");
-    deleteBtn.addListener("execute", () => this.__deleteFile(), this);
+    deleteBtn.addListener("execute", () => this.__deleteSelected(), this);
   },
 
   events: {
@@ -129,11 +129,24 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     setMultiItemSelected: function(multiSelectionData) {
-      console.log("multiSelectionData", multiSelectionData);
+      this.__multiSelection = multiSelectionData;
+      if (multiSelectionData && multiSelectionData.length) {
+        if (multiSelectionData.length === 1) {
+          this.setItemSelected(multiSelectionData[0].entry);
+        } else {
+          const selectedLabel = this.getChildControl("selected-label");
+          selectedLabel.set({
+            value: multiSelectionData.length + " files"
+          });
+        }
+      } else {
+        this.resetItemSelected();
+      }
     },
 
     resetItemSelected: function() {
       this.__selection = null;
+      this.__multiSelection = [];
       this.getChildControl("download-button").setEnabled(false);
       this.getChildControl("delete-button").setEnabled(false);
       this.getChildControl("selected-label").resetValue();
@@ -147,40 +160,47 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       return null;
     },
 
-    // Request to the server and download
-    __retrieveURLAndDownload: function() {
+    __retrieveURLAndDownloadSelected: function() {
       let selection = this.getItemSelected();
       if (selection) {
-        const fileId = selection.getFileId();
-        const locationId = selection.getLocation();
-        osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
-          .then(data => {
-            if (data) {
-              osparc.DownloadLinkTracker.getInstance().downloadLinkUnattended(data.link, data.fileName);
-            }
-          });
+        this.__retrieveURLAndDownloadFile(selection);
       }
     },
 
-    __deleteFile: function() {
-      let selection = this.getItemSelected();
+    __deleteSelected: function() {
+      const selection = this.getItemSelected();
       if (selection) {
-        console.log("Delete ", selection);
-        const fileId = selection.getFileId();
-        const locationId = selection.getLocation();
-        if (locationId !== 0 && locationId !== "0") {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Only files in simcore.s3 can be deleted"));
-          return false;
-        }
-        const dataStore = osparc.store.Data.getInstance();
-        dataStore.addListenerOnce("deleteFile", e => {
-          if (e) {
-            this.fireDataEvent("fileDeleted", e.getData());
-          }
-        }, this);
-        return dataStore.deleteFile(locationId, fileId);
+        return this.__deleteFile(selection);
       }
       return false;
-    }
+    },
+
+    __retrieveURLAndDownloadFile: function(file) {
+      const fileId = file.getFileId();
+      const locationId = file.getLocation();
+      osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId)
+        .then(data => {
+          if (data) {
+            osparc.DownloadLinkTracker.getInstance().downloadLinkUnattended(data.link, data.fileName);
+          }
+        });
+    },
+
+    __deleteFile: function(file) {
+      console.log("Delete ", file);
+      const fileId = file.getFileId();
+      const locationId = file.getLocation();
+      if (locationId !== 0 && locationId !== "0") {
+        osparc.FlashMessenger.getInstance().logAs(this.tr("Only files in simcore.s3 can be deleted"));
+        return false;
+      }
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.addListenerOnce("deleteFile", e => {
+        if (e) {
+          this.fireDataEvent("fileDeleted", e.getData());
+        }
+      }, this);
+      return dataStore.deleteFile(locationId, fileId);
+    },
   }
 });
