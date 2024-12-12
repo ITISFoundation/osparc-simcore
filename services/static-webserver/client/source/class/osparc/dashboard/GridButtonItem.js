@@ -189,7 +189,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
     __itemSelected: function() {
       if (this.isItemNotClickable()) {
-        this.setSelected(false);
         return;
       }
 

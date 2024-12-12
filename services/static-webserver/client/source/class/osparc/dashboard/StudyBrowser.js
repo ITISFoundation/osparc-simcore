@@ -650,6 +650,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __studyCardClicked: function(item, isShiftPressed) {
+      if (item.isItemNotClickable()) {
+        item.setSelected(false);
+        return;
+      }
+
       const studiesCont = this._resourcesContainer.getFlatList();
 
       if (isShiftPressed) {
@@ -665,9 +670,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
 
-      if (item.isMultiSelectionMode()) {
-        item.setSelected(true);
-      } else {
+      if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);
         this._openResourceDetails(studyData);
         this.resetSelection();
