@@ -147,7 +147,8 @@ def service_exception_handler(
             RemoteMethodNotRegisteredError,
         }:  # https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/service-library/src/servicelib/rabbitmq/_client_rpc.py#L76
             raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY, detail="Request to failed"
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Request to backend failed",
             ) from exc
         if backend_error_type := rpc_exception_map.get(type(exc)):
             raise backend_error_type(**context) from exc
