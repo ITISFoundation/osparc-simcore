@@ -38,11 +38,11 @@ from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
 from simcore_service_api_server.core.health_checker import get_health_checker
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
-from simcore_service_api_server.services.director_v2 import (
+from simcore_service_api_server.services_http.director_v2 import (
     ComputationTaskGet,
     DirectorV2Api,
 )
-from simcore_service_api_server.services.log_streaming import (
+from simcore_service_api_server.services_http.log_streaming import (
     LogDistributor,
     LogStreamer,
     LogStreamerRegistrationConflictError,

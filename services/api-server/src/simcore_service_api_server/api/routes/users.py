@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Security, status
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.profiles import Profile, ProfileUpdate
-from ...services.webserver import AuthSession
+from ...services_http.webserver import AuthSession
 from ..dependencies.webserver import get_webserver_session
 
 _logger = logging.getLogger(__name__)

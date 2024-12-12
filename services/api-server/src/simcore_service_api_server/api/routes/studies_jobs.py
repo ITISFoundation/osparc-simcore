@@ -32,21 +32,21 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.studies import JobLogsMap, Study, StudyID
-from ...services.director_v2 import DirectorV2Api
-from ...services.jobs import (
+from ...services_http.director_v2 import DirectorV2Api
+from ...services_http.jobs import (
     get_custom_metadata,
     replace_custom_metadata,
     start_project,
     stop_project,
 )
-from ...services.solver_job_models_converters import create_jobstatus_from_task
-from ...services.storage import StorageApi
-from ...services.study_job_models_converters import (
+from ...services_http.solver_job_models_converters import create_jobstatus_from_task
+from ...services_http.storage import StorageApi
+from ...services_http.study_job_models_converters import (
     create_job_from_study,
     create_job_outputs_from_project_outputs,
     get_project_and_file_inputs_from_job_inputs,
 )
-from ...services.webserver import AuthSession
+from ...services_http.webserver import AuthSession
 from ..dependencies.application import get_reverse_url_mapper
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import FMSG_CHANGELOG_CHANGED_IN_VERSION, FMSG_CHANGELOG_NEW_IN_VERSION

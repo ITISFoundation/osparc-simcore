@@ -13,7 +13,7 @@ from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.model_adapter import ServicePricingPlanGetLegacy
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
-from ...services.catalog import CatalogApi
+from ...services_http.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client

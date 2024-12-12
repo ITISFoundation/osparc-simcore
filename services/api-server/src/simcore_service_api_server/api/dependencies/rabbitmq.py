@@ -9,7 +9,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from tenacity import before_sleep_log, retry, stop_after_delay, wait_fixed
 
-from ...services.log_streaming import LogDistributor
+from ...services_http.log_streaming import LogDistributor
 
 _MAX_WAIT_FOR_LOG_DISTRIBUTOR_SECONDS: Final[int] = 10
 

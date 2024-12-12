@@ -6,7 +6,7 @@ from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_api_server.core.health_checker import ApiServerHealthChecker
 
-from ..services.log_streaming import LogDistributor
+from ..services_http.log_streaming import LogDistributor
 
 _logger = logging.getLogger(__name__)
 

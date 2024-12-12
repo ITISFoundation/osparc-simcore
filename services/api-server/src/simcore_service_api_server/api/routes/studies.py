@@ -13,7 +13,7 @@ from simcore_service_api_server.api.routes._constants import (
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.studies import Study, StudyID, StudyPort
-from ...services.webserver import AuthSession
+from ...services_http.webserver import AuthSession
 from ..dependencies.webserver import get_webserver_session
 
 _logger = logging.getLogger(__name__)
