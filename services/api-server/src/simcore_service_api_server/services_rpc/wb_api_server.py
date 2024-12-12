@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import partial
 
 from fastapi import FastAPI
 from fastapi_pagination import Page, create_page
@@ -6,15 +7,21 @@ from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     get_licensed_items as _get_licensed_items,
 )
+from simcore_service_api_server.exceptions.service_errors_utils import (
+    service_exception_mapper,
+)
 from simcore_service_api_server.models.pagination import PaginationParams
 
 from ..models.schemas.model_adapter import LicensedItemGet
+
+_exception_mapper = partial(service_exception_mapper, service_name="WebApiServer")
 
 
 @dataclass
 class WbApiRpcClient:
     _rabbitmq_rpc_client: RabbitMQRPCClient
 
+    @_exception_mapper(rpc_exception_map={})
     async def get_licensed_items(
         self, product_name: str, page_params: PaginationParams
     ) -> Page[LicensedItemGet]:

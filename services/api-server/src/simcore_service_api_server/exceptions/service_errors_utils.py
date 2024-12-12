@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import Callable, Coroutine, Mapping
 from contextlib import contextmanager
@@ -8,6 +9,7 @@ from typing import Any, Concatenate, NamedTuple, ParamSpec, TypeAlias, TypeVar
 import httpx
 from fastapi import HTTPException, status
 from pydantic import ValidationError
+from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 
 from ..models.schemas.errors import ErrorGet
@@ -50,8 +52,12 @@ class ToApiTuple(NamedTuple):
 
 
 # service to public-api status maps
-E = TypeVar("E", bound=BaseBackEndError)
-HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, E]
+BackEndErrorType = TypeVar("BackEndErrorType", bound=BaseBackEndError)
+RpcExceptionType = TypeVar(
+    "RpcExceptionType", bound=Exception
+)  # need more specific rpc exception base class
+HttpStatusMap: TypeAlias = Mapping[ServiceHTTPStatus, BackEndErrorType]
+RabbitMqRpcExceptionMap: TypeAlias = Mapping[RpcExceptionType, BackEndErrorType]
 
 
 def _get_http_exception_kwargs(
@@ -98,6 +104,7 @@ R = TypeVar("R")
 def service_exception_handler(
     service_name: str,
     http_status_map: HttpStatusMap,
+    rpc_exception_map: RabbitMqRpcExceptionMap,
     **context,
 ):
     status_code: int
@@ -126,21 +133,49 @@ def service_exception_handler(
             status_code=status_code, detail=detail, headers=headers
         ) from exc
 
+    except BaseException as exc:  # currently no baseclass for rpc errors
+        if (
+            type(exc) == asyncio.TimeoutError
+        ):  # https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/service-library/src/servicelib/rabbitmq/_client_rpc.py#L76
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail="Request to backend timed out",
+            ) from exc
+        if type(exc) in {
+            asyncio.exceptions.CancelledError,
+            RuntimeError,
+            RemoteMethodNotRegisteredError,
+        }:  # https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/service-library/src/servicelib/rabbitmq/_client_rpc.py#L76
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY, detail="Request to failed"
+            ) from exc
+        if backend_error_type := rpc_exception_map.get(type(exc)):
+            raise backend_error_type(**context) from exc
+        raise
+
 
 def service_exception_mapper(
     *,
     service_name: str,
-    http_status_map: HttpStatusMap,
+    http_status_map: HttpStatusMap = {},
+    rpc_exception_map: RabbitMqRpcExceptionMap = {},
 ) -> Callable[
     [Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]],
     Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
 ]:
     def _decorator(member_func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]):
-        _assert_correct_kwargs(func=member_func, status_map=http_status_map)
+        _assert_correct_kwargs(
+            func=member_func,
+            exception_types=set(http_status_map.values()).union(
+                set(rpc_exception_map.values())
+            ),
+        )
 
         @wraps(member_func)
         async def _wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:
-            with service_exception_handler(service_name, http_status_map, **kwargs):
+            with service_exception_handler(
+                service_name, http_status_map, rpc_exception_map, **kwargs
+            ):
                 return await member_func(self, *args, **kwargs)
 
         return _wrapper
@@ -148,13 +183,14 @@ def service_exception_mapper(
     return _decorator
 
 
-def _assert_correct_kwargs(func: Callable, status_map: HttpStatusMap):
+def _assert_correct_kwargs(func: Callable, exception_types: set[BackEndErrorType]):
     _required_kwargs = {
         name
         for name, param in signature(func).parameters.items()
         if param.kind == param.KEYWORD_ONLY
     }
-    for exc_type in status_map.values():
+    for exc_type in exception_types:
+        assert isinstance(exc_type, type)  # nosec
         _exception_inputs = exc_type.named_fields()
         assert _exception_inputs.issubset(
             _required_kwargs
