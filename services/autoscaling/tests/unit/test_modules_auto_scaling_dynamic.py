@@ -1794,14 +1794,12 @@ async def test__activate_drained_nodes_with_drained_node(
 
 
 async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     with_instances_machines_hot_buffer: EnvVarsDict,
     ec2_client: EC2Client,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,
-    ec2_instances_allowed_types_with_only_1_buffered: dict[
-        InstanceTypeType, EC2InstanceBootSpecific
-    ],
     ec2_instance_custom_tags: dict[str, str],
     buffer_count: int,
     create_buffer_machines: Callable[
@@ -1809,18 +1807,25 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
         Awaitable[list[str]],
     ],
     spied_cluster_analysis: MockType,
+    instance_type_filters: Sequence[FilterTypeDef],
 ):
     # pre-requisites
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER > 0
+
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
-    # have a few warm buffers ready
+    # have a few warm buffers ready with the same type as the hot buffer machines
     buffer_machines = await create_buffer_machines(
         buffer_count,
-        next(iter(list(ec2_instances_allowed_types_with_only_1_buffered))),
+        cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
         "stopped",
         None,
     )
@@ -1828,8 +1833,11 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
-        expected_instance_type=next(
-            iter(ec2_instances_allowed_types_with_only_1_buffered)
+        expected_instance_type=cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
         ),
         expected_instance_state="stopped",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
@@ -1841,6 +1849,7 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
+    # at analysis time, we had no machines running
     analyzed_cluster = assert_cluster_state(
         spied_cluster_analysis,
         expected_calls=1,
@@ -1849,3 +1858,40 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     assert not analyzed_cluster.active_nodes
     assert analyzed_cluster.buffer_ec2s
     assert len(analyzed_cluster.buffer_ec2s) == len(buffer_machines)
+
+    # now we should have a warm buffer moved to the hot buffer
+    await assert_autoscaled_dynamic_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        expected_instance_type=cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+
+    # let's autoscale again, to check the cluster analysis
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    # at analysis time, we had no machines running
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+    )
+    assert not analyzed_cluster.active_nodes
+    assert len(analyzed_cluster.buffer_ec2s) == max(
+        0,
+        buffer_count
+        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+    )
+    assert (
+        len(analyzed_cluster.buffer_drained_nodes)
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    )
