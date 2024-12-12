@@ -132,8 +132,8 @@ async def user(client: TestClient) -> AsyncIterator[UserInfoDict]:
             "name": "test-user",
         },
         app=client.app,
-    ) as user:
-        yield user
+    ) as user_info:
+        yield user_info
 
 
 @pytest.fixture

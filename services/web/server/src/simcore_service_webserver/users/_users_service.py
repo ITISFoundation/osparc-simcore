@@ -93,7 +93,7 @@ async def pre_register_user(
 
 async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
     """
-    :raises UserNotFoundError:
+    :raises UserNotFoundError: if missing but NOT if marked for deletion!
     """
     return await _users_repository.get_user_or_raise(
         engine=get_asyncpg_engine(app), user_id=user_id
@@ -204,7 +204,7 @@ async def get_user_display_and_id_names(
     return UserDisplayAndIdNamesTuple(
         name=row["name"],
         email=row["email"],
-        first_name=row["email"] or row["name"].capitalize(),
+        first_name=row["first_name"] or row["name"].capitalize(),
         last_name=IDStr(row["last_name"] or ""),
     )
 

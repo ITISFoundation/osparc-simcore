@@ -11,12 +11,10 @@ from ._users_service import (
     get_user_id_from_gid,
     get_user_invoice_address,
     get_user_name_and_email,
-    get_user_profile,
     get_user_role,
     get_users_in_group,
     set_user_as_deleted,
     update_expired_users,
-    update_user_profile,
 )
 
 __all__: tuple[str, ...] = (
@@ -29,12 +27,10 @@ __all__: tuple[str, ...] = (
     "get_user_id_from_gid",
     "get_user_invoice_address",
     "get_user_name_and_email",
-    "get_user_profile",
     "get_user_role",
     "get_users_in_group",
     "set_user_as_deleted",
     "update_expired_users",
-    "update_user_profile",
     "FullNameDict",
     "UserDisplayAndIdNamesTuple",
 )

@@ -23,7 +23,7 @@ from ..exception_handling import (
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _users_service, api
+from . import _users_service
 from ._common.schemas import PreRegisteredUserGet, UsersRequestContext
 from .exceptions import (
     AlreadyPreRegisteredError,
@@ -76,7 +76,7 @@ routes = web.RouteTableDef()
 async def get_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
 
-    profile: MyProfileGet = await api.get_user_profile(
+    profile: MyProfileGet = await _users_service.get_user_profile(
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
 
@@ -94,7 +94,7 @@ async def update_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     profile_update = await parse_request_body_as(MyProfilePatch, request)
 
-    await api.update_user_profile(
+    await _users_service.update_user_profile(
         request.app, user_id=req_ctx.user_id, update=profile_update
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
