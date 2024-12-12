@@ -356,10 +356,10 @@ async def _activate_and_notify(
     app: FastAPI,
     auto_scaling_mode: BaseAutoscaling,
     drained_node: AssociatedInstance,
-) -> None:
+) -> AssociatedInstance:
     app_settings = get_application_settings(app)
     docker_client = get_docker_client(app)
-    await asyncio.gather(
+    updated_node, *_ = await asyncio.gather(
         utils_docker.set_node_osparc_ready(
             app_settings, docker_client, drained_node.node, ready=True
         ),
@@ -373,6 +373,7 @@ async def _activate_and_notify(
             app, drained_node.assigned_tasks, progress=1.0
         ),
     )
+    return dataclasses.replace(drained_node, node=updated_node)
 
 
 async def _activate_drained_nodes(
@@ -392,13 +393,13 @@ async def _activate_drained_nodes(
     with log_context(
         _logger, logging.INFO, f"activate {len(nodes_to_activate)} drained nodes"
     ):
-        await asyncio.gather(
+        activated_nodes = await asyncio.gather(
             *(
                 _activate_and_notify(app, auto_scaling_mode, node)
                 for node in nodes_to_activate
             )
         )
-    new_active_node_ids = {node.ec2_instance.id for node in nodes_to_activate}
+    new_active_node_ids = {node.ec2_instance.id for node in activated_nodes}
     remaining_drained_nodes = [
         node
         for node in cluster.drained_nodes
@@ -411,7 +412,7 @@ async def _activate_drained_nodes(
     ]
     return dataclasses.replace(
         cluster,
-        active_nodes=cluster.active_nodes + nodes_to_activate,
+        active_nodes=cluster.active_nodes + activated_nodes,
         drained_nodes=remaining_drained_nodes,
         buffer_drained_nodes=remaining_reserved_drained_nodes,
     )
@@ -878,7 +879,7 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     with log_context(
         _logger, logging.INFO, f"drain {len(active_empty_instances)} empty nodes"
     ):
-        updated_nodes: list[Node] = await asyncio.gather(
+        updated_nodes = await asyncio.gather(
             *(
                 utils_docker.set_node_osparc_ready(
                     app_settings,
@@ -1076,7 +1077,7 @@ async def _drain_retired_nodes(
     app_settings = get_application_settings(app)
     docker_client = get_docker_client(app)
     # drain this empty nodes
-    updated_nodes: list[Node] = await asyncio.gather(
+    updated_nodes = await asyncio.gather(
         *(
             utils_docker.set_node_osparc_ready(
                 app_settings,
@@ -1173,7 +1174,11 @@ async def _autoscale_cluster(
 ) -> Cluster:
     # 1. check if we have pending tasks
     unnasigned_pending_tasks = await auto_scaling_mode.list_unrunnable_tasks(app)
-    _logger.info("found %s pending tasks", len(unnasigned_pending_tasks))
+    _logger.info(
+        "found %s pending task%s",
+        len(unnasigned_pending_tasks),
+        "s" if len(unnasigned_pending_tasks) > 1 else "",
+    )
     # NOTE: this function predicts how the backend will assign tasks
     still_pending_tasks, cluster = await _assign_tasks_to_current_cluster(
         app, unnasigned_pending_tasks, cluster, auto_scaling_mode
