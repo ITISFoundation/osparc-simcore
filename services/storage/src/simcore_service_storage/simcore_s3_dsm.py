@@ -530,7 +530,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
         async with self.engine.acquire() as conn:
             file_fmd = await get_fmd(conn, file_id)
-            if file_fmd and not file_fmd.is_directory:
+            if file_fmd:
                 await db_file_meta_data.delete(conn, [file_id])
 
             enclosing_dir_file_id = await get_directory_file_id(conn, file_id)
