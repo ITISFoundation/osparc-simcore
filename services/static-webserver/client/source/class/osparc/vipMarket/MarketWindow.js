@@ -30,25 +30,35 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
       height
     });
 
-    const vipMarket = this.__vipMarket = new osparc.vipMarket.Market().set({
+    const vipMarket = this.__vipMarket = new osparc.vipMarket.Market(category).set({
       openBy: nodeId ? nodeId : null,
     });
     this._setTabbedView(vipMarket);
-
-    if (category) {
-      vipMarket.openCategory(category);
-    }
   },
 
   statics: {
     openWindow: function(nodeId, category) {
       if (osparc.product.Utils.showS4LStore()) {
         const storeWindow = new osparc.vipMarket.MarketWindow(nodeId, category);
+        storeWindow.getVipMarket().addListener("importMessageSent", () => storeWindow.close());
+        storeWindow.addListenerOnce("close", () => {
+          if (storeWindow.getVipMarket()) {
+            storeWindow.getVipMarket().sendCloseMessage();
+          }
+        });
         storeWindow.center();
         storeWindow.open();
         return storeWindow;
       }
       return null;
     }
+  },
+
+  members: {
+    __vipMarket: null,
+
+    getVipMarket: function() {
+      return this.__vipMarket;
+    },
   },
 });
