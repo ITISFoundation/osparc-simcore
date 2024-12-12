@@ -33,6 +33,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
       "pointerout",
       "focusout"
     ].forEach(e => this.addListener(e, this._onPointerOut, this));
+
+    this.addListener("changeSelected", this.__evalSelectedButton, this);
   },
 
   events: {
@@ -260,7 +262,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     resourceType: {
       check: ["study", "template", "service"],
-      nullable: false,
+      init: true,
+      nullable: true,
       event: "changeResourceType"
     },
 
@@ -379,7 +382,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: "Boolean",
       init: false,
       nullable: false,
-      apply: "_applyMultiSelectionMode"
+      apply: "__applyMultiSelectionMode"
     },
 
     fetching: {
@@ -456,6 +459,31 @@ qx.Class.define("osparc.dashboard.CardBase", {
         hits: resourceData.hits ? resourceData.hits : defaultHits,
         workbench
       });
+    },
+
+    __applyMultiSelectionMode: function(value) {
+      if (!value) {
+        this.setSelected(false);
+      }
+      this.__evalSelectedButton();
+    },
+
+    __evalSelectedButton: function() {
+      if ("getResourceType" in this && this.isResourceType("study")) {
+        const menuButton = this.getChildControl("menu-button");
+        const tick = this.getChildControl("tick-selected");
+        const untick = this.getChildControl("tick-unselected");
+        if (this.isMultiSelectionMode()) {
+          const selected = this.getSelected();
+          menuButton.setVisibility("excluded");
+          tick.setVisibility(selected ? "visible" : "excluded");
+          untick.setVisibility(selected ? "excluded" : "visible");
+        } else {
+          menuButton.setVisibility("visible");
+          tick.setVisibility("excluded");
+          untick.setVisibility("excluded");
+        }
+      }
     },
 
     __applyUuid: function(value, old) {
