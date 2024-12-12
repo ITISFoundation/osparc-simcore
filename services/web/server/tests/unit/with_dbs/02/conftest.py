@@ -239,9 +239,7 @@ async def project_db_cleaner(client: TestClient):
 
 
 @pytest.fixture(autouse=True)
-async def mocked_director_v2_and_dynamic_scheduler_interfaces(
-    mock_dynamic_scheduler: None, director_v2_service_mock: aioresponses
-) -> None:
+async def mocked_director_v2(director_v2_service_mock: aioresponses) -> None:
     pass
 
 

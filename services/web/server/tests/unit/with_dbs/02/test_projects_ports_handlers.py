@@ -247,6 +247,7 @@ async def test_io_workflow(
     [UserRole.USER],
 )
 async def test_clone_project_and_set_inputs(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

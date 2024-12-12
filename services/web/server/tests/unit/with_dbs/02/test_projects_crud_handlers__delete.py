@@ -5,9 +5,8 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from http import HTTPStatus
-from typing import Awaitable
 from unittest import mock
 from unittest.mock import MagicMock, call
 
