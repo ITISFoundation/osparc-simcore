@@ -78,3 +78,12 @@ class OutputSchema(BaseModel):
             exclude_none=exclude_none,
             **kwargs,
         )
+
+
+#
+# mapping tools
+#
+
+
+def copy_dict(data: dict, update_keys: dict[str, str]) -> dict[str, Any]:
+    return {update_keys.get(k, k): v for k, v in data.items()}

@@ -1,5 +1,5 @@
 from contextlib import suppress
-from typing import Annotated, Any, Self, TypeVar
+from typing import Annotated, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
@@ -21,18 +21,15 @@ from ..groups import (
     Group,
     GroupID,
     GroupMember,
+    GroupsByTypeTuple,
     StandardGroupCreate,
     StandardGroupUpdate,
 )
 from ..users import UserID, UserNameID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
-from ._base import InputSchema, OutputSchema
+from ._base import InputSchema, OutputSchema, copy_dict
 
 S = TypeVar("S", bound=BaseModel)
-
-
-def _rename_keys(source: dict, name_map: dict[str, str]) -> dict[str, Any]:
-    return {name_map.get(k, k): v for k, v in source.items()}
 
 
 class GroupAccessRights(BaseModel):
@@ -78,7 +75,7 @@ class GroupGet(OutputSchema):
         # Merges both service models into this schema
         return cls.model_validate(
             {
-                **_rename_keys(
+                **copy_dict(
                     group.model_dump(
                         include={
                             "gid",
@@ -90,7 +87,7 @@ class GroupGet(OutputSchema):
                         exclude_unset=True,
                         by_alias=False,
                     ),
-                    name_map={
+                    update_keys={
                         "name": "label",
                     },
                 ),
@@ -147,14 +144,14 @@ class GroupCreate(InputSchema):
     thumbnail: AnyUrl | None = None
 
     def to_model(self) -> StandardGroupCreate:
-        data = _rename_keys(
+        data = copy_dict(
             self.model_dump(
                 mode="json",
                 # NOTE: intentionally inclusion_rules are not exposed to the REST api
                 include={"label", "description", "thumbnail"},
                 exclude_unset=True,
             ),
-            name_map={"label": "name"},
+            update_keys={"label": "name"},
         )
         return StandardGroupCreate(**data)
 
@@ -165,14 +162,14 @@ class GroupUpdate(InputSchema):
     thumbnail: AnyUrl | None = None
 
     def to_model(self) -> StandardGroupUpdate:
-        data = _rename_keys(
+        data = copy_dict(
             self.model_dump(
                 mode="json",
                 # NOTE: intentionally inclusion_rules are not exposed to the REST api
                 include={"label", "description", "thumbnail"},
                 exclude_unset=True,
             ),
-            name_map={"label": "name"},
+            update_keys={"label": "name"},
         )
         return StandardGroupUpdate(**data)
 
@@ -223,6 +220,21 @@ class MyGroupsGet(OutputSchema):
             }
         }
     )
+
+    @classmethod
+    def from_model(
+        cls,
+        groups_by_type: GroupsByTypeTuple,
+        my_product_group: tuple[Group, AccessRightsDict],
+    ) -> Self:
+        return cls(
+            me=GroupGet.from_model(*groups_by_type.primary),
+            organizations=[GroupGet.from_model(*gi) for gi in groups_by_type.standard],
+            all=GroupGet.from_model(*groups_by_type.everyone),
+            product=GroupGet.from_model(*my_product_group)
+            if my_product_group
+            else None,
+        )
 
 
 class GroupUserGet(BaseModel):
