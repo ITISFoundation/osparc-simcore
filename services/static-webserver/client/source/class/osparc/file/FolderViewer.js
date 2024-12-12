@@ -39,6 +39,7 @@ qx.Class.define("osparc.file.FolderViewer", {
     const iconsButton = this.getChildControl("view-options-icons");
     const listButton = this.getChildControl("view-options-list");
     const folderContent = this.getChildControl("folder-content");
+    const selectedFileLayout = this.getChildControl("selected-file-layout");
 
     this.bind("folder", this.getChildControl("folder-up"), "enabled", {
       converter: folder => Boolean(folder && folder.getPathLabel && folder.getPathLabel().length > 1)
@@ -59,6 +60,15 @@ qx.Class.define("osparc.file.FolderViewer", {
     folderContent.addListener("selectionChanged", e => this.fireDataEvent("selectionChanged", e.getData()));
     folderContent.addListener("itemSelected", e => this.fireDataEvent("itemSelected", e.getData()));
     folderContent.addListener("requestDatasetFiles", e => this.fireDataEvent("requestDatasetFiles", e.getData()));
+
+    this.addListener("selectionChanged", e => {
+      const selectionData = e.getData();
+      if (selectionData) {
+        selectedFileLayout.setItemSelected(selectionData);
+      } else {
+        selectedFileLayout.resetItemSelected(selectionData);
+      }
+    }, this);
   },
 
   properties: {
@@ -67,6 +77,7 @@ qx.Class.define("osparc.file.FolderViewer", {
       init: null,
       nullable: true,
       event: "changeFolder",
+      apply: "__applyFolder",
     },
   },
 
@@ -142,8 +153,18 @@ qx.Class.define("osparc.file.FolderViewer", {
           });
           break;
         }
+        case "selected-file-layout":
+          control = new osparc.file.FileLabelWithActions().set({
+            alignY: "middle"
+          });
+          this._add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
+
+    __applyFolder: function() {
+      this.getChildControl("selected-file-layout").resetItemSelected();
+    }
   }
 });
