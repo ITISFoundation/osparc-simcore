@@ -22,6 +22,7 @@ _LICENSE_ITEMS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status_code=status.HTTP_200_OK,
     responses=_LICENSE_ITEMS_STATUS_CODES,
     description="Get all licensed items",
+    include_in_schema=False,
 )
 async def get_licensed_items(
     page_params: Annotated[PaginationParams, Depends()],
