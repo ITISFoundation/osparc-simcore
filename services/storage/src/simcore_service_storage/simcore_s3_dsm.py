@@ -553,7 +553,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 is_directory=True,
                 sha256_checksum=None,
             ):
-                parent_dir_fmd = parent_dir_fmds[0]
+                parent_dir_fmd = max(parent_dir_fmds, key=lambda fmd: len(fmd.file_id))
                 parent_dir_fmd.file_size = UNDEFINED_SIZE
                 await db_file_meta_data.upsert(conn, parent_dir_fmd)
 
