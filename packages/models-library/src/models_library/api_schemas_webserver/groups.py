@@ -13,6 +13,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic.config import JsonDict
 
 from ..emails import LowerCaseEmailStr
 from ..groups import (
@@ -72,7 +73,7 @@ class GroupGet(OutputSchema):
 
     @classmethod
     def from_model(cls, group: Group, access_rights: AccessRightsDict) -> Self:
-        # Merges both service models into this schema
+        # Adapts these domain models into this schema
         return cls.model_validate(
             {
                 **copy_dict(
@@ -83,7 +84,9 @@ class GroupGet(OutputSchema):
                             "description",
                             "thumbnail",
                         },
-                        exclude={"access_rights", "inclusion_rules"},
+                        exclude={
+                            "inclusion_rules",  # deprecated
+                        },
                         exclude_unset=True,
                         by_alias=False,
                     ),
@@ -95,38 +98,42 @@ class GroupGet(OutputSchema):
             }
         )
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "gid": "27",
-                    "label": "A user",
-                    "description": "A very special user",
-                    "thumbnail": "https://placekitten.com/10/10",
-                    "accessRights": {"read": True, "write": False, "delete": False},
-                },
-                {
-                    "gid": 1,
-                    "label": "ITIS Foundation",
-                    "description": "The Foundation for Research on Information Technologies in Society",
-                    "accessRights": {"read": True, "write": False, "delete": False},
-                },
-                {
-                    "gid": "1",
-                    "label": "All",
-                    "description": "Open to all users",
-                    "accessRights": {"read": True, "write": True, "delete": True},
-                },
-                {
-                    "gid": 5,
-                    "label": "SPARCi",
-                    "description": "Stimulating Peripheral Activity to Relieve Conditions",
-                    "thumbnail": "https://placekitten.com/15/15",
-                    "accessRights": {"read": True, "write": True, "delete": True},
-                },
-            ]
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "gid": "27",
+                        "label": "A user",
+                        "description": "A very special user",
+                        "thumbnail": "https://placekitten.com/10/10",
+                        "accessRights": {"read": True, "write": False, "delete": False},
+                    },
+                    {
+                        "gid": 1,
+                        "label": "ITIS Foundation",
+                        "description": "The Foundation for Research on Information Technologies in Society",
+                        "accessRights": {"read": True, "write": False, "delete": False},
+                    },
+                    {
+                        "gid": "1",
+                        "label": "All",
+                        "description": "Open to all users",
+                        "accessRights": {"read": True, "write": True, "delete": True},
+                    },
+                    {
+                        "gid": 5,
+                        "label": "SPARCi",
+                        "description": "Stimulating Peripheral Activity to Relieve Conditions",
+                        "thumbnail": "https://placekitten.com/15/15",
+                        "accessRights": {"read": True, "write": True, "delete": True},
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
     @field_validator("thumbnail", mode="before")
     @classmethod
