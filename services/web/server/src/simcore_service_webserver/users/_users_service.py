@@ -21,7 +21,6 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 )
 
 from ..db.plugin import get_asyncpg_engine
-from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _preferences_api, _users_repository
 from ._common.models import (
@@ -276,16 +275,14 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
     # otherwise this function will raise asyncpg.exceptions.ForeignKeyViolationError
     # Consider "marking" users as deleted and havning a background job that
     # cleans it up
-    # TODO: upgrade!!!
-    db: AsyncpgStorage = get_plugin_storage(app)
-    user = await db.get_user({"id": user_id})
-    if not user:
+    is_deleted = await _users_repository.delete_user_by_id(
+        engine=get_asyncpg_engine(app), user_id=user_id
+    )
+    if not is_deleted:
         _logger.warning(
             "User with id '%s' could not be deleted because it does not exist", user_id
         )
         return
-
-    await db.delete_user(dict(user))
 
     # This user might be cached in the auth. If so, any request
     # with this user-id will get thru producing unexpected side-effects

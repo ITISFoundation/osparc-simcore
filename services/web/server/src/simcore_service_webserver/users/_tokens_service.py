@@ -5,7 +5,6 @@
 import sqlalchemy as sa
 from aiohttp import web
 from models_library.users import UserID, UserThirdPartyToken
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from sqlalchemy import and_, literal_column
 
 from ..db.models import tokens
@@ -21,7 +20,7 @@ async def create_token(
             tokens.insert().values(
                 user_id=user_id,
                 token_service=token.service,
-                token_data=jsonable_encoder(token),
+                token_data=token.model_dump(mode="json"),
             )
         )
         return token
