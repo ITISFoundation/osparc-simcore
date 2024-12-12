@@ -3,7 +3,8 @@ import logging
 
 import redis.asyncio as aioredis
 from aiohttp import web
-from models_library.api_schemas_webserver.users import MyPermissionGet, UserPermission
+from models_library.api_schemas_webserver.users import MyPermissionGet
+from models_library.users import UserPermission
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
