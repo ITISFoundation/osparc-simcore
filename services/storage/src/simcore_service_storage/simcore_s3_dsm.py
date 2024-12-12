@@ -752,7 +752,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 ),
                 file_id_prefix=file_id_prefix,
                 partial_file_id=None,
-                only_files=True,
+                is_directory=False,
                 sha256_checksum=sha256_checksum,
                 limit=limit,
                 offset=offset,
