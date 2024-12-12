@@ -528,10 +528,13 @@ class SimcoreS3DataManager(BaseDataManager):
                 if not can.delete:
                     raise FileAccessRightError(access_right="delete", file_id=file_id)
 
-        await get_s3_client(self.app).delete_objects_recursively(
-            bucket=self.simcore_bucket_name,
-            prefix=file_id,
-        )
+        try:
+            await get_s3_client(self.app).delete_objects_recursively(
+                bucket=self.simcore_bucket_name,
+                prefix=file_id,
+            )
+        except S3KeyNotFoundError:
+            _logger.warning("File %s not found in S3", file_id)
 
         async with self.engine.acquire() as conn:
             try:
