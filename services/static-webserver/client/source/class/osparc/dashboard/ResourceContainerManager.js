@@ -33,10 +33,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this.__groupedContainersList = [];
 
     if (resourceType === "study") {
-      const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.ToggleButtonContainer();
+      const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.CardContainer();
       this._add(workspacesContainer);
 
-      const foldersContainer = this.__foldersContainer = new osparc.dashboard.ToggleButtonContainer();
+      const foldersContainer = this.__foldersContainer = new osparc.dashboard.CardContainer();
       this._add(foldersContainer);
     }
 
@@ -118,7 +118,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __groupedContainers: null,
 
     addNonResourceCard: function(card) {
-      if (osparc.dashboard.ToggleButtonContainer.isValidWidget(card)) {
+      if (osparc.dashboard.CardContainer.isValidWidget(card)) {
         if (this.getGroupBy()) {
           // it will always go to the no-group group
           const noGroupContainer = this.__getGroupContainer("no-group");
@@ -129,12 +129,12 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           this.self().sortListByPriority(this.__nonGroupedContainer);
         }
       } else {
-        console.error("ToggleButtonContainer only allows ToggleButton as its children.");
+        console.error("CardContainer only allows ToggleButton as its children.");
       }
     },
 
     removeNonResourceCard: function(card) {
-      if (osparc.dashboard.ToggleButtonContainer.isValidWidget(card)) {
+      if (osparc.dashboard.CardContainer.isValidWidget(card)) {
         if (this.getGroupBy()) {
           const noGroupContainer = this.__getGroupContainer("no-group");
           if (noGroupContainer.getContentContainer().getChildren().indexOf(card) > -1) {
@@ -144,7 +144,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           this.__nonGroupedContainer.remove(card);
         }
       } else {
-        console.error("ToggleButtonContainer only allows ToggleButton as its children.");
+        console.error("CardContainer only allows ToggleButton as its children.");
       }
     },
 
@@ -161,7 +161,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __createGroupContainer: function(groupId, headerLabel, headerColor = "text") {
-      const groupContainer = new osparc.dashboard.GroupedToggleButtonContainer().set({
+      const groupContainer = new osparc.dashboard.GroupedCardContainer().set({
         groupId: groupId.toString(),
         headerLabel,
         headerIcon: "",
@@ -317,7 +317,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __createFlatList: function() {
-      const flatList = new osparc.dashboard.ToggleButtonContainer();
+      const flatList = new osparc.dashboard.CardContainer();
       const setContainerSpacing = () => {
         const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
         flatList.getLayout().set({

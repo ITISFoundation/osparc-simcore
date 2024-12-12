@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
+qx.Class.define("osparc.dashboard.GroupedCardContainer", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -118,7 +118,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
       const expanded = this.isExpanded();
       const showAllBtn = this.__showAllButton;
       if (expanded) {
-        contentContainer = new osparc.dashboard.ToggleButtonContainer();
+        contentContainer = new osparc.dashboard.CardContainer();
         showAllBtn.show();
       } else {
         const spacing = osparc.dashboard.GridButtonBase.SPACING;
@@ -189,7 +189,7 @@ qx.Class.define("osparc.dashboard.GroupedToggleButtonContainer", {
         }
         this.__childVisibilityChanged();
       } else {
-        console.error("ToggleButtonContainer only allows ToggleButton as its children.");
+        console.error("CardContainer only allows ToggleButton as its children.");
       }
     },
 

@@ -48,7 +48,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   events: {
-    "publishTemplate": "qx.event.type.Data"
+    "publishTemplate": "qx.event.type.Data",
   },
 
   properties: {

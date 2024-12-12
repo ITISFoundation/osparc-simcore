@@ -8,7 +8,7 @@
 /**
  * Container for GridButtonItems and ListButtonItems (ToggleButtons), with some convenient methods.
  */
-qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
+qx.Class.define("osparc.dashboard.CardContainer", {
   extend: qx.ui.container.Composite,
 
   construct: function() {
@@ -46,7 +46,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
         child.addListener("changeSelected", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
         child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.__getVisibles()), this);
       } else {
-        console.error("ToggleButtonContainer only allows ToggleButton as its children.");
+        console.error("CardContainer only allows ToggleButton as its children.");
       }
     },
 
