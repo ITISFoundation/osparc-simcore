@@ -6,9 +6,9 @@ import functools
 import logging
 
 from aiohttp import web
+from models_library.groups import GroupID
 from models_library.projects import ProjectID
-from models_library.users import GroupID
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,

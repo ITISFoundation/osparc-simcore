@@ -5,7 +5,8 @@ from aiohttp import web
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
-from models_library.users import GroupID, UserBillingDetails, UserID
+from models_library.groups import GroupID
+from models_library.users import UserBillingDetails, UserID
 from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserStatus, users

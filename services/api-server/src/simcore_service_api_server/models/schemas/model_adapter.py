@@ -17,13 +17,13 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGetWithAvailableCredits as _WalletGetWithAvailableCredits,
 )
 from models_library.basic_types import IDStr, NonNegativeDecimal
+from models_library.groups import GroupID
 from models_library.resource_tracker import (
     PricingPlanClassification,
     PricingPlanId,
     PricingUnitId,
     UnitExtraInfo,
 )
-from models_library.users import GroupID
 from models_library.wallets import WalletID, WalletStatus
 from pydantic import (
     BaseModel,

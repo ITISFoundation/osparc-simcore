@@ -8,9 +8,10 @@ import logging
 from typing import cast
 
 from aiohttp import web
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from models_library.workspaces import (
     UserWorkspaceAccessRightsDB,
     WorkspaceDB,
