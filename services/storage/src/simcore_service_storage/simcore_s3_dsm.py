@@ -21,6 +21,7 @@ from aws_library.s3 import (
     UploadedBytesTransferredCallback,
 )
 from models_library.api_schemas_storage import (
+    UNDEFINED_SIZE,
     UNDEFINED_SIZE_TYPE,
     LinkType,
     S3BucketName,
@@ -538,7 +539,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 enclosing_dir_fmd = await db_file_meta_data.get(
                     conn, enclosing_dir_file_id
                 )
-                enclosing_dir_fmd.file_size = -1
+                enclosing_dir_fmd.file_size = UNDEFINED_SIZE
                 await db_file_meta_data.upsert(conn, enclosing_dir_fmd)
 
     async def delete_project_simcore_s3(
