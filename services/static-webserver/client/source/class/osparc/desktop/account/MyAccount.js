@@ -42,11 +42,11 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       });
 
       const authData = osparc.auth.Data.getInstance();
-
+      const username = authData.getUsername();
       const email = authData.getEmail();
       const avatarSize = 80;
       const img = new qx.ui.basic.Image().set({
-        source: osparc.utils.Avatar.getUrl(email, avatarSize),
+        source: osparc.utils.Avatar.emailToThumbnail(email, username, avatarSize),
         maxWidth: avatarSize,
         maxHeight: avatarSize,
         scale: true,

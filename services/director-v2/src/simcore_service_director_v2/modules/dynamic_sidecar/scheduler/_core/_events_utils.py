@@ -385,10 +385,10 @@ async def attempt_pod_removal_and_data_saving(
     stop_duration = (
         scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_close_request()
     )
-    assert stop_duration is not None  # nosec
-    get_instrumentation(app).dynamic_sidecar_metrics.stop_time_duration.labels(
-        **get_metrics_labels(scheduler_data)
-    ).observe(stop_duration)
+    if stop_duration is not None:
+        get_instrumentation(app).dynamic_sidecar_metrics.stop_time_duration.labels(
+            **get_metrics_labels(scheduler_data)
+        ).observe(stop_duration)
 
 
 async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:

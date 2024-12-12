@@ -104,7 +104,7 @@ qx.Class.define("osparc.info.CommentUI", {
 
     __buildLayout: function() {
       const thumbnail = this.getChildControl("thumbnail");
-      thumbnail.setSource(osparc.utils.Avatar.getUrl("", 32));
+      thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail("", "", 32));
 
       const userName = this.getChildControl("user-name");
       userName.setValue("Unknown");
