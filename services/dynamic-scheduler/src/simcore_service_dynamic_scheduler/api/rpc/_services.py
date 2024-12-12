@@ -56,3 +56,8 @@ async def stop_dynamic_service(
     return await scheduler_interface.stop_dynamic_service(
         app, dynamic_service_stop=dynamic_service_stop
     )
+
+
+@router.expose()
+async def restart_user_services(app: FastAPI, *, node_id: NodeID) -> None:
+    await scheduler_interface.restart_user_services(app, node_id=node_id)

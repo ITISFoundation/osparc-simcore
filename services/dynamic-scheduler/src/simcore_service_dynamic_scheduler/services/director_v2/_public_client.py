@@ -108,6 +108,9 @@ class DirectorV2Client(
         )
         return TypeAdapter(list[DynamicServiceGet]).validate_python(response.json())
 
+    async def restart_user_services(self, *, node_id: NodeID) -> None:
+        await self.thin_client.post_restart(node_id=node_id)
+
 
 def setup_director_v2(app: FastAPI) -> None:
     public_client = DirectorV2Client(app)

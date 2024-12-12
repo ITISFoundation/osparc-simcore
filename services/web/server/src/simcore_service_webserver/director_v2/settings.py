@@ -33,14 +33,6 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     # - Mostly in floats (aiohttp.Client/) but sometimes in ints
     # - Typically in seconds but occasionally in ms
 
-    DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT: PositiveInt = Field(
-        1 * _MINUTE,
-        description="timeout of containers restart",
-        validation_alias=AliasChoices(
-            "DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT",
-        ),
-    )
-
     DIRECTOR_V2_STORAGE_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT: PositiveInt = Field(
         _HOUR,
         description=(

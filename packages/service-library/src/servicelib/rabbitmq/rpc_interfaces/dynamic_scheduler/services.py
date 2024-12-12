@@ -93,3 +93,19 @@ async def stop_dynamic_service(
         timeout_s=timeout_s,
     )
     assert result is None  # nosec
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def restart_user_services(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    node_id: NodeID,
+    timeout_s: NonNegativeInt,
+) -> None:
+    result = await rabbitmq_rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("restart_user_services"),
+        node_id=node_id,
+        timeout_s=timeout_s,
+    )
+    assert result is None  # nosec

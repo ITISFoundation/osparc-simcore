@@ -26,6 +26,10 @@ class DynamicSchedulerSettings(BaseCustomSettings, MixinServiceSettings):
         ),
     )
 
+    DYNAMIC_SCHEDULER_RESTART_USER_SERVICES_TIMEOUT: datetime.timedelta = Field(
+        datetime.timedelta(minutes=1), description="timeout for user services restart"
+    )
+
 
 def get_plugin_settings(app: web.Application) -> DynamicSchedulerSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_DYNAMIC_SCHEDULER
