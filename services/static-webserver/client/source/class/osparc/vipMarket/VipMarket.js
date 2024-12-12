@@ -26,6 +26,10 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     this.__buildLayout();
   },
 
+  events: {
+    "importMessageSent": "qx.event.type.Data"
+  },
+
   properties: {
     openBy: {
       check: "String",
@@ -71,7 +75,6 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
 
   members: {
     __anatomicalModels: null,
-    __purchasesItems: null,
     __anatomicalModelsModel: null,
 
     _createChildControlImpl: function(id) {
@@ -214,7 +217,6 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             .then(values => {
               const licensedItems = values[0];
               const purchasesItems = values[1];
-              this.__purchasesItems = purchasesItems;
 
               this.__anatomicalModels = [];
               allAnatomicalModels.forEach(model => {
@@ -359,22 +361,18 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     },
 
     __sendImportModelMessage: function(modelId) {
+      const store = osparc.store.Store.getInstance();
+      const currentStudy = store.getCurrentStudy();
       const nodeId = this.getOpenBy();
-      if (nodeId) {
-        const store = osparc.store.Store.getInstance();
-        const currentStudy = store.getCurrentStudy();
-        if (!currentStudy) {
-          return;
-        }
-        const node = currentStudy.getWorkbench().getNode(nodeId);
-        if (node && node.getIFrame()) {
-          const msg = {
-            "type": "importModel",
-            "message": {
-              "modelId": modelId,
-            },
-          };
-          node.getIFrame().sendMessageToIframe(msg);
+      if (currentStudy && nodeId) {
+        const msg = {
+          "type": "importModel",
+          "message": {
+            "modelId": modelId,
+          },
+        };
+        if (currentStudy.sendMessageToIframe(nodeId, msg)) {
+          this.fireEvent("importMessageSent");
         }
       }
     },
