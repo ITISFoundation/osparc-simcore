@@ -40,11 +40,20 @@ qx.Class.define("osparc.vipMarket.MarketWindow", {
     openWindow: function(nodeId, category) {
       if (osparc.product.Utils.showS4LStore()) {
         const storeWindow = new osparc.vipMarket.MarketWindow(nodeId, category);
+        storeWindow.getVipMarket().addListener("importMessageSent", () => storeWindow.close());
         storeWindow.center();
         storeWindow.open();
         return storeWindow;
       }
       return null;
     }
+  },
+
+  members: {
+    __vipMarket: null,
+
+    getVipMarket: function() {
+      return this.__vipMarket;
+    },
   },
 });

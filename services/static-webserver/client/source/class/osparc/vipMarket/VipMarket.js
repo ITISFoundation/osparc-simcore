@@ -26,6 +26,10 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     this.__buildLayout();
   },
 
+  events: {
+    "importMessageSent": "qx.event.type.Data"
+  },
+
   properties: {
     openBy: {
       check: "String",
@@ -373,6 +377,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             },
           };
           node.getIFrame().sendMessageToIframe(msg);
+          this.fireEvent("importMessageSent");
         }
       }
     },

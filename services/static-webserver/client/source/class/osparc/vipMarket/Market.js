@@ -58,6 +58,10 @@ qx.Class.define("osparc.vipMarket.Market", {
       });
   },
 
+  events: {
+    "importMessageSent": "qx.event.type.Data",
+  },
+
   properties: {
     openBy: {
       check: "String",
@@ -74,6 +78,7 @@ qx.Class.define("osparc.vipMarket.Market", {
         metadataUrl: marketInfo["url"],
       });
       this.bind("openBy", vipMarketView, "openBy");
+      vipMarketView.addListener("importMessageSent", () => this.fireEvent("importMessageSent"));
       const page = this.addTab(marketInfo["label"], marketInfo["icon"], vipMarketView);
       page.category = marketInfo["category"];
       return page;
