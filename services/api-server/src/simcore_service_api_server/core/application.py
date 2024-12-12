@@ -7,6 +7,7 @@ from packaging.version import Version
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
+from simcore_service_api_server.api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 
 from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -14,6 +15,7 @@ from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..services_http import catalog, director_v2, storage, webserver
 from ..services_http.rabbitmq import setup_rabbitmq
+from ..services_rpc import wb_api_server
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
@@ -92,6 +94,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
             settings.API_SERVER_WEBSERVER,
             tracing_settings=settings.API_SERVER_TRACING,
         )
+        wb_api_server.setup(app, get_rabbitmq_rpc_client(app))
 
     if settings.API_SERVER_CATALOG:
         catalog.setup(

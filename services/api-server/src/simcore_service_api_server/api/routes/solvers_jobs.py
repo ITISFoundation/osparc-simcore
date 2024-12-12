@@ -37,7 +37,7 @@ from ...services_http.solver_job_models_converters import (
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
-from ..dependencies.webserver import AuthSession, get_webserver_session
+from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_CHANGED_IN_VERSION,

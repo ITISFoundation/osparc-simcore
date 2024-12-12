@@ -18,7 +18,6 @@ from servicelib.logging_utils import log_context
 
 from ...api.dependencies.authentication import get_current_user_id
 from ...api.dependencies.services import get_api_client
-from ...api.dependencies.webserver import get_webserver_session
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -48,6 +47,7 @@ from ...services_http.study_job_models_converters import (
 )
 from ...services_http.webserver import AuthSession
 from ..dependencies.application import get_reverse_url_mapper
+from ..dependencies.webserver_http import get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import FMSG_CHANGELOG_CHANGED_IN_VERSION, FMSG_CHANGELOG_NEW_IN_VERSION
 from .solvers_jobs import JOBS_STATUS_CODES

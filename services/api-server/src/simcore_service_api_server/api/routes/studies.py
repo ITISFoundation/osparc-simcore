@@ -14,7 +14,7 @@ from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.studies import Study, StudyID, StudyPort
 from ...services_http.webserver import AuthSession
-from ..dependencies.webserver import get_webserver_session
+from ..dependencies.webserver_http import get_webserver_session
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()

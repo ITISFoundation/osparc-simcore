@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from fastapi import FastAPI
 from fastapi_pagination import Page, create_page
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
@@ -31,3 +32,9 @@ class WbApiRpcClient:
             total=licensed_items_page.total,
             params=page_params,
         )
+
+
+def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
+    app.state.wb_api_rpc_client = WbApiRpcClient(
+        _rabbitmq_rpc_client=rabbitmq_rmp_client
+    )
