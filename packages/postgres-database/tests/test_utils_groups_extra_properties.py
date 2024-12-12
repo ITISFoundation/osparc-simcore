@@ -21,6 +21,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
 from sqlalchemy import literal_column
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 async def test_get_raises_if_not_found(
@@ -97,6 +98,28 @@ async def test_get(
     )
     received_extra_properties = await GroupExtraPropertiesRepo.get(
         connection, gid=registered_user.primary_gid, product_name=product_name
+    )
+    assert created_extra_properties == received_extra_properties
+
+
+async def test_get_v2(
+    asyncpg_engine: AsyncEngine,
+    registered_user: RowProxy,
+    product_name: str,
+    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
+):
+    with pytest.raises(GroupExtraPropertiesNotFoundError):
+        await GroupExtraPropertiesRepo.get_v2(
+            asyncpg_engine, gid=registered_user.primary_gid, product_name=product_name
+        )
+
+    await create_fake_product(product_name)
+    created_extra_properties = await create_fake_group_extra_properties(
+        registered_user.primary_gid, product_name
+    )
+    received_extra_properties = await GroupExtraPropertiesRepo.get_v2(
+        asyncpg_engine, gid=registered_user.primary_gid, product_name=product_name
     )
     assert created_extra_properties == received_extra_properties
 
@@ -350,6 +373,117 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
     aggregated_group_properties = (
         await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
             connection, user_id=registered_user.id, product_name=product_name
+        )
+    )
+    assert aggregated_group_properties.internet_access is False
+    assert aggregated_group_properties.override_services_specifications is False
+    assert aggregated_group_properties.use_on_demand_clusters is True
+
+
+async def test_get_aggregated_properties_for_user_returns_property_values_as_truthy_if_one_of_them_is_v2(
+    asyncpg_engine: AsyncEngine,
+    connection: aiopg.sa.connection.SAConnection,
+    product_name: str,
+    registered_user: RowProxy,
+    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_group: Callable[..., Awaitable[RowProxy]],
+    create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
+    everyone_group_id: int,
+):
+    await create_fake_product(product_name)
+    await create_fake_product(f"{product_name}_additional_just_for_fun")
+
+    # create a specific extra properties for group that disallow everything
+    everyone_group_extra_properties = await create_fake_group_extra_properties(
+        everyone_group_id,
+        product_name,
+        internet_access=False,
+        override_services_specifications=False,
+        use_on_demand_clusters=False,
+    )
+    # this should return the everyone group properties
+    aggregated_group_properties = (
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user_v2(
+            asyncpg_engine, user_id=registered_user.id, product_name=product_name
+        )
+    )
+    assert aggregated_group_properties == everyone_group_extra_properties
+
+    # now we create some standard groups and add the user to them and make everything false for now
+    standard_groups = [await create_fake_group(connection) for _ in range(5)]
+    for group in standard_groups:
+        await create_fake_group_extra_properties(
+            group.gid,
+            product_name,
+            internet_access=False,
+            override_services_specifications=False,
+            use_on_demand_clusters=False,
+        )
+        await _add_user_to_group(
+            connection, user_id=registered_user.id, group_id=group.gid
+        )
+
+    # now we still should not have any of these value Truthy
+    aggregated_group_properties = (
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user_v2(
+            asyncpg_engine, user_id=registered_user.id, product_name=product_name
+        )
+    )
+    assert aggregated_group_properties.internet_access is False
+    assert aggregated_group_properties.override_services_specifications is False
+    assert aggregated_group_properties.use_on_demand_clusters is False
+
+    # let's change one of these standard groups
+    random_standard_group = random.choice(standard_groups)  # noqa: S311
+    result = await connection.execute(
+        groups_extra_properties.update()
+        .where(groups_extra_properties.c.group_id == random_standard_group.gid)
+        .values(internet_access=True)
+    )
+    assert result.rowcount == 1
+
+    # now we should have internet access
+    aggregated_group_properties = (
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user_v2(
+            asyncpg_engine, user_id=registered_user.id, product_name=product_name
+        )
+    )
+    assert aggregated_group_properties.internet_access is True
+    assert aggregated_group_properties.override_services_specifications is False
+    assert aggregated_group_properties.use_on_demand_clusters is False
+
+    # let's change another one of these standard groups
+    random_standard_group = random.choice(standard_groups)  # noqa: S311
+    result = await connection.execute(
+        groups_extra_properties.update()
+        .where(groups_extra_properties.c.group_id == random_standard_group.gid)
+        .values(override_services_specifications=True)
+    )
+    assert result.rowcount == 1
+
+    # now we should have internet access and service override
+    aggregated_group_properties = (
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user_v2(
+            asyncpg_engine, user_id=registered_user.id, product_name=product_name
+        )
+    )
+    assert aggregated_group_properties.internet_access is True
+    assert aggregated_group_properties.override_services_specifications is True
+    assert aggregated_group_properties.use_on_demand_clusters is False
+
+    # and we can deny it again by setting a primary extra property
+    # now create some personal extra properties
+    personal_group_extra_properties = await create_fake_group_extra_properties(
+        registered_user.primary_gid,
+        product_name,
+        internet_access=False,
+        use_on_demand_clusters=True,
+    )
+    assert personal_group_extra_properties
+
+    aggregated_group_properties = (
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user_v2(
+            asyncpg_engine, user_id=registered_user.id, product_name=product_name
         )
     )
     assert aggregated_group_properties.internet_access is False
