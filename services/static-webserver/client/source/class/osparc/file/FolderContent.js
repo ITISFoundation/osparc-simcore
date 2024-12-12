@@ -54,7 +54,7 @@ qx.Class.define("osparc.file.FolderContent", {
   events: {
     "selectionChanged": "qx.event.type.Data", // tap
     "multiSelectionChanged": "qx.event.type.Data", // tap
-    "itemSelected": "qx.event.type.Data", // dbltap
+    "openItemSelected": "qx.event.type.Data", // dbltap
     "requestDatasetFiles": "qx.event.type.Data",
   },
 
@@ -250,7 +250,7 @@ qx.Class.define("osparc.file.FolderContent", {
     },
 
     __itemDblTapped: function(entry) {
-      this.fireDataEvent("itemSelected", entry);
+      this.fireDataEvent("openItemSelected", entry);
     },
 
     __attachListenersToGridItem: function(btn, entry) {
