@@ -28,7 +28,7 @@ async def get_licensed_items(
     page_params: Annotated[PaginationParams, Depends()],
     web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     product_name: Annotated[str, Depends(get_product_name)],
-) -> Page[LicensedItemGet]:
+):
     return await web_api_rpc.get_licensed_items(
         product_name=product_name, page_params=page_params
     )

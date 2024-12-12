@@ -197,6 +197,7 @@ class AuthSession:
         with service_exception_handler(
             service_name="Webserver",
             http_status_map={status.HTTP_404_NOT_FOUND: ListJobsError},
+            rpc_exception_map={},
         ):
             resp = await self.client.get(
                 "/projects",

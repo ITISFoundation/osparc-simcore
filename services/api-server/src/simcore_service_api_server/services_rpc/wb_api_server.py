@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from functools import partial
+from typing import cast
 
 from fastapi import FastAPI
 from fastapi_pagination import Page, create_page
@@ -29,7 +30,7 @@ class WbApiRpcClient:
             offset=page_params.offset,
             limit=page_params.limit,
         )
-        return create_page(
+        page = create_page(
             [
                 LicensedItemGet(
                     licensed_item_id=elm.licensed_item_id,
@@ -44,6 +45,7 @@ class WbApiRpcClient:
             total=licensed_items_page.total,
             params=page_params,
         )
+        return cast(Page[LicensedItemGet], page)
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
