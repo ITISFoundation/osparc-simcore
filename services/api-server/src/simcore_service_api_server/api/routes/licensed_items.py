@@ -17,7 +17,7 @@ _LICENSE_ITEMS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 
 
 @router.get(
-    "/page",
+    "",
     response_model=Page[LicensedItemGet],
     status_code=status.HTTP_200_OK,
     responses=_LICENSE_ITEMS_STATUS_CODES,

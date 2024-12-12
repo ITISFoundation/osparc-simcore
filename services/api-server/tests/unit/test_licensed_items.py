@@ -67,7 +67,7 @@ async def mock_wb_api_server_rcp(
 async def test_get_licensed_items(
     mock_wb_api_server_rcp: MockerFixture, client: AsyncClient, auth: BasicAuth
 ):
-    resp = await client.get(f"{API_VTAG}/licensed-items/page", auth=auth)
+    resp = await client.get(f"{API_VTAG}/licensed-items", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
     TypeAdapter(Page[LicensedItemGet]).validate_json(resp.text)
 
@@ -76,7 +76,7 @@ async def test_get_licensed_items(
 async def test_get_licensed_items_timeout(
     mock_wb_api_server_rcp: MockerFixture, client: AsyncClient, auth: BasicAuth
 ):
-    resp = await client.get(f"{API_VTAG}/licensed-items/page", auth=auth)
+    resp = await client.get(f"{API_VTAG}/licensed-items", auth=auth)
     assert resp.status_code == status.HTTP_504_GATEWAY_TIMEOUT
 
 
@@ -87,5 +87,5 @@ async def test_get_licensed_items_timeout(
 async def test_get_licensed_items_502(
     mock_wb_api_server_rcp: MockerFixture, client: AsyncClient, auth: BasicAuth
 ):
-    resp = await client.get(f"{API_VTAG}/licensed-items/page", auth=auth)
+    resp = await client.get(f"{API_VTAG}/licensed-items", auth=auth)
     assert resp.status_code == status.HTTP_502_BAD_GATEWAY
