@@ -900,14 +900,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return control;
     },
 
-    setValue: function(value) {
-      this.setSelected(value);
-    },
-
-    getValue: function() {
-      this.getSelected();
-    },
-
     /**
      * Event handler for the pointer over event.
      */
