@@ -69,6 +69,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
                 _scheduler_url(app), _scheduler_auth(app)
             )
             # NOTE: any worker "processing" more than 1 task means that the other tasks are queued!
+            # NOTE: that is not necessarily true, in cases where 1 worker takes multiple tasks?? (osparc.io)
             processing_tasks_by_worker = await dask.list_processing_tasks_per_worker(
                 _scheduler_url(app), _scheduler_auth(app)
             )
@@ -76,7 +77,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
             for tasks in processing_tasks_by_worker.values():
                 queued_tasks += tasks[1:]
             _logger.debug(
-                "found %s unrunnable tasks and %s potentially queued tasks",
+                "found %s pending tasks and %s potentially queued tasks",
                 len(unrunnable_tasks),
                 len(queued_tasks),
             )

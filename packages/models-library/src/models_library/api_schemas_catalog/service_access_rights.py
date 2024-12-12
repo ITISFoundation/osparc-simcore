@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
+from ..groups import GroupID
 from ..services import ServiceKey, ServiceVersion
-from ..users import GroupID
 
 
 class ServiceAccessRightsGet(BaseModel):

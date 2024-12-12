@@ -11,7 +11,7 @@ import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Final, cast, get_args
+from typing import Any, Final, TypeAlias, cast, get_args
 from unittest import mock
 
 import aiodocker
@@ -46,6 +46,7 @@ from models_library.generated_models.docker_rest_api import (
     TaskSpec,
 )
 from pydantic import ByteSize, PositiveInt, TypeAdapter
+from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.logging_tools import log_context
@@ -69,6 +70,7 @@ from simcore_service_autoscaling.models import (
     Cluster,
     DaskTaskResources,
 )
+from simcore_service_autoscaling.modules import auto_scaling_core
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
 from simcore_service_autoscaling.utils.utils_docker import (
@@ -176,7 +178,11 @@ def app_with_docker_join_drained(
 @pytest.fixture(scope="session")
 def fake_ssm_settings() -> SSMSettings:
     assert "json_schema_extra" in SSMSettings.model_config
-    return SSMSettings(**SSMSettings.model_config["json_schema_extra"]["examples"][0])
+    assert isinstance(SSMSettings.model_config["json_schema_extra"], dict)
+    assert isinstance(SSMSettings.model_config["json_schema_extra"]["examples"], list)
+    return SSMSettings.model_validate(
+        SSMSettings.model_config["json_schema_extra"]["examples"][0]
+    )
 
 
 @pytest.fixture
@@ -220,6 +226,11 @@ def app_environment(
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
         return setenvs_from_dict(monkeypatch, {**external_envfile_dict})
 
+    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
+    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
+    assert isinstance(
+        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
+    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -263,6 +274,11 @@ def mocked_ec2_instances_envs(
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
     aws_instance_profile: str,
 ) -> EnvVarsDict:
+    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
+    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
+    assert isinstance(
+        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
+    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -271,10 +287,13 @@ def mocked_ec2_instances_envs(
             "EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
-                    ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                            "examples"
-                        ]
+                    ec2_type_name: cast(
+                        dict,
+                        random.choice(  # noqa: S311
+                            EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                                "examples"
+                            ]
+                        ),
                     )
                     | {"ami_id": aws_ami_id}
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
@@ -491,22 +510,23 @@ def create_fake_node(faker: Faker) -> Callable[..., DockerNode]:
     def _creator(**node_overrides) -> DockerNode:
         default_config = {
             "ID": faker.uuid4(),
-            "Version": ObjectVersion(Index=faker.pyint()),
-            "CreatedAt": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
-            "UpdatedAt": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            "Version": ObjectVersion(index=faker.pyint()),
+            "CreatedAt": datetime.datetime.now(tz=datetime.UTC).isoformat(),
+            "UpdatedAt": datetime.datetime.now(tz=datetime.UTC).isoformat(),
             "Description": NodeDescription(
-                Hostname=faker.pystr(),
-                Resources=ResourceObject(
-                    NanoCPUs=int(9 * 1e9), MemoryBytes=256 * 1024 * 1024 * 1024
+                hostname=faker.pystr(),
+                resources=ResourceObject(
+                    nano_cp_us=int(9 * 1e9),
+                    memory_bytes=TypeAdapter(ByteSize).validate_python("256GiB"),
                 ),
             ),
             "Spec": NodeSpec(
-                Name=None,
-                Labels=faker.pydict(allowed_types=(str,)),
-                Role=None,
-                Availability=Availability.drain,
+                name=None,
+                labels=faker.pydict(allowed_types=(str,)),
+                role=None,
+                availability=Availability.drain,
             ),
-            "Status": NodeStatus(State=NodeState.unknown, Message=None, Addr=None),
+            "Status": NodeStatus(state=NodeState.unknown, message=None, addr=None),
         }
         default_config.update(**node_overrides)
         return DockerNode(**default_config)
@@ -529,7 +549,7 @@ def task_template() -> dict[str, Any]:
 
 
 _GIGA_NANO_CPU = 10**9
-NUM_CPUS = PositiveInt
+NUM_CPUS: TypeAlias = PositiveInt
 
 
 @pytest.fixture
@@ -704,6 +724,7 @@ async def _assert_wait_for_service_state(
             after=after_log(ctx.logger, logging.DEBUG),
         )
         async def _() -> None:
+            assert service.id
             services = await async_docker_client.services.list(
                 filters={"id": service.id}
             )
@@ -761,7 +782,9 @@ def aws_allowed_ec2_instance_type_names_env(
 
 @pytest.fixture
 def host_cpu_count() -> int:
-    return psutil.cpu_count()
+    cpus = psutil.cpu_count()
+    assert cpus is not None
+    return cpus
 
 
 @pytest.fixture
@@ -853,9 +876,7 @@ def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
         returned_node.spec.availability = (
             Availability.active if available else Availability.drain
         )
-        returned_node.updated_at = datetime.datetime.now(
-            tz=datetime.timezone.utc
-        ).isoformat()
+        returned_node.updated_at = datetime.datetime.now(tz=datetime.UTC).isoformat()
         return returned_node
 
     return mocker.patch(
@@ -890,7 +911,7 @@ def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def patch_ec2_client_launch_instancess_min_number_of_instances(
+def patch_ec2_client_launch_instances_min_number_of_instances(
     mocker: MockerFixture,
 ) -> mock.Mock:
     """the moto library always returns min number of instances instead of max number of instances which makes
@@ -954,7 +975,7 @@ def create_associated_instance(
         return AssociatedInstance(
             node=node,
             ec2_instance=fake_ec2_instance_data(
-                launch_time=datetime.datetime.now(datetime.timezone.utc)
+                launch_time=datetime.datetime.now(datetime.UTC)
                 - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
                 - datetime.timedelta(
                     days=faker.pyint(min_value=0, max_value=100),
@@ -1001,4 +1022,23 @@ def with_short_ec2_instances_max_start_time(
         {
             "EC2_INSTANCES_MAX_START_TIME": f"{short_ec2_instance_max_start_time}",
         },
+    )
+
+
+@pytest.fixture
+async def spied_cluster_analysis(mocker: MockerFixture) -> MockType:
+    return mocker.spy(auto_scaling_core, "_analyze_current_cluster")
+
+
+@pytest.fixture
+async def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mock.Mock:
+    async def _(
+        nodes: list[DockerNode], ec2_instances: list[EC2InstanceData]
+    ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
+        return [], ec2_instances
+
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.associate_ec2_instances_with_nodes",
+        autospec=True,
+        side_effect=_,
     )

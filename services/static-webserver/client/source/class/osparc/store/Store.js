@@ -221,7 +221,11 @@ qx.Class.define("osparc.store.Store", {
     tasks: {
       check: "Array",
       init: []
-    }
+    },
+    market: {
+      check: "Array",
+      init: []
+    },
   },
 
   members: {

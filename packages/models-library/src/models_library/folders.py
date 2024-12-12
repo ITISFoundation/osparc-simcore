@@ -12,7 +12,8 @@ from pydantic import (
 )
 
 from .access_rights import AccessRights
-from .users import GroupID, UserID
+from .groups import GroupID
+from .users import UserID
 from .utils.enums import StrAutoEnum
 from .workspaces import WorkspaceID
 
