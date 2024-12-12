@@ -2,11 +2,11 @@ import logging
 
 import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver.users import UserGet, UserPermission
+from models_library.api_schemas_webserver.users import UserGet
 from models_library.emails import LowerCaseEmailStr
 from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName
-from models_library.users import UserBillingDetails, UserID
+from models_library.users import UserBillingDetails, UserID, UserPermission
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.users import UserStatus
 
