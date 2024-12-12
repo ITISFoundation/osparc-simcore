@@ -1797,6 +1797,7 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     minimal_configuration: None,
     with_instances_machines_hot_buffer: EnvVarsDict,
     ec2_client: EC2Client,
+    initialized_app: FastAPI,
     app_settings: ApplicationSettings,
     ec2_instances_allowed_types_with_only_1_buffered: dict[
         InstanceTypeType, EC2InstanceBootSpecific
@@ -1807,6 +1808,7 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
         [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag] | None],
         Awaitable[list[str]],
     ],
+    spied_cluster_analysis: MockType,
 ):
     # pre-requisites
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -1834,3 +1836,16 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
         expected_pre_pulled_images=None,
         instance_filters=None,
     )
+
+    # let's autoscale, this should move the warm buffers to hot buffers
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=0,
+    )
+    assert not analyzed_cluster.active_nodes
+    assert analyzed_cluster.buffer_ec2s
+    assert len(analyzed_cluster.buffer_ec2s) == len(buffer_machines)
