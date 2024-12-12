@@ -44,7 +44,10 @@ from pytest_simcore.helpers.autoscaling import (
     assert_cluster_state,
     create_fake_association,
 )
-from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_dynamic_ec2_instances
+from pytest_simcore.helpers.aws_ec2 import (
+    assert_autoscaled_dynamic_ec2_instances,
+    assert_autoscaled_dynamic_warm_pools_ec2_instances,
+)
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
@@ -1792,9 +1795,42 @@ async def test__activate_drained_nodes_with_drained_node(
 
 async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     minimal_configuration: None,
+    with_instances_machines_hot_buffer: EnvVarsDict,
+    ec2_client: EC2Client,
+    app_settings: ApplicationSettings,
+    ec2_instances_allowed_types_with_only_1_buffered: dict[
+        InstanceTypeType, EC2InstanceBootSpecific
+    ],
+    ec2_instance_custom_tags: dict[str, str],
+    buffer_count: int,
     create_buffer_machines: Callable[
-        [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag]],
+        [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag] | None],
         Awaitable[list[str]],
     ],
 ):
-    ...
+    # pre-requisites
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER > 0
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+    # have a few warm buffers ready
+    buffer_machines = await create_buffer_machines(
+        buffer_count,
+        next(iter(list(ec2_instances_allowed_types_with_only_1_buffered))),
+        "stopped",
+        None,
+    )
+    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=buffer_count,
+        expected_instance_type=next(
+            iter(ec2_instances_allowed_types_with_only_1_buffered)
+        ),
+        expected_instance_state="stopped",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_pre_pulled_images=None,
+        instance_filters=None,
+    )

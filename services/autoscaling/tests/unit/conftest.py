@@ -1071,20 +1071,92 @@ async def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mo
 
 
 @pytest.fixture
+def fake_pre_pull_images() -> list[DockerGenericTag]:
+    return TypeAdapter(list[DockerGenericTag]).validate_python(
+        [
+            "nginx:latest",
+            "itisfoundation/my-very-nice-service:latest",
+            "simcore/services/dynamic/another-nice-one:2.4.5",
+            "asd",
+        ]
+    )
+
+
+@pytest.fixture
+def ec2_instances_allowed_types_with_only_1_buffered(
+    faker: Faker,
+    fake_pre_pull_images: list[DockerGenericTag],
+    external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
+) -> dict[InstanceTypeType, EC2InstanceBootSpecific]:
+    if not external_ec2_instances_allowed_types:
+        return {
+            "t2.micro": EC2InstanceBootSpecific(
+                ami_id=faker.pystr(),
+                pre_pull_images=fake_pre_pull_images,
+                buffer_count=faker.pyint(min_value=1, max_value=10),
+            )
+        }
+
+    allowed_ec2_types = external_ec2_instances_allowed_types
+    allowed_ec2_types_with_buffer_defined = dict(
+        filter(
+            lambda instance_type_and_settings: instance_type_and_settings[
+                1
+            ].buffer_count
+            > 0,
+            allowed_ec2_types.items(),
+        )
+    )
+    assert (
+        allowed_ec2_types_with_buffer_defined
+    ), "one type with buffer is needed for the tests!"
+    assert (
+        len(allowed_ec2_types_with_buffer_defined) == 1
+    ), "more than one type with buffer is disallowed in this test!"
+    return {
+        TypeAdapter(InstanceTypeType).validate_python(k): v
+        for k, v in allowed_ec2_types_with_buffer_defined.items()
+    }
+
+
+@pytest.fixture
+def buffer_count(
+    ec2_instances_allowed_types_with_only_1_buffered: dict[
+        InstanceTypeType, EC2InstanceBootSpecific
+    ],
+) -> int:
+    def _by_buffer_count(
+        instance_type_and_settings: tuple[InstanceTypeType, EC2InstanceBootSpecific]
+    ) -> bool:
+        _, boot_specific = instance_type_and_settings
+        return boot_specific.buffer_count > 0
+
+    allowed_ec2_types = ec2_instances_allowed_types_with_only_1_buffered
+    allowed_ec2_types_with_buffer_defined = dict(
+        filter(_by_buffer_count, allowed_ec2_types.items())
+    )
+    assert allowed_ec2_types_with_buffer_defined, "you need one type with buffer"
+    assert (
+        len(allowed_ec2_types_with_buffer_defined) == 1
+    ), "more than one type with buffer is disallowed in this test!"
+    return next(iter(allowed_ec2_types_with_buffer_defined.values())).buffer_count
+
+
+@pytest.fixture
 async def create_buffer_machines(
     ec2_client: EC2Client,
     aws_ami_id: str,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
 ) -> Callable[
-    [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag]],
+    [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag] | None],
     Awaitable[list[str]],
 ]:
     async def _do(
         num: int,
         instance_type: InstanceTypeType,
         instance_state_name: InstanceStateNameType,
-        pre_pull_images: list[DockerGenericTag],
+        pre_pull_images: list[DockerGenericTag] | None,
     ) -> list[str]:
         assert app_settings.AUTOSCALING_EC2_INSTANCES
 
