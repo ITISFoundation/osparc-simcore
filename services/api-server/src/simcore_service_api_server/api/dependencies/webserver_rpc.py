@@ -1,7 +1,12 @@
-from fastapi import FastAPI
+from typing import Annotated, cast
+
+from fastapi import Depends, FastAPI
+from servicelib.fastapi.dependencies import get_app
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 
-def get_wb_api_rpc_client(app: FastAPI) -> WbApiRpcClient:
+async def get_wb_api_rpc_client(
+    app: Annotated[FastAPI, Depends(get_app)]
+) -> WbApiRpcClient:
     assert app.state.wb_api_rpc_client  # nosec
-    return app.state.wb_api_rpc_client
+    return cast(WbApiRpcClient, app.state.wb_api_rpc_client)
