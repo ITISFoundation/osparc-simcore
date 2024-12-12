@@ -14431,7 +14431,6 @@ components:
       - country
       - registered
       - status
-      - products
       title: UserGet
     UserNotification:
       properties:
