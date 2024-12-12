@@ -5,6 +5,7 @@ import logging
 import asyncpg.exceptions
 from aiohttp import web
 from models_library.projects import ProjectID
+from models_library.users import UserID, UserNameID
 from redis.asyncio import Redis
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.errors import DatabaseError
@@ -201,7 +202,9 @@ async def remove_users_manually_marked_as_guests(
     }
 
     # Prevent creating this list if a guest user
-    guest_users: list[tuple[int, str]] = await get_guest_user_ids_and_names(app)
+    guest_users: list[tuple[UserID, UserNameID]] = await get_guest_user_ids_and_names(
+        app
+    )
 
     for guest_user_id, guest_user_name in guest_users:
         # Prevents removing GUEST users that were automatically (NOT manually) created
