@@ -23,7 +23,7 @@ qx.Class.define("osparc.dashboard.CardContainer", {
   },
 
   statics: {
-    isValidWidget: function(widget) {
+    isValidCard: function(widget) {
       // return (card instanceof qx.ui.form.ToggleButton);
       return (
         widget instanceof osparc.dashboard.CardBase ||
@@ -38,7 +38,7 @@ qx.Class.define("osparc.dashboard.CardContainer", {
 
     // overridden
     add: function(child, options) {
-      if (this.self().isValidWidget(child)) {
+      if (this.self().isValidCard(child)) {
         if (osparc.dashboard.ResourceContainerManager.cardExists(this, child)) {
           return;
         }

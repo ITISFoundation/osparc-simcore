@@ -118,7 +118,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __groupedContainers: null,
 
     addNonResourceCard: function(card) {
-      if (osparc.dashboard.CardContainer.isValidWidget(card)) {
+      if (osparc.dashboard.CardContainer.isValidCard(card)) {
         if (this.getGroupBy()) {
           // it will always go to the no-group group
           const noGroupContainer = this.__getGroupContainer("no-group");
@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     removeNonResourceCard: function(card) {
-      if (osparc.dashboard.CardContainer.isValidWidget(card)) {
+      if (osparc.dashboard.CardContainer.isValidCard(card)) {
         if (this.getGroupBy()) {
           const noGroupContainer = this.__getGroupContainer("no-group");
           if (noGroupContainer.getContentContainer().getChildren().indexOf(card) > -1) {
