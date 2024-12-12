@@ -221,6 +221,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       const locationId = file.getLocation();
       if (locationId !== 0 && locationId !== "0") {
         osparc.FlashMessenger.getInstance().logAs(this.tr("Only files in simcore.s3 can be deleted"));
+        return null;
       }
       const dataStore = osparc.store.Data.getInstance();
       return dataStore.deleteFile(locationId, fileId);
