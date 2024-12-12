@@ -332,7 +332,7 @@ async def get_user_billing_details(
 async def delete_user_by_id(
     engine: AsyncEngine, connection: AsyncConnection | None = None, *, user_id: UserID
 ) -> bool:
-    async with pass_or_acquire_connection(engine, connection) as conn:
+    async with transaction_context(engine, connection) as conn:
         result = await conn.execute(
             delete(users)
             .where(users.c.id == user_id)
