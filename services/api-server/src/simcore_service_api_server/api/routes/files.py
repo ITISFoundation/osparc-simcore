@@ -37,7 +37,7 @@ from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
 )
-from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
+from ...services_http.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ._common import API_SERVER_DEV_FEATURES_ENABLED

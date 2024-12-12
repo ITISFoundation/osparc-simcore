@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from ...models.schemas.model_adapter import GetCreditPriceLegacy
-from ..dependencies.webserver import AuthSession, get_webserver_session
+from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
 
 router = APIRouter()

@@ -60,11 +60,11 @@ class TaskLogFileGet(BaseModel):
 
 # API CLASS ---------------------------------------------
 
-_exception_mapper = partial(service_exception_mapper, "Director V2")
+_exception_mapper = partial(service_exception_mapper, service_name="Director V2")
 
 
 class DirectorV2Api(BaseServiceClientApi):
-    @_exception_mapper({})
+    @_exception_mapper(http_status_map={})
     async def create_computation(
         self,
         *,
@@ -85,7 +85,7 @@ class DirectorV2Api(BaseServiceClientApi):
         task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
-    @_exception_mapper({})
+    @_exception_mapper(http_status_map={})
     async def start_computation(
         self,
         *,
@@ -115,7 +115,7 @@ class DirectorV2Api(BaseServiceClientApi):
         task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
+    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
     async def get_computation(
         self, *, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
@@ -129,7 +129,7 @@ class DirectorV2Api(BaseServiceClientApi):
         task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
+    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
     async def stop_computation(
         self, *, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
@@ -143,7 +143,7 @@ class DirectorV2Api(BaseServiceClientApi):
         task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
+    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
     async def delete_computation(self, *, project_id: UUID, user_id: PositiveInt):
         response = await self.client.request(
             "DELETE",
@@ -155,7 +155,9 @@ class DirectorV2Api(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: LogFileNotFoundError})
+    @_exception_mapper(
+        http_status_map={status.HTTP_404_NOT_FOUND: LogFileNotFoundError}
+    )
     async def get_computation_logs(
         self, *, user_id: PositiveInt, project_id: UUID
     ) -> JobLogsMap:

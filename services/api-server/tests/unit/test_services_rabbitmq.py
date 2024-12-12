@@ -11,7 +11,7 @@ import random
 from collections.abc import AsyncIterable, Callable, Iterable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import Final, Literal
+from typing import Final, Literal, cast
 from unittest.mock import AsyncMock
 from uuid import UUID
 
@@ -38,11 +38,11 @@ from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
 from simcore_service_api_server.core.health_checker import get_health_checker
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
-from simcore_service_api_server.services.director_v2 import (
+from simcore_service_api_server.services_http.director_v2 import (
     ComputationTaskGet,
     DirectorV2Api,
 )
-from simcore_service_api_server.services.log_streaming import (
+from simcore_service_api_server.services_http.log_streaming import (
     LogDistributor,
     LogStreamer,
     LogStreamerRegistrationConflictError,
@@ -167,7 +167,7 @@ def produce_logs(
         if log_message is None:
             log_message = LoggerRabbitMessage(
                 user_id=user_id,
-                project_id=project_id_ or faker.uuid4(),
+                project_id=project_id_ or cast(UUID, faker.uuid4(cast_to=None)),
                 node_id=node_id_,
                 messages=messages_ or [faker.text() for _ in range(10)],
                 log_level=level_ or logging.INFO,

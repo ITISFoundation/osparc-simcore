@@ -1,7 +1,7 @@
-from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from ...exceptions.backend_errors import BaseBackEndError
 from ._utils import create_error_json_response
 
 

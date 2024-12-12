@@ -2,7 +2,8 @@ from typing import Annotated
 
 from models_library.api_schemas__common.meta import BaseMeta
 from pydantic import ConfigDict, HttpUrl
-from simcore_service_api_server.models._utils_pydantic import UriSchema
+
+from ...models._utils_pydantic import UriSchema
 
 
 class Meta(BaseMeta):

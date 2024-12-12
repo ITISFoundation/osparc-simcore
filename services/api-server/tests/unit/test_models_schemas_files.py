@@ -16,7 +16,7 @@ from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import TypeAdapter, ValidationError
 from simcore_service_api_server.models.schemas.files import File
-from simcore_service_api_server.services.storage import to_file_api_model
+from simcore_service_api_server.services_http.storage import to_file_api_model
 
 FILE_CONTENT = "This is a test"
 

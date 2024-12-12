@@ -12,7 +12,7 @@ from models_library.users import UserID
 from respx import MockRouter
 from settings_library.director_v2 import DirectorV2Settings
 from simcore_service_api_server.exceptions.backend_errors import JobNotFoundError
-from simcore_service_api_server.services.director_v2 import DirectorV2Api
+from simcore_service_api_server.services_http.director_v2 import DirectorV2Api
 
 
 @pytest.fixture

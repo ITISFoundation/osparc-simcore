@@ -6,13 +6,21 @@ from pydantic import NonNegativeInt
 from servicelib.aiohttp.application_setup import ApplicationSetupError
 from servicelib.fastapi.dependencies import get_app
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from tenacity import before_sleep_log, retry, stop_after_delay, wait_fixed
 
-from ...services.log_streaming import LogDistributor
+from ...services_http.log_streaming import LogDistributor
 
 _MAX_WAIT_FOR_LOG_DISTRIBUTOR_SECONDS: Final[int] = 10
 
 _logger = logging.getLogger(__name__)
+
+
+def get_rabbitmq_rpc_client(
+    app: Annotated[FastAPI, Depends(get_app)]
+) -> RabbitMQRPCClient:
+    assert app.state.rabbitmq_rpc_client  # nosec
+    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
 
 
 def get_rabbitmq_client(app: Annotated[FastAPI, Depends(get_app)]) -> RabbitMQClient:

@@ -2,8 +2,8 @@ from typing import Annotated, TypeAlias
 
 from models_library import projects, projects_nodes_io
 from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field
-from simcore_service_api_server.models._utils_pydantic import UriSchema
 
+from ...models._utils_pydantic import UriSchema
 from .. import api_resources
 from . import solvers
 

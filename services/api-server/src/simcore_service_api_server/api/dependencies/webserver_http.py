@@ -9,7 +9,7 @@ from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
 from ...core.settings import ApplicationSettings, WebServerSettings
-from ...services.webserver import AuthSession
+from ...services_http.webserver import AuthSession
 from .application import get_app, get_settings
 from .authentication import Identity, get_active_user_email, get_current_identity
 

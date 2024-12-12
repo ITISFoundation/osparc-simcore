@@ -46,7 +46,7 @@ from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
-from simcore_service_api_server.services.solver_job_outputs import ResultsTypes
+from simcore_service_api_server.services_http.solver_job_outputs import ResultsTypes
 
 
 @pytest.fixture
