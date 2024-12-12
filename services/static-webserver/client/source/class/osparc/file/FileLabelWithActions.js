@@ -132,7 +132,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       this.__multiSelection = multiSelectionData;
       if (multiSelectionData && multiSelectionData.length) {
         if (multiSelectionData.length === 1) {
-          this.setItemSelected(multiSelectionData[0].entry);
+          this.setItemSelected(multiSelectionData[0]);
         } else {
           const selectedLabel = this.getChildControl("selected-label");
           selectedLabel.set({
@@ -161,18 +161,29 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __retrieveURLAndDownloadSelected: function() {
-      let selection = this.getItemSelected();
-      if (selection) {
-        this.__retrieveURLAndDownloadFile(selection);
+      if (this.isMultiSelect()) {
+        this.__multiSelection.forEach(selection => {
+          this.__retrieveURLAndDownloadFile(selection);
+        });
+      } else {
+        const selection = this.getItemSelected();
+        if (selection) {
+          this.__retrieveURLAndDownloadFile(selection);
+        }
       }
     },
 
     __deleteSelected: function() {
-      const selection = this.getItemSelected();
-      if (selection) {
-        return this.__deleteFile(selection);
+      if (this.isMultiSelect()) {
+        this.__multiSelection.forEach(selection => {
+          this.__deleteFile(selection);
+        });
+      } else {
+        const selection = this.getItemSelected();
+        if (selection) {
+          this.__deleteFile(selection);
+        }
       }
-      return false;
     },
 
     __retrieveURLAndDownloadFile: function(file) {

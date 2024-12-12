@@ -262,7 +262,7 @@ qx.Class.define("osparc.file.FolderContent", {
           const iconsLayout = this.getChildControl("icons-layout");
           iconsLayout.getChildren().forEach(btn => {
             if (osparc.file.FilesTree.isFile(btn.entry) && btn.getValue()) {
-              selectedFiles.push(btn);
+              selectedFiles.push(btn.entry);
             }
           });
           this.__itemTapped(selectedFiles, gridItem.getValue());
