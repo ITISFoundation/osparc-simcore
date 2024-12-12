@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.dashboard.CardBase", {
-  extend: qx.ui.form.ToggleButton,
+  extend: qx.ui.core.Widget,
   implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
   include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
   type: "abstract",
@@ -235,6 +235,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
     cardKey: {
       check: "String",
       nullable: true
+    },
+
+    selected: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+    },
+
+    icon: {
+      check: "String",
+      init: null,
+      nullable: true,
+      apply: "_applyIcon",
     },
 
     resourceData: {
@@ -884,6 +897,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
         this.fireDataEvent("emptyStudyClicked", this.getUuid());
       }, this);
       return control;
+    },
+
+    setValue: function(value) {
+      this.setSelected(value);
+    },
+
+    getValue: function() {
+      this.getSelected();
     },
 
     /**
