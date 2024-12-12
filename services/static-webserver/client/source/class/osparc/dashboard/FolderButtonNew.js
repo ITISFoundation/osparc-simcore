@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
       appearance: "pb-new"
     });
 
-    this.addListener("tap", e => this.__itemSelected(e.getData()), this);
+    this.addListener("tap", this.__itemSelected, this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.NEW);
 
@@ -77,21 +77,19 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
       this.getChildControl("title");
     },
 
-    __itemSelected: function(newVal) {
-      if (newVal) {
-        const newFolder = true;
-        const folderEditor = new osparc.editor.FolderEditor(newFolder);
-        const title = this.tr("New Folder");
-        const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 120);
-        folderEditor.addListener("createFolder", () => {
-          const name = folderEditor.getLabel();
-          this.fireDataEvent("createFolder", {
-            name,
-          });
-          win.close();
+    __itemSelected: function() {
+      const newFolder = true;
+      const folderEditor = new osparc.editor.FolderEditor(newFolder);
+      const title = this.tr("New Folder");
+      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 120);
+      folderEditor.addListener("createFolder", () => {
+        const name = folderEditor.getLabel();
+        this.fireDataEvent("createFolder", {
+          name,
         });
-        folderEditor.addListener("cancel", () => win.close());
-      }
+        win.close();
+      });
+      folderEditor.addListener("cancel", () => win.close());
     }
   }
 });

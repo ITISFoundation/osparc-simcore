@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
       appearance: "pb-new"
     });
 
-    this.addListener("tap", e => this.__itemSelected(e.getData()), this);
+    this.addListener("tap", this.__itemSelected, this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.NEW);
 
@@ -54,24 +54,22 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
   },
 
   members: {
-    __itemSelected: function(newVal) {
-      if (newVal) {
-        const workspaceEditor = new osparc.editor.WorkspaceEditor();
-        const title = this.tr("New Workspace");
-        const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 500, 500).set({
-          modal: true,
-          clickAwayClose: false,
-        });
-        workspaceEditor.addListener("workspaceCreated", () => this.fireEvent("workspaceCreated"));
-        workspaceEditor.addListener("workspaceDeleted", () => this.fireEvent("workspaceDeleted"));
-        workspaceEditor.addListener("workspaceUpdated", () => {
-          win.close();
-          this.fireEvent("workspaceUpdated");
-        }, this);
-        workspaceEditor.addListener("updateAccessRights", () => this.fireEvent("workspaceUpdated"));
-        win.getChildControl("close-button").addListener("tap", () => workspaceEditor.cancel());
-        workspaceEditor.addListener("cancel", () => win.close());
-      }
+    __itemSelected: function() {
+      const workspaceEditor = new osparc.editor.WorkspaceEditor();
+      const title = this.tr("New Workspace");
+      const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 500, 500).set({
+        modal: true,
+        clickAwayClose: false,
+      });
+      workspaceEditor.addListener("workspaceCreated", () => this.fireEvent("workspaceCreated"));
+      workspaceEditor.addListener("workspaceDeleted", () => this.fireEvent("workspaceDeleted"));
+      workspaceEditor.addListener("workspaceUpdated", () => {
+        win.close();
+        this.fireEvent("workspaceUpdated");
+      }, this);
+      workspaceEditor.addListener("updateAccessRights", () => this.fireEvent("workspaceUpdated"));
+      win.getChildControl("close-button").addListener("tap", () => workspaceEditor.cancel());
+      workspaceEditor.addListener("cancel", () => win.close());
     }
   }
 });
