@@ -29,7 +29,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
-    this.addListener("tap", this.__itemSelected, this);
+    this.addListener("changeSelected", this.__evalSelectedButton, this);
   },
 
   statics: {
@@ -265,36 +265,26 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     // overridden
     _applyMultiSelectionMode: function(value) {
       if (value) {
-        const menuButton = this.getChildControl("menu-button");
-        menuButton.setVisibility("excluded");
-        this.__itemSelected();
+        this.__evalSelectedButton();
       } else {
-        this.__showMenuOnly();
+        this.setSelected(false);
       }
     },
 
-    __itemSelected: function() {
-      if (this.isItemNotClickable()) {
-        this.setSelected(false);
-        return;
-      }
-
+    __evalSelectedButton: function() {
+      const selected = this.getSelected();
+      const menuButton = this.getChildControl("menu-button");
+      const tick = this.getChildControl("tick-selected");
+      const untick = this.getChildControl("tick-unselected");
       if (this.isResourceType("study") && this.isMultiSelectionMode()) {
-        const selected = this.getSelected();
-
-        const tick = this.getChildControl("tick-selected");
+        menuButton.setVisibility("excluded");
         tick.setVisibility(selected ? "visible" : "excluded");
-
-        const untick = this.getChildControl("tick-unselected");
         untick.setVisibility(selected ? "excluded" : "visible");
       } else {
-        this.__showMenuOnly();
+        menuButton.setVisibility("visible");
+        tick.setVisibility("excluded");
+        untick.setVisibility("excluded");
       }
-    },
-
-    __showMenuOnly: function() {
-      const menu = this.getChildControl("menu-button");
-      this.getChildControl("menu-selection-stack").setSelection([menu]);
     },
 
     _applyMenu: function(value, old) {

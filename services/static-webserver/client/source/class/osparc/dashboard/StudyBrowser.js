@@ -638,13 +638,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __configureStudyCards: function(cards) {
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
-        card.addListener("tap", e => {
-          if (card.isItemNotClickable()) {
-            card.setSelected(false);
-          } else {
-            this.__studyCardClicked(card, e.getNativeEvent().shiftKey);
-          }
-        }, this);
+        card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
         this._populateCardMenu(card);
       });
     },

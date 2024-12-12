@@ -32,8 +32,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
-    this.addListener("tap", this.__itemSelected, this);
-
     this.addListener("changeSelected", this.__evalSelectedButton, this);
   },
 
@@ -185,14 +183,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       } else {
         this.setSelected(false);
       }
-    },
-
-    __itemSelected: function() {
-      if (this.isItemNotClickable()) {
-        return;
-      }
-
-      this.setSelected(!this.getSelected());
     },
 
     __evalSelectedButton: function() {
