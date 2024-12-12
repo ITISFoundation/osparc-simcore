@@ -98,7 +98,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
     #             product_gid=product.group_id,
     #         )
 
-    my_profile, preferences = await _users_service.get_user_profile(
+    my_profile, preferences = await _users_service.get_my_profile(
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
 
@@ -120,7 +120,7 @@ async def update_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     profile_update = await parse_request_body_as(MyProfilePatch, request)
 
-    await _users_service.update_user_profile(
+    await _users_service.update_my_profile(
         request.app, user_id=req_ctx.user_id, update=profile_update
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

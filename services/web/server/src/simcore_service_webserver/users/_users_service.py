@@ -296,14 +296,15 @@ async def update_expired_users(app: web.Application) -> list[UserID]:
 
 
 #
-# USER PROFILE
+# MY USER PROFILE
 #
 
 
-async def get_user_profile(
+async def get_my_profile(
     app: web.Application, *, user_id: UserID, product_name: ProductName
 ):
-    """
+    """Caller and target user is the same. Privacy settings do not apply here
+
     :raises UserNotFoundError:
     :raises MissingGroupExtraPropertiesForProductError: when product is not properly configured
     """
@@ -323,7 +324,7 @@ async def get_user_profile(
     return my_profile, preferences
 
 
-async def update_user_profile(
+async def update_my_profile(
     app: web.Application,
     *,
     user_id: UserID,
