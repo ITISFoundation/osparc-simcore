@@ -251,9 +251,6 @@ qx.Class.define("osparc.file.FolderContent", {
 
     __itemDblTapped: function(entry) {
       this.fireDataEvent("itemSelected", entry);
-      if (osparc.file.FilesTree.isDir(entry)) {
-        this.setFolder(entry);
-      }
     },
 
     __attachListenersToGridItem: function(btn, entry) {

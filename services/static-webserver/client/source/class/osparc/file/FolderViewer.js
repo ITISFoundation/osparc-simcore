@@ -36,8 +36,8 @@ qx.Class.define("osparc.file.FolderViewer", {
     if (allowMultiselection) {
       multiSelectButton = this.getChildControl("multi-select-button");
     }
-    const iconsButton = this.getChildControl("view-options-icons");
-    const listButton = this.getChildControl("view-options-list");
+    const gridViewButton = this.getChildControl("view-options-icons");
+    const listViewButton = this.getChildControl("view-options-list");
     const folderContent = this.getChildControl("folder-content");
     const selectedFileLayout = this.getChildControl("selected-file-layout");
 
@@ -54,19 +54,27 @@ qx.Class.define("osparc.file.FolderViewer", {
     if (allowMultiselection) {
       multiSelectButton.addListener("changeValue", e => folderContent.setMultiSelect(e.getData()));
     }
-    iconsButton.addListener("execute", () => folderContent.setMode("icons"));
-    listButton.addListener("execute", () => folderContent.setMode("list"));
+    gridViewButton.addListener("execute", () => {
+      folderContent.setMode("icons");
+      selectedFileLayout.resetItemSelected();
+    });
+    listViewButton.addListener("execute", () => {
+      folderContent.setMode("list");
+      selectedFileLayout.resetItemSelected();
+    });
 
-    folderContent.addListener("itemSelected", e => this.fireDataEvent("itemSelected", e.getData()));
     folderContent.addListener("requestDatasetFiles", e => this.fireDataEvent("requestDatasetFiles", e.getData()));
     folderContent.addListener("selectionChanged", e => {
       const selectionData = e.getData();
-      if (selectionData) {
-        selectedFileLayout.setItemSelected(selectionData);
-      } else {
-        selectedFileLayout.resetItemSelected(selectionData);
-      }
+      selectionData ? selectedFileLayout.setItemSelected(selectionData) : selectedFileLayout.resetItemSelected();
     }, this);
+    folderContent.addListener("itemSelected", e => {
+      const entry = e.getData();
+      this.fireDataEvent("itemSelected", entry);
+      if (osparc.file.FilesTree.isDir(entry)) {
+        this.setFolder(entry);
+      }
+    });
   },
 
   properties: {
