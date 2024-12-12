@@ -169,6 +169,25 @@ async def test_get_monitored_nodes_with_valid_label(
     )
 
 
+async def test_get_monitored_nodes_are_sorted_according_to_creation_date(
+    mocker: MockerFixture,
+    autoscaling_docker: AutoscalingDocker,
+    create_fake_node: Callable[..., Node],
+    faker: Faker,
+):
+    fake_nodes = [
+        create_fake_node(CreatedAt=faker.date_time(tzinfo=datetime.UTC).isoformat())
+        for _ in range(10)
+    ]
+    mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
+    mocked_aiodocker.list.return_value = fake_nodes
+    monitored_nodes = await get_monitored_nodes(autoscaling_docker, node_labels=[])
+    assert len(monitored_nodes) == len(fake_nodes)
+    sorted_fake_nodes = sorted(fake_nodes, key=lambda node: arrow.get(node.created_at))
+    assert monitored_nodes == sorted_fake_nodes
+    assert monitored_nodes[0].created_at < monitored_nodes[1].created_at
+
+
 async def test_worker_nodes(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,

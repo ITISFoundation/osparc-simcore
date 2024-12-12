@@ -2,6 +2,7 @@ import logging
 from typing import Annotated
 
 from models_library.basic_types import IDStr
+from models_library.groups import GroupID
 from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.rest_filters import Filters, FiltersQueryParameters
 from models_library.rest_ordering import (
@@ -11,7 +12,7 @@ from models_library.rest_ordering import (
 )
 from models_library.rest_pagination import PageQueryParameters
 from models_library.trash import RemoveQueryParams
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field

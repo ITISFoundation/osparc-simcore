@@ -1,5 +1,6 @@
 from ..basic_types import IDStr
-from ..users import GroupID, UserID
+from ..groups import GroupID
+from ..users import UserID
 
 
 class SocketIORoomStr(IDStr):

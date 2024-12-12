@@ -4,7 +4,7 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .users import GroupID
+from .groups import GroupID
 from .utils.change_case import snake_to_camel
 
 

@@ -3,7 +3,8 @@
 import pytest
 from faker import Faker
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
-from models_library.users import GroupID, UserID
+from models_library.groups import GroupID
+from models_library.users import UserID
 
 
 @pytest.fixture

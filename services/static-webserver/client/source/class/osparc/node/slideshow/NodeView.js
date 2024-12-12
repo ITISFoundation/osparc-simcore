@@ -143,7 +143,7 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       this._iFrameLayout.removeAll();
 
       const node = this.getNode();
-      if (node) {
+      if (node && node.getIFrame()) {
         const loadingPage = node.getLoadingPage();
         const iFrame = node.getIFrame();
         const src = iFrame.getSource();
