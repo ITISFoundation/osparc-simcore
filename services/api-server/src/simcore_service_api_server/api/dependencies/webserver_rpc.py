@@ -2,7 +2,8 @@ from typing import Annotated, cast
 
 from fastapi import Depends, FastAPI
 from servicelib.fastapi.dependencies import get_app
-from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
+
+from ...services_rpc.wb_api_server import WbApiRpcClient
 
 
 async def get_wb_api_rpc_client(
