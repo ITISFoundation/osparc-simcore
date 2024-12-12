@@ -2057,7 +2057,10 @@
         "required": [
           "is_inactive"
         ],
-        "title": "GetProjectInactivityResponse"
+        "title": "GetProjectInactivityResponse",
+        "example": {
+          "is_inactive": "false"
+        }
       },
       "HTTPValidationError": {
         "properties": {

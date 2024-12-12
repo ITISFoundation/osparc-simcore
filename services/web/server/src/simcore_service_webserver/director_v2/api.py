@@ -17,7 +17,6 @@ from ._core_computations import (
     stop_pipeline,
 )
 from ._core_dynamic_services import (
-    get_project_inactivity,
     request_retrieve_dyn_service,
     restart_dynamic_service,
     retrieve,
@@ -34,7 +33,6 @@ __all__: tuple[str, ...] = (
     "DirectorServiceError",
     "get_batch_tasks_outputs",
     "get_computation_task",
-    "get_project_inactivity",
     "get_project_run_policy",
     "is_healthy",
     "is_pipeline_running",

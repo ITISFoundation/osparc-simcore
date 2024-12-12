@@ -1,5 +1,8 @@
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
+    GetProjectInactivityResponse,
+)
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
@@ -8,6 +11,7 @@ from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pydantic import NonNegativeInt
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
@@ -55,4 +59,13 @@ async def stop_dynamic_service(
 ) -> None:
     return await scheduler_interface.stop_dynamic_service(
         app, dynamic_service_stop=dynamic_service_stop
+    )
+
+
+@router.expose()
+async def get_project_inactivity(
+    app: FastAPI, *, project_id: ProjectID, max_inactivity_seconds: NonNegativeInt
+) -> GetProjectInactivityResponse:
+    return await scheduler_interface.get_project_inactivity(
+        app, project_id=project_id, max_inactivity_seconds=max_inactivity_seconds
     )

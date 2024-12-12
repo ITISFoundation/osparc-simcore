@@ -12,6 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
 from models_library.users import UserID
+from pydantic import NonNegativeInt
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
@@ -123,4 +124,14 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
         return await self.client.get(
             "/dynamic_services",
             params=as_dict_exclude_unset(user_id=user_id, project_id=project_id),
+        )
+
+    @retry_on_errors()
+    @expect_status(status.HTTP_200_OK)
+    async def get_projects_inactivity(
+        self, *, project_id: ProjectID, max_inactivity_seconds: NonNegativeInt
+    ) -> Response:
+        return await self.client.get(
+            f"/dynamic_services/projects/{project_id}/inactivity",
+            params={"max_inactivity_seconds": max_inactivity_seconds},
         )
