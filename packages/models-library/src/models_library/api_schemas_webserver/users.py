@@ -3,21 +3,31 @@ from datetime import date
 from enum import Enum
 from typing import Annotated, Any, Literal, Self
 
+import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
 from common_library.users_enums import UserStatus
 from models_library.groups import AccessRightsDict
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    StringConstraints,
+    ValidationInfo,
+    field_validator,
+)
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
-from ..groups import AccessRightsDict, Group, GroupsByTypeTuple
+from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple
 from ..products import ProductName
 from ..users import (
     FirstNameStr,
     LastNameStr,
     MyProfile,
     UserID,
+    UserNameID,
     UserPermission,
     UserThirdPartyToken,
 )
@@ -185,6 +195,28 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
 #
 
 
+class MyUsersSearchQueryParams(BaseModel):
+    match_: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=50),
+        Field(
+            description="Search string to match with public usernames and emails",
+            alias="match",
+        ),
+    ]
+    limit: Annotated[int, annotated_types.Interval(ge=1, le=50)] = 10
+
+
+class MyUserGet(OutputSchema):
+    # Public profile of a user subject to its privacy settings
+    user_id: UserID
+    group_id: GroupID
+    user_name: UserNameID
+    first_name: str | None = None
+    last_name: str | None = None
+    email: EmailStr | None = None
+
+
 class UsersSearchQueryParams(BaseModel):
     email: Annotated[
         str,
@@ -197,6 +229,7 @@ class UsersSearchQueryParams(BaseModel):
 
 
 class UserGet(OutputSchema):
+    # ONLY for admins
     first_name: str | None
     last_name: str | None
     email: LowerCaseEmailStr

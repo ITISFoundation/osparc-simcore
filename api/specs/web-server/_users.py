@@ -14,6 +14,8 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePatch,
     MyTokenCreate,
     MyTokenGet,
+    MyUserGet,
+    MyUsersSearchQueryParams,
     UserGet,
     UsersSearchQueryParams,
 )
@@ -138,23 +140,32 @@ async def list_user_permissions():
     ...
 
 
+@router.get(
+    "/me/users:search",
+    response_model=Envelope[list[MyUserGet]],
+    description="Search among users who are publicly visible to the caller (i.e., me) based on their privacy settings.",
+)
+async def search_users(_params: Annotated[MyUsersSearchQueryParams, Depends()]):
+    ...
+
+
 _extra_tags: list[str | Enum] = ["admin"]
 
 
 @router.get(
-    "/admin/users:search",
+    "/users:search",
     response_model=Envelope[list[UserGet]],
     tags=_extra_tags,
 )
-async def search_users(_params: Annotated[UsersSearchQueryParams, Depends()]):
+async def search_users_as_admin(_params: Annotated[UsersSearchQueryParams, Depends()]):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
 
 
 @router.post(
-    "/admin/users:pre-register",
+    "/users:pre-register",
     response_model=Envelope[UserGet],
     tags=_extra_tags,
 )
-async def pre_register_user(_body: PreRegisteredUserGet):
+async def pre_register_user_as_admin(_body: PreRegisteredUserGet):
     ...
