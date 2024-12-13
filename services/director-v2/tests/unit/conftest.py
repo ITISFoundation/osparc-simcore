@@ -26,7 +26,7 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.services_enums import ServiceState
 from models_library.utils._original_fastapi_encoders import jsonable_encoder
-from pydantic import TypeAdapter
+from pydantic import PositiveInt, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
@@ -338,3 +338,8 @@ def mock_docker_api(mocker: MockerFixture) -> None:
 async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
+
+
+@pytest.fixture
+def comp_task_run_id() -> PositiveInt:
+    return 42

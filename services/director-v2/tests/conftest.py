@@ -24,7 +24,6 @@ from models_library.products import ProductName
 from models_library.projects import Node, NodesDict
 from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
 from models_library.users import UserID
-from pydantic import PositiveInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_dict,
@@ -365,8 +364,3 @@ def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
         side_effect=_create,
         autospec=True,
     )
-
-
-@pytest.fixture
-def comp_task_run_id() -> PositiveInt:
-    return 42
