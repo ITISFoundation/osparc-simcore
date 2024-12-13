@@ -291,6 +291,18 @@ async def create_services_batch(
     return _
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test_cluster_scaling_with_no_services_does_nothing(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
@@ -309,6 +321,18 @@ async def test_cluster_scaling_with_no_services_does_nothing(
     )
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
@@ -409,6 +433,18 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     )
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "scale_up_params",
     [
@@ -993,6 +1029,18 @@ async def test_cluster_scaling_up_and_down(
 
 
 @pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "scale_up_params",
     [
         pytest.param(
@@ -1068,6 +1116,18 @@ async def test_cluster_scaling_up_and_down_against_aws(
     )
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "scale_up_params",
     [
@@ -1150,9 +1210,13 @@ async def test_cluster_scaling_up_starts_multiple_instances(
 
 
 @pytest.mark.parametrize(
-    "with_docker_join_drained", ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"], indirect=True
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
 )
 @pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
     "with_drain_nodes_labelled",
     ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
     indirect=True,
@@ -1448,6 +1512,18 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
 
 @pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "scale_up_params",
     [
         pytest.param(
@@ -1608,6 +1684,18 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     )
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test__find_terminateable_nodes_with_no_hosts(
     minimal_configuration: None,
     initialized_app: FastAPI,
@@ -1628,6 +1716,18 @@ async def test__find_terminateable_nodes_with_no_hosts(
     assert await _find_terminateable_instances(initialized_app, active_cluster) == []
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test__try_scale_down_cluster_with_no_nodes(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
@@ -1652,6 +1752,18 @@ async def test__try_scale_down_cluster_with_no_nodes(
     mock_remove_nodes.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test__activate_drained_nodes_with_no_tasks(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
@@ -1685,6 +1797,18 @@ async def test__activate_drained_nodes_with_no_tasks(
     mock_docker_tag_node.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test__activate_drained_nodes_with_no_drained_nodes(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
@@ -1726,6 +1850,18 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
     mock_docker_tag_node.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test__activate_drained_nodes_with_drained_node(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
@@ -1794,6 +1930,18 @@ async def test__activate_drained_nodes_with_drained_node(
     )
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
