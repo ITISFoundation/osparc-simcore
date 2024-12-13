@@ -222,7 +222,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         if (e.supportsType("osparc-moveStudy")) {
           const studyData = e.getData("osparc-moveStudy")["studyDataOrigin"];
           const studyToFolderData = {
-            studyId: studyData["uuid"],
+            studyData,
             destFolderId: this.getFolderId(),
           };
           this.fireDataEvent("studyToFolderRequested", studyToFolderData);

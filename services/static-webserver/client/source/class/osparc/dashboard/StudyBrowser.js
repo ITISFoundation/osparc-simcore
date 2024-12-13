@@ -433,10 +433,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
-    _studyToFolderRequested: function(data) {
-      console.log("studyToFolderRequested", data);
-    },
-
     // WORKSPACES
     __reloadWorkspaceCards: function() {
       this._resourcesContainer.setWorkspacesToList(this.__workspacesList);
@@ -600,7 +596,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _folderToFolderRequested: function(data) {
-      console.log("folderToFolderRequested", data);
+      const {
+        folderId,
+        destFolderId,
+      } = data;
+      osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)
+        .then(() => this.__reloadFolders())
+        .catch(err => console.error(err));
     },
 
     _trashFolderRequested: function(folderId) {
@@ -1229,7 +1231,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const studyData = button.getResourceData();
               this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
                 .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
-                .then(() => this.__removeFromStudyList(studyData["uuid"]))
                 .catch(err => {
                   console.error(err);
                   osparc.FlashMessenger.logAs(err.message, "ERROR");
@@ -1649,7 +1650,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const moveStudy = () => {
             this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
               .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
-              .then(() => this.__removeFromStudyList(studyData["uuid"]))
               .catch(err => {
                 console.error(err);
                 osparc.FlashMessenger.logAs(err.message, "ERROR");
@@ -1703,6 +1703,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       return osparc.data.Resources.fetch("studies", "moveToFolder", params)
         .then(() => studyData["folderId"] = destFolderId)
+        .then(() => this.__removeFromStudyList(studyData["uuid"]));
+    },
+
+    _studyToFolderRequested: function(data) {
+      const {
+        studyData,
+        destFolderId,
+      } = data;
+      this.__moveStudyToFolder(studyData, destFolderId)
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
