@@ -1890,6 +1890,10 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
         0,
         buffer_count
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+    ), (
+        "the warm buffers were not used as expected there should be"
+        f" {buffer_count - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER} remaining, "
+        f"found {len(analyzed_cluster.buffer_ec2s)}"
     )
     assert (
         len(analyzed_cluster.buffer_drained_nodes)
