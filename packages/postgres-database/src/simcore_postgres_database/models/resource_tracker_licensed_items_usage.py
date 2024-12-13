@@ -19,7 +19,7 @@ resource_tracker_licensed_items_usage = sa.Table(
     ),
     sa.Column(
         "licensed_item_id",
-        sa.String,
+        UUID(as_uuid=True),
         nullable=True,
     ),
     sa.Column(
