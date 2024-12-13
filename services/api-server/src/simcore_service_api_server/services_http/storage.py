@@ -24,7 +24,7 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _logger = logging.getLogger(__name__)
 
-_exception_mapper = partial(service_exception_mapper, "Storage")
+_exception_mapper = partial(service_exception_mapper, service_name="Storage")
 
 _FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 AccessRight = Literal["read", "write"]
@@ -54,7 +54,7 @@ class StorageApi(BaseServiceClientApi):
     #
     SIMCORE_S3_ID = 0
 
-    @_exception_mapper({})
+    @_exception_mapper(http_status_map={})
     async def list_files(
         self,
         *,
@@ -81,7 +81,7 @@ class StorageApi(BaseServiceClientApi):
         )
         return files
 
-    @_exception_mapper({})
+    @_exception_mapper(http_status_map={})
     async def search_owned_files(
         self,
         *,
@@ -119,7 +119,7 @@ class StorageApi(BaseServiceClientApi):
         assert len(files) <= limit if limit else True  # nosec
         return files
 
-    @_exception_mapper({})
+    @_exception_mapper(http_status_map={})
     async def get_download_link(
         self, *, user_id: int, file_id: UUID, file_name: str
     ) -> AnyUrl:
@@ -138,7 +138,7 @@ class StorageApi(BaseServiceClientApi):
         link: AnyUrl = presigned_link.link
         return link
 
-    @_exception_mapper({})
+    @_exception_mapper(http_status_map={})
     async def delete_file(self, *, user_id: int, quoted_storage_file_id: str) -> None:
         response = await self.client.delete(
             f"/locations/{self.SIMCORE_S3_ID}/files/{quoted_storage_file_id}",
@@ -146,7 +146,7 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-    @_exception_mapper({})
+    @_exception_mapper(http_status_map={})
     async def get_upload_links(
         self, *, user_id: int, file_id: UUID, file_name: str
     ) -> FileUploadSchema:
@@ -183,7 +183,7 @@ class StorageApi(BaseServiceClientApi):
             url = url.include_query_params(**query)
         return url
 
-    @_exception_mapper({})
+    @_exception_mapper(http_status_map={})
     async def create_soft_link(
         self, *, user_id: int, target_s3_path: str, as_file_id: UUID
     ) -> File:

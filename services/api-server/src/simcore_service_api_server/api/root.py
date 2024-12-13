@@ -7,6 +7,7 @@ from .routes import credits as _credits
 from .routes import (
     files,
     health,
+    licensed_items,
     meta,
     solvers,
     solvers_jobs,
@@ -40,6 +41,9 @@ def create_router(settings: ApplicationSettings):
     router.include_router(studies_jobs.router, tags=["studies"], prefix="/studies")
     router.include_router(wallets.router, tags=["wallets"], prefix="/wallets")
     router.include_router(_credits.router, tags=["credits"], prefix="/credits")
+    router.include_router(
+        licensed_items.router, tags=["licensed-items"], prefix="/licensed-items"
+    )
 
     # NOTE: multiple-files upload is currently disabled
     # Web form to upload files at http://localhost:8000/v0/upload-form-view
