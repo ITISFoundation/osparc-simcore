@@ -469,11 +469,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __evalSelectedButton: function() {
-      if (this.isResourceType("study")) {
+      if (
+        this.isResourceType("study") ||
+        this.isResourceType("template") ||
+        this.isResourceType("service")
+      ) {
         const menuButton = this.getChildControl("menu-button");
         const tick = this.getChildControl("tick-selected");
         const untick = this.getChildControl("tick-unselected");
-        if (this.isMultiSelectionMode()) {
+        if (this.isResourceType("study") && this.isMultiSelectionMode()) {
           const selected = this.getSelected();
           menuButton.setVisibility("excluded");
           tick.setVisibility(selected ? "visible" : "excluded");

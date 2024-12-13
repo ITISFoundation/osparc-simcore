@@ -649,23 +649,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return;
       }
 
-      const studiesCont = this._resourcesContainer.getFlatList();
-
-      if (isShiftPressed) {
-        const lastIdx = studiesCont.getLastSelectedIndex();
-        const currentIdx = studiesCont.getIndex(item);
-        const minMax = [Math.min(lastIdx, currentIdx), Math.max(lastIdx, currentIdx)];
-        for (let i=minMax[0]; i<=minMax[1]; i++) {
-          const card = studiesCont.getChildren()[i];
-          if (card.isVisible()) {
-            card.setSelected(true);
-          }
-        }
-      }
-      studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
-
       if (item.isMultiSelectionMode()) {
         item.setSelected(!item.getSelected());
+        const studiesCont = this._resourcesContainer.getFlatList();
+        if (isShiftPressed) {
+          const lastIdx = studiesCont.getLastSelectedIndex();
+          const currentIdx = studiesCont.getIndex(item);
+          const minMax = [Math.min(lastIdx, currentIdx), Math.max(lastIdx, currentIdx)];
+          for (let i=minMax[0]; i<=minMax[1]; i++) {
+            const card = studiesCont.getChildren()[i];
+            if (card.isVisible()) {
+              card.setSelected(true);
+            }
+          }
+        }
+        studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
       } else {
         const studyData = this.__getStudyData(item.getUuid(), false);
         this._openResourceDetails(studyData);
