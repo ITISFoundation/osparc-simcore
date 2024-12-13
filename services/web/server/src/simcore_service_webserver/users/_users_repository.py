@@ -31,7 +31,7 @@ from simcore_postgres_database.utils_users import (
     UsersRepo,
     generate_alternative_username,
 )
-from sqlalchemy import delete
+from sqlalchemy import Column, delete
 from sqlalchemy.engine.row import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -52,6 +52,19 @@ def _parse_as_user(user_id: Any) -> UserID:
         raise UserNotFoundError(uid=user_id, user_id=user_id) from err
 
 
+#
+# Privacy settings
+#
+
+
+def _is_private(hide_attribute: Column, caller_id: UserID):
+    return hide_attribute.is_(True) & (users.c.id != caller_id)
+
+
+def _is_public(hide_attribute: Column, caller_id: UserID):
+    return hide_attribute.is_(False) | (users.c.id == caller_id)
+
+
 def _public_user_cols(caller_id: UserID):
     return (
         # Fits PublicUser model
@@ -60,27 +73,32 @@ def _public_user_cols(caller_id: UserID):
         # privacy settings
         sa.case(
             (
-                users.c.privacy_hide_email.is_(True) & (users.c.id != caller_id),
+                _is_private(users.c.privacy_hide_email, caller_id),
                 None,
             ),
             else_=users.c.email,
         ).label("email"),
         sa.case(
             (
-                users.c.privacy_hide_fullname.is_(True) & (users.c.id != caller_id),
+                _is_private(users.c.privacy_hide_fullname, caller_id),
                 None,
             ),
             else_=users.c.first_name,
         ).label("first_name"),
         sa.case(
             (
-                users.c.privacy_hide_fullname.is_(True) & (users.c.id != caller_id),
+                _is_private(users.c.privacy_hide_fullname, caller_id),
                 None,
             ),
             else_=users.c.last_name,
         ).label("last_name"),
         users.c.primary_gid.label("group_id"),
     )
+
+
+#
+#  PUBLIC User
+#
 
 
 async def get_public_user(
@@ -111,14 +129,16 @@ async def search_public_user(
     limit: int,
 ) -> list:
 
-    pattern_ = f"%{search_pattern}%"
-    is_public_email = users.c.privacy_hide_email.is_(False) | (users.c.id != caller_id)
+    _pattern = f"%{search_pattern}%"
 
     query = (
         sa.select(*_public_user_cols(caller_id=caller_id))
         .where(
-            users.c.name.ilike(pattern_)
-            | (is_public_email & users.c.users.c.email.ilike(pattern_))
+            users.c.name.ilike(_pattern)
+            | (
+                _is_public(users.c.privacy_hide_email, caller_id)
+                & users.c.email.ilike(_pattern)
+            )
         )
         .limit(limit)
     )

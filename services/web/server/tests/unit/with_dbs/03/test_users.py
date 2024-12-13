@@ -7,6 +7,7 @@
 
 import functools
 import sys
+from contextlib import AsyncExitStack
 from copy import deepcopy
 from http import HTTPStatus
 from typing import Any
@@ -33,7 +34,7 @@ from pytest_simcore.helpers.faker_factories import (
     random_pre_registration_details,
 )
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.users._common.schemas import (
@@ -59,49 +60,102 @@ def app_environment(
     )
 
 
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-issues/issues/1779"
+)
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_and_search_public_users(
-    user: UserInfoDict,
     logged_user: UserInfoDict,
     client: TestClient,
     user_role: UserRole,
 ):
     assert client.app
     assert user_role.value == logged_user["role"]
-    other_user = user
 
-    assert other_user["id"] != logged_user["id"]
+    async with AsyncExitStack() as stack:
+        private_user: UserInfoDict = await stack.enter_async_context(
+            NewUser(
+                app=client.app,
+                user_data={
+                    "name": "jamie01",
+                    "first_name": "James",
+                    "last_name": "Bond",
+                    "email": "james@find.me",
+                    "privacy_hide_email": True,
+                    "privacy_hide_fullname": True,
+                },
+            )
+        )
+        public_user: UserInfoDict = await stack.enter_async_context(
+            NewUser(
+                app=client.app,
+                user_data={
+                    "name": "taylie01",
+                    "first_name": "Taylor",
+                    "last_name": "Swift",
+                    "email": "taylor@find.me",
+                    "privacy_hide_email": False,
+                    "privacy_hide_fullname": False,
+                },
+            )
+        )
 
-    # GET user fro admin
+        assert private_user["id"] != logged_user["id"]
+        assert public_user["id"] != logged_user["id"]
 
-    # GET user
-    url = client.app.router["get_user"].url_for(user_id=f'{other_user["id"]}')
-    resp = await client.get(f"{url}")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+        # GET user
+        url = client.app.router["get_user"].url_for(user_id=f'{public_user["id"]}')
+        resp = await client.get(f"{url}")
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    got = UserGet.model_validate(data)
-    assert got.user_id == other_user["id"]
-    assert got.user_name == other_user["name"]
+        # check privacy
+        got = UserGet.model_validate(data)
+        assert got.user_id == public_user["id"]
+        assert got.user_name == public_user["name"]
+        assert got.first_name == public_user.get("first_name")
+        assert got.last_name == public_user.get("last_name")
 
-    # SEARCH user
-    partial_email = other_user["email"][:-5]
-    url = client.app.router["search_users"].url_for()
-    resp = await client.post(f"{url}", json={"match": partial_email})
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+        # SEARCH by partial email
+        partial_email = "@find.m"
+        assert partial_email in private_user["email"]
+        assert partial_email in public_user["email"]
 
-    found = TypeAdapter(list[UserGet]).validate_python(data)
-    assert found
-    assert len(found) == 1
-    assert found[0] == got
+        url = client.app.router["search_users"].url_for()
+        resp = await client.post(f"{url}", json={"match": partial_email})
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    # SEARCH user for admin (from a USER)
-    url = (
-        client.app.router["search_users_for_admin"]
-        .url_for()
-        .with_query(email=partial_email)
-    )
-    resp = await client.get(f"{url}")
-    await assert_status(resp, status.HTTP_403_FORBIDDEN)
+        found = TypeAdapter(list[UserGet]).validate_python(data)
+        assert found
+        assert len(found) == 1
+        assert found[0] == got
+
+        # SEARCH by partial username
+        partial_username = "ie01"
+        assert partial_username in private_user["name"]
+        assert partial_username in public_user["name"]
+
+        url = client.app.router["search_users"].url_for()
+        resp = await client.post(f"{url}", json={"match": partial_username})
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+        found = TypeAdapter(list[UserGet]).validate_python(data)
+        assert found
+        assert len(found) == 2
+        assert found[1] == got
+        # check privacy
+        assert found[0].user_name == private_user["name"]
+        assert found[0].email is None
+        assert found[0].first_name is None
+        assert found[0].last_name is None
+
+        # SEARCH user for admin (from a USER)
+        url = (
+            client.app.router["search_users_for_admin"]
+            .url_for()
+            .with_query(email=partial_email)
+        )
+        resp = await client.get(f"{url}")
+        await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
 
 @pytest.mark.parametrize(
