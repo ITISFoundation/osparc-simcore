@@ -1323,13 +1323,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_MyPermissionGet__'
+  /v0/me/users:search:
+    get:
+      tags:
+      - user
+      summary: Search Users
+      description: Search among users who are publicly visible to the caller (i.e.,
+        me) based on their privacy settings.
+      operationId: search_users
+      parameters:
+      - name: match
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 50
+          title: Match
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 10
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_MyUserGet__'
   /v0/users:search:
     get:
       tags:
       - user
-      - po
-      summary: Search Users
-      operationId: search_users
+      - admin
+      summary: Search Users As Admin
+      operationId: search_users_as_admin
       parameters:
       - name: email
         in: query
@@ -1350,9 +1383,9 @@ paths:
     post:
       tags:
       - user
-      - po
-      summary: Pre Register User
-      operationId: pre_register_user
+      - admin
+      summary: Pre Register User As Admin
+      operationId: pre_register_user_as_admin
       requestBody:
         content:
           application/json:
@@ -8962,6 +8995,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[MyTokenGet]]
+    Envelope_list_MyUserGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/MyUserGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[MyUserGet]]
     Envelope_list_OsparcCreditsAggregatedByServiceGet__:
       properties:
         data:
@@ -10863,6 +10912,45 @@ components:
       - service
       - token_key
       title: MyTokenGet
+    MyUserGet:
+      properties:
+        userId:
+          type: integer
+          exclusiveMinimum: true
+          title: Userid
+          minimum: 0
+        groupId:
+          type: integer
+          exclusiveMinimum: true
+          title: Groupid
+          minimum: 0
+        userName:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Username
+        firstName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Firstname
+        lastName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lastname
+        email:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Email
+      type: object
+      required:
+      - userId
+      - groupId
+      - userName
+      title: MyUserGet
     Node-Input:
       properties:
         key:
