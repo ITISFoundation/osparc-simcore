@@ -1808,6 +1808,8 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     ],
     spied_cluster_analysis: MockType,
     instance_type_filters: Sequence[FilterTypeDef],
+    mock_find_node_with_name_returns_fake_node: mock.Mock,
+    mock_docker_tag_node: mock.Mock,
 ):
     # pre-requisites
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -1849,6 +1851,7 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
+    mock_docker_tag_node.assert_not_called()
     # at analysis time, we had no machines running
     analyzed_cluster = assert_cluster_state(
         spied_cluster_analysis,
@@ -1875,9 +1878,14 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
         instance_filters=instance_type_filters,
     )
 
-    # let's autoscale again, to check the cluster analysis
+    # let's autoscale again, to check the cluster analysis and tag the nodes
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    mock_docker_tag_node.assert_called()
+    assert (
+        mock_docker_tag_node.call_count
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     )
     # at analysis time, we had no machines running
     analyzed_cluster = assert_cluster_state(
