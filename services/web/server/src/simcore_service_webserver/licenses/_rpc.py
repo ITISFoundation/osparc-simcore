@@ -43,7 +43,9 @@ async def get_licensed_items_for_wallet(
     user_id: UserID,
     product_name: ProductName,
     wallet_id: WalletID,
-) -> None:
+    offset: int,
+    limit: int,
+) -> LicensedItemGetPage:
     raise NotImplementedError
 
 

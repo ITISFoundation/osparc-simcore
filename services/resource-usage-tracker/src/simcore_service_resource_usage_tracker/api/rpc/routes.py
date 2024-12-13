@@ -8,7 +8,7 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RPCRouter
 
 from ...services.modules.rabbitmq import get_rabbitmq_rpc_server
-from . import _licensed_items_purchases, _resource_tracker
+from . import _licensed_items_purchases, _licensed_items_usages, _resource_tracker
 
 _logger = logging.getLogger(__name__)
 
@@ -16,6 +16,7 @@ _logger = logging.getLogger(__name__)
 ROUTERS: list[RPCRouter] = [
     _resource_tracker.router,
     _licensed_items_purchases.router,
+    _licensed_items_usages.router,
 ]
 
 

@@ -17,9 +17,10 @@ class LicensedItemUsageDB(BaseModel):
     user_email: str
     product_name: ProductName
     service_run_id: ServiceRunId
-    start_at: datetime
+    started_at: datetime
     stopped_at: datetime | None
     num_of_seats: int
+    modified: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -31,7 +32,7 @@ class CreateLicensedItemUsageDB(BaseModel):
     user_email: str
     product_name: ProductName
     service_run_id: ServiceRunId
-    start_at: datetime
+    started_at: datetime
     num_of_seats: int
 
     model_config = ConfigDict(from_attributes=True)

@@ -17,7 +17,7 @@ from models_library.resource_tracker_licensed_items_purchases import (
 )
 from models_library.rest_ordering import OrderBy
 from models_library.wallets import WalletID
-from pydantic import AnyUrl, NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeInt, TypeAdapter
 
 from ....logging_utils import log_decorator
 from ....rabbitmq import RabbitMQRPCClient
@@ -76,7 +76,7 @@ async def get_licensed_item_purchase(
 async def create_licensed_item_purchase(
     rabbitmq_rpc_client: RabbitMQRPCClient, *, data: LicensedItemsPurchasesCreate
 ) -> LicensedItemPurchaseGet:
-    result: AnyUrl = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("create_licensed_item_purchase"),
         data=data,

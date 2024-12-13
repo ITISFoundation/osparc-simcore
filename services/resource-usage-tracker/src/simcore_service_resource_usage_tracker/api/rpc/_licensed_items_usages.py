@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from models_library.api_schemas_resource_usage_tracker.licensed_items_usages import (
+    LicenseCheckoutID,
     LicensedItemUsageGet,
     LicenseItemCheckoutGet,
 )
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker import ServiceRunId
-from models_library.resource_tracker_licensed_items_usages import LicenseCheckoutID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
