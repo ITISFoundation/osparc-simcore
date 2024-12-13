@@ -119,3 +119,9 @@ async def get_directory_file_id(
     directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
 
     return directory_file_id if directory_file_id_fmd else None
+
+
+def compute_file_id_prefix(file_id: str, levels: int):
+    components = file_id.strip("/").split("/")
+    subpath = "/".join(components[:levels])
+    return "/" + subpath if subpath else "/"

@@ -80,7 +80,11 @@ from .models import (
 from .s3 import get_s3_client
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
-from .simcore_s3_dsm_utils import expand_directory, get_directory_file_id
+from .simcore_s3_dsm_utils import (
+    compute_file_id_prefix,
+    expand_directory,
+    get_directory_file_id,
+)
 from .utils import (
     convert_db_to_model,
     download_to_file_or_raise,
@@ -517,11 +521,6 @@ class SimcoreS3DataManager(BaseDataManager):
         # Only use this in those circumstances where a collaborator requires to delete a file (the current
         # permissions model will not allow him to do so, even though this is a legitimate action)
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5159
-        def _get_subpath(path: str, levels: int):
-            components = path.strip("/").split("/")
-            subpath = "/".join(components[:levels])
-            return "/" + subpath if subpath else "/"
-
         async with self.engine.acquire() as conn:
             if enforce_access_rights:
                 can: AccessRights = await get_file_access_rights(conn, user_id, file_id)
@@ -544,7 +543,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 user_or_project_filter=UserOrProjectFilter(
                     user_id=user_id, project_ids=[]
                 ),
-                file_id_prefix=_get_subpath(file_id, 2),
+                file_id_prefix=compute_file_id_prefix(file_id, 2),
                 partial_file_id=None,
                 is_directory=True,
                 sha256_checksum=None,
