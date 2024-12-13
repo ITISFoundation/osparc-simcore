@@ -376,9 +376,9 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         mock_rabbitmq_post_message,
         app_settings,
         initialized_app,
-        nodes_total=with_instances_machines_hot_buffer,
-        nodes_drained=with_instances_machines_hot_buffer,
-        instances_running=with_instances_machines_hot_buffer,
+        nodes_total=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        nodes_drained=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        instances_running=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
         cluster_total_resources={
             "cpus": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
             * fake_node.description.resources.nano_cp_us
