@@ -241,8 +241,8 @@ qx.Class.define("osparc.auth.Manager", {
       authData.set({
         email: profile["login"],
         username: profile["userName"],
-        firstName: profile["first_name"] || profile["login"],
-        lastName: profile["last_name"] || "",
+        firstName: profile["first_name"],
+        lastName: profile["last_name"],
         expirationDate: "expirationDate" in profile ? new Date(profile["expirationDate"]) : null
       });
     },

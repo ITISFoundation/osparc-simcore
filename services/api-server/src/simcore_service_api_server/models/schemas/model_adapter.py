@@ -7,6 +7,9 @@ from typing import Annotated
 from models_library.api_schemas_api_server.pricing_plans import (
     ServicePricingPlanGet as _ServicePricingPlanGet,
 )
+from models_library.api_schemas_webserver.licensed_items import (
+    LicensedItemGet as _LicensedItemGet,
+)
 from models_library.api_schemas_webserver.product import (
     GetCreditPrice as _GetCreditPrice,
 )
@@ -17,13 +20,14 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGetWithAvailableCredits as _WalletGetWithAvailableCredits,
 )
 from models_library.basic_types import IDStr, NonNegativeDecimal
+from models_library.groups import GroupID
+from models_library.licensed_items import LicensedItemID, LicensedResourceType
 from models_library.resource_tracker import (
     PricingPlanClassification,
     PricingPlanId,
     PricingUnitId,
     UnitExtraInfo,
 )
-from models_library.users import GroupID
 from models_library.wallets import WalletID, WalletStatus
 from pydantic import (
     BaseModel,
@@ -36,9 +40,6 @@ from pydantic import (
 
 
 class GetCreditPriceLegacy(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
     product_name: str = Field(alias="productName")
     usd_per_credit: (
         Annotated[
@@ -58,6 +59,9 @@ class GetCreditPriceLegacy(BaseModel):
         "Can be None if this product's price is UNDEFINED",
         alias="minPaymentAmountUsd",
     )
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
 
 assert set(GetCreditPriceLegacy.model_fields.keys()) == set(
@@ -66,9 +70,6 @@ assert set(GetCreditPriceLegacy.model_fields.keys()) == set(
 
 
 class PricingUnitGetLegacy(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
     pricing_unit_id: PricingUnitId = Field(alias="pricingUnitId")
     unit_name: str = Field(alias="unitName")
     unit_extra_info: UnitExtraInfo = Field(alias="unitExtraInfo")
@@ -76,6 +77,9 @@ class PricingUnitGetLegacy(BaseModel):
         Decimal, PlainSerializer(float, return_type=NonNegativeFloat, when_used="json")
     ] = Field(alias="currentCostPerUnit")
     default: bool
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
 
 assert set(PricingUnitGetLegacy.model_fields.keys()) == set(
@@ -84,9 +88,6 @@ assert set(PricingUnitGetLegacy.model_fields.keys()) == set(
 
 
 class WalletGetWithAvailableCreditsLegacy(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
     wallet_id: WalletID = Field(alias="walletId")
     name: IDStr
     description: str | None = None
@@ -98,6 +99,9 @@ class WalletGetWithAvailableCreditsLegacy(BaseModel):
     available_credits: Annotated[
         Decimal, PlainSerializer(float, return_type=NonNegativeFloat, when_used="json")
     ] = Field(alias="availableCredits")
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
 
 assert set(WalletGetWithAvailableCreditsLegacy.model_fields.keys()) == set(
@@ -106,9 +110,6 @@ assert set(WalletGetWithAvailableCreditsLegacy.model_fields.keys()) == set(
 
 
 class ServicePricingPlanGetLegacy(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
     pricing_plan_id: PricingPlanId = Field(alias="pricingPlanId")
     display_name: str = Field(alias="displayName")
     description: str
@@ -116,8 +117,28 @@ class ServicePricingPlanGetLegacy(BaseModel):
     created_at: datetime = Field(alias="createdAt")
     pricing_plan_key: str = Field(alias="pricingPlanKey")
     pricing_units: list[PricingUnitGetLegacy] = Field(alias="pricingUnits")
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
 
 assert set(ServicePricingPlanGetLegacy.model_fields.keys()) == set(
     _ServicePricingPlanGet.model_fields.keys()
+)
+
+
+class LicensedItemGet(BaseModel):
+    licensed_item_id: LicensedItemID
+    name: Annotated[str, Field(alias="display_name")]
+    licensed_resource_type: LicensedResourceType
+    pricing_plan_id: PricingPlanId
+    created_at: datetime
+    modified_at: datetime
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+
+
+assert set(LicensedItemGet.model_fields.keys()) == set(
+    _LicensedItemGet.model_fields.keys()
 )

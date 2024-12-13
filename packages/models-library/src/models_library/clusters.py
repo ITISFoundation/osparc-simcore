@@ -5,7 +5,7 @@ from typing import Literal, TypeAlias
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from pydantic.types import NonNegativeInt
 
-from .users import GroupID
+from .groups import GroupID
 from .utils.common_validators import create_enums_pre_validator
 from .utils.enums import StrAutoEnum
 

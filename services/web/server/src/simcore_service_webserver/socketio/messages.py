@@ -7,8 +7,9 @@ from typing import Final
 
 from aiohttp.web import Application
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
+from models_library.groups import GroupID
 from models_library.socketio import SocketMessageDict
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.logging_utils import log_catch
 from socketio import AsyncServer  # type: ignore[import-untyped]

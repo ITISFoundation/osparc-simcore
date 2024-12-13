@@ -21,9 +21,9 @@ from models_library.api_schemas_webserver.projects_nodes import (
     ServiceResourcesDict,
 )
 from models_library.generics import Envelope
+from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.users import GroupID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._crud_handlers import ProjectPathParams
 from simcore_service_webserver.projects._nodes_handlers import (

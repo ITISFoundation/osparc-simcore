@@ -79,7 +79,7 @@ def fake_project_for_streaming(
     fake_project = ProjectGet.model_validate(data)
     fake_project.workbench = {faker.uuid4(): faker.uuid4()}
     mocker.patch(
-        "simcore_service_api_server.api.dependencies.webserver.AuthSession.get_project",
+        "simcore_service_api_server.api.dependencies.webserver_http.AuthSession.get_project",
         return_value=fake_project,
     )
 

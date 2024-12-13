@@ -21,17 +21,25 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grow();
+    const layout = new qx.ui.layout.VBox(15);
     this._setLayout(layout);
 
     this.__poplulateLayout();
   },
 
   events: {
-    "modelLeased": "qx.event.type.Event",
+    "modelPurchaseRequested": "qx.event.type.Data",
+    "modelImportRequested": "qx.event.type.Data",
   },
 
   properties: {
+    openBy: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeOpenBy",
+    },
+
     anatomicalModelsData: {
       check: "Object",
       init: null,
@@ -46,8 +54,12 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
 
       const anatomicalModelsData = this.getAnatomicalModelsData();
       if (anatomicalModelsData) {
-        const card = this.__createcCard(anatomicalModelsData);
-        this._add(card);
+        const modelInfo = this.__createModelInfo(anatomicalModelsData);
+        const pricingUnits = this.__createPricingUnits(anatomicalModelsData);
+        const importButton = this.__createImportSection(anatomicalModelsData);
+        this._add(modelInfo);
+        this._add(pricingUnits);
+        this._add(importButton);
       } else {
         const selectModelLabel = new qx.ui.basic.Label().set({
           value: this.tr("Select a model for more details"),
@@ -61,13 +73,11 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       }
     },
 
-    __createcCard: function(anatomicalModelsData) {
-      console.log(anatomicalModelsData);
-
+    __createModelInfo: function(anatomicalModelsData) {
       const cardGrid = new qx.ui.layout.Grid(16, 16);
       const cardLayout = new qx.ui.container.Composite(cardGrid);
 
-      const description = anatomicalModelsData["Description"];
+      const description = anatomicalModelsData["description"];
       description.split(" - ").forEach((desc, idx) => {
         const titleLabel = new qx.ui.basic.Label().set({
           value: desc,
@@ -85,7 +95,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
       });
 
       const thumbnail = new qx.ui.basic.Image().set({
-        source: anatomicalModelsData["Thumbnail"],
+        source: anatomicalModelsData["thumbnail"],
         alignY: "middle",
         scale: true,
         allowGrowX: true,
@@ -100,7 +110,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         row: 2,
       });
 
-      const features = anatomicalModelsData["Features"];
+      const features = anatomicalModelsData["features"];
       const featuresGrid = new qx.ui.layout.Grid(8, 8);
       const featuresLayout = new qx.ui.container.Composite(featuresGrid);
       let idx = 0;
@@ -125,7 +135,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             column: 0,
             row: idx,
           });
-  
+
           const nameLabel = new qx.ui.basic.Label().set({
             value: features[key.toLowerCase()],
             font: "text-14",
@@ -135,7 +145,7 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
             column: 1,
             row: idx,
           });
-  
+
           idx++;
         }
       });
@@ -167,40 +177,72 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelDetails", {
         row: 2,
       });
 
-      const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      if (anatomicalModelsData["leased"]) {
-        const leaseModelButton = new qx.ui.form.Button().set({
-          label: this.tr("3 seats Leased (27 days left)"),
-          appearance: "strong-button",
-          center: true,
-          enabled: false,
+      return cardLayout;
+    },
+
+    __createPricingUnits: function(anatomicalModelsData) {
+      const pricingUnitsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignX: "center"
+      }));
+
+      osparc.store.Pricing.getInstance().fetchPricingUnits(anatomicalModelsData["pricingPlanId"])
+        .then(pricingUnits => {
+          pricingUnits.forEach(pricingUnit => {
+            pricingUnit.set({
+              classification: "LICENSE"
+            });
+            const pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
+              showRentButton: true,
+            });
+            pUnit.addListener("rentPricingUnit", () => {
+              this.fireDataEvent("modelPurchaseRequested", {
+                modelId: anatomicalModelsData["modelId"],
+                licensedItemId: anatomicalModelsData["licensedItemId"],
+                pricingPlanId: anatomicalModelsData["pricingPlanId"],
+                pricingUnitId: pricingUnit.getPricingUnitId(),
+              });
+            }, this);
+            pricingUnitsLayout.add(pUnit);
+          });
+        })
+        .catch(err => console.error(err));
+
+      return pricingUnitsLayout;
+    },
+
+    __createImportSection: function(anatomicalModelsData) {
+      const importSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignX: "center"
+      }));
+
+      anatomicalModelsData["purchases"].forEach(purchase => {
+        const seatsText = "seat" + (purchase["numberOfSeats"] > 1 ? "s" : "");
+        const entry = new qx.ui.basic.Label().set({
+          value: `${purchase["numberOfSeats"]} ${seatsText} available until ${osparc.utils.Utils.formatDate(purchase["expiresAt"])}`,
+          font: "text-14",
         });
-        buttonsLayout.add(leaseModelButton, {
-          flex: 1
-        });
-      }
-      const leaseModelButton = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Lease model (2 for months)"),
-        appearance: "strong-button",
-        center: true,
-      });
-      leaseModelButton.addListener("execute", () => {
-        leaseModelButton.setFetching(true);
-        setTimeout(() => {
-          leaseModelButton.setFetching(false);
-          this.fireDataEvent("modelLeased", this.getAnatomicalModelsData()["ID"]);
-        }, 2000);
-      });
-      buttonsLayout.add(leaseModelButton, {
-        flex: 1
-      });
-      cardLayout.add(buttonsLayout, {
-        column: 0,
-        row: 3,
-        colSpan: 2,
+        importSection.add(entry);
       });
 
-      return cardLayout;
+      const importButton = new qx.ui.form.Button().set({
+        label: this.tr("Import"),
+        appearance: "strong-button",
+        center: true,
+        maxWidth: 200,
+        alignX: "center",
+      });
+      this.bind("openBy", importButton, "visibility", {
+        converter: openBy => openBy ? "visible" : "excluded"
+      });
+      importButton.addListener("execute", () => {
+        this.fireDataEvent("modelImportRequested", {
+          modelId: anatomicalModelsData["modelId"]
+        });
+      }, this);
+      if (anatomicalModelsData["purchases"].length) {
+        importSection.add(importButton);
+      }
+      return importSection;
     },
   }
 });
