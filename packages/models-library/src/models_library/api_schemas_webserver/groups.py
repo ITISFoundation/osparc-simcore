@@ -233,10 +233,11 @@ class MyGroupsGet(OutputSchema):
     def from_model(
         cls,
         groups_by_type: GroupsByTypeTuple,
-        my_product_group: tuple[Group, AccessRightsDict],
+        my_product_group: tuple[Group, AccessRightsDict] | None,
     ) -> Self:
         assert groups_by_type.primary  # nosec
         assert groups_by_type.everyone  # nosec
+
         return cls(
             me=GroupGet.from_model(*groups_by_type.primary),
             organizations=[GroupGet.from_model(*gi) for gi in groups_by_type.standard],

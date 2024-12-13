@@ -103,7 +103,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
         cls,
         my_profile: MyProfile,
         my_groups_by_type: GroupsByTypeTuple,
-        my_product_group: tuple[Group, AccessRightsDict],
+        my_product_group: tuple[Group, AccessRightsDict] | None,
         my_preferences: AggregatedPreferences,
     ) -> Self:
         data = remap_keys(
@@ -129,8 +129,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
         )
 
 
-class MyProfilePatch(BaseModel):
-    # WARNING: do not use InputSchema until front-end is updated!
+class MyProfilePatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     user_name: Annotated[IDStr | None, Field(alias="userName")] = None
