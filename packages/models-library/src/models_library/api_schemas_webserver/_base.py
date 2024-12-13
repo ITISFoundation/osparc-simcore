@@ -85,5 +85,6 @@ class OutputSchema(BaseModel):
 #
 
 
-def copy_dict(data: dict, update_keys: dict[str, str]) -> dict[str, Any]:
-    return {update_keys.get(k, k): v for k, v in data.items()}
+def remap_keys(data: dict, rename: dict[str, str]) -> dict[str, Any]:
+    """A new dict that renames the keys of a dict while keeping the values unchanged"""
+    return {rename.get(k, k): v for k, v in data.items()}
