@@ -87,17 +87,23 @@ async def pre_register_user(
 #
 
 
-async def get_public_user(
-    app: web.Application, *, caller_id: UserID, user_id: UserID
-) -> dict[str, Any]:
-    ...
+async def get_public_user(app: web.Application, *, caller_id: UserID, user_id: UserID):
+    return await _users_repository.get_public_user(
+        get_asyncpg_engine(app),
+        caller_id=caller_id,
+        user_id=user_id,
+    )
 
 
 async def search_public_users(
     app: web.Application, *, caller_id: UserID, match_: str, limit: int
-) -> list[dict[str, Any]]:
-
-    ...
+) -> list:
+    return await _users_repository.search_public_user(
+        get_asyncpg_engine(app),
+        caller_id=caller_id,
+        search_pattern=match_,
+        limit=limit,
+    )
 
 
 async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:

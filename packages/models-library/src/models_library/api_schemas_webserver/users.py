@@ -221,8 +221,8 @@ class UserGet(OutputSchema):
     email: EmailStr | None = None
 
     @classmethod
-    def from_model(cls, args):
-        ...
+    def from_model(cls, data):
+        return cls.model_validate(data, from_attributes=True)
 
 
 class UsersForAdminSearchQueryParams(RequestParameters):
