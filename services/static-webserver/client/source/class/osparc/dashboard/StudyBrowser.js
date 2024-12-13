@@ -640,6 +640,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
         this._populateCardMenu(card);
+
+        this.__attachDragHandlers(card);
+      });
+    },
+
+    __attachDragHandlers: function(card) {
+      card.setDraggable(true);
+      card.addListener("dragstart", e => {
+        // Register supported types
+        e.addType("moveStudy");
+
+        // Register supported actions
+        e.addAction("move");
+      });
+      card.addListener("droprequest", e => {
+        console.log("Related of droprequest: " + e.getRelatedTarget());
       });
     },
 

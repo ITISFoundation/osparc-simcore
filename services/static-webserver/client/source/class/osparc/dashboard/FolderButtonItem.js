@@ -152,6 +152,30 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       osparc.utils.Utils.setIdToWidget(this, "folderItem_" + folder.getFolderId());
 
       this.__addMenuButton();
+
+      this.__attachDragHandlers();
+      this.__attachDropHandlers();
+    },
+
+    __attachDragHandlers: function() {
+      this.setDraggable(true);
+      this.addListener("dragstart", e => {
+        e.addType("moveFolder");
+      });
+    },
+
+    __attachDropHandlers: function() {
+      this.setDroppable(true);
+      this.addListener("dragover", e => {
+        if (e.supportsType("moveStudy")) {
+          console.log("dragover", "moveStudy", e);
+          return;
+        } else if (e.supportsType("moveFolder")) {
+          console.log("dragover", "moveFolder", e);
+          return;
+        }
+        e.preventDefault();
+      });
     },
 
     __applyWorkspaceId: function(workspaceId) {
