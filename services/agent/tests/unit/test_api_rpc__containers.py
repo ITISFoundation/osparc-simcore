@@ -8,6 +8,7 @@ import pytest
 import pytest_mock
 from faker import Faker
 from fastapi import FastAPI
+from models_library.docker import DockerNodeID
 from models_library.projects_nodes_io import NodeID
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.agent import containers
@@ -40,7 +41,7 @@ def mocked_force_container_cleanup(mocker: pytest_mock.MockerFixture) -> AsyncMo
 async def test_force_container_cleanup(
     rpc_client: RabbitMQRPCClient,
     swarm_stack_name: str,
-    docker_node_id: str,
+    docker_node_id: DockerNodeID,
     node_id: NodeID,
     mocked_force_container_cleanup: AsyncMock,
 ):

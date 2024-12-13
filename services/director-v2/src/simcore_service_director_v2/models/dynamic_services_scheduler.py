@@ -20,6 +20,7 @@ from models_library.api_schemas_directorv2.services import (
 )
 from models_library.basic_types import PortInt
 from models_library.callbacks_mapping import CallbacksMapping
+from models_library.docker import DockerNodeID
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo, PricingInfo
@@ -299,7 +300,7 @@ class DynamicSidecar(BaseModel):
         default=None, description="used for starting the proxy"
     )
 
-    docker_node_id: str | None = Field(
+    docker_node_id: DockerNodeID | None = Field(
         default=None,
         description=(
             "contains node id of the docker node where all services "

@@ -14,6 +14,8 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from models_library.docker import DockerNodeID
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -72,7 +74,9 @@ def mock_env(
 
 @pytest.fixture
 def scheduler_data(scheduler_data_from_http_request: SchedulerData) -> SchedulerData:
-    scheduler_data_from_http_request.docker_node_id = "test_docker_node_id"
+    scheduler_data_from_http_request.dynamic_sidecar.docker_node_id = TypeAdapter(
+        DockerNodeID
+    ).validate_python("testdockernodeid")
     return scheduler_data_from_http_request
 
 

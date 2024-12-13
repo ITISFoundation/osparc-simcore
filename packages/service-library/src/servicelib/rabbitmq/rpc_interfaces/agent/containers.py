@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 from typing import Final
 
+from models_library.docker import DockerNodeID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from pydantic import NonNegativeInt, TypeAdapter
@@ -17,7 +18,7 @@ _REQUEST_TIMEOUT: Final[NonNegativeInt] = int(timedelta(minutes=60).total_second
 async def force_container_cleanup(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    docker_node_id: str,
+    docker_node_id: DockerNodeID,
     swarm_stack_name: str,
     node_id: NodeID,
 ) -> None:

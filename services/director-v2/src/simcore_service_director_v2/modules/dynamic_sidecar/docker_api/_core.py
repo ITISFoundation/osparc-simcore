@@ -12,7 +12,7 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.api_schemas_directorv2.services import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from models_library.docker import to_simcore_runtime_docker_label_key
+from models_library.docker import DockerNodeID, to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkName
 from models_library.projects_nodes_io import NodeID
@@ -170,7 +170,7 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
 async def get_dynamic_sidecar_placement(
     service_id: str,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
-) -> str:
+) -> DockerNodeID:
     """
     Waits until the service has a task in `running` state and
     returns it's `docker_node_id`.
@@ -205,7 +205,7 @@ async def get_dynamic_sidecar_placement(
 
     task = await _get_task_data_when_service_running(service_id=service_id)
 
-    docker_node_id: None | str = task.get("NodeID", None)
+    docker_node_id: DockerNodeID | None = task.get("NodeID", None)
     if not docker_node_id:
         msg = f"Could not find an assigned NodeID for service_id={service_id}. Last task inspect result: {task}"
         raise DynamicSidecarError(msg=msg)
@@ -494,7 +494,9 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
             )
 
 
-async def constrain_service_to_node(service_name: str, docker_node_id: str) -> None:
+async def constrain_service_to_node(
+    service_name: str, docker_node_id: DockerNodeID
+) -> None:
     await _update_service_spec(
         service_name,
         update_in_service_spec={
