@@ -67,10 +67,12 @@ async def test_get_and_search_public_users(
     user_role: UserRole,
 ):
     assert client.app
-    assert user_role == logged_user["role"]
+    assert user_role.value == logged_user["role"]
     other_user = user
 
     assert other_user["id"] != logged_user["id"]
+
+    # GET user fro admin
 
     # GET user
     url = client.app.router["get_user"].url_for(user_id=f'{other_user["id"]}')
@@ -83,14 +85,23 @@ async def test_get_and_search_public_users(
 
     # SEARCH user
     partial_email = other_user["email"][:-5]
-    url = client.app.router["search_users"].url_for().with_query(match=partial_email)
-    resp = await client.post(f"{url}")
+    url = client.app.router["search_users"].url_for()
+    resp = await client.post(f"{url}", json={"match": partial_email})
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     found = TypeAdapter(list[UserGet]).validate_python(data)
     assert found
     assert len(found) == 1
     assert found[0] == got
+
+    # SEARCH user for admin (from a USER)
+    url = (
+        client.app.router["search_users_for_admin"]
+        .url_for()
+        .with_query(email=partial_email)
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
 
 @pytest.mark.parametrize(
