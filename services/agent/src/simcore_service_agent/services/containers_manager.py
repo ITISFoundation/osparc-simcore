@@ -9,7 +9,6 @@ from models_library.api_schemas_directorv2.services import (
 )
 from models_library.projects_nodes_io import NodeID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-from servicelib.utils import limited_gather
 
 from ..core.settings import ApplicationSettings
 from .docker_utils import get_containers_with_prefixes, remove_container_forcefully
@@ -51,12 +50,9 @@ class ContainersManager(SingletonInAppStateMixin):
                 unexpected_orphans,
             )
 
-        await limited_gather(
-            *[
-                remove_container_forcefully(self.docker, container)
-                for container in orphan_containers
-            ],
-        )
+        # avoids parallel requests to docker engine
+        for container in orphan_containers:
+            await remove_container_forcefully(self.docker, container)
 
     async def shutdown(self) -> None:
         await self.docker.close()
