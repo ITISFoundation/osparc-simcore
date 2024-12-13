@@ -535,6 +535,8 @@ class SimcoreS3DataManager(BaseDataManager):
             )
         except S3KeyNotFoundError:
             _logger.warning("File %s not found in S3", file_id)
+            # we still need to clean up the database entry (it exists)
+            # and to invalidate the size of the parent directory
 
         async with self.engine.acquire() as conn:
             await db_file_meta_data.delete(conn, [file_id])
