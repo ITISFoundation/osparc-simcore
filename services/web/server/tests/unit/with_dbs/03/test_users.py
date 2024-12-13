@@ -19,9 +19,14 @@ from aiopg.sa.connection import SAConnection
 from common_library.users_enums import UserRole, UserStatus
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
-from models_library.api_schemas_webserver.users import MyProfileGet, UserForAdminGet
+from models_library.api_schemas_webserver.users import (
+    MyProfileGet,
+    UserForAdminGet,
+    UserGet,
+)
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import (
     DEFAULT_TEST_PASSWORD,
@@ -52,6 +57,40 @@ def app_environment(
             "WEBSERVER_DB_LISTENER": "0",
         },
     )
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_and_search_public_users(
+    user: UserInfoDict,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    user_role: UserRole,
+):
+    assert client.app
+    assert user_role == logged_user["role"]
+    other_user = user
+
+    assert other_user["id"] != logged_user["id"]
+
+    # GET user
+    url = client.app.router["get_user"].url_for(user_id=f'{other_user["id"]}')
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    got = UserGet.model_validate(data)
+    assert got.user_id == other_user["id"]
+    assert got.user_name == other_user["name"]
+
+    # SEARCH user
+    partial_email = other_user["email"][:-5]
+    url = client.app.router["search_users"].url_for().with_query(match=partial_email)
+    resp = await client.post(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    found = TypeAdapter(list[UserGet]).validate_python(data)
+    assert found
+    assert len(found) == 1
+    assert found[0] == got
 
 
 @pytest.mark.parametrize(
