@@ -130,7 +130,7 @@ class GroupExtraPropertiesRepo:
             result = await conn.stream(query)
             assert result  # nosec
             if row := await result.first():
-                return GroupExtraProperties.from_orm(row)
+                return GroupExtraProperties.from_row(row)
             msg = f"Properties for group {gid} not found"
             raise GroupExtraPropertiesNotFoundError(msg)
 
@@ -222,5 +222,5 @@ class GroupExtraPropertiesRepo:
             )
             rows = [row async for row in result]
             return GroupExtraPropertiesRepo._aggregate(
-                rows, user_id, product_name, GroupExtraProperties.from_orm
+                rows, user_id, product_name, GroupExtraProperties.from_row
             )

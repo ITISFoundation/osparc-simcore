@@ -17,7 +17,7 @@ class FromRowMixin:
         return cls(**{k: v for k, v in row.items() if k in field_names})  # type: ignore[return-value]
 
     @classmethod
-    def from_orm(cls: type[ModelType], row: Row) -> ModelType:
+    def from_row(cls: type[ModelType], row: Row) -> ModelType:
         assert is_dataclass(cls)  # nosec
         field_names = [f.name for f in fields(cls)]
         return cls(**{k: v for k, v in row._asdict().items() if k in field_names})  # type: ignore[return-value]
