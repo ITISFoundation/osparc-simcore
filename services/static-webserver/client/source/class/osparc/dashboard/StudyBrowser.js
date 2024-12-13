@@ -433,6 +433,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
+    _studyToFolderRequested: function(data) {
+      console.log("studyToFolderRequested", data);
+    },
+
     // WORKSPACES
     __reloadWorkspaceCards: function() {
       this._resourcesContainer.setWorkspacesToList(this.__workspacesList);
@@ -595,6 +599,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       moveFolderTo.addListener("cancel", () => win.close());
     },
 
+    _folderToFolderRequested: function(data) {
+      console.log("folderToFolderRequested", data);
+    },
+
     _trashFolderRequested: function(folderId) {
       osparc.store.Folders.getInstance().trashFolder(folderId, this.getCurrentWorkspaceId())
         .then(() => {
@@ -634,14 +642,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => console.error(err));
     },
     // /FOLDERS
-
-    _studyToFolderRequested: function(data) {
-      console.log("studyToFolderRequested", data);
-    },
-
-    _folderToFolderRequested: function(data) {
-      console.log("folderToFolderRequested", data);
-    },
 
     __configureStudyCards: function(cards) {
       cards.forEach(card => {
