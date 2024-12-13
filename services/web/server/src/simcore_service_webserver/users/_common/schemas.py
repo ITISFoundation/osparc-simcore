@@ -12,7 +12,7 @@ from typing import Annotated, Any, Final
 
 import pycountry
 from models_library.api_schemas_webserver._base import InputSchema
-from models_library.api_schemas_webserver.users import UserAsAdminGet
+from models_library.api_schemas_webserver.users import UserForAdminGet
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -110,5 +110,5 @@ class PreRegisteredUserGet(InputSchema):
 
 # asserts field names are in sync
 assert set(PreRegisteredUserGet.model_fields).issubset(
-    UserAsAdminGet.model_fields
+    UserForAdminGet.model_fields
 )  # nosec
