@@ -60,7 +60,8 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
       // 4: (not used) SORTING BY DURATION
       5: "service_run_status",
       6: "credit_cost",
-      7: "user_email"
+      7: "user_email",
+      8: "projects_tags",
     }
   },
 
@@ -149,7 +150,8 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
                 [usageCols.DURATION.id]: duration,
                 [usageCols.STATUS.id]: qx.lang.String.firstUp(rawRow["service_run_status"].toLowerCase()),
                 [usageCols.COST.id]: rawRow["credit_cost"] ? parseFloat(rawRow["credit_cost"]).toFixed(2) : "",
-                [usageCols.USER.id]: rawRow["user_email"]
+                [usageCols.USER.id]: rawRow["user_email"],
+                [usageCols.TAGS.id]: rawRow["project_tags"],
               })
             })
             return data
