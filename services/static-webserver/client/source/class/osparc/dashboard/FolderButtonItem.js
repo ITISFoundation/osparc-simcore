@@ -50,6 +50,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     "untrashFolderRequested": "qx.event.type.Data",
     "deleteFolderRequested": "qx.event.type.Data",
     "changeContext": "qx.event.type.Data",
+    "studyToFolderRequested": "qx.event.type.Data",
+    "folderToFolderRequested": "qx.event.type.Data",
   },
 
   properties: {
@@ -219,22 +221,18 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       this.addListener("drop", e => {
         if (e.supportsType("osparc-moveStudy")) {
           const studyData = e.getData("osparc-moveStudy")["studyDataOrigin"];
-          const params = {
-            url: {
-              studyId: studyData["uuid"],
-              folderId: this.getFolderId(),
-            }
+          const studyToFolderData = {
+            studyId: studyData["uuid"],
+            destFolderId: this.getFolderId(),
           };
-          osparc.data.Resources.fetch("studies", "moveToFolder", params)
-            .then(() => {
-              studyData["folderId"] = this.getFolderId();
-              osparc.FlashMessenger.logAs("Study moved", "INFO");
-              this.fireDataEvent("studyDroppedToFolder", studyData["uuid"]);
-            })
-            .catch(err => {
-              console.error(err);
-              osparc.FlashMessenger.logAs(err.message, "ERROR");
-            });
+          this.fireDataEvent("studyToFolderRequested", studyToFolderData);
+        } else if (e.supportsType("osparc-moveFolder")) {
+          const folder = e.getData("osparc-moveFolder")["folderOrigin"];
+          const folderToFolderData = {
+            folderId: folder.getFolderId(),
+            destFolderId: this.getFolderId(),
+          };
+          this.fireDataEvent("folderToFolderRequested", folderToFolderData);
         }
       });
     },

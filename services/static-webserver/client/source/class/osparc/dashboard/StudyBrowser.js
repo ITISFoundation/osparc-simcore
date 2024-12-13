@@ -635,6 +635,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     // /FOLDERS
 
+    _studyToFolderRequested: function(data) {
+      console.log("studyToFolderRequested", data);
+    },
+
+    _folderToFolderRequested: function(data) {
+      console.log("folderToFolderRequested", data);
+    },
+
     __configureStudyCards: function(cards) {
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
@@ -653,9 +661,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         e.addData("osparc-moveStudy", {
           "studyDataOrigin": card.getResourceData(),
         });
-      });
-      card.addListener("droprequest", e => {
-        console.log("Related of droprequest: " + e.getRelatedTarget());
       });
     },
 
