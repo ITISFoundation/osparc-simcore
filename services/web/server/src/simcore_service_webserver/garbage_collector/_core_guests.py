@@ -170,7 +170,6 @@ async def remove_guest_user_with_all_its_resources(
         ProjectNotFoundError,
         UserNotFoundError,
         ProjectDeleteError,
-        Exception,
     ) as error:
         _logger.warning(
             "Failed to delete guest user %s and its resources: %s",

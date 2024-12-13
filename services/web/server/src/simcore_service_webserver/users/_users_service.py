@@ -69,7 +69,7 @@ async def pre_register_user(
         if key in details:
             details[f"pre_{key}"] = details.pop(key)
 
-    await _users_repository.new_user_details(
+    await _users_repository.create_user_details(
         get_asyncpg_engine(app),
         email=profile.email,
         created_by=creator_user_id,

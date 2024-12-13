@@ -315,7 +315,7 @@ async def get_user_products(
         return [row async for row in result]
 
 
-async def new_user_details(
+async def create_user_details(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
@@ -340,8 +340,8 @@ async def get_user_billing_details(
     """
     async with pass_or_acquire_connection(engine, connection) as conn:
         query = UsersRepo.get_billing_details_query(user_id=user_id)
-        result = await conn.stream(query)
-        row = await result.fetchone()
+        result = await conn.execute(query)
+        row = result.fetchone()
         if not row:
             raise BillingDetailsNotFoundError(user_id=user_id)
         return UserBillingDetails.model_validate(row)
