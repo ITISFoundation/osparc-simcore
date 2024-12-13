@@ -7,8 +7,8 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
-from simcore_service_api_server.models._utils_pydantic import UriSchema
 
+from ...models._utils_pydantic import UriSchema
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr
 
