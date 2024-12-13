@@ -211,7 +211,7 @@ class MyUsersSearchQueryParams(BaseModel):
     limit: Annotated[int, annotated_types.Interval(ge=1, le=50)] = 10
 
 
-class MyUserGet(OutputSchema):
+class UserAsAdminGet(OutputSchema):
     # Public profile of a user subject to its privacy settings
     user_id: UserID
     group_id: GroupID
@@ -232,7 +232,7 @@ class UsersSearchQueryParams(BaseModel):
     ]
 
 
-class UserGet(OutputSchema):
+class UserAsAdminGet(OutputSchema):
     # ONLY for admins
     first_name: str | None
     last_name: str | None
