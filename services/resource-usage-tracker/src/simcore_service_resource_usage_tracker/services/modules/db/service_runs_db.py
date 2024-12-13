@@ -427,10 +427,7 @@ async def export_service_runs_table_to_s3(
                 resource_tracker_service_runs.c.stopped_at,
                 resource_tracker_credit_transactions.c.osparc_credits,
                 resource_tracker_credit_transactions.c.transaction_status,
-                sa.func.coalesce(
-                    _project_tags_subquery.c.project_tags,
-                    sa.cast(sa.text("'{}'"), sa.ARRAY(sa.String)),
-                ).label("project_tags"),
+                _project_tags_subquery.c.project_tags.label("project_tags"),
             )
             .select_from(
                 resource_tracker_service_runs.join(
