@@ -195,6 +195,10 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
 #
 
 
+class MyUsersGetParams(BaseModel):
+    user_id: UserID
+
+
 class MyUsersSearchQueryParams(BaseModel):
     match_: Annotated[
         str,
