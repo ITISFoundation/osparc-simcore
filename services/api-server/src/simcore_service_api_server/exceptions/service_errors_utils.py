@@ -1,3 +1,4 @@
+# pylint: disable=dangerous-default-value
 import asyncio
 import logging
 from collections.abc import Callable, Coroutine, Mapping
@@ -164,6 +165,8 @@ def service_exception_mapper(
     [Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]],
     Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
 ]:
+    assert len(http_status_map.keys()) > 0 or len(rpc_exception_map.keys()) > 0
+
     def _decorator(member_func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]):
         _assert_correct_kwargs(
             func=member_func,
