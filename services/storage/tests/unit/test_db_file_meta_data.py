@@ -76,6 +76,7 @@ def test_building_sql_statements(faker: Faker):
         _list_filter_with_partial_file_id_stmt,
         user_or_project_filter=UserOrProjectFilter(user_id=42, project_ids=[]),
         file_id_prefix=None,
+        is_directory=None,
         partial_file_id="{project_id}/",
         sha256_checksum=None,
     )
