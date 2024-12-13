@@ -21,8 +21,8 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
 from pydantic import ByteSize
 from servicelib.archiving_utils import (
-    ArchiveError,
     PrunableFolder,
+    UnsupportedArchiveFormat,
     archive_dir,
     unarchive_dir,
 )
@@ -307,7 +307,7 @@ async def _get_data_from_port(
                     dest_folder.prune(exclude=unarchived)
 
                     _logger.debug("all unzipped in %s", final_path)
-                except ArchiveError:
+                except UnsupportedArchiveFormat:
                     _logger.warning(
                         "Could not extract archive '%s' to '%s' moving it to: '%s'",
                         downloaded_file,

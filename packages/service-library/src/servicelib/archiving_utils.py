@@ -35,6 +35,10 @@ class ArchiveError(Exception):
     """
 
 
+class UnsupportedArchiveFormat(Exception):
+    pass
+
+
 def _human_readable_size(size, decimal_places=3):
     human_readable_file_size = float(size)
     unit = "B"
@@ -260,6 +264,10 @@ async def unarchive_dir(
                 f"Failed unarchiving {archive_to_extract} -> {destination_folder} due to {type(err)}."
                 f"Details: {err}"
             )
+            # maybe write unsupported error format here instead of all this to be able to still raise in case of error
+            if isinstance(err, NotImplementedError):
+                raise UnsupportedArchiveFormat(msg) from err
+
             raise ArchiveError(msg) from err
 
     # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
