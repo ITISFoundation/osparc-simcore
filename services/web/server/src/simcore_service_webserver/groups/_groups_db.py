@@ -744,6 +744,6 @@ async def auto_add_user_to_product_group(
                 gid=product_group_id,
                 access_rights=_DEFAULT_PRODUCT_GROUP_ACCESS_RIGHTS,
             )
-            .on_conflict_do_nothing()  # in case the user was already added
+            .on_conflict_do_nothing()  # in case the user was already added to this group
         )
         return product_group_id
