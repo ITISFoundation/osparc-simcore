@@ -44,8 +44,6 @@ from .exceptions import (
     UserNotFoundError,
 )
 
-_ALL = None
-
 
 def _parse_as_user(user_id: Any) -> UserID:
     try:
@@ -59,9 +57,9 @@ async def get_user_or_raise(
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    return_column_names: list[str] | None = _ALL,
+    return_column_names: list[str] | None = None,
 ) -> dict[str, Any]:
-    if return_column_names == _ALL:
+    if return_column_names is None:  # return all
         return_column_names = list(users.columns.keys())
 
     assert return_column_names is not None  # nosec
