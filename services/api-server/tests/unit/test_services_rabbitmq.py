@@ -441,7 +441,7 @@ class _MockLogDistributor:
 
 async def test_log_generator(mocker: MockFixture, faker: Faker):
     mocker.patch(
-        "simcore_service_api_server.services.log_streaming.LogStreamer._project_done",
+        "simcore_service_api_server.services_http.log_streaming.LogStreamer._project_done",
         return_value=True,
     )
     log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=_MockLogDistributor(), log_check_timeout=1)  # type: ignore

@@ -5,7 +5,7 @@
 import asyncio
 
 import pytest
-from fastapi import status
+from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_webserver.licensed_items import (
     LicensedItemGet as _LicensedItemGet,
@@ -18,28 +18,17 @@ from pytest_mock import MockerFixture
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.api.dependencies.webserver_rpc import (
+    get_wb_api_rpc_client,
+)
 from simcore_service_api_server.models.pagination import Page
 from simcore_service_api_server.models.schemas.model_adapter import LicensedItemGet
-
-
-@pytest.fixture
-async def mock_rabbitmq_rpc_client(mocker: MockerFixture) -> MockerFixture:
-    class DummyRabbitMqRpcClient:
-        pass
-
-    def _get_dummy_rpc_client():
-        return DummyRabbitMqRpcClient
-
-    mocker.patch(
-        "simcore_service_api_server.core.application.get_rabbitmq_rpc_client",
-        sideeffect=_get_dummy_rpc_client,
-    )
-    return mocker
+from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 
 @pytest.fixture
 async def mock_wb_api_server_rcp(
-    mock_rabbitmq_rpc_client: MockerFixture, exception_to_raise: Exception | None
+    app: FastAPI, mocker: MockerFixture, exception_to_raise: Exception | None
 ) -> MockerFixture:
     async def _get_backend_licensed_items(
         rabbitmq_rpc_client: RabbitMQRPCClient,
@@ -59,12 +48,18 @@ async def mock_wb_api_server_rcp(
             total=len(examples),
         )
 
-    mock_rabbitmq_rpc_client.patch(
+    class DummyRpcClient:
+        pass
+
+    app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
+        _client=DummyRpcClient()
+    )
+    mocker.patch(
         "simcore_service_api_server.services_rpc.wb_api_server._get_licensed_items",
         _get_backend_licensed_items,
     )
 
-    return mock_rabbitmq_rpc_client
+    return mocker
 
 
 @pytest.mark.parametrize("exception_to_raise", [None])
