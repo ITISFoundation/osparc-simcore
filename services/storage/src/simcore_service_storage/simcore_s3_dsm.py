@@ -537,11 +537,7 @@ class SimcoreS3DataManager(BaseDataManager):
             _logger.warning("File %s not found in S3", file_id)
 
         async with self.engine.acquire() as conn:
-            try:
-                if await db_file_meta_data.get(conn, file_id):
-                    await db_file_meta_data.delete(conn, [file_id])
-            except FileMetaDataNotFoundError:
-                _logger.warning("File %s not found in database", file_id)
+            await db_file_meta_data.delete(conn, [file_id])
 
             if parent_dir_fmds := await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
