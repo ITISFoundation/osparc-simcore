@@ -153,7 +153,7 @@ async def get_user(request: web.Request) -> web.Response:
     return envelope_json_response(UserGet.from_model(user))
 
 
-@routes.get(f"/{API_VTAG}/users:search", name="search_users")
+@routes.post(f"/{API_VTAG}/users:search", name="search_users")
 @login_required
 @permission_required("user.read")
 @_handle_users_exceptions
@@ -161,6 +161,7 @@ async def search_users(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
+    # NOTE: Decided for body instead of query parameters because it is easier for the front-end
     search_params = await parse_request_body_as(UsersSearch, request)
 
     found = await _users_service.search_public_users(
