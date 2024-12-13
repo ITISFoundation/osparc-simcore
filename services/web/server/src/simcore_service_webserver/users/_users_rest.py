@@ -5,11 +5,15 @@ from aiohttp import web
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
-    UsersSearchQueryParams,
+    UserGet,
+    UsersForAdminSearchQueryParams,
+    UsersGetParams,
+    UsersSearch,
 )
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
+    parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -133,15 +137,20 @@ async def update_my_profile(request: web.Request) -> web.Response:
 #
 
 
-@routes.get(f"/{API_VTAG}/users:search", name="get_user")
+@routes.get(f"/{API_VTAG}/users/{{user_id}}", name="get_user")
 @login_required
 @permission_required("user.read")
 @_handle_users_exceptions
 async def get_user(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
+    path_params = parse_request_path_parameters_as(UsersGetParams, request)
 
-    raise NotImplementedError
+    user = await _users_service.get_public_user(
+        request.app, caller_id=req_ctx.user_id, user_id=path_params.user_id
+    )
+
+    return envelope_json_response(UserGet.from_model(user))
 
 
 @routes.get(f"/{API_VTAG}/users:search", name="search_users")
@@ -152,7 +161,16 @@ async def search_users(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    raise NotImplementedError
+    search_params = await parse_request_body_as(UsersSearch, request)
+
+    found = await _users_service.search_public_users(
+        request.app,
+        caller_id=req_ctx.user_id,
+        match_=search_params.match_,
+        limit=search_params.limit,
+    )
+
+    return envelope_json_response([UserGet.from_model(user) for user in found])
 
 
 #
@@ -171,8 +189,8 @@ async def search_users_for_admin(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    query_params: UsersSearchQueryParams = parse_request_query_parameters_as(
-        UsersSearchQueryParams, request
+    query_params: UsersForAdminSearchQueryParams = parse_request_query_parameters_as(
+        UsersForAdminSearchQueryParams, request
     )
 
     found = await _users_service.search_users(

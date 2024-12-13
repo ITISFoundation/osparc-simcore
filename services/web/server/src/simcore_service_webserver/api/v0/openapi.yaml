@@ -1344,9 +1344,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UserAsAdminGet_'
+                $ref: '#/components/schemas/Envelope_UserForAdminGet_'
   /v0/users:search:
-    get:
+    post:
       tags:
       - user
       summary: Search Users
@@ -1354,30 +1354,21 @@ paths:
         me) based on their privacy settings.
       operationId: search_users
       parameters:
-      - name: match
+      - name: email
         in: query
         required: true
         schema:
           type: string
-          minLength: 1
-          maxLength: 50
-          title: Match
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          maximum: 50
-          minimum: 1
-          default: 10
-          title: Limit
+          minLength: 3
+          maxLength: 200
+          title: Email
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_UserAsAdminGet__'
+                $ref: '#/components/schemas/Envelope_list_UserForAdminGet__'
   /v0/admin/users:search:
     get:
       tags:
@@ -1400,7 +1391,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_UserAsAdminGet__'
+                $ref: '#/components/schemas/Envelope_list_UserForAdminGet__'
   /v0/admin/users:pre-register:
     post:
       tags:
@@ -1420,7 +1411,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UserAsAdminGet_'
+                $ref: '#/components/schemas/Envelope_UserForAdminGet_'
   /v0/wallets:
     get:
       tags:
@@ -8611,11 +8602,11 @@ components:
           title: Error
       type: object
       title: Envelope[Union[WalletGet, NoneType]]
-    Envelope_UserAsAdminGet_:
+    Envelope_UserForAdminGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/UserAsAdminGet'
+          - $ref: '#/components/schemas/UserForAdminGet'
           - type: 'null'
         error:
           anyOf:
@@ -8623,7 +8614,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[UserAsAdminGet]
+      title: Envelope[UserForAdminGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -9257,12 +9248,12 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
-    Envelope_list_UserAsAdminGet__:
+    Envelope_list_UserForAdminGet__:
       properties:
         data:
           anyOf:
           - items:
-              $ref: '#/components/schemas/UserAsAdminGet'
+              $ref: '#/components/schemas/UserForAdminGet'
             type: array
           - type: 'null'
           title: Data
@@ -9272,7 +9263,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[UserAsAdminGet]]
+      title: Envelope[list[UserForAdminGet]]
     Envelope_list_UserNotification__:
       properties:
         data:
@@ -14403,7 +14394,7 @@ components:
       - number
       - e_tag
       title: UploadedPart
-    UserAsAdminGet:
+    UserForAdminGet:
       properties:
         firstName:
           anyOf:
@@ -14494,7 +14485,7 @@ components:
       - country
       - registered
       - status
-      title: UserAsAdminGet
+      title: UserForAdminGet
     UserNotification:
       properties:
         user_id:
