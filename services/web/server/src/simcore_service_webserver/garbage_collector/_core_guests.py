@@ -20,7 +20,6 @@ from ..users import exceptions
 from ..users.api import (
     delete_user_without_projects,
     get_guest_user_ids_and_names,
-    get_user,
     get_user_primary_group_id,
     get_user_role,
 )
@@ -49,15 +48,12 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
         project_owner_primary_gid = await get_user_primary_group_id(
             app=app, user_id=user_id
         )
-        project_owner: dict = await get_user(app=app, user_id=user_id)
     except exceptions.UserNotFoundError:
         _logger.warning(
             "Could not recover user data for user '%s', stopping removal of projects!",
             f"{user_id=}",
         )
         return
-
-    user_primary_gid = int(project_owner["primary_gid"])
 
     # fetch all projects for the user
     user_project_uuids = await ProjectDBAPI.get_from_app_context(
@@ -67,7 +63,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     _logger.info(
         "Removing or transfering projects of user with %s, %s: %s",
         f"{user_id=}",
-        f"{project_owner=}",
+        f"{project_owner_primary_gid=}",
         f"{user_project_uuids=}",
     )
 
@@ -95,7 +91,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
             app=app,
             project_uuid=project_uuid,
             user_id=user_id,
-            user_primary_gid=user_primary_gid,
+            user_primary_gid=project_owner_primary_gid,
             project=project,
         )
 
@@ -134,7 +130,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
             await replace_current_owner(
                 app=app,
                 project_uuid=project_uuid,
-                user_primary_gid=user_primary_gid,
+                user_primary_gid=project_owner_primary_gid,
                 new_project_owner_gid=new_project_owner_gid,
                 project=project,
             )
