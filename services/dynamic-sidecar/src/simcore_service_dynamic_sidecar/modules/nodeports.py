@@ -22,7 +22,7 @@ from models_library.services_types import ServicePortKey
 from pydantic import ByteSize
 from servicelib.archiving_utils import (
     PrunableFolder,
-    UnsupportedArchiveFormat,
+    UnsupportedArchiveFormatError,
     archive_dir,
     unarchive_dir,
 )
@@ -281,10 +281,12 @@ async def _get_data_from_port(
             if not downloaded_file or not downloaded_file.exists():
                 # the link may be empty
                 # remove files all files from disk when disconnecting port
-                _logger.debug("removing contents of dir %s", final_path)
-                await remove_directory(
-                    final_path, only_children=True, ignore_errors=True
-                )
+                with log_context(
+                    _logger, logging.DEBUG, f"removing contents of dir '{final_path}'"
+                ):
+                    await remove_directory(
+                        final_path, only_children=True, ignore_errors=True
+                    )
                 return port, None, ByteSize(0)
 
             transferred_bytes = downloaded_file.stat().st_size
@@ -307,7 +309,7 @@ async def _get_data_from_port(
                     dest_folder.prune(exclude=unarchived)
 
                     _logger.debug("all unzipped in %s", final_path)
-                except UnsupportedArchiveFormat:
+                except UnsupportedArchiveFormatError:
                     _logger.warning(
                         "Could not extract archive '%s' to '%s' moving it to: '%s'",
                         downloaded_file,

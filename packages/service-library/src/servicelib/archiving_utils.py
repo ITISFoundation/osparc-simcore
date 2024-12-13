@@ -35,7 +35,7 @@ class ArchiveError(Exception):
     """
 
 
-class UnsupportedArchiveFormat(Exception):
+class UnsupportedArchiveFormatError(Exception):
     pass
 
 
@@ -266,7 +266,7 @@ async def unarchive_dir(
             )
             # maybe write unsupported error format here instead of all this to be able to still raise in case of error
             if isinstance(err, NotImplementedError):
-                raise UnsupportedArchiveFormat(msg) from err
+                raise UnsupportedArchiveFormatError(msg) from err
 
             raise ArchiveError(msg) from err
 
