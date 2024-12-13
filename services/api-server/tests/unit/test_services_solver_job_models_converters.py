@@ -10,7 +10,7 @@ from pydantic import RootModel, TypeAdapter, create_model
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
-from simcore_service_api_server.services.solver_job_models_converters import (
+from simcore_service_api_server.services_http.solver_job_models_converters import (
     create_job_from_project,
     create_job_inputs_from_node_inputs,
     create_jobstatus_from_task,
@@ -220,7 +220,7 @@ def test_create_job_from_project(faker: Faker):
 @pytest.mark.skip(reason="TODO: next PR")
 def test_create_jobstatus_from_task():
     from simcore_service_api_server.models.schemas.jobs import JobStatus
-    from simcore_service_api_server.services.director_v2 import ComputationTaskGet
+    from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
 
     task = ComputationTaskGet.model_validate({})  # TODO:
     job_status: JobStatus = create_jobstatus_from_task(task)

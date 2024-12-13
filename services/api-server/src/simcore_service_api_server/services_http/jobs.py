@@ -9,7 +9,7 @@ from servicelib.logging_utils import log_context
 
 from ..api.dependencies.authentication import get_current_user_id
 from ..api.dependencies.services import get_api_client
-from ..api.dependencies.webserver import get_webserver_session
+from ..api.dependencies.webserver_http import get_webserver_session
 from ..models.schemas.jobs import (
     JobID,
     JobMetadata,

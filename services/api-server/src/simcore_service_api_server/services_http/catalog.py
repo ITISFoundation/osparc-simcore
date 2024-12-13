@@ -13,11 +13,11 @@ from models_library.services import ServiceMetaDataPublished, ServiceType
 from pydantic import ConfigDict, TypeAdapter, ValidationError
 from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
-from simcore_service_api_server.exceptions.backend_errors import (
+
+from ..exceptions.backend_errors import (
     ListSolversOrStudiesError,
     SolverOrStudyNotFoundError,
 )
-
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.basic_types import VersionStr
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort
@@ -68,7 +68,7 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
 # - Error handling: What do we reraise, suppress, transform???
 #
 
-_exception_mapper = partial(service_exception_mapper, "Catalog")
+_exception_mapper = partial(service_exception_mapper, service_name="Catalog")
 
 TruncatedCatalogServiceOutAdapter: Final[
     TypeAdapter[TruncatedCatalogServiceOut]
@@ -91,7 +91,9 @@ class CatalogApi(BaseServiceClientApi):
     SEE osparc-simcore/services/catalog/openapi.json
     """
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: ListSolversOrStudiesError})
+    @_exception_mapper(
+        http_status_map={status.HTTP_404_NOT_FOUND: ListSolversOrStudiesError}
+    )
     async def list_solvers(
         self,
         *,
@@ -134,7 +136,9 @@ class CatalogApi(BaseServiceClientApi):
                 )
         return solvers
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError})
+    @_exception_mapper(
+        http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
+    )
     async def get_service(
         self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
     ) -> Solver:
@@ -163,7 +167,9 @@ class CatalogApi(BaseServiceClientApi):
         solver: Solver = service.to_solver()
         return solver
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError})
+    @_exception_mapper(
+        http_status_map={status.HTTP_404_NOT_FOUND: SolverOrStudyNotFoundError}
+    )
     async def get_service_ports(
         self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
     ):
