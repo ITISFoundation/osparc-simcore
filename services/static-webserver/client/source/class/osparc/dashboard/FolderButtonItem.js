@@ -173,13 +173,42 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       this.addListener("dragover", e => {
         let compatible = false;
         if (e.supportsType("osparc-moveStudy")) {
-          compatible = true;
-          const data = e.getData("osparc-moveStudy");
-          console.log("osparc-moveStudy", data["studyDataOrigin"]);
+          const studyData = e.getData("osparc-moveStudy");
+          // Compatibility checks:
+          // - My workspace
+          //   - None
+          // - Shared workspace
+          //   - write access on workspace
+          const workspaceId = studyData["workspaceId"];
+          if (workspaceId) {
+            const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
+            if (workspace) {
+              compatible = workspace.getMyAccessRights()["write"];
+            }
+          } else {
+            compatible = true;
+          }
         } else if (e.supportsType("osparc-moveFolder")) {
-          compatible = true;
           const data = e.getData("osparc-moveFolder");
-          console.log("osparc-moveFolder", data["folderOrigin"]);
+          const folder = data["folderOrigin"];
+          // Compatibility checks:
+          // - It's not the same folder
+          // - My workspace
+          //   - None
+          // - Shared workspace
+          //   - write access on workspace
+          compatible = this.getFolder() !== folder;
+          const workspaceId = folder.getWorkspaceId();
+          if (compatible) {
+            if (workspaceId) {
+              const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
+              if (workspace) {
+                compatible = workspace.getMyAccessRights()["write"];
+              }
+            } else {
+              compatible = true;
+            }
+          }
         }
         if (!compatible) {
           e.preventDefault();
