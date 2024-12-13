@@ -81,7 +81,7 @@ def run_id() -> RunID:
 @pytest.fixture
 def resource_tracking_run_id(
     user_id: UserID, project_id: ProjectID, node_id: NodeID
-) -> str:
+) -> RunID:
     return RunID.get_resource_tracking_run_id(
         user_id, project_id, node_id, iteration=42
     )
