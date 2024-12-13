@@ -350,4 +350,4 @@ async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
 def resource_tracking_run_id(
     user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> str:
-    return get_resource_tracking_run_id(user_id, project_id, node_id, 42)
+    return get_resource_tracking_run_id(user_id, project_id, node_id, iteration=42)
