@@ -56,7 +56,7 @@ async def list_licensed_items_purchases(
                 user_id=licensed_item_usage_db.user_id,
                 product_name=licensed_item_usage_db.product_name,
                 service_run_id=licensed_item_usage_db.service_run_id,
-                start_at=licensed_item_usage_db.start_at,
+                started_at=licensed_item_usage_db.started_at,
                 stopped_at=licensed_item_usage_db.stopped_at,
                 num_of_seats=licensed_item_usage_db.num_of_seats,
             )
@@ -84,7 +84,7 @@ async def get_licensed_item_usage(
         user_id=licensed_item_usage_db.user_id,
         product_name=licensed_item_usage_db.product_name,
         service_run_id=licensed_item_usage_db.service_run_id,
-        start_at=licensed_item_usage_db.start_at,
+        started_at=licensed_item_usage_db.started_at,
         stopped_at=licensed_item_usage_db.stopped_at,
         num_of_seats=licensed_item_usage_db.num_of_seats,
     )
@@ -176,7 +176,7 @@ async def release_licensed_item(
         user_id=licensed_item_usage_db.user_id,
         product_name=licensed_item_usage_db.product_name,
         service_run_id=licensed_item_usage_db.service_run_id,
-        start_at=licensed_item_usage_db.started_at,
+        started_at=licensed_item_usage_db.started_at,
         stopped_at=licensed_item_usage_db.stopped_at,
         num_of_seats=licensed_item_usage_db.num_of_seats,
     )

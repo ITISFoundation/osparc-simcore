@@ -20,7 +20,7 @@ class LicensedItemUsageGet(BaseModel):
     user_id: UserID
     product_name: ProductName
     service_run_id: ServiceRunId
-    start_at: datetime
+    started_at: datetime
     stopped_at: datetime | None
     num_of_seats: int
 
@@ -34,7 +34,7 @@ class LicensedItemUsageGet(BaseModel):
                     "user_id": 1,
                     "product_name": "osparc",
                     "service_run_id": "run_1",
-                    "start_at": "2023-01-11 13:11:47.293595",
+                    "started_at": "2023-01-11 13:11:47.293595",
                     "stopped_at": "2023-01-11 13:11:47.293595",
                     "num_of_seats": 1,
                 }
