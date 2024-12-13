@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import Depends
 from models_library.api_schemas_resource_usage_tracker.licensed_items_usages import (
+    LicenseCheckoutID,
     LicensedItemsUsagesPage,
     LicensedItemUsageGet,
     LicenseItemCheckoutGet,
@@ -10,10 +11,7 @@ from models_library.api_schemas_resource_usage_tracker.licensed_items_usages imp
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker import ServiceRunId, ServiceRunStatus
-from models_library.resource_tracker_licensed_items_usages import (
-    LicenseCheckoutCreate,
-    LicensedItemUsageID,
-)
+from models_library.resource_tracker_licensed_items_usages import LicensedItemUsageID
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -160,13 +158,14 @@ async def checkout_licensed_item(
 async def release_licensed_item(
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
     *,
-    data: LicenseCheckoutCreate,
+    checkout_id: LicenseCheckoutID,
+    product_name: ProductName,
 ) -> LicensedItemUsageGet:
 
     licensed_item_usage_db: LicensedItemUsageDB = await licensed_items_usages_db.update(
         db_engine,
-        licensed_item_usage_id=data.checkout_id,
-        product_name=data.product_name,
+        licensed_item_usage_id=checkout_id,
+        product_name=product_name,
         stopped_at=datetime.now(tz=UTC),
     )
 
