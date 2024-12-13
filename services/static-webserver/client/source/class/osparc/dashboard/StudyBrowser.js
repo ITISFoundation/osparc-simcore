@@ -657,12 +657,45 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __attachDragHandlers: function(card) {
       card.setDraggable(true);
+
       card.addListener("dragstart", e => {
         e.addAction("move");
         e.addType("osparc-moveStudy");
         e.addData("osparc-moveStudy", {
           "studyDataOrigin": card.getResourceData(),
         });
+      });
+
+      // Create drag indicator
+      const indicator = new qx.ui.core.Widget().set({
+        width: 200,
+        height: 100,
+        opacity: 0.7,
+        zIndex: 100,
+      });
+      indicator.setDecorator(
+        new qx.ui.decoration.Decorator().set({
+          width: 3,
+          style: "solid",
+          color: "green",
+        })
+      );
+      // Move indicator away
+      indicator.setLayoutProperties({
+        left: -1000,
+        top: -1000
+      });
+      qx.core.Init.getApplication().getRoot().add(indicator);
+
+      card.addListener("drag", e => {
+        const orig = e.getOriginalTarget();
+        const origCoords = orig.getContentLocation();
+        indicator.setDomPosition(origCoords.left, origCoords.top);
+      });
+
+      card.addListener("dragend", () => {
+        // Move indicator away
+        indicator.setDomPosition(-1000, -1000);
       });
     },
 
