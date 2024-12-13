@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.users import (
     MyTokenCreate,
     MyTokenGet,
     MyUserGet,
+    MyUsersGetParams,
     MyUsersSearchQueryParams,
     UserGet,
     UsersSearchQueryParams,
@@ -47,7 +48,7 @@ async def get_my_profile():
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def update_my_profile(_profile: MyProfilePatch):
+async def update_my_profile(_body: MyProfilePatch):
     ...
 
 
@@ -57,7 +58,7 @@ async def update_my_profile(_profile: MyProfilePatch):
     deprecated=True,
     description="Use PATCH instead",
 )
-async def replace_my_profile(_profile: MyProfilePatch):
+async def replace_my_profile(_body: MyProfilePatch):
     ...
 
 
@@ -67,7 +68,7 @@ async def replace_my_profile(_profile: MyProfilePatch):
 )
 async def set_frontend_preference(
     preference_id: PreferenceIdentifier,
-    body_item: PatchRequestBody,
+    _body: PatchRequestBody,
 ):
     ...
 
@@ -85,7 +86,7 @@ async def list_tokens():
     response_model=Envelope[MyTokenGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_token(_token: MyTokenCreate):
+async def create_token(_body: MyTokenCreate):
     ...
 
 
@@ -93,7 +94,9 @@ async def create_token(_token: MyTokenCreate):
     "/me/tokens/{service}",
     response_model=Envelope[MyTokenGet],
 )
-async def get_token(_params: Annotated[_TokenPathParams, Depends()]):
+async def get_token(
+    _path: Annotated[_TokenPathParams, Depends()],
+):
     ...
 
 
@@ -101,7 +104,7 @@ async def get_token(_params: Annotated[_TokenPathParams, Depends()]):
     "/me/tokens/{service}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_token(_params: Annotated[_TokenPathParams, Depends()]):
+async def delete_token(_path: Annotated[_TokenPathParams, Depends()]):
     ...
 
 
@@ -117,7 +120,9 @@ async def list_user_notifications():
     "/me/notifications",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def create_user_notification(_notification: UserNotificationCreate):
+async def create_user_notification(
+    _body: UserNotificationCreate,
+):
     ...
 
 
@@ -126,8 +131,8 @@ async def create_user_notification(_notification: UserNotificationCreate):
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def mark_notification_as_read(
-    _params: Annotated[_NotificationPathParams, Depends()],
-    _notification: UserNotificationPatch,
+    _path: Annotated[_NotificationPathParams, Depends()],
+    _body: UserNotificationPatch,
 ):
     ...
 
@@ -141,11 +146,19 @@ async def list_user_permissions():
 
 
 @router.get(
+    "/me/users/{user_id}",
+    response_model=Envelope[MyUserGet],
+)
+async def get_user(_path: Annotated[MyUsersGetParams, Depends()]):
+    ...
+
+
+@router.get(
     "/me/users:search",
     response_model=Envelope[list[MyUserGet]],
     description="Search among users who are publicly visible to the caller (i.e., me) based on their privacy settings.",
 )
-async def search_users(_params: Annotated[MyUsersSearchQueryParams, Depends()]):
+async def search_users(_query: Annotated[MyUsersSearchQueryParams, Depends()]):
     ...
 
 
@@ -157,7 +170,7 @@ _extra_tags: list[str | Enum] = ["admin"]
     response_model=Envelope[list[UserGet]],
     tags=_extra_tags,
 )
-async def search_users_as_admin(_params: Annotated[UsersSearchQueryParams, Depends()]):
+async def search_users_as_admin(_query: Annotated[UsersSearchQueryParams, Depends()]):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
 
