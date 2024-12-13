@@ -2018,7 +2018,8 @@
           "docker_node_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^[a-z0-9]$"
               },
               {
                 "type": "null"
