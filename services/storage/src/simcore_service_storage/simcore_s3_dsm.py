@@ -185,6 +185,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     user_id=uid, project_ids=accessible_projects_ids
                 ),
                 file_id_prefix=None,
+                is_directory=None,
                 partial_file_id=uuid_filter,
                 sha256_checksum=None,
             )

@@ -72,7 +72,7 @@ def _list_filter_with_partial_file_id_stmt(
     file_id_prefix: str | None,
     partial_file_id: str | None,
     sha256_checksum: SHA256Str | None,
-    is_directory: bool | None = None,
+    is_directory: bool | None,
     limit: int | None = None,
     offset: int | None = None,
 ):
@@ -119,7 +119,7 @@ async def list_filter_with_partial_file_id(
     file_id_prefix: str | None,
     partial_file_id: str | None,
     sha256_checksum: SHA256Str | None,
-    is_directory: bool | None = None,
+    is_directory: bool | None,
     limit: int | None = None,
     offset: int | None = None,
 ) -> list[FileMetaDataAtDB]:

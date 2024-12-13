@@ -123,5 +123,4 @@ async def get_directory_file_id(
 
 def compute_file_id_prefix(file_id: str, levels: int):
     components = file_id.strip("/").split("/")
-    subpath = "/".join(components[:levels])
-    return "/" + subpath if subpath else "/"
+    return "/".join(components[:levels])
