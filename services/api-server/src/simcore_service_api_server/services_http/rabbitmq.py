@@ -2,10 +2,13 @@ import logging
 
 from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
-from simcore_service_api_server.core.health_checker import ApiServerHealthChecker
+from simcore_service_api_server.api.dependencies.rabbitmq import get_rabbitmq_rpc_client
+from simcore_service_api_server.services_rpc import wb_api_server
 
-from ..services.log_streaming import LogDistributor
+from ..core.health_checker import ApiServerHealthChecker
+from ..services_http.log_streaming import LogDistributor
 
 _logger = logging.getLogger(__name__)
 
@@ -18,6 +21,9 @@ def setup_rabbitmq(app: FastAPI) -> None:
     async def _on_startup() -> None:
         await wait_till_rabbitmq_responsive(settings.dsn)
 
+        app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
+            client_name="api_server", settings=settings
+        )
         app.state.rabbitmq_client = RabbitMQClient(
             client_name="api_server", settings=settings
         )
@@ -32,6 +38,7 @@ def setup_rabbitmq(app: FastAPI) -> None:
         await app.state.health_checker.setup(
             app.state.settings.API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS
         )
+        wb_api_server.setup(app, get_rabbitmq_rpc_client(app))
 
     async def _on_shutdown() -> None:
         if app.state.health_checker:
@@ -40,6 +47,8 @@ def setup_rabbitmq(app: FastAPI) -> None:
             await app.state.log_distributor.teardown()
         if app.state.rabbitmq_client:
             await app.state.rabbitmq_client.close()
+        if app.state.rabbitmq_rpc_client:
+            await app.state.rabbitmq_rpc_client.close()
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

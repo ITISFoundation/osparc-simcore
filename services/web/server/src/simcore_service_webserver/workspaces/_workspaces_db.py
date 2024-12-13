@@ -217,7 +217,7 @@ async def update_workspace(
 ) -> WorkspaceDB:
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
-        **updates.dict(exclude_unset=True),
+        **updates.model_dump(exclude_unset=True),
         "modified": func.now(),
     }
 
