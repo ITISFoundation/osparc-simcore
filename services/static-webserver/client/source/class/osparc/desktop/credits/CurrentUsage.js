@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
             limit: 10
           }
         };
-        osparc.data.Resources.fetch("resourceUsage", "getWithWallet2", params)
+        osparc.data.Resources.fetch("resourceUsage", "getWithWallet", params)
           .then(data => {
             const currentTasks = data.filter(d => (d.project_id === currentStudy.getUuid()) && d.service_run_status === "RUNNING");
             let cost = 0;

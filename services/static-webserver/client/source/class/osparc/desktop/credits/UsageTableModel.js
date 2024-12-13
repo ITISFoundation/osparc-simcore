@@ -76,7 +76,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
 
     // overridden
     _loadRowCount() {
-      const endpoint = this.getWalletId() == null ? "get" : "getWithWallet"
+      const endpoint = this.getWalletId() == null ? "get" : "getWithWalletFiltered"
       const params = {
         url: {
           walletId: this.getWalletId(),
@@ -109,7 +109,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1)
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit=this.self().SERVER_MAX_LIMIT) => {
-        const endpoint = this.getWalletId() == null ? "get" : "getWithWallet"
+        const endpoint = this.getWalletId() == null ? "get" : "getWithWalletFiltered"
         return osparc.data.Resources.fetch("resourceUsage", endpoint, {
           url: {
             walletId: this.getWalletId(),
