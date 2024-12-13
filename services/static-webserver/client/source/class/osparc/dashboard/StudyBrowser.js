@@ -648,11 +648,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __attachDragHandlers: function(card) {
       card.setDraggable(true);
       card.addListener("dragstart", e => {
-        // Register supported types
-        e.addType("moveStudy");
-
-        // Register supported actions
         e.addAction("move");
+        e.addType("osparc-moveStudy");
+        e.addData("osparc-moveStudy", {
+          "studyDataOrigin": card.getResourceData(),
+        });
       });
       card.addListener("droprequest", e => {
         console.log("Related of droprequest: " + e.getRelatedTarget());

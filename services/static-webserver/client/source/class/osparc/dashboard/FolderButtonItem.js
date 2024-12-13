@@ -160,21 +160,30 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     __attachDragHandlers: function() {
       this.setDraggable(true);
       this.addListener("dragstart", e => {
-        e.addType("moveFolder");
+        e.addAction("move");
+        e.addType("osparc-moveFolder");
+        e.addData("osparc-moveFolder", {
+          "folderOrigin": this.getFolder(),
+        });
       });
     },
 
     __attachDropHandlers: function() {
       this.setDroppable(true);
       this.addListener("dragover", e => {
-        if (e.supportsType("moveStudy")) {
-          console.log("dragover", "moveStudy", e);
-          return;
-        } else if (e.supportsType("moveFolder")) {
-          console.log("dragover", "moveFolder", e);
-          return;
+        let compatible = false;
+        if (e.supportsType("osparc-moveStudy")) {
+          compatible = true;
+          const data = e.getData("osparc-moveStudy");
+          console.log("osparc-moveStudy", data["studyDataOrigin"]);
+        } else if (e.supportsType("osparc-moveFolder")) {
+          compatible = true;
+          const data = e.getData("osparc-moveFolder");
+          console.log("osparc-moveFolder", data["folderOrigin"]);
         }
-        e.preventDefault();
+        if (!compatible) {
+          e.preventDefault();
+        }
       });
     },
 
