@@ -129,6 +129,7 @@ class DaskScheduler(BaseCompScheduler):
                         hardware_info=task.hardware_info,
                         callback=wake_up_callback,
                         metadata=comp_run.metadata,
+                        run_id=comp_run.run_id,
                     )
                     for node_id, task in scheduled_tasks.items()
                 ),

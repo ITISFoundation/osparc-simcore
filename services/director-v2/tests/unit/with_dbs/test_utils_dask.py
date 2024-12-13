@@ -658,5 +658,6 @@ async def test_compute_task_envs(
         node_id=sleeper_task.node_id,
         node_image=sleeper_task.image,
         metadata=run_metadata,
+        run_id=1,
     )
     assert task_envs == expected_computed_task_envs

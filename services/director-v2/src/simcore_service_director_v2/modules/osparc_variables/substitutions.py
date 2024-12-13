@@ -21,7 +21,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_types import RunID
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
-from pydantic import BaseModel
+from pydantic import BaseModel, PositiveInt
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
 
@@ -225,7 +225,7 @@ async def resolve_and_substitute_session_variables_in_specs(
     product_name: str,
     project_id: ProjectID,
     node_id: NodeID,
-    run_id: RunID,
+    run_id: RunID | PositiveInt,
 ) -> dict[str, Any]:
     table = OsparcSessionVariablesTable.get_from_app_state(app)
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
@@ -246,7 +246,7 @@ async def resolve_and_substitute_session_variables_in_specs(
                     product_name=product_name,
                     project_id=project_id,
                     node_id=node_id,
-                    run_id=run_id,
+                    run_id=f"{run_id}",
                     api_server_base_url=app.state.settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
                 ),
             )

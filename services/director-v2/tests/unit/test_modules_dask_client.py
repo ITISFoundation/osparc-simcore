@@ -503,6 +503,7 @@ async def test_send_computation_task(
         ),
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        run_id=1,
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
@@ -594,6 +595,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         remote_fct=fake_sidecar_fct,
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        run_id=1,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1

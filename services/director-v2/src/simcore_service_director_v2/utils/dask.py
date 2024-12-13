@@ -27,7 +27,7 @@ from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
+from pydantic import AnyUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
@@ -342,6 +342,7 @@ async def compute_task_envs(
     node_id: NodeID,
     node_image: Image,
     metadata: RunMetadataDict,
+    run_id: PositiveInt,
 ) -> ContainerEnvsDict:
     product_name = metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
     task_envs = node_image.envs
@@ -360,6 +361,7 @@ async def compute_task_envs(
             product_name=product_name,
             project_id=project_id,
             node_id=node_id,
+            run_id=run_id,
         )
         # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3638
         # we currently do not validate as we are using illegal docker key names with underscores

@@ -48,7 +48,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
 from models_library.users import UserID
-from pydantic import TypeAdapter, ValidationError
+from pydantic import PositiveInt, TypeAdapter, ValidationError
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import log_catch
 from settings_library.s3 import S3Settings
@@ -293,6 +293,7 @@ class DaskClient:
         remote_fct: ContainerRemoteFct | None = None,
         metadata: RunMetadataDict,
         hardware_info: HardwareInfo,
+        run_id: PositiveInt,
     ) -> list[PublishedComputationTask]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started.
@@ -396,6 +397,7 @@ class DaskClient:
                     node_id=node_id,
                     node_image=node_image,
                     metadata=metadata,
+                    run_id=run_id,
                 )
                 task_owner = dask_utils.compute_task_owner(
                     user_id, project_id, node_id, metadata.get("project_metadata", {})
