@@ -442,7 +442,7 @@ async def test_send_computation_task(
     task_labels: ContainerLabelsDict,
     empty_hardware_info: HardwareInfo,
     faker: Faker,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     _DASK_EVENT_NAME = faker.pystr()
 
@@ -561,7 +561,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     """rationale:
     When a task is submitted to the dask backend, a dask future is returned.
@@ -653,7 +653,7 @@ async def test_abort_computation_tasks(
     faker: Faker,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     _DASK_EVENT_NAME = faker.pystr()
 
@@ -744,7 +744,7 @@ async def test_failed_task_returns_exceptions(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -808,7 +808,7 @@ async def test_send_computation_task_with_missing_resources_raises(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     # remove the workers that can handle gpu
     scheduler_info = dask_client.backend.client.scheduler_info()
@@ -854,7 +854,7 @@ async def test_send_computation_task_with_hardware_info_raises(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     hardware_info: HardwareInfo,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     # NOTE: running on the default cluster will raise missing resources
     with pytest.raises(MissingComputationalResourcesError):
@@ -884,7 +884,7 @@ async def test_too_many_resources_send_computation_task(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     # create an image that needs a huge amount of CPU
     image = Image(
@@ -925,7 +925,7 @@ async def test_disconnected_backend_raises_exception(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     # DISCONNECT THE CLUSTER
     await dask_spec_local_cluster.close()  # type: ignore
@@ -958,7 +958,7 @@ async def test_changed_scheduler_raises_exception(
     unused_tcp_port_factory: Callable,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     # change the scheduler (stop the current one and start another at the same address)
     scheduler_address = URL(dask_spec_local_cluster.scheduler_address)
@@ -1006,7 +1006,7 @@ async def test_get_tasks_status(
     fail_remote_fct: bool,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -1089,7 +1089,7 @@ async def test_dask_sub_handlers(
     fake_task_handlers: TaskHandlers,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     dask_client.register_handlers(fake_task_handlers)
     _DASK_START_EVENT = "start"
@@ -1164,7 +1164,7 @@ async def test_get_cluster_details(
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
     faker: Faker,
-    resource_tracking_run_id: str,
+    resource_tracking_run_id: RunID,
 ):
     cluster_details = await dask_client.get_cluster_details()
     assert cluster_details

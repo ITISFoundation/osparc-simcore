@@ -225,7 +225,7 @@ async def resolve_and_substitute_session_variables_in_specs(
     product_name: str,
     project_id: ProjectID,
     node_id: NodeID,
-    run_id: RunID | str,
+    run_id: RunID,
 ) -> dict[str, Any]:
     table = OsparcSessionVariablesTable.get_from_app_state(app)
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
