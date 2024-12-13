@@ -22,11 +22,14 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
 )
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.services_enums import ServiceState
+from models_library.users import UserID
 from models_library.utils._original_fastapi_encoders import jsonable_encoder
-from pydantic import PositiveInt, TypeAdapter
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
@@ -34,6 +37,9 @@ from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
+from simcore_service_director_v2.modules.comp_scheduler._utils import (
+    get_resource_tracking_run_id,
+)
 
 
 @pytest.fixture
@@ -341,5 +347,7 @@ async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
 
 
 @pytest.fixture
-def comp_task_run_id() -> PositiveInt:
-    return 42
+def resource_tracking_run_id(
+    user_id: UserID, project_id: ProjectID, node_id: NodeID
+) -> str:
+    return get_resource_tracking_run_id(user_id, project_id, node_id, 42)
