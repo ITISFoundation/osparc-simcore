@@ -1,5 +1,4 @@
 """ A collection of free functions to manipulate dicts
-
 """
 
 from collections.abc import Mapping
