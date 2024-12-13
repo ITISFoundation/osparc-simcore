@@ -22,7 +22,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
@@ -32,7 +31,10 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
-from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
+from simcore_service_webserver.application_settings_utils import (
+    AppConfigDict,
+    convert_to_environ_vars,
+)
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._crud_api_create import (
     OVERRIDABLE_DOCUMENT_KEYS,
@@ -163,7 +165,7 @@ async def logged_user(
 @pytest.fixture
 def monkeypatch_setenv_from_app_config(
     monkeypatch: pytest.MonkeyPatch,
-) -> Callable[[ConfigDict], EnvVarsDict]:
+) -> Callable[[AppConfigDict], EnvVarsDict]:
     # TODO: Change signature to be analogous to
     # packages/pytest-simcore/src/pytest_simcore/helpers/utils_envs.py
     # That solution is more flexible e.g. for context manager with monkeypatch

@@ -2,6 +2,7 @@ from contextlib import suppress
 from typing import Annotated, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.dict_tools import remap_keys
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -28,7 +29,7 @@ from ..groups import (
 )
 from ..users import UserID, UserNameID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
-from ._base import InputSchema, OutputSchema, copy_dict
+from ._base import InputSchema, OutputSchema
 
 S = TypeVar("S", bound=BaseModel)
 
@@ -76,7 +77,7 @@ class GroupGet(OutputSchema):
         # Adapts these domain models into this schema
         return cls.model_validate(
             {
-                **copy_dict(
+                **remap_keys(
                     group.model_dump(
                         include={
                             "gid",
@@ -90,7 +91,7 @@ class GroupGet(OutputSchema):
                         exclude_unset=True,
                         by_alias=False,
                     ),
-                    update_keys={
+                    rename={
                         "name": "label",
                     },
                 ),
@@ -151,14 +152,14 @@ class GroupCreate(InputSchema):
     thumbnail: AnyUrl | None = None
 
     def to_model(self) -> StandardGroupCreate:
-        data = copy_dict(
+        data = remap_keys(
             self.model_dump(
                 mode="json",
                 # NOTE: intentionally inclusion_rules are not exposed to the REST api
                 include={"label", "description", "thumbnail"},
                 exclude_unset=True,
             ),
-            update_keys={"label": "name"},
+            rename={"label": "name"},
         )
         return StandardGroupCreate(**data)
 
@@ -169,14 +170,14 @@ class GroupUpdate(InputSchema):
     thumbnail: AnyUrl | None = None
 
     def to_model(self) -> StandardGroupUpdate:
-        data = copy_dict(
+        data = remap_keys(
             self.model_dump(
                 mode="json",
                 # NOTE: intentionally inclusion_rules are not exposed to the REST api
                 include={"label", "description", "thumbnail"},
                 exclude_unset=True,
             ),
-            update_keys={"label": "name"},
+            rename={"label": "name"},
         )
         return StandardGroupUpdate(**data)
 

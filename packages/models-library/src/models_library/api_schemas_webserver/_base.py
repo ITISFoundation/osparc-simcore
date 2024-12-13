@@ -78,13 +78,3 @@ class OutputSchema(BaseModel):
             exclude_none=exclude_none,
             **kwargs,
         )
-
-
-#
-# mapping tools
-#
-
-
-def remap_keys(data: dict, rename: dict[str, str]) -> dict[str, Any]:
-    """A new dict that renames the keys of a dict while keeping the values unchanged"""
-    return {rename.get(k, k): v for k, v in data.items()}

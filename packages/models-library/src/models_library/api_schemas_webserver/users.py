@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal, Self
 from uuid import UUID
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.dict_tools import remap_keys
 from common_library.users_enums import UserStatus
 from models_library.groups import AccessRightsDict
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
@@ -26,7 +27,6 @@ from ._base import (
     InputSchemaWithoutCamelCase,
     OutputSchema,
     OutputSchemaWithoutCamelCase,
-    copy_dict,
 )
 from .groups import MyGroupsGet
 from .users_preferences import AggregatedPreferences
@@ -106,7 +106,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
         my_product_group: tuple[Group, AccessRightsDict],
         my_preferences: AggregatedPreferences,
     ) -> Self:
-        data = copy_dict(
+        data = remap_keys(
             my_profile.model_dump(
                 include={
                     "id",
@@ -120,7 +120,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
                 },
                 exclude_unset=True,
             ),
-            update_keys={"email": "login"},
+            rename={"email": "login"},
         )
         return cls(
             **data,
