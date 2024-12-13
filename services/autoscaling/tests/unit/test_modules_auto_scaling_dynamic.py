@@ -50,6 +50,7 @@ from pytest_simcore.helpers.aws_ec2 import (
 )
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from simcore_service_autoscaling.constants import BUFFER_MACHINE_TAG_KEY
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
 from simcore_service_autoscaling.modules.auto_scaling_core import (
@@ -1809,6 +1810,7 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     spied_cluster_analysis: MockType,
     instance_type_filters: Sequence[FilterTypeDef],
     mock_find_node_with_name_returns_fake_node: mock.Mock,
+    mock_compute_node_used_resources: mock.Mock,
     mock_docker_tag_node: mock.Mock,
 ):
     # pre-requisites
@@ -1874,8 +1876,12 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
             ),
         ),
         expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_additional_tag_keys=[
+            *list(ec2_instance_custom_tags),
+            BUFFER_MACHINE_TAG_KEY,
+        ],
         instance_filters=instance_type_filters,
+        expected_user_data=[],
     )
 
     # let's autoscale again, to check the cluster analysis and tag the nodes
@@ -1904,6 +1910,6 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
         f"found {len(analyzed_cluster.buffer_ec2s)}"
     )
     assert (
-        len(analyzed_cluster.buffer_drained_nodes)
+        len(analyzed_cluster.pending_ec2s)
         == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     )
