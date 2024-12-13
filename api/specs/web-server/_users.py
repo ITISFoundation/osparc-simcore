@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
@@ -137,12 +138,13 @@ async def list_user_permissions():
     ...
 
 
+_extra_tags: list[str | Enum] = ["admin"]
+
+
 @router.get(
-    "/users:search",
+    "/admin/users:search",
     response_model=Envelope[list[UserGet]],
-    tags=[
-        "po",
-    ],
+    tags=_extra_tags,
 )
 async def search_users(_params: Annotated[UsersSearchQueryParams, Depends()]):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
@@ -150,11 +152,9 @@ async def search_users(_params: Annotated[UsersSearchQueryParams, Depends()]):
 
 
 @router.post(
-    "/users:pre-register",
+    "/admin/users:pre-register",
     response_model=Envelope[UserGet],
-    tags=[
-        "po",
-    ],
+    tags=_extra_tags,
 )
 async def pre_register_user(_body: PreRegisteredUserGet):
     ...
