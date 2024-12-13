@@ -170,10 +170,11 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __attachDropHandlers: function() {
       this.setDroppable(true);
+
       this.addListener("dragover", e => {
         let compatible = false;
         if (e.supportsType("osparc-moveStudy")) {
-          const studyData = e.getData("osparc-moveStudy");
+          const studyData = e.getData("osparc-moveStudy")["studyDataOrigin"];
           // Compatibility checks:
           // - My workspace
           //   - None
@@ -189,14 +190,13 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             compatible = true;
           }
         } else if (e.supportsType("osparc-moveFolder")) {
-          const data = e.getData("osparc-moveFolder");
-          const folder = data["folderOrigin"];
           // Compatibility checks:
           // - It's not the same folder
           // - My workspace
           //   - None
           // - Shared workspace
           //   - write access on workspace
+          const folder = e.getData("osparc-moveFolder")["folderOrigin"];
           compatible = this.getFolder() !== folder;
           const workspaceId = folder.getWorkspaceId();
           if (compatible) {
@@ -211,7 +211,30 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           }
         }
         if (!compatible) {
+          // do not allow
           e.preventDefault();
+        }
+      });
+
+      this.addListener("drop", e => {
+        if (e.supportsType("osparc-moveStudy")) {
+          const studyData = e.getData("osparc-moveStudy")["studyDataOrigin"];
+          const params = {
+            url: {
+              studyId: studyData["uuid"],
+              folderId: this.getFolderId(),
+            }
+          };
+          osparc.data.Resources.fetch("studies", "moveToFolder", params)
+            .then(() => {
+              studyData["folderId"] = this.getFolderId();
+              osparc.FlashMessenger.logAs("Study moved", "INFO");
+              this.fireDataEvent("studyDroppedToFolder", studyData["uuid"]);
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.FlashMessenger.logAs(err.message, "ERROR");
+            });
         }
       });
     },
