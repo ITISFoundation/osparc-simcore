@@ -21,6 +21,7 @@ from ..users.api import (
     delete_user_without_projects,
     get_guest_user_ids_and_names,
     get_user,
+    get_user_primary_group_id,
     get_user_role,
 )
 from ..users.exceptions import UserNotFoundError
@@ -45,6 +46,9 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     """
     # recover user's primary_gid
     try:
+        project_owner_primary_gid = await get_user_primary_group_id(
+            app=app, user_id=user_id
+        )
         project_owner: dict = await get_user(app=app, user_id=user_id)
     except exceptions.UserNotFoundError:
         _logger.warning(
@@ -170,6 +174,7 @@ async def remove_guest_user_with_all_its_resources(
         ProjectNotFoundError,
         UserNotFoundError,
         ProjectDeleteError,
+        Exception,
     ) as error:
         _logger.warning(
             "Failed to delete guest user %s and its resources: %s",

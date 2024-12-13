@@ -96,6 +96,12 @@ async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
     )
 
 
+async def get_user_primary_group_id(app: web.Application, user_id: UserID) -> GroupID:
+    return await _users_repository.get_user_primary_group_id(
+        engine=get_asyncpg_engine(app), user_id=user_id
+    )
+
+
 async def get_user_id_from_gid(app: web.Application, primary_gid: GroupID) -> UserID:
     return await _users_repository.get_user_id_from_pgid(app, primary_gid)
 

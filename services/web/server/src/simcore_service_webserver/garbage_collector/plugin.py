@@ -31,6 +31,7 @@ def setup_garbage_collector(app: web.Application) -> None:
     # - project needs access to socketio via notify_project_state_update
     setup_socketio(app)
     # - project needs access to user-api that is connected to login plugin
+    # TODO: dont need this anymore!?
     setup_login_storage(app)
 
     settings = get_plugin_settings(app)

@@ -78,6 +78,20 @@ async def get_user_or_raise(
         return user
 
 
+async def get_user_primary_group_id(
+    engine: AsyncEngine, connection: AsyncConnection | None = None, *, user_id: UserID
+) -> GroupID:
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        primary_gid: GroupID | None = await conn.scalar(
+            sa.select(
+                users.c.primary_gid,
+            ).where(users.c.id == user_id)
+        )
+        if primary_gid is None:
+            raise UserNotFoundError(uid=user_id)
+        return primary_gid
+
+
 async def get_users_ids_in_group(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
@@ -147,7 +161,8 @@ async def get_user_role(app: web.Application, *, user_id: UserID) -> UserRole:
         )
         if user_role is None:
             raise UserNotFoundError(uid=user_id)
-        return UserRole(user_role)
+        assert isinstance(user_role, UserRole)  # nosec
+        return user_role
 
 
 async def list_user_permissions(
