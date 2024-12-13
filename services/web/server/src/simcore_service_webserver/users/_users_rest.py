@@ -136,11 +136,11 @@ _RESPONSE_MODEL_MINIMAL_POLICY = RESPONSE_MODEL_POLICY.copy()
 _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 
 
-@routes.get(f"/{API_VTAG}/users:search", name="search_users")
+@routes.get(f"/{API_VTAG}/admin/users:search", name="search_users_as_admin")
 @login_required
 @permission_required("user.users.*")
 @_handle_users_exceptions
-async def search_users(request: web.Request) -> web.Response:
+async def search_users_as_admin(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
@@ -157,11 +157,11 @@ async def search_users(request: web.Request) -> web.Response:
     )
 
 
-@routes.post(f"/{API_VTAG}/users:pre-register", name="pre_register_user")
+@routes.post(f"/{API_VTAG}/admin/users:pre-register", name="pre_register_user_as_admin")
 @login_required
 @permission_required("user.users.*")
 @_handle_users_exceptions
-async def pre_register_user(request: web.Request) -> web.Response:
+async def pre_register_user_as_admin(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     pre_user_profile = await parse_request_body_as(PreRegisteredUserGet, request)
 
