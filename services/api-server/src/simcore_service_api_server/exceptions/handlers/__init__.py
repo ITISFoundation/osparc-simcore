@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPError as HttpxException
-from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from starlette import status
 from starlette.exceptions import HTTPException
 
 from ..._constants import MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE
+from ...exceptions.backend_errors import BaseBackEndError
 from ..custom_errors import CustomBaseError
 from ..log_streaming_errors import LogStreamingBaseError
 from ._custom_errors import custom_error_handler

@@ -10,10 +10,10 @@ from servicelib.aiohttp import status
 
 from ..._meta import API_VERSION, PROJECT_NAME
 from ...core.health_checker import ApiServerHealthChecker, get_health_checker
-from ...services.catalog import CatalogApi
-from ...services.director_v2 import DirectorV2Api
-from ...services.storage import StorageApi
-from ...services.webserver import WebserverApi
+from ...services_http.catalog import CatalogApi
+from ...services_http.director_v2 import DirectorV2Api
+from ...services_http.storage import StorageApi
+from ...services_http.webserver import WebserverApi
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.services import get_api_client
 
