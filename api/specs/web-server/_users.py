@@ -14,10 +14,9 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePatch,
     MyTokenCreate,
     MyTokenGet,
-    MyUsersGetParams,
-    MyUsersSearchQueryParams,
-    UserAsAdminGet,
-    UsersSearchQueryParams,
+    UserForAdminGet,
+    UsersForAdminSearchQueryParams,
+    UsersGetParams,
 )
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
@@ -151,18 +150,18 @@ async def list_user_permissions():
 
 @router.get(
     "/users/{user_id}",
-    response_model=Envelope[UserAsAdminGet],
+    response_model=Envelope[UserForAdminGet],
 )
-async def get_user(_path: Annotated[MyUsersGetParams, Depends()]):
+async def get_user(_path: Annotated[UsersGetParams, Depends()]):
     ...
 
 
-@router.get(
+@router.post(
     "/users:search",
-    response_model=Envelope[list[UserAsAdminGet]],
+    response_model=Envelope[list[UserForAdminGet]],
     description="Search among users who are publicly visible to the caller (i.e., me) based on their privacy settings.",
 )
-async def search_users(_query: Annotated[MyUsersSearchQueryParams, Depends()]):
+async def search_users(_body: Annotated[UsersForAdminSearchQueryParams, Depends()]):
     ...
 
 
@@ -175,17 +174,19 @@ _extra_tags: list[str | Enum] = ["admin"]
 
 @router.get(
     "/admin/users:search",
-    response_model=Envelope[list[UserAsAdminGet]],
+    response_model=Envelope[list[UserForAdminGet]],
     tags=_extra_tags,
 )
-async def search_users_for_admin(_query: Annotated[UsersSearchQueryParams, Depends()]):
+async def search_users_for_admin(
+    _query: Annotated[UsersForAdminSearchQueryParams, Depends()]
+):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
 
 
 @router.post(
     "/admin/users:pre-register",
-    response_model=Envelope[UserAsAdminGet],
+    response_model=Envelope[UserForAdminGet],
     tags=_extra_tags,
 )
 async def pre_register_user_for_admin(_body: PreRegisteredUserGet):

@@ -9,7 +9,6 @@ from common_library.dict_tools import remap_keys
 from common_library.users_enums import UserStatus
 from models_library.groups import AccessRightsDict
 from pydantic import (
-    BaseModel,
     ConfigDict,
     EmailStr,
     Field,
@@ -22,6 +21,7 @@ from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
 from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple
 from ..products import ProductName
+from ..rest_base import RequestParameters
 from ..users import (
     FirstNameStr,
     LastNameStr,
@@ -195,11 +195,11 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
 #
 
 
-class MyUsersGetParams(BaseModel):
+class UsersGetParams(RequestParameters):
     user_id: UserID
 
 
-class MyUsersSearchQueryParams(BaseModel):
+class UsersSearch(InputSchema):
     match_: Annotated[
         str,
         StringConstraints(strip_whitespace=True, min_length=1, max_length=50),
@@ -211,7 +211,7 @@ class MyUsersSearchQueryParams(BaseModel):
     limit: Annotated[int, annotated_types.Interval(ge=1, le=50)] = 10
 
 
-class UserAsAdminGet(OutputSchema):
+class UserGet(OutputSchema):
     # Public profile of a user subject to its privacy settings
     user_id: UserID
     group_id: GroupID
@@ -220,8 +220,12 @@ class UserAsAdminGet(OutputSchema):
     last_name: str | None = None
     email: EmailStr | None = None
 
+    @classmethod
+    def from_model(cls, args):
+        ...
 
-class UsersSearchQueryParams(BaseModel):
+
+class UsersForAdminSearchQueryParams(RequestParameters):
     email: Annotated[
         str,
         Field(
@@ -232,7 +236,7 @@ class UsersSearchQueryParams(BaseModel):
     ]
 
 
-class UserAsAdminGet(OutputSchema):
+class UserForAdminGet(OutputSchema):
     # ONLY for admins
     first_name: str | None
     last_name: str | None
