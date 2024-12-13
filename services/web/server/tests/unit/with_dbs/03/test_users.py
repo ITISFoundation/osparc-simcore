@@ -19,7 +19,7 @@ from aiopg.sa.connection import SAConnection
 from common_library.users_enums import UserRole, UserStatus
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
-from models_library.api_schemas_webserver.users import MyProfileGet, UserGet
+from models_library.api_schemas_webserver.users import MyProfileGet, UserAsAdminGet
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import (
@@ -401,7 +401,7 @@ async def test_search_and_pre_registration(
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserGet(
+    got = UserAsAdminGet(
         **found[0],
         institution=None,
         address=None,
@@ -438,7 +438,7 @@ async def test_search_and_pre_registration(
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserGet(**found[0], state=None, status=None)
+    got = UserAsAdminGet(**found[0], state=None, status=None)
 
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": False,
@@ -461,7 +461,7 @@ async def test_search_and_pre_registration(
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserGet(**found[0], state=None)
+    got = UserAsAdminGet(**found[0], state=None)
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": True,
         "status": new_user["status"].name,

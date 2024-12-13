@@ -1323,7 +1323,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_MyPermissionGet__'
-  /v0/me/users/{user_id}:
+  /v0/users/{user_id}:
     get:
       tags:
       - user
@@ -1344,8 +1344,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_MyUserGet_'
-  /v0/me/users:search:
+                $ref: '#/components/schemas/Envelope_UserAsAdminGet_'
+  /v0/users:search:
     get:
       tags:
       - user
@@ -1377,14 +1377,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_MyUserGet__'
-  /v0/users:search:
+                $ref: '#/components/schemas/Envelope_list_UserAsAdminGet__'
+  /v0/admin/users:search:
     get:
       tags:
       - user
       - admin
-      summary: Search Users As Admin
-      operationId: search_users_as_admin
+      summary: Search Users For Admin
+      operationId: search_users_for_admin
       parameters:
       - name: email
         in: query
@@ -1400,14 +1400,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_UserGet__'
-  /v0/users:pre-register:
+                $ref: '#/components/schemas/Envelope_list_UserAsAdminGet__'
+  /v0/admin/users:pre-register:
     post:
       tags:
       - user
       - admin
-      summary: Pre Register User As Admin
-      operationId: pre_register_user_as_admin
+      summary: Pre Register User For Admin
+      operationId: pre_register_user_for_admin
       requestBody:
         content:
           application/json:
@@ -1420,7 +1420,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UserGet_'
+                $ref: '#/components/schemas/Envelope_UserAsAdminGet_'
   /v0/wallets:
     get:
       tags:
@@ -8253,19 +8253,6 @@ components:
           title: Error
       type: object
       title: Envelope[MyTokenGet]
-    Envelope_MyUserGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/MyUserGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[MyUserGet]
     Envelope_NodeCreated_:
       properties:
         data:
@@ -8624,11 +8611,11 @@ components:
           title: Error
       type: object
       title: Envelope[Union[WalletGet, NoneType]]
-    Envelope_UserGet_:
+    Envelope_UserAsAdminGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/UserGet'
+          - $ref: '#/components/schemas/UserAsAdminGet'
           - type: 'null'
         error:
           anyOf:
@@ -8636,7 +8623,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[UserGet]
+      title: Envelope[UserAsAdminGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -9030,22 +9017,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[MyTokenGet]]
-    Envelope_list_MyUserGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/MyUserGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[MyUserGet]]
     Envelope_list_OsparcCreditsAggregatedByServiceGet__:
       properties:
         data:
@@ -9286,12 +9257,12 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
-    Envelope_list_UserGet__:
+    Envelope_list_UserAsAdminGet__:
       properties:
         data:
           anyOf:
           - items:
-              $ref: '#/components/schemas/UserGet'
+              $ref: '#/components/schemas/UserAsAdminGet'
             type: array
           - type: 'null'
           title: Data
@@ -9301,7 +9272,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[UserGet]]
+      title: Envelope[list[UserAsAdminGet]]
     Envelope_list_UserNotification__:
       properties:
         data:
@@ -10939,45 +10910,6 @@ components:
       - service
       - token_key
       title: MyTokenGet
-    MyUserGet:
-      properties:
-        userId:
-          type: integer
-          exclusiveMinimum: true
-          title: Userid
-          minimum: 0
-        groupId:
-          type: integer
-          exclusiveMinimum: true
-          title: Groupid
-          minimum: 0
-        userName:
-          type: string
-          maxLength: 100
-          minLength: 1
-          title: Username
-        firstName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Firstname
-        lastName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Lastname
-        email:
-          anyOf:
-          - type: string
-            format: email
-          - type: 'null'
-          title: Email
-      type: object
-      required:
-      - userId
-      - groupId
-      - userName
-      title: MyUserGet
     Node-Input:
       properties:
         key:
@@ -14471,7 +14403,7 @@ components:
       - number
       - e_tag
       title: UploadedPart
-    UserGet:
+    UserAsAdminGet:
       properties:
         firstName:
           anyOf:
@@ -14562,7 +14494,7 @@ components:
       - country
       - registered
       - status
-      title: UserGet
+      title: UserAsAdminGet
     UserNotification:
       properties:
         user_id:
