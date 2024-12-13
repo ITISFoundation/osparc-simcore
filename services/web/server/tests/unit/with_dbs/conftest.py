@@ -66,10 +66,7 @@ from simcore_postgres_database.utils_products import (
 )
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.application_settings_utils import (
-    AppConfigDict,
-    convert_to_environ_vars,
-)
+from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.db.plugin import get_database_engine
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.statics._constants import (
