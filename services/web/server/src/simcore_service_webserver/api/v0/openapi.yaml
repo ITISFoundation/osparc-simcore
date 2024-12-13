@@ -1323,6 +1323,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_MyPermissionGet__'
+  /v0/me/users/{user_id}:
+    get:
+      tags:
+      - user
+      summary: Get User
+      operationId: get_user
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: User Id
+          minimum: 0
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_MyUserGet_'
   /v0/me/users:search:
     get:
       tags:
@@ -8231,6 +8253,19 @@ components:
           title: Error
       type: object
       title: Envelope[MyTokenGet]
+    Envelope_MyUserGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/MyUserGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[MyUserGet]
     Envelope_NodeCreated_:
       properties:
         data:
