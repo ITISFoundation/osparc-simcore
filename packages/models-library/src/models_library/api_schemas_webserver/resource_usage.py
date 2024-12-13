@@ -11,12 +11,12 @@ from ..resource_tracker import (
     PricingPlanId,
     PricingUnitCostUpdate,
     PricingUnitId,
-    ServiceRunId,
     ServiceRunStatus,
     SpecificInfo,
     UnitExtraInfo,
 )
 from ..services import ServiceKey, ServiceVersion
+from ..services_types import RunID
 from ..users import UserID
 from ..wallets import WalletID
 from ._base import InputSchema, OutputSchema
@@ -27,7 +27,7 @@ from ._base import InputSchema, OutputSchema
 class ServiceRunGet(
     BaseModel
 ):  # NOTE: this is already in use so I didnt modidy inheritance from OutputSchema
-    service_run_id: ServiceRunId
+    service_run_id: RunID
     wallet_id: WalletID | None
     wallet_name: str | None
     user_id: UserID

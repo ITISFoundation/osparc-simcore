@@ -9,10 +9,10 @@ from models_library.products import ProductName
 from models_library.resource_tracker import (
     CreditClassification,
     CreditTransactionStatus,
-    ServiceRunId,
     ServiceRunStatus,
 )
 from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.services_types import RunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
@@ -46,7 +46,7 @@ async def create_service_run(
     connection: AsyncConnection | None = None,
     *,
     data: ServiceRunCreate,
-) -> ServiceRunId:
+) -> RunID:
     async with transaction_context(engine, connection) as conn:
         insert_stmt = (
             resource_tracker_service_runs.insert()
@@ -88,7 +88,7 @@ async def create_service_run(
     row = result.first()
     if row is None:
         raise ServiceRunNotCreatedDBError(data=data)
-    return cast(ServiceRunId, row[0])
+    return cast(RunID, row[0])
 
 
 async def update_service_run_last_heartbeat(
@@ -160,7 +160,7 @@ async def get_service_run_by_id(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    service_run_id: ServiceRunId,
+    service_run_id: RunID,
 ) -> ServiceRunDB | None:
     async with transaction_context(engine, connection) as conn:
         stmt = sa.select(resource_tracker_service_runs).where(
@@ -590,7 +590,7 @@ async def update_service_missed_heartbeat_counter(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    service_run_id: ServiceRunId,
+    service_run_id: RunID,
     last_heartbeat_at: datetime,
     missed_heartbeat_counter: int,
 ) -> ServiceRunDB | None:

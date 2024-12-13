@@ -10,10 +10,10 @@ from models_library.resource_tracker import (
     PricingUnitCostId,
     PricingUnitId,
     ResourceTrackerServiceType,
-    ServiceRunId,
     ServiceRunStatus,
 )
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_types import RunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, NonNegativeInt
@@ -21,7 +21,7 @@ from pydantic import BaseModel, ConfigDict, NonNegativeInt
 
 class ServiceRunCreate(BaseModel):
     product_name: ProductName
-    service_run_id: ServiceRunId
+    service_run_id: RunID
     wallet_id: WalletID | None
     wallet_name: str | None
     pricing_plan_id: PricingPlanId | None
@@ -51,12 +51,12 @@ class ServiceRunCreate(BaseModel):
 
 
 class ServiceRunLastHeartbeatUpdate(BaseModel):
-    service_run_id: ServiceRunId
+    service_run_id: RunID
     last_heartbeat_at: datetime
 
 
 class ServiceRunStoppedAtUpdate(BaseModel):
-    service_run_id: ServiceRunId
+    service_run_id: RunID
     stopped_at: datetime
     service_run_status: ServiceRunStatus
     service_run_status_msg: str | None
@@ -64,7 +64,7 @@ class ServiceRunStoppedAtUpdate(BaseModel):
 
 class ServiceRunDB(BaseModel):
     product_name: ProductName
-    service_run_id: ServiceRunId
+    service_run_id: RunID
     wallet_id: WalletID | None
     wallet_name: str | None
     pricing_plan_id: PricingPlanId | None
@@ -113,7 +113,7 @@ class OsparcCreditsAggregatedByServiceKeyDB(BaseModel):
 
 
 class ServiceRunForCheckDB(BaseModel):
-    service_run_id: ServiceRunId
+    service_run_id: RunID
     last_heartbeat_at: datetime
     missed_heartbeat_counter: NonNegativeInt
     modified: datetime
