@@ -26,6 +26,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
 from models_library.services import ServiceType
+from models_library.services_types import RunID
 from models_library.users import UserID
 from networkx.classes.reportviews import InDegreeView
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -66,7 +67,6 @@ from ._utils import (
     TASK_TO_START_STATES,
     WAITING_FOR_START_STATES,
     create_service_resources_from_task,
-    get_resource_tracking_run_id,
 )
 
 _logger = logging.getLogger(__name__)
@@ -295,7 +295,7 @@ class BaseCompScheduler(ABC):
                 *(
                     publish_service_resource_tracking_heartbeat(
                         self.rabbitmq_client,
-                        get_resource_tracking_run_id(
+                        RunID.get_resource_tracking_run_id(
                             user_id, t.project_id, t.node_id, iteration
                         ),
                     )
@@ -348,7 +348,7 @@ class BaseCompScheduler(ABC):
             *(
                 publish_service_resource_tracking_started(
                     self.rabbitmq_client,
-                    service_run_id=get_resource_tracking_run_id(
+                    service_run_id=RunID.get_resource_tracking_run_id(
                         user_id, t.project_id, t.node_id, iteration
                     ),
                     wallet_id=run_metadata.get("wallet_id"),

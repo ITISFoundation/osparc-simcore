@@ -63,7 +63,7 @@ UPLOAD_DURATION: Final[PositiveFloat] = TICK_INTERVAL * 10
 @pytest.fixture
 def mounted_volumes(faker: Faker, tmp_path: Path) -> Iterator[MountedVolumes]:
     mounted_volumes = MountedVolumes(
-        run_id=RunID.create(),
+        run_id=RunID.create_for_dynamic_sidecar(),
         node_id=faker.uuid4(cast_to=None),
         inputs_path=tmp_path / "inputs",
         outputs_path=tmp_path / "outputs",

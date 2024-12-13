@@ -57,7 +57,7 @@ def test_client(initialized_app: FastAPI) -> TestClient:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return RunID.create()
+    return RunID.create_for_dynamic_sidecar()
 
 
 @pytest.fixture

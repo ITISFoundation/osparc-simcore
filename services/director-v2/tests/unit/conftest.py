@@ -37,9 +37,6 @@ from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
-from simcore_service_director_v2.modules.comp_scheduler._utils import (
-    get_resource_tracking_run_id,
-)
 
 
 @pytest.fixture
@@ -78,7 +75,16 @@ def dynamic_sidecar_port() -> PortInt:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return RunID.create()
+    return RunID.create_for_dynamic_sidecar()
+
+
+@pytest.fixture
+def resource_tracking_run_id(
+    user_id: UserID, project_id: ProjectID, node_id: NodeID
+) -> str:
+    return RunID.get_resource_tracking_run_id(
+        user_id, project_id, node_id, iteration=42
+    )
 
 
 @pytest.fixture
@@ -344,10 +350,3 @@ def mock_docker_api(mocker: MockerFixture) -> None:
 async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
-
-
-@pytest.fixture
-def resource_tracking_run_id(
-    user_id: UserID, project_id: ProjectID, node_id: NodeID
-) -> str:
-    return get_resource_tracking_run_id(user_id, project_id, node_id, iteration=42)

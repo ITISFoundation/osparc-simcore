@@ -29,7 +29,7 @@ def volume_name() -> str:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return RunID.create()
+    return RunID.create_for_dynamic_sidecar()
 
 
 @pytest.fixture

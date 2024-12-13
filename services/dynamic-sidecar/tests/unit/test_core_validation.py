@@ -156,7 +156,7 @@ def no_internet_spec(project_tests_dir: Path) -> str:
 @pytest.fixture
 def fake_mounted_volumes() -> MountedVolumes:
     return MountedVolumes(
-        run_id=RunID.create(),
+        run_id=RunID.create_for_dynamic_sidecar(),
         node_id=NodeID("a019b83f-7cce-46bf-90cf-d02f7f0f089a"),
         inputs_path=Path("/"),
         outputs_path=Path("/"),

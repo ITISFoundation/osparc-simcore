@@ -18,6 +18,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import SimcorePlatformStatus
+from models_library.services_types import RunID
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch
@@ -48,7 +49,6 @@ from ..dask_clients_pool import DaskClientsPool
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._scheduler_base import BaseCompScheduler
-from ._utils import get_resource_tracking_run_id
 
 _logger = logging.getLogger(__name__)
 
@@ -129,7 +129,7 @@ class DaskScheduler(BaseCompScheduler):
                         hardware_info=task.hardware_info,
                         callback=wake_up_callback,
                         metadata=comp_run.metadata,
-                        resource_tracking_run_id=get_resource_tracking_run_id(
+                        resource_tracking_run_id=RunID.get_resource_tracking_run_id(
                             user_id, project_id, node_id, comp_run.iteration
                         ),
                     )
@@ -322,7 +322,9 @@ class DaskScheduler(BaseCompScheduler):
             # resource tracking
             await publish_service_resource_tracking_stopped(
                 self.rabbitmq_client,
-                get_resource_tracking_run_id(user_id, project_id, node_id, iteration),
+                RunID.get_resource_tracking_run_id(
+                    user_id, project_id, node_id, iteration
+                ),
                 simcore_platform_status=simcore_platform_status,
             )
             # instrumentation
