@@ -45,6 +45,7 @@ from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
+from models_library.services_types import RunID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_mock.plugin import MockerFixture
