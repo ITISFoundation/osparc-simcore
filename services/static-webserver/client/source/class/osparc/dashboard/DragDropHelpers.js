@@ -60,11 +60,11 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         //   - Write on dest Workspace
         if (workspaceDestId === -1) { // (0)
           compatible = false;
-        } else if (studyDataOrigin["workspaceId"] === null && workspaceDest === null) { // (1)
+        } else if (studyDataOrigin["workspaceId"] === null && workspaceDestId === null) { // (1)
           compatible = true;
         } else if (studyDataOrigin["workspaceId"] === null && workspaceDest) { // (2)
           compatible = osparc.data.model.Study.canIDelete(studyDataOrigin["accessRights"]) && workspaceDest.getMyAccessRights()["write"];
-        } else if (workspaceOrigin && workspaceDest === null) { // (3)
+        } else if (workspaceOrigin && workspaceDestId === null) { // (3)
           compatible = workspaceOrigin.getMyAccessRights()["delete"];
         } else if (workspaceOrigin && workspaceDest) { // (4)
           compatible = workspaceOrigin.getMyAccessRights()["delete"] && workspaceDest.getMyAccessRights()["write"];
