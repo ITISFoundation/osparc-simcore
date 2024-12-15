@@ -159,6 +159,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         const folderOrigin = event.getData("osparc-moveFolder")["folderOrigin"];
         const folderToFolderData = {
           folderId: folderOrigin.getFolderId(),
+          destWorkspaceId: folderDest.getWorkspaceId(),
           destFolderId: folderDest.getFolderId(),
         };
         return folderToFolderData;

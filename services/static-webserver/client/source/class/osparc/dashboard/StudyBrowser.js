@@ -565,6 +565,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return win;
     },
 
+    __doMoveFolder: function(folderId, destWorkspaceId, destFolderId) {
+      osparc.store.Folders.getInstance().moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
+        .then(() => osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)) // then move to folder
+        .then(() => this.__reloadFolders())
+        .catch(err => console.error(err));
+    },
+
     _moveFolderToRequested: function(folderId) {
       const currentWorkspaceId = this.getCurrentWorkspaceId();
       const currentFolderId = this.getCurrentFolderId();
@@ -576,19 +583,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const data = e.getData();
         const destWorkspaceId = data["workspaceId"];
         const destFolderId = data["folderId"];
-        const moveFolder = () => {
-          osparc.store.Folders.getInstance().moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
-            .then(() => osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)) // then move to folder
-            .then(() => this.__reloadFolders())
-            .catch(err => console.error(err));
-        }
         if (destWorkspaceId === currentWorkspaceId) {
-          moveFolder();
+          this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
         } else {
           const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
           confirmationWin.addListener("close", () => {
             if (confirmationWin.getConfirmed()) {
-              moveFolder();
+              this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
             }
           }, this);
         }
@@ -599,11 +600,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     _folderToFolderRequested: function(data) {
       const {
         folderId,
+        destWorkspaceId,
         destFolderId,
       } = data;
-      osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)
-        .then(() => this.__reloadFolders())
-        .catch(err => console.error(err));
+      this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
     },
 
     _trashFolderRequested: function(folderId) {
