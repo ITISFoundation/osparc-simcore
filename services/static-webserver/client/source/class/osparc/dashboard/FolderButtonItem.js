@@ -233,10 +233,17 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
             }
           }
         }
-        if (!compatible) {
+        if (compatible) {
+          this.getChildControl("icon").setTextColor("strong-main");
+        } else {
           // do not allow
+          this.getChildControl("icon").setTextColor("danger-red");
           e.preventDefault();
         }
+      });
+
+      this.addListener("dragleave", () => {
+        this.getChildControl("icon").resetTextColor();
       });
 
       this.addListener("drop", e => {
