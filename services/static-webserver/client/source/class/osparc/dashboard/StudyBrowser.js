@@ -1243,12 +1243,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const selection = this._resourcesContainer.getSelection();
             selection.forEach(button => {
               const studyData = button.getResourceData();
-              this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
-                .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
-                .catch(err => {
-                  console.error(err);
-                  osparc.FlashMessenger.logAs(err.message, "ERROR");
-                });
+              this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
             });
             this.resetSelection();
             this.setMultiSelection(false);
@@ -1647,6 +1642,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return studyBillingSettingsButton;
     },
 
+    __doMoveStudy: function(studyData, destWorkspaceId, destFolderId) {
+      this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
+        .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+        });
+    },
+
     __getMoveStudyToMenuButton: function(studyData) {
       const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesome5Solid/folder/12");
       moveToButton["moveToButton"] = true;
@@ -1661,21 +1665,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const data = e.getData();
           const destWorkspaceId = data["workspaceId"];
           const destFolderId = data["folderId"];
-          const moveStudy = () => {
-            this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
-              .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
-              .catch(err => {
-                console.error(err);
-                osparc.FlashMessenger.logAs(err.message, "ERROR");
-              });
-          };
+
           if (destWorkspaceId === currentWorkspaceId) {
-            moveStudy();
+            this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
           } else {
             const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
             confirmationWin.addListener("close", () => {
               if (confirmationWin.getConfirmed()) {
-                moveStudy();
+                this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
               }
             }, this);
           }
@@ -1723,13 +1720,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     _studyToFolderRequested: function(data) {
       const {
         studyData,
+        destWorkspaceId,
         destFolderId,
       } = data;
-      this.__moveStudyToFolder(studyData, destFolderId)
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        });
+      this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
     },
 
     __getDuplicateMenuButton: function(studyData) {
