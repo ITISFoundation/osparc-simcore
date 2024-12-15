@@ -35,6 +35,10 @@ qx.Class.define("osparc.service.ServiceListItem", {
     }
 
     this.subscribeToFilterGroup("serviceCatalog");
+
+    this.bind("selected", this, "backgroundColor", {
+      converter: selected => selected ? "strong-main" : "info"
+    });
   },
 
   properties: {
