@@ -38,9 +38,10 @@ qx.Class.define("osparc.dashboard.DragWidget", {
   members: {
     __onMouseMoveDragging: function(e) {
       if (this.getContentElement()) {
+        // place it next to the "dragdrop-own-cursor" indicator
         const domEl = this.getContentElement().getDomElement();
-        domEl.style.left = `${e.pageX + 12}px`;
-        domEl.style.top = `${e.pageY + 16}px`;
+        domEl.style.left = `${e.pageX + 30}px`;
+        domEl.style.top = `${e.pageY + 0}px`;
       }
     },
 

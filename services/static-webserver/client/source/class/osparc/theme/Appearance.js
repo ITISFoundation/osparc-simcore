@@ -30,7 +30,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         return {
           source: icon,
           position: "right-top",
-          offset: [0, 0, 0, 12],
+          offset: [12, 0, 0, 12],
         }
       }
     },
