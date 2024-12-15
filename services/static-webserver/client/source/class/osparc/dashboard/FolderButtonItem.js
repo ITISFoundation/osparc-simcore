@@ -176,34 +176,10 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       this.setDroppable(true);
 
       this.addListener("dragover", e => {
+        const folderDest = this.getFolder();
         if (e.supportsType("osparc-moveStudy")) {
-          let compatible = false;
-          const studyData = e.getData("osparc-moveStudy")["studyDataOrigin"];
-          // Compatibility checks:
-          // - My workspace
-          //   - None
-          // - Shared workspace
-          //   - write access on workspace
-          const workspaceId = studyData["workspaceId"];
-          if (workspaceId) {
-            const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
-            if (workspace) {
-              compatible = workspace.getMyAccessRights()["write"];
-            }
-          } else {
-            compatible = true;
-          }
-          if (compatible) {
-            this.getChildControl("icon").setTextColor("strong-main");
-          } else {
-            this.getChildControl("icon").setTextColor("danger-red");
-            // do not allow
-            e.preventDefault();
-          }
-          const dragWidget = osparc.dashboard.DragWidget.getInstance();
-          dragWidget.setDropAllowed(compatible);
+          osparc.dashboard.DragDropHelpers.moveStudy.dragOver(e, folderDest, this);
         } else if (e.supportsType("osparc-moveFolder")) {
-          const folderDest = this.getFolder();
           osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, folderDest, this);
         }
       });
@@ -217,15 +193,11 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       });
 
       this.addListener("drop", e => {
+        const folderDest = this.getFolder();
         if (e.supportsType("osparc-moveStudy")) {
-          const studyData = e.getData("osparc-moveStudy")["studyDataOrigin"];
-          const studyToFolderData = {
-            studyData,
-            destFolderId: this.getFolderId(),
-          };
+          const studyToFolderData = osparc.dashboard.DragDropHelpers.moveStudy.drop(e, folderDest);
           this.fireDataEvent("studyToFolderRequested", studyToFolderData);
         } else if (e.supportsType("osparc-moveFolder")) {
-          const folderDest = this.getFolder();
           const folderToFolderData = osparc.dashboard.DragDropHelpers.moveFolder.drop(e, folderDest);
           this.fireDataEvent("folderToFolderRequested", folderToFolderData);
         }

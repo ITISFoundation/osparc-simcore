@@ -38,6 +38,43 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         // make it semi transparent while being dragged
         studyItem.setOpacity(0.2);
       },
+
+      dragOver: function(event, folderDest, folderItem) {
+        let compatible = false;
+        const studyDataOrigin = event.getData("osparc-moveStudy")["studyDataOrigin"];
+        // Compatibility checks:
+        // - My workspace
+        //   - None
+        // - Shared workspace
+        //   - write access on workspace
+        const workspaceId = studyDataOrigin["workspaceId"];
+        if (workspaceId) {
+          const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
+          if (workspace) {
+            compatible = workspace.getMyAccessRights()["write"];
+          }
+        } else {
+          compatible = true;
+        }
+        if (compatible) {
+          folderItem.getChildControl("icon").setTextColor("strong-main");
+        } else {
+          folderItem.getChildControl("icon").setTextColor("danger-red");
+          // do not allow
+          event.preventDefault();
+        }
+        const dragWidget = osparc.dashboard.DragWidget.getInstance();
+        dragWidget.setDropAllowed(compatible);
+      },
+
+      drop: function(event, folderDest) {
+        const studyData = event.getData("osparc-moveStudy")["studyDataOrigin"];
+        const studyToFolderData = {
+          studyData,
+          destFolderId: folderDest.getFolderId(),
+        };
+        return studyToFolderData;
+      },
     },
 
     moveFolder: {
