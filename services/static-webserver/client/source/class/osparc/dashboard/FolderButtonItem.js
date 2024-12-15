@@ -169,11 +169,10 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           "folderOrigin": this.getFolder(),
         });
 
-        this.__dragWidget = new osparc.dashboard.DragWidget();
         // make it semi transparent while being dragged
         this.setOpacity(0.2);
         // init drag indicator
-        this.__dragWidget.set({
+        this.__dragWidget = new osparc.dashboard.DragWidget();
           label: this.getTitle(),
           icon: "@FontAwesome5Solid/folder/16",
         });

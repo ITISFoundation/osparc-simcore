@@ -666,12 +666,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           "studyDataOrigin": card.getResourceData(),
         });
 
-        // Create drag indicator
-        this.__dragWidget = new osparc.dashboard.DragWidget();
         // make it semi transparent while being dragged
         card.setOpacity(0.2);
         // init drag indicator
-        this.__dragWidget.set({
+        this.__dragWidget = new osparc.dashboard.DragWidget();
           label: card.getTitle(),
           icon: "@FontAwesome5Solid/file/16",
         });
