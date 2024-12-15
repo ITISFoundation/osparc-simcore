@@ -100,6 +100,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __foldersList: null,
     __loadingFolders: null,
     __loadingWorkspaces: null,
+    __dragIndicator: null,
 
     // overridden
     initResources: function() {
@@ -646,6 +647,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // /FOLDERS
 
     __configureStudyCards: function(cards) {
+      // Create drag indicator
+      this.__dragIndicator = new qx.ui.basic.Atom().set({
+        opacity: 0.9,
+        padding: 10,
+        zIndex: 1000,
+        font: "text-14",
+        backgroundColor: "strong-main",
+        decorator: "rounded",
+        visibility: "excluded",
+      });
+      const root = qx.core.Init.getApplication().getRoot();
+      root.add(this.__dragIndicator);
+
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
@@ -656,13 +670,41 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __attachDragHandlers: function(card) {
+      const onMouseMoveDragging = e => {
+        const dragWidget = this.__dragIndicator.getContentElement().getDomElement();
+        dragWidget.style.left = `${e.pageX + 10}px`; // Offset for better visibility
+        dragWidget.style.top = `${e.pageY + 10}px`;
+      };
+
       card.setDraggable(true);
+
       card.addListener("dragstart", e => {
         e.addAction("move");
         e.addType("osparc-moveStudy");
         e.addData("osparc-moveStudy", {
           "studyDataOrigin": card.getResourceData(),
         });
+
+        // make it semi transparent while being dragged
+        card.setOpacity(0.2);
+        // init drag indicator
+        this.__dragIndicator.set({
+          label: card.getTitle(),
+          visibility: "visible",
+        });
+        // listen to mousemove while dragging
+        document.addEventListener("mousemove", onMouseMoveDragging, false);
+      });
+
+      card.addListener("dragend", () => {
+        // bring back opacity after drag
+        card.setOpacity(1);
+        // hide drag indicator
+        this.__dragIndicator.set({
+          visibility: "excluded",
+        });
+        // remove listener
+        document.removeEventListener("mousemove", onMouseMoveDragging, false);
       });
     },
 
