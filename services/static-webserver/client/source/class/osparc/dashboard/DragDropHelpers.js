@@ -69,6 +69,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         } else if (workspaceOrigin && workspaceDest) { // (4)
           compatible = workspaceOrigin.getMyAccessRights()["delete"] && workspaceDest.getMyAccessRights()["write"];
         }
+
         if (compatible) {
           folderItem.getChildControl("icon").setTextColor("strong-main");
         } else {
@@ -76,6 +77,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
           // do not allow
           event.preventDefault();
         }
+
         const dragWidget = osparc.dashboard.DragWidget.getInstance();
         dragWidget.setDropAllowed(compatible);
       },
