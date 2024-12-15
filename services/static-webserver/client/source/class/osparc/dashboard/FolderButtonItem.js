@@ -236,13 +236,16 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         if (compatible) {
           this.getChildControl("icon").setTextColor("strong-main");
         } else {
-          // do not allow
           this.getChildControl("icon").setTextColor("danger-red");
+          // do not allow
           e.preventDefault();
         }
       });
 
       this.addListener("dragleave", () => {
+        this.getChildControl("icon").resetTextColor();
+      });
+      this.addListener("dragend", () => {
         this.getChildControl("icon").resetTextColor();
       });
 
