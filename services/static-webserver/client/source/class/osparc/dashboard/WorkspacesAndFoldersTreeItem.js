@@ -125,6 +125,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
           const folderToFolderData = osparc.dashboard.DragDropHelpers.moveFolder.drop(e, workspaceDestId, folderDestId);
           this.fireDataEvent("folderToFolderRequested", folderToFolderData);
         }
+        draggingOver = false;
       });
     },
   },
