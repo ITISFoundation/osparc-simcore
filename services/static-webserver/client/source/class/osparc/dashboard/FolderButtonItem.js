@@ -178,9 +178,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       this.addListener("dragover", e => {
         const folderDest = this.getFolder();
         if (e.supportsType("osparc-moveStudy")) {
-          osparc.dashboard.DragDropHelpers.moveStudy.dragOver(e, folderDest, this);
+          osparc.dashboard.DragDropHelpers.moveStudy.dragOver(e, this, folderDest);
         } else if (e.supportsType("osparc-moveFolder")) {
-          osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, folderDest, this);
+          osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, this, folderDest);
         }
       });
 

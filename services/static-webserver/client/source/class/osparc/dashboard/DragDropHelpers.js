@@ -39,22 +39,35 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         studyItem.setOpacity(0.2);
       },
 
-      dragOver: function(event, folderDest, folderItem) {
+      dragOver: function(event, folderItem, workspaceDestId) {
         let compatible = false;
         const studyDataOrigin = event.getData("osparc-moveStudy")["studyDataOrigin"];
+        const workspaceIdOrigin = studyDataOrigin["workspaceId"];
+        const workspaceOrigin = osparc.store.Workspaces.getInstance().getWorkspace(workspaceIdOrigin);
+        const workspaceDest = osparc.store.Workspaces.getInstance().getWorkspace(workspaceDestId);
         // Compatibility checks:
-        // - My workspace
+        // - Drag over "Shared Workspaces" (0)
+        //   - No
+        // - My Workspace -> My Workspace (1)
         //   - None
-        // - Shared workspace
-        //   - write access on workspace
-        const workspaceId = studyDataOrigin["workspaceId"];
-        if (workspaceId) {
-          const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
-          if (workspace) {
-            compatible = workspace.getMyAccessRights()["write"];
-          }
-        } else {
+        // - My Workspace -> Shared Workspace (2)
+        //   - Delete on Study
+        //   - Write on dest Workspace
+        // - Shared Workspace -> My Workspace (3)
+        //   - Delete on origin Workspace
+        // - Shared Workspace -> Shared Workspace (4)
+        //   - Delete on origin Workspace
+        //   - Write on dest Workspace
+        if (workspaceDestId === -1) { // (0)
+          compatible = false;
+        } else if (studyDataOrigin["workspaceId"] === null && workspaceDest === null) { // (1)
           compatible = true;
+        } else if (studyDataOrigin["workspaceId"] === null && workspaceDest) { // (2)
+          compatible = osparc.data.model.Study.canIDelete(studyDataOrigin["accessRights"]) && workspaceDest.getMyAccessRights()["write"];
+        } else if (workspaceOrigin && workspaceDest === null) { // (3)
+          compatible = workspaceOrigin.getMyAccessRights()["delete"];
+        } else if (workspaceOrigin && workspaceDest) { // (4)
+          compatible = workspaceOrigin.getMyAccessRights()["delete"] && workspaceDest.getMyAccessRights()["write"];
         }
         if (compatible) {
           folderItem.getChildControl("icon").setTextColor("strong-main");
@@ -97,7 +110,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         folderItem.setOpacity(0.2);
       },
 
-      dragOver: function(event, folderDest, folderItem) {
+      dragOver: function(event, folderItem, folderDest) {
         let compatible = false;
         // Compatibility checks:
         // - It's not the same folder
