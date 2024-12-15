@@ -19,10 +19,18 @@ qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.common.Appearance,
 
   appearances: {
-    "dragdrop-no-cursor": {
+    "dragdrop-own-cursor": {
       style: states => {
+        let icon = "";
+        if (states.move) {
+          icon = "@FontAwesome5Solid/check/14";
+        } else {
+          icon = "@FontAwesome5Solid/times/14";
+        }
         return {
-          source: "",
+          source: icon,
+          position: "right-top",
+          offset: [0, 0, 0, 12],
         }
       }
     },
