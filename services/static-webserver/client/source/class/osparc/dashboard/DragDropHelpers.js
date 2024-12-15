@@ -20,7 +20,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
 
   statics: {
     moveStudy: {
-      dragStart: function(event, studyDataOrigin, studyItem) {
+      dragStart: function(event, studyItem, studyDataOrigin) {
         event.addAction("move");
         event.addType("osparc-moveStudy");
         event.addData("osparc-moveStudy", {
@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
     },
 
     moveFolder: {
-      dragStart: function(event, folderOrigin, folderItem) {
+      dragStart: function(event, folderItem, folderOrigin) {
         event.addAction("move");
         event.addType("osparc-moveFolder");
         event.addData("osparc-moveFolder", {
@@ -112,26 +112,35 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         folderItem.setOpacity(0.2);
       },
 
-      dragOver: function(event, folderItem, folderDest) {
+      dragOver: function(event, folderItem, workspaceDestId) {
         let compatible = false;
-        // Compatibility checks:
-        // - It's not the same folder
-        // - My workspace
-        //   - None
-        // - Shared workspace
-        //   - write access on workspace
         const folderOrigin = event.getData("osparc-moveFolder")["folderOrigin"];
-        compatible = folderDest !== folderOrigin;
-        const workspaceId = folderOrigin.getWorkspaceId();
-        if (compatible) {
-          if (workspaceId) {
-            const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
-            if (workspace) {
-              compatible = workspace.getMyAccessRights()["write"];
-            }
-          } else {
-            compatible = true;
-          }
+        const workspaceIdOrigin = folderOrigin.getWorkspaceId();
+        const workspaceOrigin = osparc.store.Workspaces.getInstance().getWorkspace(workspaceIdOrigin);
+        const workspaceDest = osparc.store.Workspaces.getInstance().getWorkspace(workspaceDestId);
+        // Compatibility checks:
+        // - Drag over "Shared Workspaces" (0)
+        //   - No
+        // - My Workspace -> My Workspace (1)
+        //   - Yes
+        // - My Workspace -> Shared Workspace (2)
+        //   - ~~Delete on Study~~
+        //   - Write on dest Workspace
+        // - Shared Workspace -> My Workspace (3)
+        //   - Delete on origin Workspace
+        // - Shared Workspace -> Shared Workspace (4)
+        //   - Delete on origin Workspace
+        //   - Write on dest Workspace
+        if (workspaceDestId === -1) { // (0)
+          compatible = false;
+        } else if (workspaceIdOrigin === null && workspaceDestId === null) { // (1)
+          compatible = true;
+        } else if (workspaceIdOrigin === null && workspaceDest) { // (2)
+          compatible = workspaceDest.getMyAccessRights()["write"];
+        } else if (workspaceOrigin && workspaceDestId === null) { // (3)
+          compatible = workspaceOrigin.getMyAccessRights()["delete"];
+        } else if (workspaceOrigin && workspaceDest) { // (4)
+          compatible = workspaceOrigin.getMyAccessRights()["delete"] && workspaceDest.getMyAccessRights()["write"];
         }
 
         if (compatible) {

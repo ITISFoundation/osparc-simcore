@@ -164,7 +164,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
       this.addListener("dragstart", e => {
         const folderOrigin = this.getFolder();
-        osparc.dashboard.DragDropHelpers.moveFolder.dragStart(e, folderOrigin, this);
+        osparc.dashboard.DragDropHelpers.moveFolder.dragStart(e, this, folderOrigin);
       });
 
       this.addListener("dragend", () => {
@@ -180,7 +180,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         if (e.supportsType("osparc-moveStudy")) {
           osparc.dashboard.DragDropHelpers.moveStudy.dragOver(e, this, folderDest.getWorkspaceId());
         } else if (e.supportsType("osparc-moveFolder")) {
-          osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, this, folderDest);
+          osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, this, folderDest.getWorkspaceId());
         }
       });
 

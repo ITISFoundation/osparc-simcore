@@ -661,7 +661,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       card.addListener("dragstart", e => {
         const studyDataOrigin = card.getResourceData();
-        osparc.dashboard.DragDropHelpers.moveStudy.dragStart(e, studyDataOrigin, card);
+        osparc.dashboard.DragDropHelpers.moveStudy.dragStart(e, card, studyDataOrigin);
       });
 
       card.addListener("dragend", () => {

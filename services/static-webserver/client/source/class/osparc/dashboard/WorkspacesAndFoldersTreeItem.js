@@ -76,7 +76,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
           e.preventDefault();
           return;
         }
-        osparc.dashboard.DragDropHelpers.moveFolder.dragStart(e, folderOrigin, this);
+        osparc.dashboard.DragDropHelpers.moveFolder.dragStart(e, this, folderOrigin);
       });
 
       this.addListener("dragend", () => {
@@ -92,12 +92,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
         if (e.supportsType("osparc-moveStudy")) {
           osparc.dashboard.DragDropHelpers.moveStudy.dragOver(e, this, workspaceDestId);
         } else if (e.supportsType("osparc-moveFolder")) {
-          const folderDest = this.__getFolder();
-          if (folderDest == null) {
-            e.preventDefault();
-            return;
-          }
-          osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, this, folderDest);
+          osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, this, workspaceDestId);
         }
       });
 
