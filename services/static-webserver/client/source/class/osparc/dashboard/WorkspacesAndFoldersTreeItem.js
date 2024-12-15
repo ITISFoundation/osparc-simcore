@@ -87,6 +87,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
     __attachDropHandlers: function() {
       this.setDroppable(true);
 
+      let draggingOver = false;
       this.addListener("dragover", e => {
         const workspaceDestId = this.getModel().getWorkspaceId();
         const folderDestId = this.getModel().getFolderId();
@@ -95,13 +96,23 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
         } else if (e.supportsType("osparc-moveFolder")) {
           osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, this, workspaceDestId, folderDestId);
         }
+
+        draggingOver = true;
+        setTimeout(() => {
+          if (draggingOver) {
+            this.setOpen(true);
+            draggingOver = false;
+          }
+        }, 1000);
       });
 
       this.addListener("dragleave", () => {
         osparc.dashboard.DragDropHelpers.dragLeave(this);
+        draggingOver = false;
       });
       this.addListener("dragend", () => {
         osparc.dashboard.DragDropHelpers.dragLeave(this);
+        draggingOver = false;
       });
 
       this.addListener("drop", e => {
