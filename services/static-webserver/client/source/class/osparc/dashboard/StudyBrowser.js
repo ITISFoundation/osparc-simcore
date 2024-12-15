@@ -100,7 +100,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __foldersList: null,
     __loadingFolders: null,
     __loadingWorkspaces: null,
-    __dragIndicator: null,
+    __dragWidget: null,
 
     // overridden
     initResources: function() {
@@ -647,9 +647,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // /FOLDERS
 
     __configureStudyCards: function(cards) {
-      // Create drag indicator
-      this.__dragIndicator = new osparc.dashboard.DragWidget();
-
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
@@ -669,20 +666,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           "studyDataOrigin": card.getResourceData(),
         });
 
+        // Create drag indicator
+        this.__dragWidget = new osparc.dashboard.DragWidget();
         // make it semi transparent while being dragged
         card.setOpacity(0.2);
         // init drag indicator
-        this.__dragIndicator.set({
+        this.__dragWidget.set({
           label: card.getTitle(),
+          icon: "@FontAwesome5Solid/file/16",
         });
-        this.__dragIndicator.start();
+        this.__dragWidget.start();
       });
 
       card.addListener("dragend", () => {
         // bring back opacity after drag
         card.setOpacity(1);
         // hide drag indicator
-        this.__dragIndicator.end();
+        this.__dragWidget.end();
+        // dispose drag indicator
+        this.__dragWidget.dispose();
+        this.__dragWidget = null;
       });
     },
 

@@ -161,12 +161,33 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __attachDragHandlers: function() {
       this.setDraggable(true);
+
       this.addListener("dragstart", e => {
         e.addAction("move");
         e.addType("osparc-moveFolder");
         e.addData("osparc-moveFolder", {
           "folderOrigin": this.getFolder(),
         });
+
+        this.__dragWidget = new osparc.dashboard.DragWidget();
+        // make it semi transparent while being dragged
+        this.setOpacity(0.2);
+        // init drag indicator
+        this.__dragWidget.set({
+          label: this.getTitle(),
+          icon: "@FontAwesome5Solid/folder/16",
+        });
+        this.__dragWidget.start();
+      });
+
+      this.addListener("dragend", () => {
+        // bring back opacity after drag
+        this.setOpacity(1);
+        // hide drag indicator
+        this.__dragWidget.end();
+        // dispose drag indicator
+        this.__dragWidget.dispose();
+        this.__dragWidget = null;
       });
     },
 
