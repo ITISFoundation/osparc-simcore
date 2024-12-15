@@ -648,17 +648,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __configureStudyCards: function(cards) {
       // Create drag indicator
-      this.__dragIndicator = new qx.ui.basic.Atom().set({
-        opacity: 0.9,
-        padding: 10,
-        zIndex: 1000,
-        font: "text-14",
-        backgroundColor: "strong-main",
-        decorator: "rounded",
-        visibility: "excluded",
-      });
-      const root = qx.core.Init.getApplication().getRoot();
-      root.add(this.__dragIndicator);
+      this.__dragIndicator = new osparc.dashboard.DragWidget();
 
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
@@ -670,12 +660,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __attachDragHandlers: function(card) {
-      const onMouseMoveDragging = e => {
-        const dragWidget = this.__dragIndicator.getContentElement().getDomElement();
-        dragWidget.style.left = `${e.pageX + 10}px`; // Offset for better visibility
-        dragWidget.style.top = `${e.pageY + 10}px`;
-      };
-
       card.setDraggable(true);
 
       card.addListener("dragstart", e => {
@@ -690,21 +674,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // init drag indicator
         this.__dragIndicator.set({
           label: card.getTitle(),
-          visibility: "visible",
         });
-        // listen to mousemove while dragging
-        document.addEventListener("mousemove", onMouseMoveDragging, false);
+        this.__dragIndicator.start();
       });
 
       card.addListener("dragend", () => {
         // bring back opacity after drag
         card.setOpacity(1);
         // hide drag indicator
-        this.__dragIndicator.set({
-          visibility: "excluded",
-        });
-        // remove listener
-        document.removeEventListener("mousemove", onMouseMoveDragging, false);
+        this.__dragIndicator.end();
       });
     },
 
