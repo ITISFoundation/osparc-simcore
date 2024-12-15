@@ -19,6 +19,27 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
   type: "static",
 
   statics: {
+    moveStudy: {
+      dragStart: function(event, studyDataOrigin, studyItem) {
+        event.addAction("move");
+        event.addType("osparc-moveStudy");
+        event.addData("osparc-moveStudy", {
+          "studyDataOrigin": studyDataOrigin,
+        });
+
+        // init drag indicator
+        const dragWidget = osparc.dashboard.DragWidget.getInstance();
+        dragWidget.getChildControl("dragged-resource").set({
+          label: studyDataOrigin["name"],
+          icon: "@FontAwesome5Solid/file/16",
+        });
+        dragWidget.start();
+
+        // make it semi transparent while being dragged
+        studyItem.setOpacity(0.2);
+      },
+    },
+
     moveFolder: {
       dragStart: function(event, folderOrigin, folderItem) {
         event.addAction("move");

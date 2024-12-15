@@ -660,29 +660,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       card.setDraggable(true);
 
       card.addListener("dragstart", e => {
-        e.addAction("move");
-        e.addType("osparc-moveStudy");
-        e.addData("osparc-moveStudy", {
-          "studyDataOrigin": card.getResourceData(),
-        });
-
-        // make it semi transparent while being dragged
-        card.setOpacity(0.2);
-        // init drag indicator
-        const dragWidget = osparc.dashboard.DragWidget.getInstance();
-        dragWidget.getChildControl("dragged-resource").set({
-          label: card.getTitle(),
-          icon: "@FontAwesome5Solid/file/16",
-        });
-        dragWidget.start();
+        const studyDataOrigin = card.getResourceData();
+        osparc.dashboard.DragDropHelpers.moveStudy.dragStart(e, studyDataOrigin, card);
       });
 
       card.addListener("dragend", () => {
-        // bring back opacity after drag
-        card.setOpacity(1);
-        // hide drag indicator
-        const dragWidget = osparc.dashboard.DragWidget.getInstance();
-        dragWidget.end();
+        osparc.dashboard.DragDropHelpers.dragEnd(card);
       });
     },
 

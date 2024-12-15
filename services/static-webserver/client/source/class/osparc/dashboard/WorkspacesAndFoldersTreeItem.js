@@ -128,10 +128,15 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
 
       this.addListener("drop", e => {
         if (e.supportsType("osparc-moveStudy")) {
+          const folderDest = this.__getFolder();
+          if (folderDest == null) {
+            e.preventDefault();
+            return;
+          }
           const studyData = e.getData("osparc-moveStudy")["studyDataOrigin"];
           const studyToFolderData = {
             studyData,
-            destFolderId: this.getFolderId(),
+            destFolderId: folderDest.getFolderId(),
           };
           this.fireDataEvent("studyToFolderRequested", studyToFolderData);
         } else if (e.supportsType("osparc-moveFolder")) {
