@@ -70,10 +70,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
           compatible = workspaceOrigin.getMyAccessRights()["delete"] && workspaceDest.getMyAccessRights()["write"];
         }
 
-        if (compatible) {
-          folderItem.getChildControl("icon").setTextColor("strong-main");
-        } else {
-          folderItem.getChildControl("icon").setTextColor("danger-red");
+        if (!compatible) {
           // do not allow
           event.preventDefault();
         }
@@ -82,11 +79,12 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         dragWidget.setDropAllowed(compatible);
       },
 
-      drop: function(event, folderDest) {
+      drop: function(event, destWorkspaceId, destFolderId) {
         const studyData = event.getData("osparc-moveStudy")["studyDataOrigin"];
         const studyToFolderData = {
           studyData,
-          destFolderId: folderDest.getFolderId(),
+          destWorkspaceId,
+          destFolderId,
         };
         return studyToFolderData;
       },
@@ -143,10 +141,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
           compatible = workspaceOrigin.getMyAccessRights()["delete"] && workspaceDest.getMyAccessRights()["write"];
         }
 
-        if (compatible) {
-          folderItem.getChildControl("icon").setTextColor("strong-main");
-        } else {
-          folderItem.getChildControl("icon").setTextColor("danger-red");
+        if (!compatible) {
           // do not allow
           event.preventDefault();
         }
@@ -155,12 +150,12 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         dragWidget.setDropAllowed(compatible);
       },
 
-      drop: function(event, folderDest) {
+      drop: function(event, destWorkspaceId, destFolderId) {
         const folderOrigin = event.getData("osparc-moveFolder")["folderOrigin"];
         const folderToFolderData = {
           folderId: folderOrigin.getFolderId(),
-          destWorkspaceId: folderDest.getWorkspaceId(),
-          destFolderId: folderDest.getFolderId(),
+          destWorkspaceId,
+          destFolderId,
         };
         return folderToFolderData;
       },

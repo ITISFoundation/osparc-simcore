@@ -104,16 +104,13 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
       });
 
       this.addListener("drop", e => {
-        const folderDest = this.__getFolder();
-        if (folderDest == null) {
-          e.preventDefault();
-          return;
-        }
+        const workspaceDestId = this.getModel().getWorkspaceId();
+        const folderDestId = this.getModel().getFolderId();
         if (e.supportsType("osparc-moveStudy")) {
-          const studyToFolderData = osparc.dashboard.DragDropHelpers.moveStudy.drop(e, folderDest);
+          const studyToFolderData = osparc.dashboard.DragDropHelpers.moveStudy.drop(e, workspaceDestId, folderDestId);
           this.fireDataEvent("studyToFolderRequested", studyToFolderData);
         } else if (e.supportsType("osparc-moveFolder")) {
-          const folderToFolderData = osparc.dashboard.DragDropHelpers.moveFolder.drop(e, folderDest);
+          const folderToFolderData = osparc.dashboard.DragDropHelpers.moveFolder.drop(e, workspaceDestId, folderDestId);
           this.fireDataEvent("folderToFolderRequested", folderToFolderData);
         }
       });
