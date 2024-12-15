@@ -100,6 +100,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __foldersList: null,
     __loadingFolders: null,
     __loadingWorkspaces: null,
+    __dragIndicator: null,
 
     // overridden
     initResources: function() {
@@ -646,6 +647,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // /FOLDERS
 
     __configureStudyCards: function(cards) {
+      // Create drag indicator
+      this.__dragIndicator = new osparc.dashboard.DragWidget();
+
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
@@ -664,6 +668,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         e.addData("osparc-moveStudy", {
           "studyDataOrigin": card.getResourceData(),
         });
+
+        // make it semi transparent while being dragged
+        card.setOpacity(0.2);
+        // init drag indicator
+        this.__dragIndicator.set({
+          label: card.getTitle(),
+        });
+        this.__dragIndicator.start();
+      });
+
+      card.addListener("dragend", () => {
+        // bring back opacity after drag
+        card.setOpacity(1);
+        // hide drag indicator
+        this.__dragIndicator.end();
       });
 
       // Create drag indicator

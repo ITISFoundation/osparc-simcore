@@ -36,13 +36,9 @@ qx.Class.define("osparc.service.ServiceListItem", {
 
     this.subscribeToFilterGroup("serviceCatalog");
 
-    /**
-     * The idea here is to show some extra options when a service is selected:
-     * - Version selection
-     * - Pricing unit selection if applies
-     */
-    // But the toggle button consumes all the events, I believe that the trick is to use the anonymous property
-    // this.addListener("changeValue", e => this.__itemSelected(e.getData()));
+    this.bind("selected", this, "backgroundColor", {
+      converter: selected => selected ? "strong-main" : "info"
+    });
   },
 
   properties: {

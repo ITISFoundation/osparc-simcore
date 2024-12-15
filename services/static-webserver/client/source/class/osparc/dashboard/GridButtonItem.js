@@ -236,7 +236,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       const menuButton = this.getChildControl("menu-button");
       if (menu) {
         menuButton.setMenu(menu);
-        menu.setPosition("top-left");
+        menu.setPosition("bottom-left");
         osparc.utils.Utils.prettifyMenu(menu);
         osparc.utils.Utils.setIdToWidget(menu, "studyItemMenuMenu");
         this.evaluateMenuButtons();
