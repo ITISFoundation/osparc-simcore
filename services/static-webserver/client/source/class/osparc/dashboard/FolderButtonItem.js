@@ -195,10 +195,10 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       this.addListener("drop", e => {
         const folderDest = this.getFolder();
         if (e.supportsType("osparc-moveStudy")) {
-          const studyToFolderData = osparc.dashboard.DragDropHelpers.moveStudy.drop(e, folderDest.getWorkspaceId(), folderDest.getFolderId());
+          const studyToFolderData = osparc.dashboard.DragDropHelpers.moveStudy.drop(e, this, folderDest.getWorkspaceId(), folderDest.getFolderId());
           this.fireDataEvent("studyToFolderRequested", studyToFolderData);
         } else if (e.supportsType("osparc-moveFolder")) {
-          const folderToFolderData = osparc.dashboard.DragDropHelpers.moveFolder.drop(e, folderDest.getWorkspaceId(), folderDest.getFolderId());
+          const folderToFolderData = osparc.dashboard.DragDropHelpers.moveFolder.drop(e, this, folderDest.getWorkspaceId(), folderDest.getFolderId());
           this.fireDataEvent("folderToFolderRequested", folderToFolderData);
         }
       });

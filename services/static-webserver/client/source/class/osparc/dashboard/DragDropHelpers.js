@@ -77,15 +77,18 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
 
         const dragWidget = osparc.dashboard.DragWidget.getInstance();
         dragWidget.setDropAllowed(compatible);
+
+        folderItem.getChildControl("icon").setTextColor(compatible ? "strong-main" : "text");
       },
 
-      drop: function(event, destWorkspaceId, destFolderId) {
+      drop: function(event, folderItem, destWorkspaceId, destFolderId) {
         const studyData = event.getData("osparc-moveStudy")["studyDataOrigin"];
         const studyToFolderData = {
           studyData,
           destWorkspaceId,
           destFolderId,
         };
+        folderItem.getChildControl("icon").resetTextColor();
         return studyToFolderData;
       },
     },
@@ -150,23 +153,27 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
 
         const dragWidget = osparc.dashboard.DragWidget.getInstance();
         dragWidget.setDropAllowed(compatible);
+
+        folderItem.getChildControl("icon").setTextColor(compatible ? "strong-main" : "text");
       },
 
-      drop: function(event, destWorkspaceId, destFolderId) {
+      drop: function(event, folderItem, destWorkspaceId, destFolderId) {
         const folderOrigin = event.getData("osparc-moveFolder")["folderOrigin"];
         const folderToFolderData = {
           folderId: folderOrigin.getFolderId(),
           destWorkspaceId,
           destFolderId,
         };
+        folderItem.getChildControl("icon").resetTextColor();
         return folderToFolderData;
       },
     },
 
     dragLeave: function(item) {
-      item.getChildControl("icon").resetTextColor();
       const dragWidget = osparc.dashboard.DragWidget.getInstance();
       dragWidget.setDropAllowed(false);
+
+      item.getChildControl("icon").resetTextColor();
     },
 
     dragEnd: function(draggedItem) {
