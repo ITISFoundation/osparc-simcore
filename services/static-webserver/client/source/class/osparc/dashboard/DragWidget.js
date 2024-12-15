@@ -39,19 +39,27 @@ qx.Class.define("osparc.dashboard.DragWidget", {
     __onMouseMoveDragging: function(e) {
       if (this.getContentElement()) {
         const domEl = this.getContentElement().getDomElement();
-        domEl.style.left = `${e.pageX + 15}px`;
-        domEl.style.top = `${e.pageY + 15}px`;
+        domEl.style.left = `${e.pageX + 12}px`;
+        domEl.style.top = `${e.pageY + 12}px`;
       }
     },
 
     start: function() {
       this.show();
       document.addEventListener("mousemove", this.__onMouseMoveDragging.bind(this), false);
+
+      // this widget will give the drop validity feedback
+      const cursor = qx.ui.core.DragDropCursor.getInstance();
+      cursor.setAppearance("dragdrop-no-cursor");
     },
 
     end: function() {
       this.exclude();
       document.removeEventListener("mousemove", this.__onMouseMoveDragging.bind(this), false);
+
+      // reset to default
+      const cursor = qx.ui.core.DragDropCursor.getInstance();
+      cursor.setAppearance("dragdrop-cursor");
     },
   }
 });

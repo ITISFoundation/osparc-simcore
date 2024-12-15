@@ -19,6 +19,14 @@ qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.common.Appearance,
 
   appearances: {
+    "dragdrop-no-cursor": {
+      style: states => {
+        return {
+          source: "",
+        }
+      }
+    },
+
     "material-button-invalid": {},
     "pb-list": {
       include: "list",
