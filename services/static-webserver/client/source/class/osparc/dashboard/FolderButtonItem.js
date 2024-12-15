@@ -172,21 +172,20 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         // make it semi transparent while being dragged
         this.setOpacity(0.2);
         // init drag indicator
-        this.__dragWidget = new osparc.dashboard.DragWidget();
+        const dragWidget = osparc.dashboard.DragWidget.getInstance();
+        dragWidget.getChildControl("dragged-resource").set({
           label: this.getTitle(),
           icon: "@FontAwesome5Solid/folder/16",
         });
-        this.__dragWidget.start();
+        dragWidget.start();
       });
 
       this.addListener("dragend", () => {
         // bring back opacity after drag
         this.setOpacity(1);
         // hide drag indicator
-        this.__dragWidget.end();
-        // dispose drag indicator
-        this.__dragWidget.dispose();
-        this.__dragWidget = null;
+        const dragWidget = osparc.dashboard.DragWidget.getInstance();
+        dragWidget.end();
       });
     },
 
@@ -239,13 +238,19 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           // do not allow
           e.preventDefault();
         }
+        const dragWidget = osparc.dashboard.DragWidget.getInstance();
+        dragWidget.setDropAllowed(compatible);
       });
 
       this.addListener("dragleave", () => {
         this.getChildControl("icon").resetTextColor();
+        const dragWidget = osparc.dashboard.DragWidget.getInstance();
+        dragWidget.setDropAllowed(false);
       });
       this.addListener("dragend", () => {
         this.getChildControl("icon").resetTextColor();
+        const dragWidget = osparc.dashboard.DragWidget.getInstance();
+        dragWidget.setDropAllowed(false);
       });
 
       this.addListener("drop", e => {

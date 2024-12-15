@@ -19,6 +19,14 @@ qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.common.Appearance,
 
   appearances: {
+    "dragdrop-no-cursor": {
+      style: () => {
+        return {
+          source: "",
+        }
+      }
+    },
+
     "dragdrop-own-cursor": {
       style: states => {
         let icon = "";
