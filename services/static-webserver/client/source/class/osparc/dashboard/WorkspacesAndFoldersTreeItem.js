@@ -90,8 +90,8 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
       this.setDroppable(true);
 
       this.addListener("dragover", e => {
-        let compatible = false;
         if (e.supportsType("osparc-moveStudy")) {
+          let compatible = false;
           const studyData = e.getData("osparc-moveStudy")["studyDataOrigin"];
           // Compatibility checks:
           // - My workspace
@@ -107,42 +107,23 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
           } else {
             compatible = true;
           }
+          if (compatible) {
+            this.getChildControl("icon").setTextColor("strong-main");
+          } else {
+            this.getChildControl("icon").setTextColor("danger-red");
+            // do not allow
+            e.preventDefault();
+          }
+          const dragWidget = osparc.dashboard.DragWidget.getInstance();
+          dragWidget.setDropAllowed(compatible);
         } else if (e.supportsType("osparc-moveFolder")) {
-          const folder = this.__getFolder();
-          if (folder == null) {
+          const folderDest = this.__getFolder();
+          if (folderDest == null) {
             e.preventDefault();
             return;
           }
-
-          // Compatibility checks:
-          // - It's not the same folder
-          // - My workspace
-          //   - None
-          // - Shared workspace
-          //   - write access on workspace
-          const folderOrigin = e.getData("osparc-moveFolder")["folderOrigin"];
-          compatible = folder !== folderOrigin;
-          const workspaceId = folderOrigin.getWorkspaceId();
-          if (compatible) {
-            if (workspaceId) {
-              const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
-              if (workspace) {
-                compatible = workspace.getMyAccessRights()["write"];
-              }
-            } else {
-              compatible = true;
-            }
-          }
+          osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, folderDest, this);
         }
-        if (compatible) {
-          this.getChildControl("icon").setTextColor("strong-main");
-        } else {
-          this.getChildControl("icon").setTextColor("danger-red");
-          // do not allow
-          e.preventDefault();
-        }
-        const dragWidget = osparc.dashboard.DragWidget.getInstance();
-        dragWidget.setDropAllowed(compatible);
       });
 
       this.addListener("dragleave", () => {
@@ -165,17 +146,12 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
           };
           this.fireDataEvent("studyToFolderRequested", studyToFolderData);
         } else if (e.supportsType("osparc-moveFolder")) {
-          const folder = this.__getFolder();
-          if (folder == null) {
+          const folderDest = this.__getFolder();
+          if (folderDest == null) {
             e.preventDefault();
             return;
           }
-
-          const folderOrigin = e.getData("osparc-moveFolder")["folderOrigin"];
-          const folderToFolderData = {
-            folderId: folderOrigin.getFolderId(),
-            destFolderId: folder.getFolderId(),
-          };
+          const folderToFolderData = osparc.dashboard.DragDropHelpers.moveFolder.drop(e, folderDest);
           this.fireDataEvent("folderToFolderRequested", folderToFolderData);
         }
       });
