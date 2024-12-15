@@ -1011,6 +1011,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._addResourceFilter();
 
       this.__connectContexts();
+      this.__connectDropHandlers();
 
       this.__addNewStudyButtons();
 
@@ -1156,6 +1157,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       // notify Filters on the left
       this._resourceFilter.contextChanged(context, workspaceId, folderId);
+    },
+
+    __connectDropHandlers: function() {
+      const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
+      workspacesAndFoldersTree.addListener("studyToFolderRequested", e => {
+        this._studyToFolderRequested(e.getData());
+      });
+      workspacesAndFoldersTree.addListener("folderToFolderRequested", e => {
+        this._folderToFolderRequested(e.getData());
+      });
     },
 
     __addSortByButton: function() {

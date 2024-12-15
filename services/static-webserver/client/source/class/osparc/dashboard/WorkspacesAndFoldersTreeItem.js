@@ -35,6 +35,11 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
     this.__attachDropHandlers();
   },
 
+  events: {
+    "studyToFolderRequested": "qx.event.type.Data",
+    "folderToFolderRequested": "qx.event.type.Data",
+  },
+
   members: {
     __attachEventHandlers: function() {
       this.addListener("mouseover", () => {
