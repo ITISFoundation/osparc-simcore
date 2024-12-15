@@ -20,7 +20,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
 
   statics: {
     moveFolder: {
-      dragStart: function(event, folderOrigin) {
+      dragStart: function(event, folderOrigin, folderItem) {
         event.addAction("move");
         event.addType("osparc-moveFolder");
         event.addData("osparc-moveFolder", {
@@ -34,6 +34,9 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
           icon: "@FontAwesome5Solid/folder/16",
         });
         dragWidget.start();
+
+        // make it semi transparent while being dragged
+        folderItem.setOpacity(0.2);
       },
 
       dragOver: function(event, folderDest, folderItem) {
@@ -80,7 +83,16 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
       },
     },
 
-    dragEnd: function() {
+    dragLeave: function(item) {
+      item.getChildControl("icon").resetTextColor();
+      const dragWidget = osparc.dashboard.DragWidget.getInstance();
+      dragWidget.setDropAllowed(false);
+    },
+
+    dragEnd: function(draggedItem) {
+      // bring back opacity after drag
+      draggedItem.setOpacity(1);
+
       // hide drag indicator
       const dragWidget = osparc.dashboard.DragWidget.getInstance();
       dragWidget.end();

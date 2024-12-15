@@ -163,29 +163,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       this.setDraggable(true);
 
       this.addListener("dragstart", e => {
-        e.addAction("move");
-        e.addType("osparc-moveFolder");
-        e.addData("osparc-moveFolder", {
-          "folderOrigin": this.getFolder(),
-        });
-
-        // make it semi transparent while being dragged
-        this.setOpacity(0.2);
-        // init drag indicator
-        const dragWidget = osparc.dashboard.DragWidget.getInstance();
-        dragWidget.getChildControl("dragged-resource").set({
-          label: this.getTitle(),
-          icon: "@FontAwesome5Solid/folder/16",
-        });
-        dragWidget.start();
+        const folderOrigin = this.getFolder();
+        osparc.dashboard.DragDropHelpers.moveFolder.dragStart(e, folderOrigin, this);
       });
 
       this.addListener("dragend", () => {
-        // bring back opacity after drag
-        this.setOpacity(1);
-        // hide drag indicator
-        const dragWidget = osparc.dashboard.DragWidget.getInstance();
-        dragWidget.end();
+        osparc.dashboard.DragDropHelpers.dragEnd(this);
       });
     },
 
@@ -193,8 +176,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       this.setDroppable(true);
 
       this.addListener("dragover", e => {
-        let compatible = false;
         if (e.supportsType("osparc-moveStudy")) {
+          let compatible = false;
           const studyData = e.getData("osparc-moveStudy")["studyDataOrigin"];
           // Compatibility checks:
           // - My workspace
@@ -210,47 +193,27 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           } else {
             compatible = true;
           }
-        } else if (e.supportsType("osparc-moveFolder")) {
-          // Compatibility checks:
-          // - It's not the same folder
-          // - My workspace
-          //   - None
-          // - Shared workspace
-          //   - write access on workspace
-          const folderOrigin = e.getData("osparc-moveFolder")["folderOrigin"];
-          compatible = this.getFolder() !== folderOrigin;
-          const workspaceId = folderOrigin.getWorkspaceId();
           if (compatible) {
-            if (workspaceId) {
-              const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
-              if (workspace) {
-                compatible = workspace.getMyAccessRights()["write"];
-              }
-            } else {
-              compatible = true;
-            }
+            this.getChildControl("icon").setTextColor("strong-main");
+          } else {
+            this.getChildControl("icon").setTextColor("danger-red");
+            // do not allow
+            e.preventDefault();
           }
+          const dragWidget = osparc.dashboard.DragWidget.getInstance();
+          dragWidget.setDropAllowed(compatible);
+        } else if (e.supportsType("osparc-moveFolder")) {
+          const folderDest = this.getFolder();
+          osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, folderDest, this);
         }
-        if (compatible) {
-          this.getChildControl("icon").setTextColor("strong-main");
-        } else {
-          this.getChildControl("icon").setTextColor("danger-red");
-          // do not allow
-          e.preventDefault();
-        }
-        const dragWidget = osparc.dashboard.DragWidget.getInstance();
-        dragWidget.setDropAllowed(compatible);
       });
 
       this.addListener("dragleave", () => {
-        this.getChildControl("icon").resetTextColor();
-        const dragWidget = osparc.dashboard.DragWidget.getInstance();
-        dragWidget.setDropAllowed(false);
+        osparc.dashboard.DragDropHelpers.dragLeave(this);
       });
+
       this.addListener("dragend", () => {
-        this.getChildControl("icon").resetTextColor();
-        const dragWidget = osparc.dashboard.DragWidget.getInstance();
-        dragWidget.setDropAllowed(false);
+        osparc.dashboard.DragDropHelpers.dragLeave(this);
       });
 
       this.addListener("drop", e => {
@@ -262,11 +225,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           };
           this.fireDataEvent("studyToFolderRequested", studyToFolderData);
         } else if (e.supportsType("osparc-moveFolder")) {
-          const folderOrigin = e.getData("osparc-moveFolder")["folderOrigin"];
-          const folderToFolderData = {
-            folderId: folderOrigin.getFolderId(),
-            destFolderId: this.getFolderId(),
-          };
+          const folderDest = this.getFolder();
+          const folderToFolderData = osparc.dashboard.DragDropHelpers.moveFolder.drop(e, folderDest);
           this.fireDataEvent("folderToFolderRequested", folderToFolderData);
         }
       });

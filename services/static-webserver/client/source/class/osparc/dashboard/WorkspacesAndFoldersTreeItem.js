@@ -65,24 +65,17 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
       this.setDraggable(true);
 
       this.addListener("dragstart", e => {
-        const folder = this.__getFolder();
+        const folderOrigin = this.__getFolder();
         // only folders can be dragged
-        if (folder == null) {
+        if (folderOrigin == null) {
           e.preventDefault();
           return;
         }
-
-        // make it semi transparent while being dragged
-        this.setOpacity(0.2);
-
-        osparc.dashboard.DragDropHelpers.moveFolder.dragStart(e, folder);
+        osparc.dashboard.DragDropHelpers.moveFolder.dragStart(e, folderOrigin, this);
       });
 
       this.addListener("dragend", () => {
-        // bring back opacity after drag
-        this.setOpacity(1);
-
-        osparc.dashboard.DragDropHelpers.dragEnd();
+        osparc.dashboard.DragDropHelpers.dragEnd(this);
       });
     },
 
@@ -127,14 +120,10 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
       });
 
       this.addListener("dragleave", () => {
-        this.getChildControl("icon").resetTextColor();
-        const dragWidget = osparc.dashboard.DragWidget.getInstance();
-        dragWidget.setDropAllowed(false);
+        osparc.dashboard.DragDropHelpers.dragLeave(this);
       });
       this.addListener("dragend", () => {
-        this.getChildControl("icon").resetTextColor();
-        const dragWidget = osparc.dashboard.DragWidget.getInstance();
-        dragWidget.setDropAllowed(false);
+        osparc.dashboard.DragDropHelpers.dragLeave(this);
       });
 
       this.addListener("drop", e => {
