@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         // - Drag over "Shared Workspaces" (0)
         //   - No
         // - My Workspace -> My Workspace (1)
-        //   - None
+        //   - Yes
         // - My Workspace -> Shared Workspace (2)
         //   - Delete on Study
         //   - Write on dest Workspace
