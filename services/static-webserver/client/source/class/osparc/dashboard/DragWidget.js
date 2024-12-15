@@ -50,30 +50,6 @@ qx.Class.define("osparc.dashboard.DragWidget", {
     },
   },
 
-  statics: {
-    dragStartFolder: function(event, folder) {
-      event.addAction("move");
-      event.addType("osparc-moveFolder");
-      event.addData("osparc-moveFolder", {
-        "folderOrigin": folder,
-      });
-
-      // init drag indicator
-      const dragWidget = osparc.dashboard.DragWidget.getInstance();
-      dragWidget.getChildControl("dragged-resource").set({
-        label: folder.getName(),
-        icon: "@FontAwesome5Solid/folder/16",
-      });
-      dragWidget.start();
-    },
-
-    dragEnd: function() {
-      // hide drag indicator
-      const dragWidget = osparc.dashboard.DragWidget.getInstance();
-      dragWidget.end();
-    }
-  },
-
   members: {
     _createChildControlImpl: function(id) {
       let control;
