@@ -217,9 +217,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           //   - None
           // - Shared workspace
           //   - write access on workspace
-          const folder = e.getData("osparc-moveFolder")["folderOrigin"];
-          compatible = this.getFolder() !== folder;
-          const workspaceId = folder.getWorkspaceId();
+          const folderOrigin = e.getData("osparc-moveFolder")["folderOrigin"];
+          compatible = this.getFolder() !== folderOrigin;
+          const workspaceId = folderOrigin.getWorkspaceId();
           if (compatible) {
             if (workspaceId) {
               const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
@@ -262,9 +262,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           };
           this.fireDataEvent("studyToFolderRequested", studyToFolderData);
         } else if (e.supportsType("osparc-moveFolder")) {
-          const folder = e.getData("osparc-moveFolder")["folderOrigin"];
+          const folderOrigin = e.getData("osparc-moveFolder")["folderOrigin"];
           const folderToFolderData = {
-            folderId: folder.getFolderId(),
+            folderId: folderOrigin.getFolderId(),
             destFolderId: this.getFolderId(),
           };
           this.fireDataEvent("folderToFolderRequested", folderToFolderData);
