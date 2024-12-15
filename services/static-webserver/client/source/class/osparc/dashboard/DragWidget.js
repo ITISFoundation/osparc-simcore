@@ -79,8 +79,8 @@ qx.Class.define("osparc.dashboard.DragWidget", {
       if (this.getContentElement()) {
         // place it next to the "dragdrop-own-cursor" indicator
         const domEl = this.getContentElement().getDomElement();
-        domEl.style.left = `${e.pageX + 30}px`;
-        domEl.style.top = `${e.pageY + 0}px`;
+        domEl.style.left = `${e.pageX + 15}px`;
+        domEl.style.top = `${e.pageY + 5}px`;
       }
     },
 
