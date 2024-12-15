@@ -110,7 +110,7 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         folderItem.setOpacity(0.2);
       },
 
-      dragOver: function(event, folderItem, workspaceDestId) {
+      dragOver: function(event, folderItem, workspaceDestId, folderDestId) {
         let compatible = false;
         const folderOrigin = event.getData("osparc-moveFolder")["folderOrigin"];
         const workspaceIdOrigin = folderOrigin.getWorkspaceId();
@@ -130,6 +130,8 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         //   - Delete on origin Workspace
         //   - Write on dest Workspace
         if (workspaceDestId === -1) { // (0)
+          compatible = false;
+        } else if (folderOrigin.getFolderId() === folderDestId) {
           compatible = false;
         } else if (workspaceIdOrigin === null && workspaceDestId === null) { // (1)
           compatible = true;

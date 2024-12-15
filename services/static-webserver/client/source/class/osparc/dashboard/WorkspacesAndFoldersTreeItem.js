@@ -89,10 +89,11 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
 
       this.addListener("dragover", e => {
         const workspaceDestId = this.getModel().getWorkspaceId();
+        const folderDestId = this.getModel().getFolderId();
         if (e.supportsType("osparc-moveStudy")) {
-          osparc.dashboard.DragDropHelpers.moveStudy.dragOver(e, this, workspaceDestId);
+          osparc.dashboard.DragDropHelpers.moveStudy.dragOver(e, this, workspaceDestId, folderDestId);
         } else if (e.supportsType("osparc-moveFolder")) {
-          osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, this, workspaceDestId);
+          osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, this, workspaceDestId, folderDestId);
         }
       });
 
