@@ -1645,6 +1645,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __doMoveStudy: function(studyData, destWorkspaceId, destFolderId) {
       this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
         .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
+        .then(() => this.__removeFromStudyList(studyData["uuid"]))
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
@@ -1713,8 +1714,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       };
       return osparc.data.Resources.fetch("studies", "moveToFolder", params)
-        .then(() => studyData["folderId"] = destFolderId)
-        .then(() => this.__removeFromStudyList(studyData["uuid"]));
+        .then(() => studyData["folderId"] = destFolderId);
     },
 
     _studyToFolderRequested: function(data) {
