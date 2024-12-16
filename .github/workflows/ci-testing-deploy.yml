@@ -1305,7 +1305,7 @@ jobs:
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install 7zip
-        run: ./ci/github/helpers/install_7zip.bash
+        run: sudo ./ci/github/helpers/install_7zip.bash
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: typecheck
