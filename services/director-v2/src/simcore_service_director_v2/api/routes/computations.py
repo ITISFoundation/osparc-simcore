@@ -75,7 +75,6 @@ from ...utils.dags import (
     compute_pipeline_details,
     compute_pipeline_started_timestamp,
     compute_pipeline_stopped_timestamp,
-    compute_pipeline_submitted_timestamp,
     create_complete_dag,
     create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
@@ -396,9 +395,7 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
             stopped=compute_pipeline_stopped_timestamp(
                 minimal_computational_dag, comp_tasks
             ),
-            submitted=compute_pipeline_submitted_timestamp(
-                minimal_computational_dag, comp_tasks
-            ),
+            submitted=last_run.created if last_run else None,
         )
 
     except ProjectNotFoundError as e:
@@ -498,7 +495,7 @@ async def get_computation(
         result=None,
         started=compute_pipeline_started_timestamp(pipeline_dag, all_tasks),
         stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
-        submitted=compute_pipeline_submitted_timestamp(pipeline_dag, all_tasks),
+        submitted=last_run.created if last_run else None,
     )
 
 
@@ -554,26 +551,29 @@ async def stop_computation(
             )
 
         # get run details if any
-        last_run: CompRunsAtDB | None = None
-        with contextlib.suppress(ComputationalRunNotFoundError):
-            last_run = await comp_runs_repo.get(
-                user_id=computation_stop.user_id, project_id=project_id
+        async def _create_computation_response() -> ComputationGet:
+            last_run: CompRunsAtDB | None = None
+            with contextlib.suppress(ComputationalRunNotFoundError):
+                last_run = await comp_runs_repo.get(
+                    user_id=computation_stop.user_id, project_id=project_id
+                )
+
+            return ComputationGet(
+                id=project_id,
+                state=pipeline_state,
+                pipeline_details=await compute_pipeline_details(
+                    complete_dag, pipeline_dag, tasks
+                ),
+                url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
+                stop_url=None,
+                iteration=last_run.iteration if last_run else None,
+                result=None,
+                started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
+                stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
+                submitted=last_run.created if last_run else None,
             )
 
-        return ComputationGet(
-            id=project_id,
-            state=pipeline_state,
-            pipeline_details=await compute_pipeline_details(
-                complete_dag, pipeline_dag, tasks
-            ),
-            url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
-            stop_url=None,
-            iteration=last_run.iteration if last_run else None,
-            result=None,
-            started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
-            stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
-            submitted=compute_pipeline_submitted_timestamp(pipeline_dag, tasks),
-        )
+        return await _create_computation_response()
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
