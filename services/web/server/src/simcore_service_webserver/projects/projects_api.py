@@ -1050,7 +1050,7 @@ async def patch_project_node(
         )
 
     # 5. Updates project states for user, if inputs have been changed
-    if _node_patch_exclude_unset.get("inputs"):
+    if "inputs" in _node_patch_exclude_unset:
         updated_project = await add_project_states_for_user(
            user_id=user_id, project=updated_project, is_template=False, app=app
         )
