@@ -418,15 +418,43 @@ async def _activate_drained_nodes(
     )
 
 
-async def _start_buffer_instances(
+async def _start_warm_buffer_instances(
     app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
 ) -> Cluster:
+    """starts warm buffer if there are assigned tasks, or if a hot buffer of the same type is needed"""
+
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+
     instances_to_start = [
         i.ec2_instance for i in cluster.buffer_ec2s if i.assigned_tasks
     ]
+
+    if (
+        len(cluster.buffer_drained_nodes)
+        < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    ):
+        # check if we can migrate warm buffers to hot buffers
+        hot_buffer_instance_type = cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        )
+        free_startable_warm_buffers_to_replace_hot_buffers = [
+            warm_buffer.ec2_instance
+            for warm_buffer in cluster.buffer_ec2s
+            if (warm_buffer.ec2_instance.type == hot_buffer_instance_type)
+            and not warm_buffer.assigned_tasks
+        ]
+        instances_to_start += free_startable_warm_buffers_to_replace_hot_buffers[
+            : app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+            - len(cluster.buffer_drained_nodes)
+        ]
+
     if not instances_to_start:
         return cluster
-    # change the buffer machine to an active one
+
     with log_context(
         _logger, logging.INFO, f"start {len(instances_to_start)} buffer machines"
     ):
@@ -1187,8 +1215,8 @@ async def _autoscale_cluster(
     # 2. activate available drained nodes to cover some of the tasks
     cluster = await _activate_drained_nodes(app, cluster, auto_scaling_mode)
 
-    # 3. start buffer instances to cover the remaining tasks
-    cluster = await _start_buffer_instances(app, cluster, auto_scaling_mode)
+    # 3. start warm buffer instances to cover the remaining tasks
+    cluster = await _start_warm_buffer_instances(app, cluster, auto_scaling_mode)
 
     # 4. scale down unused instances
     cluster = await _scale_down_unused_cluster_instances(
