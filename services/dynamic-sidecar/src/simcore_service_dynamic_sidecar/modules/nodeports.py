@@ -20,12 +20,7 @@ from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
 from pydantic import ByteSize
-from servicelib.archiving_utils import (
-    PrunableFolder,
-    UnsupportedArchiveFormatError,
-    archive_dir,
-    unarchive_dir,
-)
+from servicelib.archiving_utils import PrunableFolder, archive_dir
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.file_utils import remove_directory
 from servicelib.logging_utils import log_context
@@ -41,6 +36,7 @@ from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.settings import ApplicationSettings, get_settings
 from ..modules.notifications import PortNotifier
+from .seven_zip_wrapper import unarchive_zip_to
 
 
 class PortTypeName(str, Enum):
@@ -298,28 +294,15 @@ async def _get_data_from_port(
             dest_folder = PrunableFolder(final_path)
 
             if _is_zip_file(downloaded_file):
-                # unzip updated data to dest_path
-                _logger.debug("unzipping %s", downloaded_file)
-                try:
-                    unarchived: set[Path] = await unarchive_dir(
-                        archive_to_extract=downloaded_file,
-                        destination_folder=final_path,
-                        progress_bar=sub_progress,
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"unzipping '{downloaded_file}' to {final_path}",
+                ):
+                    unarchived: set[Path] = await unarchive_zip_to(
+                        downloaded_file, final_path, sub_progress
                     )
                     dest_folder.prune(exclude=unarchived)
-
-                    _logger.debug("all unzipped in %s", final_path)
-                except UnsupportedArchiveFormatError:
-                    _logger.warning(
-                        "Could not extract archive '%s' to '%s' moving it to: '%s'",
-                        downloaded_file,
-                        final_path,
-                        final_path / downloaded_file.name,
-                    )
-                    await _move_file_to_input_port(
-                        final_path, downloaded_file, dest_folder
-                    )
-
             else:
                 await _move_file_to_input_port(final_path, downloaded_file, dest_folder)
 

@@ -1304,6 +1304,8 @@ jobs:
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
+      - name: install 7zip
+        run: ./ci/github/helpers/install_7zip.bash
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: typecheck
