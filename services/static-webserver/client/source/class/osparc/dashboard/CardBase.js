@@ -85,7 +85,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     filterText: function(checks, text) {
       if (text) {
-        const includesSome = checks.some(check => check.toLowerCase().trim().includes(text.toLowerCase()));
+        const includesSome = checks.some(check => check && check.toLowerCase().trim().includes(text.toLowerCase()));
         return !includesSome;
       }
       return false;
