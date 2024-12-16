@@ -377,7 +377,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         description="Name of the current dynamic-sidecar being observed",
     )
     run_id: ServiceRunID = Field(
-        default_factory=ServiceRunID.create_for_dynamic_sidecar,
+        default_factory=ServiceRunID.get_resource_tracking_run_id_for_dynamic,
         description=(
             "Uniquely identify the dynamic sidecar session (a.k.a. 2 "
             "subsequent exact same services will have a different run_id)"

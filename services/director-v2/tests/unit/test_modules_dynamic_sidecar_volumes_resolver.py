@@ -37,7 +37,7 @@ def state_paths() -> list[Path]:
 
 @pytest.fixture
 def service_run_id() -> ServiceRunID:
-    return ServiceRunID.create_for_dynamic_sidecar()
+    return ServiceRunID.get_resource_tracking_run_id_for_dynamic()
 
 
 @pytest.fixture
@@ -142,7 +142,7 @@ async def test_unique_name_creation_and_removal(faker: Faker):
     unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
         path=Path("/some/random/path/to/a/workspace/folder"),
         node_uuid=faker.uuid4(cast_to=None),
-        service_run_id=ServiceRunID.create_for_dynamic_sidecar(),
+        service_run_id=ServiceRunID.get_resource_tracking_run_id_for_dynamic(),
     )
 
     await assert_creation_and_removal(unique_volume_name)
@@ -150,7 +150,7 @@ async def test_unique_name_creation_and_removal(faker: Faker):
 
 def test_volumes_get_truncated_as_expected(faker: Faker):
     node_uuid = faker.uuid4(cast_to=None)
-    service_run_id = ServiceRunID.create_for_dynamic_sidecar()
+    service_run_id = ServiceRunID.get_resource_tracking_run_id_for_dynamic()
     assert node_uuid != service_run_id
     unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
         path=Path(

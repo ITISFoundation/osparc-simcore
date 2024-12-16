@@ -25,12 +25,16 @@ def test_run_id_get_resource_tracking_run_id(
     iteration: PositiveInt,
     expected_result: str,
 ):
-    resource_tracking_service_run_id = ServiceRunID.get_resource_tracking_run_id(
-        user_id, project_id, node_id, iteration
+    resource_tracking_service_run_id = (
+        ServiceRunID.get_resource_tracking_run_id_for_computational(
+            user_id, project_id, node_id, iteration
+        )
     )
     assert isinstance(resource_tracking_service_run_id, ServiceRunID)
     assert resource_tracking_service_run_id == expected_result
 
 
-def test_run_id_create_for_dynamic_sidecar():
-    assert isinstance(ServiceRunID.create_for_dynamic_sidecar(), ServiceRunID)
+def test_get_resource_tracking_run_id_for_dynamic():
+    assert isinstance(
+        ServiceRunID.get_resource_tracking_run_id_for_dynamic(), ServiceRunID
+    )

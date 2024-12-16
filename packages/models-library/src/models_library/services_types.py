@@ -61,7 +61,7 @@ class ServiceRunID(str):
     __slots__ = ()
 
     @classmethod
-    def create_for_dynamic_sidecar(cls) -> Self:
+    def get_resource_tracking_run_id_for_dynamic(cls) -> Self:
         """used for dynamic services"""
         # NOTE: there was a legacy version of this RunID
         # legacy version:
@@ -73,7 +73,7 @@ class ServiceRunID(str):
         return cls(run_id_format)
 
     @classmethod
-    def get_resource_tracking_run_id(
+    def get_resource_tracking_run_id_for_computational(
         cls,
         user_id: UserID,
         project_id: "ProjectID",

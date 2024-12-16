@@ -237,7 +237,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # Each time a new dynamic-sidecar service is created
         # generate a new `run_id` to avoid resource collisions
-        scheduler_data.run_id = ServiceRunID.create_for_dynamic_sidecar()
+        scheduler_data.run_id = ServiceRunID.get_resource_tracking_run_id_for_dynamic()
 
         rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
 

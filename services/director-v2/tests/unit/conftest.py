@@ -80,14 +80,14 @@ def dynamic_sidecar_port() -> PortInt:
 
 @pytest.fixture
 def service_run_id() -> ServiceRunID:
-    return ServiceRunID.create_for_dynamic_sidecar()
+    return ServiceRunID.get_resource_tracking_run_id_for_dynamic()
 
 
 @pytest.fixture
 def resource_tracking_run_id(
     user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> ServiceRunID:
-    return ServiceRunID.get_resource_tracking_run_id(
+    return ServiceRunID.get_resource_tracking_run_id_for_computational(
         user_id, project_id, node_id, iteration=42
     )
 

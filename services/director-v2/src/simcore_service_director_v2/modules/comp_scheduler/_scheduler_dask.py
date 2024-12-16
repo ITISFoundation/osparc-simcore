@@ -129,7 +129,7 @@ class DaskScheduler(BaseCompScheduler):
                         hardware_info=task.hardware_info,
                         callback=wake_up_callback,
                         metadata=comp_run.metadata,
-                        resource_tracking_run_id=ServiceRunID.get_resource_tracking_run_id(
+                        resource_tracking_run_id=ServiceRunID.get_resource_tracking_run_id_for_computational(
                             user_id, project_id, node_id, comp_run.iteration
                         ),
                     )
@@ -322,7 +322,7 @@ class DaskScheduler(BaseCompScheduler):
             # resource tracking
             await publish_service_resource_tracking_stopped(
                 self.rabbitmq_client,
-                ServiceRunID.get_resource_tracking_run_id(
+                ServiceRunID.get_resource_tracking_run_id_for_computational(
                     user_id, project_id, node_id, iteration
                 ),
                 simcore_platform_status=simcore_platform_status,

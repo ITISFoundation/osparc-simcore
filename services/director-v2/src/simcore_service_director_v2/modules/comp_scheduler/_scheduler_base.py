@@ -295,7 +295,7 @@ class BaseCompScheduler(ABC):
                 *(
                     publish_service_resource_tracking_heartbeat(
                         self.rabbitmq_client,
-                        ServiceRunID.get_resource_tracking_run_id(
+                        ServiceRunID.get_resource_tracking_run_id_for_computational(
                             user_id, t.project_id, t.node_id, iteration
                         ),
                     )
@@ -348,7 +348,7 @@ class BaseCompScheduler(ABC):
             *(
                 publish_service_resource_tracking_started(
                     self.rabbitmq_client,
-                    service_run_id=ServiceRunID.get_resource_tracking_run_id(
+                    service_run_id=ServiceRunID.get_resource_tracking_run_id_for_computational(
                         user_id, t.project_id, t.node_id, iteration
                     ),
                     wallet_id=run_metadata.get("wallet_id"),

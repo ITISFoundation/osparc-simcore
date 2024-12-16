@@ -29,7 +29,7 @@ def volume_name() -> str:
 
 @pytest.fixture
 def service_run_id() -> ServiceRunID:
-    return ServiceRunID.create_for_dynamic_sidecar()
+    return ServiceRunID.get_resource_tracking_run_id_for_dynamic()
 
 
 @pytest.fixture

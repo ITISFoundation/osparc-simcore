@@ -42,7 +42,7 @@ def get_monitored_paths(
         inputs: Path, outputs: Path, states: list[Path]
     ) -> dict[MountPathCategory, set[Path]]:
         mounted_volumes = MountedVolumes(
-            service_run_id=ServiceRunID.create_for_dynamic_sidecar(),
+            service_run_id=ServiceRunID.get_resource_tracking_run_id_for_dynamic(),
             node_id=node_id,
             inputs_path=dy_volumes / inputs,
             outputs_path=dy_volumes / outputs,
