@@ -290,12 +290,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __openServiceCatalog: function(e) {
-      const winPos = this.__pointerEventToScreenPos(e);
       const nodePos = this.__pointerEventToWorkbenchPos(e);
-      this.openServiceCatalog(winPos, nodePos);
+      this.openServiceCatalog(nodePos);
     },
 
-    openServiceCatalog: function(winPos, nodePos) {
+    openServiceCatalog: function(nodePos) {
       if (this.getStudy().isReadOnly()) {
         return null;
       }
@@ -766,8 +765,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         let dragNodeId = data.nodeId;
 
         if (this.__tempEdgeNodeId === dragNodeId) {
-          const winPos = this.__unscaleCoordinates(this.__pointerPos.x, this.__pointerPos.y);
-          const srvCat = this.openServiceCatalog(winPos, this.__pointerPos);
+          const srvCat = this.openServiceCatalog(this.__pointerPos);
           if (srvCat) {
             this.__tempEdgeIsInput === true ? srvCat.setContext(null, dragNodeId) : srvCat.setContext(dragNodeId, null);
             srvCat.addListener("close", () => this.__removeTempEdge(), this);
@@ -1327,10 +1325,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           "text": "\uf090", // in
           "action": () => {
             const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), true);
-            const srvCat = this.openServiceCatalog({
-              x: 50,
-              y: 50
-            }, freePos);
+            const srvCat = this.openServiceCatalog(freePos);
             if (srvCat) {
               srvCat.setContext(null, nodeUI.getNodeId());
             }
@@ -1340,10 +1335,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           "text": "\uf08b", // out
           "action": () => {
             const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), false);
-            const srvCat = this.openServiceCatalog({
-              x: 50,
-              y: 50
-            }, freePos);
+            const srvCat = this.openServiceCatalog(freePos);
             if (srvCat) {
               srvCat.setContext(nodeUI.getNodeId(), null);
             }
