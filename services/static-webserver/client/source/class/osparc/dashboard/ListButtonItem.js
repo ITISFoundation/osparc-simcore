@@ -28,8 +28,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     this.base(arguments);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
-
-    this.addListener("changeValue", this.__itemSelected, this);
   },
 
   statics: {
@@ -262,48 +260,16 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       });
     },
 
-    // overridden
-    _applyMultiSelectionMode: function(value) {
-      if (value) {
-        const menuButton = this.getChildControl("menu-button");
-        menuButton.setVisibility("excluded");
-        this.__itemSelected();
-      } else {
-        this.__showMenuOnly();
-      }
-    },
-
-    __itemSelected: function() {
-      if (this.isItemNotClickable()) {
-        this.setValue(false);
-        return;
-      }
-
-      if (this.isResourceType("study") && this.isMultiSelectionMode()) {
-        const selected = this.getValue();
-
-        const tick = this.getChildControl("tick-selected");
-        tick.setVisibility(selected ? "visible" : "excluded");
-
-        const untick = this.getChildControl("tick-unselected");
-        untick.setVisibility(selected ? "excluded" : "visible");
-      } else {
-        this.__showMenuOnly();
-      }
-    },
-
-    __showMenuOnly: function() {
-      const menu = this.getChildControl("menu-button");
-      this.getChildControl("menu-selection-stack").setSelection([menu]);
-    },
-
-    _applyMenu: function(value, old) {
+    _applyMenu: function(menu, old) {
       const menuButton = this.getChildControl("menu-button");
-      if (value) {
-        menuButton.setMenu(value);
-        osparc.utils.Utils.setIdToWidget(value, "studyItemMenuMenu");
+      if (menu) {
+        menuButton.setMenu(menu);
+        menu.setPosition("bottom-left");
+        osparc.utils.Utils.prettifyMenu(menu);
+        osparc.utils.Utils.setIdToWidget(menu, "studyItemMenuMenu");
+        this.evaluateMenuButtons();
       }
-      menuButton.setVisibility(value ? "visible" : "excluded");
+      menuButton.setVisibility(menu ? "visible" : "excluded");
     }
   }
 });
