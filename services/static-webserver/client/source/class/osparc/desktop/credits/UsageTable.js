@@ -114,7 +114,13 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
         column: 7,
         label: qx.locale.Manager.tr("User"),
         width: 140
-      }
+      },
+      TAGS: {
+        id: "tags",
+        column: 7,
+        label: qx.locale.Manager.tr("Tags"),
+        width: 140
+      },
     }
   }
 });
