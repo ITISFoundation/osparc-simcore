@@ -24,6 +24,7 @@ from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, Resources
 from fastapi import FastAPI
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    DockerGenericTag,
     DockerLabelKey,
     StandardSimcoreDockerLabels,
 )
@@ -43,9 +44,13 @@ from pytest_simcore.helpers.autoscaling import (
     assert_cluster_state,
     create_fake_association,
 )
-from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_dynamic_ec2_instances
+from pytest_simcore.helpers.aws_ec2 import (
+    assert_autoscaled_dynamic_ec2_instances,
+    assert_autoscaled_dynamic_warm_pools_ec2_instances,
+)
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from simcore_service_autoscaling.constants import BUFFER_MACHINE_TAG_KEY
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
 from simcore_service_autoscaling.modules.auto_scaling_core import (
@@ -68,7 +73,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
 from types_aiobotocore_ec2.client import EC2Client
-from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import FilterTypeDef, InstanceTypeDef
 
 
@@ -286,6 +291,18 @@ async def create_services_batch(
     return _
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test_cluster_scaling_with_no_services_does_nothing(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
@@ -304,10 +321,22 @@ async def test_cluster_scaling_with_no_services_does_nothing(
     )
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
-    mock_machines_buffer: int,
+    with_instances_machines_hot_buffer: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     aws_allowed_ec2_instance_type_names_env: list[str],
@@ -321,17 +350,13 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     instance_type_filters: Sequence[FilterTypeDef],
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    assert (
-        mock_machines_buffer
-        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-    )
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
     )
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=mock_machines_buffer,
+        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
         expected_instance_type=cast(
             InstanceTypeType,
             next(
@@ -346,7 +371,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         mock_rabbitmq_post_message,
         app_settings,
         initialized_app,
-        instances_pending=mock_machines_buffer,
+        instances_pending=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
     )
     mock_rabbitmq_post_message.reset_mock()
     # calling again should attach the new nodes to the reserve, but nothing should start
@@ -356,7 +381,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=mock_machines_buffer,
+        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
         expected_instance_type=cast(
             InstanceTypeType,
             next(
@@ -375,14 +400,15 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         mock_rabbitmq_post_message,
         app_settings,
         initialized_app,
-        nodes_total=mock_machines_buffer,
-        nodes_drained=mock_machines_buffer,
-        instances_running=mock_machines_buffer,
+        nodes_total=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        nodes_drained=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        instances_running=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
         cluster_total_resources={
-            "cpus": mock_machines_buffer
+            "cpus": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
             * fake_node.description.resources.nano_cp_us
             / 1e9,
-            "ram": mock_machines_buffer * fake_node.description.resources.memory_bytes,
+            "ram": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+            * fake_node.description.resources.memory_bytes,
         },
     )
 
@@ -394,7 +420,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=mock_machines_buffer,
+        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
         expected_instance_type=cast(
             InstanceTypeType,
             next(
@@ -407,6 +433,18 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     )
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "scale_up_params",
     [
@@ -991,6 +1029,18 @@ async def test_cluster_scaling_up_and_down(
 
 
 @pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "scale_up_params",
     [
         pytest.param(
@@ -1066,6 +1116,18 @@ async def test_cluster_scaling_up_and_down_against_aws(
     )
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "scale_up_params",
     [
@@ -1148,9 +1210,13 @@ async def test_cluster_scaling_up_starts_multiple_instances(
 
 
 @pytest.mark.parametrize(
-    "with_docker_join_drained", ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"], indirect=True
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
 )
 @pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
     "with_drain_nodes_labelled",
     ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
     indirect=True,
@@ -1446,6 +1512,18 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
 
 @pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
     "scale_up_params",
     [
         pytest.param(
@@ -1606,6 +1684,18 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     )
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test__find_terminateable_nodes_with_no_hosts(
     minimal_configuration: None,
     initialized_app: FastAPI,
@@ -1626,6 +1716,18 @@ async def test__find_terminateable_nodes_with_no_hosts(
     assert await _find_terminateable_instances(initialized_app, active_cluster) == []
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test__try_scale_down_cluster_with_no_nodes(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
@@ -1650,6 +1752,18 @@ async def test__try_scale_down_cluster_with_no_nodes(
     mock_remove_nodes.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test__activate_drained_nodes_with_no_tasks(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
@@ -1683,6 +1797,18 @@ async def test__activate_drained_nodes_with_no_tasks(
     mock_docker_tag_node.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test__activate_drained_nodes_with_no_drained_nodes(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
@@ -1724,6 +1850,18 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
     mock_docker_tag_node.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test__activate_drained_nodes_with_drained_node(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
@@ -1789,4 +1927,137 @@ async def test__activate_drained_nodes_with_drained_node(
             _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
         },
         available=True,
+    )
+
+
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
+    minimal_configuration: None,
+    with_instances_machines_hot_buffer: EnvVarsDict,
+    ec2_client: EC2Client,
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+    ec2_instance_custom_tags: dict[str, str],
+    buffer_count: int,
+    create_buffer_machines: Callable[
+        [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag] | None],
+        Awaitable[list[str]],
+    ],
+    spied_cluster_analysis: MockType,
+    instance_type_filters: Sequence[FilterTypeDef],
+    mock_find_node_with_name_returns_fake_node: mock.Mock,
+    mock_compute_node_used_resources: mock.Mock,
+    mock_docker_tag_node: mock.Mock,
+):
+    # pre-requisites
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER > 0
+
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+    # have a few warm buffers ready with the same type as the hot buffer machines
+    buffer_machines = await create_buffer_machines(
+        buffer_count,
+        cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
+        "stopped",
+        None,
+    )
+    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=buffer_count,
+        expected_instance_type=cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
+        expected_instance_state="stopped",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_pre_pulled_images=None,
+        instance_filters=None,
+    )
+
+    # let's autoscale, this should move the warm buffers to hot buffers
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    mock_docker_tag_node.assert_not_called()
+    # at analysis time, we had no machines running
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=0,
+    )
+    assert not analyzed_cluster.active_nodes
+    assert analyzed_cluster.buffer_ec2s
+    assert len(analyzed_cluster.buffer_ec2s) == len(buffer_machines)
+
+    # now we should have a warm buffer moved to the hot buffer
+    await assert_autoscaled_dynamic_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        expected_instance_type=cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
+        expected_instance_state="running",
+        expected_additional_tag_keys=[
+            *list(ec2_instance_custom_tags),
+            BUFFER_MACHINE_TAG_KEY,
+        ],
+        instance_filters=instance_type_filters,
+        expected_user_data=[],
+    )
+
+    # let's autoscale again, to check the cluster analysis and tag the nodes
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscaling()
+    )
+    mock_docker_tag_node.assert_called()
+    assert (
+        mock_docker_tag_node.call_count
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    )
+    # at analysis time, we had no machines running
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+    )
+    assert not analyzed_cluster.active_nodes
+    assert len(analyzed_cluster.buffer_ec2s) == max(
+        0,
+        buffer_count
+        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+    ), (
+        "the warm buffers were not used as expected there should be"
+        f" {buffer_count - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER} remaining, "
+        f"found {len(analyzed_cluster.buffer_ec2s)}"
+    )
+    assert (
+        len(analyzed_cluster.pending_ec2s)
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     )
