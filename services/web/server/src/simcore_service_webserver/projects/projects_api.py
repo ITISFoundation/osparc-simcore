@@ -1049,7 +1049,13 @@ async def patch_project_node(
             app, project_id
         )
 
-    # 5. Notify project node update
+    # 5. Updates project states for user, if inputs have been changed
+    if "inputs" in _node_patch_exclude_unset:
+        updated_project = await add_project_states_for_user(
+           user_id=user_id, project=updated_project, is_template=False, app=app
+        )
+
+    # 6. Notify project node update
     await notify_project_node_update(app, updated_project, node_id, errors=None)
 
 

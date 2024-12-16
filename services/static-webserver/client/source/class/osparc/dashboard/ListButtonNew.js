@@ -51,10 +51,6 @@ qx.Class.define("osparc.dashboard.ListButtonNew", {
   },
 
   members: {
-    _onToggleChange: function(e) {
-      this.setValue(false);
-    },
-
     _shouldApplyFilter: function(data) {
       return false;
     },

@@ -73,7 +73,7 @@ qx.Class.define("osparc.dashboard.MoveResourceTo", {
       switch (id) {
         case "current-location": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          const intro = new qx.ui.basic.Label(this.tr("Current location"));
+          const intro = new qx.ui.basic.Label(this.tr("Current location:"));
           control.add(intro);
           const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.__currentWorkspaceId);
           const workspaceText = workspace ? workspace.getName() : "My Workspace";
