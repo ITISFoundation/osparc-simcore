@@ -378,7 +378,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const node = this.getNode();
       if (node.getServiceUrl() !== null) {
         // restart button pushed
-        if (this.getIFrame().getSource().includes(node.getServiceUrl())) {
+        if (this.getIFrame() && this.getIFrame().getSource().includes(node.getServiceUrl())) {
           this.__loadIframe();
         }
 
