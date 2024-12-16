@@ -1344,7 +1344,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UserForAdminGet_'
+                $ref: '#/components/schemas/Envelope_UserGet_'
   /v0/users:search:
     post:
       tags:
@@ -1354,21 +1354,30 @@ paths:
         me) based on their privacy settings.
       operationId: search_users
       parameters:
-      - name: email
+      - name: match
         in: query
         required: true
         schema:
           type: string
-          minLength: 3
-          maxLength: 200
-          title: Email
+          minLength: 1
+          maxLength: 80
+          title: Match
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 10
+          title: Limit
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_UserForAdminGet__'
+                $ref: '#/components/schemas/Envelope_list_UserGet__'
   /v0/admin/users:search:
     get:
       tags:
@@ -8615,6 +8624,19 @@ components:
           title: Error
       type: object
       title: Envelope[UserForAdminGet]
+    Envelope_UserGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/UserGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[UserGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -9264,6 +9286,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[UserForAdminGet]]
+    Envelope_list_UserGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/UserGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[UserGet]]
     Envelope_list_UserNotification__:
       properties:
         data:
@@ -14494,6 +14532,45 @@ components:
       - registered
       - status
       title: UserForAdminGet
+    UserGet:
+      properties:
+        userId:
+          type: integer
+          exclusiveMinimum: true
+          title: Userid
+          minimum: 0
+        groupId:
+          type: integer
+          exclusiveMinimum: true
+          title: Groupid
+          minimum: 0
+        userName:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Username
+        firstName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Firstname
+        lastName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lastname
+        email:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Email
+      type: object
+      required:
+      - userId
+      - groupId
+      - userName
+      title: UserGet
     UserNotification:
       properties:
         user_id:
