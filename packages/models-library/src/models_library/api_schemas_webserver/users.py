@@ -2,7 +2,6 @@ import re
 from datetime import date
 from enum import Enum
 from typing import Annotated, Any, Literal, Self
-from uuid import UUID
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
@@ -247,11 +246,11 @@ class UserGet(OutputSchema):
 
 class MyTokenCreate(InputSchemaWithoutCamelCase):
     service: Annotated[
-        str,
+        IDStr,
         Field(description="uniquely identifies the service where this token is used"),
     ]
-    token_key: UUID
-    token_secret: UUID
+    token_key: IDStr
+    token_secret: IDStr
 
     def to_model(self) -> UserThirdPartyToken:
         return UserThirdPartyToken(
@@ -262,10 +261,10 @@ class MyTokenCreate(InputSchemaWithoutCamelCase):
 
 
 class MyTokenGet(OutputSchemaWithoutCamelCase):
-    service: str
-    token_key: UUID
+    service: IDStr
+    token_key: IDStr
     token_secret: Annotated[
-        UUID | None, Field(deprecated=True, description="Will be removed")
+        IDStr | None, Field(deprecated=True, description="Will be removed")
     ] = None
 
     @classmethod

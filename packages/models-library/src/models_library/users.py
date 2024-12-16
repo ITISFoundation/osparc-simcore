@@ -1,6 +1,5 @@
 import datetime
 from typing import Annotated, TypeAlias
-from uuid import UUID
 
 from common_library.users_enums import UserRole
 from models_library.basic_types import IDStr
@@ -84,8 +83,8 @@ class UserThirdPartyToken(BaseModel):
     """
 
     service: str
-    token_key: UUID
-    token_secret: UUID | None = None
+    token_key: str
+    token_secret: str | None = None
 
     model_config = ConfigDict(
         json_schema_extra={

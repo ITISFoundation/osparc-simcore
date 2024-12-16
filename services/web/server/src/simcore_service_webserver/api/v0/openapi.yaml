@@ -10809,15 +10809,19 @@ components:
       properties:
         service:
           type: string
+          maxLength: 100
+          minLength: 1
           title: Service
           description: uniquely identifies the service where this token is used
         token_key:
           type: string
-          format: uuid
+          maxLength: 100
+          minLength: 1
           title: Token Key
         token_secret:
           type: string
-          format: uuid
+          maxLength: 100
+          minLength: 1
           title: Token Secret
       type: object
       required:
@@ -10829,15 +10833,19 @@ components:
       properties:
         service:
           type: string
+          maxLength: 100
+          minLength: 1
           title: Service
         token_key:
           type: string
-          format: uuid
+          maxLength: 100
+          minLength: 1
           title: Token Key
         token_secret:
           anyOf:
           - type: string
-            format: uuid
+            maxLength: 100
+            minLength: 1
           - type: 'null'
           title: Token Secret
           description: Will be removed
