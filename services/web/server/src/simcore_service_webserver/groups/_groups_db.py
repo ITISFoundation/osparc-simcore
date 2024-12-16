@@ -27,7 +27,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ..db.models import GroupType, groups, user_to_groups, users
+from ..db.models import groups, user_to_groups, users
 from ..db.plugin import get_asyncpg_engine
 from ..users.exceptions import UserNotFoundError
 from .exceptions import (
