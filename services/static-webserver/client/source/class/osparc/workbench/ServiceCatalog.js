@@ -54,18 +54,18 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
 
     this.__sortBy = osparc.service.SortServicesButtons.DefaultSorting;
 
-    let catalogLayout = new qx.ui.layout.VBox();
+    const catalogLayout = new qx.ui.layout.VBox();
     this.setLayout(catalogLayout);
 
-    let filterLayout = this.__createFilterLayout();
+    const filterLayout = this.__createFilterLayout();
     this.add(filterLayout);
 
-    let list = this.__createListLayout();
+    const list = this.__createListLayout();
     this.add(list, {
       flex: 1
     });
 
-    let btnLayout = this.__createButtonsLayout();
+    const btnLayout = this.__createButtonsLayout();
     this.add(btnLayout);
 
     this.__createEvents();
@@ -103,9 +103,11 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       });
 
       const filters = new osparc.filter.group.ServiceFilterGroup("serviceCatalog").set({
-        maxHeight: 30
+        maxHeight: 30,
       });
-      this.__textFilter = filters.getTextFilter().getChildControl("textfield", true);
+      this.__textFilter = filters.getTextFilter().getChildControl("textfield", true).set({
+        minWidth: 150,
+      });
       layout.add(filters);
 
       layout.add(new qx.ui.core.Spacer(), {
@@ -131,9 +133,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         width: 568,
         backgroundColor: "background-main"
       });
-      const scrolledServices = new qx.ui.container.Scroll().set({
-        height: 260
-      });
+      const scrolledServices = new qx.ui.container.Scroll();
       scrolledServices.add(serviceList);
 
       this.__serviceList.addListener("changeSelected", e => {
