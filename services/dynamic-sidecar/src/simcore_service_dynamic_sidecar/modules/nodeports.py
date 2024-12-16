@@ -249,7 +249,6 @@ async def _move_file_to_input_port(
 ) -> None:
     with log_context(_logger, logging.DEBUG, f"moving {downloaded_file}"):
         final_path = final_path / downloaded_file.name
-        # ensure parent exists
         final_path.parent.mkdir(exist_ok=True, parents=True)
 
         await _shutil_move(downloaded_file, final_path)
