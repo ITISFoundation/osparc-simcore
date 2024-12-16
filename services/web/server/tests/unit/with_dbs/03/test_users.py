@@ -16,10 +16,10 @@ import pytest
 import simcore_service_webserver.login._auth_api
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
+from common_library.users_enums import UserRole, UserStatus
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.api_schemas_webserver.users import MyProfileGet, UserGet
-from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import (
@@ -30,7 +30,6 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_service_webserver.users._common.schemas import (
     MAX_BYTES_SIZE_EXTRAS,
     PreRegisteredUserGet,
@@ -116,36 +115,31 @@ async def test_get_profile(
     resp = await client.get(f"{url}")
     data, error = await assert_status(resp, status.HTTP_200_OK)
 
-    resp_model = Envelope[MyProfileGet].model_validate(await resp.json())
-
-    assert resp_model.data.model_dump(**RESPONSE_MODEL_POLICY, mode="json") == data
-    assert resp_model.error is None
-
-    profile = resp_model.data
-
-    product_group = {
-        "accessRights": {"delete": False, "read": False, "write": False},
-        "description": "osparc product group",
-        "gid": 2,
-        "inclusionRules": {},
-        "label": "osparc",
-        "thumbnail": None,
-    }
+    assert not error
+    profile = MyProfileGet.model_validate(data)
 
     assert profile.login == logged_user["email"]
     assert profile.first_name == logged_user.get("first_name", None)
     assert profile.last_name == logged_user.get("last_name", None)
     assert profile.role == user_role.name
     assert profile.groups
+    assert profile.expiration_date is None
 
     got_profile_groups = profile.groups.model_dump(**RESPONSE_MODEL_POLICY, mode="json")
     assert got_profile_groups["me"] == primary_group
     assert got_profile_groups["all"] == all_group
+    assert got_profile_groups["product"] == {
+        "accessRights": {"delete": False, "read": False, "write": False},
+        "description": "osparc product group",
+        "gid": 2,
+        "label": "osparc",
+        "thumbnail": None,
+    }
 
     sorted_by_group_id = functools.partial(sorted, key=lambda d: d["gid"])
     assert sorted_by_group_id(
         got_profile_groups["organizations"]
-    ) == sorted_by_group_id([*standard_groups, product_group])
+    ) == sorted_by_group_id(standard_groups)
 
     assert profile.preferences == await get_frontend_user_preferences_aggregation(
         client.app, user_id=logged_user["id"], product_name="osparc"
@@ -160,14 +154,16 @@ async def test_update_profile(
 ):
     assert client.app
 
-    resp = await client.get("/v0/me")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    # GET
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
 
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["role"] == user_role.name
     before = deepcopy(data)
 
+    # UPDATE
     url = client.app.router["update_my_profile"].url_for()
-    assert url.path == "/v0/me"
     resp = await client.patch(
         f"{url}",
         json={
@@ -175,10 +171,11 @@ async def test_update_profile(
         },
     )
     _, error = await assert_status(resp, status.HTTP_204_NO_CONTENT)
-
     assert not error
 
-    resp = await client.get("/v0/me")
+    # GET
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data["last_name"] == "Foo"

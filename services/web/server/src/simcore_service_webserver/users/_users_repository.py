@@ -1,7 +1,6 @@
 import contextlib
 from typing import Any
 
-import simcore_postgres_database.errors as db_errors
 import sqlalchemy as sa
 from aiohttp import web
 from common_library.users_enums import UserRole
@@ -34,6 +33,7 @@ from simcore_postgres_database.utils_users import (
 )
 from sqlalchemy import delete
 from sqlalchemy.engine.row import Row
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ..db.plugin import get_asyncpg_engine
@@ -386,7 +386,13 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
                     "hide_email",
                     users.c.privacy_hide_email,
                 ).label("privacy"),
-                sa.func.date(users.c.expires_at).label("expiration_date"),
+                sa.case(
+                    (
+                        users.c.expires_at.isnot(None),
+                        sa.func.date(users.c.expires_at),
+                    ),
+                    else_=None,  # or some default value if necessary
+                ).label("expiration_date"),
             ).where(users.c.id == user_id)
         )
         row = await result.first()
@@ -424,7 +430,7 @@ async def update_user_profile(
                     .values(**updated_values)
                 )
 
-        except db_errors.UniqueViolation as err:
+        except IntegrityError as err:
             user_name = updated_values.get("name")
 
             raise UserNameDuplicateError(
