@@ -28,7 +28,7 @@ from simcore_service_api_server.models.schemas.model_adapter import (
     WalletGetWithAvailableCreditsLegacy,
 )
 from simcore_service_api_server.models.schemas.solvers import Solver
-from simcore_service_api_server.services.director_v2 import ComputationTaskGet
+from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
 
 
 def _start_job_side_effect(

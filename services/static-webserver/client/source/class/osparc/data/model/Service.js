@@ -43,7 +43,8 @@ qx.Class.define("osparc.data.model.Service", {
       bootOptions: serviceData.bootOptions,
       classifiers: serviceData.classifiers || [],
       quality: serviceData.quality || null,
-      hits: serviceData.hits || 0
+      xType: serviceData.xType || null,
+      hits: serviceData.hits || 0,
     });
   },
 
@@ -147,6 +148,13 @@ qx.Class.define("osparc.data.model.Service", {
     },
 
     // ------ ignore for serializing ------
+    xType: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeXType",
+    },
+
     hits: {
       check: "Number",
       init: 0,
@@ -158,7 +166,8 @@ qx.Class.define("osparc.data.model.Service", {
 
   statics: {
     IgnoreSerializationProps: [
-      "hits"
+      "xType",
+      "hits",
     ]
   },
 
