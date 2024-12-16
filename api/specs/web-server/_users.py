@@ -15,8 +15,10 @@ from models_library.api_schemas_webserver.users import (
     MyTokenCreate,
     MyTokenGet,
     UserForAdminGet,
+    UserGet,
     UsersForAdminSearchQueryParams,
     UsersGetParams,
+    UsersSearch,
 )
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
@@ -150,7 +152,7 @@ async def list_user_permissions():
 
 @router.get(
     "/users/{user_id}",
-    response_model=Envelope[UserForAdminGet],
+    response_model=Envelope[UserGet],
 )
 async def get_user(_path: Annotated[UsersGetParams, Depends()]):
     ...
@@ -158,10 +160,10 @@ async def get_user(_path: Annotated[UsersGetParams, Depends()]):
 
 @router.post(
     "/users:search",
-    response_model=Envelope[list[UserForAdminGet]],
+    response_model=Envelope[list[UserGet]],
     description="Search among users who are publicly visible to the caller (i.e., me) based on their privacy settings.",
 )
-async def search_users(_body: Annotated[UsersForAdminSearchQueryParams, Depends()]):
+async def search_users(_body: Annotated[UsersSearch, Depends()]):
     ...
 
 
