@@ -65,7 +65,7 @@ def generate_content(
 @pytest.fixture
 def skip_if_seven_zip_is_missing() -> None:
     try:
-        subprocess.check_output(["7z", "--help"])  # noqa: S607
+        subprocess.check_output(["7z", "--help"])  # noqa: S607, S603
     except Exception:  # pylint: disable=broad-except
         pytest.skip("7z is not installed")
 
