@@ -33,7 +33,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       appearance: "pb-study"
     });
 
-    this.addListener("changeValue", e => this.__itemSelected(e.getData()), this);
+    this.addListener("tap", this.__itemSelected, this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
@@ -50,6 +50,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     "untrashFolderRequested": "qx.event.type.Data",
     "deleteFolderRequested": "qx.event.type.Data",
     "changeContext": "qx.event.type.Data",
+    "studyToFolderRequested": "qx.event.type.Data",
+    "folderToFolderRequested": "qx.event.type.Data",
   },
 
   properties: {
@@ -152,6 +154,54 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       osparc.utils.Utils.setIdToWidget(this, "folderItem_" + folder.getFolderId());
 
       this.__addMenuButton();
+
+      this.__attachDragHandlers();
+      this.__attachDropHandlers();
+    },
+
+    __attachDragHandlers: function() {
+      this.setDraggable(true);
+
+      this.addListener("dragstart", e => {
+        const folderOrigin = this.getFolder();
+        osparc.dashboard.DragDropHelpers.moveFolder.dragStart(e, this, folderOrigin);
+      });
+
+      this.addListener("dragend", () => {
+        osparc.dashboard.DragDropHelpers.dragEnd(this);
+      });
+    },
+
+    __attachDropHandlers: function() {
+      this.setDroppable(true);
+
+      this.addListener("dragover", e => {
+        const folderDest = this.getFolder();
+        if (e.supportsType("osparc-moveStudy")) {
+          osparc.dashboard.DragDropHelpers.moveStudy.dragOver(e, this, folderDest.getWorkspaceId(), folderDest.getFolderId());
+        } else if (e.supportsType("osparc-moveFolder")) {
+          osparc.dashboard.DragDropHelpers.moveFolder.dragOver(e, this, folderDest.getWorkspaceId(), folderDest.getFolderId());
+        }
+      });
+
+      this.addListener("dragleave", () => {
+        osparc.dashboard.DragDropHelpers.dragLeave(this);
+      });
+
+      this.addListener("dragend", () => {
+        osparc.dashboard.DragDropHelpers.dragLeave(this);
+      });
+
+      this.addListener("drop", e => {
+        const folderDest = this.getFolder();
+        if (e.supportsType("osparc-moveStudy")) {
+          const studyToFolderData = osparc.dashboard.DragDropHelpers.moveStudy.drop(e, this, folderDest.getWorkspaceId(), folderDest.getFolderId());
+          this.fireDataEvent("studyToFolderRequested", studyToFolderData);
+        } else if (e.supportsType("osparc-moveFolder")) {
+          const folderToFolderData = osparc.dashboard.DragDropHelpers.moveFolder.drop(e, this, folderDest.getWorkspaceId(), folderDest.getFolderId());
+          this.fireDataEvent("folderToFolderRequested", folderToFolderData);
+        }
+      });
     },
 
     __applyWorkspaceId: function(workspaceId) {
@@ -188,9 +238,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       const menuButton = this.getChildControl("menu-button");
       menuButton.setVisibility("visible");
 
-      const menu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
-      });
+      const menu = new qx.ui.menu.Menu();
+      menu.setPosition("bottom-right");
+      osparc.utils.Utils.prettifyMenu(menu);
 
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       if (
@@ -240,13 +290,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       menuButton.setMenu(menu);
     },
 
-    __itemSelected: function(newVal) {
+    __itemSelected: function() {
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       // do not allow selecting workspace
-      if (studyBrowserContext !== "trash" && newVal) {
+      if (studyBrowserContext !== "trash") {
         this.fireDataEvent("folderSelected", this.getFolderId());
       }
-      this.setValue(false);
     },
 
     __editFolder: function() {
