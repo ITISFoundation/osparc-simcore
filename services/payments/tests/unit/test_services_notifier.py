@@ -18,7 +18,8 @@ from models_library.api_schemas_payments.socketio import (
 )
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.api_schemas_webserver.wallets import PaymentTransaction
-from models_library.users import GroupID, UserID
+from models_library.groups import GroupID
+from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_payment_transaction

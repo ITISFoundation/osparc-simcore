@@ -32,11 +32,12 @@ openapi_modules = [
         "_announcements",
         "_catalog",
         "_catalog_tags",  # MUST BE after _catalog
-        "_catalog_licensed_items",
         "_computations",
         "_exporter",
         "_folders",
         "_long_running_tasks",
+        "_licensed_items",
+        "_licensed_items_purchases",
         "_metamodeling",
         "_nih_sparc",
         "_nih_sparc_redirections",

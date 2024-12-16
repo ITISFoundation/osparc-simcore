@@ -409,7 +409,7 @@ async def workspace(
     # CREATE a workspace
     resp = await client.post("/v0/workspaces", json={"name": "My first workspace"})
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    workspace = WorkspaceGet.parse_obj(data)
+    workspace = WorkspaceGet.model_validate(data)
 
     yield workspace
 
@@ -433,7 +433,7 @@ async def test_trash_empty_workspace(
     resp = await client.get("/v0/workspaces")
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    page = Page[WorkspaceGet].model_validate(await resp.json())
     assert page.meta.total == 1
     assert page.data[0] == workspace
 
@@ -441,7 +441,7 @@ async def test_trash_empty_workspace(
     resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    page = Page[WorkspaceGet].model_validate(await resp.json())
     assert page.meta.total == 0
 
     # -------------
@@ -457,16 +457,16 @@ async def test_trash_empty_workspace(
     resp = await client.get("/v0/workspaces")
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    page = Page[WorkspaceGet].model_validate(await resp.json())
     assert page.meta.total == 0
 
     # LIST trashed
     resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    page = Page[WorkspaceGet].model_validate(await resp.json())
     assert page.meta.total == 1
-    assert page.data[0].dict(exclude=_exclude_attrs) == workspace.dict(
+    assert page.data[0].model_dump(exclude=_exclude_attrs) == workspace.model_dump(
         exclude=_exclude_attrs
     )
     assert page.data[0].trashed_at is not None
@@ -483,9 +483,9 @@ async def test_trash_empty_workspace(
     resp = await client.get("/v0/workspaces")
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    page = Page[WorkspaceGet].model_validate(await resp.json())
     assert page.meta.total == 1
-    assert page.data[0].dict(exclude=_exclude_attrs) == workspace.dict(
+    assert page.data[0].model_dump(exclude=_exclude_attrs) == workspace.model_dump(
         exclude=_exclude_attrs
     )
 
@@ -496,5 +496,5 @@ async def test_trash_empty_workspace(
     resp = await client.get("/v0/workspaces", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
 
-    page = Page[WorkspaceGet].parse_obj(await resp.json())
+    page = Page[WorkspaceGet].model_validate(await resp.json())
     assert page.meta.total == 0

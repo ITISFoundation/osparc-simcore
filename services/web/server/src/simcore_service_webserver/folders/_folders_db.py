@@ -18,10 +18,11 @@ from models_library.folders import (
     FolderScope,
     UserFolderAccessRightsDB,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.folders_v2 import folders_v2
@@ -322,7 +323,7 @@ async def update(
     """
     Batch/single patch of folder/s
     """
-    # NOTE: exclude unset can also be done using a pydantic model and dict(exclude_unset=True)
+    # NOTE: exclude unset can also be done using a pydantic model and model_dump(exclude_unset=True)
     updated = as_dict_exclude_unset(
         name=name,
         parent_folder_id=parent_folder_id,

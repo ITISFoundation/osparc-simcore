@@ -75,7 +75,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       const reloadButton = treeFolderView.getChildControl("reload-button");
       reloadButton.addListener("execute", () => this.__reloadTree(), this);
 
-      const selectedFileLayout = treeFolderView.getChildControl("selected-file-layout");
+      const selectedFileLayout = treeFolderView.getChildControl("folder-viewer").getChildControl("selected-file-layout");
       selectedFileLayout.addListener("fileDeleted", e => this.__fileDeleted(e.getData()), this);
     },
 

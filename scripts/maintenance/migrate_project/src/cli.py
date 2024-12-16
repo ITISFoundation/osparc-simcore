@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import typer
 from db import (
@@ -15,7 +14,7 @@ from r_clone import assemble_config_file, sync_file
 def main(config: Path = typer.Option(..., exists=True)):
     assert config.exists()  # nosec
     settings = Settings.load_from_file(config)
-    typer.echo(f"Detected settings:\n{settings.json(indent=2)}\n")
+    typer.echo(f"Detected settings:\n{settings.model_dump_json(indent=2)}\n")
 
     r_clone_config_path = assemble_config_file(
         # source

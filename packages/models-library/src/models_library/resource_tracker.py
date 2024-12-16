@@ -48,6 +48,7 @@ class CreditTransactionStatus(StrAutoEnum):
 class CreditClassification(StrAutoEnum):
     ADD_WALLET_TOP_UP = auto()  # user top up credits
     DEDUCT_SERVICE_RUN = auto()  # computational/dynamic service run costs)
+    DEDUCT_LICENSE_PURCHASE = auto()
 
 
 class PricingPlanClassification(StrAutoEnum):

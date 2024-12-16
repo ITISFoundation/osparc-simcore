@@ -16,7 +16,7 @@ from models_library.projects_state import RunningState
 from pytest_simcore.helpers import faker_catalog
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
-from simcore_service_api_server.services.director_v2 import ComputationTaskGet
+from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
 
 
 @pytest.fixture

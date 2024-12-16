@@ -5,7 +5,7 @@ from typing import Literal, TypeAlias
 from pydantic import ConfigDict, Field, HttpUrl, ValidationInfo, field_validator
 
 from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
-from ..users import GroupID
+from ..groups import GroupID
 from ..wallets import WalletID, WalletStatus
 from ._base import InputSchema, OutputSchema
 
@@ -20,17 +20,58 @@ class WalletGet(OutputSchema):
     created: datetime
     modified: datetime
 
-    model_config = ConfigDict(from_attributes=True, frozen=False)
+    model_config = ConfigDict(
+        from_attributes=True,
+        frozen=False,
+        json_schema_extra={
+            "examples": [
+                {
+                    "wallet_id": 1,
+                    "name": "My wallet",
+                    "description": "My description",
+                    "owner": 1,
+                    "thumbnail": "https://example.com/payment-method/form",
+                    "status": "ACTIVE",
+                    "created": "2024-03-25T00:00:00",
+                    "modified": "2024-03-25T00:00:00",
+                }
+            ]
+        },
+    )
 
 
 class WalletGetWithAvailableCredits(WalletGet):
     available_credits: Decimal
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    **WalletGet.model_config["json_schema_extra"]["examples"][0],  # type: ignore
+                    "available_credits": 10.5,
+                }
+            ]
+        }
+    )
 
 
 class WalletGetPermissions(WalletGet):
     read: bool
     write: bool
     delete: bool
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    **WalletGet.model_config["json_schema_extra"]["examples"][0],  # type: ignore
+                    "read": True,
+                    "write": True,
+                    "delete": True,
+                }
+            ]
+        }
+    )
 
 
 class CreateWalletBodyParams(OutputSchema):
