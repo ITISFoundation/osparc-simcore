@@ -1,4 +1,4 @@
-""" CRUD operations on a "computation" resource
+"""CRUD operations on a "computation" resource
 
 A computation is a resource that represents a running pipeline of computational services in a give project
 Therefore,
@@ -14,7 +14,6 @@ Therefore,
 
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
-
 
 import contextlib
 import logging
@@ -551,29 +550,26 @@ async def stop_computation(
             )
 
         # get run details if any
-        async def _create_computation_response() -> ComputationGet:
-            last_run: CompRunsAtDB | None = None
-            with contextlib.suppress(ComputationalRunNotFoundError):
-                last_run = await comp_runs_repo.get(
-                    user_id=computation_stop.user_id, project_id=project_id
-                )
-
-            return ComputationGet(
-                id=project_id,
-                state=pipeline_state,
-                pipeline_details=await compute_pipeline_details(
-                    complete_dag, pipeline_dag, tasks
-                ),
-                url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
-                stop_url=None,
-                iteration=last_run.iteration if last_run else None,
-                result=None,
-                started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
-                stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
-                submitted=last_run.created if last_run else None,
+        last_run: CompRunsAtDB | None = None
+        with contextlib.suppress(ComputationalRunNotFoundError):
+            last_run = await comp_runs_repo.get(
+                user_id=computation_stop.user_id, project_id=project_id
             )
 
-        return await _create_computation_response()
+        return ComputationGet(
+            id=project_id,
+            state=pipeline_state,
+            pipeline_details=await compute_pipeline_details(
+                complete_dag, pipeline_dag, tasks
+            ),
+            url=TypeAdapter(AnyHttpUrl).validate_python(f"{request.url}"),
+            stop_url=None,
+            iteration=last_run.iteration if last_run else None,
+            result=None,
+            started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
+            stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
+            submitted=last_run.created if last_run else None,
+        )
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
