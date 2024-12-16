@@ -233,11 +233,6 @@ async def auto_add_user_to_product_group(
     )
 
 
-auto_create_guest_user_and_add_to_product_group = (
-    _groups_repository.auto_create_guest_user_and_add_to_product_group
-)
-
-
 def _only_one_true(*args):
     return sum(bool(arg) for arg in args) == 1
 

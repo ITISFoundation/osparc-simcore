@@ -1,11 +1,9 @@
 import re
 from copy import deepcopy
-from datetime import datetime
 
 import sqlalchemy as sa
 from aiohttp import web
 from common_library.groups_enums import GroupType
-from common_library.users_enums import UserRole, UserStatus
 from models_library.basic_types import IDStr
 from models_library.groups import (
     AccessRightsDict,
@@ -17,7 +15,6 @@ from models_library.groups import (
     StandardGroupCreate,
     StandardGroupUpdate,
 )
-from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.users import users
@@ -751,34 +748,3 @@ async def auto_add_user_to_product_group(
             .on_conflict_do_nothing()  # in case the user was already added to this group
         )
         return product_group_id
-
-
-async def auto_create_guest_user_and_add_to_product_group(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    random_user_name: str,
-    email: str,
-    password_hash: str,
-    expires_at: datetime,
-    product_name: ProductName,
-):
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        query = (
-            users.insert()
-            .values(
-                name=random_user_name,
-                email=email,
-                password_hash=password_hash,
-                status=UserStatus.ACTIVE,
-                role=UserRole.GUEST,
-                expires_at=expires_at,
-            )
-            .returning(users.c.id)
-        )
-
-        user_id = await conn.scalar(query)
-
-        await auto_add_user_to_product_group(
-            app, connection, user_id=user_id, product_name=product_name
-        )
