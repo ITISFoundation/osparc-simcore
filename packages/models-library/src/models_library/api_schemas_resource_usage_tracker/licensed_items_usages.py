@@ -48,5 +48,5 @@ class LicensedItemsUsagesPage(NamedTuple):
     total: PositiveInt
 
 
-class LicenseItemCheckoutGet(BaseModel):
+class LicenseCheckoutGet(BaseModel):
     checkout_id: LicenseCheckoutID  # This is a licensed_item_usage_id generated in the `resource_tracker_licensed_items_usages` table

@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from models_library.api_schemas_resource_usage_tracker.licensed_items_usages import (
+    LicenseCheckoutGet,
     LicenseCheckoutID,
     LicensedItemUsageGet,
-    LicenseItemCheckoutGet,
 )
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
@@ -27,7 +27,7 @@ async def checkout_licensed_item(
     service_run_id: ServiceRunId,
     user_id: UserID,
     user_email: str,
-) -> LicenseItemCheckoutGet:
+) -> LicenseCheckoutGet:
     return await licensed_items_usages.checkout_licensed_item(
         db_engine=app.state.engine,
         licensed_item_id=licensed_item_id,

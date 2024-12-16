@@ -3,10 +3,10 @@ from typing import Annotated
 
 from fastapi import Depends
 from models_library.api_schemas_resource_usage_tracker.licensed_items_usages import (
+    LicenseCheckoutGet,
     LicenseCheckoutID,
     LicensedItemsUsagesPage,
     LicensedItemUsageGet,
-    LicenseItemCheckoutGet,
 )
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
@@ -100,7 +100,7 @@ async def checkout_licensed_item(
     service_run_id: ServiceRunId,
     user_id: UserID,
     user_email: str,
-) -> LicenseItemCheckoutGet:
+) -> LicenseCheckoutGet:
 
     _active_purchased_seats: int = await licensed_items_purchases_db.get_active_purchased_seats_for_item_and_wallet(
         db_engine,
@@ -150,9 +150,7 @@ async def checkout_licensed_item(
     )
 
     # Return checkout ID
-    return LicenseItemCheckoutGet(
-        checkout_id=license_item_usage_db.licensed_item_usage_id
-    )
+    return LicenseCheckoutGet(checkout_id=license_item_usage_db.licensed_item_usage_id)
 
 
 async def release_licensed_item(
