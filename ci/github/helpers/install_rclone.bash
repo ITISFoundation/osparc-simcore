@@ -9,4 +9,4 @@ set -o nounset   # abort on unbound variable
 set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
-apt-get install p7zip-full
+exec "$( dirname -- "$0"; )"/../../../scripts/install_rclone.bash
