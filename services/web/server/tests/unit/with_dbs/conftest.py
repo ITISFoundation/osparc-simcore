@@ -19,6 +19,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, I
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -41,6 +42,7 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.products import ProductName
 from models_library.services_enums import ServiceState
 from pydantic import ByteSize, TypeAdapter
+from pytest_docker.plugin import Services
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -452,7 +454,7 @@ def create_dynamic_service_mock(
     return _create
 
 
-def _is_postgres_responsive(url):
+def _is_postgres_responsive(url: str):
     """Check if something responds to url"""
     try:
         engine = sa.create_engine(url)
@@ -464,7 +466,9 @@ def _is_postgres_responsive(url):
 
 
 @pytest.fixture(scope="session")
-def postgres_dsn(docker_services, docker_ip, default_app_cfg: dict) -> dict:
+def postgres_dsn(
+    docker_services: Services, docker_ip: str | Any, default_app_cfg: dict
+) -> dict:
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
     cfg["host"] = docker_ip
     cfg["port"] = docker_services.port_for("postgres", 5432)
@@ -472,7 +476,7 @@ def postgres_dsn(docker_services, docker_ip, default_app_cfg: dict) -> dict:
 
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, postgres_dsn):
+def postgres_service(docker_services: Services, postgres_dsn: dict) -> str:
     url = DSN.format(**postgres_dsn)
 
     # Wait until service is responsive.
@@ -647,6 +651,7 @@ async def with_permitted_override_services_specifications(
             .where(groups_extra_properties.c.group_id == 1)
             .values(override_services_specifications=True)
         )
+
     yield
 
     async with aiopg_engine.acquire() as conn:
