@@ -229,5 +229,5 @@ class StandardSimcoreDockerLabels(BaseModel):
 
 
 DockerNodeID: TypeAlias = Annotated[
-    str, StringConstraints(strip_whitespace=True, pattern=re.compile(r"^[a-z0-9]$"))
+    str, StringConstraints(strip_whitespace=True, pattern=re.compile(r"[a-zA-Z0-9]"))
 ]
