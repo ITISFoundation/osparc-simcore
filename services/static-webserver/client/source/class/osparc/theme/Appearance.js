@@ -953,7 +953,6 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
-    // override in product
     "strong-button": {
       include: "form-button"
     },
