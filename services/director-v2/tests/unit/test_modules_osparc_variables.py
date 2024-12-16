@@ -174,7 +174,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
         "user_role": "${OSPARC_VARIABLE_USER_ROLE}",
         "api_key": "${OSPARC_VARIABLE_API_KEY}",
         "api_secret": "${OSPARC_VARIABLE_API_SECRET}",
-        "run_id": "${OSPARC_VARIABLE_RUN_ID}",
+        "service_run_id": "${OSPARC_VARIABLE_SERVICE_RUN_ID}",
     }
     print("SPECS\n", specs)
 

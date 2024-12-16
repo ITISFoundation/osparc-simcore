@@ -121,7 +121,7 @@ class OsparcSessionVariablesTable(OsparcVariablesTable, SingletonInAppStateMixin
             ("OSPARC_VARIABLE_NODE_ID", "node_id"),
             ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
             ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
-            ("OSPARC_VARIABLE_RUN_ID", "run_id"),
+            ("OSPARC_VARIABLE_SERVICE_RUN_ID", "run_id"),
             ("OSPARC_VARIABLE_USER_ID", "user_id"),
             ("OSPARC_VARIABLE_API_HOST", "api_server_base_url"),
         ]:
