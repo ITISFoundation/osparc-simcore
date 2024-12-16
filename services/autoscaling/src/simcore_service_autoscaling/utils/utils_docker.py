@@ -521,8 +521,14 @@ async def tag_node(
     tags: dict[DockerLabelKey, str],
     available: bool,
 ) -> Node:
+    assert node.spec  # nosec
+    if (node.spec.labels == tags) and (
+        (node.spec.availability is Availability.active) == available
+    ):
+        # nothing to do
+        return node
     with log_context(
-        logger, logging.DEBUG, msg=f"tagging {node.id=} with {tags=} and {available=}"
+        logger, logging.DEBUG, msg=f"tag {node.id=} with {tags=} and {available=}"
     ):
         assert node.id  # nosec
 

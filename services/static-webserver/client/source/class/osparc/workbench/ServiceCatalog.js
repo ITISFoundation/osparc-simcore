@@ -136,7 +136,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       });
       scrolledServices.add(serviceList);
 
-      this.__serviceList.addListener("changeValue", e => {
+      this.__serviceList.addListener("changeSelected", e => {
         if (e.getData() && e.getData().getService()) {
           const selectedService = e.getData().getService();
           this.__changedSelection(selectedService.getKey());
