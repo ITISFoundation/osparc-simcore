@@ -140,6 +140,8 @@ qx.Class.define("osparc.auth.ui.LoginView", {
           `;
         }
         const disclaimer = osparc.announcement.AnnouncementUIFactory.createLoginAnnouncement(this.tr("Disclaimer"), text);
+        disclaimer.getChildren()[0].setFont("text-14"); // title
+        disclaimer.getChildren()[1].setFont("text-12"); // description
         this.add(disclaimer);
 
         this.add(new qx.ui.core.Spacer(), {
