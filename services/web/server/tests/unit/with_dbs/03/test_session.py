@@ -12,10 +12,10 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from cryptography.fernet import Fernet
-from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser
 from simcore_service_webserver.application import create_application
+from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.session._cookie_storage import (
     SharedCookieEncryptedCookieStorage,
 )
@@ -34,7 +34,7 @@ def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     disable_static_webserver: Callable,
-    app_cfg: ConfigDict,
+    app_cfg: AppConfigDict,
     app_environment: EnvVarsDict,
     postgres_db,
     mock_orphaned_services,  # disables gc

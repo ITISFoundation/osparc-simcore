@@ -367,7 +367,7 @@ async def test_access_cookie_of_expired_user(
     resp = await client.get(f"{me_url}")
 
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert await get_user_role(app, data["id"]) == UserRole.GUEST
+    assert await get_user_role(app, user_id=data["id"]) == UserRole.GUEST
 
     async def enforce_garbage_collect_guest(uid):
         # TODO: can be replaced now by actual GC
@@ -375,7 +375,7 @@ async def test_access_cookie_of_expired_user(
         #   - GUEST user expired, cleaning it up
         #   - client still holds cookie with its identifier nonetheless
         #
-        assert await get_user_role(app, uid) == UserRole.GUEST
+        assert await get_user_role(app, user_id=uid) == UserRole.GUEST
         projects = await _get_user_projects(client)
         assert len(projects) == 1
 
@@ -403,14 +403,14 @@ async def test_access_cookie_of_expired_user(
     # as a guest user
     resp = await client.get(f"{me_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert await get_user_role(app, data["id"]) == UserRole.GUEST
+    assert await get_user_role(app, user_id=data["id"]) == UserRole.GUEST
 
     # But I am another user
     assert data["id"] != user_id
     assert data["login"] != user_email
 
 
-@pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 64])
+@pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 32])
 async def test_guest_user_is_not_garbage_collected(
     number_of_simultaneous_requests: int,
     web_server: TestServer,

@@ -172,7 +172,7 @@ async def _copy_files_from_source_project(
                     source_project["uuid"],
                     ProjectStatus.CLONING,
                     user_id,
-                    await get_user_fullname(app, user_id),
+                    await get_user_fullname(app, user_id=user_id),
                 )
             )
         starting_value = task_progress.percent

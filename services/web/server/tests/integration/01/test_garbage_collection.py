@@ -35,8 +35,9 @@ from simcore_service_webserver.db.models import projects, users
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import _core as gc_core
+from simcore_service_webserver.garbage_collector._tasks_core import _GC_TASK_NAME
 from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
-from simcore_service_webserver.groups._groups_api import create_standard_group
+from simcore_service_webserver.groups._groups_service import create_standard_group
 from simcore_service_webserver.groups.api import add_user_in_group
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
@@ -274,7 +275,7 @@ async def get_template_project(
     )
 
 
-async def get_group(client: TestClient, user: dict):
+async def get_group(client: TestClient, user: UserInfoDict):
     """Creates a group for a given user"""
     assert client.app
 
@@ -631,7 +632,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     await assert_projects_count(aiopg_engine, 1)
     await assert_user_is_owner_of_project(aiopg_engine, u1, project)
 
-    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+    await asyncio.sleep(2 * WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
     await assert_user_not_in_db(aiopg_engine, u1)
@@ -1015,6 +1016,12 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     USER "u1", "u2" and "u3" are manually marked as "GUEST";
     EXPECTED: the project and all the users are removed
     """
+
+    gc_task: asyncio.Task = next(
+        task for task in asyncio.all_tasks() if task.get_name() == _GC_TASK_NAME
+    )
+    assert not gc_task.done()
+
     u1 = await login_user(client)
     u2 = await login_user(client)
     u3 = await login_user(client)

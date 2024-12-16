@@ -14,7 +14,7 @@ from ..scicrunch.models import ResearchResource, ResourceHit
 from ..scicrunch.service_client import SciCrunch
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from ._classifiers_api import GroupClassifierRepository, build_rrids_tree_view
+from ._classifiers_service import GroupClassifierRepository, build_rrids_tree_view
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.schemas import GroupsClassifiersQuery, GroupsPathParams
 

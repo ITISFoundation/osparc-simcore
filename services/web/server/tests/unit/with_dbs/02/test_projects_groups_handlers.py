@@ -57,6 +57,7 @@ async def test_projects_groups_full_workflow(
     mock_project_uses_available_services,
     mock_catalog_api_get_services_for_user_in_product_2,
 ):
+    assert client.app
     # check the default project permissions
     url = client.app.router["list_project_groups"].url_for(
         project_id=f"{user_project['uuid']}"
