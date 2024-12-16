@@ -29,7 +29,7 @@ qx.Class.define("osparc.service.ServiceList", {
    */
   construct: function(filterGroupId) {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.Flow(5, 5));
+    this._setLayout(new qx.ui.layout.VBox(5));
     if (filterGroupId) {
       this.__filterGroup = filterGroupId;
     }
