@@ -25,7 +25,6 @@ from models_library.api_schemas_webserver.users import (
     UserForAdminGet,
     UserGet,
 )
-from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
