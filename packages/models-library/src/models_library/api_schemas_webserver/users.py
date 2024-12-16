@@ -269,7 +269,11 @@ class MyTokenGet(OutputSchemaWithoutCamelCase):
 
     @classmethod
     def from_model(cls, token: UserThirdPartyToken) -> Self:
-        return cls(service=token.service, token_key=token.token_key, token_secret=None)
+        return cls(
+            service=token.service,  # type: ignore[arg-type]
+            token_key=token.token_key,  # type: ignore[arg-type]
+            token_secret=None,
+        )
 
 
 #
