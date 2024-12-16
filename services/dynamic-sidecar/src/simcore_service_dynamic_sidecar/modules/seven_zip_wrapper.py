@@ -18,7 +18,7 @@ async def _get_file_count(zip_path: Path) -> int:
         raise SevenZipError(command=result.command, command_result=result.message)
 
     match = re.search(r"\s*(\d+)\s*files", result.message)
-    return int(match.group().replace("files", "").strip())
+    return int(match.group().replace("files", "").strip() if match else "0")
 
 
 async def unarchive_zip_to(
@@ -37,6 +37,8 @@ async def unarchive_zip_to(
     process = await asyncio.create_subprocess_shell(
         command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
+    assert process.stdout  # nosec
+    assert process.stderr  # nosec
 
     async with progress_bar.sub_progress(
         steps=file_count, description=IDStr("...")
