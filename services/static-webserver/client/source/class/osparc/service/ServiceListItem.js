@@ -26,7 +26,8 @@ qx.Class.define("osparc.service.ServiceListItem", {
       height: this.self().ITEM_HEIGHT,
       paddingTop: 0,
       paddingBottom: 0,
-      allowGrowX: true
+      allowGrowX: true,
+      focusable: true,
     });
 
     this.setResourceType("service");

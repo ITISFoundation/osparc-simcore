@@ -54,18 +54,18 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
 
     this.__sortBy = osparc.service.SortServicesButtons.DefaultSorting;
 
-    let catalogLayout = new qx.ui.layout.VBox();
+    const catalogLayout = new qx.ui.layout.VBox();
     this.setLayout(catalogLayout);
 
-    let filterLayout = this.__createFilterLayout();
+    const filterLayout = this.__createFilterLayout();
     this.add(filterLayout);
 
-    let list = this.__createListLayout();
+    const list = this.__createListLayout();
     this.add(list, {
       flex: 1
     });
 
-    let btnLayout = this.__createButtonsLayout();
+    const btnLayout = this.__createButtonsLayout();
     this.add(btnLayout);
 
     this.__createEvents();
