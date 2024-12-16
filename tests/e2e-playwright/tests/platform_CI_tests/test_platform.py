@@ -6,8 +6,10 @@
 # pylint: disable=no-name-in-module
 
 from pathlib import Path
+from typing import Iterable
 
 import pytest
+from playwright.sync_api import BrowserContext
 
 
 @pytest.fixture(scope="session")
@@ -16,12 +18,28 @@ def store_browser_context() -> bool:
 
 
 @pytest.fixture
+def results_path(request):
+    """
+    Fixture to retrieve the path to the test's results directory.
+    """
+    # Check if `results_dir` is available in the current test's user properties
+    results_dir = dict(request.node.user_properties).get("results_dir")
+    if not results_dir:
+        results_dir = "test-results"  # Default results directory
+    test_name = request.node.name
+    test_dir = Path(results_dir) / test_name
+    test_dir.mkdir(parents=True, exist_ok=True)  # Ensure the test directory exists
+    return test_dir
+
+
+@pytest.fixture
 def logged_in_context(
     playwright,
     store_browser_context: bool,
     request: pytest.FixtureRequest,
     pytestconfig,
-):
+    results_path: Path,
+) -> Iterable[BrowserContext]:
     is_headed = "--headed" in pytestconfig.invocation_params.args
 
     file_path = Path("state.json")
@@ -30,7 +48,14 @@ def logged_in_context(
 
     browser = playwright.chromium.launch(headless=not is_headed)
     context = browser.new_context(storage_state="state.json")
+    test_name = request.node.name
+    context.tracing.start(
+        title=f"Trace for Browser 2 in test {test_name}",
+        snapshots=True,
+        screenshots=True,
+    )
     yield context
+    context.tracing.stop(path=f"{results_path}/second_browser_trace.zip")
     context.close()
     browser.close()
 
@@ -80,7 +105,10 @@ def test_simple_workspace_workflow(
         and response.request.method == "POST"
     ) as response_info:
         page.get_by_test_id("newWorkspaceButton").click()
+        page.wait_for_timeout(500)
         page.get_by_test_id("workspaceEditorSave").click()
+        page.wait_for_timeout(500)
+
     _workspace_id = response_info.value.json()["data"]["workspaceId"]
     page.get_by_test_id(f"workspaceItem_{_workspace_id}").click()
     page.get_by_test_id("workspacesAndFoldersTreeItem_null_null").click()
