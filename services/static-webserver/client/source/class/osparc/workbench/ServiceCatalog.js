@@ -103,9 +103,11 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       });
 
       const filters = new osparc.filter.group.ServiceFilterGroup("serviceCatalog").set({
-        maxHeight: 30
+        maxHeight: 30,
       });
-      this.__textFilter = filters.getTextFilter().getChildControl("textfield", true);
+      this.__textFilter = filters.getTextFilter().getChildControl("textfield", true).set({
+        minWidth: 150,
+      });
       layout.add(filters);
 
       layout.add(new qx.ui.core.Spacer(), {
@@ -131,9 +133,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         width: 568,
         backgroundColor: "background-main"
       });
-      const scrolledServices = new qx.ui.container.Scroll().set({
-        height: 260
-      });
+      const scrolledServices = new qx.ui.container.Scroll();
       scrolledServices.add(serviceList);
 
       this.__serviceList.addListener("changeSelected", e => {

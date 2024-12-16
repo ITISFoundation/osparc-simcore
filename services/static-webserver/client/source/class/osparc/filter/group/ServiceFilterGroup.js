@@ -27,7 +27,7 @@ qx.Class.define("osparc.filter.group.ServiceFilterGroup", {
    */
   construct: function(filterGroupId) {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.HBox(5));
+    this._setLayout(new qx.ui.layout.HBox(10));
     this.__filterGroupId = filterGroupId;
     const textFilter = this.__textFilter = new osparc.filter.TextFilter("text", filterGroupId);
     osparc.utils.Utils.setIdToWidget(textFilter, "serviceFiltersTextFld");
