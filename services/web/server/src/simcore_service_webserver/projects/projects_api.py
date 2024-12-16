@@ -813,8 +813,8 @@ async def add_project_node(
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project["uuid"], product_name
     )
-    await director_v2_api.update_dynamic_service_networks_in_project(
-        request.app, project["uuid"]
+    await dynamic_scheduler_api.update_projects_networks(
+        request.app, project_id=ProjectID(project["uuid"])
     )
 
     if _is_node_dynamic(service_key):
@@ -936,8 +936,8 @@ async def delete_project_node(
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project_uuid, product_name
     )
-    await director_v2_api.update_dynamic_service_networks_in_project(
-        request.app, project_uuid
+    await dynamic_scheduler_api.update_projects_networks(
+        request.app, project_id=project_uuid
     )
 
 
@@ -1045,9 +1045,7 @@ async def patch_project_node(
         app, user_id, project_id, product_name=product_name
     )
     if _node_patch_exclude_unset.get("label"):
-        await director_v2_api.update_dynamic_service_networks_in_project(
-            app, project_id
-        )
+        await dynamic_scheduler_api.update_projects_networks(app, project_id=project_id)
 
     # 5. Updates project states for user, if inputs have been changed
     if "inputs" in _node_patch_exclude_unset:

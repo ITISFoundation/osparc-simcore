@@ -26,7 +26,8 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 
 from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
-from ..director_v2 import api
+from ..director_v2 import api as director_v2_api
+from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..folders import _folders_db as folders_db
 from ..storage.api import (
     copy_data_folders_from_project,
@@ -376,13 +377,13 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             await db.set_hidden_flag(new_project["uuid"], hidden=False)
 
         # update the network information in director-v2
-        await api.update_dynamic_service_networks_in_project(
-            request.app, ProjectID(new_project["uuid"])
+        await dynamic_scheduler_api.update_projects_networks(
+            request.app, project_id=ProjectID(new_project["uuid"])
         )
         task_progress.update()
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
-        await api.create_or_update_pipeline(
+        await director_v2_api.create_or_update_pipeline(
             request.app, user_id, new_project["uuid"], product_name
         )
         # get the latest state of the project (lastChangeDate for instance)

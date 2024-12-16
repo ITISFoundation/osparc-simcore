@@ -232,11 +232,6 @@ async def empty_user_project2(
         print("<----- removed project", project["name"])
 
 
-@pytest.fixture(autouse=True)
-async def director_v2_mock(director_v2_service_mock) -> aioresponses:
-    return director_v2_service_mock
-
-
 async def test_anonymous_websocket_connection(
     client_session_id_factory: Callable[[], str],
     socketio_url_factory: Callable,
@@ -541,6 +536,7 @@ async def test_interactive_services_removed_after_logout(
     ],
 )
 async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(
+    director_v2_service_mock: aioresponses,
     client: TestClient,
     logged_user: UserInfoDict,
     empty_user_project,
@@ -678,6 +674,7 @@ async def mocked_notification_system(mocker):
     ],
 )
 async def test_interactive_services_removed_per_project(
+    director_v2_service_mock: aioresponses,
     client,
     logged_user,
     empty_user_project,
@@ -799,6 +796,7 @@ async def test_interactive_services_removed_per_project(
     ],
 )
 async def test_services_remain_after_closing_one_out_of_two_tabs(
+    director_v2_service_mock: aioresponses,
     client,
     logged_user,
     empty_user_project,
@@ -854,6 +852,7 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     ],
 )
 async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
+    director_v2_service_mock: aioresponses,
     client,
     logged_user,
     empty_user_project,
@@ -923,6 +922,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER, UserRole.GUEST])
 async def test_regression_removing_unexisting_user(
+    director_v2_service_mock: aioresponses,
     client: TestClient,
     logged_user: dict[str, Any],
     empty_user_project: dict[str, Any],

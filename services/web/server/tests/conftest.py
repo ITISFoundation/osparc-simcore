@@ -21,6 +21,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -444,3 +445,15 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
     for client, project_uuid in zip(used_clients, created_project_uuids, strict=True):
         url = client.app.router["delete_project"].url_for(project_id=project_uuid)
         await client.delete(url.path)
+
+
+@pytest.fixture
+def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.stop_dynamic_services_in_project",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.update_projects_networks",
+        autospec=True,
+    )
