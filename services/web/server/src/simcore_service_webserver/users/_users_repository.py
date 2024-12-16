@@ -391,7 +391,7 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
                         users.c.expires_at.isnot(None),
                         sa.func.date(users.c.expires_at),
                     ),
-                    else_=None,  # or some default value if necessary
+                    else_=None,
                 ).label("expiration_date"),
             ).where(users.c.id == user_id)
         )
