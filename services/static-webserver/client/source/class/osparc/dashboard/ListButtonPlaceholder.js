@@ -23,9 +23,6 @@ qx.Class.define("osparc.dashboard.ListButtonPlaceholder", {
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.PLACEHOLDER);
 
-    // make unselectable
-    this.addListener("changeValue", () => this.setValue(false), this);
-
     this.__layout = this.getChildControl("progress-layout")
     this.set({
       appearance: "pb-new",
@@ -106,10 +103,6 @@ qx.Class.define("osparc.dashboard.ListButtonPlaceholder", {
 
     getBlocked: function() {
       return true;
-    },
-
-    _onToggleChange: function() {
-      this.setValue(false);
     },
 
     _shouldApplyFilter: function(data) {
