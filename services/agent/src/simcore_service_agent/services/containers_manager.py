@@ -10,11 +10,9 @@ from models_library.api_schemas_directorv2.services import (
 from models_library.projects_nodes_io import NodeID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
-from ..core.settings import ApplicationSettings
 from .docker_utils import get_containers_with_prefixes, remove_container_forcefully
 
 _logger = logging.getLogger(__name__)
-_always_visible_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -44,7 +42,7 @@ class ContainersManager(SingletonInAppStateMixin):
             if orphan.startswith(user_service_prefix)
         }
         if unexpected_orphans:
-            _always_visible_logger.info(
+            _logger.warning(
                 "Unexpected orphans detected for node_id='%s': %s",
                 node_id,
                 unexpected_orphans,
@@ -63,12 +61,6 @@ def get_containers_manager(app: FastAPI) -> ContainersManager:
 
 
 def setup_containers_manager(app: FastAPI) -> None:
-    settings: ApplicationSettings = app.state.settings
-
-    logging.getLogger(_always_visible_logger.name).setLevel(
-        min(logging.INFO, settings.log_level)
-    )
-
     async def _on_startup() -> None:
         ContainersManager().set_to_app_state(app)
 
