@@ -1,7 +1,7 @@
 #
 # Domain-Specific Interfaces
 #
-from ._groups_api import (
+from ._groups_service import (
     add_user_in_group,
     auto_add_user_to_groups,
     auto_add_user_to_product_group,

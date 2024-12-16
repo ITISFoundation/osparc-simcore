@@ -33,7 +33,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.groups._groups_api import get_product_group_for_user
+from simcore_service_webserver.groups._groups_service import get_product_group_for_user
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.groups.exceptions import GroupNotFoundError
 from simcore_service_webserver.products.api import get_product

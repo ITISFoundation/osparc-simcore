@@ -19,7 +19,7 @@ from models_library.api_schemas_webserver.groups import GroupGet
 from models_library.groups import GroupsByTypeTuple, StandardGroupCreate
 from models_library.users import UserID
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
-from simcore_service_webserver.groups._groups_api import (
+from simcore_service_webserver.groups._groups_service import (
     add_user_in_group,
     create_standard_group,
     delete_standard_group,

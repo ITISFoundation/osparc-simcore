@@ -22,7 +22,7 @@ from ..login.decorators import login_required
 from ..products.api import Product, get_current_product
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _groups_api
+from . import _groups_service
 from ._common.exceptions_handlers import handle_plugin_requests_exceptions
 from ._common.schemas import (
     GroupsPathParams,
@@ -48,7 +48,7 @@ async def list_groups(request: web.Request):
     product: Product = get_current_product(request)
     req_ctx = GroupsRequestContext.model_validate(request)
 
-    groups_by_type = await _groups_api.list_user_groups_with_read_access(
+    groups_by_type = await _groups_service.list_user_groups_with_read_access(
         request.app, user_id=req_ctx.user_id
     )
 
@@ -60,7 +60,7 @@ async def list_groups(request: web.Request):
     if product.group_id:
         with suppress(GroupNotFoundError):
             # Product is optional
-            my_product_group = await _groups_api.get_product_group_for_user(
+            my_product_group = await _groups_service.get_product_group_for_user(
                 app=request.app,
                 user_id=req_ctx.user_id,
                 product_gid=product.group_id,
@@ -90,7 +90,7 @@ async def get_group(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
-    group, access_rights = await _groups_api.get_associated_group(
+    group, access_rights = await _groups_service.get_associated_group(
         request.app, user_id=req_ctx.user_id, group_id=path_params.gid
     )
 
@@ -107,7 +107,7 @@ async def create_group(request: web.Request):
 
     create = await parse_request_body_as(GroupCreate, request)
 
-    group, access_rights = await _groups_api.create_standard_group(
+    group, access_rights = await _groups_service.create_standard_group(
         request.app,
         user_id=req_ctx.user_id,
         create=create.to_model(),
@@ -127,7 +127,7 @@ async def update_group(request: web.Request):
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
     update: GroupUpdate = await parse_request_body_as(GroupUpdate, request)
 
-    group, access_rights = await _groups_api.update_standard_group(
+    group, access_rights = await _groups_service.update_standard_group(
         request.app,
         user_id=req_ctx.user_id,
         group_id=path_params.gid,
@@ -147,7 +147,7 @@ async def delete_group(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
-    await _groups_api.delete_standard_group(
+    await _groups_service.delete_standard_group(
         request.app, user_id=req_ctx.user_id, group_id=path_params.gid
     )
 
@@ -168,7 +168,7 @@ async def get_all_group_users(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
-    users_in_group = await _groups_api.list_group_members(
+    users_in_group = await _groups_service.list_group_members(
         request.app, req_ctx.user_id, path_params.gid
     )
 
@@ -189,7 +189,7 @@ async def add_group_user(request: web.Request):
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
     added: GroupUserAdd = await parse_request_body_as(GroupUserAdd, request)
 
-    await _groups_api.add_user_in_group(
+    await _groups_service.add_user_in_group(
         request.app,
         req_ctx.user_id,
         path_params.gid,
@@ -212,7 +212,7 @@ async def get_group_user(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsUsersPathParams, request)
 
-    user = await _groups_api.get_group_member(
+    user = await _groups_service.get_group_member(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
 
@@ -228,7 +228,7 @@ async def update_group_user(request: web.Request):
     path_params = parse_request_path_parameters_as(GroupsUsersPathParams, request)
     update: GroupUserUpdate = await parse_request_body_as(GroupUserUpdate, request)
 
-    user = await _groups_api.update_group_member(
+    user = await _groups_service.update_group_member(
         request.app,
         user_id=req_ctx.user_id,
         group_id=path_params.gid,
@@ -246,7 +246,7 @@ async def update_group_user(request: web.Request):
 async def delete_group_user(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsUsersPathParams, request)
-    await _groups_api.delete_group_member(
+    await _groups_service.delete_group_member(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
 
