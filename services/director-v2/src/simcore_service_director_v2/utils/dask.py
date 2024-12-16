@@ -362,7 +362,7 @@ async def compute_task_envs(
             product_name=product_name,
             project_id=project_id,
             node_id=node_id,
-            run_id=resource_tracking_run_id,
+            service_run_id=resource_tracking_run_id,
         )
         # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3638
         # we currently do not validate as we are using illegal docker key names with underscores
