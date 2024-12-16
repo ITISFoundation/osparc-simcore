@@ -45,7 +45,7 @@ ComputationalServiceKey: TypeAlias = Annotated[
 ServiceVersion: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
 
 
-class RunID(str):
+class ServiceRunID(str):
     """
     Used to assign a unique identifier to the run of a service.
 
@@ -92,7 +92,7 @@ class RunID(str):
         return core_schema.no_info_after_validator_function(cls, handler(str))
 
     @classmethod
-    def validate(cls, v: "RunID | str", _: ValidationInfo) -> "RunID":
+    def validate(cls, v: "ServiceRunID | str", _: ValidationInfo) -> "ServiceRunID":
         if isinstance(v, cls):
             return v
         if isinstance(v, str):

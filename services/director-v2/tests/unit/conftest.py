@@ -25,7 +25,12 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
+from models_library.services import (
+    ServiceKey,
+    ServiceKeyVersion,
+    ServiceRunID,
+    ServiceVersion,
+)
 from models_library.services_enums import ServiceState
 from models_library.users import UserID
 from models_library.utils._original_fastapi_encoders import jsonable_encoder
@@ -74,15 +79,15 @@ def dynamic_sidecar_port() -> PortInt:
 
 
 @pytest.fixture
-def run_id() -> RunID:
-    return RunID.create_for_dynamic_sidecar()
+def service_run_id() -> ServiceRunID:
+    return ServiceRunID.create_for_dynamic_sidecar()
 
 
 @pytest.fixture
 def resource_tracking_run_id(
     user_id: UserID, project_id: ProjectID, node_id: NodeID
-) -> RunID:
-    return RunID.get_resource_tracking_run_id(
+) -> ServiceRunID:
+    return ServiceRunID.get_resource_tracking_run_id(
         user_id, project_id, node_id, iteration=42
     )
 
@@ -116,7 +121,7 @@ def scheduler_data_from_http_request(
     request_scheme: str,
     request_simcore_user_agent: str,
     can_save: bool,
-    run_id: RunID,
+    service_run_id: ServiceRunID,
 ) -> SchedulerData:
     return SchedulerData.from_http_request(
         service=dynamic_service_create,
@@ -126,7 +131,7 @@ def scheduler_data_from_http_request(
         request_scheme=request_scheme,
         request_simcore_user_agent=request_simcore_user_agent,
         can_save=can_save,
-        run_id=run_id,
+        run_id=service_run_id,
     )
 
 

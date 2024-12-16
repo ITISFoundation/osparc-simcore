@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.licensed_items import (
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
@@ -65,7 +65,7 @@ async def checkout_licensed_item_for_wallet(
     wallet_id: WalletID,
     licensed_item_id: LicensedItemID,
     num_of_seats: int,
-    service_run_id: RunID,
+    service_run_id: ServiceRunID,
 ) -> None:
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
@@ -89,7 +89,7 @@ async def release_licensed_item_for_wallet(
     wallet_id: WalletID,
     licensed_item_id: LicensedItemID,
     num_of_seats: int,
-    service_run_id: RunID,
+    service_run_id: ServiceRunID,
 ) -> None:
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,

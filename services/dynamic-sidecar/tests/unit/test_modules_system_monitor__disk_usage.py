@@ -16,7 +16,7 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import (
     MountPathCategory,
 )
 from models_library.projects_nodes_io import NodeID
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from psutil._common import sdiskusage
 from pydantic import ByteSize, TypeAdapter
@@ -42,7 +42,7 @@ def get_monitored_paths(
         inputs: Path, outputs: Path, states: list[Path]
     ) -> dict[MountPathCategory, set[Path]]:
         mounted_volumes = MountedVolumes(
-            run_id=RunID.create_for_dynamic_sidecar(),
+            service_run_id=ServiceRunID.create_for_dynamic_sidecar(),
             node_id=node_id,
             inputs_path=dy_volumes / inputs,
             outputs_path=dy_volumes / outputs,

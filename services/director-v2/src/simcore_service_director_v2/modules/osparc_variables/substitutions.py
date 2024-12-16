@@ -18,7 +18,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import ComposeSpecLabelDict
 from models_library.services import ServiceKey, ServiceVersion
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
 from pydantic import BaseModel
@@ -183,7 +183,7 @@ async def resolve_and_substitute_session_variables_in_model(
     product_name: str,
     project_id: ProjectID,
     node_id: NodeID,
-    run_id: RunID,
+    service_run_id: ServiceRunID,
 ) -> TBaseModel:
     result: TBaseModel = model
     try:
@@ -203,7 +203,7 @@ async def resolve_and_substitute_session_variables_in_model(
                 product_name=product_name,
                 project_id=project_id,
                 node_id=node_id,
-                run_id=run_id,
+                run_id=service_run_id,
                 api_server_base_url=app.state.settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
             ),
         )
@@ -225,7 +225,7 @@ async def resolve_and_substitute_session_variables_in_specs(
     product_name: str,
     project_id: ProjectID,
     node_id: NodeID,
-    run_id: RunID,
+    service_run_id: ServiceRunID,
 ) -> dict[str, Any]:
     table = OsparcSessionVariablesTable.get_from_app_state(app)
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
@@ -246,7 +246,7 @@ async def resolve_and_substitute_session_variables_in_specs(
                     product_name=product_name,
                     project_id=project_id,
                     node_id=node_id,
-                    run_id=f"{run_id}",
+                    run_id=service_run_id,
                     api_server_base_url=app.state.settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
                 ),
             )

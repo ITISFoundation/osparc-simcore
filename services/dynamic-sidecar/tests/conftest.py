@@ -18,7 +18,7 @@ from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.services import RunID
+from models_library.services import ServiceRunID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -124,8 +124,8 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-def run_id() -> RunID:
-    return RunID.create_for_dynamic_sidecar()
+def service_run_id() -> ServiceRunID:
+    return ServiceRunID.create_for_dynamic_sidecar()
 
 
 @pytest.fixture
@@ -173,7 +173,7 @@ def base_mock_envs(
     state_paths_dirs: list[Path],
     state_exclude_dirs: list[Path],
     node_id: NodeID,
-    run_id: RunID,
+    service_run_id: ServiceRunID,
     ensure_shared_store_dir: None,
 ) -> EnvVarsDict:
     return {
@@ -184,7 +184,7 @@ def base_mock_envs(
         "DYNAMIC_SIDECAR_SHARED_STORE_DIR": f"{shared_store_dir}",
         # envs on container
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-        "DY_SIDECAR_RUN_ID": f"{run_id}",
+        "DY_SIDECAR_RUN_ID": service_run_id,
         "DY_SIDECAR_NODE_ID": f"{node_id}",
         "DY_SIDECAR_PATH_INPUTS": f"{inputs_dir}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{outputs_dir}",
@@ -216,7 +216,7 @@ def mock_environment(
     state_paths_dirs: list[Path],
     state_exclude_dirs: list[Path],
     node_id: NodeID,
-    run_id: RunID,
+    service_run_id: ServiceRunID,
     inputs_dir: Path,
     compose_namespace: str,
     outputs_dir: Path,
@@ -242,7 +242,7 @@ def mock_environment(
             "DY_SIDECAR_PATH_INPUTS": f"{inputs_dir}",
             "DY_SIDECAR_PATH_OUTPUTS": f"{outputs_dir}",
             "DY_SIDECAR_PROJECT_ID": f"{project_id}",
-            "DY_SIDECAR_RUN_ID": run_id,
+            "DY_SIDECAR_RUN_ID": service_run_id,
             "DY_SIDECAR_STATE_EXCLUDE": json_dumps(state_exclude_dirs),
             "DY_SIDECAR_STATE_PATHS": json_dumps(state_paths_dirs),
             "DY_SIDECAR_USER_ID": f"{user_id}",

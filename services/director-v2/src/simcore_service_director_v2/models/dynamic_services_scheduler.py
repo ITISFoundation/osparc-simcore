@@ -24,7 +24,7 @@ from models_library.service_settings_labels import (
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
-from models_library.services import RunID
+from models_library.services import ServiceRunID
 from models_library.services_resources import ServiceResourcesDict
 from models_library.wallets import WalletInfo
 from pydantic import (
@@ -376,8 +376,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ...,
         description="Name of the current dynamic-sidecar being observed",
     )
-    run_id: RunID = Field(
-        default_factory=RunID.create_for_dynamic_sidecar,
+    run_id: ServiceRunID = Field(
+        default_factory=ServiceRunID.create_for_dynamic_sidecar,
         description=(
             "Uniquely identify the dynamic sidecar session (a.k.a. 2 "
             "subsequent exact same services will have a different run_id)"
@@ -483,7 +483,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_scheme: str,
         request_simcore_user_agent: str,
         can_save: bool,
-        run_id: RunID | None = None,
+        run_id: ServiceRunID | None = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)

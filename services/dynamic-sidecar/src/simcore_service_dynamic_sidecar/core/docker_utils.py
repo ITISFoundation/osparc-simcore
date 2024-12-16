@@ -10,7 +10,7 @@ from aiodocker.utils import clean_filters
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
-from models_library.services import RunID
+from models_library.services import ServiceRunID
 from pydantic import PositiveInt
 from servicelib.utils import logged_gather
 from starlette import status as http_status
@@ -40,9 +40,11 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
         await docker.close()
 
 
-async def get_volume_by_label(label: str, run_id: RunID) -> dict[str, Any]:
+async def get_volume_by_label(
+    label: str, service_run_id: ServiceRunID
+) -> dict[str, Any]:
     async with docker_client() as docker:
-        filters = {"label": [f"source={label}", f"run_id={run_id}"]}
+        filters = {"label": [f"source={label}", f"run_id={service_run_id}"]}
         params = {"filters": clean_filters(filters)}
         data = await docker._query_json(  # pylint: disable=protected-access  # noqa: SLF001
             "volumes", method="GET", params=params
@@ -53,7 +55,7 @@ async def get_volume_by_label(label: str, run_id: RunID) -> dict[str, Any]:
             raise VolumeNotFoundError(
                 volume_count=len(volumes),
                 source_label=label,
-                run_id=run_id,
+                service_run_id=service_run_id,
                 volume_names=" ".join(v.get("Name", "UNKNOWN") for v in volumes),
                 status_code=http_status.HTTP_404_NOT_FOUND,
             )

@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
@@ -56,8 +56,8 @@ def test_client(initialized_app: FastAPI) -> TestClient:
 
 
 @pytest.fixture
-def run_id() -> RunID:
-    return RunID.create_for_dynamic_sidecar()
+def service_run_id() -> ServiceRunID:
+    return ServiceRunID.create_for_dynamic_sidecar()
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ def volumes_path(tmp_path: Path) -> Path:
 
 @pytest.fixture
 async def create_dynamic_sidecar_volume(
-    run_id: RunID,
+    service_run_id: ServiceRunID,
     project_id: ProjectID,
     swarm_stack_name: str,
     user_id: UserID,
@@ -89,13 +89,13 @@ async def create_dynamic_sidecar_volume(
     async with aiodocker.Docker() as docker_client:
 
         async def _(node_id: NodeID, in_use: bool, volume_name: str) -> str:
-            source = get_source(run_id, node_id, volumes_path / volume_name)
+            source = get_source(service_run_id, node_id, volumes_path / volume_name)
             volume = await docker_client.volumes.create(
                 {
                     "Name": source,
                     "Labels": {
                         "node_uuid": f"{node_id}",
-                        "run_id": run_id,
+                        "run_id": service_run_id,
                         "source": source,
                         "study_id": f"{project_id}",
                         "swarm_stack_name": swarm_stack_name,

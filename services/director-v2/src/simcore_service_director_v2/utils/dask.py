@@ -26,7 +26,7 @@ from models_library.errors import ErrorDict
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
 from servicelib.logging_utils import log_catch, log_context
@@ -343,7 +343,7 @@ async def compute_task_envs(
     node_id: NodeID,
     node_image: Image,
     metadata: RunMetadataDict,
-    resource_tracking_run_id: RunID,
+    resource_tracking_run_id: ServiceRunID,
 ) -> ContainerEnvsDict:
     product_name = metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
     task_envs = node_image.envs

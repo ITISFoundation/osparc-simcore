@@ -8,13 +8,13 @@ from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..resource_tracker import CreditTransactionStatus, ServiceRunStatus
 from ..services import ServiceKey, ServiceVersion
-from ..services_types import RunID
+from ..services_types import ServiceRunID
 from ..users import UserID
 from ..wallets import WalletID
 
 
 class ServiceRunGet(BaseModel):
-    service_run_id: RunID
+    service_run_id: ServiceRunID
     wallet_id: WalletID | None
     wallet_name: str | None
     user_id: UserID

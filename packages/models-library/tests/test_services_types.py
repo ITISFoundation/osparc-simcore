@@ -1,7 +1,7 @@
 import pytest
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import PositiveInt
 
@@ -25,12 +25,12 @@ def test_run_id_get_resource_tracking_run_id(
     iteration: PositiveInt,
     expected_result: str,
 ):
-    resource_tracking_run_id = RunID.get_resource_tracking_run_id(
+    resource_tracking_service_run_id = ServiceRunID.get_resource_tracking_run_id(
         user_id, project_id, node_id, iteration
     )
-    assert isinstance(resource_tracking_run_id, RunID)
-    assert resource_tracking_run_id == expected_result
+    assert isinstance(resource_tracking_service_run_id, ServiceRunID)
+    assert resource_tracking_service_run_id == expected_result
 
 
 def test_run_id_create_for_dynamic_sidecar():
-    assert isinstance(RunID.create_for_dynamic_sidecar(), RunID)
+    assert isinstance(ServiceRunID.create_for_dynamic_sidecar(), ServiceRunID)

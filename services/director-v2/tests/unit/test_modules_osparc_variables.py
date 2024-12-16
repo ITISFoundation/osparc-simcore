@@ -18,7 +18,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.service_settings_labels import ComposeSpecLabelDict
 from models_library.services import ServiceKey, ServiceVersion
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SubstitutionValue
 from models_library.utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
@@ -185,7 +185,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
         product_name="a_product",
         project_id=faker.uuid4(cast_to=None),
         node_id=faker.uuid4(cast_to=None),
-        run_id=RunID("some_run_id"),
+        service_run_id=ServiceRunID("some_run_id"),
     )
     print("REPLACED SPECS\n", replaced_specs)
 

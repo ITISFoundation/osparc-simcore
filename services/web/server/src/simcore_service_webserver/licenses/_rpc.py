@@ -5,7 +5,7 @@ from models_library.basic_types import IDStr
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
@@ -56,7 +56,7 @@ async def checkout_licensed_item_for_wallet(
     wallet_id: WalletID,
     licensed_item_id: LicensedItemID,
     num_of_seats: int,
-    service_run_id: RunID,
+    service_run_id: ServiceRunID,
 ) -> None:
     raise NotImplementedError
 
@@ -70,7 +70,7 @@ async def release_licensed_item_for_wallet(
     wallet_id: WalletID,
     licensed_item_id: LicensedItemID,
     num_of_seats: int,
-    service_run_id: RunID,
+    service_run_id: ServiceRunID,
 ) -> None:
     raise NotImplementedError
 

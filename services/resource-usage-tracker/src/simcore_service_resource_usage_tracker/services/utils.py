@@ -15,7 +15,7 @@ from models_library.rabbitmq_messages import (
     WalletCreditsMessage,
 )
 from models_library.resource_tracker import ServiceRunStatus
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
@@ -59,7 +59,7 @@ _BATCH_SIZE = 20
 
 async def _publish_to_rabbitmq_wallet_credits_limit_reached(
     rabbitmq_client: RabbitMQClient,
-    service_run_id: RunID,
+    service_run_id: ServiceRunID,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,

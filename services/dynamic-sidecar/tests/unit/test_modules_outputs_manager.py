@@ -14,7 +14,7 @@ import pytest
 from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI
-from models_library.services import RunID
+from models_library.services import ServiceRunID
 from pydantic import PositiveFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
@@ -371,7 +371,7 @@ async def test_regression_io_log_redirect_cb(
     monkeypatch.setenv("RABBIT_SECURE", "false")
 
     mounted_volumes = MountedVolumes(
-        run_id=RunID.create_for_dynamic_sidecar(),
+        service_run_id=ServiceRunID.create_for_dynamic_sidecar(),
         node_id=faker.uuid4(cast_to=None),
         inputs_path=Path("/"),
         outputs_path=Path("/"),
