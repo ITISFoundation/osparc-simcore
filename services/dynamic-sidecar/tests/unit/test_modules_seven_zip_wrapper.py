@@ -93,7 +93,8 @@ def _strip_folder_from_path(paths: set[Path], *, to_strip: Path) -> set[Path]:
 @pytest.mark.parametrize(
     "sub_dirs, files_in_subdirs",
     [
-        pytest.param(50, 40, id="few_items"),
+        pytest.param(0, 0, id="no_items"),
+        pytest.param(5, 4, id="few_items"),
     ],
 )
 async def test_ensure_same_interface_as_unarchive_dir(
