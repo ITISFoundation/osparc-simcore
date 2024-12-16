@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from simcore_service_webserver.application_settings import ApplicationSettings
