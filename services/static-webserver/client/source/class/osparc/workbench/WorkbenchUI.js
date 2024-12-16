@@ -304,11 +304,6 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         return null;
       }
       const srvCat = new osparc.workbench.ServiceCatalog();
-      const maxLeft = this.getBounds().width - osparc.workbench.ServiceCatalog.Width;
-      const maxHeight = this.getBounds().height - osparc.workbench.ServiceCatalog.Height;
-      const posX = Math.min(winPos.x, maxLeft);
-      const posY = Math.min(winPos.y, maxHeight);
-      srvCat.moveTo(posX + this.__getLeftOffset(), posY + this.__getTopOffset());
       srvCat.addListener("addService", async e => {
         const {
           service,
@@ -321,6 +316,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           this._createEdgeBetweenNodes(nodeLeftId ? nodeLeftId : newNodeId, nodeRightId ? nodeRightId : newNodeId, true);
         }
       }, this);
+      srvCat.center();
       srvCat.open();
       return srvCat;
     },
