@@ -1167,6 +1167,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       workspacesAndFoldersTree.addListener("folderToFolderRequested", e => {
         this._folderToFolderRequested(e.getData());
       });
+
+      this._resourceFilter.addListener("trashStudyRequested", e => {
+        this.__trashStudyRequested(e.getData());
+      });
+      this._resourceFilter.addListener("trashFolderRequested", e => {
+        this._trashFolderRequested(e.getData());
+      });
     },
 
     __addSortByButton: function() {

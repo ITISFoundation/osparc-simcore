@@ -176,12 +176,12 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         const workspaceIdOrigin = studyDataOrigin["workspaceId"];
         const workspaceOrigin = osparc.store.Workspaces.getInstance().getWorkspace(workspaceIdOrigin);
         // Compatibility checks:
-        // - My Workspace -> Trash (1)
+        // - My Workspace -> Trash (0)
         //   - Delete on Study
-        // - Shared Workspace -> Trash (2)
+        // - Shared Workspace -> Trash (1)
         //   - Delete on Shared Workspace
         if (workspaceIdOrigin === null) { // (0)
-          compatible = osparc.data.model.Study.canIDelete(studyDataOrigin["accessRights"])
+          compatible = osparc.data.model.Study.canIDelete(studyDataOrigin["accessRights"]);
         } else if (workspaceIdOrigin !== null) { // (1)
           compatible = workspaceOrigin.getMyAccessRights()["delete"];
         }
@@ -195,20 +195,41 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
         dragWidget.setDropAllowed(compatible);
       },
 
-      drop: function(event, folderItem, destWorkspaceId, destFolderId) {
-        const studyData = event.getData("osparc-moveStudy")["studyDataOrigin"];
-        const studyToFolderData = {
-          studyData,
-          destWorkspaceId,
-          destFolderId,
-        };
-        folderItem.getChildControl("icon").resetTextColor();
-        return studyToFolderData;
+      drop: function(event) {
+        return event.getData("osparc-moveStudy")["studyDataOrigin"];
       },
     },
 
     trashFolder: {
+      dragOver: function(event) {
+        let compatible = false;
+        const folderOrigin = event.getData("osparc-moveFolder")["folderOrigin"];
+        const workspaceIdOrigin = folderOrigin.getWorkspaceId();
+        const workspaceOrigin = osparc.store.Workspaces.getInstance().getWorkspace(workspaceIdOrigin);
+        // Compatibility checks:
+        // - My Workspace -> Trash (0)
+        //   - Yes
+        // - Shared Workspace -> Trash (1)
+        //   - Delete on Shared Workspace
+        if (workspaceIdOrigin === null) { // (0)
+          compatible = true;
+        } else if (workspaceIdOrigin !== null) { // (1)
+          compatible = workspaceOrigin.getMyAccessRights()["delete"];
+        }
 
+        if (!compatible) {
+          // do not allow
+          event.preventDefault();
+        }
+
+        const dragWidget = osparc.dashboard.DragWidget.getInstance();
+        dragWidget.setDropAllowed(compatible);
+      },
+
+      drop: function(event) {
+        const folderOrigin = event.getData("osparc-moveFolder")["folderOrigin"];
+        return folderOrigin.getFolderId();
+      },
     },
 
     dragLeave: function(item) {
