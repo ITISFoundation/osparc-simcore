@@ -606,7 +606,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
     },
 
-    _trashFolderRequested: function(folderId) {
+    __folderToTrash: function(folderId) {
       osparc.store.Folders.getInstance().trashFolder(folderId, this.getCurrentWorkspaceId())
         .then(() => {
           this.__reloadFolders();
@@ -618,6 +618,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
         })
+    },
+
+    _trashFolderRequested: function(folderId) {
+      const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+      let msg = this.tr("Are you sure you want to move the Folder and all its content to the trash?");
+      msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Move to Trash"),
+        confirmText: this.tr("Move to Trash"),
+        confirmAction: "delete"
+      });
+      confirmationWin.center();
+      confirmationWin.open();
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
+          this.__folderToTrash(folderId);
+        }
+      }, this);
     },
 
     _untrashFolderRequested: function(folder) {
