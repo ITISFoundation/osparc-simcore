@@ -583,27 +583,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const data = e.getData();
         const destWorkspaceId = data["workspaceId"];
         const destFolderId = data["folderId"];
-        if (destWorkspaceId === currentWorkspaceId) {
-          this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
-        } else {
-          const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
-          confirmationWin.addListener("close", () => {
-            if (confirmationWin.getConfirmed()) {
-              this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
-            }
-          }, this);
-        }
+        this._folderToFolderRequested(folderId, currentWorkspaceId, destWorkspaceId, destFolderId);
       });
       moveFolderTo.addListener("cancel", () => win.close());
     },
 
-    _folderToFolderRequested: function(data) {
-      const {
-        folderId,
-        destWorkspaceId,
-        destFolderId,
-      } = data;
-      this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
+    _folderToFolderRequested: function(folderId, workspaceId, destWorkspaceId, destFolderId) {
+      if (destWorkspaceId === workspaceId) {
+        this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
+      } else {
+        const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
+        confirmationWin.addListener("close", () => {
+          if (confirmationWin.getConfirmed()) {
+            this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
+          }
+        }, this);
+      }
     },
 
     __folderToTrash: function(folderId) {
@@ -1183,7 +1178,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._studyToFolderRequested(e.getData());
       });
       workspacesAndFoldersTree.addListener("folderToFolderRequested", e => {
-        this._folderToFolderRequested(e.getData());
+        const {
+          folderId,
+          workspaceId,
+          destWorkspaceId,
+          destFolderId,
+        } = e.getData();
+        this._folderToFolderRequested(folderId, workspaceId, destWorkspaceId, destFolderId);
       });
 
       this._resourceFilter.addListener("trashStudyRequested", e => {
