@@ -169,12 +169,12 @@ async def get_user_or_raise(
     assert set(return_column_names).issubset(users.columns.keys())  # nosec
 
     async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             sa.select(*(users.columns[name] for name in return_column_names)).where(
                 users.c.id == user_id
             )
         )
-        row = await result.first()
+        row = result.first()
         if row is None:
             raise UserNotFoundError(uid=user_id)
         user: dict[str, Any] = row._asdict()
