@@ -204,7 +204,7 @@ class UsersSearch(InputSchema):
         str,
         StringConstraints(strip_whitespace=True, min_length=1, max_length=80),
         Field(
-            description="Search string to match with public usernames and emails",
+            description="Search string to match with usernames and public profiles (e.g. emails, first/last name)",
             alias="match",
         ),
     ]
