@@ -31,7 +31,7 @@ async def _run_cli_command(
     )
 
     async def read_stream(
-        stream, chunk_size: NonNegativeInt = 64, window_size: NonNegativeInt = 16
+        stream, chunk_size: NonNegativeInt = 16, window_size: NonNegativeInt = 16
     ) -> str:
         command_output = ""
 
@@ -56,7 +56,7 @@ async def _run_cli_command(
 
             if output_handlers:
                 await asyncio.gather(
-                    *[handler(lookbehind_buffer) for handler in output_handlers]
+                    *[handler(current_text) for handler in output_handlers]
                 )
 
             # Keep last window_size characters for next iteration
@@ -69,6 +69,7 @@ async def _run_cli_command(
         asyncio.create_task(read_stream(process.stdout)),
         process.wait(),
     )
+    print("OUTPUT=", command_output)
 
     if process.returncode != os.EX_OK:
         msg = f"Could not run '{command}' error: '{command_output}'"
@@ -76,15 +77,15 @@ async def _run_cli_command(
 
 
 async def print_output_handler(chunk: str) -> None:
-    _logger.debug("chunk=%s", chunk)
+    print(f"{chunk=}")
 
 
-_TOTAL_BYTES_RE: Final[str] = r"(\d+)\s*bytes"
-_PROGRESS_PERCENT_RE: Final[str] = r"(?:100|\d?\d)%"
+_TOTAL_BYTES_RE: Final[str] = r" (\d+)\s*bytes "
+_PROGRESS_PERCENT_RE: Final[str] = r" (?:100|\d?\d)% "
 _ALL_DONE_RE: Final[str] = r"Everything is Ok"
 
 
-class DecompressProgressParser:
+class ProgressParser:
     def __init__(
         self, decompressed_bytes: Callable[[NonNegativeInt], Awaitable[None]]
     ) -> None:
@@ -105,7 +106,7 @@ class DecompressProgressParser:
 
         # search for `dd%` -> update progress (as last entry inside the string)
         if matches := re.findall(_PROGRESS_PERCENT_RE, chunk):
-            self.percent = int(matches[-1].strip("%"))
+            self.percent = int(matches[-1].strip().strip("%"))
 
         # search for `Everything is Ok` -> set 100% and finish
         if re.search(_ALL_DONE_RE, chunk, re.IGNORECASE):
@@ -141,13 +142,19 @@ async def archive_dir(
     exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData | None = None,
 ) -> None:
-    command = f"7z a -tzip {destination} {dir_to_compress} -bsp1"
+    command = f"7z a -tzip -bsp1 {destination} {dir_to_compress}"
 
-    async def decompressed_bytes(bytes_decompressed: NonNegativeInt) -> None:
-        print(f"{bytes_decompressed=}")
+    async def progress_handler(byte_progress: NonNegativeInt) -> None:
+        print(f"{byte_progress=}")
 
-    parser = DecompressProgressParser(decompressed_bytes)
-    await _run_cli_command(command, [print_output_handler, parser.parse_chunk])
+    parser = ProgressParser(progress_handler)
+    await _run_cli_command(
+        command,
+        [
+            #   print_output_handler,
+            parser.parse_chunk,
+        ],
+    )
 
 
 async def unarchive_dir(
@@ -160,5 +167,9 @@ async def unarchive_dir(
 ) -> set[Path]:
     # NOTE: maintained here conserve the interface
     _ = max_workers  # no longer used
+
+    command = f"7z x -bsp1 {archive_to_extract} -o{destination_folder}"
+
+    await _run_cli_command(command, [print_output_handler])
 
     return set()
