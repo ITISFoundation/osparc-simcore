@@ -20,6 +20,7 @@ from models_library.groups import (
 from models_library.users import UserID
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.users import users
+from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_postgres_database.utils_products import execute_get_or_create_product_group
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -491,8 +492,8 @@ async def list_users_in_group(
     group_id: GroupID,
 ) -> list[GroupMember]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        # GET GROUP & caller access
-        result = await conn.execute(
+        # GET GROUP & caller access-rights (if non PRIMARY)
+        query = (
             sa.select(
                 *_GROUP_COLUMNS,
                 user_to_groups.c.access_rights,
@@ -503,29 +504,36 @@ async def list_users_in_group(
                 ).join(users, users.c.id == user_to_groups.c.uid)
             )
             .where(
-                ((user_to_groups.c.uid == user_id) & (user_to_groups.c.gid == group_id))
-                | (
-                    (groups.c.type == GroupType.PRIMARY)
-                    & users.c.role.in_([r for r in UserRole if r > UserRole.GUEST])
+                (user_to_groups.c.gid == group_id)
+                & (
+                    (user_to_groups.c.uid == user_id)
+                    | (
+                        (groups.c.type == GroupType.PRIMARY)
+                        & users.c.role.in_([r for r in UserRole if r > UserRole.GUEST])
+                    )
                 )
             )
         )
+
+        print(as_postgres_sql_query_str(query))
+
+        result = await conn.execute(query)
         group_row = result.first()
         if not group_row:
             raise GroupNotFoundError(gid=group_id)
 
         # Drop access-rights if primary group
-        if group_row.type != GroupType.PRIMARY:
+        if group_row.type == GroupType.PRIMARY:
+            query = sa.select(
+                *_group_user_cols(user_id),
+            )
+        else:
             _check_group_permissions(
                 group_row, caller_id=user_id, group_id=group_id, permission="read"
             )
             query = sa.select(
                 *_group_user_cols(user_id),
                 user_to_groups.c.access_rights,
-            )
-        else:
-            query = sa.select(
-                *_group_user_cols(user_id),
             )
 
         # GET users
