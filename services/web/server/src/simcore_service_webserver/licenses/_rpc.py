@@ -46,7 +46,7 @@ async def get_licensed_items(
 
 
 @router.expose(reraise_if_error_type=(NotImplementedError,))
-async def get_purchased_licensed_items_for_wallet(
+async def get_available_licensed_items_for_wallet(
     app: web.Application,
     *,
     product_name: ProductName,

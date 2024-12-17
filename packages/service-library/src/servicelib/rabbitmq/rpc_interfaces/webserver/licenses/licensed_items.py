@@ -44,7 +44,7 @@ async def get_licensed_items(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_purchased_licensed_items_for_wallet(
+async def get_available_licensed_items_for_wallet(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
@@ -56,7 +56,7 @@ async def get_purchased_licensed_items_for_wallet(
     result: LicensedItemGet = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python(
-            "get_purchased_licensed_items_for_wallet"
+            "get_available_licensed_items_for_wallet"
         ),
         product_name=product_name,
         user_id=user_id,

@@ -19,8 +19,8 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     checkout_licensed_item_for_wallet,
+    get_available_licensed_items_for_wallet,
     get_licensed_items,
-    get_purchased_licensed_items_for_wallet,
     release_licensed_item_for_wallet,
 )
 from settings_library.rabbit import RabbitSettings
@@ -147,7 +147,7 @@ async def test_license_checkout_workflow(
     assert result.total == 1
 
     with pytest.raises(NotImplementedError):
-        await get_purchased_licensed_items_for_wallet(
+        await get_available_licensed_items_for_wallet(
             rpc_client,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
