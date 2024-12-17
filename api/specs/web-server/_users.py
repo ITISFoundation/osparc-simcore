@@ -163,7 +163,7 @@ async def get_user(_path: Annotated[UsersGetParams, Depends()]):
     response_model=Envelope[list[UserGet]],
     description="Search among users who are publicly visible to the caller (i.e., me) based on their privacy settings.",
 )
-async def search_users(_body: Annotated[UsersSearch, Depends()]):
+async def search_users(_body: UsersSearch):
     ...
 
 
