@@ -42,11 +42,11 @@ async def get_licensed_items(
 
 
 @router.expose(reraise_if_error_type=(NotImplementedError,))
-async def get_licensed_items_for_wallet(
+async def get_purchased_licensed_items_for_wallet(
     app: web.Application,
     *,
-    user_id: UserID,
     product_name: ProductName,
+    user_id: UserID,
     wallet_id: WalletID,
     offset: int,
     limit: int,
@@ -58,8 +58,8 @@ async def get_licensed_items_for_wallet(
 async def checkout_licensed_item_for_wallet(
     app: web.Application,
     *,
-    user_id: UserID,
     product_name: ProductName,
+    user_id: UserID,
     wallet_id: WalletID,
     licensed_item_id: LicensedItemID,
     num_of_seats: int,
@@ -80,9 +80,9 @@ async def checkout_licensed_item_for_wallet(
 async def release_licensed_item_for_wallet(
     app: web.Application,
     *,
+    product_name: ProductName,
     user_id: UserID,
     checkout_id: LicenseCheckoutID,
-    product_name: ProductName,
 ) -> LicensedItemUsageGet:
     return await _licensed_checkouts_api.release_licensed_item_for_wallet(
         app, product_name=product_name, user_id=user_id, checkout_id=checkout_id
