@@ -274,7 +274,14 @@ class GroupUserGet(OutputSchemaWithoutCamelCase):
     ] = None
 
     # Access Rights
-    access_rights: GroupAccessRights = Field(..., alias="accessRights")
+    access_rights: Annotated[
+        GroupAccessRights | None,
+        Field(
+            alias="accessRights",
+            description="If group is standard, these are these are the access rights of the user to it."
+            "None if primary group.",
+        ),
+    ] = None
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -292,7 +299,23 @@ class GroupUserGet(OutputSchemaWithoutCamelCase):
                     "write": False,
                     "delete": False,
                 },
-            }
+            },
+            "examples": [
+                # unique member on a primary group with two different primacy settings
+                {
+                    "id": "16",
+                    "userName": "mrprivate",
+                    "gid": "55",
+                },
+                {
+                    "id": "56",
+                    "userName": "mrpublic",
+                    "login": "mrpublic@email.me",
+                    "first_name": "Mr",
+                    "last_name": "Public",
+                    "gid": "42",
+                },
+            ],
         },
     )
 
