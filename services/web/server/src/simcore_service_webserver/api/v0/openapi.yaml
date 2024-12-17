@@ -10250,11 +10250,14 @@ components:
           description: the user gravatar id hash
           deprecated: true
         accessRights:
-          $ref: '#/components/schemas/GroupAccessRights'
+          anyOf:
+          - $ref: '#/components/schemas/GroupAccessRights'
+          - type: 'null'
+          description: If group is standard, these are these are the access rights
+            of the user to it.None if primary group.
       type: object
       required:
       - userName
-      - accessRights
       title: GroupUserGet
       example:
         accessRights:
