@@ -35,6 +35,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
   events: {
     "trashContext": "qx.event.type.Event",
+    "trashStudyRequested": "qx.event.type.Data",
+    "trashFolderRequested": "qx.event.type.Data",
     "changeSharedWith": "qx.event.type.Data",
     "changeSelectedTags": "qx.event.type.Data",
     "changeServiceType": "qx.event.type.Data"
@@ -114,7 +116,34 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         }
       });
       this.evaluateTrashEmpty();
+      this.__attachDropHandlers(trashButton);
       return trashButton;
+    },
+
+    __attachDropHandlers: function(trashButton) {
+      trashButton.setDroppable(true);
+
+      trashButton.addListener("dragover", e => {
+        if (e.supportsType("osparc-moveStudy")) {
+          osparc.dashboard.DragDropHelpers.trashStudy.dragOver(e);
+        } else if (e.supportsType("osparc-moveFolder")) {
+          osparc.dashboard.DragDropHelpers.trashFolder.dragOver(e);
+        }
+      });
+
+      trashButton.addListener("dragleave", () => {
+        osparc.dashboard.DragDropHelpers.dragLeave();
+      });
+
+      trashButton.addListener("drop", e => {
+        if (e.supportsType("osparc-moveStudy")) {
+          const studyData = osparc.dashboard.DragDropHelpers.trashStudy.drop(e);
+          this.fireDataEvent("trashStudyRequested", studyData);
+        } else if (e.supportsType("osparc-moveFolder")) {
+          const folderId = osparc.dashboard.DragDropHelpers.trashFolder.drop(e);
+          this.fireDataEvent("trashFolderRequested", folderId);
+        }
+      });
     },
 
     evaluateTrashEmpty: function() {
