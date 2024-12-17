@@ -554,6 +554,24 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    // Warning button
+    "form-button-warning": {
+      include:"form-button-outlined",
+      style: {
+        color: "warning",
+        width: 1,
+        style: "solid"
+      }
+    },
+    "form-button-warning-hover": {
+      include:"form-button-outlined",
+      style: {
+        color: "warning",
+        width: 1,
+        style: "solid"
+      }
+    },
+
     // Delete button
     "form-button-danger": {
       include:"form-button-outlined",

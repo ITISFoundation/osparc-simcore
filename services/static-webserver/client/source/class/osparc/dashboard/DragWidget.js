@@ -27,10 +27,10 @@ qx.Class.define("osparc.dashboard.DragWidget", {
     }));
 
     this.set({
+      appearance: "strong-ui",
       opacity: 0.9,
       padding: 10,
       zIndex: 1000,
-      backgroundColor: "strong-main",
       decorator: "rounded",
       visibility: "excluded",
     });
@@ -71,7 +71,7 @@ qx.Class.define("osparc.dashboard.DragWidget", {
     __dropAllowed: function(allowed) {
       this.getChildControl("allowed-icon").set({
         source: allowed ? "@FontAwesome5Solid/check/14" : "@FontAwesome5Solid/times/14",
-        textColor: allowed ? "text" : "danger-red",
+        textColor: allowed ? "default-button-text" : "danger-red",
       });
     },
 
