@@ -8,6 +8,9 @@ from models_library.api_schemas_webserver import (
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker import ServiceRunId
+from models_library.resource_tracker_licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
@@ -68,7 +71,7 @@ async def release_licensed_item_for_wallet(
     app: web.Application,
     product_name: ProductName,
     user_id: UserID,
-    licensed_item_checkout_id: rut_licensed_items_checkouts.LicensedItemCheckoutID,
+    licensed_item_checkout_id: LicensedItemCheckoutID,
 ) -> webserver_licensed_items_checkouts.LicensedItemCheckoutGet:
     rpc_client = get_rabbitmq_rpc_client(app)
 

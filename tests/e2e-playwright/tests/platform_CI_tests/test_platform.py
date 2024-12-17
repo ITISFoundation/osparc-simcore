@@ -5,7 +5,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Iterable
 from pathlib import Path
 from typing import Iterable
 

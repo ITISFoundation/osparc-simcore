@@ -212,4 +212,4 @@ async def get_currently_used_seats_for_item_and_wallet(
         row = result.first()
         if row is None or row[0] is None:
             return 0
-        return row[0]
+        return int(row[0])
