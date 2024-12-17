@@ -7,10 +7,9 @@
 
 import functools
 import sys
-from contextlib import AsyncExitStack
 from copy import deepcopy
 from http import HTTPStatus
-from typing import Any
+from typing import Any, AsyncIterable
 from unittest.mock import MagicMock, Mock
 
 import pytest
@@ -60,121 +59,146 @@ def app_environment(
     )
 
 
+@pytest.fixture
+async def private_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
+    assert client.app
+    async with NewUser(
+        app=client.app,
+        user_data={
+            "name": "jamie01",
+            "first_name": "James",
+            "last_name": "Bond",
+            "email": "james@find.me",
+            "privacy_hide_email": True,
+            "privacy_hide_fullname": True,
+        },
+    ) as usr:
+        yield usr
+
+
+@pytest.fixture
+async def public_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
+    assert client.app
+    async with NewUser(
+        user_data={
+            "name": "taylie01",
+            "first_name": "Taylor",
+            "last_name": "Swift",
+            "email": "taylor@find.me",
+            "privacy_hide_email": False,
+            "privacy_hide_fullname": False,
+        },
+    ) as usr:
+        yield usr
+
+
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-issues/issues/1779"
 )
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_get_and_search_public_users(
+async def test_search_users(
     logged_user: UserInfoDict,
     client: TestClient,
     user_role: UserRole,
+    public_user: UserInfoDict,
+    private_user: UserInfoDict,
 ):
     assert client.app
     assert user_role.value == logged_user["role"]
 
-    async with AsyncExitStack() as stack:
-        private_user: UserInfoDict = await stack.enter_async_context(
-            NewUser(
-                app=client.app,
-                user_data={
-                    "name": "jamie01",
-                    "first_name": "James",
-                    "last_name": "Bond",
-                    "email": "james@find.me",
-                    "privacy_hide_email": True,
-                    "privacy_hide_fullname": True,
-                },
-            )
-        )
-        public_user: UserInfoDict = await stack.enter_async_context(
-            NewUser(
-                app=client.app,
-                user_data={
-                    "name": "taylie01",
-                    "first_name": "Taylor",
-                    "last_name": "Swift",
-                    "email": "taylor@find.me",
-                    "privacy_hide_email": False,
-                    "privacy_hide_fullname": False,
-                },
-            )
-        )
+    assert private_user["id"] != logged_user["id"]
+    assert public_user["id"] != logged_user["id"]
 
-        assert private_user["id"] != logged_user["id"]
-        assert public_user["id"] != logged_user["id"]
+    # SEARCH by partial email
+    partial_email = "@find.m"
+    assert partial_email in private_user["email"]
+    assert partial_email in public_user["email"]
 
-        # SEARCH by partial email
-        partial_email = "@find.m"
-        assert partial_email in private_user["email"]
-        assert partial_email in public_user["email"]
+    url = client.app.router["search_users"].url_for()
+    resp = await client.post(f"{url}", json={"match": partial_email})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-        url = client.app.router["search_users"].url_for()
-        resp = await client.post(f"{url}", json={"match": partial_email})
-        data, _ = await assert_status(resp, status.HTTP_200_OK)
+    found = TypeAdapter(list[UserGet]).validate_python(data)
+    assert found
+    assert len(found) == 1
+    assert found[0].user_id == public_user["id"]
+    assert found[0].user_name == public_user["name"]
+    assert found[0].email == public_user["email"]
+    assert found[0].first_name == public_user.get("first_name")
+    assert found[0].last_name == public_user.get("last_name")
 
-        found = TypeAdapter(list[UserGet]).validate_python(data)
-        assert found
-        assert len(found) == 1
-        assert found[0].user_id == public_user["id"]
-        assert found[0].user_name == public_user["name"]
-        assert found[0].email == public_user["email"]
-        assert found[0].first_name == public_user.get("first_name")
-        assert found[0].last_name == public_user.get("last_name")
+    # SEARCH by partial username
+    partial_username = "ie01"
+    assert partial_username in private_user["name"]
+    assert partial_username in public_user["name"]
 
-        # SEARCH by partial username
-        partial_username = "ie01"
-        assert partial_username in private_user["name"]
-        assert partial_username in public_user["name"]
+    url = client.app.router["search_users"].url_for()
+    resp = await client.post(f"{url}", json={"match": partial_username})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-        url = client.app.router["search_users"].url_for()
-        resp = await client.post(f"{url}", json={"match": partial_username})
-        data, _ = await assert_status(resp, status.HTTP_200_OK)
+    found = TypeAdapter(list[UserGet]).validate_python(data)
+    assert found
+    assert len(found) == 2
+    assert found[1].user_id == public_user["id"]
+    # check privacy
+    assert found[0].user_name == private_user["name"]
+    assert found[0].email is None
+    assert found[0].first_name is None
+    assert found[0].last_name is None
 
-        found = TypeAdapter(list[UserGet]).validate_python(data)
-        assert found
-        assert len(found) == 2
-        assert found[1].user_id == public_user["id"]
-        # check privacy
-        assert found[0].user_name == private_user["name"]
-        assert found[0].email is None
-        assert found[0].first_name is None
-        assert found[0].last_name is None
+    # SEARCH user for admin (from a USER)
+    url = (
+        client.app.router["search_users_for_admin"]
+        .url_for()
+        .with_query(email=partial_email)
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
-        # SEARCH user for admin (from a USER)
-        url = (
-            client.app.router["search_users_for_admin"]
-            .url_for()
-            .with_query(email=partial_email)
-        )
-        resp = await client.get(f"{url}")
-        await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
-        # GET user by primary GID
-        url = client.app.router["get_all_group_users"].url_for(
-            gid=f"{public_user['primary_gid']}"
-        )
-        resp = await client.get(f"{url}")
-        data, _ = await assert_status(resp, status.HTTP_200_OK)
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-issues/issues/1779"
+)
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_user_by_group_id(
+    logged_user: UserInfoDict,
+    client: TestClient,
+    user_role: UserRole,
+    public_user: UserInfoDict,
+    private_user: UserInfoDict,
+):
+    assert client.app
+    assert user_role.value == logged_user["role"]
 
-        users = TypeAdapter(list[GroupUserGet]).validate_python(data)
-        assert len(users) == 1
-        assert users[0].id == public_user["id"]
-        assert users[0].user_name == public_user["name"]
-        assert users[0].first_name == public_user.get("first_name")
-        assert users[0].last_name == public_user.get("last_name")
+    assert private_user["id"] != logged_user["id"]
+    assert public_user["id"] != logged_user["id"]
 
-        url = client.app.router["get_all_group_users"].url_for(
-            gid=f"{private_user['primary_gid']}"
-        )
-        resp = await client.get(f"{url}")
-        data, _ = await assert_status(resp, status.HTTP_200_OK)
+    # GET user by primary GID
+    url = client.app.router["get_all_group_users"].url_for(
+        gid=f"{public_user['primary_gid']}"
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-        users = TypeAdapter(list[GroupUserGet]).validate_python(data)
-        assert len(users) == 1
-        assert users[0].id == private_user["id"]
-        assert users[0].user_name == private_user["name"]
-        assert users[0].first_name is None
-        assert users[0].last_name is None
+    users = TypeAdapter(list[GroupUserGet]).validate_python(data)
+    assert len(users) == 1
+    assert users[0].id == public_user["id"]
+    assert users[0].user_name == public_user["name"]
+    assert users[0].first_name == public_user.get("first_name")
+    assert users[0].last_name == public_user.get("last_name")
+
+    url = client.app.router["get_all_group_users"].url_for(
+        gid=f"{private_user['primary_gid']}"
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    users = TypeAdapter(list[GroupUserGet]).validate_python(data)
+    assert len(users) == 1
+    assert users[0].id == private_user["id"]
+    assert users[0].user_name == private_user["name"]
+    assert users[0].first_name is None
+    assert users[0].last_name is None
 
 
 @pytest.mark.parametrize(
