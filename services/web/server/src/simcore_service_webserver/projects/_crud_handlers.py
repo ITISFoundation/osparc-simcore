@@ -448,7 +448,8 @@ async def delete_project(request: web.Request):
             )
         if project_users:
             other_user_names = {
-                await get_user_fullname(request.app, uid) for uid in project_users
+                await get_user_fullname(request.app, user_id=uid)
+                for uid in project_users
             }
             raise web.HTTPForbidden(
                 reason=f"Project is open by {other_user_names}. "

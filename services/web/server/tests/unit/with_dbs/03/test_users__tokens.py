@@ -7,8 +7,10 @@
 
 import random
 from collections.abc import AsyncIterator
+from copy import deepcopy
 from http import HTTPStatus
 from itertools import repeat
+from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -59,7 +61,7 @@ async def fake_tokens(
     logged_user: UserInfoDict,
     tokens_db_cleanup: None,
     faker: Faker,
-) -> list:
+) -> list[dict[str, Any]]:
     all_tokens = []
     assert client.app
 
@@ -133,7 +135,7 @@ async def test_read_token(
     client: TestClient,
     logged_user: UserInfoDict,
     tokens_db_cleanup: None,
-    fake_tokens,
+    fake_tokens: list[dict[str, Any]],
     expected: HTTPStatus,
 ):
     assert client.app
@@ -145,16 +147,18 @@ async def test_read_token(
     data, error = await assert_status(resp, expected)
 
     if not error:
-        expected_token = random.choice(fake_tokens)
+        expected_token = deepcopy(random.choice(fake_tokens))
         sid = expected_token["service"]
 
         # get one
         url = client.app.router["get_token"].url_for(service=sid)
-        assert "/v0/me/tokens/%s" % sid == str(url)
+        assert f"/v0/me/tokens/{sid}" == str(url)
         resp = await client.get(url.path)
 
         data, error = await assert_status(resp, expected)
 
+        expected_token["token_key"] = expected_token["token_key"]
+        expected_token["token_secret"] = None
         assert data == expected_token, "list and read item are both read operations"
 
 
@@ -171,7 +175,7 @@ async def test_delete_token(
     client: TestClient,
     logged_user: UserInfoDict,
     tokens_db_cleanup: None,
-    fake_tokens: list,
+    fake_tokens: list[dict[str, Any]],
     expected: HTTPStatus,
 ):
     assert client.app

@@ -21,8 +21,8 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
@@ -32,7 +32,10 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
-from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
+from simcore_service_webserver.application_settings_utils import (
+    AppConfigDict,
+    convert_to_environ_vars,
+)
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._crud_api_create import (
     OVERRIDABLE_DOCUMENT_KEYS,
@@ -132,8 +135,8 @@ async def user(client: TestClient) -> AsyncIterator[UserInfoDict]:
             "name": "test-user",
         },
         app=client.app,
-    ) as user:
-        yield user
+    ) as user_info:
+        yield user_info
 
 
 @pytest.fixture
@@ -163,7 +166,7 @@ async def logged_user(
 @pytest.fixture
 def monkeypatch_setenv_from_app_config(
     monkeypatch: pytest.MonkeyPatch,
-) -> Callable[[ConfigDict], EnvVarsDict]:
+) -> Callable[[AppConfigDict], EnvVarsDict]:
     # TODO: Change signature to be analogous to
     # packages/pytest-simcore/src/pytest_simcore/helpers/utils_envs.py
     # That solution is more flexible e.g. for context manager with monkeypatch
@@ -444,3 +447,15 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
     for client, project_uuid in zip(used_clients, created_project_uuids, strict=True):
         url = client.app.router["delete_project"].url_for(project_id=project_uuid)
         await client.delete(url.path)
+
+
+@pytest.fixture
+def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.stop_dynamic_services_in_project",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.update_projects_networks",
+        autospec=True,
+    )
