@@ -111,7 +111,6 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     __searchUsers: function() {
       const text = this.__textFilter.getChildControl("textfield").getValue();
-      console.log("search", text);
       const params = {
         data: {
           match: text

@@ -216,14 +216,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       shareIcon.addListener("mouseout", () => hint.exclude(), this);
     },
 
-    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
+    // groups -> [users, orgs, [productEveryone], [everyone]];
     populateShareIcon: function(shareIcon, accessRights) {
       const groupsStore = osparc.store.Groups.getInstance();
-      const orgMembs = Object.values(groupsStore.getReachableUsers());
+      const users = Object.values(groupsStore.getUsers());
       const orgs = Object.values(groupsStore.getOrganizations());
       const productEveryone = [groupsStore.getEveryoneProductGroup()];
       const everyone = [groupsStore.getEveryoneGroup()];
-      const groups = [orgMembs, orgs, productEveryone, everyone];
+      const groups = [users, orgs, productEveryone, everyone];
       osparc.dashboard.CardBase.setIconAndTooltip(shareIcon, accessRights, groups);
     },
   },
