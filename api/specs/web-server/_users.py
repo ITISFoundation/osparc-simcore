@@ -33,7 +33,7 @@ from simcore_service_webserver.users._notifications import (
 from simcore_service_webserver.users._notifications_rest import _NotificationPathParams
 from simcore_service_webserver.users._tokens_rest import _TokenPathParams
 
-router = APIRouter(prefix=f"/{API_VTAG}", tags=["user"])
+router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])
 
 
 @router.get(
