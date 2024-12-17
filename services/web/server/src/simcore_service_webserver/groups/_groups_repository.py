@@ -268,7 +268,7 @@ async def get_user_group(
     """
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         row = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, gid=group_id
+            conn, user_id=user_id, group_id=group_id
         )
         _check_group_permissions(row, user_id, group_id, "read")
 
