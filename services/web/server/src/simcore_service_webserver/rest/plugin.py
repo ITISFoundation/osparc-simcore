@@ -9,12 +9,12 @@
 import logging
 
 from aiohttp import web
-from aiohttp_swagger import setup_swagger  # type: ignore[import-untyped]
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
     error_middleware_factory,
 )
+from swagger_ui import api_doc
 
 from .._meta import API_VTAG
 from ..security.plugin import setup_security
@@ -60,11 +60,8 @@ def setup_rest(app: web.Application):
     #
     _logger.debug("OAS loaded from %s ", spec_path)
     if settings.REST_SWAGGER_API_DOC_ENABLED:
-        setup_swagger(
-            app,
-            swagger_url="/dev/doc",
-            swagger_from_file=str(spec_path),
-            ui_version=3,
+        api_doc(
+            app=app, url_prefix="/dev/doc", config_path=str(spec_path), title="API doc"
         )
 
 
