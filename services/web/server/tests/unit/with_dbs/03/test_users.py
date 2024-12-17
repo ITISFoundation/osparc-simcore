@@ -159,22 +159,30 @@ async def test_get_and_search_public_users(
 
         # GET user by primary GID
         url = client.app.router["get_all_group_users"].url_for(
-            gid=f"{public_user['id']}"
+            gid=f"{public_user['primary_gid']}"
         )
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-        user = GroupUserGet.model_validate(data)
-        assert user.id == public_user["id"]
+        users = TypeAdapter(list[GroupUserGet]).validate_python(data)
+        assert len(users) == 1
+        assert users[0].id == public_user["id"]
+        assert users[0].user_name == public_user["name"]
+        assert users[0].first_name == public_user.get("first_name")
+        assert users[0].last_name == public_user.get("last_name")
 
         url = client.app.router["get_all_group_users"].url_for(
-            gid=f"{private_user['id']}"
+            gid=f"{private_user['primary_gid']}"
         )
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-        user = GroupUserGet.model_validate(data)
-        assert user.id == private_user["id"]
+        users = TypeAdapter(list[GroupUserGet]).validate_python(data)
+        assert len(users) == 1
+        assert users[0].id == private_user["id"]
+        assert users[0].user_name == private_user["name"]
+        assert users[0].first_name is None
+        assert users[0].last_name is None
 
 
 @pytest.mark.parametrize(

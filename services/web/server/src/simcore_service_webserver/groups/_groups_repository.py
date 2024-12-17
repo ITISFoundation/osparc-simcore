@@ -490,7 +490,7 @@ async def list_users_in_group(
     group_id: GroupID,
 ) -> list[GroupMember]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        # first check if the group exists
+        # GET GROUP & caller access
         result = await conn.execute(
             sa.select(
                 *_GROUP_COLUMNS,
@@ -510,23 +510,30 @@ async def list_users_in_group(
         if not group_row:
             raise GroupNotFoundError(gid=group_id)
 
+        # Drop access-rights if primary group
         if group_row.type != GroupType.PRIMARY:
             _check_group_permissions(
                 group_row, caller_id=user_id, group_id=group_id, permission="read"
             )
-
-        # now get the list
-        query = (
-            sa.select(
+            query = sa.select(
                 *_group_user_cols(user_id),
                 user_to_groups.c.access_rights,
             )
-            .select_from(users.join(user_to_groups, isouter=True))
-            .where(user_to_groups.c.gid == group_id)
+        else:
+            query = sa.select(
+                *_group_user_cols(user_id),
+            )
+
+        # GET users
+        query = query.select_from(users.join(user_to_groups, isouter=True)).where(
+            user_to_groups.c.gid == group_id
         )
 
         result = await conn.stream(query)
-        return [GroupMember.model_validate(row) async for row in result]
+        return [
+            GroupMember.model_validate(row, from_attributes=True)
+            async for row in result
+        ]
 
 
 async def get_user_in_group(
