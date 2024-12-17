@@ -30,6 +30,16 @@ class DynamicSchedulerSettings(BaseCustomSettings, MixinServiceSettings):
         datetime.timedelta(minutes=1), description="timeout for user services restart"
     )
 
+    DYNAMIC_SCHEDULER_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT: datetime.timedelta = Field(
+        datetime.timedelta(hours=1),
+        description=(
+            "When dynamic services upload and download data from storage, "
+            "sometimes very big payloads are involved. In order to handle "
+            "such payloads it is required to have long timeouts which "
+            "allow the service to finish the operation."
+        ),
+    )
+
 
 def get_plugin_settings(app: web.Application) -> DynamicSchedulerSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_DYNAMIC_SCHEDULER

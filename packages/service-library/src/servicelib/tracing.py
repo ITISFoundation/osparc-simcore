@@ -21,13 +21,14 @@ def get_context() -> TracingContext:
 
 @contextmanager
 def use_tracing_context(context: TracingContext):
+    token: object | None = None
     if context is not None:
-        otcontext.attach(context)
+        token = otcontext.attach(context)
     try:
         yield
     finally:
-        if context is not None:
-            otcontext.detach(context)
+        if token is not None:
+            otcontext.detach(token)
 
 
 def setup_log_tracing(tracing_settings: TracingSettings):

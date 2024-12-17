@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from models_library.basic_types import BootModeEnum, LogLevel
+from models_library.docker import DockerNodeID
 from pydantic import AliasChoices, AnyHttpUrl, Field, field_validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
@@ -11,7 +12,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
-    LOGLEVEL: LogLevel = Field(
+    LOG_LEVEL: LogLevel = Field(
         LogLevel.WARNING,
         validation_alias=AliasChoices(
             "AGENT_LOGLEVEL",
@@ -79,7 +80,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    AGENT_DOCKER_NODE_ID: str = Field(..., description="used by the rabbitmq module")
+    AGENT_DOCKER_NODE_ID: DockerNodeID = Field(
+        ..., description="used by the rabbitmq module"
+    )
 
     AGENT_RABBITMQ: RabbitSettings = Field(
         description="settings for service/rabbitmq",
@@ -91,7 +94,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True},
     )
 
-    @field_validator("LOGLEVEL")
+    @field_validator("LOG_LEVEL")
     @classmethod
     def valid_log_level(cls, value) -> LogLevel:
         return LogLevel(cls.validate_log_level(value))

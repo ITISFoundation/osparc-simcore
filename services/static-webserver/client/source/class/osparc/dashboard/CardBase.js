@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.dashboard.CardBase", {
-  extend: qx.ui.form.ToggleButton,
+  extend: qx.ui.core.Widget,
   implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
   include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
   type: "abstract",
@@ -33,6 +33,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
       "pointerout",
       "focusout"
     ].forEach(e => this.addListener(e, this._onPointerOut, this));
+
+    this.addListener("changeSelected", this.__evalSelectedButton, this);
   },
 
   events: {
@@ -83,7 +85,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     filterText: function(checks, text) {
       if (text) {
-        const includesSome = checks.some(check => check.toLowerCase().trim().includes(text.toLowerCase()));
+        const includesSome = checks.some(check => check && check.toLowerCase().trim().includes(text.toLowerCase()));
         return !includesSome;
       }
       return false;
@@ -237,6 +239,20 @@ qx.Class.define("osparc.dashboard.CardBase", {
       nullable: true
     },
 
+    selected: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeSelected",
+    },
+
+    icon: {
+      check: "String",
+      init: null,
+      nullable: true,
+      apply: "_applyIcon",
+    },
+
     resourceData: {
       check: "Object",
       nullable: false,
@@ -246,7 +262,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     resourceType: {
       check: ["study", "template", "service"],
-      nullable: false,
+      init: true,
+      nullable: true,
       event: "changeResourceType"
     },
 
@@ -365,7 +382,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: "Boolean",
       init: false,
       nullable: false,
-      apply: "_applyMultiSelectionMode"
+      apply: "__applyMultiSelectionMode"
     },
 
     fetching: {
@@ -442,6 +459,35 @@ qx.Class.define("osparc.dashboard.CardBase", {
         hits: resourceData.hits ? resourceData.hits : defaultHits,
         workbench
       });
+    },
+
+    __applyMultiSelectionMode: function(value) {
+      if (!value) {
+        this.setSelected(false);
+      }
+      this.__evalSelectedButton();
+    },
+
+    __evalSelectedButton: function() {
+      if (
+        this.hasChildControl("menu-button") &&
+        this.hasChildControl("tick-selected") &&
+        this.hasChildControl("tick-unselected")
+      ) {
+        const menuButton = this.getChildControl("menu-button");
+        const tick = this.getChildControl("tick-selected");
+        const untick = this.getChildControl("tick-unselected");
+        if (this.isResourceType("study") && this.isMultiSelectionMode()) {
+          const selected = this.getSelected();
+          menuButton.setVisibility("excluded");
+          tick.setVisibility(selected ? "visible" : "excluded");
+          untick.setVisibility(selected ? "excluded" : "visible");
+        } else {
+          menuButton.setVisibility("visible");
+          tick.setVisibility("excluded");
+          untick.setVisibility("excluded");
+        }
+      }
     },
 
     __applyUuid: function(value, old) {

@@ -1,5 +1,8 @@
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
+    RetrieveDataOutEnveloped,
+)
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
@@ -7,6 +10,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 
 from ..core.settings import ApplicationSettings
@@ -82,3 +86,27 @@ async def restart_user_services(app: FastAPI, *, node_id: NodeID) -> None:
 
     director_v2_client = DirectorV2Client.get_from_app_state(app)
     await director_v2_client.restart_user_services(node_id=node_id)
+
+
+async def retrieve_inputs(
+    app: FastAPI, *, node_id: NodeID, port_keys: list[ServicePortKey]
+) -> RetrieveDataOutEnveloped:
+    settings: ApplicationSettings = app.state.settings
+    if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
+        raise NotImplementedError
+
+    director_v2_client = DirectorV2Client.get_from_app_state(app)
+    return await director_v2_client.retrieve_inputs(
+        node_id=node_id,
+        port_keys=port_keys,
+        timeout=settings.DYNAMIC_SCHEDULER_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT,
+    )
+
+
+async def update_projects_networks(app: FastAPI, *, project_id: ProjectID) -> None:
+    settings: ApplicationSettings = app.state.settings
+    if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
+        raise NotImplementedError
+
+    director_v2_client = DirectorV2Client.get_from_app_state(app)
+    await director_v2_client.update_projects_networks(project_id=project_id)

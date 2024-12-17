@@ -47,13 +47,8 @@ qx.Class.define("osparc.service.PricingUnitsList", {
     },
 
     __fetchUnits: function() {
-      const plansParams = {
-        url: osparc.data.Resources.getServiceUrl(
-          this.__serviceMetadata["key"],
-          this.__serviceMetadata["version"]
-        )
-      };
-      osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
+      const pricingStore = osparc.store.Pricing.getInstance();
+      pricingStore.fetchPricingPlansService(this.__serviceMetadata["key"], this.__serviceMetadata["version"])
         .then(data => this.__populateList(data["pricingUnits"]))
         .catch(err => {
           console.error(err);
@@ -61,11 +56,11 @@ qx.Class.define("osparc.service.PricingUnitsList", {
         });
     },
 
-    __populateList: function(pricingUnits) {
+    __populateList: function(pricingUnitsData) {
       this.getChildControl("pricing-units-container").removeAll();
 
-      if (pricingUnits.length) {
-        const pUnits = new osparc.study.PricingUnits(pricingUnits, null, false);
+      if (pricingUnitsData.length) {
+        const pUnits = new osparc.study.PricingUnitTiers(pricingUnitsData, null, false);
         this.getChildControl("pricing-units-container").add(pUnits);
       } else {
         const notFound = new qx.ui.basic.Label().set({

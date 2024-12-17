@@ -82,19 +82,26 @@ _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(
 ).validate_python("io.simcore.osparc-node-termination-started")
 
 
+def _get_node_creation_date(node: Node) -> datetime.datetime:
+    assert node.created_at  # nosec
+    return arrow.get(node.created_at).datetime
+
+
 async def get_monitored_nodes(
     docker_client: AutoscalingDocker, node_labels: list[DockerLabelKey]
 ) -> list[Node]:
     node_label_filters = [f"{label}=true" for label in node_labels] + [
         f"{label}" for label in _OSPARC_SERVICE_READY_LABEL_KEYS
     ]
-    return TypeAdapter(list[Node]).validate_python(
+    list_of_nodes = TypeAdapter(list[Node]).validate_python(
         await docker_client.nodes.list(filters={"node.label": node_label_filters})
     )
+    list_of_nodes.sort(key=_get_node_creation_date)
+    return list_of_nodes
 
 
 async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
-    return TypeAdapter(list[Node]).validate_python(
+    list_of_nodes = TypeAdapter(list[Node]).validate_python(
         await docker_client.nodes.list(
             filters={
                 "role": ["worker"],
@@ -104,6 +111,8 @@ async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
             }
         )
     )
+    list_of_nodes.sort(key=_get_node_creation_date)
+    return list_of_nodes
 
 
 async def remove_nodes(
@@ -512,8 +521,14 @@ async def tag_node(
     tags: dict[DockerLabelKey, str],
     available: bool,
 ) -> Node:
+    assert node.spec  # nosec
+    if (node.spec.labels == tags) and (
+        (node.spec.availability is Availability.active) == available
+    ):
+        # nothing to do
+        return node
     with log_context(
-        logger, logging.DEBUG, msg=f"tagging {node.id=} with {tags=} and {available=}"
+        logger, logging.DEBUG, msg=f"tag {node.id=} with {tags=} and {available=}"
     ):
         assert node.id  # nosec
 

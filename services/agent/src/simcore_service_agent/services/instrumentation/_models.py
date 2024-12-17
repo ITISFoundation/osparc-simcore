@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Final
 
+from models_library.docker import DockerNodeID
 from prometheus_client import CollectorRegistry, Counter
 from servicelib.instrumentation import MetricsBase, get_metrics_namespace
 
@@ -34,10 +35,10 @@ class AgentMetrics(MetricsBase):
             registry=self.registry,
         )
 
-    def remove_volumes(self, docker_node_id: str) -> None:
+    def remove_volumes(self, docker_node_id: DockerNodeID) -> None:
         self.volumes_removed.labels(docker_node_id=docker_node_id).inc()
 
-    def backedup_volumes(self, docker_node_id: str) -> None:
+    def backedup_volumes(self, docker_node_id: DockerNodeID) -> None:
         self.volumes_backedup.labels(docker_node_id=docker_node_id).inc()
 
 

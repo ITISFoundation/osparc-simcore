@@ -37,7 +37,7 @@ async def _remove_service(
         save_service_state = False
     else:
         try:
-            if await get_user_role(app, service.user_id) <= UserRole.GUEST:
+            if await get_user_role(app, user_id=service.user_id) <= UserRole.GUEST:
                 save_service_state = False
             else:
                 save_service_state = await has_user_project_access_rights(

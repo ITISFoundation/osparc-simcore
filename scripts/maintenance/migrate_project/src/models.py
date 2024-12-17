@@ -92,5 +92,7 @@ class Settings(BaseModel):
 if __name__ == "__main__":
     # produces an empty configuration to be saved as starting point
     print(
-        Settings.model_validate(Settings.Config.schema_extra["example"]).json(indent=2)
+        Settings.model_validate(
+            Settings.Config.schema_extra["example"]
+        ).model_dump_json(indent=2)
     )

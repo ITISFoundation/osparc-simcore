@@ -25,12 +25,11 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodePatch,
     NodeRetrieve,
 )
-from models_library.groups import EVERYONE_GROUP_ID, Group, GroupTypeInModel
+from models_library.groups import EVERYONE_GROUP_ID, Group, GroupID, GroupType
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
-from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
@@ -63,7 +62,6 @@ from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
-from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..groups.api import get_group_from_gid, list_all_user_groups_ids
 from ..groups.exceptions import GroupNotFoundError
@@ -280,8 +278,8 @@ async def retrieve_node(request: web.Request) -> web.Response:
     retrieve = await parse_request_body_as(NodeRetrieve, request)
 
     return web.json_response(
-        await director_v2_api.retrieve(
-            request.app, f"{path_params.node_id}", retrieve.port_keys
+        await dynamic_scheduler_api.retrieve_inputs(
+            request.app, path_params.node_id, retrieve.port_keys
         ),
         dumps=json_dumps,
     )
@@ -377,7 +375,7 @@ async def stop_node(request: web.Request) -> web.Response:
         permission="write",
     )
 
-    user_role = await get_user_role(request.app, req_ctx.user_id)
+    user_role = await get_user_role(request.app, user_id=req_ctx.user_id)
     if user_role is None or user_role <= UserRole.GUEST:
         save_state = False
 
@@ -569,7 +567,7 @@ async def get_project_services_access_for_gid(
         raise GroupNotFoundError(gid=query_params.for_gid)
 
     # Update groups to compare based on the type of sharing group
-    if _sharing_with_group.group_type == GroupTypeInModel.PRIMARY:
+    if _sharing_with_group.group_type == GroupType.PRIMARY:
         _user_id = await get_user_id_from_gid(
             app=request.app, primary_gid=query_params.for_gid
         )
@@ -578,7 +576,7 @@ async def get_project_services_access_for_gid(
         )
         groups_to_compare.update(set(user_groups_ids))
         groups_to_compare.add(query_params.for_gid)
-    elif _sharing_with_group.group_type == GroupTypeInModel.STANDARD:
+    elif _sharing_with_group.group_type == GroupType.STANDARD:
         groups_to_compare = {query_params.for_gid}
 
     # Initialize a list for inaccessible services

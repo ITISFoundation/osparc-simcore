@@ -1207,7 +1207,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_ThirdPartyToken__'
+                $ref: '#/components/schemas/Envelope_list_MyTokenGet__'
     post:
       tags:
       - user
@@ -1217,7 +1217,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenCreate'
+              $ref: '#/components/schemas/MyTokenCreate'
         required: true
       responses:
         '201':
@@ -1225,7 +1225,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
+                $ref: '#/components/schemas/Envelope_MyTokenGet_'
   /v0/me/tokens/{service}:
     get:
       tags:
@@ -1245,7 +1245,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
+                $ref: '#/components/schemas/Envelope_MyTokenGet_'
     delete:
       tags:
       - user
@@ -1322,7 +1322,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_PermissionGet__'
+                $ref: '#/components/schemas/Envelope_list_MyPermissionGet__'
   /v0/users:search:
     get:
       tags:
@@ -1345,7 +1345,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_UserProfile__'
+                $ref: '#/components/schemas/Envelope_list_UserGet__'
   /v0/users:pre-register:
     post:
       tags:
@@ -1357,7 +1357,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PreUserProfile'
+              $ref: '#/components/schemas/PreRegisteredUserGet'
         required: true
       responses:
         '200':
@@ -1365,7 +1365,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UserProfile_'
+                $ref: '#/components/schemas/Envelope_UserGet_'
   /v0/wallets:
     get:
       tags:
@@ -8185,6 +8185,19 @@ components:
           title: Error
       type: object
       title: Envelope[MyProfileGet]
+    Envelope_MyTokenGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/MyTokenGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[MyTokenGet]
     Envelope_NodeCreated_:
       properties:
         data:
@@ -8484,19 +8497,6 @@ components:
           title: Error
       type: object
       title: Envelope[TaskStatus]
-    Envelope_ThirdPartyToken_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/ThirdPartyToken'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[ThirdPartyToken]
     Envelope_Union_EmailTestFailed__EmailTestPassed__:
       properties:
         data:
@@ -8556,11 +8556,11 @@ components:
           title: Error
       type: object
       title: Envelope[Union[WalletGet, NoneType]]
-    Envelope_UserProfile_:
+    Envelope_UserGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/UserProfile'
+          - $ref: '#/components/schemas/UserGet'
           - type: 'null'
         error:
           anyOf:
@@ -8568,7 +8568,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[UserProfile]
+      title: Envelope[UserGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -8930,6 +8930,38 @@ components:
           title: Error
       type: object
       title: Envelope[list[LicensedItemGet]]
+    Envelope_list_MyPermissionGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/MyPermissionGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[MyPermissionGet]]
+    Envelope_list_MyTokenGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/MyTokenGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[MyTokenGet]]
     Envelope_list_OsparcCreditsAggregatedByServiceGet__:
       properties:
         data:
@@ -8962,22 +8994,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[PaymentMethodGet]]
-    Envelope_list_PermissionGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/PermissionGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[PermissionGet]]
     Envelope_list_PricingPlanAdminGet__:
       properties:
         data:
@@ -9186,12 +9202,12 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
-    Envelope_list_ThirdPartyToken__:
+    Envelope_list_UserGet__:
       properties:
         data:
           anyOf:
           - items:
-              $ref: '#/components/schemas/ThirdPartyToken'
+              $ref: '#/components/schemas/UserGet'
             type: array
           - type: 'null'
           title: Data
@@ -9201,7 +9217,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[ThirdPartyToken]]
+      title: Envelope[list[UserGet]]
     Envelope_list_UserNotification__:
       properties:
         data:
@@ -9218,22 +9234,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[UserNotification]]
-    Envelope_list_UserProfile__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/UserProfile'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[UserProfile]]
     Envelope_list_Viewer__:
       properties:
         data:
@@ -10662,6 +10662,19 @@ components:
           description: Some foundation
           gid: '16'
           label: Blue Fundation
+    MyPermissionGet:
+      properties:
+        name:
+          type: string
+          title: Name
+        allowed:
+          type: boolean
+          title: Allowed
+      type: object
+      required:
+      - name
+      - allowed
+      title: MyPermissionGet
     MyProfileGet:
       properties:
         id:
@@ -10792,6 +10805,56 @@ components:
           title: Hideemail
       type: object
       title: MyProfilePrivacyPatch
+    MyTokenCreate:
+      properties:
+        service:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Service
+          description: uniquely identifies the service where this token is used
+        token_key:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Token Key
+        token_secret:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Token Secret
+      type: object
+      required:
+      - service
+      - token_key
+      - token_secret
+      title: MyTokenCreate
+    MyTokenGet:
+      properties:
+        service:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Service
+        token_key:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Token Key
+        token_secret:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Token Secret
+          description: Will be removed
+          deprecated: true
+      type: object
+      required:
+      - service
+      - token_key
+      title: MyTokenGet
     Node-Input:
       properties:
         key:
@@ -11761,19 +11824,6 @@ components:
       - completedAt
       - completedStatus
       title: PaymentTransaction
-    PermissionGet:
-      properties:
-        name:
-          type: string
-          title: Name
-        allowed:
-          type: boolean
-          title: Allowed
-      type: object
-      required:
-      - name
-      - allowed
-      title: PermissionGet
     PhoneConfirmationBody:
       properties:
         email:
@@ -11869,7 +11919,7 @@ components:
       - x
       - y
       title: Position
-    PreUserProfile:
+    PreRegisteredUserGet:
       properties:
         firstName:
           type: string
@@ -11912,8 +11962,7 @@ components:
         extras:
           type: object
           title: Extras
-          description: Keeps extra information provided in the request form. At most
-            MAX_NUM_EXTRAS fields
+          description: Keeps extra information provided in the request form.
       type: object
       required:
       - firstName
@@ -11924,7 +11973,7 @@ components:
       - city
       - postalCode
       - country
-      title: PreUserProfile
+      title: PreRegisteredUserGet
     Preference:
       properties:
         defaultValue:
@@ -14167,58 +14216,6 @@ components:
       - url
       - thumbnail
       title: ThirdPartyInfoDict
-    ThirdPartyToken:
-      properties:
-        service:
-          type: string
-          title: Service
-          description: uniquely identifies the service where this token is used
-        token_key:
-          type: string
-          format: uuid
-          title: Token Key
-          description: basic token key
-        token_secret:
-          anyOf:
-          - type: string
-            format: uuid
-          - type: 'null'
-          title: Token Secret
-      type: object
-      required:
-      - service
-      - token_key
-      title: ThirdPartyToken
-      description: Tokens used to access third-party services connected to osparc
-        (e.g. pennsieve, scicrunch, etc)
-      example:
-        service: github-api-v1
-        token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
-    TokenCreate:
-      properties:
-        service:
-          type: string
-          title: Service
-          description: uniquely identifies the service where this token is used
-        token_key:
-          type: string
-          format: uuid
-          title: Token Key
-          description: basic token key
-        token_secret:
-          anyOf:
-          - type: string
-            format: uuid
-          - type: 'null'
-          title: Token Secret
-      type: object
-      required:
-      - service
-      - token_key
-      title: TokenCreate
-      example:
-        service: github-api-v1
-        token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
     UnitExtraInfo-Input:
       properties:
         CPU:
@@ -14351,6 +14348,98 @@ components:
       - number
       - e_tag
       title: UploadedPart
+    UserGet:
+      properties:
+        firstName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Firstname
+        lastName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lastname
+        email:
+          type: string
+          format: email
+          title: Email
+        institution:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        address:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Address
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+          description: State, province, canton, ...
+        postalCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Postalcode
+        country:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country
+        extras:
+          type: object
+          title: Extras
+          description: Keeps extra information provided in the request form
+        invitedBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Invitedby
+        registered:
+          type: boolean
+          title: Registered
+        status:
+          anyOf:
+          - $ref: '#/components/schemas/UserStatus'
+          - type: 'null'
+        products:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Products
+          description: List of products this users is included or None if fields is
+            unset
+      type: object
+      required:
+      - firstName
+      - lastName
+      - email
+      - institution
+      - phone
+      - address
+      - city
+      - state
+      - postalCode
+      - country
+      - registered
+      - status
+      title: UserGet
     UserNotification:
       properties:
         user_id:
@@ -14472,98 +14561,6 @@ components:
       required:
       - read
       title: UserNotificationPatch
-    UserProfile:
-      properties:
-        firstName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Firstname
-        lastName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Lastname
-        email:
-          type: string
-          format: email
-          title: Email
-        institution:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Institution
-        phone:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Phone
-        address:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Address
-        city:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: City
-        state:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: State
-          description: State, province, canton, ...
-        postalCode:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Postalcode
-        country:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Country
-        extras:
-          type: object
-          title: Extras
-          description: Keeps extra information provided in the request form
-        invitedBy:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Invitedby
-        registered:
-          type: boolean
-          title: Registered
-        status:
-          anyOf:
-          - $ref: '#/components/schemas/UserStatus'
-          - type: 'null'
-        products:
-          anyOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
-          title: Products
-          description: List of products this users is included or None if fields is
-            unset
-      type: object
-      required:
-      - firstName
-      - lastName
-      - email
-      - institution
-      - phone
-      - address
-      - city
-      - state
-      - postalCode
-      - country
-      - registered
-      - status
-      title: UserProfile
     UserStatus:
       type: string
       enum:

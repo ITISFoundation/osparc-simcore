@@ -38,11 +38,11 @@ qx.Class.define("osparc.pricing.PlanEditor", {
     if (pricingPlan) {
       this.__pricingPlan = osparc.utils.Utils.deepCloneObject(pricingPlan);
       this.set({
-        ppKey: pricingPlan.pricingPlanKey,
-        name: pricingPlan.displayName,
-        description: pricingPlan.description,
-        classification: pricingPlan.classification,
-        isActive: pricingPlan.isActive
+        ppKey: pricingPlan.getPricingPlanKey(),
+        name: pricingPlan.getName(),
+        description: pricingPlan.getDescription(),
+        classification: pricingPlan.getClassification(),
+        isActive: pricingPlan.getIsActive(),
       });
       ppKey.setEnabled(false);
       this.getChildControl("save");
@@ -75,8 +75,8 @@ qx.Class.define("osparc.pricing.PlanEditor", {
     },
 
     classification: {
-      check: "String",
-      init: "TIER",
+      check: ["TIER", "LICENSE"],
+      init: "",
       nullable: false,
       event: "changeClassification"
     },
@@ -132,12 +132,21 @@ qx.Class.define("osparc.pricing.PlanEditor", {
           break;
         }
         case "classification": {
-          control = new qx.ui.form.TextField().set({
+          control = new qx.ui.form.SelectBox().set({
             font: "text-14",
-            enabled: false
+          });
+          [
+            "TIER",
+            "LICENSE",
+          ].forEach(c => {
+            const cItem = new qx.ui.form.ListItem(c);
+            control.add(cItem);
           });
           this.bind("classification", control, "value");
-          control.bind("value", this, "classification");
+          control.addListener("changeValue", e => {
+            const currentSelection = e.getData();
+            this.setClassification(currentSelection.getLabel());
+          }, this);
           this._add(control);
           break;
         }
@@ -200,43 +209,41 @@ qx.Class.define("osparc.pricing.PlanEditor", {
       const name = this.getName();
       const description = this.getDescription();
       const classification = this.getClassification();
-      const params = {
-        data: {
-          "pricingPlanKey": ppKey,
-          "displayName": name,
-          "description": description,
-          "classification": classification
-        }
+      const newPricingPlanData = {
+        "pricingPlanKey": ppKey,
+        "displayName": name,
+        "description": description,
+        "classification": classification,
       };
-      osparc.data.Resources.fetch("pricingPlans", "post", params)
+      osparc.store.Pricing.getInstance().postPricingPlan(newPricingPlanData)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
           this.fireEvent("done");
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
+          const errorMsg = err.message || this.tr("Something went wrong creating ") + name;
+          osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
           console.error(err);
         })
         .finally(() => this.getChildControl("create").setFetching(false));
     },
 
     __updatePricingPlan: function() {
-      this.__pricingPlan["displayName"] = this.getName();
-      this.__pricingPlan["description"] = this.getDescription();
-      this.__pricingPlan["isActive"] = this.getIsActive();
-      const params = {
-        url: {
-          "pricingPlanId": this.__pricingPlan["pricingPlanId"]
-        },
-        data: this.__pricingPlan
+      const updateData = {
+        "pricingPlanKey": this.getPpKey(),
+        "displayName": this.getName(),
+        "description": this.getDescription(),
+        "classification": this.getClassification(),
+        "isActive": this.getIsActive(),
       };
-      osparc.data.Resources.fetch("pricingPlans", "update", params)
+      osparc.store.Pricing.getInstance().putPricingPlan(this.__pricingPlan["pricingPlanId"], updateData)
         .then(() => {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Successfully updated"));
           this.fireEvent("done");
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
+          const errorMsg = err.message || this.tr("Something went wrong");
+          osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
           console.error(err);
         })
         .finally(() => this.getChildControl("save").setFetching(false));

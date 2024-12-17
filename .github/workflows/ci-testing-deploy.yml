@@ -772,7 +772,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/catalog.bash test
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -879,7 +879,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -930,7 +930,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/director.bash test
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -981,7 +981,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/director-v2.bash test
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -1910,7 +1910,7 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -1974,7 +1974,7 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/webserver.bash test 02
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -2038,7 +2038,7 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/director-v2.bash test 01
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -2111,7 +2111,7 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/director-v2.bash test 02
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -2177,7 +2177,7 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/dynamic-sidecar.bash test 01
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -2241,7 +2241,7 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/simcore-sdk.bash test
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -2330,7 +2330,7 @@ jobs:
       - name: test
         run: ./ci/github/system-testing/public-api.bash test
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -2395,7 +2395,7 @@ jobs:
           name: ${{ github.job }}_services_settings_schemas
           path: ./services/**/settings-schema.json
       - name: upload failed tests logs
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs

@@ -3,9 +3,9 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 import uuid
-from collections.abc import Awaitable, Callable
-from datetime import datetime, timezone
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
+from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -53,7 +53,7 @@ async def registered_project(
     await _delete_project(connection, project["uuid"])
 
 
-@pytest.mark.parametrize("expected", (datetime.now(tz=timezone.utc), None))
+@pytest.mark.parametrize("expected", (datetime.now(tz=UTC), None))
 async def test_get_project_trashed_at_column_can_be_converted_to_datetime(
     asyncpg_engine: AsyncEngine, registered_project: dict, expected: datetime | None
 ):
