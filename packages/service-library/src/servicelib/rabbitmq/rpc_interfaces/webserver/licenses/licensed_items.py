@@ -12,12 +12,14 @@ from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.resource_tracker import ServiceRunId
+from models_library.resource_tracker_licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
-from simcore_service_webserver.licenses._rpc import LicensedItemCheckoutID
 
 _logger = logging.getLogger(__name__)
 
