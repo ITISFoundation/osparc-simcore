@@ -879,6 +879,18 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * USERS
+       */
+      "users": {
+        useCache: false, // osparc.store.Groups handles the cache
+        endpoints: {
+          search: {
+            method: "POST",
+            url: statics.API + "/users:search"
+          }
+        }
+      },
+      /*
        * WALLETS
        */
       "wallets": {

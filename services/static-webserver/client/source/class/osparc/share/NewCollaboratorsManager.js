@@ -11,7 +11,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   construct: function(resourceData, showOrganizations = true) {
     this.base(arguments, "collaboratorsManager", this.tr("Share with"));
     this.set({
-      layout: new qx.ui.layout.VBox(),
+      layout: new qx.ui.layout.VBox(5),
       allowMinimize: false,
       allowMaximize: false,
       showMinimize: false,
@@ -65,12 +65,23 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       });
       this.add(introLabel);
 
+      const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "middle",
+      }));
       const filter = this.__textFilter = new osparc.filter.TextFilter("name", "collaboratorsManager").set({
-        allowStretchX: true,
-        margin: [0, 10, 5, 10]
+        allowGrowX: true,
+        margin: 0,
       });
       this.addListener("appear", () => filter.getChildControl("textfield").focus());
-      this.add(filter);
+      toolbar.add(filter, {
+        flex: 1
+      });
+      const searchButton = new osparc.ui.form.FetchButton(this.tr("Search"), "@FontAwesome5Solid/search/12").set({
+        maxHeight: 30,
+      });
+      searchButton.addListener("exectue", () => this.__searchUsers(), this);
+      toolbar.add(searchButton);
+      this.add(toolbar);
 
       const collabButtonsContainer = this.__collabButtonsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       const scrollContainer = new qx.ui.container.Scroll();
@@ -96,6 +107,22 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       shareButton.addListener("execute", () => this.__shareClicked(), this);
       buttons.add(shareButton);
       this.add(buttons);
+    },
+
+    __searchUsers: function() {
+      const text = this.__textFilter.getValue();
+      console.log("search", text);
+      const params = {
+        data: {
+          match: text
+        }
+      };
+      osparc.data.Resources.fetch("users", "search", params)
+        .then(data => console.log(data))
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+        })
     },
 
     __reloadCollaborators: function() {
