@@ -739,7 +739,7 @@ async def auto_add_user_to_groups(
 
     # auto add user to the groups with the right rules
     # get the groups where there are inclusion rules and see if they apply
-    query = sa.select(groups).where(groups.c.inclusion_rules != "{}")
+    query = sa.select(groups).where(groups.c.inclusion_rules != {})
     possible_group_ids = set()
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
