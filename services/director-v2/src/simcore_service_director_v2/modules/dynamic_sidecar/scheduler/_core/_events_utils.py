@@ -28,6 +28,7 @@ from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.agent.containers import force_container_cleanup
 from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
     NoServiceVolumesFoundRPCError,
 )
@@ -210,6 +211,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     set_were_state_and_outputs_saved: bool | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
+    rabbit_rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
 
     if set_were_state_and_outputs_saved is not None:
         scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
@@ -221,7 +223,14 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
         node_uuid=scheduler_data.node_uuid,
         swarm_stack_name=swarm_stack_name,
     )
-    # remove network
+    if scheduler_data.dynamic_sidecar.docker_node_id:
+        await force_container_cleanup(
+            rabbit_rpc_client,
+            docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+            swarm_stack_name=swarm_stack_name,
+            node_id=scheduler_data.node_uuid,
+        )
+
     task_progress.update(message="removing network", percent=ProgressPercent(0.2))
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
 
@@ -237,7 +246,6 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
                 message="removing volumes", percent=ProgressPercent(0.3)
             )
             with log_context(_logger, logging.DEBUG, f"removing volumes '{node_uuid}'"):
-                rabbit_rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
                 try:
                     await remove_volumes_without_backup_for_service(
                         rabbit_rpc_client,
