@@ -7,6 +7,10 @@ from collections.abc import Awaitable, Callable
 
 import pytest
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_resource_usage_tracker.licensed_items_usages import (
+    LicenseCheckoutGet,
+    LicensedItemUsageGet,
+)
 from models_library.licensed_items import LicensedResourceType
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
@@ -17,7 +21,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     checkout_licensed_item_for_wallet,
     get_licensed_items,
-    get_licensed_items_for_wallet,
+    get_purchased_licensed_items_for_wallet,
     release_licensed_item_for_wallet,
 )
 from settings_library.rabbit import RabbitSettings
@@ -67,12 +71,66 @@ async def rpc_client(
     return await rabbitmq_rpc_client("client")
 
 
-async def test_api_keys_workflow(
+@pytest.fixture
+def mock_get_wallet_by_user(mocker: MockerFixture) -> tuple:
+    return mocker.patch(
+        "simcore_service_webserver.licenses._licensed_checkouts_api.get_wallet_by_user",
+        spec=True,
+    )
+
+
+_LICENSE_CHECKOUT_GET = LicenseCheckoutGet.model_validate(
+    {
+        "checkout_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
+    }
+)
+
+
+@pytest.fixture
+def mock_checkout_licensed_item(mocker: MockerFixture) -> tuple:
+    return mocker.patch(
+        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_usages.checkout_licensed_item",
+        spec=True,
+        return_value=_LICENSE_CHECKOUT_GET,
+    )
+
+
+_LICENSED_ITEM_USAGE_GET = LicensedItemUsageGet.model_validate(
+    LicensedItemUsageGet.model_config["json_schema_extra"]["examples"][0]
+)
+
+
+@pytest.fixture
+def mock_get_licensed_item_usage(mocker: MockerFixture) -> tuple:
+    return mocker.patch(
+        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_usages.get_licensed_item_usage",
+        spec=True,
+        return_value=_LICENSED_ITEM_USAGE_GET,
+    )
+
+
+@pytest.fixture
+def mock_release_licensed_item(mocker: MockerFixture) -> tuple:
+    return mocker.patch(
+        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_usages.release_licensed_item",
+        spec=True,
+        return_value=_LICENSED_ITEM_USAGE_GET,
+    )
+
+
+@pytest.mark.acceptance_test(
+    "Implements https://github.com/ITISFoundation/osparc-issues/issues/1800"
+)
+async def test_license_checkout_workflow(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
     osparc_product_name: ProductName,
     logged_user: UserInfoDict,
     pricing_plan_id: int,
+    mock_get_wallet_by_user: MockerFixture,
+    mock_checkout_licensed_item: MockerFixture,
+    mock_release_licensed_item: MockerFixture,
+    mock_get_licensed_item_usage: MockerFixture,
 ):
     assert client.app
 
@@ -82,7 +140,7 @@ async def test_api_keys_workflow(
     assert len(result.items) == 0
     assert result.total == 0
 
-    await _licensed_items_db.create(
+    license_item_db = await _licensed_items_db.create(
         client.app,
         product_name=osparc_product_name,
         name="Model A",
@@ -97,31 +155,26 @@ async def test_api_keys_workflow(
     assert result.total == 1
 
     with pytest.raises(NotImplementedError):
-        await get_licensed_items_for_wallet(
+        await get_purchased_licensed_items_for_wallet(
             rpc_client,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
             wallet_id=1,
         )
 
-    with pytest.raises(NotImplementedError):
-        await checkout_licensed_item_for_wallet(
-            rpc_client,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-            wallet_id=1,
-            licensed_item_id="c5139a2e-4e1f-4ebe-9bfd-d17f195111ee",
-            num_of_seats=1,
-            service_run_id="run_1",
-        )
+    checkout = await checkout_licensed_item_for_wallet(
+        rpc_client,
+        product_name=osparc_product_name,
+        user_id=logged_user["id"],
+        wallet_id=1,
+        licensed_item_id=license_item_db.licensed_item_id,
+        num_of_seats=1,
+        service_run_id="run_1",
+    )
 
-    with pytest.raises(NotImplementedError):
-        await release_licensed_item_for_wallet(
-            rpc_client,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-            wallet_id=1,
-            licensed_item_id="c5139a2e-4e1f-4ebe-9bfd-d17f195111ee",
-            num_of_seats=1,
-            service_run_id="run_1",
-        )
+    await release_licensed_item_for_wallet(
+        rpc_client,
+        product_name=osparc_product_name,
+        user_id=logged_user["id"],
+        checkout_id=checkout.checkout_id,
+    )
