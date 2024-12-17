@@ -503,7 +503,7 @@ async def list_users_in_group(
             )
             .where(
                 ((user_to_groups.c.uid == user_id) & (user_to_groups.c.gid == group_id))
-                | (groups.c.type == GroupType.PRIMARY)
+                | (groups.c.type == GroupType.PRIMARY)  # TODO: at least active users!
             )
         )
         group_row = result.first()
