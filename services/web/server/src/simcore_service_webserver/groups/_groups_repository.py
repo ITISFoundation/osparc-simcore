@@ -5,6 +5,7 @@ from typing import Literal
 import sqlalchemy as sa
 from aiohttp import web
 from common_library.groups_enums import GroupType
+from common_library.users_enums import UserRole
 from models_library.basic_types import IDStr
 from models_library.groups import (
     AccessRightsDict,
@@ -499,11 +500,14 @@ async def list_users_in_group(
             .select_from(
                 groups.join(
                     user_to_groups, user_to_groups.c.gid == groups.c.gid, isouter=True
-                )
+                ).join(users, users.c.id == user_to_groups.c.uid)
             )
             .where(
                 ((user_to_groups.c.uid == user_id) & (user_to_groups.c.gid == group_id))
-                | (groups.c.type == GroupType.PRIMARY)  # TODO: at least active users!
+                | (
+                    (groups.c.type == GroupType.PRIMARY)
+                    & users.c.role.in_([r for r in UserRole if r > UserRole.GUEST])
+                )
             )
         )
         group_row = result.first()
