@@ -80,6 +80,7 @@ async def private_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
 async def public_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
     assert client.app
     async with NewUser(
+        app=client.app,
         user_data={
             "name": "taylie01",
             "first_name": "Taylor",
@@ -139,12 +140,16 @@ async def test_search_users(
     found = TypeAdapter(list[UserGet]).validate_python(data)
     assert found
     assert len(found) == 2
-    assert found[1].user_id == public_user["id"]
+
+    index = [u.user_id for u in found].index(public_user["id"])
+    assert found[index].user_name == public_user["name"]
+
     # check privacy
-    assert found[0].user_name == private_user["name"]
-    assert found[0].email is None
-    assert found[0].first_name is None
-    assert found[0].last_name is None
+    index = (index + 1) % 2
+    assert found[index].user_name == private_user["name"]
+    assert found[index].email is None
+    assert found[index].first_name is None
+    assert found[index].last_name is None
 
     # SEARCH user for admin (from a USER)
     url = (
