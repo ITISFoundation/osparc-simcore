@@ -101,9 +101,9 @@ _LICENSED_ITEM_USAGE_GET = LicensedItemCheckoutGet.model_validate(
 
 
 @pytest.fixture
-def mock_get_licensed_item_usage(mocker: MockerFixture) -> tuple:
+def mock_get_licensed_item_checkout(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_checkouts.get_licensed_item_usage",
+        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_checkouts.get_licensed_item_checkout",
         spec=True,
         return_value=_LICENSED_ITEM_USAGE_GET,
     )
@@ -130,7 +130,7 @@ async def test_license_checkout_workflow(
     mock_get_wallet_by_user: MockerFixture,
     mock_checkout_licensed_item: MockerFixture,
     mock_release_licensed_item: MockerFixture,
-    mock_get_licensed_item_usage: MockerFixture,
+    mock_get_licensed_item_checkout: MockerFixture,
 ):
     assert client.app
 

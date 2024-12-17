@@ -80,5 +80,5 @@ class LicensedItemPurchaseNotFoundError(RutNotFoundError):
     licensed_item_purchase_id: LicensedItemPurchaseID
 
 
-class LicensedItemUsageNotFoundError(RutNotFoundError):
-    licensed_item_usage_id: LicensedItemCheckoutID
+class LicensedItemCheckoutNotFoundError(RutNotFoundError):
+    licensed_item_checkout_id: LicensedItemCheckoutID

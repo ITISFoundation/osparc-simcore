@@ -66,7 +66,7 @@ async def release_licensed_item_for_wallet(
     rpc_client = get_rabbitmq_rpc_client(app)
 
     checkout_item = await licensed_items_checkouts.get_licensed_item_checkout(
-        rpc_client, product_name=product_name, licensed_item_usage_id=checkout_id
+        rpc_client, product_name=product_name, licensed_item_checkout_id=checkout_id
     )
 
     # Check whether user has access to the wallet
@@ -86,7 +86,7 @@ async def release_licensed_item_for_wallet(
     )
 
     return webserver_licensed_items_checkouts.LicensedItemCheckoutGet(
-        licensed_item_checkout_id=licensed_item_get.licensed_item_usage_id,
+        licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
         licensed_item_id=licensed_item_get.licensed_item_id,
         wallet_id=licensed_item_get.wallet_id,
         user_id=licensed_item_get.user_id,

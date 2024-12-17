@@ -125,7 +125,7 @@ async def test_rpc_licensed_items_checkouts_workflow(
     output = await licensed_items_checkouts.get_licensed_item_checkout(
         rpc_client,
         product_name="osparc",
-        licensed_item_usage_id=output.items[0].licensed_item_checkout_id,
+        licensed_item_checkout_id=output.items[0].licensed_item_checkout_id,
     )
     assert isinstance(output, LicensedItemCheckoutGet)
 

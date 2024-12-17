@@ -39,13 +39,13 @@ async def get_licensed_item_checkout(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
-    licensed_item_usage_id: LicensedItemCheckoutID,
+    licensed_item_checkout_id: LicensedItemCheckoutID,
 ) -> LicensedItemCheckoutGet:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("get_licensed_item_checkout"),
         product_name=product_name,
-        licensed_item_usage_id=licensed_item_usage_id,
+        licensed_item_checkout_id=licensed_item_checkout_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, LicensedItemCheckoutGet)  # nosec

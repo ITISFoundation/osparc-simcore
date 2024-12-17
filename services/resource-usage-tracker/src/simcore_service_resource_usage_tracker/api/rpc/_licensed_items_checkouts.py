@@ -22,16 +22,16 @@ router = RPCRouter()
 
 
 @router.expose(reraise_if_error_type=())
-async def get_licensed_item_usage(
+async def get_licensed_item_checkout(
     app: FastAPI,
     *,
     product_name: ProductName,
-    licensed_item_usage_id: LicensedItemCheckoutID,
+    licensed_item_checkout_id: LicensedItemCheckoutID,
 ) -> LicensedItemCheckoutGet:
     return await licensed_items_checkouts.get_licensed_item_checkout(
         db_engine=app.state.engine,
         product_name=product_name,
-        licensed_item_checkout_id=licensed_item_usage_id,
+        licensed_item_checkout_id=licensed_item_checkout_id,
     )
 
 

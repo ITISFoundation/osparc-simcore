@@ -52,17 +52,17 @@ async def list_licensed_items_checkouts(
         total=total,
         items=[
             LicensedItemCheckoutGet(
-                licensed_item_checkout_id=licensed_item_usage_db.licensed_item_checkout_id,
-                licensed_item_id=licensed_item_usage_db.licensed_item_id,
-                wallet_id=licensed_item_usage_db.wallet_id,
-                user_id=licensed_item_usage_db.user_id,
-                product_name=licensed_item_usage_db.product_name,
-                service_run_id=licensed_item_usage_db.service_run_id,
-                started_at=licensed_item_usage_db.started_at,
-                stopped_at=licensed_item_usage_db.stopped_at,
-                num_of_seats=licensed_item_usage_db.num_of_seats,
+                licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
+                licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+                wallet_id=licensed_item_checkout_db.wallet_id,
+                user_id=licensed_item_checkout_db.user_id,
+                product_name=licensed_item_checkout_db.product_name,
+                service_run_id=licensed_item_checkout_db.service_run_id,
+                started_at=licensed_item_checkout_db.started_at,
+                stopped_at=licensed_item_checkout_db.stopped_at,
+                num_of_seats=licensed_item_checkout_db.num_of_seats,
             )
-            for licensed_item_usage_db in licensed_items_checkouts_list_db
+            for licensed_item_checkout_db in licensed_items_checkouts_list_db
         ],
     )
 
@@ -73,24 +73,24 @@ async def get_licensed_item_checkout(
     product_name: ProductName,
     licensed_item_checkout_id: LicensedItemCheckoutID,
 ) -> LicensedItemCheckoutGet:
-    licensed_item_usage_db: LicensedItemCheckoutDB = (
+    licensed_item_checkout_db: LicensedItemCheckoutDB = (
         await licensed_items_checkouts_db.get(
             db_engine,
             product_name=product_name,
-            licensed_item_usage_id=licensed_item_checkout_id,
+            licensed_item_checkout_id=licensed_item_checkout_id,
         )
     )
 
     return LicensedItemCheckoutGet(
-        licensed_item_checkout_id=licensed_item_usage_db.licensed_item_checkout_id,
-        licensed_item_id=licensed_item_usage_db.licensed_item_id,
-        wallet_id=licensed_item_usage_db.wallet_id,
-        user_id=licensed_item_usage_db.user_id,
-        product_name=licensed_item_usage_db.product_name,
-        service_run_id=licensed_item_usage_db.service_run_id,
-        started_at=licensed_item_usage_db.started_at,
-        stopped_at=licensed_item_usage_db.stopped_at,
-        num_of_seats=licensed_item_usage_db.num_of_seats,
+        licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
+        licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+        wallet_id=licensed_item_checkout_db.wallet_id,
+        user_id=licensed_item_checkout_db.user_id,
+        product_name=licensed_item_checkout_db.product_name,
+        service_run_id=licensed_item_checkout_db.service_run_id,
+        started_at=licensed_item_checkout_db.started_at,
+        stopped_at=licensed_item_checkout_db.stopped_at,
+        num_of_seats=licensed_item_checkout_db.num_of_seats,
     )
 
 
@@ -139,7 +139,7 @@ async def checkout_licensed_item(
     ):
         raise ValueError("This should not happen")
 
-    _create_item_usage = CreateLicensedItemCheckoutDB(
+    _create_item_checkout = CreateLicensedItemCheckoutDB(
         licensed_item_id=licensed_item_id,
         wallet_id=wallet_id,
         user_id=user_id,
@@ -150,7 +150,7 @@ async def checkout_licensed_item(
         num_of_seats=num_of_seats,
     )
     license_item_checkout_db = await licensed_items_checkouts_db.create(
-        db_engine, data=_create_item_usage
+        db_engine, data=_create_item_checkout
     )
 
     # Return checkout ID
@@ -166,23 +166,23 @@ async def release_licensed_item(
     product_name: ProductName,
 ) -> LicensedItemCheckoutGet:
 
-    licensed_item_usage_db: LicensedItemCheckoutDB = (
+    licensed_item_checkout_db: LicensedItemCheckoutDB = (
         await licensed_items_checkouts_db.update(
             db_engine,
-            licensed_item_usage_id=checkout_id,
+            licensed_item_checkout_id=checkout_id,
             product_name=product_name,
             stopped_at=datetime.now(tz=UTC),
         )
     )
 
     return LicensedItemCheckoutGet(
-        licensed_item_checkout_id=licensed_item_usage_db.licensed_item_checkout_id,
-        licensed_item_id=licensed_item_usage_db.licensed_item_id,
-        wallet_id=licensed_item_usage_db.wallet_id,
-        user_id=licensed_item_usage_db.user_id,
-        product_name=licensed_item_usage_db.product_name,
-        service_run_id=licensed_item_usage_db.service_run_id,
-        started_at=licensed_item_usage_db.started_at,
-        stopped_at=licensed_item_usage_db.stopped_at,
-        num_of_seats=licensed_item_usage_db.num_of_seats,
+        licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
+        licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+        wallet_id=licensed_item_checkout_db.wallet_id,
+        user_id=licensed_item_checkout_db.user_id,
+        product_name=licensed_item_checkout_db.product_name,
+        service_run_id=licensed_item_checkout_db.service_run_id,
+        started_at=licensed_item_checkout_db.started_at,
+        stopped_at=licensed_item_checkout_db.stopped_at,
+        num_of_seats=licensed_item_checkout_db.num_of_seats,
     )

@@ -4,9 +4,6 @@ from typing import cast
 import sqlalchemy as sa
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemPurchaseID,
-)
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt
@@ -17,9 +14,12 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from simcore_service_resource_usage_tracker.services.licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ....exceptions.errors import LicensedItemUsageNotFoundError
+from ....exceptions.errors import LicensedItemCheckoutNotFoundError
 from ....models.licensed_items_checkouts import (
     CreateLicensedItemCheckoutDB,
     LicensedItemCheckoutDB,
@@ -125,7 +125,7 @@ async def get(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    licensed_item_usage_id: LicensedItemPurchaseID,
+    licensed_item_checkout_id: LicensedItemCheckoutID,
     product_name: ProductName,
 ) -> LicensedItemCheckoutDB:
     base_query = (
@@ -133,8 +133,8 @@ async def get(
         .select_from(resource_tracker_licensed_items_checkouts)
         .where(
             (
-                resource_tracker_licensed_items_checkouts.c.licensed_item_usage_id
-                == licensed_item_usage_id
+                resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id
+                == licensed_item_checkout_id
             )
             & (resource_tracker_licensed_items_checkouts.c.product_name == product_name)
         )
@@ -144,8 +144,8 @@ async def get(
         result = await conn.stream(base_query)
         row = await result.first()
         if row is None:
-            raise LicensedItemUsageNotFoundError(
-                licensed_item_usage_id=licensed_item_usage_id
+            raise LicensedItemCheckoutNotFoundError(
+                licensed_item_checkout_id=licensed_item_checkout_id
             )
         return LicensedItemCheckoutDB.model_validate(row)
 
@@ -154,7 +154,7 @@ async def update(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    licensed_item_usage_id: LicensedItemPurchaseID,
+    licensed_item_checkout_id: LicensedItemCheckoutID,
     product_name: ProductName,
     stopped_at: datetime,
 ) -> LicensedItemCheckoutDB:
@@ -166,8 +166,8 @@ async def update(
         )
         .where(
             (
-                resource_tracker_licensed_items_checkouts.c.licensed_item_usage_id
-                == licensed_item_usage_id
+                resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id
+                == licensed_item_checkout_id
             )
             & (resource_tracker_licensed_items_checkouts.c.product_name == product_name)
             & (resource_tracker_licensed_items_checkouts.c.stopped_at.is_(None))
@@ -179,8 +179,8 @@ async def update(
         result = await conn.execute(update_stmt)
         row = result.first()
         if row is None:
-            raise LicensedItemUsageNotFoundError(
-                licensed_item_usage_id=licensed_item_usage_id
+            raise LicensedItemCheckoutNotFoundError(
+                licensed_item_checkout_id=licensed_item_checkout_id
             )
         return LicensedItemCheckoutDB.model_validate(row)
 
