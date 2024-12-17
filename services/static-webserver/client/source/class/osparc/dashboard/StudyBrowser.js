@@ -585,7 +585,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.store.Folders.getInstance().moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
         .then(() => osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)) // then move to folder
         .then(() => this.__reloadFolders())
-        .catch(err => console.error(err));
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+        });
     },
 
     _folderToFolderRequested: function(folderId, workspaceId, destWorkspaceId, destFolderId) {
@@ -612,7 +615,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        })
+        });
     },
 
     _trashFolderRequested: function(folderId) {
@@ -1729,11 +1732,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       };
       return osparc.data.Resources.fetch("studies", "moveToWorkspace", params)
-        .then(() => studyData["workspaceId"] = destWorkspaceId)
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        });
+        .then(() => studyData["workspaceId"] = destWorkspaceId);
     },
 
     __moveStudyToFolder: function(studyData, destFolderId) {
