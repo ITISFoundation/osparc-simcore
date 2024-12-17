@@ -17,7 +17,6 @@ from models_library.api_schemas_webserver.users import (
     UserForAdminGet,
     UserGet,
     UsersForAdminSearchQueryParams,
-    UsersGetParams,
     UsersSearch,
 )
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
@@ -148,14 +147,6 @@ async def list_user_permissions():
 #
 # USERS public
 #
-
-
-@router.get(
-    "/users/{user_id}",
-    response_model=Envelope[UserGet],
-)
-async def get_user(_path: Annotated[UsersGetParams, Depends()]):
-    ...
 
 
 @router.post(
