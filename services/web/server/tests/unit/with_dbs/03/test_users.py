@@ -143,7 +143,7 @@ async def test_search_users(
     assert len(found) == 1
     assert semi_private_user["name"] == found[0].user_name
     assert found[0].first_name == semi_private_user.get("first_name")
-    assert found[0].last_name == semi_private_user.get("first_name")
+    assert found[0].last_name == semi_private_user.get("last_name")
     assert found[0].email is None
 
     # SEARCH by partial email

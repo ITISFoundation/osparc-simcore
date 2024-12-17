@@ -10,6 +10,7 @@ from datetime import datetime
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
+from sqlalchemy import Column
 
 from .errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
@@ -214,7 +215,17 @@ class UsersRepo:
                 users_pre_registration_details.c.pre_email == email
             )
         )
-        if pre_registered:
-            return True
+        return bool(pre_registered)
 
-        return False
+
+#
+# Privacy settings
+#
+
+
+def is_private(hide_attribute: Column, caller_id: int):
+    return hide_attribute.is_(True) & (users.c.id != caller_id)
+
+
+def is_public(hide_attribute: Column, caller_id: int):
+    return hide_attribute.is_(False) | (users.c.id == caller_id)
