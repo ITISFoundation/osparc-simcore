@@ -7,9 +7,10 @@
 
 import functools
 import sys
+from collections.abc import AsyncIterable
 from copy import deepcopy
 from http import HTTPStatus
-from typing import Any, AsyncIterable
+from typing import Any
 from unittest.mock import MagicMock, Mock
 
 import pytest
@@ -77,6 +78,23 @@ async def private_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
 
 
 @pytest.fixture
+async def semi_private_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
+    assert client.app
+    async with NewUser(
+        app=client.app,
+        user_data={
+            "name": "maxwell",
+            "first_name": "James",
+            "last_name": "Maxwell",
+            "email": "j@maxwell.me",
+            "privacy_hide_email": True,
+            "privacy_hide_fullname": False,  # <--
+        },
+    ) as usr:
+        yield usr
+
+
+@pytest.fixture
 async def public_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
     assert client.app
     async with NewUser(
@@ -102,6 +120,7 @@ async def test_search_users(
     client: TestClient,
     user_role: UserRole,
     public_user: UserInfoDict,
+    semi_private_user: UserInfoDict,
     private_user: UserInfoDict,
 ):
     assert client.app
@@ -109,6 +128,23 @@ async def test_search_users(
 
     assert private_user["id"] != logged_user["id"]
     assert public_user["id"] != logged_user["id"]
+
+    # SEARCH by partial first_name
+    partial_name = "james"
+    assert partial_name in private_user.get("first_name", "").lower()
+    assert partial_name in semi_private_user.get("first_name", "").lower()
+
+    url = client.app.router["search_users"].url_for()
+    resp = await client.post(f"{url}", json={"match": partial_name})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    found = TypeAdapter(list[UserGet]).validate_python(data)
+    assert found
+    assert len(found) == 1
+    assert semi_private_user["name"] == found[0].user_name
+    assert found[0].first_name == semi_private_user.get("first_name")
+    assert found[0].last_name == semi_private_user.get("first_name")
+    assert found[0].email is None
 
     # SEARCH by partial email
     partial_email = "@find.m"
