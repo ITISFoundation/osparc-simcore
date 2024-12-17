@@ -1,4 +1,4 @@
-from ._core import archive_dir, unarchive_dir
+from ._api import archive_dir, unarchive_dir
 from ._errors import ArchiveError
 from ._prunable_folder import PrunableFolder, is_leaf_path
 
