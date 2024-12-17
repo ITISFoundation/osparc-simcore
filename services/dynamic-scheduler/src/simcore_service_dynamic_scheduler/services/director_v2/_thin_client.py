@@ -11,6 +11,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
+from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
@@ -91,7 +92,7 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
         node_id: NodeID,
         simcore_user_agent: str,
         save_state: bool,
-        timeout: datetime.timedelta,
+        timeout: datetime.timedelta,  # noqa: ASYNC109
     ) -> Response:
         @retry_on_errors(total_retry_timeout_overwrite=timeout.total_seconds())
         @expect_status(status.HTTP_204_NO_CONTENT)
@@ -114,6 +115,22 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
 
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
+    async def dynamic_service_retrieve(
+        self,
+        *,
+        node_id: NodeID,
+        port_keys: list[ServicePortKey],
+        timeout: datetime.timedelta,  # noqa: ASYNC109
+    ) -> Response:
+        post_data = {"port_keys": port_keys}
+        return await self.client.post(
+            f"/dynamic_services/{node_id}:retrieve",
+            content=json_dumps(post_data),
+            timeout=timeout.total_seconds(),
+        )
+
+    @retry_on_errors()
+    @expect_status(status.HTTP_200_OK)
     async def get_dynamic_services(
         self,
         *,
@@ -124,6 +141,11 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
             "/dynamic_services",
             params=as_dict_exclude_unset(user_id=user_id, project_id=project_id),
         )
+
+    @retry_on_errors()
+    @expect_status(status.HTTP_204_NO_CONTENT)
+    async def post_restart(self, *, node_id: NodeID) -> Response:
+        return await self.client.post(f"/dynamic_services/{node_id}:restart")
 
     @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)

@@ -62,7 +62,6 @@ from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
-from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..groups.api import get_group_from_gid, list_all_user_groups_ids
 from ..groups.exceptions import GroupNotFoundError
@@ -279,8 +278,8 @@ async def retrieve_node(request: web.Request) -> web.Response:
     retrieve = await parse_request_body_as(NodeRetrieve, request)
 
     return web.json_response(
-        await director_v2_api.retrieve(
-            request.app, f"{path_params.node_id}", retrieve.port_keys
+        await dynamic_scheduler_api.retrieve_inputs(
+            request.app, path_params.node_id, retrieve.port_keys
         ),
         dumps=json_dumps,
     )
@@ -411,7 +410,9 @@ async def restart_node(request: web.Request) -> web.Response:
 
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
-    await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
+    await dynamic_scheduler_api.restart_user_services(
+        request.app, node_id=path_params.node_id
+    )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
