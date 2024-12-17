@@ -33,7 +33,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.groups._groups_api import get_product_group_for_user
+from simcore_service_webserver.groups._groups_service import get_product_group_for_user
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.groups.exceptions import GroupNotFoundError
 from simcore_service_webserver.products.api import get_product
@@ -412,6 +412,7 @@ async def test_get_project(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group,
@@ -427,6 +428,7 @@ async def test_new_project(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -453,6 +455,7 @@ async def test_new_project_from_template(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_other_study(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -482,6 +485,7 @@ async def test_new_project_from_other_study(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template_with_body(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -536,6 +540,7 @@ async def test_new_project_from_template_with_body(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_template_from_project(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],

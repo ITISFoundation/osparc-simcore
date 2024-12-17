@@ -3,16 +3,19 @@
 # pylint: disable=unused-variable
 
 
-import json
-import sys
+from typing import Any
 
 import pytest
-from pytest_simcore.helpers.dict_tools import copy_from_dict, get_from_dict
-from pytest_simcore.helpers.typing_docker import TaskDict
+from common_library.dict_tools import (
+    copy_from_dict,
+    get_from_dict,
+    remap_keys,
+    update_dict,
+)
 
 
 @pytest.fixture
-def data():
+def data() -> dict[str, Any]:
     return {
         "ID": "3ifd79yhz2vpgu1iz43mf9m2d",
         "Version": {"Index": 176},
@@ -113,7 +116,20 @@ def data():
     }
 
 
-def test_get_from_dict(data: TaskDict):
+def test_remap_keys():
+    assert remap_keys({"a": 1, "b": 2}, rename={"a": "A"}) == {"A": 1, "b": 2}
+
+
+def test_update_dict():
+    def _increment(x):
+        return x + 1
+
+    data = {"a": 1, "b": 2, "c": 3}
+
+    assert update_dict(data, a=_increment, b=42) == {"a": 2, "b": 42, "c": 3}
+
+
+def test_get_from_dict(data: dict[str, Any]):
 
     assert get_from_dict(data, "Spec.ContainerSpec.Labels") == {
         "com.docker.stack.namespace": "master-simcore"
@@ -122,7 +138,7 @@ def test_get_from_dict(data: TaskDict):
     assert get_from_dict(data, "Invalid.Invalid.Invalid", default=42) == 42
 
 
-def test_copy_from_dict(data: TaskDict):
+def test_copy_from_dict(data: dict[str, Any]):
 
     selected_data = copy_from_dict(
         data,
@@ -136,8 +152,6 @@ def test_copy_from_dict(data: TaskDict):
         },
     )
 
-    print(json.dumps(selected_data, indent=2))
-
     assert selected_data["ID"] == data["ID"]
     assert (
         selected_data["Spec"]["ContainerSpec"]["Image"]
@@ -145,11 +159,4 @@ def test_copy_from_dict(data: TaskDict):
     )
     assert selected_data["Status"]["State"] == data["Status"]["State"]
     assert "Message" not in selected_data["Status"]["State"]
-    assert "Message" in data["Status"]["State"]
-
-
-if __name__ == "__main__":
-    # NOTE: use in vscode "Run and Debug" -> select 'Python: Current File'
-    sys.exit(
-        pytest.main(["-vv", "-s", "--pdb", "--log-cli-level=WARNING", sys.argv[0]])
-    )
+    assert "running" in data["Status"]["State"]

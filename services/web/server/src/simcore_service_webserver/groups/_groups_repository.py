@@ -17,6 +17,7 @@ from models_library.groups import (
 )
 from models_library.users import UserID
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_products import execute_get_or_create_product_group
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -27,7 +28,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ..db.models import GroupType, groups, user_to_groups, users
+from ..db.models import groups, user_to_groups, users
 from ..db.plugin import get_asyncpg_engine
 from ..users.exceptions import UserNotFoundError
 from .exceptions import (
@@ -744,6 +745,6 @@ async def auto_add_user_to_product_group(
                 gid=product_group_id,
                 access_rights=_DEFAULT_PRODUCT_GROUP_ACCESS_RIGHTS,
             )
-            .on_conflict_do_nothing()  # in case the user was already added
+            .on_conflict_do_nothing()  # in case the user was already added to this group
         )
         return product_group_id

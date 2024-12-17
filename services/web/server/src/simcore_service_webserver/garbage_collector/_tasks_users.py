@@ -8,14 +8,12 @@ import logging
 from collections.abc import AsyncIterator, Callable
 
 from aiohttp import web
-from aiopg.sa.engine import Engine
 from models_library.users import UserID
 from servicelib.logging_utils import get_log_record_extra, log_context
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from ..db.plugin import get_database_engine
 from ..login.utils import notify_user_logout
 from ..security.api import clean_auth_policy_cache
 from ..users.api import update_expired_users
@@ -60,10 +58,8 @@ async def _update_expired_users(app: web.Application):
     """
     It is resilient, i.e. if update goes wrong, it waits a bit and retries
     """
-    engine: Engine = get_database_engine(app)
-    assert engine  # nosec
 
-    if updated := await update_expired_users(engine):
+    if updated := await update_expired_users(app):
         # expired users might be cached in the auth. If so, any request
         # with this user-id will get thru producing unexpected side-effects
         await clean_auth_policy_cache(app)

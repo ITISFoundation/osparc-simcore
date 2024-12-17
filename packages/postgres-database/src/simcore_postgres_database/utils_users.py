@@ -134,8 +134,8 @@ class UsersRepo:
                 )
 
     @staticmethod
-    async def get_billing_details(conn: SAConnection, user_id: int) -> RowProxy | None:
-        result = await conn.execute(
+    def get_billing_details_query(user_id: int):
+        return (
             sa.select(
                 users.c.first_name,
                 users.c.last_name,
@@ -154,6 +154,12 @@ class UsersRepo:
                 )
             )
             .where(users.c.id == user_id)
+        )
+
+    @staticmethod
+    async def get_billing_details(conn: SAConnection, user_id: int) -> RowProxy | None:
+        result = await conn.execute(
+            UsersRepo.get_billing_details_query(user_id=user_id)
         )
         value: RowProxy | None = await result.fetchone()
         return value

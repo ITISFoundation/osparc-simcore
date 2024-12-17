@@ -1,13 +1,16 @@
+# pylint: disable=no-name-in-module
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
-# pylint: disable=no-name-in-module
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
+from collections.abc import Iterable
 from pathlib import Path
 
 import pytest
+from playwright.sync_api._generated import BrowserContext, Playwright
+from pydantic import AnyUrl
 
 
 @pytest.fixture(scope="session")
@@ -17,11 +20,11 @@ def store_browser_context() -> bool:
 
 @pytest.fixture
 def logged_in_context(
-    playwright,
+    playwright: Playwright,
     store_browser_context: bool,
     request: pytest.FixtureRequest,
-    pytestconfig,
-):
+    pytestconfig: pytest.Config,
+) -> Iterable[BrowserContext]:
     is_headed = "--headed" in pytestconfig.invocation_params.args
 
     file_path = Path("state.json")
@@ -36,7 +39,7 @@ def logged_in_context(
 
 
 @pytest.fixture(scope="module")
-def test_module_teardown():
+def test_module_teardown() -> Iterable[None]:
 
     yield  # Run the tests
 
@@ -45,7 +48,9 @@ def test_module_teardown():
         file_path.unlink()
 
 
-def test_simple_folder_workflow(logged_in_context, product_url, test_module_teardown):
+def test_simple_folder_workflow(
+    logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None
+):
     page = logged_in_context.new_page()
 
     page.goto(f"{product_url}")
@@ -66,7 +71,7 @@ def test_simple_folder_workflow(logged_in_context, product_url, test_module_tear
 
 
 def test_simple_workspace_workflow(
-    logged_in_context, product_url, test_module_teardown
+    logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None
 ):
     page = logged_in_context.new_page()
 

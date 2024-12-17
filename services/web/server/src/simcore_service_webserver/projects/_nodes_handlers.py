@@ -279,8 +279,8 @@ async def retrieve_node(request: web.Request) -> web.Response:
     retrieve = await parse_request_body_as(NodeRetrieve, request)
 
     return web.json_response(
-        await director_v2_api.retrieve(
-            request.app, f"{path_params.node_id}", retrieve.port_keys
+        await dynamic_scheduler_api.retrieve_inputs(
+            request.app, path_params.node_id, retrieve.port_keys
         ),
         dumps=json_dumps,
     )
@@ -376,7 +376,7 @@ async def stop_node(request: web.Request) -> web.Response:
         permission="write",
     )
 
-    user_role = await get_user_role(request.app, req_ctx.user_id)
+    user_role = await get_user_role(request.app, user_id=req_ctx.user_id)
     if user_role is None or user_role <= UserRole.GUEST:
         save_state = False
 
