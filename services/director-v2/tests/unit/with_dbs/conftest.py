@@ -118,7 +118,6 @@ async def create_tasks(
                 ),
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
-                "submit": datetime.datetime.now(datetime.UTC),
                 "job_id": generate_dask_job_id(
                     service_key=node_data.key,
                     service_version=node_data.version,
