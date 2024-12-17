@@ -95,7 +95,7 @@ def mock_checkout_licensed_item(mocker: MockerFixture) -> tuple:
     )
 
 
-_LICENSED_ITEM_USAGE_GET = LicensedItemCheckoutGet.model_validate(
+_LICENSED_ITEM_CHECKOUT_GET = LicensedItemCheckoutGet.model_validate(
     LicensedItemCheckoutGet.model_config["json_schema_extra"]["examples"][0]
 )
 
@@ -105,7 +105,7 @@ def mock_get_licensed_item_checkout(mocker: MockerFixture) -> tuple:
     return mocker.patch(
         "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_checkouts.get_licensed_item_checkout",
         spec=True,
-        return_value=_LICENSED_ITEM_USAGE_GET,
+        return_value=_LICENSED_ITEM_CHECKOUT_GET,
     )
 
 
@@ -114,7 +114,7 @@ def mock_release_licensed_item(mocker: MockerFixture) -> tuple:
     return mocker.patch(
         "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_checkouts.release_licensed_item",
         spec=True,
-        return_value=_LICENSED_ITEM_USAGE_GET,
+        return_value=_LICENSED_ITEM_CHECKOUT_GET,
     )
 
 
