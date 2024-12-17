@@ -61,7 +61,10 @@ def setup_rest(app: web.Application):
     _logger.debug("OAS loaded from %s ", spec_path)
     if settings.REST_SWAGGER_API_DOC_ENABLED:
         api_doc(
-            app=app, url_prefix="/dev/doc", config_path=str(spec_path), title="API doc"
+            app=app,
+            url_prefix="/dev/doc",
+            config_path=str(spec_path),
+            title="Web-API doc",
         )
 
 
