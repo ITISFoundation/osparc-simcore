@@ -555,7 +555,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__reloadFolders();
     },
 
-    __showMoveToWorkspaceWarningMessage: function() {
+    __showMoveToDifferentWorkspaceWarningMessage: function() {
       const msg = this.tr("The permissions will be taken from the new workspace.");
       const win = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Move"),
@@ -592,7 +592,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (destWorkspaceId === workspaceId) {
         this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
       } else {
-        const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
+        const confirmationWin = this.__showMoveToDifferentWorkspaceWarningMessage();
         confirmationWin.addListener("close", () => {
           if (confirmationWin.getConfirmed()) {
             this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
@@ -1277,7 +1277,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (destWorkspaceId === currentWorkspaceId) {
             moveStudies();
           } else {
-            const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
+            const confirmationWin = this.__showMoveToDifferentWorkspaceWarningMessage();
             confirmationWin.addListener("close", () => {
               if (confirmationWin.getConfirmed()) {
                 moveStudies();
@@ -1696,7 +1696,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (destWorkspaceId === currentWorkspaceId) {
             this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
           } else {
-            const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
+            const confirmationWin = this.__showMoveToDifferentWorkspaceWarningMessage();
             confirmationWin.addListener("close", () => {
               if (confirmationWin.getConfirmed()) {
                 this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
