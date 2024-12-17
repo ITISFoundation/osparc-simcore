@@ -31,7 +31,7 @@ from simcore_postgres_database.utils_users import (
     UsersRepo,
     generate_alternative_username,
 )
-from sqlalchemy import delete
+from sqlalchemy import Column, delete
 from sqlalchemy.engine.row import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -52,6 +52,109 @@ def _parse_as_user(user_id: Any) -> UserID:
         raise UserNotFoundError(uid=user_id, user_id=user_id) from err
 
 
+#
+# Privacy settings
+#
+
+
+def _is_private(hide_attribute: Column, caller_id: UserID):
+    return hide_attribute.is_(True) & (users.c.id != caller_id)
+
+
+def _is_public(hide_attribute: Column, caller_id: UserID):
+    return hide_attribute.is_(False) | (users.c.id == caller_id)
+
+
+def _public_user_cols(caller_id: UserID):
+    return (
+        # Fits PublicUser model
+        users.c.id.label("user_id"),
+        users.c.name.label("user_name"),
+        # privacy settings
+        sa.case(
+            (
+                _is_private(users.c.privacy_hide_email, caller_id),
+                None,
+            ),
+            else_=users.c.email,
+        ).label("email"),
+        sa.case(
+            (
+                _is_private(users.c.privacy_hide_fullname, caller_id),
+                None,
+            ),
+            else_=users.c.first_name,
+        ).label("first_name"),
+        sa.case(
+            (
+                _is_private(users.c.privacy_hide_fullname, caller_id),
+                None,
+            ),
+            else_=users.c.last_name,
+        ).label("last_name"),
+        users.c.primary_gid.label("group_id"),
+    )
+
+
+#
+#  PUBLIC User
+#
+
+
+async def get_public_user(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    caller_id: UserID,
+    user_id: UserID,
+):
+    query = sa.select(*_public_user_cols(caller_id=caller_id)).where(
+        users.c.id == user_id
+    )
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.execute(query)
+        user = result.first()
+        if not user:
+            raise UserNotFoundError(uid=user_id)
+        return user
+
+
+async def search_public_user(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    caller_id: UserID,
+    search_pattern: str,
+    limit: int,
+) -> list:
+
+    _pattern = f"%{search_pattern}%"
+
+    query = (
+        sa.select(*_public_user_cols(caller_id=caller_id))
+        .where(
+            users.c.name.ilike(_pattern)
+            | (
+                _is_public(users.c.privacy_hide_email, caller_id)
+                & users.c.email.ilike(_pattern)
+            )
+            | (
+                _is_public(users.c.privacy_hide_fullname, caller_id)
+                & (
+                    users.c.first_name.ilike(_pattern)
+                    | users.c.last_name.ilike(_pattern)
+                )
+            )
+        )
+        .limit(limit)
+    )
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.stream(query)
+        return [got async for got in result]
+
+
 async def get_user_or_raise(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
@@ -66,12 +169,12 @@ async def get_user_or_raise(
     assert set(return_column_names).issubset(users.columns.keys())  # nosec
 
     async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             sa.select(*(users.columns[name] for name in return_column_names)).where(
                 users.c.id == user_id
             )
         )
-        row = await result.first()
+        row = result.first()
         if row is None:
             raise UserNotFoundError(uid=user_id)
         user: dict[str, Any] = row._asdict()
