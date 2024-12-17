@@ -20,6 +20,7 @@ from aiopg.sa.connection import SAConnection
 from common_library.users_enums import UserRole, UserStatus
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
+from models_library.api_schemas_webserver.groups import GroupUserGet
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     UserForAdminGet,
@@ -155,6 +156,25 @@ async def test_get_and_search_public_users(
         )
         resp = await client.get(f"{url}")
         await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+        # GET user by primary GID
+        url = client.app.router["get_all_group_users"].url_for(
+            gid=f"{public_user['id']}"
+        )
+        resp = await client.get(f"{url}")
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+        user = GroupUserGet.model_validate(data)
+        assert user.id == public_user["id"]
+
+        url = client.app.router["get_all_group_users"].url_for(
+            gid=f"{private_user['id']}"
+        )
+        resp = await client.get(f"{url}")
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+        user = GroupUserGet.model_validate(data)
+        assert user.id == private_user["id"]
 
 
 @pytest.mark.parametrize(
