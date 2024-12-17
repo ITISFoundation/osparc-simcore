@@ -13,13 +13,16 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    LICENSES_ERRORS,
+)
 
 from ...services import licensed_items_checkouts
 
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=())
+@router.expose(reraise_if_error_type=LICENSES_ERRORS)
 async def get_licensed_item_checkout(
     app: FastAPI,
     *,
@@ -33,7 +36,7 @@ async def get_licensed_item_checkout(
     )
 
 
-@router.expose(reraise_if_error_type=())
+@router.expose(reraise_if_error_type=LICENSES_ERRORS)
 async def get_licensed_items_checkouts_page(
     app: FastAPI,
     *,
@@ -53,7 +56,7 @@ async def get_licensed_items_checkouts_page(
     )
 
 
-@router.expose(reraise_if_error_type=())
+@router.expose(reraise_if_error_type=LICENSES_ERRORS)
 async def checkout_licensed_item(
     app: FastAPI,
     *,
@@ -77,7 +80,7 @@ async def checkout_licensed_item(
     )
 
 
-@router.expose(reraise_if_error_type=())
+@router.expose(reraise_if_error_type=LICENSES_ERRORS)
 async def release_licensed_item(
     app: FastAPI,
     *,

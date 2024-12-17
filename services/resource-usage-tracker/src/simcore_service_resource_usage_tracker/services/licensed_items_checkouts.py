@@ -15,6 +15,11 @@ from models_library.resource_tracker_licensed_items_checkouts import (
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CanNotCheckoutNotEnoughAvailableSeatsError,
+    CanNotCheckoutServiceIsNotRunningError,
+    NotEnoughAvailableSeatsError,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api.rest.dependencies import get_resource_tracker_db_engine
@@ -122,10 +127,16 @@ async def checkout_licensed_item(
 
     available_seats = _active_purchased_seats - _currently_used_seats
     if available_seats <= 0:
-        raise ValueError("Not enough available seats")
+        raise NotEnoughAvailableSeatsError(
+            license_item_id=licensed_item_id, available_num_of_seats=available_seats
+        )
 
     if available_seats - num_of_seats < 0:
-        raise ValueError("Can not checkout num of seats, not enough available")
+        raise CanNotCheckoutNotEnoughAvailableSeatsError(
+            license_item_id=licensed_item_id,
+            available_num_of_seats=available_seats,
+            num_of_seats=num_of_seats,
+        )
 
     # Check if the service run ID is currently running
     service_run = await service_runs_db.get_service_run_by_id(
@@ -135,7 +146,9 @@ async def checkout_licensed_item(
         service_run is None
         or service_run.service_run_status != ServiceRunStatus.RUNNING
     ):
-        raise ValueError("This should not happen")
+        raise CanNotCheckoutServiceIsNotRunningError(
+            license_item_id=licensed_item_id, service_run=service_run
+        )
 
     _create_item_checkout = CreateLicensedItemCheckoutDB(
         licensed_item_id=licensed_item_id,

@@ -15,6 +15,9 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    LICENSES_ERRORS,
+)
 
 from ..rabbitmq import get_rabbitmq_rpc_server
 from . import _licensed_checkouts_api, _licensed_items_api
@@ -22,7 +25,7 @@ from . import _licensed_checkouts_api, _licensed_items_api
 router = RPCRouter()
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=LICENSES_ERRORS)
 async def get_licensed_items(
     app: web.Application,
     *,
@@ -55,7 +58,7 @@ async def get_purchased_licensed_items_for_wallet(
     raise NotImplementedError
 
 
-@router.expose(reraise_if_error_type=(NotImplementedError,))
+@router.expose(reraise_if_error_type=LICENSES_ERRORS)
 async def checkout_licensed_item_for_wallet(
     app: web.Application,
     *,
@@ -77,7 +80,7 @@ async def checkout_licensed_item_for_wallet(
     )
 
 
-@router.expose(reraise_if_error_type=(NotImplementedError,))
+@router.expose(reraise_if_error_type=LICENSES_ERRORS)
 async def release_licensed_item_for_wallet(
     app: web.Application,
     *,

@@ -1,7 +1,4 @@
 from common_library.errors_classes import OsparcErrorMixin
-from models_library.resource_tracker_licensed_items_checkouts import (
-    LicensedItemCheckoutID,
-)
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemPurchaseID,
 )
@@ -78,7 +75,3 @@ class PricingPlanNotFoundForServiceError(RutNotFoundError):
 
 class LicensedItemPurchaseNotFoundError(RutNotFoundError):
     licensed_item_purchase_id: LicensedItemPurchaseID
-
-
-class LicensedItemCheckoutNotFoundError(RutNotFoundError):
-    licensed_item_checkout_id: LicensedItemCheckoutID

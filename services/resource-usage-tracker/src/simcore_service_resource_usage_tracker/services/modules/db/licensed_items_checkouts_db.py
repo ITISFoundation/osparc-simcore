@@ -7,6 +7,9 @@ from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    LicensedItemCheckoutNotFoundError,
+)
 from simcore_postgres_database.models.resource_tracker_licensed_items_checkouts import (
     resource_tracker_licensed_items_checkouts,
 )
@@ -19,7 +22,6 @@ from simcore_service_resource_usage_tracker.services.licensed_items_checkouts im
 )
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ....exceptions.errors import LicensedItemCheckoutNotFoundError
 from ....models.licensed_items_checkouts import (
     CreateLicensedItemCheckoutDB,
     LicensedItemCheckoutDB,
