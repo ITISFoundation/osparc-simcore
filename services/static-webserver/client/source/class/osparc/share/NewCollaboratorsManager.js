@@ -79,7 +79,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const searchButton = new osparc.ui.form.FetchButton(this.tr("Search"), "@FontAwesome5Solid/search/12").set({
         maxHeight: 30,
       });
-      searchButton.addListener("exectue", () => this.__searchUsers(), this);
+      searchButton.addListener("execute", () => this.__searchUsers(), this);
       toolbar.add(searchButton);
       this.add(toolbar);
 
@@ -110,7 +110,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     },
 
     __searchUsers: function() {
-      const text = this.__textFilter.getValue();
+      const text = this.__textFilter.getChildControl("textfield").getValue();
       console.log("search", text);
       const params = {
         data: {
