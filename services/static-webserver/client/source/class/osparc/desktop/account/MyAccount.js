@@ -64,24 +64,17 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       authData.bind("username", usernameLabel, "value");
       layout.add(usernameLabel);
 
-      const nameLabel = new qx.ui.basic.Label().set({
+      const fullNameLabel = new qx.ui.basic.Label().set({
         font: "text-13",
         alignX: "center"
       });
-      layout.add(nameLabel);
-      const updateName = () => {
-        let name = "";
-        if (authData.getFirstName()) {
-          name += authData.getFirstName();
-        }
-        if (authData.getLastName()) {
-          name += " " + authData.getLastName();
-        }
-        nameLabel.setValue(name);
-      }
-      updateName();
-      authData.addListener("changeFirstName", updateName);
-      authData.addListener("changeLastName", updateName);
+      layout.add(fullNameLabel);
+      authData.bind("firstName", fullNameLabel, "value", {
+        converter: () => authData.getFullName()
+      });
+      authData.bind("lastName", fullNameLabel, "value", {
+        converter: () => authData.getFullName()
+      });
 
       if (authData.getRole() !== "user") {
         const role = authData.getFriendlyRole();
