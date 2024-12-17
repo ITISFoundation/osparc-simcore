@@ -565,13 +565,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return win;
     },
 
-    __doMoveFolder: function(folderId, destWorkspaceId, destFolderId) {
-      osparc.store.Folders.getInstance().moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
-        .then(() => osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)) // then move to folder
-        .then(() => this.__reloadFolders())
-        .catch(err => console.error(err));
-    },
-
     _moveFolderToRequested: function(folderId) {
       const currentWorkspaceId = this.getCurrentWorkspaceId();
       const currentFolderId = this.getCurrentFolderId();
@@ -586,6 +579,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._folderToFolderRequested(folderId, currentWorkspaceId, destWorkspaceId, destFolderId);
       });
       moveFolderTo.addListener("cancel", () => win.close());
+    },
+
+    __doMoveFolder: function(folderId, destWorkspaceId, destFolderId) {
+      osparc.store.Folders.getInstance().moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
+        .then(() => osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)) // then move to folder
+        .then(() => this.__reloadFolders())
+        .catch(err => console.error(err));
     },
 
     _folderToFolderRequested: function(folderId, workspaceId, destWorkspaceId, destFolderId) {
