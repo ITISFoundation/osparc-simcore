@@ -20,7 +20,6 @@ from models_library.groups import (
 from models_library.users import UserID
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.users import users
-from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_postgres_database.utils_products import execute_get_or_create_product_group
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -515,8 +514,6 @@ async def list_users_in_group(
             )
         )
 
-        print(as_postgres_sql_query_str(query))
-
         result = await conn.execute(query)
         group_row = result.first()
         if not group_row:
@@ -541,10 +538,10 @@ async def list_users_in_group(
             user_to_groups.c.gid == group_id
         )
 
-        result = await conn.stream(query)
+        aresult = await conn.stream(query)
         return [
             GroupMember.model_validate(row, from_attributes=True)
-            async for row in result
+            async for row in aresult
         ]
 
 
@@ -742,7 +739,7 @@ async def auto_add_user_to_groups(
 
     # auto add user to the groups with the right rules
     # get the groups where there are inclusion rules and see if they apply
-    query = sa.select(groups).where(groups.c.inclusion_rules != {})
+    query = sa.select(groups).where(groups.c.inclusion_rules != "{}")
     possible_group_ids = set()
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
