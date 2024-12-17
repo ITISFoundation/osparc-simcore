@@ -1,7 +1,4 @@
 from aiohttp import web
-from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
-    LicensedItemCheckoutID,
-)
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.licensed_items import LicensedItemGetPage
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
@@ -11,6 +8,9 @@ from models_library.basic_types import IDStr
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker import ServiceRunId
+from models_library.resource_tracker_licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID

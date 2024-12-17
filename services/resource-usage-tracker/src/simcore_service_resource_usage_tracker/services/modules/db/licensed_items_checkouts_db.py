@@ -4,6 +4,9 @@ from typing import cast
 import sqlalchemy as sa
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
+from models_library.resource_tracker_licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt
@@ -16,9 +19,6 @@ from simcore_postgres_database.models.resource_tracker_licensed_items_checkouts 
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
-)
-from simcore_service_resource_usage_tracker.services.licensed_items_checkouts import (
-    LicensedItemCheckoutID,
 )
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
