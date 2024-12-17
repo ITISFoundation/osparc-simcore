@@ -1,5 +1,6 @@
 import re
 from copy import deepcopy
+from typing import Literal
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -89,11 +90,14 @@ def _to_group_info_tuple(group: Row) -> GroupInfoTuple:
 
 
 def _check_group_permissions(
-    group: Row, user_id: int, gid: int, permission: str
+    group: Row,
+    caller_id: UserID,
+    group_id: GroupID,
+    permission: Literal["read", "write", "delete"],
 ) -> None:
     if not group.access_rights[permission]:
         raise UserInsufficientRightsError(
-            user_id=user_id, gid=gid, permission=permission
+            user_id=caller_id, gid=group_id, permission=permission
         )
 
 
@@ -487,10 +491,29 @@ async def list_users_in_group(
 ) -> list[GroupMember]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
-        group = await _get_group_and_access_rights_or_raise(
-            conn, user_id=user_id, group_id=group_id
+        result = await conn.execute(
+            sa.select(
+                *_GROUP_COLUMNS,
+                user_to_groups.c.access_rights,
+            )
+            .select_from(
+                groups.join(
+                    user_to_groups, user_to_groups.c.gid == groups.c.gid, isouter=True
+                )
+            )
+            .where(
+                ((user_to_groups.c.uid == user_id) & (user_to_groups.c.gid == group_id))
+                | (groups.c.type == GroupType.PRIMARY)
+            )
         )
-        _check_group_permissions(group, user_id, group_id, "read")
+        group_row = result.first()
+        if not group_row:
+            raise GroupNotFoundError(gid=group_id)
+
+        if group_row.type != GroupType.PRIMARY:
+            _check_group_permissions(
+                group_row, caller_id=user_id, group_id=group_id, permission="read"
+            )
 
         # now get the list
         query = (
@@ -498,7 +521,7 @@ async def list_users_in_group(
                 *_group_user_cols(user_id),
                 user_to_groups.c.access_rights,
             )
-            .select_from(users.join(user_to_groups))
+            .select_from(users.join(user_to_groups, isouter=True))
             .where(user_to_groups.c.gid == group_id)
         )
 
