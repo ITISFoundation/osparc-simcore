@@ -29,13 +29,13 @@ from .modules.db import (
 )
 
 
-async def list_licensed_items_purchases(
+async def list_licensed_items_usages(
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
     *,
     product_name: ProductName,
     filter_wallet_id: WalletID,
-    offset: int = 0,
-    limit: int = 20,
+    offset: int,
+    limit: int,
     order_by: OrderBy,
 ) -> LicensedItemsUsagesPage:
     total, licensed_items_usages_list_db = await licensed_items_usages_db.list_(

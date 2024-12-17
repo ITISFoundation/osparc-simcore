@@ -38,8 +38,14 @@ async def get_licensed_items_purchases_page(
     wallet_id: WalletID,
     offset: int = 0,
     limit: int = 20,
-    order_by: OrderBy = OrderBy(field=IDStr("purchased_at")),
+    order_by: OrderBy | None = None,
 ) -> LicensedItemsPurchasesPage:
+    """
+    Default order_by field is "purchased_at"
+    """
+    if order_by is None:
+        order_by = OrderBy(field=IDStr("purchased_at"))
+
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("get_licensed_items_purchases_page"),

@@ -128,7 +128,7 @@ async def get(
         .select_from(resource_tracker_licensed_items_usage)
         .where(
             (
-                resource_tracker_licensed_items_usage.c.licensed_item_purchase_id
+                resource_tracker_licensed_items_usage.c.licensed_item_usage_id
                 == licensed_item_usage_id
             )
             & (resource_tracker_licensed_items_usage.c.product_name == product_name)

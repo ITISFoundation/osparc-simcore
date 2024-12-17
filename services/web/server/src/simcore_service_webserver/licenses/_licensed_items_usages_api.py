@@ -62,6 +62,19 @@ async def release_licensed_item_for_wallet(
     checkout_id: rut_licensed_items_usages.LicenseCheckoutID,
 ) -> webserver_licensed_items_usages.LicensedItemUsageGet:
     rpc_client = get_rabbitmq_rpc_client(app)
+    # Get
+    checkout_item = await licensed_items_usages.get_licensed_item_usage(
+        rpc_client, product_name=product_name, licensed_item_usage_id=checkout_id
+    )
+
+    # Check whether user has access to the wallet
+    await get_wallet_by_user(
+        app,
+        user_id=user_id,
+        wallet_id=checkout_item.wallet_id,
+        product_name=product_name,
+    )
+
     licensed_item_get: rut_licensed_items_usages.LicensedItemUsageGet = (
         await licensed_items_usages.release_licensed_item(
             rpc_client,
@@ -70,25 +83,13 @@ async def release_licensed_item_for_wallet(
         )
     )
 
-    # Check whether user has access to the wallet
-    await get_wallet_by_user(
-        app,
-        user_id=user_id,
-        wallet_id=licensed_item_get.wallet_id,
-        product_name=product_name,
-    )
-
     return webserver_licensed_items_usages.LicensedItemUsageGet(
-        licensed_item_purchase_id=licensed_item_get.licensed_item_purchase_id,
-        product_name=licensed_item_get.product_name,
+        licensed_item_usage_id=licensed_item_get.licensed_item_usage_id,
         licensed_item_id=licensed_item_get.licensed_item_id,
         wallet_id=licensed_item_get.wallet_id,
-        pricing_unit_cost_id=licensed_item_get.pricing_unit_cost_id,
-        pricing_unit_cost=licensed_item_get.pricing_unit_cost,
-        start_at=licensed_item_get.start_at,
-        expire_at=licensed_item_get.expire_at,
+        user_id=licensed_item_get.user_id,
+        product_name=licensed_item_get.product_name,
+        started_at=licensed_item_get.started_at,
+        stopped_at=licensed_item_get.stopped_at,
         num_of_seats=licensed_item_get.num_of_seats,
-        purchased_by_user=licensed_item_get.purchased_by_user,
-        purchased_at=licensed_item_get.purchased_at,
-        modified_at=licensed_item_get.modified,
     )

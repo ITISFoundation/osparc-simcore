@@ -10,6 +10,10 @@ from typing import Generator
 
 import pytest
 import sqlalchemy as sa
+from models_library.api_schemas_resource_usage_tracker.licensed_items_usages import (
+    LicensedItemsUsagesPage,
+    LicensedItemUsageGet,
+)
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemsPurchasesCreate,
 )
@@ -17,6 +21,9 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     licensed_items_purchases,
     licensed_items_usages,
+)
+from simcore_postgres_database.models.resource_tracker_licensed_items_usage import (
+    resource_tracker_licensed_items_usage,
 )
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
@@ -29,18 +36,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
-
-
-async def test_service_licensed_items_usages(
-    mocked_redis_server: None,
-    postgres_db: sa.engine.Engine,
-    rpc_client: RabbitMQRPCClient,
-):
-    ...
-
-    # List licensed items usages
-
-    # Get licensed items usages
 
 
 _USER_ID_1 = 1
@@ -66,15 +61,24 @@ def resource_tracker_service_run_id(
 
         yield row[0]
 
+        con.execute(resource_tracker_licensed_items_usage.delete())
         con.execute(resource_tracker_service_runs.delete())
 
 
 async def test_rpc_licensed_items_usages_workflow(
     mocked_redis_server: None,
-    postgres_db: sa.engine.Engine,
     resource_tracker_service_run_id: str,
     rpc_client: RabbitMQRPCClient,
 ):
+    # List licensed items usages
+    output = await licensed_items_usages.get_licensed_items_usages_page(
+        rpc_client,
+        product_name="osparc",
+        filter_wallet_id=_WALLET_ID,
+    )
+    assert output.total == 0
+    assert output.items == []
+
     # Purchase license item
     _create_data = LicensedItemsPurchasesCreate(
         product_name="osparc",
@@ -107,6 +111,23 @@ async def test_rpc_licensed_items_usages_workflow(
         user_id=_USER_ID_1,
         user_email="test@test.com",
     )
+
+    # List licensed items usages
+    output = await licensed_items_usages.get_licensed_items_usages_page(
+        rpc_client,
+        product_name="osparc",
+        filter_wallet_id=_WALLET_ID,
+    )
+    assert output.total == 1
+    assert isinstance(output, LicensedItemsUsagesPage)
+
+    # Get licensed items usages
+    output = await licensed_items_usages.get_licensed_item_usage(
+        rpc_client,
+        product_name="osparc",
+        licensed_item_usage_id=output.items[0].licensed_item_usage_id,
+    )
+    assert isinstance(output, LicensedItemUsageGet)
 
     # Release num of seats
     license_item_usage = await licensed_items_usages.release_licensed_item(
