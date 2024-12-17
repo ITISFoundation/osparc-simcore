@@ -30,8 +30,10 @@ from simcore_postgres_database.utils_repos import (
 from simcore_postgres_database.utils_users import (
     UsersRepo,
     generate_alternative_username,
+    is_private,
+    is_public,
 )
-from sqlalchemy import Column, delete
+from sqlalchemy import delete
 from sqlalchemy.engine.row import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -52,20 +54,7 @@ def _parse_as_user(user_id: Any) -> UserID:
         raise UserNotFoundError(uid=user_id, user_id=user_id) from err
 
 
-#
-# Privacy settings
-#
-
-
-def _is_private(hide_attribute: Column, caller_id: UserID):
-    return hide_attribute.is_(True) & (users.c.id != caller_id)
-
-
-def _is_public(hide_attribute: Column, caller_id: UserID):
-    return hide_attribute.is_(False) | (users.c.id == caller_id)
-
-
-def _public_user_cols(caller_id: UserID):
+def _public_user_cols(caller_id: int):
     return (
         # Fits PublicUser model
         users.c.id.label("user_id"),
@@ -73,21 +62,21 @@ def _public_user_cols(caller_id: UserID):
         # privacy settings
         sa.case(
             (
-                _is_private(users.c.privacy_hide_email, caller_id),
+                is_private(users.c.privacy_hide_email, caller_id),
                 None,
             ),
             else_=users.c.email,
         ).label("email"),
         sa.case(
             (
-                _is_private(users.c.privacy_hide_fullname, caller_id),
+                is_private(users.c.privacy_hide_fullname, caller_id),
                 None,
             ),
             else_=users.c.first_name,
         ).label("first_name"),
         sa.case(
             (
-                _is_private(users.c.privacy_hide_fullname, caller_id),
+                is_private(users.c.privacy_hide_fullname, caller_id),
                 None,
             ),
             else_=users.c.last_name,
@@ -136,11 +125,11 @@ async def search_public_user(
         .where(
             users.c.name.ilike(_pattern)
             | (
-                _is_public(users.c.privacy_hide_email, caller_id)
+                is_public(users.c.privacy_hide_email, caller_id)
                 & users.c.email.ilike(_pattern)
             )
             | (
-                _is_public(users.c.privacy_hide_fullname, caller_id)
+                is_public(users.c.privacy_hide_fullname, caller_id)
                 & (
                     users.c.first_name.ilike(_pattern)
                     | users.c.last_name.ilike(_pattern)
