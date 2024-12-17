@@ -1,6 +1,30 @@
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, NamedTuple, Self, TypedDict
 
-from pydantic import BaseModel, ConfigDict, Field
+from models_library.basic_types import IDStr
+from models_library.emails import LowerCaseEmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+class FullNameDict(TypedDict):
+    first_name: str | None
+    last_name: str | None
+
+
+class UserDisplayAndIdNamesTuple(NamedTuple):
+    name: str
+    email: EmailStr
+    first_name: IDStr
+    last_name: IDStr
+
+    @property
+    def full_name(self) -> IDStr:
+        return IDStr.concatenate(self.first_name, self.last_name)
+
+
+class UserIdNamesTuple(NamedTuple):
+    name: str
+    email: str
+
 
 #
 # DB models
@@ -45,3 +69,9 @@ class ToUserUpdateDB(BaseModel):
 
     def to_db(self) -> dict[str, Any]:
         return self.model_dump(exclude_unset=True, by_alias=False)
+
+
+class UserCredentialsTuple(NamedTuple):
+    email: LowerCaseEmailStr
+    password_hash: str
+    display_name: str

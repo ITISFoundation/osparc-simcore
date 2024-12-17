@@ -7,7 +7,7 @@
 
 import functools
 import logging
-from typing import Any
+from typing import Any, TypeAlias
 
 from aiohttp import web
 from common_library.pydantic_fields_extension import get_type, is_nullable
@@ -19,8 +19,10 @@ from .application_settings import ApplicationSettings, get_application_settings
 
 _logger = logging.getLogger(__name__)
 
+AppConfigDict: TypeAlias = dict[str, Any]
 
-def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
+
+def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
     """Maps current ApplicationSettings object into former trafaret-based config"""
 
     return {
@@ -186,8 +188,8 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
 
 
 def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
-    cfg: dict[str, Any]
-) -> dict[str, Any]:
+    cfg: AppConfigDict,
+) -> AppConfigDict:
     """Creates envs dict out of config dict
 
     NOTE: ONLY used to support legacy introduced by traferet vs settings_library.

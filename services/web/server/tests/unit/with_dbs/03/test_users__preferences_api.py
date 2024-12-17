@@ -10,8 +10,8 @@ import aiopg.sa
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from faker import Faker
 from common_library.pydantic_fields_extension import get_type
+from faker import Faker
 from models_library.api_schemas_webserver.users_preferences import Preference
 from models_library.products import ProductName
 from models_library.user_preferences import FrontendUserPreference
@@ -24,14 +24,14 @@ from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
 from simcore_postgres_database.models.users import UserStatus
-from simcore_service_webserver.users._preferences_api import (
-    _get_frontend_user_preferences,
-    get_frontend_user_preferences_aggregation,
-    set_frontend_user_preference,
-)
 from simcore_service_webserver.users._preferences_models import (
     ALL_FRONTEND_PREFERENCES,
     BillingCenterUsageColumnOrderFrontendUserPreference,
+)
+from simcore_service_webserver.users._preferences_service import (
+    _get_frontend_user_preferences,
+    get_frontend_user_preferences_aggregation,
+    set_frontend_user_preference,
 )
 
 
