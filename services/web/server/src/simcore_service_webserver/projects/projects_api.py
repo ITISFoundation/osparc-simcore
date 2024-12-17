@@ -1136,6 +1136,20 @@ async def is_node_id_present_in_any_project_workbench(
     return await db.node_id_exists(node_id)
 
 
+async def _safe_retrieve(
+    app: web.Application, node_id: NodeID, port_keys: list[str]
+) -> None:
+    try:
+        await dynamic_scheduler_api.retrieve_inputs(app, node_id, port_keys)
+    except RPCServerError as exc:
+        log.warning(
+            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s]",
+            node_id,
+            port_keys,
+            exc,
+        )
+
+
 async def _trigger_connected_service_retrieve(
     app: web.Application, project: dict, updated_node_uuid: str, changed_keys: list[str]
 ) -> None:
@@ -1176,7 +1190,7 @@ async def _trigger_connected_service_retrieve(
 
     # call /retrieve on the nodes
     update_tasks = [
-        director_v2_api.request_retrieve_dyn_service(app, node, keys)
+        _safe_retrieve(app, NodeID(node), keys)
         for node, keys in nodes_keys_to_update.items()
     ]
     await logged_gather(*update_tasks)
