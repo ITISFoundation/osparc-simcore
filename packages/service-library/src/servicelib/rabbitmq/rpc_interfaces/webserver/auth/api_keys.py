@@ -26,7 +26,7 @@ async def create_api_key(
         product_name=product_name,
         api_key=api_key,
     )
-    assert isinstance(result, ApiKeyGet)
+    assert isinstance(result, ApiKeyGet)  # nosec
     return result
 
 
@@ -45,7 +45,7 @@ async def get_api_key(
         product_name=product_name,
         api_key_id=api_key_id,
     )
-    assert isinstance(result, ApiKeyGet)
+    assert isinstance(result, ApiKeyGet)  # nosec
     return result
 
 
@@ -63,4 +63,4 @@ async def delete_api_key(
         product_name=product_name,
         api_key_id=api_key_id,
     )
-    assert result is None
+    assert result is None  # nosec

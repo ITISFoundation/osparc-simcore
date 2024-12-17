@@ -107,6 +107,11 @@ qx.Class.define("osparc.utils.Utils", {
       return newName;
     },
 
+    isEmail: function(value) {
+      const reg = /^([A-Za-z0-9_\-.+])+@([A-Za-z0-9_\-.])+\.([A-Za-z]{2,})$/;
+      return reg.test(value);
+    },
+
     replaceTokens: function(str, key, value) {
       // `str` might be a a localized string, get the string first
       str = str.toString ? str.toString() : str;

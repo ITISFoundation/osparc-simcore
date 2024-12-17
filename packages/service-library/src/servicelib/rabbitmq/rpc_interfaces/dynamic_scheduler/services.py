@@ -116,3 +116,16 @@ async def retrieve_inputs(
     )
     assert isinstance(result, RetrieveDataOutEnveloped)  # nosec
     return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def update_projects_networks(
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, project_id: ProjectID
+) -> None:
+    result = await rabbitmq_rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("update_projects_networks"),
+        project_id=project_id,
+        timeout_s=_RPC_DEFAULT_TIMEOUT_S,
+    )
+    assert result is None  # nosec

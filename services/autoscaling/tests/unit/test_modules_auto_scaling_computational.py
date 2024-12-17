@@ -11,10 +11,10 @@ import asyncio
 import datetime
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final, cast
 from unittest import mock
 
 import arrow
@@ -32,7 +32,11 @@ from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import NodeState, NodeStatus
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, TypeAdapter
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
+from pytest_simcore.helpers.autoscaling import (
+    assert_cluster_state,
+    create_fake_association,
+)
 from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_computational_ec2_instances
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
@@ -43,7 +47,6 @@ from simcore_service_autoscaling.modules.auto_scaling_mode_computational import 
 )
 from simcore_service_autoscaling.modules.dask import DaskTaskResources
 from simcore_service_autoscaling.modules.docker import get_docker_client
-from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
     _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
@@ -182,93 +185,14 @@ def ec2_instance_custom_tags(
     }
 
 
-async def test_cluster_scaling_with_no_tasks_does_nothing(
-    minimal_configuration: None,
-    app_settings: ApplicationSettings,
-    initialized_app: FastAPI,
-    mock_launch_instances: mock.Mock,
-    mock_terminate_instances: mock.Mock,
-    mock_rabbitmq_post_message: mock.Mock,
-    dask_spec_local_cluster: distributed.SpecCluster,
-):
-    await auto_scale_cluster(
-        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
-    )
-    mock_launch_instances.assert_not_called()
-    mock_terminate_instances.assert_not_called()
-    _assert_rabbit_autoscaling_message_sent(
-        mock_rabbitmq_post_message,
-        app_settings,
-        initialized_app,
-        dask_spec_local_cluster.scheduler_address,
-    )
-
-
-@pytest.mark.acceptance_test(
-    "Ensure this does not happen https://github.com/ITISFoundation/osparc-simcore/issues/6227"
-)
-async def test_cluster_scaling_with_disabled_ssm_does_not_block_autoscaling(
-    minimal_configuration: None,
-    disabled_ssm: None,
-    app_settings: ApplicationSettings,
-    initialized_app: FastAPI,
-    mock_launch_instances: mock.Mock,
-    mock_terminate_instances: mock.Mock,
-    mock_rabbitmq_post_message: mock.Mock,
-    dask_spec_local_cluster: distributed.SpecCluster,
-):
-    await auto_scale_cluster(
-        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
-    )
-    mock_launch_instances.assert_not_called()
-    mock_terminate_instances.assert_not_called()
-    _assert_rabbit_autoscaling_message_sent(
-        mock_rabbitmq_post_message,
-        app_settings,
-        initialized_app,
-        dask_spec_local_cluster.scheduler_address,
-    )
-
-
-async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
-    minimal_configuration: None,
-    app_settings: ApplicationSettings,
-    initialized_app: FastAPI,
-    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
-    mock_launch_instances: mock.Mock,
-    mock_terminate_instances: mock.Mock,
-    mock_rabbitmq_post_message: mock.Mock,
-    dask_spec_local_cluster: distributed.SpecCluster,
-):
-    # create a task that needs too much power
-    dask_future = create_dask_task(
-        {"RAM": int(TypeAdapter(ByteSize).validate_python("12800GiB"))}
-    )
-    assert dask_future
-
-    await auto_scale_cluster(
-        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
-    )
-    mock_launch_instances.assert_not_called()
-    mock_terminate_instances.assert_not_called()
-    _assert_rabbit_autoscaling_message_sent(
-        mock_rabbitmq_post_message,
-        app_settings,
-        initialized_app,
-        dask_spec_local_cluster.scheduler_address,
-    )
-
-
 @pytest.fixture
-def create_dask_task_resources() -> Callable[..., DaskTaskResources]:
+def create_dask_task_resources() -> (
+    Callable[[InstanceTypeType | None, Resources], DaskTaskResources]
+):
     def _do(
-        ec2_instance_type: InstanceTypeType | None, ram: ByteSize
+        ec2_instance_type: InstanceTypeType | None, task_resource: Resources
     ) -> DaskTaskResources:
-        resources = DaskTaskResources(
-            {
-                "RAM": int(ram),
-            }
-        )
+        resources = _dask_task_resources_from_resources(task_resource)
         if ec2_instance_type is not None:
             resources[create_ec2_resource_constraint_key(ec2_instance_type)] = 1
         return resources
@@ -306,11 +230,13 @@ def mock_dask_is_worker_connected(mocker: MockerFixture) -> mock.Mock:
 async def _create_task_with_resources(
     ec2_client: EC2Client,
     dask_task_imposed_ec2_type: InstanceTypeType | None,
-    dask_ram: ByteSize | None,
-    create_dask_task_resources: Callable[..., DaskTaskResources],
+    task_resources: Resources | None,
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
 ) -> distributed.Future:
-    if dask_task_imposed_ec2_type and not dask_ram:
+    if dask_task_imposed_ec2_type and not task_resources:
         instance_types = await ec2_client.describe_instance_types(
             InstanceTypes=[dask_task_imposed_ec2_type]
         )
@@ -319,43 +245,225 @@ async def _create_task_with_resources(
         assert instance_types["InstanceTypes"]
         assert "MemoryInfo" in instance_types["InstanceTypes"][0]
         assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
-        dask_ram = TypeAdapter(ByteSize).validate_python(
-            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
+        task_resources = Resources(
+            cpus=1,
+            ram=TypeAdapter(ByteSize).validate_python(
+                f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
+            ),
         )
+
+    assert task_resources
     dask_task_resources = create_dask_task_resources(
-        dask_task_imposed_ec2_type, dask_ram
+        dask_task_imposed_ec2_type, task_resources
     )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
     return dask_future
 
 
-@pytest.mark.acceptance_test()
+@dataclass(kw_only=True)
+class _ScaleUpParams:
+    imposed_instance_type: InstanceTypeType | None
+    task_resources: Resources | None
+    num_tasks: int
+    expected_instance_type: InstanceTypeType
+    expected_num_instances: int
+
+
+_RESOURCE_TO_DASK_RESOURCE_MAP: Final[dict[str, str]] = {"CPUS": "CPU", "RAM": "RAM"}
+
+
+def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResources:
+    return {
+        _RESOURCE_TO_DASK_RESOURCE_MAP[res_key.upper()]: res_value
+        for res_key, res_value in resources.model_dump().items()
+    }
+
+
+@pytest.fixture
+async def create_tasks_batch(
+    ec2_client: EC2Client,
+    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
+) -> Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]]:
+    async def _(scale_up_params: _ScaleUpParams) -> list[distributed.Future]:
+        return await asyncio.gather(
+            *(
+                _create_task_with_resources(
+                    ec2_client,
+                    scale_up_params.imposed_instance_type,
+                    scale_up_params.task_resources,
+                    create_dask_task_resources,
+                    create_dask_task,
+                )
+                for _ in range(scale_up_params.num_tasks)
+            )
+        )
+
+    return _
+
+
 @pytest.mark.parametrize(
-    "dask_task_imposed_ec2_type, dask_ram, expected_ec2_type",
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["without_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+async def test_cluster_scaling_with_no_tasks_does_nothing(
+    minimal_configuration: None,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    mock_launch_instances: mock.Mock,
+    mock_terminate_instances: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
+    dask_spec_local_cluster: distributed.SpecCluster,
+):
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    mock_launch_instances.assert_not_called()
+    mock_terminate_instances.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        dask_spec_local_cluster.scheduler_address,
+    )
+
+
+@pytest.mark.acceptance_test(
+    "Ensure this does not happen https://github.com/ITISFoundation/osparc-simcore/issues/6227"
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["without_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+async def test_cluster_scaling_with_disabled_ssm_does_not_block_autoscaling(
+    minimal_configuration: None,
+    disabled_ssm: None,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    mock_launch_instances: mock.Mock,
+    mock_terminate_instances: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
+    dask_spec_local_cluster: distributed.SpecCluster,
+):
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    mock_launch_instances.assert_not_called()
+    mock_terminate_instances.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        dask_spec_local_cluster.scheduler_address,
+    )
+
+
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["without_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
+    minimal_configuration: None,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    mock_launch_instances: mock.Mock,
+    mock_terminate_instances: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
+    dask_spec_local_cluster: distributed.SpecCluster,
+):
+    # create a task that needs too much power
+    dask_future = create_dask_task(
+        {"RAM": int(TypeAdapter(ByteSize).validate_python("12800GiB"))}
+    )
+    assert dask_future
+
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    mock_launch_instances.assert_not_called()
+    mock_terminate_instances.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        dask_spec_local_cluster.scheduler_address,
+    )
+
+
+@pytest.mark.acceptance_test
+@pytest.mark.parametrize(
+    "scale_up_params",
     [
         pytest.param(
-            None,
-            TypeAdapter(ByteSize).validate_python("128Gib"),
-            "r5n.4xlarge",
+            _ScaleUpParams(
+                imposed_instance_type=None,
+                task_resources=Resources(
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                ),
+                num_tasks=1,
+                expected_instance_type="r5n.4xlarge",
+                expected_num_instances=1,
+            ),
             id="No explicit instance defined",
         ),
         pytest.param(
-            "g4dn.2xlarge",
-            None,
-            "g4dn.2xlarge",
+            _ScaleUpParams(
+                imposed_instance_type="g4dn.2xlarge",
+                task_resources=None,
+                num_tasks=1,
+                expected_instance_type="g4dn.2xlarge",
+                expected_num_instances=1,
+            ),
             id="Explicitely ask for g4dn.2xlarge and use all the resources",
         ),
         pytest.param(
-            "r5n.8xlarge",
-            TypeAdapter(ByteSize).validate_python("116Gib"),
-            "r5n.8xlarge",
+            _ScaleUpParams(
+                imposed_instance_type="r5n.8xlarge",
+                task_resources=Resources(
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("116Gib")
+                ),
+                num_tasks=1,
+                expected_instance_type="r5n.8xlarge",
+                expected_num_instances=1,
+            ),
             id="Explicitely ask for r5n.8xlarge and set the resources",
         ),
         pytest.param(
-            "r5n.8xlarge",
-            None,
-            "r5n.8xlarge",
+            _ScaleUpParams(
+                imposed_instance_type="r5n.8xlarge",
+                task_resources=None,
+                num_tasks=1,
+                expected_instance_type="r5n.8xlarge",
+                expected_num_instances=1,
+            ),
             id="Explicitely ask for r5n.8xlarge and use all the resources",
         ),
     ],
@@ -364,7 +472,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     fake_node: DockerNode,
@@ -377,26 +485,17 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_dask_is_worker_connected: mock.Mock,
     mocker: MockerFixture,
     dask_spec_local_cluster: distributed.SpecCluster,
-    create_dask_task_resources: Callable[..., DaskTaskResources],
-    dask_task_imposed_ec2_type: InstanceTypeType | None,
-    dask_ram: ByteSize | None,
-    expected_ec2_type: InstanceTypeType,
     with_drain_nodes_labelled: bool,
     ec2_instance_custom_tags: dict[str, str],
+    scale_up_params: _ScaleUpParams,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
     # create a task that needs more power
-    dask_future = await _create_task_with_resources(
-        ec2_client,
-        dask_task_imposed_ec2_type,
-        dask_ram,
-        create_dask_task_resources,
-        create_dask_task,
-    )
-
+    dask_futures = await create_tasks_batch(scale_up_params)
+    assert dask_futures
     # this should trigger a scaling up as we have no nodes
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
@@ -406,8 +505,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -443,8 +542,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     instances = await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -456,9 +555,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_find_node_with_name_returns_fake_node.assert_called_once()
     mock_docker_find_node_with_name_returns_fake_node.reset_mock()
     expected_docker_node_tags = {
-        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: expected_ec2_type
+        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: scale_up_params.expected_instance_type
     }
-    assert mock_docker_tag_node.call_count == 2
+    assert mock_docker_tag_node.call_count == 3
     assert fake_node.spec
     assert fake_node.spec.labels
     fake_attached_node = deepcopy(fake_node)
@@ -525,7 +624,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # now we have 1 monitored node that needs to be mocked
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
     fake_attached_node.status = NodeStatus(
-        State=NodeState.ready, Message=None, Addr=None
+        state=NodeState.ready, message=None, addr=None
     )
     fake_attached_node.spec.availability = Availability.active
     assert fake_attached_node.description
@@ -557,14 +656,15 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert mock_dask_get_worker_used_resources.call_count == 2 * num_useless_calls
     mock_dask_get_worker_used_resources.reset_mock()
     mock_docker_find_node_with_name_returns_fake_node.assert_not_called()
-    mock_docker_tag_node.assert_not_called()
+    assert mock_docker_tag_node.call_count == num_useless_calls
+    mock_docker_tag_node.reset_mock()
     mock_docker_set_node_availability.assert_not_called()
     # check the number of instances did not change and is still running
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -577,7 +677,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     #
     # 4. now scaling down, as we deleted all the tasks
     #
-    del dask_future
+    del dask_futures
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mock_dask_is_worker_connected.assert_called_once()
     mock_dask_is_worker_connected.reset_mock()
@@ -647,8 +747,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -658,7 +758,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
     fake_attached_node.spec.labels[
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    ] = datetime.datetime.now(tz=datetime.UTC).isoformat()
 
     # the node will be not be terminated before the timeout triggers
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -676,15 +776,15 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
     # now changing the last update timepoint will trigger the node removal and shutdown the ec2 instance
     fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
-        datetime.datetime.now(tz=datetime.timezone.utc)
+        datetime.datetime.now(tz=datetime.UTC)
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         - datetime.timedelta(seconds=1)
     ).isoformat()
@@ -694,8 +794,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -726,8 +826,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="terminated",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -736,12 +836,26 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_compute_node_used_resources.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["without_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
-    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
     ec2_client: EC2Client,
     faker: Faker,
     caplog: pytest.LogCaptureFixture,
@@ -752,7 +866,8 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
 
     # create a task that needs more power
     dask_task_resources = create_dask_task_resources(
-        faker.pystr(), TypeAdapter(ByteSize).validate_python("128GiB")
+        cast(InstanceTypeType, faker.pystr()),
+        Resources(cpus=1, ram=TypeAdapter(ByteSize).validate_python("128GiB")),
     )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
@@ -772,12 +887,26 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
     assert "Unexpected error:" in error_messages[0]
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["without_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_resources(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
-    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
     ec2_client: EC2Client,
     faker: Faker,
     caplog: pytest.LogCaptureFixture,
@@ -788,7 +917,8 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
 
     # create a task that needs more power
     dask_task_resources = create_dask_task_resources(
-        "t2.xlarge", TypeAdapter(ByteSize).validate_python("128GiB")
+        "t2.xlarge",
+        Resources(cpus=1, ram=TypeAdapter(ByteSize).validate_python("128GiB")),
     )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
@@ -808,47 +938,24 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
     assert "Unexpected error:" in error_messages[0]
 
 
-@dataclass(frozen=True)
-class _ScaleUpParams:
-    task_resources: Resources
-    num_tasks: int
-    expected_instance_type: str
-    expected_num_instances: int
-
-
-def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResources:
-    return {
-        res_key.upper(): res_value
-        for res_key, res_value in resources.model_dump().items()
-    }
-
-
-@pytest.fixture
-def patch_ec2_client_launch_instancess_min_number_of_instances(
-    mocker: MockerFixture,
-) -> mock.Mock:
-    """the moto library always returns min number of instances instead of max number of instances which makes
-    it difficult to test scaling to multiple of machines. this should help"""
-    original_fct = SimcoreEC2API.launch_instances
-
-    async def _change_parameters(*args, **kwargs) -> list[EC2InstanceData]:
-        new_kwargs = kwargs | {"min_number_of_instances": kwargs["number_of_instances"]}
-        print(f"patching launch_instances with: {new_kwargs}")
-        return await original_fct(*args, **new_kwargs)
-
-    return mocker.patch.object(
-        SimcoreEC2API,
-        "launch_instances",
-        autospec=True,
-        side_effect=_change_parameters,
-    )
-
-
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["without_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 @pytest.mark.parametrize(
     "scale_up_params",
     [
         pytest.param(
             _ScaleUpParams(
+                imposed_instance_type=None,
                 task_resources=Resources(
                     cpus=5, ram=TypeAdapter(ByteSize).validate_python("36Gib")
                 ),
@@ -861,11 +968,11 @@ def patch_ec2_client_launch_instancess_min_number_of_instances(
     ],
 )
 async def test_cluster_scaling_up_starts_multiple_instances(
-    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
     ec2_client: EC2Client,
     mock_docker_tag_node: mock.Mock,
     scale_up_params: _ScaleUpParams,
@@ -880,16 +987,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     assert not all_instances["Reservations"]
 
     # create several tasks that needs more power
-    dask_futures = await asyncio.gather(
-        *(
-            asyncio.get_event_loop().run_in_executor(
-                None,
-                create_dask_task,
-                _dask_task_resources_from_resources(scale_up_params.task_resources),
-            )
-            for _ in range(scale_up_params.num_tasks)
-        )
-    )
+    dask_futures = await create_tasks_batch(scale_up_params)
     assert dask_futures
 
     # run the code
@@ -902,7 +1000,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=scale_up_params.expected_num_instances,
-        expected_instance_type="g3.4xlarge",
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -922,15 +1020,41 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     mock_rabbitmq_post_message.reset_mock()
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["without_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "scale_up_params",
+    [
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type="r5n.8xlarge",
+                task_resources=None,
+                num_tasks=1,
+                expected_instance_type="r5n.8xlarge",
+                expected_num_instances=1,
+            ),
+            id="Impose r5n.8xlarge without resources",
+        ),
+    ],
+)
 async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and_not_more(
-    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
     ec2_client: EC2Client,
     dask_spec_local_cluster: distributed.SpecCluster,
-    create_dask_task_resources: Callable[..., DaskTaskResources],
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     mock_docker_find_node_with_name_returns_fake_node: mock.Mock,
@@ -939,29 +1063,23 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
     mock_dask_get_worker_has_results_in_memory: mock.Mock,
     mock_dask_get_worker_used_resources: mock.Mock,
     ec2_instance_custom_tags: dict[str, str],
+    scale_up_params: _ScaleUpParams,
 ):
-    ec2_instance_type = "r5n.8xlarge"
-
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES > 0
-    num_tasks = 3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    # override the number of tasks
+    scale_up_params.num_tasks = (
+        3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    )
+    scale_up_params.expected_num_instances = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    )
 
     # create the tasks
-    task_futures = await asyncio.gather(
-        *(
-            _create_task_with_resources(
-                ec2_client,
-                ec2_instance_type,
-                None,
-                create_dask_task_resources,
-                create_dask_task,
-            )
-            for _ in range(num_tasks)
-        )
-    )
+    task_futures = await create_tasks_batch(scale_up_params)
     assert all(task_futures)
 
     # this should trigger a scaling up as we have no nodes
@@ -971,8 +1089,8 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
-        expected_instance_type=ec2_instance_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -990,7 +1108,7 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
         initialized_app,
         dask_spec_local_cluster.scheduler_address,
         instances_running=0,
-        instances_pending=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+        instances_pending=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
 
@@ -1003,22 +1121,36 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
     await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
-        expected_instance_type=ec2_instance_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
 
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["without_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
 async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_starts_max_instances_and_not_more(
-    patch_ec2_client_launch_instancess_min_number_of_instances: mock.Mock,
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
     ec2_client: EC2Client,
     dask_spec_local_cluster: distributed.SpecCluster,
-    create_dask_task_resources: Callable[..., DaskTaskResources],
+    create_dask_task_resources: Callable[
+        [InstanceTypeType | None, Resources], DaskTaskResources
+    ],
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     mock_docker_find_node_with_name_returns_fake_node: mock.Mock,
@@ -1106,12 +1238,30 @@ async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_star
 
 
 @pytest.mark.parametrize(
-    "dask_task_imposed_ec2_type, dask_ram, expected_ec2_type",
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["without_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "scale_up_params",
     [
         pytest.param(
-            None,
-            TypeAdapter(ByteSize).validate_python("128Gib"),
-            "r5n.4xlarge",
+            _ScaleUpParams(
+                imposed_instance_type=None,
+                task_resources=Resources(
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                ),
+                num_tasks=1,
+                expected_instance_type="r5n.4xlarge",
+                expected_num_instances=1,
+            ),
             id="No explicit instance defined",
         ),
     ],
@@ -1121,18 +1271,15 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
-    create_dask_task: Callable[[DaskTaskResources], distributed.Future],
+    create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
     ec2_client: EC2Client,
-    dask_task_imposed_ec2_type: InstanceTypeType | None,
-    dask_ram: ByteSize | None,
-    create_dask_task_resources: Callable[..., DaskTaskResources],
     dask_spec_local_cluster: distributed.SpecCluster,
-    expected_ec2_type: InstanceTypeType,
     mock_find_node_with_name_returns_none: mock.Mock,
     mock_docker_tag_node: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
     short_ec2_instance_max_start_time: datetime.timedelta,
     ec2_instance_custom_tags: dict[str, str],
+    scale_up_params: _ScaleUpParams,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
@@ -1143,14 +1290,9 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
     # create a task that needs more power
-    dask_future = await _create_task_with_resources(
-        ec2_client,
-        dask_task_imposed_ec2_type,
-        dask_ram,
-        create_dask_task_resources,
-        create_dask_task,
-    )
-    assert dask_future
+    dask_futures = await create_tasks_batch(scale_up_params)
+    assert dask_futures
+
     # this should trigger a scaling up as we have no nodes
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
@@ -1160,8 +1302,8 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     instances = await assert_autoscaled_computational_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=expected_ec2_type,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
@@ -1203,8 +1345,8 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
         instances = await assert_autoscaled_computational_ec2_instances(
             ec2_client,
             expected_num_reservations=1,
-            expected_num_instances=1,
-            expected_instance_type=expected_ec2_type,
+            expected_num_instances=scale_up_params.expected_num_instances,
+            expected_instance_type=scale_up_params.expected_instance_type,
             expected_instance_state="running",
             expected_additional_tag_keys=list(ec2_instance_custom_tags),
         )
@@ -1216,7 +1358,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
             initialized_app,
             dask_spec_local_cluster.scheduler_address,
             instances_running=0,
-            instances_pending=1,
+            instances_pending=scale_up_params.expected_num_instances,
         )
         mock_rabbitmq_post_message.reset_mock()
         assert instances
@@ -1247,7 +1389,10 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     all_instances = await ec2_client.describe_instances()
     assert len(all_instances["Reservations"]) == 2
     assert "Instances" in all_instances["Reservations"][0]
-    assert len(all_instances["Reservations"][0]["Instances"]) == 1
+    assert (
+        len(all_instances["Reservations"][0]["Instances"])
+        == scale_up_params.expected_num_instances
+    )
     assert "State" in all_instances["Reservations"][0]["Instances"][0]
     assert "Name" in all_instances["Reservations"][0]["Instances"][0]["State"]
     assert (
@@ -1256,9 +1401,308 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     )
 
     assert "Instances" in all_instances["Reservations"][1]
-    assert len(all_instances["Reservations"][1]["Instances"]) == 1
+    assert (
+        len(all_instances["Reservations"][1]["Instances"])
+        == scale_up_params.expected_num_instances
+    )
     assert "State" in all_instances["Reservations"][1]["Instances"][0]
     assert "Name" in all_instances["Reservations"][1]["Instances"][0]["State"]
     assert (
         all_instances["Reservations"][1]["Instances"][0]["State"]["Name"] == "running"
     )
+
+
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["with_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["without_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "scale_up_params1, scale_up_params2",
+    [
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                task_resources=Resources(
+                    cpus=16, ram=TypeAdapter(ByteSize).validate_python("30Gib")
+                ),
+                num_tasks=12,
+                expected_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
+                expected_num_instances=10,
+            ),
+            _ScaleUpParams(
+                imposed_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
+                task_resources=Resources(
+                    cpus=32, ram=TypeAdapter(ByteSize).validate_python("20480MB")
+                ),
+                num_tasks=7,
+                expected_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
+                expected_num_instances=7,
+            ),
+            id="A batch of services requiring g3.4xlarge and a batch requiring g4dn.8xlarge",
+        ),
+    ],
+)
+async def test_cluster_adapts_machines_on_the_fly(
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
+    minimal_configuration: None,
+    ec2_client: EC2Client,
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+    create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
+    ec2_instance_custom_tags: dict[str, str],
+    scale_up_params1: _ScaleUpParams,
+    scale_up_params2: _ScaleUpParams,
+    mocked_associate_ec2_instances_with_nodes: mock.Mock,
+    mock_docker_set_node_availability: mock.Mock,
+    mock_dask_is_worker_connected: mock.Mock,
+    create_fake_node: Callable[..., DockerNode],
+    mock_docker_tag_node: mock.Mock,
+    spied_cluster_analysis: MockType,
+    mocker: MockerFixture,
+):
+    # pre-requisites
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES > 0
+    assert (
+        scale_up_params1.num_tasks
+        >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    ), "this test requires to run a first batch of more services than the maximum number of instances allowed"
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+    #
+    # 1. create the first batch of services requiring the initial machines
+    first_batch_tasks = await create_tasks_batch(scale_up_params1)
+    assert first_batch_tasks
+
+    # it will only scale once and do nothing else
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    await assert_autoscaled_computational_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params1.expected_num_instances,
+        expected_instance_type=scale_up_params1.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+    )
+
+    assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=0,
+    )
+    mocked_associate_ec2_instances_with_nodes.assert_called_once_with([], [])
+    mocked_associate_ec2_instances_with_nodes.reset_mock()
+    mocked_associate_ec2_instances_with_nodes.side_effect = create_fake_association(
+        create_fake_node, None, None
+    )
+    mock_docker_tag_node.assert_not_called()
+    mock_dask_is_worker_connected.assert_not_called()
+
+    #
+    # 2. now the machines are associated
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    mocked_associate_ec2_instances_with_nodes.assert_called_once()
+    mock_docker_tag_node.assert_called()
+    assert (
+        mock_docker_tag_node.call_count
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    )
+    assert analyzed_cluster.active_nodes
+
+    #
+    # 3. now we start the second batch of services requiring a different type of machines
+    second_batch_tasks = await create_tasks_batch(scale_up_params2)
+    assert second_batch_tasks
+
+    # scaling will do nothing since we have hit the maximum number of machines
+    for _ in range(3):
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+        )
+        await assert_autoscaled_computational_ec2_instances(
+            ec2_client,
+            expected_num_reservations=1,
+            expected_num_instances=scale_up_params1.expected_num_instances,
+            expected_instance_type=scale_up_params1.expected_instance_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=3,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
+
+    #
+    # 4.now we simulate that some of the services in the 1st batch have completed and that we are 1 below the max
+    # a machine should switch off and another type should be started (just pop the future out of scope)
+    for _ in range(
+        scale_up_params1.num_tasks
+        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+        + 1
+    ):
+        first_batch_tasks.pop()
+
+    # first call to auto_scale_cluster will mark 1 node as empty
+    with mock.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.set_node_found_empty",
+        autospec=True,
+    ) as mock_docker_set_node_found_empty:
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+        )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
+    # the last machine is found empty
+    mock_docker_set_node_found_empty.assert_called_with(
+        mock.ANY,
+        analyzed_cluster.active_nodes[-1].node,
+        empty=True,
+    )
+
+    # now we mock the get_node_found_empty so the next call will actually drain the machine
+    with mock.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.get_node_empty_since",
+        autospec=True,
+        return_value=arrow.utcnow().datetime
+        - 1.5
+        * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING,
+    ) as mocked_get_node_empty_since:
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+        )
+    mocked_get_node_empty_since.assert_called_once()
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
+    # now scaling again should find the drained machine
+    drained_machine_instance_id = analyzed_cluster.active_nodes[-1].ec2_instance.id
+    mocked_associate_ec2_instances_with_nodes.side_effect = create_fake_association(
+        create_fake_node, drained_machine_instance_id, None
+    )
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert analyzed_cluster.drained_nodes
+
+    # this will initiate termination now
+    with mock.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.get_node_last_readyness_update",
+        autospec=True,
+        return_value=arrow.utcnow().datetime
+        - 1.5
+        * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION,
+    ):
+        mock_docker_tag_node.reset_mock()
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+        )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    mock_docker_tag_node.assert_called_with(
+        mock.ANY,
+        analyzed_cluster.drained_nodes[-1].node,
+        tags=mock.ANY,
+        available=False,
+    )
+
+    # scaling again should find the terminating machine
+    mocked_associate_ec2_instances_with_nodes.side_effect = create_fake_association(
+        create_fake_node, drained_machine_instance_id, drained_machine_instance_id
+    )
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    analyzed_cluster = assert_cluster_state(
+        spied_cluster_analysis,
+        expected_calls=1,
+        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+    )
+    assert analyzed_cluster.active_nodes
+    assert not analyzed_cluster.drained_nodes
+    assert analyzed_cluster.terminating_nodes
+
+    # now this will terminate it and straight away start a new machine type
+    with mock.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.get_node_termination_started_since",
+        autospec=True,
+        return_value=arrow.utcnow().datetime
+        - 1.5
+        * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION,
+    ):
+        mocked_docker_remove_node = mocker.patch(
+            "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.remove_nodes",
+            return_value=None,
+            autospec=True,
+        )
+        await auto_scale_cluster(
+            app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+        )
+        mocked_docker_remove_node.assert_called_once()
+
+    # now let's check what we have
+    all_instances = await ec2_client.describe_instances()
+    assert len(all_instances["Reservations"]) == 2, "there should be 2 Reservations"
+    reservation1 = all_instances["Reservations"][0]
+    assert "Instances" in reservation1
+    assert len(reservation1["Instances"]) == (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+    ), f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, found {len(reservation1['Instances'])}"
+    for instance in reservation1["Instances"]:
+        assert "InstanceType" in instance
+        assert instance["InstanceType"] == scale_up_params1.expected_instance_type
+        assert "InstanceId" in instance
+        assert "State" in instance
+        assert "Name" in instance["State"]
+        if instance["InstanceId"] == drained_machine_instance_id:
+            assert instance["State"]["Name"] == "terminated"
+        else:
+            assert instance["State"]["Name"] == "running"
+
+    reservation2 = all_instances["Reservations"][1]
+    assert "Instances" in reservation2
+    assert (
+        len(reservation2["Instances"]) == 1
+    ), f"expected 1 EC2 instances, found {len(reservation2['Instances'])}"
+    for instance in reservation2["Instances"]:
+        assert "InstanceType" in instance
+        assert instance["InstanceType"] == scale_up_params2.expected_instance_type

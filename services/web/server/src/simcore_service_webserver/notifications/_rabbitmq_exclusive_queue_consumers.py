@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator, Generator
 from typing import Final
 
 from aiohttp import web
+from models_library.groups import GroupID
 from models_library.rabbitmq_messages import (
     EventRabbitMessage,
     LoggerRabbitMessage,
@@ -12,7 +13,6 @@ from models_library.rabbitmq_messages import (
     WalletCreditsMessage,
 )
 from models_library.socketio import SocketMessageDict
-from models_library.users import GroupID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient

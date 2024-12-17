@@ -69,3 +69,8 @@ async def retrieve_inputs(
     return await scheduler_interface.retrieve_inputs(
         app, node_id=node_id, port_keys=port_keys
     )
+
+
+@router.expose()
+async def update_projects_networks(app: FastAPI, *, project_id: ProjectID) -> None:
+    await scheduler_interface.update_projects_networks(app, project_id=project_id)

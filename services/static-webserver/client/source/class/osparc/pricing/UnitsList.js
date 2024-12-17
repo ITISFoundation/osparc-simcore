@@ -43,7 +43,7 @@ qx.Class.define("osparc.pricing.UnitsList", {
       let control;
       switch (id) {
         case "pricing-units-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
           this._addAt(control, 0, {
             flex: 1
           });
@@ -63,13 +63,8 @@ qx.Class.define("osparc.pricing.UnitsList", {
     },
 
     __fetchUnits: function() {
-      const params = {
-        url: {
-          pricingPlanId: this.getPricingPlanId()
-        }
-      };
-      osparc.data.Resources.fetch("pricingPlans", "getOne", params)
-        .then(data => this.__populateList(data["pricingUnits"]));
+      osparc.store.Pricing.getInstance().fetchPricingUnits(this.getPricingPlanId())
+        .then(pricingUnits => this.__populateList(pricingUnits));
     },
 
     __populateList: function(pricingUnits) {
@@ -80,23 +75,27 @@ qx.Class.define("osparc.pricing.UnitsList", {
       }
 
       pricingUnits.forEach(pricingUnit => {
-        const pUnit = new osparc.study.PricingUnit(pricingUnit).set({
-          showSpecificInfo: true,
+        let pUnit = null;
+        if (pricingUnit.getClassification() === "LICENSE") {
+          pUnit = new osparc.study.PricingUnitLicense(pricingUnit).set({
+            showRentButton: false,
+          });
+        } else {
+          pUnit = new osparc.study.PricingUnitTier(pricingUnit).set({
+            showAwsSpecificInfo: true,
+          });
+        }
+        pUnit.set({
           showEditButton: true,
-          allowGrowY: false
         });
         pUnit.addListener("editPricingUnit", () => this.__openUpdatePricingUnit(pricingUnit));
         this.getChildControl("pricing-units-container").add(pUnit);
       });
 
       const buttons = this.getChildControl("pricing-units-container").getChildren();
-      const keepDefaultSelected = () => {
-        buttons.forEach(btn => {
-          btn.setValue(btn.getUnitData().isDefault());
-        });
-      };
-      keepDefaultSelected();
-      buttons.forEach(btn => btn.addListener("execute", () => keepDefaultSelected()));
+      buttons.forEach(btn => {
+        btn.setSelected(btn.getUnitData().getIsDefault());
+      });
     },
 
     __openCreatePricingUnit: function() {

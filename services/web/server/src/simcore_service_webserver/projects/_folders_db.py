@@ -129,7 +129,7 @@ async def update_project_to_folder(
     """
     Batch/single patch of project to folders
     """
-    # NOTE: exclude unset can also be done using a pydantic model and dict(exclude_unset=True)
+    # NOTE: exclude unset can also be done using a pydantic model and model_dump(exclude_unset=True)
     updated = as_dict_exclude_unset(
         user_id=user_id,
     )

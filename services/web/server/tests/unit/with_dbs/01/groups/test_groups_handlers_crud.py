@@ -71,8 +71,8 @@ async def test_list_user_groups_and_try_modify_organizations(
     my_groups = MyGroupsGet.model_validate(data)
     assert not error
 
-    assert my_groups.me.model_dump(by_alias=True) == primary_group
-    assert my_groups.all.model_dump(by_alias=True) == all_group
+    assert my_groups.me.model_dump(by_alias=True, exclude_unset=True) == primary_group
+    assert my_groups.all.model_dump(by_alias=True, exclude_unset=True) == all_group
 
     assert my_groups.organizations
     assert len(my_groups.organizations) == len(standard_groups)
@@ -80,12 +80,12 @@ async def test_list_user_groups_and_try_modify_organizations(
     by_gid = operator.itemgetter("gid")
     assert sorted(
         TypeAdapter(list[GroupGet]).dump_python(
-            my_groups.organizations, mode="json", by_alias=True
+            my_groups.organizations, mode="json", by_alias=True, exclude_unset=True
         ),
         key=by_gid,
     ) == sorted(standard_groups, key=by_gid)
 
-    for group in standard_groups:
+    for i, group in enumerate(standard_groups):
         # try to delete a group
         url = client.app.router["delete_group"].url_for(gid=f"{group['gid']}")
         response = await client.delete(f"{url}")
@@ -93,7 +93,15 @@ async def test_list_user_groups_and_try_modify_organizations(
 
         # try to add some user in the group
         url = client.app.router["add_group_user"].url_for(gid=f"{group['gid']}")
-        response = await client.post(f"{url}", json={"uid": logged_user["id"]})
+
+        if i % 2 == 0:
+            # by user-id
+            params = {"uid": logged_user["id"]}
+        else:
+            # by user name
+            params = {"userName": logged_user["name"]}
+
+        response = await client.post(f"{url}", json=params)
         await assert_status(response, status.HTTP_403_FORBIDDEN)
 
         # try to modify the user in the group

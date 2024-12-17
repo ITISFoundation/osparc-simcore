@@ -82,12 +82,9 @@ qx.Class.define("osparc.auth.Data", {
       event: "changeUsername",
     },
 
-    /**
-     *  Email of logged in user, otherwise null
-    */
     email: {
       init: null,
-      nullable: true,
+      nullable: true, // email of logged in user, otherwise null
       check: "String"
     },
 

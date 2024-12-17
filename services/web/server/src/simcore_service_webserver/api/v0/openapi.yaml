@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.49.0
+  version: 0.50.0
 servers:
 - url: ''
   description: webserver
@@ -1207,7 +1207,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_ThirdPartyToken__'
+                $ref: '#/components/schemas/Envelope_list_MyTokenGet__'
     post:
       tags:
       - user
@@ -1217,7 +1217,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenCreate'
+              $ref: '#/components/schemas/MyTokenCreate'
         required: true
       responses:
         '201':
@@ -1225,7 +1225,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
+                $ref: '#/components/schemas/Envelope_MyTokenGet_'
   /v0/me/tokens/{service}:
     get:
       tags:
@@ -1245,7 +1245,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
+                $ref: '#/components/schemas/Envelope_MyTokenGet_'
     delete:
       tags:
       - user
@@ -1322,7 +1322,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_PermissionGet__'
+                $ref: '#/components/schemas/Envelope_list_MyPermissionGet__'
   /v0/users:search:
     get:
       tags:
@@ -1345,7 +1345,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_UserProfile__'
+                $ref: '#/components/schemas/Envelope_list_UserGet__'
   /v0/users:pre-register:
     post:
       tags:
@@ -1357,7 +1357,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PreUserProfile'
+              $ref: '#/components/schemas/PreRegisteredUserGet'
         required: true
       responses:
         '200':
@@ -1365,7 +1365,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UserProfile_'
+                $ref: '#/components/schemas/Envelope_UserGet_'
   /v0/wallets:
     get:
       tags:
@@ -2413,108 +2413,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
-  /v0/catalog/licensed-items:
-    get:
-      tags:
-      - licenses
-      - catalog
-      summary: List Licensed Items
-      operationId: list_licensed_items
-      parameters:
-      - name: order_by
-        in: query
-        required: false
-        schema:
-          type: string
-          contentMediaType: application/json
-          contentSchema: {}
-          default: '{"field":"modified","direction":"desc"}'
-          title: Order By
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 20
-          title: Limit
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_LicensedItemGet__'
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-  /v0/catalog/licensed-items/{licensed_item_id}:
-    get:
-      tags:
-      - licenses
-      - catalog
-      summary: Get Licensed Item
-      operationId: get_licensed_item
-      parameters:
-      - name: licensed_item_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Licensed Item Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_LicensedItemGet_'
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-  /v0/catalog/licensed-items/{licensed_item_id}:purchase:
-    post:
-      tags:
-      - licenses
-      - catalog
-      summary: Purchase Licensed Item
-      operationId: purchase_licensed_item
-      parameters:
-      - name: licensed_item_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Licensed Item Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LicensedItemsBodyParams'
-      responses:
-        '204':
-          description: Successful Response
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
   /v0/computations/{project_id}:
     get:
       tags:
@@ -3083,6 +2981,277 @@ paths:
           content:
             application/json:
               schema: {}
+  /v0/catalog/licensed-items:
+    get:
+      tags:
+      - licenses
+      - catalog
+      summary: List Licensed Items
+      operationId: list_licensed_items
+      parameters:
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"modified","direction":"desc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_LicensedItemGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+  /v0/catalog/licensed-items/{licensed_item_id}:
+    get:
+      tags:
+      - licenses
+      - catalog
+      summary: Get Licensed Item
+      operationId: get_licensed_item
+      parameters:
+      - name: licensed_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Licensed Item Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_LicensedItemGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+  /v0/catalog/licensed-items/{licensed_item_id}:purchase:
+    post:
+      tags:
+      - licenses
+      - catalog
+      summary: Purchase Licensed Item
+      operationId: purchase_licensed_item
+      parameters:
+      - name: licensed_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Licensed Item Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicensedItemsBodyParams'
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+  /v0/wallets/{wallet_id}/licensed-items-purchases:
+    get:
+      tags:
+      - licenses
+      - wallets
+      summary: List Wallet Licensed Items Purchases
+      operationId: list_wallet_licensed_items_purchases
+      parameters:
+      - name: wallet_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Wallet Id
+          minimum: 0
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"purchased_at","direction":"desc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_LicensedItemPurchaseGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+  /v0/licensed-items-purchases/{licensed_item_purchase_id}:
+    get:
+      tags:
+      - licenses
+      summary: Get Licensed Item Purchase
+      operationId: get_licensed_item_purchase
+      parameters:
+      - name: licensed_item_purchase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Licensed Item Purchase Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_LicensedItemPurchaseGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
   /v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations:
     get:
       tags:
@@ -7951,6 +8120,19 @@ components:
           title: Error
       type: object
       title: Envelope[LicensedItemGet]
+    Envelope_LicensedItemPurchaseGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/LicensedItemPurchaseGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[LicensedItemPurchaseGet]
     Envelope_Log_:
       properties:
         data:
@@ -8003,6 +8185,19 @@ components:
           title: Error
       type: object
       title: Envelope[MyProfileGet]
+    Envelope_MyTokenGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/MyTokenGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[MyTokenGet]
     Envelope_NodeCreated_:
       properties:
         data:
@@ -8302,19 +8497,6 @@ components:
           title: Error
       type: object
       title: Envelope[TaskStatus]
-    Envelope_ThirdPartyToken_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/ThirdPartyToken'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[ThirdPartyToken]
     Envelope_Union_EmailTestFailed__EmailTestPassed__:
       properties:
         data:
@@ -8374,11 +8556,11 @@ components:
           title: Error
       type: object
       title: Envelope[Union[WalletGet, NoneType]]
-    Envelope_UserProfile_:
+    Envelope_UserGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/UserProfile'
+          - $ref: '#/components/schemas/UserGet'
           - type: 'null'
         error:
           anyOf:
@@ -8386,7 +8568,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[UserProfile]
+      title: Envelope[UserGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -8748,6 +8930,38 @@ components:
           title: Error
       type: object
       title: Envelope[list[LicensedItemGet]]
+    Envelope_list_MyPermissionGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/MyPermissionGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[MyPermissionGet]]
+    Envelope_list_MyTokenGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/MyTokenGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[MyTokenGet]]
     Envelope_list_OsparcCreditsAggregatedByServiceGet__:
       properties:
         data:
@@ -8780,22 +8994,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[PaymentMethodGet]]
-    Envelope_list_PermissionGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/PermissionGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[PermissionGet]]
     Envelope_list_PricingPlanAdminGet__:
       properties:
         data:
@@ -9004,12 +9202,12 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
-    Envelope_list_ThirdPartyToken__:
+    Envelope_list_UserGet__:
       properties:
         data:
           anyOf:
           - items:
-              $ref: '#/components/schemas/ThirdPartyToken'
+              $ref: '#/components/schemas/UserGet'
             type: array
           - type: 'null'
           title: Data
@@ -9019,7 +9217,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[ThirdPartyToken]]
+      title: Envelope[list[UserGet]]
     Envelope_list_UserNotification__:
       properties:
         data:
@@ -9036,22 +9234,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[UserNotification]]
-    Envelope_list_UserProfile__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/UserProfile'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[UserProfile]]
     Envelope_list_Viewer__:
       properties:
         data:
@@ -9851,8 +10033,10 @@ components:
       properties:
         gid:
           type: integer
+          exclusiveMinimum: true
           title: Gid
           description: the group ID
+          minimum: 0
         label:
           type: string
           title: Label
@@ -9934,10 +10118,12 @@ components:
       properties:
         id:
           anyOf:
-          - type: string
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
           - type: 'null'
           title: Id
-          description: the user id
+          description: the user's id
         userName:
           type: string
           maxLength: 100
@@ -9945,7 +10131,9 @@ components:
           title: Username
         gid:
           anyOf:
-          - type: string
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
           - type: 'null'
           title: Gid
           description: the user primary gid
@@ -10178,6 +10366,71 @@ components:
       - createdAt
       - modifiedAt
       title: LicensedItemGet
+    LicensedItemPurchaseGet:
+      properties:
+        licensedItemPurchaseId:
+          type: string
+          format: uuid
+          title: Licenseditempurchaseid
+        productName:
+          type: string
+          title: Productname
+        licensedItemId:
+          type: string
+          format: uuid
+          title: Licenseditemid
+        walletId:
+          type: integer
+          exclusiveMinimum: true
+          title: Walletid
+          minimum: 0
+        pricingUnitCostId:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricingunitcostid
+          minimum: 0
+        pricingUnitCost:
+          type: string
+          title: Pricingunitcost
+        startAt:
+          type: string
+          format: date-time
+          title: Startat
+        expireAt:
+          type: string
+          format: date-time
+          title: Expireat
+        numOfSeats:
+          type: integer
+          title: Numofseats
+        purchasedByUser:
+          type: integer
+          exclusiveMinimum: true
+          title: Purchasedbyuser
+          minimum: 0
+        purchasedAt:
+          type: string
+          format: date-time
+          title: Purchasedat
+        modifiedAt:
+          type: string
+          format: date-time
+          title: Modifiedat
+      type: object
+      required:
+      - licensedItemPurchaseId
+      - productName
+      - licensedItemId
+      - walletId
+      - pricingUnitCostId
+      - pricingUnitCost
+      - startAt
+      - expireAt
+      - numOfSeats
+      - purchasedByUser
+      - purchasedAt
+      - modifiedAt
+      title: LicensedItemPurchaseGet
     LicensedItemsBodyParams:
       properties:
         wallet_id:
@@ -10185,14 +10438,26 @@ components:
           exclusiveMinimum: true
           title: Wallet Id
           minimum: 0
-        num_of_seeds:
+        pricing_plan_id:
           type: integer
-          title: Num Of Seeds
+          exclusiveMinimum: true
+          title: Pricing Plan Id
+          minimum: 0
+        pricing_unit_id:
+          type: integer
+          exclusiveMinimum: true
+          title: Pricing Unit Id
+          minimum: 0
+        num_of_seats:
+          type: integer
+          title: Num Of Seats
       additionalProperties: false
       type: object
       required:
       - wallet_id
-      - num_of_seeds
+      - pricing_plan_id
+      - pricing_unit_id
+      - num_of_seats
       title: LicensedItemsBodyParams
     LicensedResourceType:
       type: string
@@ -10371,7 +10636,7 @@ components:
             read: true
             write: false
           description: Open to all users
-          gid: '0'
+          gid: 1
           label: All
         me:
           accessRights:
@@ -10397,6 +10662,19 @@ components:
           description: Some foundation
           gid: '16'
           label: Blue Fundation
+    MyPermissionGet:
+      properties:
+        name:
+          type: string
+          title: Name
+        allowed:
+          type: boolean
+          title: Allowed
+      type: object
+      required:
+      - name
+      - allowed
+      title: MyPermissionGet
     MyProfileGet:
       properties:
         id:
@@ -10527,6 +10805,56 @@ components:
           title: Hideemail
       type: object
       title: MyProfilePrivacyPatch
+    MyTokenCreate:
+      properties:
+        service:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Service
+          description: uniquely identifies the service where this token is used
+        token_key:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Token Key
+        token_secret:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Token Secret
+      type: object
+      required:
+      - service
+      - token_key
+      - token_secret
+      title: MyTokenCreate
+    MyTokenGet:
+      properties:
+        service:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Service
+        token_key:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Token Key
+        token_secret:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Token Secret
+          description: Will be removed
+          deprecated: true
+      type: object
+      required:
+      - service
+      - token_key
+      title: MyTokenGet
     Node-Input:
       properties:
         key:
@@ -11229,6 +11557,24 @@ components:
       - _links
       - data
       title: Page[CheckpointApiModel]
+    Page_LicensedItemPurchaseGet_:
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          items:
+            $ref: '#/components/schemas/LicensedItemPurchaseGet'
+          type: array
+          title: Data
+      additionalProperties: false
+      type: object
+      required:
+      - _meta
+      - _links
+      - data
+      title: Page[LicensedItemPurchaseGet]
     Page_PaymentTransaction_:
       properties:
         _meta:
@@ -11478,19 +11824,6 @@ components:
       - completedAt
       - completedStatus
       title: PaymentTransaction
-    PermissionGet:
-      properties:
-        name:
-          type: string
-          title: Name
-        allowed:
-          type: boolean
-          title: Allowed
-      type: object
-      required:
-      - name
-      - allowed
-      title: PermissionGet
     PhoneConfirmationBody:
       properties:
         email:
@@ -11586,7 +11919,7 @@ components:
       - x
       - y
       title: Position
-    PreUserProfile:
+    PreRegisteredUserGet:
       properties:
         firstName:
           type: string
@@ -11629,8 +11962,7 @@ components:
         extras:
           type: object
           title: Extras
-          description: Keeps extra information provided in the request form. At most
-            MAX_NUM_EXTRAS fields
+          description: Keeps extra information provided in the request form.
       type: object
       required:
       - firstName
@@ -11641,7 +11973,7 @@ components:
       - city
       - postalCode
       - country
-      title: PreUserProfile
+      title: PreRegisteredUserGet
     Preference:
       properties:
         defaultValue:
@@ -13884,58 +14216,6 @@ components:
       - url
       - thumbnail
       title: ThirdPartyInfoDict
-    ThirdPartyToken:
-      properties:
-        service:
-          type: string
-          title: Service
-          description: uniquely identifies the service where this token is used
-        token_key:
-          type: string
-          format: uuid
-          title: Token Key
-          description: basic token key
-        token_secret:
-          anyOf:
-          - type: string
-            format: uuid
-          - type: 'null'
-          title: Token Secret
-      type: object
-      required:
-      - service
-      - token_key
-      title: ThirdPartyToken
-      description: Tokens used to access third-party services connected to osparc
-        (e.g. pennsieve, scicrunch, etc)
-      example:
-        service: github-api-v1
-        token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
-    TokenCreate:
-      properties:
-        service:
-          type: string
-          title: Service
-          description: uniquely identifies the service where this token is used
-        token_key:
-          type: string
-          format: uuid
-          title: Token Key
-          description: basic token key
-        token_secret:
-          anyOf:
-          - type: string
-            format: uuid
-          - type: 'null'
-          title: Token Secret
-      type: object
-      required:
-      - service
-      - token_key
-      title: TokenCreate
-      example:
-        service: github-api-v1
-        token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
     UnitExtraInfo-Input:
       properties:
         CPU:
@@ -14068,6 +14348,98 @@ components:
       - number
       - e_tag
       title: UploadedPart
+    UserGet:
+      properties:
+        firstName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Firstname
+        lastName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lastname
+        email:
+          type: string
+          format: email
+          title: Email
+        institution:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        address:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Address
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+          description: State, province, canton, ...
+        postalCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Postalcode
+        country:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country
+        extras:
+          type: object
+          title: Extras
+          description: Keeps extra information provided in the request form
+        invitedBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Invitedby
+        registered:
+          type: boolean
+          title: Registered
+        status:
+          anyOf:
+          - $ref: '#/components/schemas/UserStatus'
+          - type: 'null'
+        products:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Products
+          description: List of products this users is included or None if fields is
+            unset
+      type: object
+      required:
+      - firstName
+      - lastName
+      - email
+      - institution
+      - phone
+      - address
+      - city
+      - state
+      - postalCode
+      - country
+      - registered
+      - status
+      title: UserGet
     UserNotification:
       properties:
         user_id:
@@ -14189,98 +14561,6 @@ components:
       required:
       - read
       title: UserNotificationPatch
-    UserProfile:
-      properties:
-        firstName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Firstname
-        lastName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Lastname
-        email:
-          type: string
-          format: email
-          title: Email
-        institution:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Institution
-        phone:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Phone
-        address:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Address
-        city:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: City
-        state:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: State
-          description: State, province, canton, ...
-        postalCode:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Postalcode
-        country:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Country
-        extras:
-          type: object
-          title: Extras
-          description: Keeps extra information provided in the request form
-        invitedBy:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Invitedby
-        registered:
-          type: boolean
-          title: Registered
-        status:
-          anyOf:
-          - $ref: '#/components/schemas/UserStatus'
-          - type: 'null'
-        products:
-          anyOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
-          title: Products
-          description: List of products this users is included or None if fields is
-            unset
-      type: object
-      required:
-      - firstName
-      - lastName
-      - email
-      - institution
-      - phone
-      - address
-      - city
-      - state
-      - postalCode
-      - country
-      - registered
-      - status
-      title: UserProfile
     UserStatus:
       type: string
       enum:

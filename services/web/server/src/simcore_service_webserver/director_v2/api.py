@@ -16,11 +16,7 @@ from ._core_computations import (
     is_pipeline_running,
     stop_pipeline,
 )
-from ._core_dynamic_services import (
-    get_project_inactivity,
-    restart_dynamic_service,
-    update_dynamic_service_networks_in_project,
-)
+from ._core_dynamic_services import get_project_inactivity, restart_dynamic_service
 from ._core_utils import is_healthy
 from .exceptions import DirectorServiceError
 
@@ -39,6 +35,5 @@ __all__: tuple[str, ...] = (
     "restart_dynamic_service",
     "set_project_run_policy",
     "stop_pipeline",
-    "update_dynamic_service_networks_in_project",
 )
 # nopycln: file

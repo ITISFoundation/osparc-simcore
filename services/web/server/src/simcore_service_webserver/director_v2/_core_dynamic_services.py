@@ -37,19 +37,6 @@ async def restart_dynamic_service(app: web.Application, node_uuid: str) -> None:
 
 
 @log_decorator(logger=_log)
-async def update_dynamic_service_networks_in_project(
-    app: web.Application, project_id: ProjectID
-) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = (
-        URL(settings.base_url) / f"dynamic_services/projects/{project_id}/-/networks"
-    )
-    await request_director_v2(
-        app, "PATCH", backend_url, expected_status=web.HTTPNoContent
-    )
-
-
-@log_decorator(logger=_log)
 async def get_project_inactivity(
     app: web.Application,
     project_id: ProjectID,

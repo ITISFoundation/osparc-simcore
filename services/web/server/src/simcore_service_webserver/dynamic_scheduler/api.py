@@ -166,3 +166,11 @@ async def retrieve_inputs(
             settings.DYNAMIC_SCHEDULER_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT.total_seconds()
         ),
     )
+
+
+async def update_projects_networks(
+    app: web.Application, *, project_id: ProjectID
+) -> None:
+    await services.update_projects_networks(
+        get_rabbitmq_rpc_client(app), project_id=project_id
+    )

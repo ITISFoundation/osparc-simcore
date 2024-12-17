@@ -35,6 +35,7 @@ from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodePatch
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_access import Owner
@@ -59,7 +60,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.socketio import SocketMessageDict
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from models_library.workspaces import UserWorkspaceAccessRightsDB
@@ -592,7 +593,7 @@ async def _start_dynamic_service(
         raise
 
     save_state = False
-    user_role: UserRole = await get_user_role(request.app, user_id)
+    user_role: UserRole = await get_user_role(request.app, user_id=user_id)
     if user_role > UserRole.GUEST:
         save_state = await has_user_project_access_rights(
             request.app, project_id=project_uuid, user_id=user_id, permission="write"
@@ -812,8 +813,8 @@ async def add_project_node(
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project["uuid"], product_name
     )
-    await director_v2_api.update_dynamic_service_networks_in_project(
-        request.app, project["uuid"]
+    await dynamic_scheduler_api.update_projects_networks(
+        request.app, project_id=ProjectID(project["uuid"])
     )
 
     if _is_node_dynamic(service_key):
@@ -935,8 +936,8 @@ async def delete_project_node(
     await director_v2_api.create_or_update_pipeline(
         request.app, user_id, project_uuid, product_name
     )
-    await director_v2_api.update_dynamic_service_networks_in_project(
-        request.app, project_uuid
+    await dynamic_scheduler_api.update_projects_networks(
+        request.app, project_id=project_uuid
     )
 
 
@@ -1044,11 +1045,15 @@ async def patch_project_node(
         app, user_id, project_id, product_name=product_name
     )
     if _node_patch_exclude_unset.get("label"):
-        await director_v2_api.update_dynamic_service_networks_in_project(
-            app, project_id
+        await dynamic_scheduler_api.update_projects_networks(app, project_id=project_id)
+
+    # 5. Updates project states for user, if inputs have been changed
+    if "inputs" in _node_patch_exclude_unset:
+        updated_project = await add_project_states_for_user(
+            user_id=user_id, project=updated_project, is_template=False, app=app
         )
 
-    # 5. Notify project node update
+    # 6. Notify project node update
     await notify_project_node_update(app, updated_project, node_id, errors=None)
 
 
@@ -1256,7 +1261,7 @@ async def try_open_project_for_user(
             project_uuid,
             ProjectStatus.OPENING,
             user_id,
-            await get_user_fullname(app, user_id),
+            await get_user_fullname(app, user_id=user_id),
             notify_users=False,
         ):
             with managed_resource(user_id, client_session_id, app) as user_session:
@@ -1426,22 +1431,23 @@ async def _get_project_lock_state(
         f"{set_user_ids=}",
     )
     usernames: list[FullNameDict] = [
-        await get_user_fullname(app, uid) for uid in set_user_ids
+        await get_user_fullname(app, user_id=uid) for uid in set_user_ids
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
-    if set_user_ids.issubset({user_id}):
-        if not await _user_has_another_client_open(user_session_id_list, app):
-            # in this case the project is re-openable by the same user until it gets closed
-            log.debug(
-                "project [%s] is in use by the same user [%s] that is currently disconnected, so it is unlocked for this specific user and opened",
-                f"{project_uuid=}",
-                f"{set_user_ids=}",
-            )
-            return ProjectLocked(
-                value=False,
-                owner=Owner(user_id=next(iter(set_user_ids)), **usernames[0]),
-                status=ProjectStatus.OPENED,
-            )
+    if set_user_ids.issubset({user_id}) and not await _user_has_another_client_open(
+        user_session_id_list, app
+    ):
+        # in this case the project is re-openable by the same user until it gets closed
+        log.debug(
+            "project [%s] is in use by the same user [%s] that is currently disconnected, so it is unlocked for this specific user and opened",
+            f"{project_uuid=}",
+            f"{set_user_ids=}",
+        )
+        return ProjectLocked(
+            value=False,
+            owner=Owner(user_id=next(iter(set_user_ids)), **usernames[0]),
+            status=ProjectStatus.OPENED,
+        )
     # the project is opened in another tab or browser, or by another user, both case resolves to the project being locked, and opened
     log.debug(
         "project [%s] is in use by another user [%s], so it is locked",
@@ -1725,11 +1731,13 @@ async def remove_project_dynamic_services(
         user_id,
     )
 
-    user_name_data: FullNameDict = user_name or await get_user_fullname(app, user_id)
+    user_name_data: FullNameDict = user_name or await get_user_fullname(
+        app, user_id=user_id
+    )
 
     user_role: UserRole | None = None
     try:
-        user_role = await get_user_role(app, user_id)
+        user_role = await get_user_role(app, user_id=user_id)
     except UserNotFoundError:
         user_role = None
 

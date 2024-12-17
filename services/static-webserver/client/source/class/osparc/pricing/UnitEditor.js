@@ -18,7 +18,7 @@
 qx.Class.define("osparc.pricing.UnitEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(pricingUnitData) {
+  construct: function(pricingUnit) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -36,7 +36,6 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     const manager = this.__validator = new qx.ui.form.validation.Manager();
     unitName.setRequired(true);
     costPerUnit.setRequired(true);
-    specificInfo.setRequired(true);
     unitExtraInfoCPU.setRequired(true);
     unitExtraInfoRAM.setRequired(true);
     unitExtraInfoVRAM.setRequired(true);
@@ -46,28 +45,31 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     manager.add(specificInfo);
     manager.add(unitExtraInfo);
 
-    if (pricingUnitData) {
+    if (pricingUnit) {
       this.set({
-        pricingUnitId: pricingUnitData.pricingUnitId,
-        unitName: pricingUnitData.unitName,
-        costPerUnit: parseFloat(pricingUnitData.currentCostPerUnit),
-        comment: pricingUnitData.comment ? pricingUnitData.comment : "",
-        specificInfo: pricingUnitData.specificInfo && pricingUnitData.specificInfo["aws_ec2_instances"] ? pricingUnitData.specificInfo["aws_ec2_instances"].toString() : "",
-        default: pricingUnitData.default
+        pricingUnitId: pricingUnit.getPricingUnitId(),
+        unitName: pricingUnit.getName(),
+        costPerUnit: pricingUnit.getCost(),
       });
-      const extraInfo = osparc.utils.Utils.deepCloneObject(pricingUnitData.unitExtraInfo);
-      // extract the required fields from the unitExtraInfo
-      this.set({
-        unitExtraInfoCPU: extraInfo["CPU"],
-        unitExtraInfoRAM: extraInfo["RAM"],
-        unitExtraInfoVRAM: extraInfo["VRAM"]
-      });
-      delete extraInfo["CPU"];
-      delete extraInfo["RAM"];
-      delete extraInfo["VRAM"];
-      this.set({
-        unitExtraInfo: extraInfo
-      });
+      if (pricingUnit.getClassification() === "TIER") {
+        this.set({
+          specificInfo: pricingUnit.getSpecificInfo() && pricingUnit.getSpecificInfo()["aws_ec2_instances"] ? pricingUnit.getSpecificInfo()["aws_ec2_instances"].toString() : "",
+          default: pricingUnit.getIsDefault(),
+        });
+        const extraInfo = osparc.utils.Utils.deepCloneObject(pricingUnit.getExtraInfo());
+        // extract the required fields from the unitExtraInfo
+        this.set({
+          unitExtraInfoCPU: extraInfo["CPU"],
+          unitExtraInfoRAM: extraInfo["RAM"],
+          unitExtraInfoVRAM: extraInfo["VRAM"]
+        });
+        delete extraInfo["CPU"];
+        delete extraInfo["RAM"];
+        delete extraInfo["VRAM"];
+        this.set({
+          unitExtraInfo: extraInfo
+        });
+      }
       this.getChildControl("save");
     } else {
       this.getChildControl("create");
@@ -111,8 +113,8 @@ qx.Class.define("osparc.pricing.UnitEditor", {
 
     specificInfo: {
       check: "String",
-      init: "t2.medium",
-      nullable: false,
+      init: null,
+      nullable: true,
       event: "changeSpecificInfo"
     },
 
@@ -304,7 +306,11 @@ qx.Class.define("osparc.pricing.UnitEditor", {
       const unitName = this.getUnitName();
       const costPerUnit = this.getCostPerUnit();
       const comment = this.getComment();
+      const awsEc2Instances = [];
       const specificInfo = this.getSpecificInfo();
+      if (specificInfo) {
+        awsEc2Instances.push(specificInfo);
+      }
       const extraInfo = {};
       extraInfo["CPU"] = this.getUnitExtraInfoCPU();
       extraInfo["RAM"] = this.getUnitExtraInfoRAM();
@@ -320,7 +326,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           "costPerUnit": costPerUnit,
           "comment": comment,
           "specificInfo": {
-            "aws_ec2_instances": [specificInfo]
+            "aws_ec2_instances": awsEc2Instances
           },
           "unitExtraInfo": extraInfo,
           "default": isDefault

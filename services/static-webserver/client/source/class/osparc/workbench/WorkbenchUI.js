@@ -290,12 +290,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __openServiceCatalog: function(e) {
-      const winPos = this.__pointerEventToScreenPos(e);
       const nodePos = this.__pointerEventToWorkbenchPos(e);
-      this.openServiceCatalog(winPos, nodePos);
+      this.openServiceCatalog(nodePos);
     },
 
-    openServiceCatalog: function(winPos, nodePos) {
+    openServiceCatalog: function(nodePos) {
       if (this.getStudy().isReadOnly()) {
         return null;
       }
@@ -304,11 +303,6 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         return null;
       }
       const srvCat = new osparc.workbench.ServiceCatalog();
-      const maxLeft = this.getBounds().width - osparc.workbench.ServiceCatalog.Width;
-      const maxHeight = this.getBounds().height - osparc.workbench.ServiceCatalog.Height;
-      const posX = Math.min(winPos.x, maxLeft);
-      const posY = Math.min(winPos.y, maxHeight);
-      srvCat.moveTo(posX + this.__getLeftOffset(), posY + this.__getTopOffset());
       srvCat.addListener("addService", async e => {
         const {
           service,
@@ -321,6 +315,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           this._createEdgeBetweenNodes(nodeLeftId ? nodeLeftId : newNodeId, nodeRightId ? nodeRightId : newNodeId, true);
         }
       }, this);
+      srvCat.center();
       srvCat.open();
       return srvCat;
     },
@@ -770,8 +765,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         let dragNodeId = data.nodeId;
 
         if (this.__tempEdgeNodeId === dragNodeId) {
-          const winPos = this.__unscaleCoordinates(this.__pointerPos.x, this.__pointerPos.y);
-          const srvCat = this.openServiceCatalog(winPos, this.__pointerPos);
+          const srvCat = this.openServiceCatalog(this.__pointerPos);
           if (srvCat) {
             this.__tempEdgeIsInput === true ? srvCat.setContext(null, dragNodeId) : srvCat.setContext(dragNodeId, null);
             srvCat.addListener("close", () => this.__removeTempEdge(), this);
@@ -1331,10 +1325,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           "text": "\uf090", // in
           "action": () => {
             const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), true);
-            const srvCat = this.openServiceCatalog({
-              x: 50,
-              y: 50
-            }, freePos);
+            const srvCat = this.openServiceCatalog(freePos);
             if (srvCat) {
               srvCat.setContext(null, nodeUI.getNodeId());
             }
@@ -1344,10 +1335,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           "text": "\uf08b", // out
           "action": () => {
             const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), false);
-            const srvCat = this.openServiceCatalog({
-              x: 50,
-              y: 50
-            }, freePos);
+            const srvCat = this.openServiceCatalog(freePos);
             if (srvCat) {
               srvCat.setContext(nodeUI.getNodeId(), null);
             }

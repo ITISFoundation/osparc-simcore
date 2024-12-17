@@ -7,27 +7,27 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
-from models_library.api_schemas_webserver.users import MyProfileGet, MyProfilePatch
+from models_library.api_schemas_webserver.users import (
+    MyPermissionGet,
+    MyProfileGet,
+    MyProfilePatch,
+    MyTokenCreate,
+    MyTokenGet,
+    UserGet,
+    UsersSearchQueryParams,
+)
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
 from models_library.user_preferences import PreferenceIdentifier
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.users._handlers import PreUserProfile, _SearchQueryParams
+from simcore_service_webserver.users._common.schemas import PreRegisteredUserGet
 from simcore_service_webserver.users._notifications import (
     UserNotification,
     UserNotificationCreate,
     UserNotificationPatch,
 )
-from simcore_service_webserver.users._notifications_handlers import (
-    _NotificationPathParams,
-)
-from simcore_service_webserver.users._schemas import UserProfile
-from simcore_service_webserver.users._tokens_handlers import _TokenPathParams
-from simcore_service_webserver.users.schemas import (
-    PermissionGet,
-    ThirdPartyToken,
-    TokenCreate,
-)
+from simcore_service_webserver.users._notifications_rest import _NotificationPathParams
+from simcore_service_webserver.users._tokens_rest import _TokenPathParams
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["user"])
 
@@ -63,15 +63,15 @@ async def replace_my_profile(_profile: MyProfilePatch):
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def set_frontend_preference(
-    preference_id: PreferenceIdentifier,  # noqa: ARG001
-    body_item: PatchRequestBody,  # noqa: ARG001
+    preference_id: PreferenceIdentifier,
+    body_item: PatchRequestBody,
 ):
     ...
 
 
 @router.get(
     "/me/tokens",
-    response_model=Envelope[list[ThirdPartyToken]],
+    response_model=Envelope[list[MyTokenGet]],
 )
 async def list_tokens():
     ...
@@ -79,16 +79,16 @@ async def list_tokens():
 
 @router.post(
     "/me/tokens",
-    response_model=Envelope[ThirdPartyToken],
+    response_model=Envelope[MyTokenGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_token(_token: TokenCreate):
+async def create_token(_token: MyTokenCreate):
     ...
 
 
 @router.get(
     "/me/tokens/{service}",
-    response_model=Envelope[ThirdPartyToken],
+    response_model=Envelope[MyTokenGet],
 )
 async def get_token(_params: Annotated[_TokenPathParams, Depends()]):
     ...
@@ -131,7 +131,7 @@ async def mark_notification_as_read(
 
 @router.get(
     "/me/permissions",
-    response_model=Envelope[list[PermissionGet]],
+    response_model=Envelope[list[MyPermissionGet]],
 )
 async def list_user_permissions():
     ...
@@ -139,22 +139,22 @@ async def list_user_permissions():
 
 @router.get(
     "/users:search",
-    response_model=Envelope[list[UserProfile]],
+    response_model=Envelope[list[UserGet]],
     tags=[
         "po",
     ],
 )
-async def search_users(_params: Annotated[_SearchQueryParams, Depends()]):
+async def search_users(_params: Annotated[UsersSearchQueryParams, Depends()]):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
 
 
 @router.post(
     "/users:pre-register",
-    response_model=Envelope[UserProfile],
+    response_model=Envelope[UserGet],
     tags=[
         "po",
     ],
 )
-async def pre_register_user(_body: PreUserProfile):
+async def pre_register_user(_body: PreRegisteredUserGet):
     ...

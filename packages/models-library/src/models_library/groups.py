@@ -1,35 +1,30 @@
-import enum
 from typing import Annotated, Final, NamedTuple, TypeAlias
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.groups_enums import GroupType as GroupType
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic.config import JsonDict
 from pydantic.types import PositiveInt
-from typing_extensions import TypedDict
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from .basic_types import IDStr
-from .users import GroupID, UserID
+from .users import UserID
 from .utils.common_validators import create_enums_pre_validator
 
 EVERYONE_GROUP_ID: Final[int] = 1
 
+GroupID: TypeAlias = PositiveInt
 
-class GroupTypeInModel(str, enum.Enum):
-    """
-    standard: standard group, e.g. any group that is not a primary group or special group such as the everyone group
-    primary: primary group, e.g. the primary group is the user own defined group that typically only contain the user (same as in linux)
-    everyone: the only group for all users
-    """
-
-    STANDARD = "standard"
-    PRIMARY = "primary"
-    EVERYONE = "everyone"
+__all__: tuple[str, ...] = ("GroupType",)
 
 
 class Group(BaseModel):
     gid: PositiveInt
     name: str
     description: str
-    group_type: Annotated[GroupTypeInModel, Field(alias="type")]
+    group_type: Annotated[GroupType, Field(alias="type")]
     thumbnail: str | None
 
     inclusion_rules: Annotated[
@@ -40,10 +35,50 @@ class Group(BaseModel):
     ] = DEFAULT_FACTORY
 
     _from_equivalent_enums = field_validator("group_type", mode="before")(
-        create_enums_pre_validator(GroupTypeInModel)
+        create_enums_pre_validator(GroupType)
     )
 
-    model_config = ConfigDict(populate_by_name=True)
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "gid": 1,
+                        "name": "Everyone",
+                        "type": "everyone",
+                        "description": "all users",
+                        "thumbnail": None,
+                    },
+                    {
+                        "gid": 2,
+                        "name": "User",
+                        "description": "primary group",
+                        "type": "primary",
+                        "thumbnail": None,
+                    },
+                    {
+                        "gid": 3,
+                        "name": "Organization",
+                        "description": "standard group",
+                        "type": "standard",
+                        "thumbnail": None,
+                        "inclusionRules": {},
+                    },
+                    {
+                        "gid": 4,
+                        "name": "Product",
+                        "description": "standard group for products",
+                        "type": "standard",
+                        "thumbnail": None,
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        populate_by_name=True, json_schema_extra=_update_json_schema_extra
+    )
 
 
 class AccessRightsDict(TypedDict):
