@@ -625,7 +625,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Move to Trash"),
         confirmText: this.tr("Move to Trash"),
-        confirmAction: "delete"
+        confirmAction: "warning",
       });
       confirmationWin.center();
       confirmationWin.open();
@@ -2074,7 +2074,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Move to Trash"),
         confirmText: this.tr("Move to Trash"),
-        confirmAction: "delete"
+        confirmAction: "warning",
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
       return confirmationWin;

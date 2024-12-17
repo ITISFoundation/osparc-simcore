@@ -965,6 +965,15 @@ qx.Theme.define("osparc.theme.Appearance", {
       include: "form-button"
     },
 
+    "warning-button": {
+      include: "form-button",
+      style: state => ({
+        decorator: state.hovered || state.focused ? "form-button-warning-hover" : "form-button-warning",
+        backgroundColor: state.hovered || state.focused ? "default-button-hover-background" : "warning",
+        textColor: state.hovered || state.focused ? "default-button-text" : "black",
+      })
+    },
+
     "danger-button": {
       include: "form-button",
       style: state => ({
