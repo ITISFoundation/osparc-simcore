@@ -157,15 +157,16 @@ async def get_user_or_raise(
     assert return_column_names is not None  # nosec
     assert set(return_column_names).issubset(users.columns.keys())  # nosec
 
+    query = sa.select(*(users.columns[name] for name in return_column_names)).where(
+        users.c.id == user_id
+    )
+
     async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.execute(
-            sa.select(*(users.columns[name] for name in return_column_names)).where(
-                users.c.id == user_id
-            )
-        )
+        result = await conn.execute(query)
         row = result.first()
         if row is None:
             raise UserNotFoundError(uid=user_id)
+
         user: dict[str, Any] = row._asdict()
         return user
 
@@ -433,7 +434,7 @@ async def get_user_billing_details(
     async with pass_or_acquire_connection(engine, connection) as conn:
         query = UsersRepo.get_billing_details_query(user_id=user_id)
         result = await conn.execute(query)
-        row = result.fetchone()
+        row = result.first()
         if not row:
             raise BillingDetailsNotFoundError(user_id=user_id)
         return UserBillingDetails.model_validate(row)
@@ -448,7 +449,7 @@ async def delete_user_by_id(
             .where(users.c.id == user_id)
             .returning(users.c.id)  # Return the ID of the deleted row otherwise None
         )
-        deleted_user = result.fetchone()
+        deleted_user = result.first()
 
         # If no row was deleted, the user did not exist
         return bool(deleted_user)
