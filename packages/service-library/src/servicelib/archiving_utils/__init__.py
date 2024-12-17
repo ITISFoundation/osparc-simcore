@@ -1,10 +1,6 @@
-from ._core import (
-    ArchiveError,
-    PrunableFolder,
-    archive_dir,
-    is_leaf_path,
-    unarchive_dir,
-)
+from ._core import archive_dir, unarchive_dir
+from ._errors import ArchiveError
+from ._prunable_folder import PrunableFolder, is_leaf_path
 
 __all__ = (
     "archive_dir",
