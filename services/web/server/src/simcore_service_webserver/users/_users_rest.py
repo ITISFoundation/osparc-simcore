@@ -166,7 +166,7 @@ _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 
 @routes.get(f"/{API_VTAG}/admin/users:search", name="search_users_for_admin")
 @login_required
-@permission_required("user.admin.read")
+@permission_required("admin.users.read")
 @_handle_users_exceptions
 async def search_users_for_admin(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
@@ -189,7 +189,7 @@ async def search_users_for_admin(request: web.Request) -> web.Response:
     f"/{API_VTAG}/admin/users:pre-register", name="pre_register_user_for_admin"
 )
 @login_required
-@permission_required("user.admin.read")
+@permission_required("admin.users.read")
 @_handle_users_exceptions
 async def pre_register_user_for_admin(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
