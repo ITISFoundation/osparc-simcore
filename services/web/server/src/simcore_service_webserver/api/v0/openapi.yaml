@@ -611,8 +611,9 @@ paths:
     get:
       tags:
       - groups
+      - users
       summary: Get All Group Users
-      description: Gets users in organization groups
+      description: Gets users in organization or primary groups
       operationId: get_all_group_users
       parameters:
       - name: gid
@@ -633,6 +634,7 @@ paths:
     post:
       tags:
       - groups
+      - users
       summary: Add Group User
       description: Adds a user to an organization group using their username, user
         ID, or email (subject to privacy settings)
@@ -659,6 +661,7 @@ paths:
     get:
       tags:
       - groups
+      - users
       summary: Get Group User
       description: Gets specific user in an organization group
       operationId: get_group_user
@@ -689,6 +692,7 @@ paths:
     patch:
       tags:
       - groups
+      - users
       summary: Update Group User
       description: Updates user (access-rights) to an organization group
       operationId: update_group_user
@@ -725,6 +729,7 @@ paths:
     delete:
       tags:
       - groups
+      - users
       summary: Delete Group User
       description: Removes a user from an organization group
       operationId: delete_group_user
@@ -1133,7 +1138,7 @@ paths:
   /v0/me:
     get:
       tags:
-      - user
+      - users
       summary: Get My Profile
       operationId: get_my_profile
       responses:
@@ -1145,7 +1150,7 @@ paths:
                 $ref: '#/components/schemas/Envelope_MyProfileGet_'
     put:
       tags:
-      - user
+      - users
       summary: Replace My Profile
       description: Use PATCH instead
       operationId: replace_my_profile
@@ -1161,7 +1166,7 @@ paths:
       deprecated: true
     patch:
       tags:
-      - user
+      - users
       summary: Update My Profile
       operationId: update_my_profile
       requestBody:
@@ -1176,7 +1181,7 @@ paths:
   /v0/me/preferences/{preference_id}:
     patch:
       tags:
-      - user
+      - users
       summary: Set Frontend Preference
       operationId: set_frontend_preference
       parameters:
@@ -1198,7 +1203,7 @@ paths:
   /v0/me/tokens:
     get:
       tags:
-      - user
+      - users
       summary: List Tokens
       operationId: list_tokens
       responses:
@@ -1210,7 +1215,7 @@ paths:
                 $ref: '#/components/schemas/Envelope_list_MyTokenGet__'
     post:
       tags:
-      - user
+      - users
       summary: Create Token
       operationId: create_token
       requestBody:
@@ -1229,7 +1234,7 @@ paths:
   /v0/me/tokens/{service}:
     get:
       tags:
-      - user
+      - users
       summary: Get Token
       operationId: get_token
       parameters:
@@ -1248,7 +1253,7 @@ paths:
                 $ref: '#/components/schemas/Envelope_MyTokenGet_'
     delete:
       tags:
-      - user
+      - users
       summary: Delete Token
       operationId: delete_token
       parameters:
@@ -1264,7 +1269,7 @@ paths:
   /v0/me/notifications:
     get:
       tags:
-      - user
+      - users
       summary: List User Notifications
       operationId: list_user_notifications
       responses:
@@ -1276,7 +1281,7 @@ paths:
                 $ref: '#/components/schemas/Envelope_list_UserNotification__'
     post:
       tags:
-      - user
+      - users
       summary: Create User Notification
       operationId: create_user_notification
       requestBody:
@@ -1291,7 +1296,7 @@ paths:
   /v0/me/notifications/{notification_id}:
     patch:
       tags:
-      - user
+      - users
       summary: Mark Notification As Read
       operationId: mark_notification_as_read
       parameters:
@@ -1313,7 +1318,7 @@ paths:
   /v0/me/permissions:
     get:
       tags:
-      - user
+      - users
       summary: List User Permissions
       operationId: list_user_permissions
       responses:
@@ -1326,7 +1331,7 @@ paths:
   /v0/users/{user_id}:
     get:
       tags:
-      - user
+      - users
       summary: Get User
       operationId: get_user
       parameters:
@@ -1348,7 +1353,7 @@ paths:
   /v0/users:search:
     post:
       tags:
-      - user
+      - users
       summary: Search Users
       description: Search among users who are publicly visible to the caller (i.e.,
         me) based on their privacy settings.
@@ -1381,7 +1386,7 @@ paths:
   /v0/admin/users:search:
     get:
       tags:
-      - user
+      - users
       - admin
       summary: Search Users For Admin
       operationId: search_users_for_admin
@@ -1404,7 +1409,7 @@ paths:
   /v0/admin/users:pre-register:
     post:
       tags:
-      - user
+      - users
       - admin
       summary: Pre Register User For Admin
       operationId: pre_register_user_for_admin
