@@ -22,16 +22,31 @@ qx.Class.define("osparc.store.Users", {
   construct: function() {
     this.base(arguments);
 
-    this.usersCached = [];
+    this.__usersCached = [];
   },
 
   members: {
     addUser: function(userData) {
-      const userFound = this.usersCached.find(user => user.getGroupId() === userData["groupId"]);
+      const user = new osparc.data.model.User(userData);
+      const userFound = this.__usersCached.find(usr => usr.getGroupId() === user.getGroupId());
       if (!userFound) {
-        const user = new osparc.data.model.User(userData);
-        this.usersCached.push(user);
+        this.__usersCached.push(user);
       }
+      return user;
+    },
+
+    searchUsers: function(text) {
+      const params = {
+        data: {
+          match: text
+        }
+      };
+      return osparc.data.Resources.fetch("users", "search", params)
+        .then(usersData => {
+          const users = [];
+          usersData.forEach(userData => users.push(this.addUser(userData)));
+          return users;
+        });
     },
   }
 });

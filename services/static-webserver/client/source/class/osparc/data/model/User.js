@@ -41,12 +41,12 @@ qx.Class.define("osparc.data.model.User", {
     }
     const thumbnail = osparc.utils.Avatar.emailToThumbnail(userData["login"], userData["userName"]);
     this.set({
-      userId: parseInt(userData["id"]),
-      groupId: parseInt(userData["gid"]),
+      userId: ("id" in userData) ? parseInt(userData["id"]) : parseInt(userData["userId"]),
+      groupId: ("gid" in userData) ? parseInt(userData["gid"]) : parseInt(userData["groupId"]),
       username: userData["userName"],
-      firstName: userData["first_name"],
-      lastName: userData["last_name"],
-      email: userData["login"],
+      firstName: ("first_name" in userData) ? userData["first_name"] : userData["firstName"],
+      lastName: ("last_name" in userData) ? userData["last_name"] : userData["lastName"],
+      email: ("login" in userData) ? userData["login"] : userData["email"],
       label: userData["userName"],
       description,
       thumbnail,

@@ -111,17 +111,14 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     __searchUsers: function() {
       const text = this.__textFilter.getChildControl("textfield").getValue();
-      const params = {
-        data: {
-          match: text
-        }
-      };
-      osparc.data.Resources.fetch("users", "search", params)
-        .then(data => console.log(data))
+      osparc.store.Users.getInstance().searchUsers(text)
+        .then(users => {
+          console.log(users);
+        })
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-        })
+        });
     },
 
     __reloadCollaborators: function() {
