@@ -30,4 +30,4 @@ async def unarchive_dir(
     # NOTE: maintained here conserve the interface
     _ = max_workers  # no longer used
 
-    return {}
+    return set()

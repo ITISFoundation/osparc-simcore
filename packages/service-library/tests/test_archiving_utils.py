@@ -120,13 +120,13 @@ def zipfile_single_file_extract_worker_raises_error() -> Iterator[None]:
 
     # pylint: disable=protected-access
     old_func = (
-        archiving_utils._zipfile_interface._zipfile_single_file_extract_worker
+        archiving_utils._interface_zipfile._zipfile_single_file_extract_worker
     )  # noqa: SLF001
-    archiving_utils._zipfile_interface._zipfile_single_file_extract_worker = (  # noqa: SLF001
+    archiving_utils._interface_zipfile._zipfile_single_file_extract_worker = (  # noqa: SLF001
         __raise_error
     )
     yield
-    archiving_utils._zipfile_interface._zipfile_single_file_extract_worker = (
+    archiving_utils._interface_zipfile._zipfile_single_file_extract_worker = (
         old_func  # noqa: SLF001
     )
 
