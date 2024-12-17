@@ -171,7 +171,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       const newPlanButton = new osparc.dashboard.GridButtonNew(title, desc);
       newPlanButton.setCardKey(templateInfo.idToWidget);
       osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo.idToWidget);
-      newPlanButton.addListener("execute", () => newStudyClicked());
+      newPlanButton.addListener("tap", () => newStudyClicked());
       return newPlanButton;
     },
 

@@ -555,7 +555,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__reloadFolders();
     },
 
-    __showMoveToWorkspaceWarningMessage: function() {
+    __showMoveToDifferentWorkspaceWarningMessage: function() {
       const msg = this.tr("The permissions will be taken from the new workspace.");
       const win = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Move"),
@@ -563,13 +563,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       win.open();
       return win;
-    },
-
-    __doMoveFolder: function(folderId, destWorkspaceId, destFolderId) {
-      osparc.store.Folders.getInstance().moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
-        .then(() => osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)) // then move to folder
-        .then(() => this.__reloadFolders())
-        .catch(err => console.error(err));
     },
 
     _moveFolderToRequested: function(folderId) {
@@ -583,30 +576,35 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const data = e.getData();
         const destWorkspaceId = data["workspaceId"];
         const destFolderId = data["folderId"];
-        if (destWorkspaceId === currentWorkspaceId) {
-          this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
-        } else {
-          const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
-          confirmationWin.addListener("close", () => {
-            if (confirmationWin.getConfirmed()) {
-              this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
-            }
-          }, this);
-        }
+        this._folderToFolderRequested(folderId, currentWorkspaceId, destWorkspaceId, destFolderId);
       });
       moveFolderTo.addListener("cancel", () => win.close());
     },
 
-    _folderToFolderRequested: function(data) {
-      const {
-        folderId,
-        destWorkspaceId,
-        destFolderId,
-      } = data;
-      this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
+    __doMoveFolder: function(folderId, destWorkspaceId, destFolderId) {
+      osparc.store.Folders.getInstance().moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
+        .then(() => osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)) // then move to folder
+        .then(() => this.__reloadFolders())
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+        });
     },
 
-    _trashFolderRequested: function(folderId) {
+    _folderToFolderRequested: function(folderId, workspaceId, destWorkspaceId, destFolderId) {
+      if (destWorkspaceId === workspaceId) {
+        this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
+      } else {
+        const confirmationWin = this.__showMoveToDifferentWorkspaceWarningMessage();
+        confirmationWin.addListener("close", () => {
+          if (confirmationWin.getConfirmed()) {
+            this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
+          }
+        }, this);
+      }
+    },
+
+    __folderToTrash: function(folderId) {
       osparc.store.Folders.getInstance().trashFolder(folderId, this.getCurrentWorkspaceId())
         .then(() => {
           this.__reloadFolders();
@@ -617,7 +615,25 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
-        })
+        });
+    },
+
+    _trashFolderRequested: function(folderId) {
+      const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+      let msg = this.tr("Are you sure you want to move the Folder and all its content to the trash?");
+      msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Move to Trash"),
+        confirmText: this.tr("Move to Trash"),
+        confirmAction: "warning",
+      });
+      confirmationWin.center();
+      confirmationWin.open();
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
+          this.__folderToTrash(folderId);
+        }
+      }, this);
     },
 
     _untrashFolderRequested: function(folder) {
@@ -1162,10 +1178,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __connectDropHandlers: function() {
       const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
       workspacesAndFoldersTree.addListener("studyToFolderRequested", e => {
-        this._studyToFolderRequested(e.getData());
+        const {
+          studyData,
+          destWorkspaceId,
+          destFolderId,
+        } = e.getData();
+        this._moveStudyToFolderReqested(studyData, destWorkspaceId, destFolderId);
       });
       workspacesAndFoldersTree.addListener("folderToFolderRequested", e => {
-        this._folderToFolderRequested(e.getData());
+        const {
+          folderId,
+          workspaceId,
+          destWorkspaceId,
+          destFolderId,
+        } = e.getData();
+        this._folderToFolderRequested(folderId, workspaceId, destWorkspaceId, destFolderId);
+      });
+
+      this._resourceFilter.addListener("trashStudyRequested", e => {
+        this.__trashStudyRequested(e.getData());
+      });
+      this._resourceFilter.addListener("trashFolderRequested", e => {
+        this._trashFolderRequested(e.getData());
       });
     },
 
@@ -1251,7 +1285,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (destWorkspaceId === currentWorkspaceId) {
             moveStudies();
           } else {
-            const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
+            const confirmationWin = this.__showMoveToDifferentWorkspaceWarningMessage();
             confirmationWin.addListener("close", () => {
               if (confirmationWin.getConfirmed()) {
                 moveStudies();
@@ -1652,6 +1686,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
+    _moveStudyToFolderReqested: function(studyData, destWorkspaceId, destFolderId) {
+      if (studyData["workspaceId"] === destWorkspaceId) {
+        this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
+      } else {
+        const confirmationWin = this.__showMoveToDifferentWorkspaceWarningMessage();
+        confirmationWin.addListener("close", () => {
+          if (confirmationWin.getConfirmed()) {
+            this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
+          }
+        }, this);
+      }
+    },
+
     __getMoveStudyToMenuButton: function(studyData) {
       const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesome5Solid/folder/12");
       moveToButton["moveToButton"] = true;
@@ -1666,17 +1713,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const data = e.getData();
           const destWorkspaceId = data["workspaceId"];
           const destFolderId = data["folderId"];
-
-          if (destWorkspaceId === currentWorkspaceId) {
-            this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
-          } else {
-            const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
-            confirmationWin.addListener("close", () => {
-              if (confirmationWin.getConfirmed()) {
-                this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
-              }
-            }, this);
-          }
+          this._moveStudyToFolderReqested(studyData, destWorkspaceId, destFolderId);
         }, this);
         moveStudyTo.addListener("cancel", () => win.close());
       }, this);
@@ -1695,11 +1732,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       };
       return osparc.data.Resources.fetch("studies", "moveToWorkspace", params)
-        .then(() => studyData["workspaceId"] = destWorkspaceId)
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        });
+        .then(() => studyData["workspaceId"] = destWorkspaceId);
     },
 
     __moveStudyToFolder: function(studyData, destFolderId) {
@@ -1715,15 +1748,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       return osparc.data.Resources.fetch("studies", "moveToFolder", params)
         .then(() => studyData["folderId"] = destFolderId);
-    },
-
-    _studyToFolderRequested: function(data) {
-      const {
-        studyData,
-        destWorkspaceId,
-        destFolderId,
-      } = data;
-      this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
     },
 
     __getDuplicateMenuButton: function(studyData) {
@@ -2050,7 +2074,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Move to Trash"),
         confirmText: this.tr("Move to Trash"),
-        confirmAction: "delete"
+        confirmAction: "warning",
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
       return confirmationWin;
