@@ -26,6 +26,10 @@ class DynamicSchedulerSettings(BaseCustomSettings, MixinServiceSettings):
         ),
     )
 
+    DYNAMIC_SCHEDULER_RESTART_USER_SERVICES_TIMEOUT: datetime.timedelta = Field(
+        datetime.timedelta(minutes=1), description="timeout for user services restart"
+    )
+
     DYNAMIC_SCHEDULER_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT: datetime.timedelta = Field(
         datetime.timedelta(hours=1),
         description=(

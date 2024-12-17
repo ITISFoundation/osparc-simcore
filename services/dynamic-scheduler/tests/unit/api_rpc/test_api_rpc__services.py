@@ -494,15 +494,34 @@ async def test_stop_dynamic_service_serializes_generic_errors(
 
 
 @pytest.fixture
+def mock_director_v2_restart_user_services(node_id: NodeID) -> Iterator[None]:
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.post(f"/dynamic_services/{node_id}:restart").respond(
+            status.HTTP_204_NO_CONTENT
+        )
+        yield None
+
+
+async def test_restart_user_services(
+    mock_director_v2_restart_user_services: None,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+):
+    await services.restart_user_services(rpc_client, node_id=node_id, timeout_s=5)
+
+
+@pytest.fixture
 def mock_director_v2_service_retrieve_inputs(node_id: NodeID) -> Iterator[None]:
     with respx.mock(
         base_url="http://director-v2:8000/v2",
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
-        request_ok = mock.post(f"/dynamic_services/{node_id}:retrieve")
-
-        request_ok.respond(
+        mock.post(f"/dynamic_services/{node_id}:retrieve").respond(
             status.HTTP_200_OK,
             text=TypeAdapter(RetrieveDataOutEnveloped)
             .validate_python(
