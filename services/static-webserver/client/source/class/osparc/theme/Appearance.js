@@ -19,6 +19,15 @@ qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.common.Appearance,
 
   appearances: {
+    "strong-ui": {
+      style: () => {
+        return {
+          textColor: "default-button-text",
+          backgroundColor: "product-color",
+        };
+      }
+    },
+
     "dragdrop-no-cursor": {
       style: () => {
         return {
@@ -561,13 +570,12 @@ qx.Theme.define("osparc.theme.Appearance", {
     "widget/reset-button": {},
 
     "form-button": {
+      include: "strong-ui",
       style: function(states) {
         const style = {
           decorator: "form-button",
           cursor: "pointer",
-          textColor: "default-button-text", // OM!!!!!
           padding: 5,
-          backgroundColor: "default-button",
           center: true,
         };
         if (states.hovered) {
