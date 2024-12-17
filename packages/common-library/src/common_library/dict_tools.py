@@ -1,9 +1,17 @@
-""" Utils to operate with dicts """
+""" A collection of free functions to manipulate dicts
+"""
 
-from copy import deepcopy
-from typing import Any, Mapping
+from collections.abc import Mapping
+from copy import copy, deepcopy
+from typing import Any
 
-ConfigDict = dict[str, Any]
+
+def remap_keys(data: dict, rename: dict[str, str]) -> dict[str, Any]:
+    """A new dict that renames the keys of a dict while keeping the values unchanged
+
+    NOTE: Does not support renaming of nested keys
+    """
+    return {rename.get(k, k): v for k, v in data.items()}
 
 
 def get_from_dict(obj: Mapping[str, Any], dotted_key: str, default=None) -> Any:
@@ -28,10 +36,10 @@ def copy_from_dict(
     #
 
     if include is None:
-        return deepcopy(data) if deep else data.copy()
+        return deepcopy(data) if deep else copy(data)
 
     if include == ...:
-        return deepcopy(data) if deep else data.copy()
+        return deepcopy(data) if deep else copy(data)
 
     if isinstance(include, set):
         return {key: data[key] for key in include}
@@ -46,7 +54,7 @@ def copy_from_dict(
 
 def update_dict(obj: dict, **updates):
     for key, update_value in updates.items():
-        if callable(update_value):
-            update_value = update_value(obj[key])
-        obj.update({key: update_value})
+        obj.update(
+            {key: update_value(obj[key]) if callable(update_value) else update_value}
+        )
     return obj

@@ -19,6 +19,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, I
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -41,8 +42,8 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.products import ProductName
 from models_library.services_enums import ServiceState
 from pydantic import ByteSize, TypeAdapter
+from pytest_docker.plugin import Services
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -67,6 +68,7 @@ from simcore_postgres_database.utils_products import (
 )
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
+from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.db.plugin import get_database_engine
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.statics._constants import (
@@ -92,7 +94,7 @@ def disable_swagger_doc_generation(
 
 
 @pytest.fixture(scope="session")
-def docker_compose_env(default_app_cfg: ConfigDict) -> Iterator[pytest.MonkeyPatch]:
+def docker_compose_env(default_app_cfg: AppConfigDict) -> Iterator[pytest.MonkeyPatch]:
     postgres_cfg = default_app_cfg["db"]["postgres"]
     redis_cfg = default_app_cfg["resource_manager"]["redis"]
     # docker-compose reads these environs
@@ -117,7 +119,7 @@ def docker_compose_file(docker_compose_env: pytest.MonkeyPatch) -> str:
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
+def app_cfg(default_app_cfg: AppConfigDict, unused_tcp_port_factory) -> AppConfigDict:
     """
     NOTE: SHOULD be overriden in any test module to configure the app accordingly
     """
@@ -133,8 +135,8 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    app_cfg: ConfigDict,
-    monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
+    app_cfg: AppConfigDict,
+    monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], dict[str, str]],
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
@@ -189,7 +191,7 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
-    app_cfg: ConfigDict,
+    app_cfg: AppConfigDict,
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     # tools
@@ -452,7 +454,7 @@ def create_dynamic_service_mock(
     return _create
 
 
-def _is_postgres_responsive(url):
+def _is_postgres_responsive(url: str):
     """Check if something responds to url"""
     try:
         engine = sa.create_engine(url)
@@ -464,7 +466,9 @@ def _is_postgres_responsive(url):
 
 
 @pytest.fixture(scope="session")
-def postgres_dsn(docker_services, docker_ip, default_app_cfg: dict) -> dict:
+def postgres_dsn(
+    docker_services: Services, docker_ip: str | Any, default_app_cfg: dict
+) -> dict:
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
     cfg["host"] = docker_ip
     cfg["port"] = docker_services.port_for("postgres", 5432)
@@ -472,7 +476,7 @@ def postgres_dsn(docker_services, docker_ip, default_app_cfg: dict) -> dict:
 
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, postgres_dsn):
+def postgres_service(docker_services: Services, postgres_dsn: dict) -> str:
     url = DSN.format(**postgres_dsn)
 
     # Wait until service is responsive.
@@ -647,6 +651,7 @@ async def with_permitted_override_services_specifications(
             .where(groups_extra_properties.c.group_id == 1)
             .values(override_services_specifications=True)
         )
+
     yield
 
     async with aiopg_engine.acquire() as conn:

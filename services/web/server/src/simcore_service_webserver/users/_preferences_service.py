@@ -20,7 +20,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 )
 
 from ..db.plugin import get_database_engine
-from . import _preferences_db
+from . import _preferences_repository
 from ._preferences_models import (
     ALL_FRONTEND_PREFERENCES,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
@@ -39,7 +39,7 @@ async def _get_frontend_user_preferences(
 ) -> list[FrontendUserPreference]:
     saved_user_preferences: list[FrontendUserPreference | None] = await logged_gather(
         *(
-            _preferences_db.get_user_preference(
+            _preferences_repository.get_user_preference(
                 app,
                 user_id=user_id,
                 product_name=product_name,
@@ -64,7 +64,7 @@ async def get_frontend_user_preference(
     product_name: ProductName,
     preference_class: type[FrontendUserPreference],
 ) -> AnyUserPreference | None:
-    return await _preferences_db.get_user_preference(
+    return await _preferences_repository.get_user_preference(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -127,7 +127,7 @@ async def set_frontend_user_preference(
         FrontendUserPreference.get_preference_class_from_name(preference_name),
     )
 
-    await _preferences_db.set_user_preference(
+    await _preferences_repository.set_user_preference(
         app,
         user_id=user_id,
         preference=TypeAdapter(preference_class).validate_python({"value": value}),  # type: ignore[arg-type] # GitHK this is suspicious

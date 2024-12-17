@@ -14,8 +14,8 @@ from unittest.mock import MagicMock
 
 import pytest
 import yaml
-from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.webserver_projects import empty_project_data
+from simcore_service_webserver.application_settings_utils import AppConfigDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -40,7 +40,7 @@ def default_app_config_unit_file(tests_data_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def default_app_cfg(default_app_config_unit_file: Path) -> ConfigDict:
+def default_app_cfg(default_app_config_unit_file: Path) -> AppConfigDict:
     # NOTE: ONLY used at the session scopes
     # TODO: create instead a loader function and return a Callable
     config: dict = yaml.safe_load(default_app_config_unit_file.read_text())

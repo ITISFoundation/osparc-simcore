@@ -29,6 +29,14 @@ class InputSchema(BaseModel):
     )
 
 
+class OutputSchemaWithoutCamelCase(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="ignore",
+        frozen=True,
+    )
+
+
 class OutputSchema(BaseModel):
     model_config = ConfigDict(
         alias_generator=snake_to_camel,

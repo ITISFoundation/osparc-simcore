@@ -6,12 +6,12 @@ from pathlib import Path
 import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_dict,
     setenvs_from_envfile,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_service_webserver.application_settings_utils import AppConfigDict
 
 
 @pytest.fixture
@@ -68,7 +68,7 @@ def dir_with_random_content(tmpdir, faker: Faker) -> Path:
 
 
 @pytest.fixture
-def app_config_for_production_legacy(test_data_dir: Path) -> ConfigDict:
+def app_config_for_production_legacy(test_data_dir: Path) -> AppConfigDict:
     app_config = json.loads(
         (test_data_dir / "server_docker_prod_app_config-unit.json").read_text()
     )

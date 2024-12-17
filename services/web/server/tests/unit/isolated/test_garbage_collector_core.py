@@ -240,7 +240,9 @@ async def test_remove_orphaned_services_inexisting_user_does_not_save_state(
         mock.ANY, fake_running_service.node_uuid
     )
     mock_list_node_ids_in_project.assert_called_once_with(mock.ANY, project_id)
-    mock_get_user_role.assert_called_once_with(mock_app, fake_running_service.user_id)
+    mock_get_user_role.assert_called_once_with(
+        mock_app, user_id=fake_running_service.user_id
+    )
     mock_has_write_permission.assert_not_called()
     mock_stop_dynamic_service.assert_called_once_with(
         mock_app,
