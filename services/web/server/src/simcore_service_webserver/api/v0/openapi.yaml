@@ -1328,28 +1328,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_MyPermissionGet__'
-  /v0/users/{user_id}:
-    get:
-      tags:
-      - users
-      summary: Get User
-      operationId: get_user
-      parameters:
-      - name: user_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: User Id
-          minimum: 0
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_UserGet_'
   /v0/users:search:
     post:
       tags:
@@ -8617,19 +8595,6 @@ components:
           title: Error
       type: object
       title: Envelope[UserForAdminGet]
-    Envelope_UserGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/UserGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[UserGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
