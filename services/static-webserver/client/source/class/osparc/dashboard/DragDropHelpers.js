@@ -169,11 +169,55 @@ qx.Class.define("osparc.dashboard.DragDropHelpers", {
       },
     },
 
+    trashStudy: {
+      dragOver: function(event) {
+        let compatible = false;
+        const studyDataOrigin = event.getData("osparc-moveStudy")["studyDataOrigin"];
+        const workspaceIdOrigin = studyDataOrigin["workspaceId"];
+        const workspaceOrigin = osparc.store.Workspaces.getInstance().getWorkspace(workspaceIdOrigin);
+        // Compatibility checks:
+        // - My Workspace -> Trash (1)
+        //   - Delete on Study
+        // - Shared Workspace -> Trash (2)
+        //   - Delete on Shared Workspace
+        if (workspaceIdOrigin === null) { // (0)
+          compatible = osparc.data.model.Study.canIDelete(studyDataOrigin["accessRights"])
+        } else if (workspaceIdOrigin !== null) { // (1)
+          compatible = workspaceOrigin.getMyAccessRights()["delete"];
+        }
+
+        if (!compatible) {
+          // do not allow
+          event.preventDefault();
+        }
+
+        const dragWidget = osparc.dashboard.DragWidget.getInstance();
+        dragWidget.setDropAllowed(compatible);
+      },
+
+      drop: function(event, folderItem, destWorkspaceId, destFolderId) {
+        const studyData = event.getData("osparc-moveStudy")["studyDataOrigin"];
+        const studyToFolderData = {
+          studyData,
+          destWorkspaceId,
+          destFolderId,
+        };
+        folderItem.getChildControl("icon").resetTextColor();
+        return studyToFolderData;
+      },
+    },
+
+    trashFolder: {
+
+    },
+
     dragLeave: function(item) {
       const dragWidget = osparc.dashboard.DragWidget.getInstance();
       dragWidget.setDropAllowed(false);
 
-      item.getChildControl("icon").resetTextColor();
+      if (item) {
+        item.getChildControl("icon").resetTextColor();
+      }
     },
 
     dragEnd: function(draggedItem) {

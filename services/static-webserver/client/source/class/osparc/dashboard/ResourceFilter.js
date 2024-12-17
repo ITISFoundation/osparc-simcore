@@ -114,7 +114,24 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         }
       });
       this.evaluateTrashEmpty();
+      this.__attachDropHandlers(trashButton);
       return trashButton;
+    },
+
+    __attachDropHandlers: function(trashButton) {
+      trashButton.setDroppable(true);
+
+      trashButton.addListener("dragover", e => {
+        if (e.supportsType("osparc-moveStudy")) {
+          osparc.dashboard.DragDropHelpers.trashStudy.dragOver(e);
+        } else if (e.supportsType("osparc-moveFolder")) {
+          osparc.dashboard.DragDropHelpers.trashFolder.dragOver(e);
+        }
+      });
+
+      trashButton.addListener("dragleave", () => {
+        osparc.dashboard.DragDropHelpers.dragLeave();
+      });
     },
 
     evaluateTrashEmpty: function() {
