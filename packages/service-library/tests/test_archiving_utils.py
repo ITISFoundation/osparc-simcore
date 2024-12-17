@@ -108,7 +108,8 @@ def exclude_patterns_validation_dir(tmp_path: Path, faker: Faker) -> Path:
 
 
 def __raise_error(*arts, **kwargs) -> None:
-    raise ArchiveError("raised as requested")
+    msg = "raised as requested"
+    raise ArchiveError(msg)
 
 
 @pytest.fixture
@@ -118,10 +119,12 @@ def zipfile_single_file_extract_worker_raises_error() -> Iterator[None]:
     # context fo this function or it cannot be pickled
 
     # pylint: disable=protected-access
-    old_func = archiving_utils._zipfile_single_file_extract_worker
-    archiving_utils._zipfile_single_file_extract_worker = __raise_error
+    old_func = archiving_utils._core._zipfile_single_file_extract_worker  # noqa: SLF001
+    archiving_utils._core._zipfile_single_file_extract_worker = (  # noqa: SLF001
+        __raise_error
+    )
     yield
-    archiving_utils._zipfile_single_file_extract_worker = old_func
+    archiving_utils._core._zipfile_single_file_extract_worker = old_func  # noqa: SLF001
 
 
 # UTILS
@@ -141,8 +144,8 @@ def get_all_files_in_dir(dir_path: Path) -> set[Path]:
 
 
 def _compute_hash(file_path: Path) -> tuple[Path, str]:
-    with open(file_path, "rb") as file_to_hash:
-        file_hash = hashlib.md5()
+    with Path.open(file_path, "rb") as file_to_hash:
+        file_hash = hashlib.md5()  # noqa: S324
         chunk = file_to_hash.read(8192)
         while chunk:
             file_hash.update(chunk)
@@ -163,7 +166,7 @@ async def compute_hashes(file_paths: list[Path]) -> dict[Path, str]:
         ]
         # pylint: disable=unnecessary-comprehension
         # see return value of _compute_hash it is a tuple, mapping list[Tuple[Path,str]] to Dict[Path, str] here
-        return {k: v for k, v in await asyncio.gather(*tasks)}
+        return dict(await asyncio.gather(*tasks))
 
 
 def full_file_path_from_dir_and_subdirs(dir_path: Path) -> list[Path]:
@@ -238,7 +241,8 @@ def assert_unarchived_paths(
     is_saved_as_relpath: bool,
     unsupported_replace: bool = False,
 ):
-    is_file_or_emptydir = lambda p: p.is_file() or (p.is_dir() and not any(p.glob("*")))
+    def is_file_or_emptydir(path: Path) -> bool:
+        return path.is_file() or path.is_dir() and not any(path.glob("*"))
 
     # all unarchivedare under dst_dir
     assert all(dst_dir in f.parents for f in unarchived_paths)
@@ -555,7 +559,7 @@ file_suffix = 0
 async def _archive_dir_performance(
     input_path: Path, destination_path: Path, compress: bool
 ):
-    global file_suffix  # pylint: disable=global-statement
+    global file_suffix  # pylint: disable=global-statement  # noqa: PLW0603
 
     await archive_dir(
         input_path,
