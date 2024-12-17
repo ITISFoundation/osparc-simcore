@@ -1,20 +1,22 @@
 from fastapi import FastAPI
-from models_library.api_schemas_resource_usage_tracker.licensed_items_usages import (
+from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
     LicenseCheckoutGet,
     LicenseCheckoutID,
-    LicensedItemsUsagesPage,
-    LicensedItemUsageGet,
+    LicensedItemCheckoutGet,
+    LicensedItemsCheckoutsPage,
 )
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker import ServiceRunId
-from models_library.resource_tracker_licensed_items_usages import LicensedItemUsageID
+from models_library.resource_tracker_licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
 
-from ...services import licensed_items_usages
+from ...services import licensed_items_checkouts
 
 router = RPCRouter()
 
@@ -24,17 +26,17 @@ async def get_licensed_item_usage(
     app: FastAPI,
     *,
     product_name: ProductName,
-    licensed_item_usage_id: LicensedItemUsageID,
-) -> LicensedItemUsageGet:
-    return await licensed_items_usages.get_licensed_item_usage(
+    licensed_item_usage_id: LicensedItemCheckoutID,
+) -> LicensedItemCheckoutGet:
+    return await licensed_items_checkouts.get_licensed_item_checkout(
         db_engine=app.state.engine,
         product_name=product_name,
-        licensed_item_usage_id=licensed_item_usage_id,
+        licensed_item_checkout_id=licensed_item_usage_id,
     )
 
 
 @router.expose(reraise_if_error_type=())
-async def get_licensed_items_usages_page(
+async def get_licensed_items_checkouts_page(
     app: FastAPI,
     *,
     product_name: ProductName,
@@ -42,8 +44,8 @@ async def get_licensed_items_usages_page(
     offset: int = 0,
     limit: int = 20,
     order_by: OrderBy,
-) -> LicensedItemsUsagesPage:
-    return await licensed_items_usages.list_licensed_items_usages(
+) -> LicensedItemsCheckoutsPage:
+    return await licensed_items_checkouts.list_licensed_items_checkouts(
         db_engine=app.state.engine,
         product_name=product_name,
         filter_wallet_id=filter_wallet_id,
@@ -65,7 +67,7 @@ async def checkout_licensed_item(
     user_id: UserID,
     user_email: str,
 ) -> LicenseCheckoutGet:
-    return await licensed_items_usages.checkout_licensed_item(
+    return await licensed_items_checkouts.checkout_licensed_item(
         db_engine=app.state.engine,
         licensed_item_id=licensed_item_id,
         wallet_id=wallet_id,
@@ -80,7 +82,7 @@ async def checkout_licensed_item(
 @router.expose(reraise_if_error_type=())
 async def release_licensed_item(
     app: FastAPI, *, checkout_id: LicenseCheckoutID, product_name: ProductName
-) -> LicensedItemUsageGet:
-    return await licensed_items_usages.release_licensed_item(
+) -> LicensedItemCheckoutGet:
+    return await licensed_items_checkouts.release_licensed_item(
         db_engine=app.state.engine, checkout_id=checkout_id, product_name=product_name
     )

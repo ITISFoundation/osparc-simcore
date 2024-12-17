@@ -3,14 +3,16 @@ from datetime import datetime
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker import ServiceRunId
-from models_library.resource_tracker_licensed_items_usages import LicensedItemUsageID
+from models_library.resource_tracker_licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict
 
 
-class LicensedItemUsageDB(BaseModel):
-    licensed_item_usage_id: LicensedItemUsageID
+class LicensedItemCheckoutDB(BaseModel):
+    licensed_item_checkout_id: LicensedItemCheckoutID
     licensed_item_id: LicensedItemID
     wallet_id: WalletID
     user_id: UserID
@@ -25,7 +27,7 @@ class LicensedItemUsageDB(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class CreateLicensedItemUsageDB(BaseModel):
+class CreateLicensedItemCheckoutDB(BaseModel):
     licensed_item_id: LicensedItemID
     wallet_id: WalletID
     user_id: UserID
@@ -38,7 +40,7 @@ class CreateLicensedItemUsageDB(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UpdateLicensedItemUsageDB(BaseModel):
+class UpdateLicensedItemCheckoutDB(BaseModel):
     stopped_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

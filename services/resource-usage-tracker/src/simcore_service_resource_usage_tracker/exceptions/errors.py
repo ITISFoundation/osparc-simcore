@@ -1,8 +1,10 @@
 from common_library.errors_classes import OsparcErrorMixin
+from models_library.resource_tracker_licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemPurchaseID,
 )
-from models_library.resource_tracker_licensed_items_usages import LicensedItemUsageID
 
 
 class ResourceUsageTrackerBaseError(OsparcErrorMixin, Exception):
@@ -79,4 +81,4 @@ class LicensedItemPurchaseNotFoundError(RutNotFoundError):
 
 
 class LicensedItemUsageNotFoundError(RutNotFoundError):
-    licensed_item_usage_id: LicensedItemUsageID
+    licensed_item_usage_id: LicensedItemCheckoutID

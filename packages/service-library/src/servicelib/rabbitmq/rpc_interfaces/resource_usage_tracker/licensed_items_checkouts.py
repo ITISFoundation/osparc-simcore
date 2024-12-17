@@ -4,25 +4,27 @@ from typing import Final
 from models_library.api_schemas_resource_usage_tracker import (
     RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
 )
-from models_library.api_schemas_resource_usage_tracker.licensed_items_usages import (
+from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
     LicenseCheckoutGet,
     LicenseCheckoutID,
-    LicensedItemsUsagesPage,
-    LicensedItemUsageGet,
+    LicensedItemCheckoutGet,
+    LicensedItemsCheckoutsPage,
 )
 from models_library.basic_types import IDStr
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.resource_tracker import ServiceRunId
-from models_library.resource_tracker_licensed_items_usages import LicensedItemUsageID
+from models_library.resource_tracker_licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt, TypeAdapter
 
 from ....logging_utils import log_decorator
-from ....rabbitmq import RabbitMQRPCClient
+from ... import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
 
@@ -33,25 +35,25 @@ _RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_licensed_item_usage(
+async def get_licensed_item_checkout(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
-    licensed_item_usage_id: LicensedItemUsageID,
-) -> LicensedItemUsageGet:
+    licensed_item_usage_id: LicensedItemCheckoutID,
+) -> LicensedItemCheckoutGet:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("get_licensed_item_usage"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_licensed_item_checkout"),
         product_name=product_name,
         licensed_item_usage_id=licensed_item_usage_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, LicensedItemUsageGet)  # nosec
+    assert isinstance(result, LicensedItemCheckoutGet)  # nosec
     return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_licensed_items_usages_page(
+async def get_licensed_items_checkouts_page(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     product_name: ProductName,
@@ -59,7 +61,7 @@ async def get_licensed_items_usages_page(
     offset: int = 0,
     limit: int = 20,
     order_by: OrderBy | None = None,
-) -> LicensedItemsUsagesPage:
+) -> LicensedItemsCheckoutsPage:
     """
     Default order_by field is "started_at"
     """
@@ -68,7 +70,7 @@ async def get_licensed_items_usages_page(
 
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("get_licensed_items_usages_page"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_licensed_items_checkouts_page"),
         product_name=product_name,
         filter_wallet_id=filter_wallet_id,
         limit=limit,
@@ -76,7 +78,7 @@ async def get_licensed_items_usages_page(
         order_by=order_by,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, LicensedItemsUsagesPage)  # nosec
+    assert isinstance(result, LicensedItemsCheckoutsPage)  # nosec
     return result
 
 
@@ -114,13 +116,13 @@ async def release_licensed_item(
     *,
     checkout_id: LicenseCheckoutID,
     product_name: ProductName,
-) -> LicensedItemUsageGet:
-    result: LicensedItemUsageGet = await rabbitmq_rpc_client.request(
+) -> LicensedItemCheckoutGet:
+    result: LicensedItemCheckoutGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("release_licensed_item"),
         checkout_id=checkout_id,
         product_name=product_name,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, LicensedItemUsageGet)  # nosec
+    assert isinstance(result, LicensedItemCheckoutGet)  # nosec
     return result

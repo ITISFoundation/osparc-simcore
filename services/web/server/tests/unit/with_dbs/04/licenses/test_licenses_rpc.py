@@ -7,9 +7,9 @@ from collections.abc import Awaitable, Callable
 
 import pytest
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_resource_usage_tracker.licensed_items_usages import (
+from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
     LicenseCheckoutGet,
-    LicensedItemUsageGet,
+    LicensedItemCheckoutGet,
 )
 from models_library.licensed_items import LicensedResourceType
 from models_library.products import ProductName
@@ -89,21 +89,21 @@ _LICENSE_CHECKOUT_GET = LicenseCheckoutGet.model_validate(
 @pytest.fixture
 def mock_checkout_licensed_item(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_usages.checkout_licensed_item",
+        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_checkouts.checkout_licensed_item",
         spec=True,
         return_value=_LICENSE_CHECKOUT_GET,
     )
 
 
-_LICENSED_ITEM_USAGE_GET = LicensedItemUsageGet.model_validate(
-    LicensedItemUsageGet.model_config["json_schema_extra"]["examples"][0]
+_LICENSED_ITEM_USAGE_GET = LicensedItemCheckoutGet.model_validate(
+    LicensedItemCheckoutGet.model_config["json_schema_extra"]["examples"][0]
 )
 
 
 @pytest.fixture
 def mock_get_licensed_item_usage(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_usages.get_licensed_item_usage",
+        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_checkouts.get_licensed_item_usage",
         spec=True,
         return_value=_LICENSED_ITEM_USAGE_GET,
     )
@@ -112,7 +112,7 @@ def mock_get_licensed_item_usage(mocker: MockerFixture) -> tuple:
 @pytest.fixture
 def mock_release_licensed_item(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_usages.release_licensed_item",
+        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_checkouts.release_licensed_item",
         spec=True,
         return_value=_LICENSED_ITEM_USAGE_GET,
     )

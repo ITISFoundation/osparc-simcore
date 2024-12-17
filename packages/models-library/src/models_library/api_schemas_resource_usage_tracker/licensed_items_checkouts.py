@@ -5,7 +5,9 @@ from uuid import UUID
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker import ServiceRunId
-from models_library.resource_tracker_licensed_items_usages import LicensedItemUsageID
+from models_library.resource_tracker_licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, PositiveInt
@@ -13,8 +15,8 @@ from pydantic import BaseModel, ConfigDict, PositiveInt
 LicenseCheckoutID: TypeAlias = UUID
 
 
-class LicensedItemUsageGet(BaseModel):
-    licensed_item_usage_id: LicensedItemUsageID
+class LicensedItemCheckoutGet(BaseModel):
+    licensed_item_checkout_id: LicensedItemCheckoutID
     licensed_item_id: LicensedItemID
     wallet_id: WalletID
     user_id: UserID
@@ -28,7 +30,7 @@ class LicensedItemUsageGet(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "licensed_item_usage_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
+                    "licensed_item_checkout_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
                     "licensed_item_id": "303942ef-6d31-4ba8-afbe-dbb1fce2a953",
                     "wallet_id": 1,
                     "user_id": 1,
@@ -43,10 +45,10 @@ class LicensedItemUsageGet(BaseModel):
     )
 
 
-class LicensedItemsUsagesPage(NamedTuple):
-    items: list[LicensedItemUsageGet]
+class LicensedItemsCheckoutsPage(NamedTuple):
+    items: list[LicensedItemCheckoutGet]
     total: PositiveInt
 
 
 class LicenseCheckoutGet(BaseModel):
-    checkout_id: LicenseCheckoutID  # This is a licensed_item_usage_id generated in the `resource_tracker_licensed_items_usages` table
+    checkout_id: LicenseCheckoutID  # This is a licensed_item_checkout_id generated in the `resource_tracker_licensed_items_checkouts` table
