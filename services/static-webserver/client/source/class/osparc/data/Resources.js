@@ -958,7 +958,7 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
-      "users": {
+      "poUsers": {
         endpoints: {
           search: {
             method: "GET",
