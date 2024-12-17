@@ -7,13 +7,11 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePatch,
     UserGet,
     UsersForAdminSearchQueryParams,
-    UsersGetParams,
     UsersSearch,
 )
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
-    parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -137,22 +135,6 @@ async def update_my_profile(request: web.Request) -> web.Response:
 #
 
 
-@routes.get(f"/{API_VTAG}/users/{{user_id}}", name="get_user")
-@login_required
-@permission_required("user.read")
-@_handle_users_exceptions
-async def get_user(request: web.Request) -> web.Response:
-    req_ctx = UsersRequestContext.model_validate(request)
-    assert req_ctx.product_name  # nosec
-    path_params = parse_request_path_parameters_as(UsersGetParams, request)
-
-    user = await _users_service.get_public_user(
-        request.app, caller_id=req_ctx.user_id, user_id=path_params.user_id
-    )
-
-    return envelope_json_response(UserGet.from_model(user))
-
-
 @routes.post(f"/{API_VTAG}/users:search", name="search_users")
 @login_required
 @permission_required("user.read")
@@ -184,7 +166,7 @@ _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 
 @routes.get(f"/{API_VTAG}/admin/users:search", name="search_users_for_admin")
 @login_required
-@permission_required("user.admin.get")
+@permission_required("user.admin.read")
 @_handle_users_exceptions
 async def search_users_for_admin(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
@@ -207,7 +189,7 @@ async def search_users_for_admin(request: web.Request) -> web.Response:
     f"/{API_VTAG}/admin/users:pre-register", name="pre_register_user_for_admin"
 )
 @login_required
-@permission_required("user.admin.get")
+@permission_required("user.admin.read")
 @_handle_users_exceptions
 async def pre_register_user_for_admin(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)

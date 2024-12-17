@@ -103,18 +103,6 @@ async def test_get_and_search_public_users(
         assert private_user["id"] != logged_user["id"]
         assert public_user["id"] != logged_user["id"]
 
-        # GET user
-        url = client.app.router["get_user"].url_for(user_id=f'{public_user["id"]}')
-        resp = await client.get(f"{url}")
-        data, _ = await assert_status(resp, status.HTTP_200_OK)
-
-        # check privacy
-        got = UserGet.model_validate(data)
-        assert got.user_id == public_user["id"]
-        assert got.user_name == public_user["name"]
-        assert got.first_name == public_user.get("first_name")
-        assert got.last_name == public_user.get("last_name")
-
         # SEARCH by partial email
         partial_email = "@find.m"
         assert partial_email in private_user["email"]
@@ -127,7 +115,11 @@ async def test_get_and_search_public_users(
         found = TypeAdapter(list[UserGet]).validate_python(data)
         assert found
         assert len(found) == 1
-        assert found[0] == got
+        assert found[0].user_id == public_user["id"]
+        assert found[0].user_name == public_user["name"]
+        assert found[0].email == public_user["email"]
+        assert found[0].first_name == public_user.get("first_name")
+        assert found[0].last_name == public_user.get("last_name")
 
         # SEARCH by partial username
         partial_username = "ie01"
@@ -141,7 +133,7 @@ async def test_get_and_search_public_users(
         found = TypeAdapter(list[UserGet]).validate_python(data)
         assert found
         assert len(found) == 2
-        assert found[1] == got
+        assert found[1].user_id == public_user["id"]
         # check privacy
         assert found[0].user_name == private_user["name"]
         assert found[0].email is None
@@ -477,8 +469,8 @@ async def test_access_rights_on_search_users_only_product_owners_can_access(
 ):
     assert client.app
 
-    url = client.app.router["search_users"].url_for()
-    assert url.path == "/v0/users:search"
+    url = client.app.router["search_users_for_admin"].url_for()
+    assert url.path == "/v0/admin/users:search"
 
     resp = await client.get(url.path, params={"email": "do-not-exists@foo.com"})
     await assert_status(resp, expected)
@@ -528,7 +520,9 @@ async def test_search_and_pre_registration(
     assert client.app
 
     # ONLY in `users` and NOT `users_pre_registration_details`
-    resp = await client.get("/v0/users:search", params={"email": logged_user["email"]})
+    resp = await client.get(
+        "/v0/admin/users:search", params={"email": logged_user["email"]}
+    )
     assert resp.status == status.HTTP_200_OK
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
@@ -562,11 +556,11 @@ async def test_search_and_pre_registration(
     # NOT in `users` and ONLY `users_pre_registration_details`
 
     # create pre-registration
-    resp = await client.post("/v0/users:pre-register", json=account_request_form)
+    resp = await client.post("/v0/admin/users:pre-register", json=account_request_form)
     assert resp.status == status.HTTP_200_OK
 
     resp = await client.get(
-        "/v0/users:search", params={"email": account_request_form["email"]}
+        "/v0/admin/users:search", params={"email": account_request_form["email"]}
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
@@ -589,7 +583,7 @@ async def test_search_and_pre_registration(
     )
 
     resp = await client.get(
-        "/v0/users:search", params={"email": account_request_form["email"]}
+        "/v0/admin/users:search", params={"email": account_request_form["email"]}
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
