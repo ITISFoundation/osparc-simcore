@@ -131,7 +131,9 @@ async def test_rpc_licensed_items_checkouts_workflow(
 
     # Release num of seats
     license_item_checkout = await licensed_items_checkouts.release_licensed_item(
-        rpc_client, checkout_id=checkout.checkout_id, product_name="osparc"
+        rpc_client,
+        licensed_item_checkout_id=checkout.licensed_item_checkout_id,
+        product_name="osparc",
     )
     assert license_item_checkout
     assert isinstance(license_item_checkout.stopped_at, datetime)

@@ -1,9 +1,10 @@
 from aiohttp import web
+from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.licensed_items import LicensedItemGetPage
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
-    LicenseCheckoutGet,
-    LicenseCheckoutID,
     LicensedItemCheckoutGet,
 )
 from models_library.basic_types import IDStr
@@ -64,7 +65,7 @@ async def checkout_licensed_item_for_wallet(
     licensed_item_id: LicensedItemID,
     num_of_seats: int,
     service_run_id: ServiceRunId,
-) -> LicenseCheckoutGet:
+) -> LicensedItemCheckoutGet:
     return await _licensed_checkouts_api.checkout_licensed_item_for_wallet(
         app,
         licensed_item_id=licensed_item_id,
@@ -82,10 +83,13 @@ async def release_licensed_item_for_wallet(
     *,
     product_name: ProductName,
     user_id: UserID,
-    checkout_id: LicenseCheckoutID,
+    licensed_item_checkout_id: LicensedItemCheckoutID,
 ) -> LicensedItemCheckoutGet:
     return await _licensed_checkouts_api.release_licensed_item_for_wallet(
-        app, product_name=product_name, user_id=user_id, checkout_id=checkout_id
+        app,
+        product_name=product_name,
+        user_id=user_id,
+        licensed_item_checkout_id=licensed_item_checkout_id,
     )
 
 

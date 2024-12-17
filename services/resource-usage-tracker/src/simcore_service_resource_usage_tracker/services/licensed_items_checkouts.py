@@ -3,8 +3,6 @@ from typing import Annotated
 
 from fastapi import Depends
 from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
-    LicenseCheckoutGet,
-    LicenseCheckoutID,
     LicensedItemCheckoutGet,
     LicensedItemsCheckoutsPage,
 )
@@ -104,7 +102,7 @@ async def checkout_licensed_item(
     service_run_id: ServiceRunId,
     user_id: UserID,
     user_email: str,
-) -> LicenseCheckoutGet:
+) -> LicensedItemCheckoutGet:
 
     _active_purchased_seats: int = await licensed_items_purchases_db.get_active_purchased_seats_for_item_and_wallet(
         db_engine,
@@ -149,27 +147,35 @@ async def checkout_licensed_item(
         started_at=datetime.now(tz=UTC),
         num_of_seats=num_of_seats,
     )
-    license_item_checkout_db = await licensed_items_checkouts_db.create(
+    licensed_item_checkout_db = await licensed_items_checkouts_db.create(
         db_engine, data=_create_item_checkout
     )
 
     # Return checkout ID
-    return LicenseCheckoutGet(
-        checkout_id=license_item_checkout_db.licensed_item_checkout_id
+    return LicensedItemCheckoutGet(
+        licensed_item_checkout_id=licensed_item_checkout_db.licensed_item_checkout_id,
+        licensed_item_id=licensed_item_checkout_db.licensed_item_id,
+        wallet_id=licensed_item_checkout_db.wallet_id,
+        user_id=licensed_item_checkout_db.user_id,
+        product_name=licensed_item_checkout_db.product_name,
+        service_run_id=licensed_item_checkout_db.service_run_id,
+        started_at=licensed_item_checkout_db.started_at,
+        stopped_at=licensed_item_checkout_db.stopped_at,
+        num_of_seats=licensed_item_checkout_db.num_of_seats,
     )
 
 
 async def release_licensed_item(
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
     *,
-    checkout_id: LicenseCheckoutID,
+    licensed_item_checkout_id: LicensedItemCheckoutID,
     product_name: ProductName,
 ) -> LicensedItemCheckoutGet:
 
     licensed_item_checkout_db: LicensedItemCheckoutDB = (
         await licensed_items_checkouts_db.update(
             db_engine,
-            licensed_item_checkout_id=checkout_id,
+            licensed_item_checkout_id=licensed_item_checkout_id,
             product_name=product_name,
             stopped_at=datetime.now(tz=UTC),
         )

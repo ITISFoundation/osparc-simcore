@@ -8,7 +8,6 @@ from collections.abc import Awaitable, Callable
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
-    LicenseCheckoutGet,
     LicensedItemCheckoutGet,
 )
 from models_library.licensed_items import LicensedResourceType
@@ -79,10 +78,8 @@ def mock_get_wallet_by_user(mocker: MockerFixture) -> tuple:
     )
 
 
-_LICENSE_CHECKOUT_GET = LicenseCheckoutGet.model_validate(
-    {
-        "checkout_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",
-    }
+_LICENSED_ITEM_CHECKOUT_GET = LicensedItemCheckoutGet.model_validate(
+    LicensedItemCheckoutGet.model_config["json_schema_extra"]["examples"][0]
 )
 
 
@@ -91,13 +88,8 @@ def mock_checkout_licensed_item(mocker: MockerFixture) -> tuple:
     return mocker.patch(
         "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_checkouts.checkout_licensed_item",
         spec=True,
-        return_value=_LICENSE_CHECKOUT_GET,
+        return_value=_LICENSED_ITEM_CHECKOUT_GET,
     )
-
-
-_LICENSED_ITEM_CHECKOUT_GET = LicensedItemCheckoutGet.model_validate(
-    LicensedItemCheckoutGet.model_config["json_schema_extra"]["examples"][0]
-)
 
 
 @pytest.fixture

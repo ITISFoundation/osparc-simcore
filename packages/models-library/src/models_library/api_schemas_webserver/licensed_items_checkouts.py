@@ -1,11 +1,8 @@
 from datetime import datetime
 from typing import NamedTuple
 
-from pydantic import BaseModel, PositiveInt
+from pydantic import PositiveInt
 
-from ..api_schemas_resource_usage_tracker.licensed_items_checkouts import (
-    LicenseCheckoutID,
-)
 from ..licensed_items import LicensedItemID
 from ..products import ProductName
 from ..resource_tracker_licensed_items_checkouts import LicensedItemCheckoutID
@@ -28,7 +25,3 @@ class LicensedItemCheckoutGet(OutputSchema):
 class LicensedItemUsageGetPage(NamedTuple):
     items: list[LicensedItemCheckoutGet]
     total: PositiveInt
-
-
-class LicenseCheckoutGet(BaseModel):
-    checkout_id: LicenseCheckoutID

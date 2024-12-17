@@ -7,7 +7,6 @@ from models_library.api_schemas_webserver.licensed_items import (
 )
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
     LicenseCheckoutGet,
-    LicenseCheckoutID,
     LicensedItemCheckoutGet,
 )
 from models_library.licensed_items import LicensedItemID
@@ -19,6 +18,7 @@ from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
+from simcore_service_webserver.licenses._rpc import LicensedItemCheckoutID
 
 _logger = logging.getLogger(__name__)
 
@@ -98,14 +98,14 @@ async def release_licensed_item_for_wallet(
     *,
     product_name: ProductName,
     user_id: UserID,
-    checkout_id: LicenseCheckoutID,
+    licensed_item_checkout_id: LicensedItemCheckoutID,
 ) -> LicensedItemCheckoutGet:
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("release_licensed_item_for_wallet"),
         product_name=product_name,
         user_id=user_id,
-        checkout_id=checkout_id,
+        licensed_item_checkout_id=licensed_item_checkout_id,
     )
     assert isinstance(result, LicensedItemCheckoutGet)  # nosec
     return result

@@ -1,6 +1,5 @@
 from datetime import datetime
-from typing import NamedTuple, TypeAlias
-from uuid import UUID
+from typing import NamedTuple
 
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
@@ -11,8 +10,6 @@ from models_library.resource_tracker_licensed_items_checkouts import (
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, PositiveInt
-
-LicenseCheckoutID: TypeAlias = UUID
 
 
 class LicensedItemCheckoutGet(BaseModel):
@@ -48,7 +45,3 @@ class LicensedItemCheckoutGet(BaseModel):
 class LicensedItemsCheckoutsPage(NamedTuple):
     items: list[LicensedItemCheckoutGet]
     total: PositiveInt
-
-
-class LicenseCheckoutGet(BaseModel):
-    checkout_id: LicenseCheckoutID  # This is a licensed_item_checkout_id generated in the `resource_tracker_licensed_items_checkouts` table

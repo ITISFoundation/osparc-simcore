@@ -1,7 +1,5 @@
 from fastapi import FastAPI
 from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
-    LicenseCheckoutGet,
-    LicenseCheckoutID,
     LicensedItemCheckoutGet,
     LicensedItemsCheckoutsPage,
 )
@@ -66,7 +64,7 @@ async def checkout_licensed_item(
     service_run_id: ServiceRunId,
     user_id: UserID,
     user_email: str,
-) -> LicenseCheckoutGet:
+) -> LicensedItemCheckoutGet:
     return await licensed_items_checkouts.checkout_licensed_item(
         db_engine=app.state.engine,
         licensed_item_id=licensed_item_id,
@@ -81,8 +79,13 @@ async def checkout_licensed_item(
 
 @router.expose(reraise_if_error_type=())
 async def release_licensed_item(
-    app: FastAPI, *, checkout_id: LicenseCheckoutID, product_name: ProductName
+    app: FastAPI,
+    *,
+    licensed_item_checkout_id: LicensedItemCheckoutID,
+    product_name: ProductName,
 ) -> LicensedItemCheckoutGet:
     return await licensed_items_checkouts.release_licensed_item(
-        db_engine=app.state.engine, checkout_id=checkout_id, product_name=product_name
+        db_engine=app.state.engine,
+        licensed_item_checkout_id=licensed_item_checkout_id,
+        product_name=product_name,
     )

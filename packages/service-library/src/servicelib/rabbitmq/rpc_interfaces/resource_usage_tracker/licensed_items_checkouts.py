@@ -5,8 +5,6 @@ from models_library.api_schemas_resource_usage_tracker import (
     RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
 )
 from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
-    LicenseCheckoutGet,
-    LicenseCheckoutID,
     LicensedItemCheckoutGet,
     LicensedItemsCheckoutsPage,
 )
@@ -93,8 +91,8 @@ async def checkout_licensed_item(
     service_run_id: ServiceRunId,
     user_id: UserID,
     user_email: str,
-) -> LicenseCheckoutGet:
-    result: LicenseCheckoutGet = await rabbitmq_rpc_client.request(
+) -> LicensedItemCheckoutGet:
+    result: LicensedItemCheckoutGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("checkout_licensed_item"),
         licensed_item_id=licensed_item_id,
@@ -106,7 +104,7 @@ async def checkout_licensed_item(
         user_email=user_email,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, LicenseCheckoutGet)  # nosec
+    assert isinstance(result, LicensedItemCheckoutGet)  # nosec
     return result
 
 
@@ -114,13 +112,13 @@ async def checkout_licensed_item(
 async def release_licensed_item(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    checkout_id: LicenseCheckoutID,
+    licensed_item_checkout_id: LicensedItemCheckoutID,
     product_name: ProductName,
 ) -> LicensedItemCheckoutGet:
     result: LicensedItemCheckoutGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("release_licensed_item"),
-        checkout_id=checkout_id,
+        licensed_item_checkout_id=licensed_item_checkout_id,
         product_name=product_name,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
