@@ -14696,7 +14696,8 @@ components:
           maxLength: 80
           minLength: 1
           title: Match
-          description: Search string to match with public usernames and emails
+          description: Search string to match with usernames and public profiles (e.g.
+            emails, first/last name)
         limit:
           type: integer
           maximum: 50
