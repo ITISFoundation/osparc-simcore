@@ -115,8 +115,7 @@ qx.Class.define("osparc.store.Groups", {
             // reset group's group members
             group.setGroupMembers({});
             orgMembers.forEach(orgMember => {
-              const userMember = new osparc.data.model.UserMember(orgMember);
-              this.__addToUsersCache(userMember, groupId);
+              this.__addMemberToCache(orgMember, groupId);
             });
           }
         });
@@ -419,7 +418,8 @@ qx.Class.define("osparc.store.Groups", {
       delete this.getOrganizations()[groupId];
     },
 
-    __addToUsersCache: function(userMember, orgId = null) {
+    __addMemberToCache: function(orgMember, orgId = null) {
+      const userMember = new osparc.data.model.UserMember(orgMember);
       if (orgId) {
         const organization = this.getOrganization(orgId);
         if (organization) {
@@ -427,6 +427,7 @@ qx.Class.define("osparc.store.Groups", {
         }
       }
       this.getUsers()[userMember.getGroupId()] = userMember;
+      osparc.store.Users.getInstance().addUser(orgMember);
     },
 
     __removeUserFromCache: function(userId, orgId) {
