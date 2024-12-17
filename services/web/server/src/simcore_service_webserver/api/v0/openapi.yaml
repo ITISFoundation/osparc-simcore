@@ -1358,24 +1358,12 @@ paths:
       description: Search among users who are publicly visible to the caller (i.e.,
         me) based on their privacy settings.
       operationId: search_users
-      parameters:
-      - name: match
-        in: query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsersSearch'
         required: true
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 80
-          title: Match
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          maximum: 50
-          minimum: 1
-          default: 10
-          title: Limit
       responses:
         '200':
           description: Successful Response
@@ -14709,6 +14697,24 @@ components:
       - BANNED
       - DELETED
       title: UserStatus
+    UsersSearch:
+      properties:
+        match:
+          type: string
+          maxLength: 80
+          minLength: 1
+          title: Match
+          description: Search string to match with public usernames and emails
+        limit:
+          type: integer
+          maximum: 50
+          minimum: 1
+          title: Limit
+          default: 10
+      type: object
+      required:
+      - match
+      title: UsersSearch
     Viewer:
       properties:
         title:
