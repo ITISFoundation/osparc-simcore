@@ -139,6 +139,13 @@ async def search_public_user(
                 _is_public(users.c.privacy_hide_email, caller_id)
                 & users.c.email.ilike(_pattern)
             )
+            | (
+                _is_public(users.c.privacy_hide_fullname, caller_id)
+                & (
+                    users.c.first_name.ilike(_pattern)
+                    | users.c.last_name.ilike(_pattern)
+                )
+            )
         )
         .limit(limit)
     )
