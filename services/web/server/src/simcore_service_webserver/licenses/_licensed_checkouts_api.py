@@ -15,6 +15,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_client
+from ..users.api import get_user
 from ..wallets.api import get_wallet_by_user
 
 
@@ -26,7 +27,6 @@ async def checkout_licensed_item_for_wallet(
     num_of_seats: int,
     service_run_id: ServiceRunId,
     user_id: UserID,
-    user_email: str,
 ) -> webserver_licensed_items_usages.LicenseCheckoutGet:
     # Check whether user has access to the wallet
     await get_wallet_by_user(
@@ -35,6 +35,8 @@ async def checkout_licensed_item_for_wallet(
         wallet_id=wallet_id,
         product_name=product_name,
     )
+
+    user = await get_user(app, user_id=user_id)
 
     rpc_client = get_rabbitmq_rpc_client(app)
     license_checkout_get: rut_licensed_items_usages.LicenseCheckoutGet = (
@@ -46,7 +48,7 @@ async def checkout_licensed_item_for_wallet(
             num_of_seats=num_of_seats,
             service_run_id=service_run_id,
             user_id=user_id,
-            user_email=user_email,
+            user_email=user["email"],
         )
     )
 
@@ -62,7 +64,7 @@ async def release_licensed_item_for_wallet(
     checkout_id: rut_licensed_items_usages.LicenseCheckoutID,
 ) -> webserver_licensed_items_usages.LicensedItemUsageGet:
     rpc_client = get_rabbitmq_rpc_client(app)
-    # Get
+
     checkout_item = await licensed_items_usages.get_licensed_item_usage(
         rpc_client, product_name=product_name, licensed_item_usage_id=checkout_id
     )

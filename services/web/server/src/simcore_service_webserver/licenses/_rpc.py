@@ -1,6 +1,11 @@
 from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.licensed_items import LicensedItemGetPage
+from models_library.api_schemas_webserver.licensed_items_usages import (
+    LicenseCheckoutGet,
+    LicenseCheckoutID,
+    LicensedItemUsageGet,
+)
 from models_library.basic_types import IDStr
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
@@ -11,7 +16,7 @@ from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
 
 from ..rabbitmq import get_rabbitmq_rpc_server
-from . import _licensed_items_api
+from . import _licensed_checkouts_api, _licensed_items_api
 
 router = RPCRouter()
 
@@ -59,22 +64,29 @@ async def checkout_licensed_item_for_wallet(
     licensed_item_id: LicensedItemID,
     num_of_seats: int,
     service_run_id: ServiceRunId,
-) -> None:
-    raise NotImplementedError
+) -> LicenseCheckoutGet:
+    return await _licensed_checkouts_api.checkout_licensed_item_for_wallet(
+        app,
+        licensed_item_id=licensed_item_id,
+        wallet_id=wallet_id,
+        product_name=product_name,
+        num_of_seats=num_of_seats,
+        service_run_id=service_run_id,
+        user_id=user_id,
+    )
 
 
 @router.expose(reraise_if_error_type=(NotImplementedError,))
 async def release_licensed_item_for_wallet(
     app: web.Application,
     *,
-    user_id: str,
-    product_name: str,
-    wallet_id: WalletID,
-    licensed_item_id: LicensedItemID,
-    num_of_seats: int,
-    service_run_id: ServiceRunId,
-) -> None:
-    raise NotImplementedError
+    user_id: UserID,
+    checkout_id: LicenseCheckoutID,
+    product_name: ProductName,
+) -> LicensedItemUsageGet:
+    return await _licensed_checkouts_api.release_licensed_item_for_wallet(
+        app, product_name=product_name, user_id=user_id, checkout_id=checkout_id
+    )
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
