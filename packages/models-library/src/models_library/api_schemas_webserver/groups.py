@@ -29,7 +29,7 @@ from ..groups import (
 )
 from ..users import UserID, UserNameID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
-from ._base import InputSchema, OutputSchema
+from ._base import InputSchema, OutputSchema, OutputSchemaWithoutCamelCase
 
 S = TypeVar("S", bound=BaseModel)
 
@@ -248,8 +248,7 @@ class MyGroupsGet(OutputSchema):
         )
 
 
-class GroupUserGet(BaseModel):
-    # OutputSchema
+class GroupUserGet(OutputSchemaWithoutCamelCase):
 
     # Identifiers
     id: Annotated[UserID | None, Field(description="the user's id")] = None
