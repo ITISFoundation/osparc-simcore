@@ -147,6 +147,17 @@ qx.Class.define("osparc.auth.Data", {
       return this.getUsername();
     },
 
+    getFullName: function() {
+      let name = "";
+      if (this.getFirstName()) {
+        name += this.getFirstName();
+      }
+      if (this.getLastName()) {
+        name += " " + this.getLastName();
+      }
+      return name;
+    },
+
     getFriendlyRole: function() {
       const role = this.getRole();
       let friendlyRole = role.replace(/_/g, " ");

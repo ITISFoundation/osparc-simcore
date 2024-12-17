@@ -576,7 +576,6 @@ qx.Theme.define("osparc.theme.Appearance", {
           decorator: "form-button",
           cursor: "pointer",
           padding: 5,
-          center: true,
         };
         if (states.hovered) {
           style.decorator = "form-button-hovered";
