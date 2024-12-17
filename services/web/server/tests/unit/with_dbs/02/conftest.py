@@ -239,10 +239,8 @@ async def project_db_cleaner(client: TestClient):
 
 
 @pytest.fixture(autouse=True)
-async def mocked_director_v2(
-    director_v2_service_mock: aioresponses,
-) -> AsyncIterator[aioresponses]:
-    return director_v2_service_mock
+async def mocked_director_v2(director_v2_service_mock: aioresponses) -> None:
+    pass
 
 
 @pytest.fixture()

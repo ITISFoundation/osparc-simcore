@@ -152,6 +152,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
 @pytest.mark.parametrize("limit", [7, 20, 43])
 @pytest.mark.parametrize(*standard_user_role())
 async def test_list_projects_with_pagination(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],
@@ -181,7 +182,7 @@ async def test_list_projects_with_pagination(
         next_link = None
         default_query_parameter = {"limit": limit}
         projects = []
-        for i in range(NUMBER_OF_CALLS):
+        for _ in range(NUMBER_OF_CALLS):
             print(
                 "calling in with query",
                 next_link.query if next_link else default_query_parameter,
@@ -189,9 +190,9 @@ async def test_list_projects_with_pagination(
             data, meta, links = await _list_projects(
                 client,
                 expected.ok,
-                query_parameters=next_link.query
-                if next_link
-                else default_query_parameter,
+                query_parameters=(
+                    next_link.query if next_link else default_query_parameter
+                ),
             )
             print("...received [", meta, "]")
             assert len(data) == meta["count"]

@@ -188,7 +188,7 @@ def pytest_runtest_makereport(item: pytest.Item, call):
 
 
 @pytest.hookimpl(tryfirst=True)
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config):
     config.pluginmanager.register(pytest_runtest_setup, "osparc_test_times_plugin")
     config.pluginmanager.register(pytest_runtest_makereport, "osparc_makereport_plugin")
 

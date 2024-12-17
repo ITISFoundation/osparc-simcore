@@ -13,6 +13,7 @@ import secrets
 import string
 from contextlib import suppress
 from datetime import datetime
+from typing import Final
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -65,6 +66,33 @@ async def get_authorized_user(request: web.Request) -> dict:
     return {}
 
 
+# GUEST_USER_RC_LOCK:
+#
+#   These locks prevents the GC from deleting a GUEST user in to stages of its lifefime:
+#
+#  1. During construction:
+#     - Prevents GC from deleting this GUEST user while it is being created
+#     - Since the user still does not have an ID assigned, the lock is named with his random_user_name
+#     - the timeout here is the TTL of the lock in Redis. in case the webserver is overwhelmed and cannot create
+#       a user during that time or crashes, then redis will ensure the lock disappears and let the garbage collector do its work
+#
+MAX_DELAY_TO_CREATE_USER: Final[int] = 8  # secs
+#
+#  2. During initialization
+#     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
+#     - Uses the ID assigned to name the lock
+#
+MAX_DELAY_TO_GUEST_FIRST_CONNECTION: Final[int] = 15  # secs
+#
+#
+# NOTES:
+#   - In case of failure or excessive delay the lock has a timeout that automatically unlocks it
+#     and the GC can clean up what remains
+#   - Notice that the ids to name the locks are unique, therefore the lock can be acquired w/o errors
+#   - These locks are very specific to resources and have timeout so the risk of blocking from GC is small
+#
+
+
 async def create_temporary_guest_user(request: web.Request):
     """Creates a guest user with a random name and
 
@@ -86,33 +114,6 @@ async def create_temporary_guest_user(request: web.Request):
     password = generate_password(length=12)
     expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 
-    # GUEST_USER_RC_LOCK:
-    #
-    #   These locks prevents the GC from deleting a GUEST user in to stages of its lifefime:
-    #
-    #  1. During construction:
-    #     - Prevents GC from deleting this GUEST user while it is being created
-    #     - Since the user still does not have an ID assigned, the lock is named with his random_user_name
-    #     - the timeout here is the TTL of the lock in Redis. in case the webserver is overwhelmed and cannot create
-    #       a user during that time or crashes, then redis will ensure the lock disappears and let the garbage collector do its work
-    #
-    MAX_DELAY_TO_CREATE_USER = 5  # secs
-    #
-    #  2. During initialization
-    #     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
-    #     - Uses the ID assigned to name the lock
-    #
-    MAX_DELAY_TO_GUEST_FIRST_CONNECTION = 15  # secs
-    #
-    #
-    # NOTES:
-    #   - In case of failure or excessive delay the lock has a timeout that automatically unlocks it
-    #     and the GC can clean up what remains
-    #   - Notice that the ids to name the locks are unique, therefore the lock can be acquired w/o errors
-    #   - These locks are very specific to resources and have timeout so the risk of blocking from GC is small
-    #
-
-    # (1) read details above
     usr = None
     try:
         async with redis_locks_client.lock(

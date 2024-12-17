@@ -9,7 +9,10 @@ import respx
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
+    RetrieveDataOutEnveloped,
+)
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
@@ -55,14 +58,14 @@ def node_not_found(faker: Faker) -> NodeID:
 @pytest.fixture
 def service_status_new_style() -> DynamicServiceGet:
     return TypeAdapter(DynamicServiceGet).validate_python(
-        DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
+        DynamicServiceGet.model_json_schema()["examples"][1]
     )
 
 
 @pytest.fixture
 def service_status_legacy() -> NodeGet:
     return TypeAdapter(NodeGet).validate_python(
-        NodeGet.model_config["json_schema_extra"]["examples"][1]
+        NodeGet.model_json_schema()["examples"][1]
     )
 
 
@@ -112,9 +115,7 @@ def mock_director_v2_service_state(
         mock.get("/dynamic_services").respond(
             status.HTTP_200_OK,
             text=json.dumps(
-                jsonable_encoder(
-                    DynamicServiceGet.model_config["json_schema_extra"]["examples"]
-                )
+                jsonable_encoder(DynamicServiceGet.model_json_schema()["examples"])
             ),
         )
 
@@ -193,7 +194,7 @@ async def test_list_tracked_dynamic_services(rpc_client: RabbitMQRPCClient):
     assert len(results) == 2
     assert results == [
         TypeAdapter(DynamicServiceGet).validate_python(x)
-        for x in DynamicServiceGet.model_config["json_schema_extra"]["examples"]
+        for x in DynamicServiceGet.model_json_schema()["examples"]
     ]
 
 
@@ -223,7 +224,7 @@ async def test_get_state(
 def dynamic_service_start() -> DynamicServiceStart:
     # one for legacy and one for new style?
     return TypeAdapter(DynamicServiceStart).validate_python(
-        DynamicServiceStart.model_config["json_schema_extra"]["example"]
+        DynamicServiceStart.model_json_schema()["example"]
     )
 
 
@@ -490,3 +491,59 @@ async def test_stop_dynamic_service_serializes_generic_errors(
             ),
             timeout_s=5,
         )
+
+
+@pytest.fixture
+def mock_director_v2_service_retrieve_inputs(node_id: NodeID) -> Iterator[None]:
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        request_ok = mock.post(f"/dynamic_services/{node_id}:retrieve")
+
+        request_ok.respond(
+            status.HTTP_200_OK,
+            text=TypeAdapter(RetrieveDataOutEnveloped)
+            .validate_python(
+                RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
+            )
+            .model_dump_json(),
+        )
+
+        yield None
+
+
+async def test_retrieve_inputs(
+    mock_director_v2_service_retrieve_inputs: None,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+):
+    results = await services.retrieve_inputs(
+        rpc_client, node_id=node_id, port_keys=[], timeout_s=10
+    )
+    assert (
+        results.model_dump(mode="python")
+        == RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
+    )
+
+
+@pytest.fixture
+def mock_director_v2_update_projects_networks(project_id: ProjectID) -> Iterator[None]:
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.patch(f"/dynamic_services/projects/{project_id}/-/networks").respond(
+            status.HTTP_204_NO_CONTENT
+        )
+        yield None
+
+
+async def test_update_projects_networks(
+    mock_director_v2_update_projects_networks: None,
+    rpc_client: RabbitMQRPCClient,
+    project_id: ProjectID,
+):
+    await services.update_projects_networks(rpc_client, project_id=project_id)
