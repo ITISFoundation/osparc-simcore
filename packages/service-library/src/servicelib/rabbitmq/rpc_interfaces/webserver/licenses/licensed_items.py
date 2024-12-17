@@ -6,7 +6,6 @@ from models_library.api_schemas_webserver.licensed_items import (
     LicensedItemGetPage,
 )
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
-    LicenseCheckoutGet,
     LicensedItemCheckoutGet,
 )
 from models_library.licensed_items import LicensedItemID
@@ -77,7 +76,7 @@ async def checkout_licensed_item_for_wallet(
     licensed_item_id: LicensedItemID,
     num_of_seats: int,
     service_run_id: ServiceRunId,
-) -> LicenseCheckoutGet:
+) -> LicensedItemCheckoutGet:
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("checkout_licensed_item_for_wallet"),
@@ -88,7 +87,7 @@ async def checkout_licensed_item_for_wallet(
         num_of_seats=num_of_seats,
         service_run_id=service_run_id,
     )
-    assert isinstance(result, LicenseCheckoutGet)  # nosec
+    assert isinstance(result, LicensedItemCheckoutGet)  # nosec
     return result
 
 

@@ -168,5 +168,5 @@ async def test_license_checkout_workflow(
         rpc_client,
         product_name=osparc_product_name,
         user_id=logged_user["id"],
-        checkout_id=checkout.checkout_id,
+        licensed_item_checkout_id=checkout.licensed_item_checkout_id,
     )
