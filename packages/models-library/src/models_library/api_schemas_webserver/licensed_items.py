@@ -11,6 +11,7 @@ from ._base import OutputSchema
 class LicensedItemGet(OutputSchema):
     licensed_item_id: LicensedItemID
     name: str
+    license_key: str | None
     licensed_resource_type: LicensedResourceType
     pricing_plan_id: PricingPlanId
     created_at: datetime
@@ -21,6 +22,7 @@ class LicensedItemGet(OutputSchema):
                 {
                     "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
                     "name": "best-model",
+                    "license_key": "license-specific-key",
                     "licensed_resource_type": f"{LicensedResourceType.VIP_MODEL}",
                     "pricing_plan_id": "15",
                     "created_at": "2024-12-12 09:59:26.422140",
