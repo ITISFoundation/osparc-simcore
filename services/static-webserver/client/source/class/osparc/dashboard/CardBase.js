@@ -194,10 +194,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
       }
 
-      if (sharedGrps.length === 0 && osparc.data.model.Study.canIWrite(accessRights)) {
-        shareIcon.set({
-          toolTipText: qx.locale.Manager.tr("Share")
-        });
+      if (sharedGrps.length === 0) {
+        if (osparc.data.model.Study.canIWrite(accessRights)) {
+          shareIcon.set({
+            toolTipText: qx.locale.Manager.tr("Share")
+          });
+        }
         return;
       }
       const sharedGrpLabels = [];
