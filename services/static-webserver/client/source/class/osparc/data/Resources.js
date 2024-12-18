@@ -884,6 +884,10 @@ qx.Class.define("osparc.data.Resources", {
       "users": {
         useCache: false, // osparc.store.Groups handles the cache
         endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/groups/{gid}/users"
+          },
           search: {
             method: "POST",
             url: statics.API + "/users:search"

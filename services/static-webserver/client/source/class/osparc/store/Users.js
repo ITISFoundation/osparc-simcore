@@ -28,6 +28,29 @@ qx.Class.define("osparc.store.Users", {
   },
 
   members: {
+    fetchUser: function(groupId) {
+      const params = {
+        url: {
+          gid: groupId
+        }
+      };
+      return osparc.data.Resources.fetch("users", "get", params)
+        .then(userData => {
+          const user = this.addUser(userData[0]);
+          return user;
+        });
+    },
+
+    getUser: function(groupId, fetchIfNotFound = true) {
+      const userFound = this.getUsers().find(user => user.getGroupId() === groupId);
+      if (userFound) {
+        return new Promise(resolve => resolve(userFound));
+      } else if (fetchIfNotFound) {
+        return this.fetchUser(groupId);
+      }
+      return new Promise(reject => reject());
+    },
+
     addUser: function(userData) {
       const user = new osparc.data.model.User(userData);
       const userFound = this.getUsers().find(usr => usr.getGroupId() === user.getGroupId());
