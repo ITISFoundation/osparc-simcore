@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Iterable
 
 import pytest
-from playwright.sync_api._generated import BrowserContext, Playwright, expect
+from playwright.sync_api import expect
+from playwright.sync_api._generated import BrowserContext, Playwright
 from pydantic import AnyUrl
 
 
