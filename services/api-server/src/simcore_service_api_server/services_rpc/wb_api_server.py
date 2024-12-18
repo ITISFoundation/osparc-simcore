@@ -4,6 +4,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from fastapi_pagination import Page, create_page
+from models_library.api_schemas_webserver.licensed_items import LicensedItemGetPage
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     get_licensed_items as _get_licensed_items,
@@ -20,16 +21,9 @@ _exception_mapper = partial(service_exception_mapper, service_name="WebApiServer
 class WbApiRpcClient:
     _client: RabbitMQRPCClient
 
-    @_exception_mapper(rpc_exception_map={})
-    async def get_licensed_items(
-        self, product_name: str, page_params: PaginationParams
+    def _create_licensed_items_get_page(
+        self, *, licensed_items_page: LicensedItemGetPage, page_params: PaginationParams
     ) -> Page[LicensedItemGet]:
-        licensed_items_page = await _get_licensed_items(
-            rabbitmq_rpc_client=self._client,
-            product_name=product_name,
-            offset=page_params.offset,
-            limit=page_params.limit,
-        )
         page = create_page(
             [
                 LicensedItemGet(
@@ -47,6 +41,20 @@ class WbApiRpcClient:
             params=page_params,
         )
         return cast(Page[LicensedItemGet], page)
+
+    @_exception_mapper(rpc_exception_map={})
+    async def get_licensed_items(
+        self, product_name: str, page_params: PaginationParams
+    ) -> Page[LicensedItemGet]:
+        licensed_items_page = await _get_licensed_items(
+            rabbitmq_rpc_client=self._client,
+            product_name=product_name,
+            offset=page_params.offset,
+            limit=page_params.limit,
+        )
+        return self._create_licensed_items_get_page(
+            licensed_items_page=licensed_items_page, page_params=page_params
+        )
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
