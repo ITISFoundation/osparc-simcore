@@ -45,6 +45,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     __showOrganizations: null,
     __introLabel: null,
     __textFilter: null,
+    __searchButton: null,
     __collabButtonsContainer: null,
     __orgsButton: null,
     __shareButton: null,
@@ -76,7 +77,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       toolbar.add(filter, {
         flex: 1
       });
-      const searchButton = new osparc.ui.form.FetchButton(this.tr("Search"), "@FontAwesome5Solid/search/12").set({
+      const searchButton = this.__searchButton = new osparc.ui.form.FetchButton(this.tr("Search"), "@FontAwesome5Solid/search/12").set({
         maxHeight: 30,
       });
       searchButton.addListener("execute", () => this.__searchUsers(), this);
@@ -111,14 +112,17 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     __searchUsers: function() {
       const text = this.__textFilter.getChildControl("textfield").getValue();
+      this.__searchButton.setFetching(true);
       osparc.store.Users.getInstance().searchUsers(text)
         .then(users => {
-          console.log(users);
+          users.forEach(user => user["collabType"] = 2);
+          this.__addPotentialCollaborators(users);
         })
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-        });
+        })
+        .finally(() => this.__searchButton.setFetching(false));
     },
 
     __reloadPotentialCollaborators: function() {
