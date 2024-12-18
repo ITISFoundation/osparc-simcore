@@ -19,18 +19,20 @@ qx.Class.define("osparc.store.Users", {
   extend: qx.core.Object,
   type: "singleton",
 
-  construct: function() {
-    this.base(arguments);
-
-    this.__usersCached = [];
+  properties: {
+    users: {
+      check: "Array",
+      init: [],
+      nullable: false,
+    },
   },
 
   members: {
     addUser: function(userData) {
       const user = new osparc.data.model.User(userData);
-      const userFound = this.__usersCached.find(usr => usr.getGroupId() === user.getGroupId());
+      const userFound = this.getUsers().find(usr => usr.getGroupId() === user.getGroupId());
       if (!userFound) {
-        this.__usersCached.push(user);
+        this.getUsers().push(user);
       }
       return user;
     },

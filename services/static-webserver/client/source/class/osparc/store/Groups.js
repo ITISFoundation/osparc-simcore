@@ -45,11 +45,6 @@ qx.Class.define("osparc.store.Groups", {
       check: "osparc.data.model.Group",
       init: {}
     },
-
-    users: {
-      check: "Object",
-      init: {}
-    },
   },
 
   events: {
@@ -126,7 +121,8 @@ qx.Class.define("osparc.store.Groups", {
         this.__fetchGroups()
           .then(orgs => {
             // reset Users
-            this.resetUsers();
+            const usersStore = osparc.store.Users.getInstance();
+            usersStore.resetUsers();
             const promises = Object.keys(orgs).map(orgId => this.__fetchGroupMembers(orgId));
             Promise.all(promises)
               .then(() => resolve())
@@ -151,7 +147,8 @@ qx.Class.define("osparc.store.Groups", {
         allGroupsAndUsers[organization.getGroupId()] = organization;
       });
 
-      Object.values(this.getUsers()).forEach(user => {
+      const users = osparc.store.Users.getInstance().getUsers();
+      users.forEach(user => {
         allGroupsAndUsers[user.getGroupId()] = user;
       });
 
@@ -173,7 +170,9 @@ qx.Class.define("osparc.store.Groups", {
       groupMe["collabType"] = 2;
       groups.push(groupMe);
 
-      Object.values(this.getUsers()).forEach(user => {
+      const usersStore = osparc.store.Users.getInstance();
+      const users = usersStore.getUsers();
+      users.forEach(user => {
         user["collabType"] = 2;
         groups.push(user);
       });
@@ -201,6 +200,12 @@ qx.Class.define("osparc.store.Groups", {
       const potentialCollaborators = {};
       const orgs = this.getOrganizations();
       const productEveryone = this.getEveryoneProductGroup();
+
+      if (includeProductEveryone && productEveryone) {
+        productEveryone["collabType"] = 0;
+        potentialCollaborators[productEveryone.getGroupId()] = productEveryone;
+      }
+
       Object.values(orgs).forEach(org => {
         if (org.getAccessRights()["read"]) {
           // maybe because of migration script, some users have access to the product everyone group
@@ -212,20 +217,20 @@ qx.Class.define("osparc.store.Groups", {
           potentialCollaborators[org.getGroupId()] = org;
         }
       });
-      const users = this.getUsers();
-      for (const gid of Object.keys(users)) {
-        users[gid]["collabType"] = 2;
-        potentialCollaborators[gid] = users[gid];
-      }
+
       if (includeMe) {
         const myGroup = this.getGroupMe();
         myGroup["collabType"] = 2;
         potentialCollaborators[myGroup.getGroupId()] = myGroup;
       }
-      if (includeProductEveryone && productEveryone) {
-        productEveryone["collabType"] = 0;
-        potentialCollaborators[productEveryone.getGroupId()] = productEveryone;
-      }
+
+      const usersStore = osparc.store.Users.getInstance();
+      const users = usersStore.getUsers();
+      users.forEach(user => {
+        user["collabType"] = 2;
+        potentialCollaborators[user.getGroupId()] = user;
+      });
+
       return potentialCollaborators;
     },
 
@@ -239,16 +244,18 @@ qx.Class.define("osparc.store.Groups", {
 
     getUserByUserId: function(userId) {
       if (userId) {
-        const users = this.getUsers();
-        return Object.values(users).find(member => member.getUserId() === userId);
+        const usersStore = osparc.store.Users.getInstance();
+        const users = usersStore.getUsers();
+        return users.find(user => user.getUserId() === userId);
       }
       return null;
     },
 
     getUserByGroupId: function(groupId) {
       if (groupId) {
-        const users = this.getUsers();
-        return Object.values(users).find(member => member.getGroupId() === groupId);
+        const usersStore = osparc.store.Users.getInstance();
+        const users = usersStore.getUsers();
+        return users.find(user => user.getGroupId() === groupId);
       }
       return null;
     },
@@ -426,7 +433,6 @@ qx.Class.define("osparc.store.Groups", {
           organization.addGroupMember(userMember);
         }
       }
-      this.getUsers()[userMember.getGroupId()] = userMember;
       osparc.store.Users.getInstance().addUser(orgMember);
     },
 
