@@ -1196,10 +1196,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
 
       this._resourceFilter.addListener("trashStudyRequested", e => {
-        this.__trashStudyRequested(e.getData());
+        const studyData = e.getData();
+        this.__trashStudyRequested(studyData);
       });
       this._resourceFilter.addListener("trashFolderRequested", e => {
-        this._trashFolderRequested(e.getData());
+        const folderId = e.getData();
+        this._trashFolderRequested(folderId);
       });
     },
 
