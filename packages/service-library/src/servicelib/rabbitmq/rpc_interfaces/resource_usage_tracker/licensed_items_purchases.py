@@ -17,7 +17,7 @@ from models_library.resource_tracker_licensed_items_purchases import (
 )
 from models_library.rest_ordering import OrderBy
 from models_library.wallets import WalletID
-from pydantic import AnyUrl, NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeInt, TypeAdapter
 
 from ....logging_utils import log_decorator
 from ....rabbitmq import RabbitMQRPCClient
@@ -38,8 +38,14 @@ async def get_licensed_items_purchases_page(
     wallet_id: WalletID,
     offset: int = 0,
     limit: int = 20,
-    order_by: OrderBy = OrderBy(field=IDStr("purchased_at")),
+    order_by: OrderBy | None = None,
 ) -> LicensedItemsPurchasesPage:
+    """
+    Default order_by field is "purchased_at"
+    """
+    if order_by is None:
+        order_by = OrderBy(field=IDStr("purchased_at"))
+
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("get_licensed_items_purchases_page"),
@@ -76,7 +82,7 @@ async def get_licensed_item_purchase(
 async def create_licensed_item_purchase(
     rabbitmq_rpc_client: RabbitMQRPCClient, *, data: LicensedItemsPurchasesCreate
 ) -> LicensedItemPurchaseGet:
-    result: AnyUrl = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("create_licensed_item_purchase"),
         data=data,
