@@ -19,11 +19,12 @@
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
     .header {
-      align-items: center;
-      height: 200px;
+        background-color:#0090d0; /* it should depend on the product */
+        text-align: center;
+        padding: 10px;
     }
     .footer {
-      align-items: center;
+        text-align: center;
     }
     a {
         color: #007bff;
@@ -33,6 +34,7 @@
 </head>
 <body>
   <div class="header">
+    <img src="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/Sim4Life_full_logo_white.svg">
   </div>
   <div class="container">
     <p>Dear {{ user.first_name }},</p>
