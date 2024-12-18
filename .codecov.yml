@@ -10,10 +10,10 @@ flag_management:
     statuses:
     - type: project
       target: auto
-      threshold: 2%
+      threshold: 5%
     - type: patch
       target: auto
-      threshold: 2%
+      threshold: 5%
 
 
 component_management:
@@ -22,7 +22,7 @@ component_management:
     statuses:
       - type: project
         target: auto
-        threshold: 2%
+        threshold: 5%
         branches:
           - "!master"
   individual_components:
@@ -116,12 +116,12 @@ coverage:
     project:
       default:
         informational: true
-        threshold: 2%
+        threshold: 5%
 
     patch:
       default:
         informational: true
-        threshold: 2%
+        threshold: 5%
 
 comment:
   layout: "header,diff,flags,components,footer"

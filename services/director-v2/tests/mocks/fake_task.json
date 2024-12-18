@@ -50,7 +50,6 @@
     "requires_gpu": false,
     "requires_mpi": true
   },
-  "submit": "1994-11-10T19:23:02.115Z",
   "state": "PUBLISHED",
   "internal_id": 21107840,
   "node_class": "COMPUTATIONAL",

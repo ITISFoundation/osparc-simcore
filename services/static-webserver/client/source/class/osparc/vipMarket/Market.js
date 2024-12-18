@@ -22,7 +22,8 @@ qx.Class.define("osparc.vipMarket.Market", {
     this.base(arguments);
 
     const miniWallet = osparc.desktop.credits.BillingCenter.createMiniWalletView().set({
-      paddingRight: 10
+      paddingRight: 10,
+      minWidth: 150,
     });
     this.addWidgetOnTopOfTheTabs(miniWallet);
 

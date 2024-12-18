@@ -21,6 +21,6 @@ qx.Theme.define("osparc.theme.products.tis.ThemeLight", {
     decoration: osparc.theme.Decoration,
     font: osparc.theme.Font,
     icon: qx.theme.icon.Oxygen,
-    appearance: osparc.theme.products.tis.Appearance
+    appearance: osparc.theme.Appearance,
   }
 });
