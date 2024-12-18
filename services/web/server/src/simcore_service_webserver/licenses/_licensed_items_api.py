@@ -45,6 +45,7 @@ async def get_licensed_item(
     return LicensedItemGet(
         licensed_item_id=licensed_item_db.licensed_item_id,
         name=licensed_item_db.name,
+        license_key=licensed_item_db.license_key,
         licensed_resource_type=licensed_item_db.licensed_resource_type,
         pricing_plan_id=licensed_item_db.pricing_plan_id,
         created_at=licensed_item_db.created,
@@ -68,6 +69,7 @@ async def list_licensed_items(
             LicensedItemGet(
                 licensed_item_id=licensed_item_db.licensed_item_id,
                 name=licensed_item_db.name,
+                license_key=licensed_item_db.license_key,
                 licensed_resource_type=licensed_item_db.licensed_resource_type,
                 pricing_plan_id=licensed_item_db.pricing_plan_id,
                 created_at=licensed_item_db.created,

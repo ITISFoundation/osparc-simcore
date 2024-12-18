@@ -58,6 +58,12 @@ licensed_items = sa.Table(
         nullable=False,
         doc="Product name",
     ),
+    sa.Column(
+        "license_key",
+        sa.String,
+        nullable=True,
+        doc="Purpose: Acts as a mapping key to the internal license server. Usage: The Sim4Life base applications use this key to check out a seat from the internal license server.",
+    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
 )
