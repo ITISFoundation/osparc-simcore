@@ -7,6 +7,9 @@ from fastapi_pagination import Page, create_page
 from models_library.api_schemas_webserver.licensed_items import LicensedItemGetPage
 from models_library.licensed_items import LicensedItemID
 from models_library.resource_tracker import ServiceRunId
+from models_library.resource_tracker_licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
@@ -18,6 +21,9 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     get_licensed_items as _get_licensed_items,
+)
+from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
+    release_licensed_item_for_wallet as _release_licensed_item_for_wallet,
 )
 
 from ..exceptions.service_errors_utils import service_exception_mapper
@@ -105,6 +111,30 @@ class WbApiRpcClient:
             licensed_item_id=licensed_item_id,
             num_of_seats=num_of_seats,
             service_run_id=service_run_id,
+        )
+        return LicensedItemCheckoutGet(
+            licensed_item_checkout_id=licensed_item_checkout_get.licensed_item_checkout_id,
+            licensed_item_id=licensed_item_checkout_get.licensed_item_id,
+            wallet_id=licensed_item_checkout_get.wallet_id,
+            user_id=licensed_item_checkout_get.user_id,
+            product_name=licensed_item_checkout_get.product_name,
+            started_at=licensed_item_checkout_get.started_at,
+            stopped_at=licensed_item_checkout_get.stopped_at,
+            num_of_seats=licensed_item_checkout_get.num_of_seats,
+        )
+
+    async def release_licensed_item_for_wallet(
+        self,
+        *,
+        product_name: str,
+        user_id: UserID,
+        licensed_item_checkout_id: LicensedItemCheckoutID,
+    ) -> LicensedItemCheckoutGet:
+        licensed_item_checkout_get = await _release_licensed_item_for_wallet(
+            self._client,
+            product_name=product_name,
+            user_id=user_id,
+            licensed_item_checkout_id=licensed_item_checkout_id,
         )
         return LicensedItemCheckoutGet(
             licensed_item_checkout_id=licensed_item_checkout_get.licensed_item_checkout_id,

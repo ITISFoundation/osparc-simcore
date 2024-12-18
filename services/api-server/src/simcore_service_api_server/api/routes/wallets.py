@@ -99,7 +99,7 @@ async def get_available_licensed_items_for_wallet(
     description="Checkout licensed item",
     include_in_schema=False,
 )
-async def checkout_licensed_item_for_wallet(
+async def checkout_licensed_item(
     wallet_id: int,
     licensed_item_id: LicensedItemID,
     web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
@@ -114,4 +114,26 @@ async def checkout_licensed_item_for_wallet(
         licensed_item_id=licensed_item_id,
         num_of_seats=checkout_data.number_of_seats,
         service_run_id=checkout_data.service_run_id,
+    )
+
+
+@router.post(
+    "/{wallet_id}/licensed-items/{licensed_item_id}/release",
+    response_model=LicensedItemCheckoutGet,
+    status_code=status.HTTP_200_OK,
+    responses=WALLET_STATUS_CODES,
+    description="Release previously checked out licensed item",
+    include_in_schema=False,
+)
+async def release_licensed_item(
+    wallet_id: int,
+    licensed_item_id: LicensedItemID,
+    web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    product_name: Annotated[str, Depends(get_product_name)],
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+):
+    return await web_api_rpc.release_licensed_item_for_wallet(
+        product_name=product_name,
+        user_id=user_id,
+        licensed_item_checkout_id=licensed_item_id,
     )
