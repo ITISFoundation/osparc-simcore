@@ -35,6 +35,7 @@ class WbApiRpcClient:
                 LicensedItemGet(
                     licensed_item_id=elm.licensed_item_id,
                     name=elm.name,
+                    license_key=elm.license_key,
                     licensed_resource_type=elm.licensed_resource_type,
                     pricing_plan_id=elm.pricing_plan_id,
                     created_at=elm.created_at,

@@ -130,6 +130,7 @@ assert set(ServicePricingPlanGetLegacy.model_fields.keys()) == set(
 class LicensedItemGet(BaseModel):
     licensed_item_id: LicensedItemID
     name: Annotated[str, Field(alias="display_name")]
+    license_key: str | None
     licensed_resource_type: LicensedResourceType
     pricing_plan_id: PricingPlanId
     created_at: datetime
@@ -141,7 +142,4 @@ class LicensedItemGet(BaseModel):
 
 assert set(LicensedItemGet.model_fields.keys()) == set(
     _LicensedItemGet.model_fields.keys()
-    - {
-        "license_key"
-    }  # NOTE: @bisgaard-itis please expose https://github.com/ITISFoundation/osparc-simcore/issues/6875
 )
