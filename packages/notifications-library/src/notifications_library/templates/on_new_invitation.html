@@ -12,19 +12,20 @@
         color: #333;
         width: 600px;
     }
+    header {
+        background-color:#0090d0; /* it should depend on the product */
+        text-align: center;
+        padding: 10px;
+    }
+    footer {
+        text-align: center;
+        padding: 10px;
+    }
     .container {
         background-color: #f9f9f9;
         padding: 20px;
         border-radius: 5px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    .header {
-        background-color:#0090d0; /* it should depend on the product */
-        text-align: center;
-        padding: 10px;
-    }
-    .footer {
-        text-align: center;
     }
     a {
         color: #007bff;
@@ -33,9 +34,9 @@
 </style>
 </head>
 <body>
-  <div class="header">
+  <header>
     <img src="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/Sim4Life_full_logo_white.svg">
-  </div>
+  </header>
   <div class="container">
     <p>Dear {{ user.first_name }},</p>
     <p>Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.</p>
@@ -46,7 +47,9 @@
     <p>Best Regards,</p>
     <p>The <i>{{ product.display_name }}</i> Team</p>
   </div>
-  <div class="footer">
-  </div>
+  <footer>
+    <a href="mailto:{{ product.support_email }}">Contact Us</a>
+    <a href="https://github.com/ITISFoundation/osparc-simcore">Github</a>
+  </footer>
 </body>
 </html>
