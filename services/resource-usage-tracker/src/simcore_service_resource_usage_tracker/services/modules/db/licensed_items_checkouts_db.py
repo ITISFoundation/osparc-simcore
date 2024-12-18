@@ -114,6 +114,8 @@ async def list_(
 
     async with pass_or_acquire_connection(engine, connection) as conn:
         total_count = await conn.scalar(count_query)
+        if total_count is None:
+            total_count = 0
 
         result = await conn.stream(list_query)
         items: list[LicensedItemCheckoutDB] = [
@@ -208,8 +210,7 @@ async def get_currently_used_seats_for_item_and_wallet(
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.execute(sum_stmt)
-        row = result.first()
-        if row is None or row[0] is None:
+        total_sum = await conn.scalar(sum_stmt)
+        if total_sum is None:
             return 0
-        return int(row[0])
+        return cast(int, total_sum)

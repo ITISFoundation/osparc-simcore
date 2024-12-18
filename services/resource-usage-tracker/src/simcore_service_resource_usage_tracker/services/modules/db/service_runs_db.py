@@ -376,7 +376,9 @@ async def get_osparc_credits_aggregated_by_service(
 
         subquery = base_query.subquery()
         count_query = sa.select(sa.func.count()).select_from(subquery)
-        count_result = await conn.execute(count_query)
+        count_result = await conn.scalar(count_query)
+        if count_result is None:
+            count_result = 0
 
         # Default ordering and pagination
         list_query = (
@@ -387,7 +389,7 @@ async def get_osparc_credits_aggregated_by_service(
         list_result = await conn.execute(list_query)
 
     return (
-        cast(int, count_result.scalar()),
+        cast(int, count_result),
         [
             OsparcCreditsAggregatedByServiceKeyDB.model_validate(row)
             for row in list_result.fetchall()

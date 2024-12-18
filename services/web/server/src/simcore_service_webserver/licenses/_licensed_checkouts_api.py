@@ -24,12 +24,15 @@ from ..wallets.api import get_wallet_by_user
 
 async def checkout_licensed_item_for_wallet(
     app: web.Application,
-    licensed_item_id: LicensedItemID,
-    wallet_id: WalletID,
+    *,
+    # access context
     product_name: ProductName,
+    wallet_id: WalletID,
+    user_id: UserID,
+    # checkout args
+    licensed_item_id: LicensedItemID,
     num_of_seats: int,
     service_run_id: ServiceRunId,
-    user_id: UserID,
 ) -> webserver_licensed_items_checkouts.LicensedItemCheckoutGet:
     # Check whether user has access to the wallet
     await get_wallet_by_user(
@@ -69,8 +72,11 @@ async def checkout_licensed_item_for_wallet(
 
 async def release_licensed_item_for_wallet(
     app: web.Application,
+    *,
+    # access context
     product_name: ProductName,
     user_id: UserID,
+    # release args
     licensed_item_checkout_id: LicensedItemCheckoutID,
 ) -> webserver_licensed_items_checkouts.LicensedItemCheckoutGet:
     rpc_client = get_rabbitmq_rpc_client(app)
