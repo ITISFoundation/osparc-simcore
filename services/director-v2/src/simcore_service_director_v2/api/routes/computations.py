@@ -1,4 +1,4 @@
-""" CRUD operations on a "computation" resource
+"""CRUD operations on a "computation" resource
 
 A computation is a resource that represents a running pipeline of computational services in a give project
 Therefore,
@@ -14,7 +14,6 @@ Therefore,
 
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
-
 
 import contextlib
 import logging
@@ -75,7 +74,6 @@ from ...utils.dags import (
     compute_pipeline_details,
     compute_pipeline_started_timestamp,
     compute_pipeline_stopped_timestamp,
-    compute_pipeline_submitted_timestamp,
     create_complete_dag,
     create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
@@ -396,9 +394,7 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
             stopped=compute_pipeline_stopped_timestamp(
                 minimal_computational_dag, comp_tasks
             ),
-            submitted=compute_pipeline_submitted_timestamp(
-                minimal_computational_dag, comp_tasks
-            ),
+            submitted=last_run.created if last_run else None,
         )
 
     except ProjectNotFoundError as e:
@@ -498,7 +494,7 @@ async def get_computation(
         result=None,
         started=compute_pipeline_started_timestamp(pipeline_dag, all_tasks),
         stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
-        submitted=compute_pipeline_submitted_timestamp(pipeline_dag, all_tasks),
+        submitted=last_run.created if last_run else None,
     )
 
 
@@ -572,7 +568,7 @@ async def stop_computation(
             result=None,
             started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
             stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
-            submitted=compute_pipeline_submitted_timestamp(pipeline_dag, tasks),
+            submitted=last_run.created if last_run else None,
         )
 
     except ProjectNotFoundError as e:
