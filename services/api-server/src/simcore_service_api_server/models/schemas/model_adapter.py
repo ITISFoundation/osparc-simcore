@@ -141,5 +141,7 @@ class LicensedItemGet(BaseModel):
 
 assert set(LicensedItemGet.model_fields.keys()) == set(
     _LicensedItemGet.model_fields.keys()
-    - {"license_key"}  # TODO: @bisgaard-itis please expose
+    - {
+        "license_key"
+    }  # NOTE: @bisgaard-itis please expose https://github.com/ITISFoundation/osparc-simcore/issues/6875
 )
