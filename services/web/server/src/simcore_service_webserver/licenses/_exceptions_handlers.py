@@ -22,11 +22,11 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     WalletAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        "Wallet {wallet_id} forbidden.",
+        "Credit account {wallet_id} forbidden.",
     ),
     WalletNotEnoughCreditsError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
-        "Not enough credits in the wallet.",
+        "Not enough credits in the credit account.",
     ),
     LicensedItemPricingPlanMatchError: HttpErrorInfo(
         status.HTTP_400_BAD_REQUEST,

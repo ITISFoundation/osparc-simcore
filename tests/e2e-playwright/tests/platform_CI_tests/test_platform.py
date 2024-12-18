@@ -5,10 +5,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Iterable
 from pathlib import Path
+from typing import Iterable
 
 import pytest
+from playwright.sync_api import expect
 from playwright.sync_api._generated import BrowserContext, Playwright
 from pydantic import AnyUrl
 
@@ -24,6 +25,7 @@ def logged_in_context(
     store_browser_context: bool,
     request: pytest.FixtureRequest,
     pytestconfig: pytest.Config,
+    results_path: Path,
 ) -> Iterable[BrowserContext]:
     is_headed = "--headed" in pytestconfig.invocation_params.args
 
@@ -33,7 +35,14 @@ def logged_in_context(
 
     browser = playwright.chromium.launch(headless=not is_headed)
     context = browser.new_context(storage_state="state.json")
+    test_name = request.node.name
+    context.tracing.start(
+        title=f"Trace for Browser 2 in test {test_name}",
+        snapshots=True,
+        screenshots=True,
+    )
     yield context
+    context.tracing.stop(path=f"{results_path}/second_browser_trace.zip")
     context.close()
     browser.close()
 
@@ -85,7 +94,12 @@ def test_simple_workspace_workflow(
         and response.request.method == "POST"
     ) as response_info:
         page.get_by_test_id("newWorkspaceButton").click()
+
+        workspace_title_field = page.get_by_test_id("workspaceEditorTitle")
+        # wait until the title is automatically filled up
+        expect(workspace_title_field).not_to_have_value("")
         page.get_by_test_id("workspaceEditorSave").click()
+
     _workspace_id = response_info.value.json()["data"]["workspaceId"]
     page.get_by_test_id(f"workspaceItem_{_workspace_id}").click()
     page.get_by_test_id("workspacesAndFoldersTreeItem_null_null").click()

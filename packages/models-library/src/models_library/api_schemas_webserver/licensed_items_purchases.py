@@ -2,16 +2,14 @@ from datetime import datetime
 from decimal import Decimal
 from typing import NamedTuple
 
-from models_library.licensed_items import LicensedItemID
-from models_library.products import ProductName
-from models_library.resource_tracker import PricingUnitCostId
-from models_library.resource_tracker_licensed_items_purchases import (
-    LicensedItemPurchaseID,
-)
-from models_library.users import UserID
-from models_library.wallets import WalletID
 from pydantic import PositiveInt
 
+from ..licensed_items import LicensedItemID
+from ..products import ProductName
+from ..resource_tracker import PricingUnitCostId
+from ..resource_tracker_licensed_items_purchases import LicensedItemPurchaseID
+from ..users import UserID
+from ..wallets import WalletID
 from ._base import OutputSchema
 
 
