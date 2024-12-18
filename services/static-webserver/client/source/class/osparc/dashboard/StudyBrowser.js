@@ -1203,6 +1203,25 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
+    _studyToFolderRequested: function(data) {
+      const {
+        studyData,
+        destWorkspaceId,
+        destFolderId,
+      } = data;
+      this.__studyToFolderRequested(studyData, destWorkspaceId, destFolderId);
+    },
+
+    _folderToFolderRequested: function(data) {
+      const {
+        folderId,
+        workspaceId,
+        destWorkspaceId,
+        destFolderId,
+      } = data;
+      this.__folderToFolderRequested(folderId, workspaceId, destWorkspaceId, destFolderId);
+    },
+
     __addSortByButton: function() {
       const sortByButton = new osparc.dashboard.SortedByMenuButton();
       sortByButton.set({
