@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request for an Account in {{ product.display_name }}</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        color: #333;
+        width: 600px;
+    }
+    .container {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      align-items: center;
+      height: 200px;
+    }
+    .footer {
+      align-items: center;
+    }
+    a {
+        color: #007bff;
+        text-decoration: none;
+    }
+</style>
+</head>
+<body>
+  <div class="header">
+  </div>
+  <div class="container">
+    <p>Dear {{ user.first_name }},</p>
+    <p>Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.</p>
+    <p>Click <a href="{{ link }}">here</a> to access the registration page.</p>
+    <p>Please follow the on-screen information and proceed with your registration.</p>
+    <p>If any problem should occur, please feel free to contact us at {{ product.support_email }}.</p>
+    <p>Enjoy {{ product.display_name }}!</p>
+    <p>Best Regards,</p>
+    <p>The <i>{{ product.display_name }}</i> Team</p>
+  </div>
+  <div class="footer">
+  </div>
+</body>
+</html>
