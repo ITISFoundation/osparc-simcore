@@ -28,14 +28,14 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
   construct: function() {
     this.base(arguments);
 
+    this._setLayout(new qx.ui.layout.Canvas());
+
     this.set({
       width: this.self().ITEM_WIDTH,
       height: this.self().ITEM_HEIGHT,
       padding: 0,
       allowGrowX: false
     });
-
-    this._setLayout(new qx.ui.layout.Canvas());
 
     this.getChildControl("main-layout");
   },
@@ -107,7 +107,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
   },
 
   members: {
-
     // overridden
     _createChildControlImpl: function(id) {
       let layout;

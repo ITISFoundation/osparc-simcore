@@ -462,7 +462,7 @@ qx.Class.define("osparc.Application", {
             if (osparc.auth.Data.getInstance().isGuest()) {
               const msg = osparc.utils.Utils.createAccountMessage();
               osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-            } else if ("expirationDate" in profile) {
+            } else if (profile["expirationDate"]) {
               const now = new Date();
               const today = new Date(now.toISOString().slice(0, 10));
               const expirationDay = new Date(profile["expirationDate"]);

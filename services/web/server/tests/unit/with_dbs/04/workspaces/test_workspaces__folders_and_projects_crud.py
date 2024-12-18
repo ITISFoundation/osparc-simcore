@@ -296,7 +296,7 @@ async def test_workspaces_delete_folders(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    added_workspace = WorkspaceGet.parse_obj(data)
+    added_workspace = WorkspaceGet.model_validate(data)
 
     # Create project in workspace
     project_data = deepcopy(fake_project)

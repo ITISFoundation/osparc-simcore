@@ -16,7 +16,7 @@ from servicelib.rabbitmq import RabbitMQClient
 
 from .._meta import PROJECT_NAME
 from ..models.schemas.jobs import JobID, JobLog
-from ..services.log_streaming import LogDistributor
+from ..services_http.log_streaming import LogDistributor
 
 METRICS_NAMESPACE: Final[str] = PROJECT_NAME.replace("-", "_")
 

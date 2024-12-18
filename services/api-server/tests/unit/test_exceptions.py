@@ -1,7 +1,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
-
+# pylint: disable=too-many-arguments
 
 from http import HTTPStatus
 from uuid import UUID
@@ -25,8 +25,8 @@ from simcore_service_api_server.models.schemas.errors import ErrorGet
 
 async def test_backend_service_exception_mapper():
     @service_exception_mapper(
-        "DummyService",
-        {status.HTTP_400_BAD_REQUEST: ProfileNotFoundError},
+        service_name="DummyService",
+        http_status_map={status.HTTP_400_BAD_REQUEST: ProfileNotFoundError},
     )
     async def my_endpoint(status_code: int):
         raise HTTPStatusError(
@@ -103,26 +103,26 @@ async def test_service_exception_mapper():
         pass
 
     with pytest.raises(AssertionError):
-        _assert_correct_kwargs(func=coro1, status_map=status_map)
+        _assert_correct_kwargs(func=coro1, exception_types=set(status_map.values()))
 
     async def coro2(project_id=UUID("9c201eb7-ba04-4d9b-abe6-f16b406ca86d")):
         pass
 
     with pytest.raises(AssertionError) as exc:
-        _assert_correct_kwargs(func=coro2, status_map=status_map)
+        _assert_correct_kwargs(func=coro2, exception_types=set(status_map.values()))
 
     async def coro3(*, project_id):
         pass
 
-    _assert_correct_kwargs(func=coro3, status_map=status_map)
+    _assert_correct_kwargs(func=coro3, exception_types=set(status_map.values()))
 
     async def coro4(*, project_id=UUID("ce56af2e-e9e5-46a4-8067-662077de5528")):
         pass
 
-    _assert_correct_kwargs(func=coro4, status_map=status_map)
+    _assert_correct_kwargs(func=coro4, exception_types=set(status_map.values()))
 
     async def coro5(*, project_uuid):
         pass
 
     with pytest.raises(AssertionError):
-        _assert_correct_kwargs(func=coro5, status_map=status_map)
+        _assert_correct_kwargs(func=coro5, exception_types=set(status_map.values()))

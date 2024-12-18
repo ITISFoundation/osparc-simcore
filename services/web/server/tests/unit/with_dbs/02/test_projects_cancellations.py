@@ -180,6 +180,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
 
 @pytest.mark.parametrize(*_standard_user_role_response())
 async def test_creating_new_project_from_template_without_copying_data_creates_skeleton(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],
@@ -230,6 +231,7 @@ async def test_creating_new_project_from_template_without_copying_data_creates_s
 
 @pytest.mark.parametrize(*_standard_user_role_response())
 async def test_creating_new_project_as_template_without_copying_data_creates_skeleton(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],

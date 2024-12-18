@@ -273,7 +273,7 @@ async def get_worker_used_resources(
     async with _scheduler_client(scheduler_url, authentication) as client:
         worker_url, _ = _dask_worker_from_ec2_instance(client, ec2_instance)
 
-        _logger.debug("looking for processing tasksfor %s", f"{worker_url=}")
+        _logger.debug("looking for processing tasks for %s", f"{worker_url=}")
 
         # now get the used resources
         worker_processing_tasks: list[

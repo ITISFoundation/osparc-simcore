@@ -4,6 +4,7 @@ from typing import Final
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
     GetProjectInactivityResponse,
+    RetrieveDataOutEnveloped,
 )
 from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -14,6 +15,7 @@ from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.logging_utils import log_decorator
@@ -114,3 +116,51 @@ async def get_project_inactivity(
     )
     assert isinstance(result, GetProjectInactivityResponse)  # nosec
     return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def restart_user_services(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    node_id: NodeID,
+    timeout_s: NonNegativeInt,
+) -> None:
+    result = await rabbitmq_rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("restart_user_services"),
+        node_id=node_id,
+        timeout_s=timeout_s,
+    )
+    assert result is None  # nosec
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def retrieve_inputs(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    node_id: NodeID,
+    port_keys: list[ServicePortKey],
+    timeout_s: NonNegativeInt,
+) -> RetrieveDataOutEnveloped:
+    result = await rabbitmq_rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("retrieve_inputs"),
+        node_id=node_id,
+        port_keys=port_keys,
+        timeout_s=timeout_s,
+    )
+    assert isinstance(result, RetrieveDataOutEnveloped)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def update_projects_networks(
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, project_id: ProjectID
+) -> None:
+    result = await rabbitmq_rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("update_projects_networks"),
+        project_id=project_id,
+        timeout_s=_RPC_DEFAULT_TIMEOUT_S,
+    )
+    assert result is None  # nosec

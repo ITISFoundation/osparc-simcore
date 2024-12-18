@@ -356,9 +356,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__workbenchUI.openServiceCatalog({
           x: 50,
           y: 50
-        }, {
-          x: 50,
-          y: 50
         });
       });
       homeAndNodesTree.add(addNewNodeBtn);

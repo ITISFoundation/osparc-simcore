@@ -188,7 +188,7 @@ def pytest_runtest_makereport(item: pytest.Item, call):
 
 
 @pytest.hookimpl(tryfirst=True)
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config):
     config.pluginmanager.register(pytest_runtest_setup, "osparc_test_times_plugin")
     config.pluginmanager.register(pytest_runtest_makereport, "osparc_makereport_plugin")
 
@@ -417,7 +417,7 @@ def log_in_and_out(
 def _open_with_resources(page: Page, *, click_it: bool):
     study_title_field = page.get_by_test_id("studyTitleField")
     # wait until the title is automatically filled up
-    expect(study_title_field).not_to_have_value("", timeout=5000)
+    expect(study_title_field).not_to_have_value("")
 
     open_with_resources_button = page.get_by_test_id("openWithResources")
     if click_it:

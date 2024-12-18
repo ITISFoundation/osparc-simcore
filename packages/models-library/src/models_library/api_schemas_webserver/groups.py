@@ -1,8 +1,8 @@
 from contextlib import suppress
-from typing import Annotated, Any, Self, TypeVar
+from typing import Annotated, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.groups import EVERYONE_GROUP_ID
+from common_library.dict_tools import remap_keys
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -14,13 +14,16 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic.config import JsonDict
 
 from ..emails import LowerCaseEmailStr
 from ..groups import (
+    EVERYONE_GROUP_ID,
     AccessRightsDict,
     Group,
     GroupID,
     GroupMember,
+    GroupsByTypeTuple,
     StandardGroupCreate,
     StandardGroupUpdate,
 )
@@ -29,10 +32,6 @@ from ..utils.common_validators import create__check_only_one_is_set__root_valida
 from ._base import InputSchema, OutputSchema
 
 S = TypeVar("S", bound=BaseModel)
-
-
-def _rename_keys(source: dict, name_map: dict[str, str]) -> dict[str, Any]:
-    return {name_map.get(k, k): v for k, v in source.items()}
 
 
 class GroupAccessRights(BaseModel):
@@ -75,10 +74,10 @@ class GroupGet(OutputSchema):
 
     @classmethod
     def from_model(cls, group: Group, access_rights: AccessRightsDict) -> Self:
-        # Merges both service models into this schema
+        # Adapts these domain models into this schema
         return cls.model_validate(
             {
-                **_rename_keys(
+                **remap_keys(
                     group.model_dump(
                         include={
                             "gid",
@@ -86,11 +85,13 @@ class GroupGet(OutputSchema):
                             "description",
                             "thumbnail",
                         },
-                        exclude={"access_rights", "inclusion_rules"},
+                        exclude={
+                            "inclusion_rules",  # deprecated
+                        },
                         exclude_unset=True,
                         by_alias=False,
                     ),
-                    name_map={
+                    rename={
                         "name": "label",
                     },
                 ),
@@ -98,38 +99,42 @@ class GroupGet(OutputSchema):
             }
         )
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "gid": "27",
-                    "label": "A user",
-                    "description": "A very special user",
-                    "thumbnail": "https://placekitten.com/10/10",
-                    "accessRights": {"read": True, "write": False, "delete": False},
-                },
-                {
-                    "gid": 1,
-                    "label": "ITIS Foundation",
-                    "description": "The Foundation for Research on Information Technologies in Society",
-                    "accessRights": {"read": True, "write": False, "delete": False},
-                },
-                {
-                    "gid": "1",
-                    "label": "All",
-                    "description": "Open to all users",
-                    "accessRights": {"read": True, "write": True, "delete": True},
-                },
-                {
-                    "gid": 5,
-                    "label": "SPARCi",
-                    "description": "Stimulating Peripheral Activity to Relieve Conditions",
-                    "thumbnail": "https://placekitten.com/15/15",
-                    "accessRights": {"read": True, "write": True, "delete": True},
-                },
-            ]
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "gid": "27",
+                        "label": "A user",
+                        "description": "A very special user",
+                        "thumbnail": "https://placekitten.com/10/10",
+                        "accessRights": {"read": True, "write": False, "delete": False},
+                    },
+                    {
+                        "gid": 1,
+                        "label": "ITIS Foundation",
+                        "description": "The Foundation for Research on Information Technologies in Society",
+                        "accessRights": {"read": True, "write": False, "delete": False},
+                    },
+                    {
+                        "gid": "1",
+                        "label": "All",
+                        "description": "Open to all users",
+                        "accessRights": {"read": True, "write": True, "delete": True},
+                    },
+                    {
+                        "gid": 5,
+                        "label": "SPARCi",
+                        "description": "Stimulating Peripheral Activity to Relieve Conditions",
+                        "thumbnail": "https://placekitten.com/15/15",
+                        "accessRights": {"read": True, "write": True, "delete": True},
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
     @field_validator("thumbnail", mode="before")
     @classmethod
@@ -147,14 +152,14 @@ class GroupCreate(InputSchema):
     thumbnail: AnyUrl | None = None
 
     def to_model(self) -> StandardGroupCreate:
-        data = _rename_keys(
+        data = remap_keys(
             self.model_dump(
                 mode="json",
                 # NOTE: intentionally inclusion_rules are not exposed to the REST api
                 include={"label", "description", "thumbnail"},
                 exclude_unset=True,
             ),
-            name_map={"label": "name"},
+            rename={"label": "name"},
         )
         return StandardGroupCreate(**data)
 
@@ -165,14 +170,14 @@ class GroupUpdate(InputSchema):
     thumbnail: AnyUrl | None = None
 
     def to_model(self) -> StandardGroupUpdate:
-        data = _rename_keys(
+        data = remap_keys(
             self.model_dump(
                 mode="json",
                 # NOTE: intentionally inclusion_rules are not exposed to the REST api
                 include={"label", "description", "thumbnail"},
                 exclude_unset=True,
             ),
-            name_map={"label": "name"},
+            rename={"label": "name"},
         )
         return StandardGroupUpdate(**data)
 
@@ -223,6 +228,24 @@ class MyGroupsGet(OutputSchema):
             }
         }
     )
+
+    @classmethod
+    def from_model(
+        cls,
+        groups_by_type: GroupsByTypeTuple,
+        my_product_group: tuple[Group, AccessRightsDict] | None,
+    ) -> Self:
+        assert groups_by_type.primary  # nosec
+        assert groups_by_type.everyone  # nosec
+
+        return cls(
+            me=GroupGet.from_model(*groups_by_type.primary),
+            organizations=[GroupGet.from_model(*gi) for gi in groups_by_type.standard],
+            all=GroupGet.from_model(*groups_by_type.everyone),
+            product=GroupGet.from_model(*my_product_group)
+            if my_product_group
+            else None,
+        )
 
 
 class GroupUserGet(BaseModel):

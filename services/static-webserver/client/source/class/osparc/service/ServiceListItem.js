@@ -26,7 +26,8 @@ qx.Class.define("osparc.service.ServiceListItem", {
       height: this.self().ITEM_HEIGHT,
       paddingTop: 0,
       paddingBottom: 0,
-      allowGrowX: true
+      allowGrowX: true,
+      focusable: true,
     });
 
     this.setResourceType("service");
@@ -36,13 +37,9 @@ qx.Class.define("osparc.service.ServiceListItem", {
 
     this.subscribeToFilterGroup("serviceCatalog");
 
-    /**
-     * The idea here is to show some extra options when a service is selected:
-     * - Version selection
-     * - Pricing unit selection if applies
-     */
-    // But the toggle button consumes all the events, I believe that the trick is to use the anonymous property
-    // this.addListener("changeValue", e => this.__itemSelected(e.getData()));
+    this.bind("selected", this, "backgroundColor", {
+      converter: selected => selected ? "strong-main" : "info"
+    });
   },
 
   properties: {
@@ -63,33 +60,6 @@ qx.Class.define("osparc.service.ServiceListItem", {
   members: {
     __versionsBox: null,
     __infoBtn: null,
-
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "extended-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-          this._add(control, {
-            row: 1,
-            column: 0,
-            colSpan: osparc.dashboard.ListButtonBase.POS.HITS
-          });
-          break;
-        case "version-layout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-          this.getChildControl("extended-layout").add(control);
-          const versionLabel = new qx.ui.basic.Label(this.tr("Version"));
-          control.add(versionLabel);
-          const selectBox = this.__versionsBox = new qx.ui.form.SelectBox();
-          control.add(selectBox);
-          const infoBtn = this.__infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16");
-          infoBtn.addListener("execute", () => this.__showServiceDetails(), this);
-          control.add(infoBtn);
-          break;
-        }
-      }
-      return control || this.base(arguments, id);
-    },
 
     __applyService: function(service) {
       // BASE
@@ -125,44 +95,6 @@ qx.Class.define("osparc.service.ServiceListItem", {
         row: 0,
         column: osparc.dashboard.ListButtonBase.POS.HITS
       });
-    },
-
-    __itemSelected: function(selected) {
-      this.setHeight(selected ? 70 : 35);
-      const extendedLayout = this.getChildControl("extended-layout");
-      const versionLayout = this.getChildControl("version-layout");
-      extendedLayout.setVisibility(selected ? "visible" : "excluded");
-      versionLayout.setVisibility(selected ? "visible" : "excluded");
-      this.__populateVersions();
-    },
-
-    __populateVersions: function() {
-      const serviceKey = this.getService().getKey();
-      const selectBox = this.__versionsBox;
-      selectBox.removeAll();
-      const versions = osparc.service.Utils.getVersions(serviceKey);
-      const latest = new qx.ui.form.ListItem(this.self().LATEST);
-      latest.version = this.self().LATEST;
-      selectBox.add(latest);
-      versions.forEach(version => {
-        const listItem = osparc.service.Utils.versionToListItem(serviceKey, version);
-        selectBox.add(listItem);
-      });
-      osparc.utils.Utils.growSelectBox(selectBox, 200);
-      selectBox.setSelection([latest]);
-    },
-
-    __showServiceDetails: function() {
-      const key = this.getService().getKey();
-      let version = this.__versionsBox.getSelection()[0].version;
-      if (version === this.self().LATEST) {
-        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].version;
-      }
-      osparc.store.Services.getService(key, version)
-        .then(serviceMetadata => {
-          const serviceDetails = new osparc.info.ServiceLarge(serviceMetadata);
-          osparc.info.ServiceLarge.popUpInWindow(serviceDetails);
-        });
     },
 
     _filterText: function(text) {

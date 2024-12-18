@@ -26,10 +26,10 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.solvers import Solver, SolverKeyId
-from ...services.catalog import CatalogApi
-from ...services.director_v2 import DirectorV2Api
-from ...services.jobs import replace_custom_metadata, start_project, stop_project
-from ...services.solver_job_models_converters import (
+from ...services_http.catalog import CatalogApi
+from ...services_http.director_v2 import DirectorV2Api
+from ...services_http.jobs import replace_custom_metadata, start_project, stop_project
+from ...services_http.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,
     create_new_project_for_job,
@@ -37,7 +37,7 @@ from ...services.solver_job_models_converters import (
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
-from ..dependencies.webserver import AuthSession, get_webserver_session
+from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_CHANGED_IN_VERSION,

@@ -16,9 +16,7 @@ from unittest import mock
 
 import pytest
 import tenacity
-from aws_library.ec2 import AWSTagKey, EC2InstanceBootSpecific
-from common_library.json_serialization import json_dumps
-from faker import Faker
+from aws_library.ec2 import AWSTagKey
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.docker import DockerGenericTag
@@ -30,68 +28,15 @@ from pytest_simcore.helpers.aws_ec2 import (
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.constants import PRE_PULLED_IMAGES_EC2_TAG_KEY
-from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
 )
 from simcore_service_autoscaling.modules.buffer_machines_pool_core import (
     monitor_buffer_machines,
 )
-from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
-    get_deactivated_buffer_ec2_tags,
-)
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
-from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
-
-
-@pytest.fixture
-def fake_pre_pull_images() -> list[DockerGenericTag]:
-    return TypeAdapter(list[DockerGenericTag]).validate_python(
-        [
-            "nginx:latest",
-            "itisfoundation/my-very-nice-service:latest",
-            "simcore/services/dynamic/another-nice-one:2.4.5",
-            "asd",
-        ]
-    )
-
-
-@pytest.fixture
-def ec2_instances_allowed_types_with_only_1_buffered(
-    faker: Faker,
-    fake_pre_pull_images: list[DockerGenericTag],
-    external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
-) -> dict[InstanceTypeType, EC2InstanceBootSpecific]:
-    if not external_ec2_instances_allowed_types:
-        return {
-            "t2.micro": EC2InstanceBootSpecific(
-                ami_id=faker.pystr(),
-                pre_pull_images=fake_pre_pull_images,
-                buffer_count=faker.pyint(min_value=1, max_value=10),
-            )
-        }
-
-    allowed_ec2_types = external_ec2_instances_allowed_types
-    allowed_ec2_types_with_buffer_defined = dict(
-        filter(
-            lambda instance_type_and_settings: instance_type_and_settings[
-                1
-            ].buffer_count
-            > 0,
-            allowed_ec2_types.items(),
-        )
-    )
-    assert (
-        allowed_ec2_types_with_buffer_defined
-    ), "one type with buffer is needed for the tests!"
-    assert (
-        len(allowed_ec2_types_with_buffer_defined) == 1
-    ), "more than one type with buffer is disallowed in this test!"
-    return {
-        TypeAdapter(InstanceTypeType).validate_python(k): v
-        for k, v in allowed_ec2_types_with_buffer_defined.items()
-    }
+from types_aiobotocore_ec2.type_defs import FilterTypeDef
 
 
 @pytest.fixture
@@ -345,96 +290,6 @@ async def test_monitor_buffer_machines(
     )
 
 
-@pytest.fixture
-async def create_buffer_machines(
-    ec2_client: EC2Client,
-    aws_ami_id: str,
-    app_settings: ApplicationSettings,
-    initialized_app: FastAPI,
-) -> Callable[
-    [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag]],
-    Awaitable[list[str]],
-]:
-    async def _do(
-        num: int,
-        instance_type: InstanceTypeType,
-        instance_state_name: InstanceStateNameType,
-        pre_pull_images: list[DockerGenericTag],
-    ) -> list[str]:
-        assert app_settings.AUTOSCALING_EC2_INSTANCES
-
-        assert instance_state_name in [
-            "running",
-            "stopped",
-        ], "only 'running' and 'stopped' are supported for testing"
-
-        resource_tags: list[TagTypeDef] = [
-            {"Key": tag_key, "Value": tag_value}
-            for tag_key, tag_value in get_deactivated_buffer_ec2_tags(
-                initialized_app, DynamicAutoscaling()
-            ).items()
-        ]
-        if pre_pull_images is not None and instance_state_name == "stopped":
-            resource_tags.append(
-                {
-                    "Key": PRE_PULLED_IMAGES_EC2_TAG_KEY,
-                    "Value": f"{json_dumps(pre_pull_images)}",
-                }
-            )
-        with log_context(
-            logging.INFO, f"creating {num} buffer machines of {instance_type}"
-        ):
-            instances = await ec2_client.run_instances(
-                ImageId=aws_ami_id,
-                MaxCount=num,
-                MinCount=num,
-                InstanceType=instance_type,
-                KeyName=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
-                SecurityGroupIds=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
-                SubnetId=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
-                IamInstanceProfile={
-                    "Arn": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE
-                },
-                TagSpecifications=[
-                    {"ResourceType": "instance", "Tags": resource_tags},
-                    {"ResourceType": "volume", "Tags": resource_tags},
-                    {"ResourceType": "network-interface", "Tags": resource_tags},
-                ],
-                UserData="echo 'I am pytest'",
-            )
-            instance_ids = [
-                i["InstanceId"] for i in instances["Instances"] if "InstanceId" in i
-            ]
-
-        waiter = ec2_client.get_waiter("instance_exists")
-        await waiter.wait(InstanceIds=instance_ids)
-        instances = await ec2_client.describe_instances(InstanceIds=instance_ids)
-        assert "Reservations" in instances
-        assert instances["Reservations"]
-        assert "Instances" in instances["Reservations"][0]
-        assert len(instances["Reservations"][0]["Instances"]) == num
-        for instance in instances["Reservations"][0]["Instances"]:
-            assert "State" in instance
-            assert "Name" in instance["State"]
-            assert instance["State"]["Name"] == "running"
-
-        if instance_state_name == "stopped":
-            await ec2_client.stop_instances(InstanceIds=instance_ids)
-            instances = await ec2_client.describe_instances(InstanceIds=instance_ids)
-            assert "Reservations" in instances
-            assert instances["Reservations"]
-            assert "Instances" in instances["Reservations"][0]
-            assert len(instances["Reservations"][0]["Instances"]) == num
-            for instance in instances["Reservations"][0]["Instances"]:
-                assert "State" in instance
-                assert "Name" in instance["State"]
-                assert instance["State"]["Name"] == "stopped"
-
-        return instance_ids
-
-    return _do
-
-
 @dataclass
 class _BufferMachineParams:
     instance_state_name: InstanceStateNameType
@@ -650,29 +505,6 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
         expected_pre_pulled_images=None,
         instance_filters=instance_type_filters,
     )
-
-
-@pytest.fixture
-def buffer_count(
-    ec2_instances_allowed_types_with_only_1_buffered: dict[
-        InstanceTypeType, EC2InstanceBootSpecific
-    ],
-) -> int:
-    def _by_buffer_count(
-        instance_type_and_settings: tuple[InstanceTypeType, EC2InstanceBootSpecific]
-    ) -> bool:
-        _, boot_specific = instance_type_and_settings
-        return boot_specific.buffer_count > 0
-
-    allowed_ec2_types = ec2_instances_allowed_types_with_only_1_buffered
-    allowed_ec2_types_with_buffer_defined = dict(
-        filter(_by_buffer_count, allowed_ec2_types.items())
-    )
-    assert allowed_ec2_types_with_buffer_defined, "you need one type with buffer"
-    assert (
-        len(allowed_ec2_types_with_buffer_defined) == 1
-    ), "more than one type with buffer is disallowed in this test!"
-    return next(iter(allowed_ec2_types_with_buffer_defined.values())).buffer_count
 
 
 @pytest.fixture

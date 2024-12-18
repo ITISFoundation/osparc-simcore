@@ -18,11 +18,12 @@
 qx.Class.define("osparc.vipMarket.Market", {
   extend: osparc.ui.window.TabbedView,
 
-  construct: function() {
+  construct: function(category) {
     this.base(arguments);
 
     const miniWallet = osparc.desktop.credits.BillingCenter.createMiniWalletView().set({
-      paddingRight: 10
+      paddingRight: 10,
+      minWidth: 150,
     });
     this.addWidgetOnTopOfTheTabs(miniWallet);
 
@@ -51,7 +52,15 @@ qx.Class.define("osparc.vipMarket.Market", {
         }].forEach(marketInfo => {
           this.__buildViPMarketPage(marketInfo);
         });
+
+        if (category) {
+          this.openCategory(category);
+        }
       });
+  },
+
+  events: {
+    "importMessageSent": "qx.event.type.Data",
   },
 
   properties: {
@@ -70,6 +79,7 @@ qx.Class.define("osparc.vipMarket.Market", {
         metadataUrl: marketInfo["url"],
       });
       this.bind("openBy", vipMarketView, "openBy");
+      vipMarketView.addListener("importMessageSent", () => this.fireEvent("importMessageSent"));
       const page = this.addTab(marketInfo["label"], marketInfo["icon"], vipMarketView);
       page.category = marketInfo["category"];
       return page;
@@ -82,6 +92,18 @@ qx.Class.define("osparc.vipMarket.Market", {
         return true;
       }
       return false;
+    },
+
+    sendCloseMessage: function() {
+      const store = osparc.store.Store.getInstance();
+      const currentStudy = store.getCurrentStudy();
+      const nodeId = this.getOpenBy();
+      if (currentStudy && nodeId) {
+        const msg = {
+          "type": "closeMarket",
+        };
+        currentStudy.sendMessageToIframe(nodeId, msg);
+      }
     },
   }
 });

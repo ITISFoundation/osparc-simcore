@@ -24,13 +24,13 @@ from servicelib.aiohttp import status
 from servicelib.status_codes_utils import is_2xx_success
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.groups._groups_api import (
-    create_standard_group,
-    delete_standard_group,
-)
-from simcore_service_webserver.groups._groups_db import (
+from simcore_service_webserver.groups._groups_repository import (
     _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
     _DEFAULT_GROUP_READ_ACCESS_RIGHTS,
+)
+from simcore_service_webserver.groups._groups_service import (
+    create_standard_group,
+    delete_standard_group,
 )
 from simcore_service_webserver.groups.api import auto_add_user_to_groups
 from simcore_service_webserver.security.api import clean_auth_policy_cache

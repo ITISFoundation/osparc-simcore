@@ -42,7 +42,10 @@ async def assert_autoscaled_dynamic_ec2_instances(
     expected_instance_state: InstanceStateNameType,
     expected_additional_tag_keys: list[str],
     instance_filters: Sequence[FilterTypeDef] | None,
+    expected_user_data: list[str] | None = None,
 ) -> list[InstanceTypeDef]:
+    if expected_user_data is None:
+        expected_user_data = ["docker swarm join"]
     return await assert_ec2_instances(
         ec2_client,
         expected_num_reservations=expected_num_reservations,
@@ -54,7 +57,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
             "io.simcore.autoscaling.monitored_services_labels",
             *expected_additional_tag_keys,
         ],
-        expected_user_data=["docker swarm join"],
+        expected_user_data=expected_user_data,
         instance_filters=instance_filters,
     )
 

@@ -26,6 +26,10 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     this.__buildLayout();
   },
 
+  events: {
+    "importMessageSent": "qx.event.type.Data"
+  },
+
   properties: {
     openBy: {
       check: "String",
@@ -71,7 +75,6 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
 
   members: {
     __anatomicalModels: null,
-    __purchasesItems: null,
     __anatomicalModelsModel: null,
 
     _createChildControlImpl: function(id) {
@@ -123,7 +126,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             decorator: "no-border",
             spacing: 5,
             minWidth: 250,
-            maxWidth: 250
+            maxWidth: 250,
+            backgroundColor: "transparent",
           });
           this.getChildControl("left-side").add(control, {
             flex: 1
@@ -214,7 +218,6 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             .then(values => {
               const licensedItems = values[0];
               const purchasesItems = values[1];
-              this.__purchasesItems = purchasesItems;
 
               this.__anatomicalModels = [];
               allAnatomicalModels.forEach(model => {
@@ -294,7 +297,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                     const found = this.__anatomicalModels.find(model => model["modelId"] === modelId);
                     if (found) {
                       found["purchases"].push(purchaseData);
-                      this.__populateModels();
+                      this.__populateModels(modelId);
                       anatomicModelDetails.setAnatomicalModelsData(found);
                     }
                   })
@@ -315,7 +318,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         .catch(err => console.error(err));
     },
 
-    __populateModels: function() {
+    __populateModels: function(selectModelId) {
       const models = this.__anatomicalModels;
 
       this.__anatomicalModelsModel.removeAll();
@@ -356,25 +359,33 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
         sortModel(sortBy);
         models.forEach(model => this.__anatomicalModelsModel.append(qx.data.marshal.Json.createModel(model)));
       }, this);
+
+      // select model after timeout, there is something that changes the selection to empty after populating the list
+      setTimeout(() => {
+        const modelsUIList = this.getChildControl("models-list");
+        if (selectModelId) {
+          const entryFound = modelsUIList.getSelectables().find(entry => "getModelId" in entry && entry.getModelId() === selectModelId);
+          modelsUIList.setSelection([entryFound]);
+        } else if (modelsUIList.getSelectables().length) {
+          // select first
+          modelsUIList.setSelection([modelsUIList.getSelectables()[0]]);
+        }
+      }, 100);
     },
 
     __sendImportModelMessage: function(modelId) {
+      const store = osparc.store.Store.getInstance();
+      const currentStudy = store.getCurrentStudy();
       const nodeId = this.getOpenBy();
-      if (nodeId) {
-        const store = osparc.store.Store.getInstance();
-        const currentStudy = store.getCurrentStudy();
-        if (!currentStudy) {
-          return;
-        }
-        const node = currentStudy.getWorkbench().getNode(nodeId);
-        if (node && node.getIFrame()) {
-          const msg = {
-            "type": "importModel",
-            "message": {
-              "modelId": modelId,
-            },
-          };
-          node.getIFrame().sendMessageToIframe(msg);
+      if (currentStudy && nodeId) {
+        const msg = {
+          "type": "importModel",
+          "message": {
+            "modelId": modelId,
+          },
+        };
+        if (currentStudy.sendMessageToIframe(nodeId, msg)) {
+          this.fireEvent("importMessageSent");
         }
       }
     },
