@@ -30,8 +30,10 @@ from simcore_postgres_database.utils_repos import (
 from simcore_postgres_database.utils_users import (
     UsersRepo,
     generate_alternative_username,
+    is_private,
+    is_public,
 )
-from sqlalchemy import Column, delete
+from sqlalchemy import delete
 from sqlalchemy.engine.row import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -52,20 +54,7 @@ def _parse_as_user(user_id: Any) -> UserID:
         raise UserNotFoundError(uid=user_id, user_id=user_id) from err
 
 
-#
-# Privacy settings
-#
-
-
-def _is_private(hide_attribute: Column, caller_id: UserID):
-    return hide_attribute.is_(True) & (users.c.id != caller_id)
-
-
-def _is_public(hide_attribute: Column, caller_id: UserID):
-    return hide_attribute.is_(False) | (users.c.id == caller_id)
-
-
-def _public_user_cols(caller_id: UserID):
+def _public_user_cols(caller_id: int):
     return (
         # Fits PublicUser model
         users.c.id.label("user_id"),
@@ -73,21 +62,21 @@ def _public_user_cols(caller_id: UserID):
         # privacy settings
         sa.case(
             (
-                _is_private(users.c.privacy_hide_email, caller_id),
+                is_private(users.c.privacy_hide_email, caller_id),
                 None,
             ),
             else_=users.c.email,
         ).label("email"),
         sa.case(
             (
-                _is_private(users.c.privacy_hide_fullname, caller_id),
+                is_private(users.c.privacy_hide_fullname, caller_id),
                 None,
             ),
             else_=users.c.first_name,
         ).label("first_name"),
         sa.case(
             (
-                _is_private(users.c.privacy_hide_fullname, caller_id),
+                is_private(users.c.privacy_hide_fullname, caller_id),
                 None,
             ),
             else_=users.c.last_name,
@@ -136,11 +125,11 @@ async def search_public_user(
         .where(
             users.c.name.ilike(_pattern)
             | (
-                _is_public(users.c.privacy_hide_email, caller_id)
+                is_public(users.c.privacy_hide_email, caller_id)
                 & users.c.email.ilike(_pattern)
             )
             | (
-                _is_public(users.c.privacy_hide_fullname, caller_id)
+                is_public(users.c.privacy_hide_fullname, caller_id)
                 & (
                     users.c.first_name.ilike(_pattern)
                     | users.c.last_name.ilike(_pattern)
@@ -168,15 +157,16 @@ async def get_user_or_raise(
     assert return_column_names is not None  # nosec
     assert set(return_column_names).issubset(users.columns.keys())  # nosec
 
+    query = sa.select(*(users.columns[name] for name in return_column_names)).where(
+        users.c.id == user_id
+    )
+
     async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.execute(
-            sa.select(*(users.columns[name] for name in return_column_names)).where(
-                users.c.id == user_id
-            )
-        )
+        result = await conn.execute(query)
         row = result.first()
         if row is None:
             raise UserNotFoundError(uid=user_id)
+
         user: dict[str, Any] = row._asdict()
         return user
 
@@ -444,7 +434,7 @@ async def get_user_billing_details(
     async with pass_or_acquire_connection(engine, connection) as conn:
         query = UsersRepo.get_billing_details_query(user_id=user_id)
         result = await conn.execute(query)
-        row = result.fetchone()
+        row = result.first()
         if not row:
             raise BillingDetailsNotFoundError(user_id=user_id)
         return UserBillingDetails.model_validate(row)
@@ -459,7 +449,7 @@ async def delete_user_by_id(
             .where(users.c.id == user_id)
             .returning(users.c.id)  # Return the ID of the deleted row otherwise None
         )
-        deleted_user = result.fetchone()
+        deleted_user = result.first()
 
         # If no row was deleted, the user did not exist
         return bool(deleted_user)

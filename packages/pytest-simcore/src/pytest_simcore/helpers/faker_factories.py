@@ -16,10 +16,11 @@ import itertools
 import json
 import random
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 from uuid import uuid4
 
+import arrow
 import faker
 from faker import Faker
 
@@ -182,7 +183,7 @@ def fake_task_factory(first_internal_id=1) -> Callable:
     _index_in_sequence = itertools.count(start=first_internal_id)
 
     def fake_task(**overrides) -> dict[str, Any]:
-        t0 = datetime.utcnow()
+        t0 = arrow.utcnow().datetime
         data = {
             "project_id": uuid4(),
             "node_id": uuid4(),
@@ -193,7 +194,6 @@ def fake_task_factory(first_internal_id=1) -> Callable:
             "outputs": json.dumps({}),
             "image": json.dumps({}),
             "state": random.choice(_get_comp_pipeline_test_states()),
-            "submit": t0,
             "start": t0 + timedelta(seconds=1),
             "end": t0 + timedelta(minutes=5),
         }
@@ -251,7 +251,7 @@ def random_product(
 
 
 def utcnow() -> datetime:
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)
 
 
 def random_payment_method(

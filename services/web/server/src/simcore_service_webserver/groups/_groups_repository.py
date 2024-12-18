@@ -25,6 +25,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from simcore_postgres_database.utils_users import is_private, is_public
 from sqlalchemy import and_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.row import Row
@@ -417,10 +418,7 @@ async def get_user_from_email(
         result = await conn.stream(
             sa.select(users.c.id).where(
                 (users.c.email == email)
-                & (
-                    users.c.privacy_hide_email.is_(False)
-                    | (users.c.id == caller_user_id)
-                )
+                & is_public(users.c.privacy_hide_email, caller_id=caller_user_id)
             )
         )
         user = await result.fetchone()
@@ -434,30 +432,28 @@ async def get_user_from_email(
 #
 
 
-def _group_user_cols(caller_user_id: int):
+def _group_user_cols(caller_id: UserID):
     return (
         users.c.id,
         users.c.name,
         # privacy settings
         sa.case(
             (
-                users.c.privacy_hide_email.is_(True) & (users.c.id != caller_user_id),
+                is_private(users.c.privacy_hide_email, caller_id),
                 None,
             ),
             else_=users.c.email,
         ).label("email"),
         sa.case(
             (
-                users.c.privacy_hide_fullname.is_(True)
-                & (users.c.id != caller_user_id),
+                is_private(users.c.privacy_hide_fullname, caller_id),
                 None,
             ),
             else_=users.c.first_name,
         ).label("first_name"),
         sa.case(
             (
-                users.c.privacy_hide_fullname.is_(True)
-                & (users.c.id != caller_user_id),
+                is_private(users.c.privacy_hide_fullname, caller_id),
                 None,
             ),
             else_=users.c.last_name,
