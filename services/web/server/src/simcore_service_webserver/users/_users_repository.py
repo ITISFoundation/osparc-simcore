@@ -51,7 +51,7 @@ def _parse_as_user(user_id: Any) -> UserID:
     try:
         return TypeAdapter(UserID).validate_python(user_id)
     except ValidationError as err:
-        raise UserNotFoundError(uid=user_id, user_id=user_id) from err
+        raise UserNotFoundError(user_id=user_id) from err
 
 
 def _public_user_cols(caller_id: int):
@@ -105,7 +105,7 @@ async def get_public_user(
         result = await conn.execute(query)
         user = result.first()
         if not user:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
         return user
 
 
@@ -165,7 +165,7 @@ async def get_user_or_raise(
         result = await conn.execute(query)
         row = result.first()
         if row is None:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
 
         user: dict[str, Any] = row._asdict()
         return user
@@ -181,7 +181,7 @@ async def get_user_primary_group_id(
             ).where(users.c.id == user_id)
         )
         if primary_gid is None:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
         return primary_gid
 
 
@@ -193,7 +193,9 @@ async def get_users_ids_in_group(
 ) -> set[UserID]:
     async with pass_or_acquire_connection(engine, connection) as conn:
         result = await conn.stream(
-            sa.select(user_to_groups.c.uid).where(user_to_groups.c.gid == group_id)
+            sa.select(
+                user_to_groups.c.uid,
+            ).where(user_to_groups.c.gid == group_id)
         )
         return {row.uid async for row in result}
 
@@ -201,7 +203,9 @@ async def get_users_ids_in_group(
 async def get_user_id_from_pgid(app: web.Application, primary_gid: int) -> UserID:
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
         user_id: UserID = await conn.scalar(
-            sa.select(users.c.id).where(users.c.primary_gid == primary_gid)
+            sa.select(
+                users.c.id,
+            ).where(users.c.primary_gid == primary_gid)
         )
         return user_id
 
@@ -221,7 +225,7 @@ async def get_user_fullname(app: web.Application, *, user_id: UserID) -> FullNam
         )
         user = await result.first()
         if not user:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
 
         return FullNameDict(
             first_name=user.first_name,
@@ -234,7 +238,10 @@ async def get_guest_user_ids_and_names(
 ) -> list[tuple[UserID, UserNameID]]:
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
         result = await conn.stream(
-            sa.select(users.c.id, users.c.name).where(users.c.role == UserRole.GUEST)
+            sa.select(
+                users.c.id,
+                users.c.name,
+            ).where(users.c.role == UserRole.GUEST)
         )
 
         return TypeAdapter(list[tuple[UserID, UserNameID]]).validate_python(
@@ -250,10 +257,12 @@ async def get_user_role(app: web.Application, *, user_id: UserID) -> UserRole:
 
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
         user_role = await conn.scalar(
-            sa.select(users.c.role).where(users.c.id == user_id)
+            sa.select(
+                users.c.role,
+            ).where(users.c.id == user_id)
         )
         if user_role is None:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
         assert isinstance(user_role, UserRole)  # nosec
         return user_role
 
@@ -291,7 +300,9 @@ async def do_update_expired_users(
     async with transaction_context(engine, connection) as conn:
         result = await conn.stream(
             users.update()
-            .values(status=UserStatus.EXPIRED)
+            .values(
+                status=UserStatus.EXPIRED,
+            )
             .where(
                 (users.c.expires_at.is_not(None))
                 & (users.c.status == UserStatus.ACTIVE)
@@ -311,7 +322,11 @@ async def update_user_status(
 ):
     async with transaction_context(engine, connection) as conn:
         await conn.execute(
-            users.update().values(status=new_status).where(users.c.id == user_id)
+            users.update()
+            .values(
+                status=new_status,
+            )
+            .where(users.c.id == user_id)
         )
 
 
@@ -325,7 +340,9 @@ async def search_users_and_get_profile(
     users_alias = sa.alias(users, name="users_alias")
 
     invited_by = (
-        sa.select(users_alias.c.name)
+        sa.select(
+            users_alias.c.name,
+        )
         .where(users_pre_registration_details.c.created_by == users_alias.c.id)
         .label("invited_by")
     )
@@ -384,11 +401,19 @@ async def get_user_products(
 ) -> list[Row]:
     async with pass_or_acquire_connection(engine, connection) as conn:
         product_name_subq = (
-            sa.select(products.c.name)
+            sa.select(
+                products.c.name,
+            )
             .where(products.c.group_id == groups.c.gid)
             .label("product_name")
         )
-        products_gis_subq = sa.select(products.c.group_id).distinct().subquery()
+        products_gis_subq = (
+            sa.select(
+                products.c.group_id,
+            )
+            .distinct()
+            .subquery()
+        )
         query = (
             sa.select(
                 groups.c.gid,
@@ -419,7 +444,9 @@ async def create_user_details(
     async with transaction_context(engine, connection) as conn:
         await conn.execute(
             sa.insert(users_pre_registration_details).values(
-                created_by=created_by, pre_email=email, **other_values
+                created_by=created_by,
+                pre_email=email,
+                **other_values,
             )
         )
 
@@ -490,7 +517,7 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
         )
         row = await result.first()
         if not row:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
 
         my_profile = MyProfile.model_validate(row, from_attributes=True)
         assert my_profile.id == user_id  # nosec
