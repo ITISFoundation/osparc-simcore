@@ -3,6 +3,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination import Page
+from models_library.licensed_items import LicensedItemID
 from pydantic import PositiveInt
 from simcore_service_api_server.api.dependencies.authentication import (
     get_current_user_id,
@@ -12,11 +13,13 @@ from simcore_service_api_server.api.dependencies.webserver_rpc import (
     get_wb_api_rpc_client,
 )
 from simcore_service_api_server.models.pagination import PaginationParams
+from simcore_service_api_server.models.schemas.wallets import LicensedItemCheckoutData
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.model_adapter import (
+    LicensedItemCheckoutGet,
     LicensedItemGet,
     WalletGetWithAvailableCreditsLegacy,
 )
@@ -85,4 +88,30 @@ async def get_available_licensed_items_for_wallet(
         wallet_id=wallet_id,
         user_id=user_id,
         page_params=page_params,
+    )
+
+
+@router.post(
+    "/{wallet_id}/licensed-items/{licensed_item_id}/checkout",
+    response_model=LicensedItemCheckoutGet,
+    status_code=status.HTTP_200_OK,
+    responses=WALLET_STATUS_CODES,
+    description="Checkout licensed item",
+    include_in_schema=False,
+)
+async def checkout_licensed_item_for_wallet(
+    wallet_id: int,
+    licensed_item_id: LicensedItemID,
+    web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    product_name: Annotated[str, Depends(get_product_name)],
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    checkout_data: LicensedItemCheckoutData,
+):
+    return await web_api_rpc.checkout_licensed_item_for_wallet(
+        product_name=product_name,
+        user_id=user_id,
+        wallet_id=wallet_id,
+        licensed_item_id=licensed_item_id,
+        num_of_seats=checkout_data.number_of_seats,
+        service_run_id=checkout_data.service_run_id,
     )

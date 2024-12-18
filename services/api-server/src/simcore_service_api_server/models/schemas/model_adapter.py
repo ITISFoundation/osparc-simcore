@@ -10,6 +10,9 @@ from models_library.api_schemas_api_server.pricing_plans import (
 from models_library.api_schemas_webserver.licensed_items import (
     LicensedItemGet as _LicensedItemGet,
 )
+from models_library.api_schemas_webserver.licensed_items_checkouts import (
+    LicensedItemCheckoutGet as _LicensedItemCheckoutGet,
+)
 from models_library.api_schemas_webserver.product import (
     GetCreditPrice as _GetCreditPrice,
 )
@@ -22,12 +25,17 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.basic_types import IDStr, NonNegativeDecimal
 from models_library.groups import GroupID
 from models_library.licensed_items import LicensedItemID, LicensedResourceType
+from models_library.products import ProductName
 from models_library.resource_tracker import (
     PricingPlanClassification,
     PricingPlanId,
     PricingUnitId,
     UnitExtraInfo,
 )
+from models_library.resource_tracker_licensed_items_checkouts import (
+    LicensedItemCheckoutID,
+)
+from models_library.users import UserID
 from models_library.wallets import WalletID, WalletStatus
 from pydantic import (
     BaseModel,
@@ -142,4 +150,20 @@ class LicensedItemGet(BaseModel):
 
 assert set(LicensedItemGet.model_fields.keys()) == set(
     _LicensedItemGet.model_fields.keys()
+)
+
+
+class LicensedItemCheckoutGet(BaseModel):
+    licensed_item_checkout_id: LicensedItemCheckoutID
+    licensed_item_id: LicensedItemID
+    wallet_id: WalletID
+    user_id: UserID
+    product_name: ProductName
+    started_at: datetime
+    stopped_at: datetime | None
+    num_of_seats: int
+
+
+assert set(LicensedItemCheckoutGet.model_fields.keys()) == set(
+    _LicensedItemCheckoutGet.model_fields.keys()
 )
