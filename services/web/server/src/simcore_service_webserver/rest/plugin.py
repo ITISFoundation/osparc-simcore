@@ -14,7 +14,7 @@ from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
     error_middleware_factory,
 )
-from swagger_ui import api_doc
+from swagger_ui import api_doc  # type: ignore
 
 from .._meta import API_VTAG
 from ..security.plugin import setup_security
