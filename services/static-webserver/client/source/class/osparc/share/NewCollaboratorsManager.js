@@ -57,7 +57,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     },
 
     __renderLayout: function() {
-      const introText = this.tr("In order to start Sharing with other members, you first need to belong to an Organization.");
+      const introText = this.tr("In order to start Sharing, you need to belong to an Organization or Search other users.");
       const introLabel = this.__introLabel = new qx.ui.basic.Label(introText).set({
         rich: true,
         wrap: true,
@@ -142,7 +142,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
       this.__potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, includeProductEveryone)
       const anyCollaborator = Object.keys(this.__potentialCollaborators).length;
-      // tell the user that belonging to an organization is required to start sharing
+      // tell the user that belonging to an organization or searching for "unknown users" is required to start sharing
       this.__introLabel.setVisibility(anyCollaborator ? "excluded" : "visible");
       this.__orgsButton.setVisibility(anyCollaborator ? "excluded" : "visible");
       // or start sharing
