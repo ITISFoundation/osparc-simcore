@@ -75,7 +75,7 @@ async def test_licensed_items_checkouts_db__force_release_license_seats_by_run_i
         user_id=_USER_ID_1,
         user_email="test@test.com",
         product_name="osparc",
-        service_run_id=resource_tracker_service_run_id,  # <-- RUN ID 1
+        service_run_id=resource_tracker_service_run_id,
         started_at=datetime.now(tz=UTC),
         num_of_seats=1,
     )
@@ -90,7 +90,7 @@ async def test_licensed_items_checkouts_db__force_release_license_seats_by_run_i
     await licensed_items_checkouts_db.create(
         engine,
         data=CreateLicensedItemCheckoutDB.model_construct(
-            **_create_license_item_checkout_db_2  # <-- RUN ID 1
+            **_create_license_item_checkout_db_2
         ),
     )
 
@@ -101,7 +101,7 @@ async def test_licensed_items_checkouts_db__force_release_license_seats_by_run_i
     checkout = await licensed_items_checkouts_db.create(
         engine,
         data=CreateLicensedItemCheckoutDB.model_construct(
-            **_create_license_item_checkout_db_3  # <-- RUN ID 1
+            **_create_license_item_checkout_db_3
         ),
     )
 
