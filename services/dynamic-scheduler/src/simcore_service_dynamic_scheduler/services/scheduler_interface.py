@@ -103,7 +103,6 @@ async def restart_user_services(app: FastAPI, *, node_id: NodeID) -> None:
         raise NotImplementedError
 
     director_v2_client = DirectorV2Client.get_from_app_state(app)
-
     await director_v2_client.restart_user_services(node_id=node_id)
 
 
