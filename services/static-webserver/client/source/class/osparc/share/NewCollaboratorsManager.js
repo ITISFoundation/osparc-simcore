@@ -29,8 +29,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     this.__renderLayout();
 
     this.__selectedCollaborators = [];
-    this.__visibleCollaborators = {};
-    this.__reloadCollaborators();
+    this.__potentialCollaborators = {};
+    this.__reloadPotentialCollaborators();
 
     this.center();
     this.open();
@@ -49,7 +49,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     __orgsButton: null,
     __shareButton: null,
     __selectedCollaborators: null,
-    __visibleCollaborators: null,
+    __potentialCollaborators: null,
 
     getActionButton: function() {
       return this.__shareButton;
@@ -121,7 +121,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         });
     },
 
-    __reloadCollaborators: function() {
+    __reloadPotentialCollaborators: function() {
       let includeProductEveryone = false;
       if (this.__showOrganizations === false) {
         includeProductEveryone = false;
@@ -135,18 +135,19 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         // all users can share services with ProductEveryone
         includeProductEveryone = true;
       }
-      const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, includeProductEveryone)
-      this.__visibleCollaborators = potentialCollaborators;
-      const anyCollaborator = Object.keys(potentialCollaborators).length;
+
+      this.__potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, includeProductEveryone)
+      const anyCollaborator = Object.keys(this.__potentialCollaborators).length;
       // tell the user that belonging to an organization is required to start sharing
       this.__introLabel.setVisibility(anyCollaborator ? "excluded" : "visible");
       this.__orgsButton.setVisibility(anyCollaborator ? "excluded" : "visible");
-
       // or start sharing
       this.__textFilter.setVisibility(anyCollaborator ? "visible" : "excluded");
       this.__collabButtonsContainer.setVisibility(anyCollaborator ? "visible" : "excluded");
       this.__shareButton.setVisibility(anyCollaborator ? "visible" : "excluded");
-      this.__addEditors();
+
+      const potentialCollaborators = Object.values(this.__potentialCollaborators);
+      this.__addPotentialCollaborators(potentialCollaborators);
     },
 
     __collaboratorButton: function(collaborator) {
@@ -164,11 +165,9 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       return collaboratorButton;
     },
 
-    __addEditors: function() {
-      const visibleCollaborators = Object.values(this.__visibleCollaborators);
-
+    __addPotentialCollaborators: function(potentialCollaborators) {
       // sort them first
-      visibleCollaborators.sort((a, b) => {
+      potentialCollaborators.sort((a, b) => {
         if (a["collabType"] > b["collabType"]) {
           return 1;
         }
@@ -194,15 +193,15 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       }
 
       const existingCollaborators = existingCollabs.map(c => parseInt(c));
-      visibleCollaborators.forEach(visibleCollaborator => {
+      potentialCollaborators.forEach(potentialCollaborator => {
         // do not list the visibleCollaborators that are already collaborators
-        if (existingCollaborators.includes(visibleCollaborator.getGroupId())) {
+        if (existingCollaborators.includes(potentialCollaborator.getGroupId())) {
           return;
         }
-        if (this.__showOrganizations === false && visibleCollaborator["collabType"] !== 2) {
+        if (this.__showOrganizations === false && potentialCollaborator["collabType"] !== 2) {
           return;
         }
-        this.__collabButtonsContainer.add(this.__collaboratorButton(visibleCollaborator));
+        this.__collabButtonsContainer.add(this.__collaboratorButton(potentialCollaborator));
       });
     },
 
