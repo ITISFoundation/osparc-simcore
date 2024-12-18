@@ -28,28 +28,30 @@ qx.Class.define("osparc.data.model.User", {
   construct: function(userData) {
     this.base(arguments);
 
-    let description = "";
-    if (userData["first_name"]) {
-      description = userData["first_name"];
-      if (userData["last_name"]) {
-        description += " " + userData["last_name"];
+    const userId = ("id" in userData) ? parseInt(userData["id"]) : parseInt(userData["userId"]);
+    const groupId = ("gid" in userData) ? parseInt(userData["gid"]) : parseInt(userData["groupId"]);
+    const username = userData["userName"];
+    const email = ("login" in userData) ? userData["login"] : userData["email"];
+    const firstName = ("first_name" in userData) ? userData["first_name"] : userData["firstName"];
+    const lastName = ("last_name" in userData) ? userData["last_name"] : userData["lastName"];
+    let description = [firstName, lastName].join(" ").trim(); // the null values will be replaced by empty strings
+    if (email) {
+      if (description) {
+        description += " - "
       }
-      description += " - ";
+      description += email;
     }
-    if (userData["login"]) {
-      description += userData["login"];
-    }
-    const thumbnail = osparc.utils.Avatar.emailToThumbnail(userData["login"], userData["userName"]);
+    const thumbnail = osparc.utils.Avatar.emailToThumbnail(email, username);
     this.set({
-      userId: ("id" in userData) ? parseInt(userData["id"]) : parseInt(userData["userId"]),
-      groupId: ("gid" in userData) ? parseInt(userData["gid"]) : parseInt(userData["groupId"]),
-      username: userData["userName"],
-      firstName: ("first_name" in userData) ? userData["first_name"] : userData["firstName"],
-      lastName: ("last_name" in userData) ? userData["last_name"] : userData["lastName"],
-      email: ("login" in userData) ? userData["login"] : userData["email"],
-      label: userData["userName"],
-      description,
+      userId,
+      groupId,
+      username,
+      firstName,
+      lastName,
+      email,
       thumbnail,
+      label: username,
+      description,
     });
   },
 
