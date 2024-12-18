@@ -313,7 +313,7 @@ async def create_standard_group(
             sa.select(users.c.primary_gid).where(users.c.id == user_id)
         )
         if not user:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
 
         result = await conn.stream(
             # pylint: disable=no-value-for-parameter
