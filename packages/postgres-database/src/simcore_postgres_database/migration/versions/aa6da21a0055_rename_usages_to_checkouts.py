@@ -1,7 +1,7 @@
 """rename usages to checkouts
 
 Revision ID: aa6da21a0055
-Revises: 3720518f82a7
+Revises: 77ac824a77ff
 Create Date: 2024-12-17 13:47:09.304574+00:00
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "aa6da21a0055"
-down_revision = "3720518f82a7"
+down_revision = "77ac824a77ff"
 branch_labels = None
 depends_on = None
 
