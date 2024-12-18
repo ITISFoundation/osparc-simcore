@@ -183,7 +183,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
       // once the groups were removed, the remaining group ids are users' primary groups ids
       const usersStore = osparc.store.Users.getInstance();
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const myGroupId = groupsStore.getMyGroupId();
       for (let i=0; i<gids.length; i++) {
         const gid = gids[i];
         if (myGroupId !== gid) {
@@ -194,8 +194,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
       }
 
+      const canIWrite = osparc.data.model.Study.canIWrite(accessRights);
       if (sharedGrps.length === 0) {
-        if (osparc.data.model.Study.canIWrite(accessRights)) {
+        if (canIWrite) {
           shareIcon.set({
             toolTipText: qx.locale.Manager.tr("Share")
           });
