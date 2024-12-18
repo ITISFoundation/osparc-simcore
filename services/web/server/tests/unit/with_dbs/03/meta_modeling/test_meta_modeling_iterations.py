@@ -70,7 +70,6 @@ async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict
         await conn.execute(projects.delete())
 
 
-@pytest.mark.skip(reason="TODO: temporary removed to check blocker")
 @pytest.mark.acceptance_test()
 async def test_iterators_workflow(
     client: TestClient,
