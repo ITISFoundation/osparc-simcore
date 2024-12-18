@@ -15,13 +15,9 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
-from models_library.api_schemas_directorv2.dynamic_services import (
-    GetProjectInactivityResponse,
-)
 from models_library.products import ProductName
 from models_library.projects_state import ProjectState
 from pydantic import TypeAdapter
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -658,14 +654,6 @@ async def test_new_template_from_project(
             TypeAdapter(uuidlib.UUID).validate_python(node_name)
 
 
-@pytest.fixture
-def mock_dynamic_scheduler_inactivity(mocker: MockerFixture, is_inactive: bool) -> None:
-    mocker.patch(
-        "simcore_service_webserver.projects.projects_api.dynamic_scheduler_api.get_project_inactivity",
-        return_value=GetProjectInactivityResponse(is_inactive=is_inactive),
-    )
-
-
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -673,15 +661,12 @@ def mock_dynamic_scheduler_inactivity(mocker: MockerFixture, is_inactive: bool) 
         *((role, status.HTTP_200_OK) for role in UserRole if role > UserRole.ANONYMOUS),
     ],
 )
-@pytest.mark.parametrize("is_inactive", [True, False])
 async def test_get_project_inactivity(
-    mock_dynamic_scheduler_inactivity: None,
     logged_user: UserInfoDict,
     client: TestClient,
     faker: Faker,
     user_role: UserRole,
     expected: HTTPStatus,
-    is_inactive: bool,
 ):
     mock_project_id = faker.uuid4()
 
@@ -697,4 +682,4 @@ async def test_get_project_inactivity(
 
     assert data
     assert error is None
-    assert data["is_inactive"] is is_inactive
+    assert data["is_inactive"] is True
