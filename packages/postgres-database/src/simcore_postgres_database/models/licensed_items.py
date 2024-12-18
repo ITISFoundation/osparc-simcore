@@ -58,6 +58,11 @@ licensed_items = sa.Table(
         nullable=False,
         doc="Product name",
     ),
+    sa.Column(
+        "license_key",
+        sa.String,
+        nullable=True,
+    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
 )
