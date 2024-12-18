@@ -576,7 +576,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const data = e.getData();
         const destWorkspaceId = data["workspaceId"];
         const destFolderId = data["folderId"];
-        this._folderToFolderRequested(folderId, currentWorkspaceId, destWorkspaceId, destFolderId);
+        this.__folderToFolderRequested(folderId, currentWorkspaceId, destWorkspaceId, destFolderId);
       });
       moveFolderTo.addListener("cancel", () => win.close());
     },
@@ -591,7 +591,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    _folderToFolderRequested: function(folderId, workspaceId, destWorkspaceId, destFolderId) {
+    __folderToFolderRequested: function(folderId, workspaceId, destWorkspaceId, destFolderId) {
       if (destWorkspaceId === workspaceId) {
         this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
       } else {
@@ -1183,7 +1183,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           destWorkspaceId,
           destFolderId,
         } = e.getData();
-        this._moveStudyToFolderReqested(studyData, destWorkspaceId, destFolderId);
+        this.__studyToFolderRequested(studyData, destWorkspaceId, destFolderId);
       });
       workspacesAndFoldersTree.addListener("folderToFolderRequested", e => {
         const {
@@ -1192,7 +1192,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           destWorkspaceId,
           destFolderId,
         } = e.getData();
-        this._folderToFolderRequested(folderId, workspaceId, destWorkspaceId, destFolderId);
+        this.__folderToFolderRequested(folderId, workspaceId, destWorkspaceId, destFolderId);
       });
 
       this._resourceFilter.addListener("trashStudyRequested", e => {
@@ -1686,7 +1686,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    _moveStudyToFolderReqested: function(studyData, destWorkspaceId, destFolderId) {
+    __studyToFolderRequested: function(studyData, destWorkspaceId, destFolderId) {
       if (studyData["workspaceId"] === destWorkspaceId) {
         this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
       } else {
@@ -1713,7 +1713,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const data = e.getData();
           const destWorkspaceId = data["workspaceId"];
           const destFolderId = data["folderId"];
-          this._moveStudyToFolderReqested(studyData, destWorkspaceId, destFolderId);
+          this.__studyToFolderRequested(studyData, destWorkspaceId, destFolderId);
         }, this);
         moveStudyTo.addListener("cancel", () => win.close());
       }, this);
