@@ -7,11 +7,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from ._common import RefActions, column_modified_datetime
 from .base import metadata
 
-resource_tracker_licensed_items_usage = sa.Table(
-    "resource_tracker_licensed_items_usage",
+resource_tracker_licensed_items_checkouts = sa.Table(
+    "resource_tracker_licensed_items_checkouts",
     metadata,
     sa.Column(
-        "licensed_item_usage_id",
+        "licensed_item_checkout_id",
         UUID(as_uuid=True),
         nullable=False,
         primary_key=True,
@@ -19,7 +19,7 @@ resource_tracker_licensed_items_usage = sa.Table(
     ),
     sa.Column(
         "licensed_item_id",
-        sa.String,
+        UUID(as_uuid=True),
         nullable=True,
     ),
     sa.Column(
