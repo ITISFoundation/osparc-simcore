@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Iterable
 
 import pytest
-from playwright.sync_api._generated import BrowserContext, Playwright
+from playwright.sync_api._generated import BrowserContext, Playwright, expect
 from pydantic import AnyUrl
 
 
@@ -108,9 +108,11 @@ def test_simple_workspace_workflow(
         and response.request.method == "POST"
     ) as response_info:
         page.get_by_test_id("newWorkspaceButton").click()
-        page.wait_for_timeout(500)
+
+        workspace_title_field = page.get_by_test_id("workspaceEditorTitle")
+        # wait until the title is automatically filled up
+        expect(workspace_title_field).not_to_have_value("")
         page.get_by_test_id("workspaceEditorSave").click()
-        page.wait_for_timeout(500)
 
     _workspace_id = response_info.value.json()["data"]["workspaceId"]
     page.get_by_test_id(f"workspaceItem_{_workspace_id}").click()
