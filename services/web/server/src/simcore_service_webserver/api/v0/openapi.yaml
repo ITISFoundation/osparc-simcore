@@ -10342,6 +10342,11 @@ components:
         name:
           type: string
           title: Name
+        licenseKey:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Licensekey
         licensedResourceType:
           $ref: '#/components/schemas/LicensedResourceType'
         pricingPlanId:
@@ -10361,6 +10366,7 @@ components:
       required:
       - licensedItemId
       - name
+      - licenseKey
       - licensedResourceType
       - pricingPlanId
       - createdAt
