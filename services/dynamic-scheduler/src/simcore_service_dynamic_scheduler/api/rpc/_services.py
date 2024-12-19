@@ -63,6 +63,11 @@ async def stop_dynamic_service(
 
 
 @router.expose()
+async def restart_user_services(app: FastAPI, *, node_id: NodeID) -> None:
+    await scheduler_interface.restart_user_services(app, node_id=node_id)
+
+
+@router.expose()
 async def retrieve_inputs(
     app: FastAPI, *, node_id: NodeID, port_keys: list[ServicePortKey]
 ) -> RetrieveDataOutEnveloped:

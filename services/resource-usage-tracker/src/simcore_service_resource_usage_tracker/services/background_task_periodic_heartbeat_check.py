@@ -6,9 +6,9 @@ from fastapi import FastAPI
 from models_library.resource_tracker import (
     CreditTransactionStatus,
     ResourceTrackerServiceType,
-    ServiceRunId,
     ServiceRunStatus,
 )
+from models_library.services_types import ServiceRunID
 from pydantic import NonNegativeInt, PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -28,7 +28,7 @@ async def _check_service_heartbeat(
     base_start_timestamp: datetime,
     resource_usage_tracker_missed_heartbeat_interval: timedelta,
     resource_usage_tracker_missed_heartbeat_counter_fail: NonNegativeInt,
-    service_run_id: ServiceRunId,
+    service_run_id: ServiceRunID,
     last_heartbeat_at: datetime,
     missed_heartbeat_counter: NonNegativeInt,
     modified_at: datetime,
@@ -74,7 +74,7 @@ async def _check_service_heartbeat(
 
 async def _close_unhealthy_service(
     db_engine: AsyncEngine,
-    service_run_id: ServiceRunId,
+    service_run_id: ServiceRunID,
     base_start_timestamp: datetime,
 ):
     # 1. Close the service_run

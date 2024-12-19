@@ -6,14 +6,14 @@ from models_library.api_schemas_directorv2.services import (
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 
 class DynamicServiceVolumeLabels(BaseModel):
     node_uuid: NodeID
-    run_id: RunID
+    run_id: ServiceRunID
     source: str
     study_id: ProjectID
     swarm_stack_name: str

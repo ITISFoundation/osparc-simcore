@@ -24,6 +24,7 @@ class LicensedResourceType(StrAutoEnum):
 class LicensedItemDB(BaseModel):
     licensed_item_id: LicensedItemID
     name: str
+    license_key: str | None
     licensed_resource_type: LicensedResourceType
     pricing_plan_id: PricingPlanId
     product_name: ProductName

@@ -45,6 +45,7 @@ from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_mock.plugin import MockerFixture
@@ -442,6 +443,7 @@ async def test_send_computation_task(
     task_labels: ContainerLabelsDict,
     empty_hardware_info: HardwareInfo,
     faker: Faker,
+    resource_tracking_run_id: ServiceRunID,
 ):
     _DASK_EVENT_NAME = faker.pystr()
 
@@ -503,6 +505,7 @@ async def test_send_computation_task(
         ),
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
@@ -559,6 +562,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     """rationale:
     When a task is submitted to the dask backend, a dask future is returned.
@@ -594,6 +598,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         remote_fct=fake_sidecar_fct,
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -649,6 +654,7 @@ async def test_abort_computation_tasks(
     faker: Faker,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     _DASK_EVENT_NAME = faker.pystr()
 
@@ -687,6 +693,7 @@ async def test_abort_computation_tasks(
         remote_fct=fake_remote_fct,
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -738,6 +745,7 @@ async def test_failed_task_returns_exceptions(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -758,6 +766,7 @@ async def test_failed_task_returns_exceptions(
         remote_fct=fake_failing_sidecar_fct,
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -800,6 +809,7 @@ async def test_send_computation_task_with_missing_resources_raises(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # remove the workers that can handle gpu
     scheduler_info = dask_client.backend.client.scheduler_info()
@@ -826,6 +836,7 @@ async def test_send_computation_task_with_missing_resources_raises(
             remote_fct=None,
             metadata=comp_run_metadata,
             hardware_info=empty_hardware_info,
+            resource_tracking_run_id=resource_tracking_run_id,
         )
     mocked_user_completed_cb.assert_not_called()
 
@@ -844,6 +855,7 @@ async def test_send_computation_task_with_hardware_info_raises(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # NOTE: running on the default cluster will raise missing resources
     with pytest.raises(MissingComputationalResourcesError):
@@ -855,6 +867,7 @@ async def test_send_computation_task_with_hardware_info_raises(
             remote_fct=None,
             metadata=comp_run_metadata,
             hardware_info=hardware_info,
+            resource_tracking_run_id=resource_tracking_run_id,
         )
     mocked_user_completed_cb.assert_not_called()
 
@@ -872,6 +885,7 @@ async def test_too_many_resources_send_computation_task(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # create an image that needs a huge amount of CPU
     image = Image(
@@ -895,6 +909,7 @@ async def test_too_many_resources_send_computation_task(
             remote_fct=None,
             metadata=comp_run_metadata,
             hardware_info=empty_hardware_info,
+            resource_tracking_run_id=resource_tracking_run_id,
         )
 
     mocked_user_completed_cb.assert_not_called()
@@ -911,6 +926,7 @@ async def test_disconnected_backend_raises_exception(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # DISCONNECT THE CLUSTER
     await dask_spec_local_cluster.close()  # type: ignore
@@ -923,6 +939,7 @@ async def test_disconnected_backend_raises_exception(
             remote_fct=None,
             metadata=comp_run_metadata,
             hardware_info=empty_hardware_info,
+            resource_tracking_run_id=resource_tracking_run_id,
         )
     mocked_user_completed_cb.assert_not_called()
 
@@ -942,6 +959,7 @@ async def test_changed_scheduler_raises_exception(
     unused_tcp_port_factory: Callable,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # change the scheduler (stop the current one and start another at the same address)
     scheduler_address = URL(dask_spec_local_cluster.scheduler_address)
@@ -971,6 +989,7 @@ async def test_changed_scheduler_raises_exception(
                 remote_fct=None,
                 metadata=comp_run_metadata,
                 hardware_info=empty_hardware_info,
+                resource_tracking_run_id=resource_tracking_run_id,
             )
     mocked_user_completed_cb.assert_not_called()
 
@@ -988,6 +1007,7 @@ async def test_get_tasks_status(
     fail_remote_fct: bool,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -1015,6 +1035,7 @@ async def test_get_tasks_status(
         remote_fct=fake_remote_fct,
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -1069,6 +1090,7 @@ async def test_dask_sub_handlers(
     fake_task_handlers: TaskHandlers,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     dask_client.register_handlers(fake_task_handlers)
     _DASK_START_EVENT = "start"
@@ -1098,6 +1120,7 @@ async def test_dask_sub_handlers(
         remote_fct=fake_remote_fct,
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -1142,6 +1165,7 @@ async def test_get_cluster_details(
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
     faker: Faker,
+    resource_tracking_run_id: ServiceRunID,
 ):
     cluster_details = await dask_client.get_cluster_details()
     assert cluster_details
@@ -1178,6 +1202,7 @@ async def test_get_cluster_details(
         ),
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1

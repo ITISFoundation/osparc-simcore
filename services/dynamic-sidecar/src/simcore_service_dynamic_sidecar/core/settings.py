@@ -10,7 +10,7 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import DynamicServiceKey, RunID, ServiceVersion
+from models_library.services import DynamicServiceKey, ServiceRunID, ServiceVersion
 from models_library.users import UserID
 from pydantic import (
     AliasChoices,
@@ -159,7 +159,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DY_SIDECAR_USER_ID: UserID
     DY_SIDECAR_PROJECT_ID: ProjectID
     DY_SIDECAR_NODE_ID: NodeID
-    DY_SIDECAR_RUN_ID: RunID
+    DY_SIDECAR_RUN_ID: ServiceRunID
     DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS: bool
 
     DY_SIDECAR_SERVICE_KEY: DynamicServiceKey | None = None

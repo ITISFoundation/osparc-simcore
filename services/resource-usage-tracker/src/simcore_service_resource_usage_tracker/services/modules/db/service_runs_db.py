@@ -9,10 +9,10 @@ from models_library.products import ProductName
 from models_library.resource_tracker import (
     CreditClassification,
     CreditTransactionStatus,
-    ServiceRunId,
     ServiceRunStatus,
 )
 from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
@@ -46,7 +46,7 @@ async def create_service_run(
     connection: AsyncConnection | None = None,
     *,
     data: ServiceRunCreate,
-) -> ServiceRunId:
+) -> ServiceRunID:
     async with transaction_context(engine, connection) as conn:
         insert_stmt = (
             resource_tracker_service_runs.insert()
@@ -88,7 +88,7 @@ async def create_service_run(
     row = result.first()
     if row is None:
         raise ServiceRunNotCreatedDBError(data=data)
-    return cast(ServiceRunId, row[0])
+    return cast(ServiceRunID, row[0])
 
 
 async def update_service_run_last_heartbeat(
@@ -160,7 +160,7 @@ async def get_service_run_by_id(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    service_run_id: ServiceRunId,
+    service_run_id: ServiceRunID,
 ) -> ServiceRunDB | None:
     async with transaction_context(engine, connection) as conn:
         stmt = sa.select(resource_tracker_service_runs).where(
@@ -376,7 +376,9 @@ async def get_osparc_credits_aggregated_by_service(
 
         subquery = base_query.subquery()
         count_query = sa.select(sa.func.count()).select_from(subquery)
-        count_result = await conn.execute(count_query)
+        count_result = await conn.scalar(count_query)
+        if count_result is None:
+            count_result = 0
 
         # Default ordering and pagination
         list_query = (
@@ -387,7 +389,7 @@ async def get_osparc_credits_aggregated_by_service(
         list_result = await conn.execute(list_query)
 
     return (
-        cast(int, count_result.scalar()),
+        cast(int, count_result),
         [
             OsparcCreditsAggregatedByServiceKeyDB.model_validate(row)
             for row in list_result.fetchall()
@@ -427,10 +429,7 @@ async def export_service_runs_table_to_s3(
                 resource_tracker_service_runs.c.stopped_at,
                 resource_tracker_credit_transactions.c.osparc_credits,
                 resource_tracker_credit_transactions.c.transaction_status,
-                sa.func.coalesce(
-                    _project_tags_subquery.c.project_tags,
-                    sa.cast(sa.text("'{}'"), sa.ARRAY(sa.String)),
-                ).label("project_tags"),
+                _project_tags_subquery.c.project_tags.label("project_tags"),
             )
             .select_from(
                 resource_tracker_service_runs.join(
@@ -590,7 +589,7 @@ async def update_service_missed_heartbeat_counter(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    service_run_id: ServiceRunId,
+    service_run_id: ServiceRunID,
     last_heartbeat_at: datetime,
     missed_heartbeat_counter: int,
 ) -> ServiceRunDB | None:
