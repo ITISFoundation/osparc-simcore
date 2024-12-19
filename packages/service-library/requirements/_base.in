@@ -27,7 +27,6 @@ pydantic
 pyinstrument
 pyyaml
 redis
-repro-zipfile
 tenacity
 toolz
 tqdm
