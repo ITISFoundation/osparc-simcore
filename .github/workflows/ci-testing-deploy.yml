@@ -275,6 +275,8 @@ jobs:
     name: "[build] docker images (excluding frontend)"
     steps:
       - uses: actions/checkout@v4
+      - name: setup QEMU
+        uses: docker/setup-qemu-action@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -311,6 +313,8 @@ jobs:
     name: "[build] docker images (frontend-only)"
     steps:
       - uses: actions/checkout@v4
+      - name: setup QEMU
+        uses: docker/setup-qemu-action@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
