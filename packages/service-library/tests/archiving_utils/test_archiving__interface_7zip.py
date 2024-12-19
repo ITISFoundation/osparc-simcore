@@ -64,8 +64,6 @@ async def test_compress_progress_parser(
 async def test_archive_unarchive(
     mixed_file_types: Path, archive_path: Path, unpacked_archive: Path, compress: bool
 ):
-    await archive_dir(
-        mixed_file_types, archive_path, compress=compress, store_relative_path=True
-    )
+    await archive_dir(mixed_file_types, archive_path, compress=compress)
 
     await unarchive_dir(archive_path, unpacked_archive)

@@ -4,19 +4,32 @@ import logging
 import os
 import re
 from collections.abc import Awaitable, Callable
+from contextlib import AsyncExitStack
 from pathlib import Path
-from typing import Final
+from typing import Final, Iterator
 
+import tqdm
+from models_library.basic_types import IDStr
 from pydantic import NonNegativeInt
+from servicelib.logging_utils import log_catch
+from tqdm.contrib.logging import tqdm_logging_redirect
 
 from ..progress_bar import ProgressBarData
 from ._errors import ArchiveError
+from ._tdqm_utils import (
+    TQDM_FILE_OPTIONS,
+    TQDM_MULTI_FILES_OPTIONS,
+    compute_tqdm_miniters,
+    human_readable_size,
+)
 
 _logger = logging.getLogger(__name__)
 
 
 async def _run_cli_command(
-    command: str, output_handlers: list[Callable[[str], Awaitable[None]]] | None = None
+    command: str,
+    *,
+    output_handlers: list[Callable[[str], Awaitable[None]]] | None = None,
 ) -> None:
     """
     Raises:
@@ -69,7 +82,6 @@ async def _run_cli_command(
         asyncio.create_task(read_stream(process.stdout)),
         process.wait(),
     )
-    print("OUTPUT=", command_output)
 
     if process.returncode != os.EX_OK:
         msg = f"Could not run '{command}' error: '{command_output}'"
@@ -77,8 +89,35 @@ async def _run_cli_command(
 
 
 _TOTAL_BYTES_RE: Final[str] = r" (\d+)\s*bytes "
+_FILE_COUNT_RE: Final[str] = r" (\d+)\s*files"
 _PROGRESS_PERCENT_RE: Final[str] = r" (?:100|\d?\d)% "
 _ALL_DONE_RE: Final[str] = r"Everything is Ok"
+
+
+class ArchiveInfoParser:
+    def __init__(self) -> None:
+        self.total_bytes: NonNegativeInt | None = None
+        self.file_count: NonNegativeInt | None = None
+
+    async def parse_chunk(self, chunk: str) -> None:
+        # search for ` NUMBER bytes ` -> set byte size
+        if self.total_bytes is None and (match := re.search(_TOTAL_BYTES_RE, chunk)):
+            self.total_bytes = int(match.group(1))
+
+        # search for ` NUMBER files` -> set file count
+        if self.file_count is None and (match := re.search(_FILE_COUNT_RE, chunk)):
+            self.file_count = int(match.group(1))
+
+    def get_parsed_values(self) -> tuple[NonNegativeInt, NonNegativeInt]:
+        if self.total_bytes is None:
+            msg = f"Unexpected value for {self.total_bytes=}. Should not be None"
+            raise ArchiveError(msg)
+
+        if self.file_count is None:
+            msg = f"Unexpected value for {self.file_count=}. Should not be None"
+            raise ArchiveError(msg)
+
+        return (self.total_bytes, self.file_count)
 
 
 class ProgressParser:
@@ -96,11 +135,11 @@ class ProgressParser:
         self.emitted_total: NonNegativeInt = 0
 
     def _prase_progress(self, chunk: str) -> None:
-        # search for "NUMBER bytes" -> set bytes size
+        # search for " NUMBER bytes" -> set byte size
         if self.total_bytes is None and (match := re.search(_TOTAL_BYTES_RE, chunk)):
             self.total_bytes = int(match.group(1))
 
-        # search for `dd%` -> update progress (as last entry inside the string)
+        # search for ` dd% ` -> update progress (as last entry inside the string)
         if matches := re.findall(_PROGRESS_PERCENT_RE, chunk):
             self.percent = int(matches[-1].strip().strip("%"))
 
@@ -129,25 +168,56 @@ class ProgressParser:
             self.finished_emitted = True
 
 
+def _iter_files_to_compress(dir_path: Path) -> Iterator[Path]:
+    # NOTE: make sure to sort paths othrwise between different runs
+    # the zip will have a different structure and hash
+    for path in sorted(dir_path.rglob("*")):
+        if path.is_file():
+            yield path
+
+
 async def archive_dir(
     dir_to_compress: Path,
     destination: Path,
     *,
     compress: bool,
-    store_relative_path: bool,  # always set to True  # TODO : remove at the end not used
-    exclude_patterns: set[str] | None = None,  # TODO : remove at the end not used
     progress_bar: ProgressBarData | None = None,
 ) -> None:
-    assert store_relative_path is True  # nosec
 
     compression_option = "-mx=0" if compress else ""
     command = f"7z a -tzip -bsp1 {compression_option} {destination} {dir_to_compress}"
 
-    async def progress_handler(byte_progress: NonNegativeInt) -> None:
-        print(f"{byte_progress=}")
+    folder_size_bytes = sum(
+        file.stat().st_size for file in _iter_files_to_compress(dir_to_compress)
+    )
 
-    parser = ProgressParser(progress_handler)
-    await _run_cli_command(command, [parser.parse_chunk])
+    async with AsyncExitStack() as stack:
+        if not progress_bar:
+            progress_bar = ProgressBarData(
+                num_steps=1, description=IDStr(f"compressing {dir_to_compress.name}")
+            )
+        sub_progress = await stack.enter_async_context(
+            progress_bar.sub_progress(folder_size_bytes, description=IDStr("..."))
+        )
+
+        tqdm_progress = stack.enter_context(
+            tqdm_logging_redirect(
+                desc=f"compressing {dir_to_compress} -> {destination}\n",
+                total=folder_size_bytes,
+                **(
+                    TQDM_FILE_OPTIONS
+                    | {"miniters": compute_tqdm_miniters(folder_size_bytes)}
+                ),
+            )
+        )
+
+        async def progress_handler(byte_progress: NonNegativeInt) -> None:
+            tqdm_progress.update(byte_progress)
+            await sub_progress.update(byte_progress)
+
+        await _run_cli_command(
+            command, output_handlers=[ProgressParser(progress_handler).parse_chunk]
+        )
 
 
 async def unarchive_dir(
@@ -160,12 +230,28 @@ async def unarchive_dir(
 ) -> set[Path]:
     _ = max_workers  # not required here, can be removed from the interface
 
-    command = f"7z x -bsp1 {archive_to_extract} -o{destination_folder}"
+    archive_info_parser = ArchiveInfoParser()
+    await _run_cli_command(
+        f"7z l {archive_to_extract}",
+        output_handlers=[archive_info_parser.parse_chunk],
+    )
+    total_bytes, file_count = archive_info_parser.get_parsed_values()
 
-    async def progress_handler(byte_progress: NonNegativeInt) -> None:
-        print(f"{byte_progress=}")
+    with tqdm.tqdm(
+        desc=f"decompressing {archive_to_extract} -> {destination_folder} [{file_count} file{'s' if file_count > 1 else ''}"
+        f"/{human_readable_size(archive_to_extract.stat().st_size)}]\n",
+        total=total_bytes,
+        **TQDM_MULTI_FILES_OPTIONS,
+    ) as tqdm_progress:
 
-    parser = ProgressParser(progress_handler)
-    await _run_cli_command(command, [parser.parse_chunk])
+        async def progress_handler(byte_progress: NonNegativeInt) -> None:
+            if tqdm_progress.update(byte_progress) and log_cb:
+                with log_catch(_logger, reraise=False):
+                    await log_cb(f"{tqdm_progress}")
 
-    return set()
+        await _run_cli_command(
+            f"7z x -bsp1 {archive_to_extract} -o{destination_folder}",
+            output_handlers=[ProgressParser(progress_handler).parse_chunk],
+        )
+
+    return {x for x in destination_folder.rglob("*") if x.is_file()}
