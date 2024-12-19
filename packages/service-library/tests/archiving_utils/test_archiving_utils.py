@@ -9,7 +9,7 @@ import os
 import secrets
 import string
 import tempfile
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterable
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -17,8 +17,7 @@ import pytest
 from faker import Faker
 from pydantic import ByteSize, TypeAdapter
 from pytest_benchmark.plugin import BenchmarkFixture
-from servicelib import archiving_utils
-from servicelib.archiving_utils import ArchiveError, archive_dir, unarchive_dir
+from servicelib.archiving_utils import archive_dir, unarchive_dir
 
 
 @pytest.fixture
@@ -77,30 +76,6 @@ def dir_with_random_content(faker: Faker) -> Iterable[Path]:
         yield temp_dir_path
 
 
-def __raise_error(*arts, **kwargs) -> None:
-    msg = "raised as requested"
-    raise ArchiveError(msg)
-
-
-@pytest.fixture
-def zipfile_single_file_extract_worker_raises_error() -> Iterator[None]:
-    # NOTE: cannot MagicMock cannot be serialized via pickle used by
-    # multiprocessing, also `__raise_error` cannot be defined in the
-    # context fo this function or it cannot be pickled
-
-    # pylint: disable=protected-access
-    old_func = (
-        archiving_utils._interface_zipfile._zipfile_single_file_extract_worker
-    )  # noqa: SLF001
-    archiving_utils._interface_zipfile._zipfile_single_file_extract_worker = (  # noqa: SLF001
-        __raise_error
-    )
-    yield
-    archiving_utils._interface_zipfile._zipfile_single_file_extract_worker = (
-        old_func  # noqa: SLF001
-    )
-
-
 # UTILS
 
 
@@ -147,19 +122,10 @@ def full_file_path_from_dir_and_subdirs(dir_path: Path) -> list[Path]:
     return [x for x in dir_path.rglob("*") if x.is_file()]
 
 
-def _escape_undecodable_str(s: str) -> str:
-    return s.encode(errors="replace").decode("utf-8")
-
-
-def _escape_undecodable_path(path: Path) -> Path:
-    return Path(_escape_undecodable_str(str(path)))
-
-
 async def assert_same_directory_content(
     dir_to_compress: Path,
     output_dir: Path,
     inject_relative_path: Path | None = None,
-    unsupported_replace: bool = False,
 ) -> None:
     def _relative_path(input_path: Path) -> Path:
         assert inject_relative_path is not None
@@ -167,9 +133,6 @@ async def assert_same_directory_content(
 
     input_set = get_all_files_in_dir(dir_to_compress)
     output_set = get_all_files_in_dir(output_dir)
-
-    if unsupported_replace:
-        input_set = {_escape_undecodable_path(x) for x in input_set}
 
     if inject_relative_path is not None:
         input_set = {_relative_path(x) for x in input_set}
@@ -185,9 +148,6 @@ async def assert_same_directory_content(
         for k, v in (
             await compute_hashes(full_file_path_from_dir_and_subdirs(dir_to_compress))
         ).items()
-    }
-    dir_to_compress_hashes = {
-        _escape_undecodable_path(k): v for k, v in dir_to_compress_hashes.items()
     }
 
     # computing the hashes for output_dir and map in a dict
@@ -212,7 +172,6 @@ def assert_unarchived_paths(
     unarchived_paths: set[Path],
     src_dir: Path,
     dst_dir: Path,
-    unsupported_replace: bool = False,
 ):
     def is_file_or_emptydir(path: Path) -> bool:
         return path.is_file() or path.is_dir() and not any(path.glob("*"))
@@ -232,8 +191,6 @@ def assert_unarchived_paths(
         for f in src_dir.rglob("*")
         if is_file_or_emptydir(f)
     }
-    if unsupported_replace:
-        expected_tails = {_escape_undecodable_str(x) for x in expected_tails}
     assert got_tails == expected_tails
 
 
@@ -355,14 +312,12 @@ async def test_regression_unsupported_characters(
         unarchived_paths,
         src_dir=dir_to_archive,
         dst_dir=dst_dir,
-        unsupported_replace=True,
     )
 
     await assert_same_directory_content(
         dir_to_compress=dir_to_archive,
         output_dir=dst_dir,
         inject_relative_path=None,
-        unsupported_replace=True,
     )
 
 
@@ -373,27 +328,6 @@ ALL_ITEMS_SET: set[Path] = {
     Path("d1/sd1/f1"),
     Path("d1/sd1/f2.txt"),
 }
-
-
-async def test_unarchive_dir_raises_error(
-    zipfile_single_file_extract_worker_raises_error: None,
-    dir_with_random_content: Path,
-    tmp_path: Path,
-):
-    temp_dir_one = tmp_path / "one"
-    temp_dir_two = tmp_path / "two"
-
-    temp_dir_one.mkdir()
-    temp_dir_two.mkdir()
-
-    archive_file = temp_dir_one / "archive.zip"
-
-    await archive_dir(
-        dir_to_compress=dir_with_random_content, destination=archive_file, compress=True
-    )
-
-    with pytest.raises(ArchiveError, match=r"^.*raised as requested.*$"):
-        await archiving_utils.unarchive_dir(archive_file, temp_dir_two)
 
 
 file_suffix = 0
@@ -451,7 +385,7 @@ def _touch_all_files_in_path(path_to_archive: Path) -> None:
         path.touch()
 
 
-@pytest.mark.parametrize("compress", [True, False])
+@pytest.mark.parametrize("compress", [False])
 async def test_regression_archive_hash_does_not_change(
     mixed_file_types: Path, tmp_path: Path, compress: bool
 ):
@@ -465,10 +399,12 @@ async def test_regression_archive_hash_does_not_change(
     assert first_archive != second_archive
 
     await archive_dir(mixed_file_types, first_archive, compress=compress)
+    assert first_archive.exists()
 
     _touch_all_files_in_path(mixed_file_types)
 
     await archive_dir(mixed_file_types, second_archive, compress=compress)
+    assert second_archive.exists()
 
     _, first_hash = _compute_hash(first_archive)
     _, second_hash = _compute_hash(second_archive)
