@@ -4,6 +4,7 @@ from typing import Any
 from fastapi import FastAPI, status
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
+    GetProjectInactivityResponse,
     RetrieveDataOutEnveloped,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -14,7 +15,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
-from pydantic import TypeAdapter
+from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import AttachLifespanMixin, HasClientSetupInterface
 from servicelib.fastapi.http_client_thin import UnexpectedStatusError
@@ -124,6 +125,16 @@ class DirectorV2Client(
             user_id=user_id, project_id=project_id
         )
         return TypeAdapter(list[DynamicServiceGet]).validate_python(response.json())
+
+    async def get_project_inactivity(
+        self, *, project_id: ProjectID, max_inactivity_seconds: NonNegativeInt
+    ) -> GetProjectInactivityResponse:
+        response = await self.thin_client.get_projects_inactivity(
+            project_id=project_id, max_inactivity_seconds=max_inactivity_seconds
+        )
+        return TypeAdapter(GetProjectInactivityResponse).validate_python(
+            response.json()
+        )
 
     async def restart_user_services(self, *, node_id: NodeID) -> None:
         await self.thin_client.post_restart(node_id=node_id)

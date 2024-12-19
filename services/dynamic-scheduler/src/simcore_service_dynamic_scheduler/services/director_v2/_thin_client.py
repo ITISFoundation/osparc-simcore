@@ -13,6 +13,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
+from pydantic import NonNegativeInt
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
@@ -143,6 +144,15 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
         )
 
     @retry_on_errors()
+    @expect_status(status.HTTP_200_OK)
+    async def get_projects_inactivity(
+        self, *, project_id: ProjectID, max_inactivity_seconds: NonNegativeInt
+    ) -> Response:
+        return await self.client.get(
+            f"/dynamic_services/projects/{project_id}/inactivity",
+            params={"max_inactivity_seconds": max_inactivity_seconds},
+        )
+
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def post_restart(self, *, node_id: NodeID) -> Response:
         return await self.client.post(f"/dynamic_services/{node_id}:restart")

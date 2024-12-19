@@ -3,6 +3,7 @@ from typing import Final
 
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
+    GetProjectInactivityResponse,
     RetrieveDataOutEnveloped,
 )
 from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
@@ -97,6 +98,24 @@ async def stop_dynamic_service(
         timeout_s=timeout_s,
     )
     assert result is None  # nosec
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_project_inactivity(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    project_id: ProjectID,
+    max_inactivity_seconds: NonNegativeInt,
+) -> GetProjectInactivityResponse:
+    result = await rabbitmq_rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_project_inactivity"),
+        project_id=project_id,
+        max_inactivity_seconds=max_inactivity_seconds,
+        timeout_s=_RPC_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, GetProjectInactivityResponse)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
