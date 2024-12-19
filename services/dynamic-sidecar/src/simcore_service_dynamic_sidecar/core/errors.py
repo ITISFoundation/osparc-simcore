@@ -29,7 +29,3 @@ class ContainerExecCommandFailedError(BaseDynamicSidecarError):
         "Command '{command}' exited with code '{exit_code}'"
         "and output: '{command_result}'"
     )
-
-
-class SevenZipError(BaseDynamicSidecarError):
-    msg_template = "Could not finish command: '{command}'\nReason: {command_result}"
