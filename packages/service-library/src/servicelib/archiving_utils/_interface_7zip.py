@@ -217,11 +217,9 @@ async def unarchive_dir(
     archive_to_extract: Path,
     destination_folder: Path,
     *,
-    max_workers: int = 0,  # TODO: remove at the end not used
     progress_bar: ProgressBarData | None = None,
     log_cb: Callable[[str], Awaitable[None]] | None = None,
 ) -> set[Path]:
-    _ = max_workers  # not required here, can be removed from the interface
 
     archive_info_parser = ArchiveInfoParser()
     await _run_cli_command(
@@ -230,14 +228,26 @@ async def unarchive_dir(
     )
     total_bytes, file_count = archive_info_parser.get_parsed_values()
 
-    with tqdm.tqdm(
-        desc=f"decompressing {archive_to_extract} -> {destination_folder} [{file_count} file{'s' if file_count > 1 else ''}"
-        f"/{human_readable_size(archive_to_extract.stat().st_size)}]\n",
-        total=total_bytes,
-        **TQDM_MULTI_FILES_OPTIONS,
-    ) as tqdm_progress:
+    async with AsyncExitStack() as progress_stack:
+        if not progress_bar:
+            progress_bar = ProgressBarData(
+                num_steps=1, description=IDStr(f"extracting {archive_to_extract.name}")
+            )
+        sub_prog = await progress_stack.enter_async_context(
+            progress_bar.sub_progress(steps=total_bytes, description=IDStr("..."))
+        )
+
+        tqdm_progress = progress_stack.enter_context(
+            tqdm.tqdm(
+                desc=f"decompressing {archive_to_extract} -> {destination_folder} [{file_count} file{'s' if file_count > 1 else ''}"
+                f"/{human_readable_size(archive_to_extract.stat().st_size)}]\n",
+                total=total_bytes,
+                **TQDM_MULTI_FILES_OPTIONS,
+            )
+        )
 
         async def progress_handler(byte_progress: NonNegativeInt) -> None:
+            await sub_prog.update(byte_progress)
             if tqdm_progress.update(byte_progress) and log_cb:
                 with log_catch(_logger, reraise=False):
                     await log_cb(f"{tqdm_progress}")
