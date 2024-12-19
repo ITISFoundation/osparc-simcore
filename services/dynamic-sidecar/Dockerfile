@@ -53,6 +53,8 @@ RUN \
   && gosu nobody true
 
 # install RClone, we do it in a separate layer such that the cache is not locked forever, as this seems to take a long time
+ARG TARGETARCH
+ENV TARGETARCH=${TARGETARCH}
 RUN \
   --mount=type=bind,source=scripts/install_rclone.bash,target=install_rclone.bash \
   ./install_rclone.bash
@@ -64,7 +66,12 @@ RUN \
   ./install_7zip.bash
 
 RUN AWS_CLI_VERSION="2.11.11" \
-  && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
+  && case "${TARGETARCH}" in \
+  "amd64") ARCH="x86_64" ;; \
+  "arm64") ARCH="aarch64" ;; \
+  *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+  esac \
+  && curl "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
   && apt-get update && apt-get install -y unzip \
   && unzip awscliv2.zip \
   && ./aws/install \
