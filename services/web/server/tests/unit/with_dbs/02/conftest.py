@@ -17,10 +17,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
-from models_library.api_schemas_directorv2.dynamic_services import (
-    DynamicServiceGet,
-    GetProjectInactivityResponse,
-)
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects_nodes import Node, NodeID
 from models_library.projects_state import ProjectState
 from models_library.services_resources import (
@@ -268,18 +265,8 @@ def assert_get_same_project_caller() -> Callable:
 
 
 @pytest.fixture
-def disable_dynamic_scheduler_inactivity(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_webserver.projects.projects_api.dynamic_scheduler_api.get_project_inactivity",
-        return_value=GetProjectInactivityResponse(is_inactive=True),
-    )
-
-
-@pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-    disable_dynamic_scheduler_inactivity: None,
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(
         monkeypatch,

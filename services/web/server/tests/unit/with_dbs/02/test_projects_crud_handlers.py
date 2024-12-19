@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import re
 import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
 from http import HTTPStatus
@@ -654,6 +655,22 @@ async def test_new_template_from_project(
             TypeAdapter(uuidlib.UUID).validate_python(node_name)
 
 
+@pytest.fixture
+def mock_director_v2_inactivity(
+    aioresponses_mocker: aioresponses, is_inactive: bool
+) -> None:
+    aioresponses_mocker.clear()
+    get_services_pattern = re.compile(
+        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/inactivity.*$"
+    )
+    aioresponses_mocker.get(
+        get_services_pattern,
+        status=status.HTTP_200_OK,
+        repeat=True,
+        payload={"is_inactive": is_inactive},
+    )
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -661,12 +678,15 @@ async def test_new_template_from_project(
         *((role, status.HTTP_200_OK) for role in UserRole if role > UserRole.ANONYMOUS),
     ],
 )
+@pytest.mark.parametrize("is_inactive", [True, False])
 async def test_get_project_inactivity(
+    mock_director_v2_inactivity: None,
     logged_user: UserInfoDict,
     client: TestClient,
     faker: Faker,
     user_role: UserRole,
     expected: HTTPStatus,
+    is_inactive: bool,
 ):
     mock_project_id = faker.uuid4()
 
@@ -682,4 +702,4 @@ async def test_get_project_inactivity(
 
     assert data
     assert error is None
-    assert data["is_inactive"] is True
+    assert data["is_inactive"] is is_inactive
