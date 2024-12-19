@@ -1,0 +1,597 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "simcore-service-resource-usage-tracker web API",
+    "description": "Service that collects and stores computational resources usage used in osparc-simcore",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Healthcheck",
+        "operationId": "healthcheck__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/meta": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Get Service Metadata",
+        "operationId": "get_service_metadata_v1_meta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/_Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/credit-transactions/credits:sum": {
+      "post": {
+        "tags": [
+          "credit-transactions"
+        ],
+        "summary": "Sum total available credits in the wallet",
+        "operationId": "get_credit_transactions_sum_v1_credit_transactions_credits_sum_post",
+        "parameters": [
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Name"
+            }
+          },
+          {
+            "name": "wallet_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "Wallet Id",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletTotalCredits"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/credit-transactions": {
+      "post": {
+        "tags": [
+          "credit-transactions"
+        ],
+        "summary": "Top up credits for specific wallet",
+        "operationId": "create_credit_transaction_v1_credit_transactions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreditTransactionCreateBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditTransactionCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/services/{service_key}/{service_version}/pricing-plan": {
+      "get": {
+        "tags": [
+          "pricing-plans"
+        ],
+        "summary": "Get Service Default Pricing Plan",
+        "description": "Returns a default pricing plan with pricing details for a specified service",
+        "operationId": "get_service_default_pricing_plan",
+        "parameters": [
+          {
+            "name": "service_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Service Key"
+            }
+          },
+          {
+            "name": "service_version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Service Version"
+            }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingPlanGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}": {
+      "get": {
+        "tags": [
+          "pricing-plans"
+        ],
+        "summary": "Get Pricing Plan Unit",
+        "description": "Returns a list of service pricing plans with pricing details for a specified service",
+        "operationId": "list_service_pricing_plans",
+        "parameters": [
+          {
+            "name": "pricing_plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "Pricing Plan Id",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "pricing_unit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "Pricing Unit Id",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingUnitGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreditTransactionCreateBody": {
+        "properties": {
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "wallet_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Wallet Id",
+            "minimum": 0
+          },
+          "wallet_name": {
+            "type": "string",
+            "title": "Wallet Name"
+          },
+          "user_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
+            "minimum": 0
+          },
+          "user_email": {
+            "type": "string",
+            "title": "User Email"
+          },
+          "osparc_credits": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Osparc Credits"
+          },
+          "payment_transaction_id": {
+            "type": "string",
+            "title": "Payment Transaction Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_name",
+          "wallet_id",
+          "wallet_name",
+          "user_id",
+          "user_email",
+          "osparc_credits",
+          "payment_transaction_id",
+          "created_at"
+        ],
+        "title": "CreditTransactionCreateBody"
+      },
+      "CreditTransactionCreated": {
+        "properties": {
+          "credit_transaction_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Credit Transaction Id",
+            "minimum": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "credit_transaction_id"
+        ],
+        "title": "CreditTransactionCreated",
+        "description": "Response Create Credit Transaction V1 Credit Transactions Post"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HardwareInfo": {
+        "properties": {
+          "aws_ec2_instances": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Aws Ec2 Instances"
+          }
+        },
+        "type": "object",
+        "required": [
+          "aws_ec2_instances"
+        ],
+        "title": "HardwareInfo"
+      },
+      "PricingPlanClassification": {
+        "type": "string",
+        "enum": [
+          "TIER",
+          "LICENSE"
+        ],
+        "title": "PricingPlanClassification"
+      },
+      "PricingPlanGet": {
+        "properties": {
+          "pricing_plan_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricing Plan Id",
+            "minimum": 0
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "classification": {
+            "$ref": "#/components/schemas/PricingPlanClassification"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "pricing_plan_key": {
+            "type": "string",
+            "title": "Pricing Plan Key"
+          },
+          "pricing_units": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PricingUnitGet"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Units"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricing_plan_id",
+          "display_name",
+          "description",
+          "classification",
+          "created_at",
+          "pricing_plan_key",
+          "pricing_units",
+          "is_active"
+        ],
+        "title": "PricingPlanGet"
+      },
+      "PricingUnitGet": {
+        "properties": {
+          "pricing_unit_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricing Unit Id",
+            "minimum": 0
+          },
+          "unit_name": {
+            "type": "string",
+            "title": "Unit Name"
+          },
+          "unit_extra_info": {
+            "$ref": "#/components/schemas/UnitExtraInfo"
+          },
+          "current_cost_per_unit": {
+            "type": "string",
+            "title": "Current Cost Per Unit"
+          },
+          "current_cost_per_unit_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Current Cost Per Unit Id",
+            "minimum": 0
+          },
+          "default": {
+            "type": "boolean",
+            "title": "Default"
+          },
+          "specific_info": {
+            "$ref": "#/components/schemas/HardwareInfo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricing_unit_id",
+          "unit_name",
+          "unit_extra_info",
+          "current_cost_per_unit",
+          "current_cost_per_unit_id",
+          "default",
+          "specific_info"
+        ],
+        "title": "PricingUnitGet"
+      },
+      "UnitExtraInfo": {
+        "properties": {
+          "CPU": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Cpu"
+          },
+          "RAM": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Ram"
+          },
+          "VRAM": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Vram"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "CPU",
+          "RAM",
+          "VRAM"
+        ],
+        "title": "UnitExtraInfo",
+        "description": "Custom information that is propagated to the frontend. Defined fields are mandatory."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WalletTotalCredits": {
+        "properties": {
+          "wallet_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Wallet Id",
+            "minimum": 0
+          },
+          "available_osparc_credits": {
+            "type": "number",
+            "title": "Available Osparc Credits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "wallet_id",
+          "available_osparc_credits"
+        ],
+        "title": "WalletTotalCredits"
+      },
+      "_Meta": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "docs_url": {
+            "type": "string",
+            "title": "Docs Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "docs_url"
+        ],
+        "title": "_Meta"
+      }
+    }
+  }
+}
