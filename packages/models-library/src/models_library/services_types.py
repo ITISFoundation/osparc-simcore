@@ -55,7 +55,7 @@ class ServiceRunID(str):
     Avoids overwriting data that left dropped on the node (due to an error)
     and gives the osparc-agent an opportunity to back it up.
     The resource-usage-tracker tracker uses these RunIDs to keep track of
-    resource usage from comp and dynamic services.
+    resource usage from computational and dynamic services.
     """
 
     __slots__ = ()
