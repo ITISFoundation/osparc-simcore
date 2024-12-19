@@ -962,11 +962,11 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           search: {
             method: "GET",
-            url: statics.API + "/users:search?email={email}"
+            url: statics.API + "/admin/users:search?email={email}"
           },
           preRegister: {
             method: "POST",
-            url: statics.API + "/users:pre-register"
+            url: statics.API + "/admin/users:pre-register"
           }
         }
       },

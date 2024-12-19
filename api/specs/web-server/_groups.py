@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+from enum import Enum
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
@@ -87,19 +88,24 @@ async def delete_group(_path: Annotated[GroupsPathParams, Depends()]):
     """
 
 
+_extra_tags: list[str | Enum] = ["users"]
+
+
 @router.get(
     "/groups/{gid}/users",
     response_model=Envelope[list[GroupUserGet]],
+    tags=_extra_tags,
 )
 async def get_all_group_users(_path: Annotated[GroupsPathParams, Depends()]):
     """
-    Gets users in organization groups
+    Gets users in organization or primary groups
     """
 
 
 @router.post(
     "/groups/{gid}/users",
     status_code=status.HTTP_204_NO_CONTENT,
+    tags=_extra_tags,
 )
 async def add_group_user(
     _path: Annotated[GroupsPathParams, Depends()],
@@ -113,6 +119,7 @@ async def add_group_user(
 @router.get(
     "/groups/{gid}/users/{uid}",
     response_model=Envelope[GroupUserGet],
+    tags=_extra_tags,
 )
 async def get_group_user(
     _path: Annotated[GroupsUsersPathParams, Depends()],
@@ -125,6 +132,7 @@ async def get_group_user(
 @router.patch(
     "/groups/{gid}/users/{uid}",
     response_model=Envelope[GroupUserGet],
+    tags=_extra_tags,
 )
 async def update_group_user(
     _path: Annotated[GroupsUsersPathParams, Depends()],
@@ -138,6 +146,7 @@ async def update_group_user(
 @router.delete(
     "/groups/{gid}/users/{uid}",
     status_code=status.HTTP_204_NO_CONTENT,
+    tags=_extra_tags,
 )
 async def delete_group_user(
     _path: Annotated[GroupsUsersPathParams, Depends()],
