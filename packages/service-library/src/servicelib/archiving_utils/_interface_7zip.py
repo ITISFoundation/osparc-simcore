@@ -6,7 +6,7 @@ import re
 from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
 from pathlib import Path
-from typing import Final, Iterator
+from typing import Final
 
 import tqdm
 from models_library.basic_types import IDStr
@@ -22,6 +22,7 @@ from ._tdqm_utils import (
     compute_tqdm_miniters,
     human_readable_size,
 )
+from ._utils import iter_files_to_compress
 
 _logger = logging.getLogger(__name__)
 
@@ -168,14 +169,6 @@ class ProgressParser:
             self.finished_emitted = True
 
 
-def _iter_files_to_compress(dir_path: Path) -> Iterator[Path]:
-    # NOTE: make sure to sort paths othrwise between different runs
-    # the zip will have a different structure and hash
-    for path in sorted(dir_path.rglob("*")):
-        if path.is_file():
-            yield path
-
-
 async def archive_dir(
     dir_to_compress: Path,
     destination: Path,
@@ -188,7 +181,7 @@ async def archive_dir(
     command = f"7z a -tzip -bsp1 {compression_option} {destination} {dir_to_compress}"
 
     folder_size_bytes = sum(
-        file.stat().st_size for file in _iter_files_to_compress(dir_to_compress)
+        file.stat().st_size for file in iter_files_to_compress(dir_to_compress)
     )
 
     async with AsyncExitStack() as stack:

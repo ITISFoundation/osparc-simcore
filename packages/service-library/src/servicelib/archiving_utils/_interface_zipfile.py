@@ -7,11 +7,10 @@ from collections.abc import Awaitable, Callable, Iterator
 from contextlib import AsyncExitStack, contextmanager
 from functools import partial
 from pathlib import Path
-from typing import Any, Final
+from typing import Final
 
 import tqdm
 from models_library.basic_types import IDStr
-from pydantic import NonNegativeFloat
 from repro_zipfile import ReproducibleZipFile  # type: ignore[import-untyped]
 from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
 
@@ -23,42 +22,23 @@ from ..pools import (
 )
 from ..progress_bar import ProgressBarData
 from ._errors import ArchiveError
+from ._tdqm_utils import (
+    TQDM_FILE_OPTIONS,
+    TQDM_MULTI_FILES_OPTIONS,
+    compute_tqdm_miniters,
+    human_readable_size,
+)
+from ._utils import iter_files_to_compress
 
 _MIN: Final[int] = 60  # secs
 _MAX_UNARCHIVING_WORKER_COUNT: Final[int] = 2
 _CHUNK_SIZE: Final[int] = 1024 * 8
-_UNIT_MULTIPLIER: Final[NonNegativeFloat] = 1024.0
 
 _logger = logging.getLogger(__name__)
 
 
-def _human_readable_size(size, decimal_places=3):
-    human_readable_file_size = float(size)
-    unit = "B"
-    for t_unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
-        if human_readable_file_size < _UNIT_MULTIPLIER:
-            unit = t_unit
-            break
-        human_readable_file_size /= _UNIT_MULTIPLIER
-
-    return f"{human_readable_file_size:.{decimal_places}f}{unit}"
-
-
-def _compute_tqdm_miniters(byte_size: int) -> float:
-    """ensures tqdm minimal iteration is 1 %"""
-    return min(byte_size / 100.0, 1.0)
-
-
 def _strip_undecodable_in_path(path: Path) -> Path:
     return Path(str(path).encode(errors="replace").decode("utf-8"))
-
-
-def _iter_files_to_compress(dir_path: Path) -> Iterator[Path]:
-    # NOTE: make sure to sort paths othrwise between different runs
-    # the zip will have a different structure and hash
-    for path in sorted(dir_path.rglob("*")):
-        if path.is_file():
-            yield path
 
 
 def _strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
@@ -88,19 +68,6 @@ class _FastZipFileReader(ReproducibleZipFile):
         """method disabled"""
 
 
-_TQDM_FILE_OPTIONS: Final[dict[str, Any]] = {
-    "unit": "byte",
-    "unit_scale": True,
-    "unit_divisor": 1024,
-    "colour": "yellow",
-    "miniters": 1,
-}
-_TQDM_MULTI_FILES_OPTIONS: Final[dict[str, Any]] = _TQDM_FILE_OPTIONS | {
-    "unit": "file",
-    "unit_divisor": 1000,
-}
-
-
 def _zipfile_single_file_extract_worker(
     zip_file_path: Path,
     file_in_archive: zipfile.ZipInfo,
@@ -126,8 +93,8 @@ def _zipfile_single_file_extract_worker(
             total=file_in_archive.file_size,
             desc=desc,
             **(
-                _TQDM_FILE_OPTIONS
-                | {"miniters": _compute_tqdm_miniters(file_in_archive.file_size)}
+                TQDM_FILE_OPTIONS
+                | {"miniters": compute_tqdm_miniters(file_in_archive.file_size)}
             ),
         ) as pbar:
             while chunk := zip_fp.read(_CHUNK_SIZE):
@@ -221,9 +188,9 @@ async def unarchive_dir(
                 tqdm_progress = progress_stack.enter_context(
                     tqdm.tqdm(
                         desc=f"decompressing {archive_to_extract} -> {destination_folder} [{len(futures)} file{'s' if len(futures) > 1 else ''}"
-                        f"/{_human_readable_size(archive_to_extract.stat().st_size)}]\n",
+                        f"/{human_readable_size(archive_to_extract.stat().st_size)}]\n",
                         total=total_file_size,
-                        **_TQDM_MULTI_FILES_OPTIONS,
+                        **TQDM_MULTI_FILES_OPTIONS,
                     )
                 )
                 for future in asyncio.as_completed(futures):
@@ -299,19 +266,17 @@ def _add_to_archive(
 ) -> None:
     compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
     folder_size_bytes = sum(
-        file.stat().st_size for file in _iter_files_to_compress(dir_to_compress)
+        file.stat().st_size for file in iter_files_to_compress(dir_to_compress)
     )
     desc = f"compressing {dir_to_compress} -> {destination}"
     with tqdm_logging_redirect(
         desc=f"{desc}\n",
         total=folder_size_bytes,
-        **(
-            _TQDM_FILE_OPTIONS | {"miniters": _compute_tqdm_miniters(folder_size_bytes)}
-        ),
+        **(TQDM_FILE_OPTIONS | {"miniters": compute_tqdm_miniters(folder_size_bytes)}),
     ) as progress_bar, _progress_enabled_zip_write_handler(
         ReproducibleZipFile(destination, "w", compression=compression), progress_bar
     ) as zip_file_handler:
-        for file_to_add in _iter_files_to_compress(dir_to_compress):
+        for file_to_add in iter_files_to_compress(dir_to_compress):
             progress_bar.set_description(f"{desc}/{file_to_add.name}\n")
             file_name_in_archive = _strip_directory_from_path(
                 file_to_add, dir_to_compress
@@ -357,7 +322,7 @@ async def archive_dir(
 
     async with AsyncExitStack() as stack:
         folder_size_bytes = sum(
-            file.stat().st_size for file in _iter_files_to_compress(dir_to_compress)
+            file.stat().st_size for file in iter_files_to_compress(dir_to_compress)
         )
         sub_progress = await stack.enter_async_context(
             progress_bar.sub_progress(folder_size_bytes, description=IDStr("..."))
