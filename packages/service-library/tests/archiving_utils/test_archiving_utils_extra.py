@@ -6,19 +6,13 @@ import shutil
 from pathlib import Path
 
 import pytest
+from helpers import print_tree
 from servicelib.archiving_utils import (
     PrunableFolder,
     archive_dir,
     is_leaf_path,
     unarchive_dir,
 )
-
-
-def _print_tree(path: Path, level=0):
-    tab = " " * level
-    print(f"{tab}{'+' if path.is_dir() else '-'} {path if level==0 else path.name}")
-    for p in path.glob("*"):
-        _print_tree(p, level + 1)
 
 
 @pytest.fixture
@@ -37,7 +31,7 @@ def state_dir(tmp_path) -> Path:
     (base_dir / "d1" / "d1_1" / "d1_1_1" / "f6").touch()
 
     print("state-dir ---")
-    _print_tree(base_dir)
+    print_tree(base_dir)
     # + /tmp/pytest-of-crespo/pytest-95/test_override_and_prune_from_a1/original
     #  + empty
     #  + d1
@@ -69,7 +63,7 @@ def new_state_dir(tmp_path) -> Path:
     # f6 deleted -> d1/d1_1/d2_2 remains empty and should be pruned
 
     print("new-state-dir ---")
-    _print_tree(base_dir)
+    print_tree(base_dir)
     # + /tmp/pytest-of-crespo/pytest-95/test_override_and_prune_from_a1/updated
     #  + d1
     #   + d1_1
@@ -125,7 +119,7 @@ def test_override_and_prune_folder(state_dir: Path, new_state_dir: Path):
     assert old_paths != got_paths
 
     print("after ----")
-    _print_tree(state_dir)
+    print_tree(state_dir)
 
 
 @pytest.mark.parametrize(
