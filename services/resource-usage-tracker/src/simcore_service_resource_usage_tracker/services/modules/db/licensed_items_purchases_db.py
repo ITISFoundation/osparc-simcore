@@ -1,6 +1,8 @@
+from datetime import UTC, datetime
 from typing import cast
 
 import sqlalchemy as sa
+from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_purchases import (
     LicensedItemPurchaseID,
@@ -114,6 +116,8 @@ async def list_(
 
     async with pass_or_acquire_connection(engine, connection) as conn:
         total_count = await conn.scalar(count_query)
+        if total_count is None:
+            total_count = 0
 
         result = await conn.stream(list_query)
         items: list[LicensedItemsPurchasesDB] = [
@@ -150,3 +154,36 @@ async def get(
                 licensed_item_purchase_id=licensed_item_purchase_id
             )
         return LicensedItemsPurchasesDB.model_validate(row)
+
+
+async def get_active_purchased_seats_for_item_and_wallet(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    licensed_item_id: LicensedItemID,
+    wallet_id: WalletID,
+    product_name: ProductName,
+) -> int:
+    """
+    Exclude expired seats
+    """
+    _current_time = datetime.now(tz=UTC)
+
+    sum_stmt = sa.select(
+        sa.func.sum(resource_tracker_licensed_items_purchases.c.num_of_seats)
+    ).where(
+        (resource_tracker_licensed_items_purchases.c.wallet_id == wallet_id)
+        & (
+            resource_tracker_licensed_items_purchases.c.licensed_item_id
+            == licensed_item_id
+        )
+        & (resource_tracker_licensed_items_purchases.c.product_name == product_name)
+        & (resource_tracker_licensed_items_purchases.c.start_at <= _current_time)
+        & (resource_tracker_licensed_items_purchases.c.expire_at >= _current_time)
+    )
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        total_sum = await conn.scalar(sum_stmt)
+        if total_sum is None:
+            return 0
+        return cast(int, total_sum)
