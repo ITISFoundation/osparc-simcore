@@ -1,11 +1,17 @@
-from typing import Annotated, Any, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, Self, TypeAlias
 from uuid import uuid4
 
 import arrow
-from pydantic import GetCoreSchemaHandler, StringConstraints, ValidationInfo
+from pydantic import (
+    GetCoreSchemaHandler,
+    PositiveInt,
+    StringConstraints,
+    ValidationInfo,
+)
 from pydantic_core import CoreSchema, core_schema
 
 from .basic_regex import PROPERTY_KEY_RE, SIMPLE_VERSION_RE
+from .projects_nodes_io import NodeID
 from .services_regex import (
     COMPUTATIONAL_SERVICE_KEY_RE,
     DYNAMIC_SERVICE_KEY_RE,
@@ -13,6 +19,10 @@ from .services_regex import (
     SERVICE_ENCODED_KEY_RE,
     SERVICE_KEY_RE,
 )
+from .users import UserID
+
+if TYPE_CHECKING:
+    from .projects import ProjectID
 
 ServicePortKey: TypeAlias = Annotated[str, StringConstraints(pattern=PROPERTY_KEY_RE)]
 
@@ -35,7 +45,7 @@ ComputationalServiceKey: TypeAlias = Annotated[
 ServiceVersion: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
 
 
-class RunID(str):
+class ServiceRunID(str):
     """
     Used to assign a unique identifier to the run of a service.
 
@@ -44,12 +54,15 @@ class RunID(str):
     and old volumes for different runs.
     Avoids overwriting data that left dropped on the node (due to an error)
     and gives the osparc-agent an opportunity to back it up.
+    The resource-usage-tracker tracker uses these RunIDs to keep track of
+    resource usage from computational and dynamic services.
     """
 
     __slots__ = ()
 
     @classmethod
-    def create(cls) -> "RunID":
+    def get_resource_tracking_run_id_for_dynamic(cls) -> Self:
+        """used for dynamic services"""
         # NOTE: there was a legacy version of this RunID
         # legacy version:
         #   '0ac3ed64-665b-42d2-95f7-e59e0db34242'
@@ -60,6 +73,17 @@ class RunID(str):
         return cls(run_id_format)
 
     @classmethod
+    def get_resource_tracking_run_id_for_computational(
+        cls,
+        user_id: UserID,
+        project_id: "ProjectID",
+        node_id: NodeID,
+        iteration: PositiveInt,
+    ) -> Self:
+        """used by computational services"""
+        return cls(f"comp_{user_id}_{project_id}_{node_id}_{iteration}")
+
+    @classmethod
     def __get_pydantic_core_schema__(
         cls,
         source_type: Any,  # pylint:disable=unused-argument
@@ -68,7 +92,7 @@ class RunID(str):
         return core_schema.no_info_after_validator_function(cls, handler(str))
 
     @classmethod
-    def validate(cls, v: "RunID | str", _: ValidationInfo) -> "RunID":
+    def validate(cls, v: "ServiceRunID | str", _: ValidationInfo) -> "ServiceRunID":
         if isinstance(v, cls):
             return v
         if isinstance(v, str):

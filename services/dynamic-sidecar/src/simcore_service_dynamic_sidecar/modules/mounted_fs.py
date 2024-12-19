@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
-from models_library.services import RunID
+from models_library.services import ServiceRunID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 
 from ..core.docker_utils import get_volume_by_label
@@ -36,7 +36,7 @@ class MountedVolumes:
 
     def __init__(
         self,
-        run_id: RunID,
+        service_run_id: ServiceRunID,
         node_id: NodeID,
         inputs_path: Path,
         outputs_path: Path,
@@ -46,7 +46,7 @@ class MountedVolumes:
         compose_namespace: str,
         dy_volumes: Path,
     ) -> None:
-        self.run_id: RunID = run_id
+        self.service_run_id: ServiceRunID = service_run_id
         self.node_id: NodeID = node_id
         self.inputs_path: Path = inputs_path
         self.outputs_path: Path = outputs_path
@@ -62,14 +62,14 @@ class MountedVolumes:
     def volume_name_inputs(self) -> str:
         """Same name as the namespace, to easily track components"""
         return (
-            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.run_id}_{self.node_id}"
+            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.service_run_id}_{self.node_id}"
             f"_{_name_from_full_path(self.inputs_path)[::-1]}"
         )
 
     @cached_property
     def volume_name_outputs(self) -> str:
         return (
-            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.run_id}_{self.node_id}"
+            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.service_run_id}_{self.node_id}"
             f"_{_name_from_full_path(self.outputs_path)[::-1]}"
         )
 
@@ -78,14 +78,14 @@ class MountedVolumes:
         if self.user_preferences_path is None:
             return None
         return (
-            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.run_id}_{self.node_id}"
+            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.service_run_id}_{self.node_id}"
             f"_{_name_from_full_path(self.user_preferences_path)[::-1]}"
         )
 
     def volume_name_state_paths(self) -> Generator[str, None, None]:
         for state_path in self.state_paths:
             yield (
-                f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.run_id}_{self.node_id}"
+                f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.service_run_id}_{self.node_id}"
                 f"_{_name_from_full_path(state_path)[::-1]}"
             )
 
@@ -116,39 +116,45 @@ class MountedVolumes:
             _ensure_path(path)
 
     @staticmethod
-    async def _get_bind_path_from_label(label: str, run_id: RunID) -> Path:
-        volume_details = await get_volume_by_label(label=label, run_id=run_id)
+    async def _get_bind_path_from_label(
+        label: str, service_run_id: ServiceRunID
+    ) -> Path:
+        volume_details = await get_volume_by_label(
+            label=label, service_run_id=service_run_id
+        )
         return Path(volume_details["Mountpoint"])
 
-    async def get_inputs_docker_volume(self, run_id: RunID) -> str:
+    async def get_inputs_docker_volume(self, service_run_id: ServiceRunID) -> str:
         bind_path: Path = await self._get_bind_path_from_label(
-            self.volume_name_inputs, run_id
+            self.volume_name_inputs, service_run_id
         )
         return f"{bind_path}:{self.inputs_path}"
 
-    async def get_outputs_docker_volume(self, run_id: RunID) -> str:
+    async def get_outputs_docker_volume(self, service_run_id: ServiceRunID) -> str:
         bind_path: Path = await self._get_bind_path_from_label(
-            self.volume_name_outputs, run_id
+            self.volume_name_outputs, service_run_id
         )
         return f"{bind_path}:{self.outputs_path}"
 
-    async def get_user_preferences_path_volume(self, run_id: RunID) -> str | None:
+    async def get_user_preferences_path_volume(
+        self, service_run_id: ServiceRunID
+    ) -> str | None:
         if self.volume_user_preferences is None:
             return None
 
         bind_path: Path = await self._get_bind_path_from_label(
-            self.volume_user_preferences, run_id
+            self.volume_user_preferences, service_run_id
         )
         return f"{bind_path}:{self.user_preferences_path}"
 
     async def iter_state_paths_to_docker_volumes(
-        self, run_id: RunID
+        self, service_run_id: ServiceRunID
     ) -> AsyncGenerator[str, None]:
         for volume_state_path, state_path in zip(
             self.volume_name_state_paths(), self.state_paths, strict=True
         ):
             bind_path: Path = await self._get_bind_path_from_label(
-                volume_state_path, run_id
+                volume_state_path, service_run_id
             )
             yield f"{bind_path}:{state_path}"
 
@@ -157,7 +163,7 @@ def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
     settings: ApplicationSettings = app.state.settings
 
     app.state.mounted_volumes = MountedVolumes(
-        run_id=settings.DY_SIDECAR_RUN_ID,
+        service_run_id=settings.DY_SIDECAR_RUN_ID,
         node_id=settings.DY_SIDECAR_NODE_ID,
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
         outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,

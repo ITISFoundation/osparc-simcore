@@ -47,6 +47,7 @@ from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
+from models_library.services import ServiceRunID
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
 from pydantic.networks import AnyUrl
@@ -293,6 +294,7 @@ class DaskClient:
         remote_fct: ContainerRemoteFct | None = None,
         metadata: RunMetadataDict,
         hardware_info: HardwareInfo,
+        resource_tracking_run_id: ServiceRunID,
     ) -> list[PublishedComputationTask]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started.
@@ -396,6 +398,7 @@ class DaskClient:
                     node_id=node_id,
                     node_image=node_image,
                     metadata=metadata,
+                    resource_tracking_run_id=resource_tracking_run_id,
                 )
                 task_owner = dask_utils.compute_task_owner(
                     user_id, project_id, node_id, metadata.get("project_metadata", {})
