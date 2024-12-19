@@ -5,11 +5,11 @@ from typing import cast
 import sqlalchemy as sa
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
-from models_library.resource_tracker import ServiceRunId
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
 from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.services_types import ServiceRunID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
@@ -225,7 +225,7 @@ async def force_release_license_seats_by_run_id(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    service_run_id: ServiceRunId,
+    service_run_id: ServiceRunID,
 ) -> None:
     """
     Purpose: This function is utilized by a periodic heartbeat check task that monitors whether running services are
