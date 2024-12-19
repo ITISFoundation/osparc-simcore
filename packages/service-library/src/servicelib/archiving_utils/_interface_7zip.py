@@ -138,11 +138,14 @@ async def archive_dir(
     destination: Path,
     *,
     compress: bool,
-    store_relative_path: bool,
-    exclude_patterns: set[str] | None = None,
+    store_relative_path: bool,  # always set to True  # TODO : remove at the end not used
+    exclude_patterns: set[str] | None = None,  # TODO : remove at the end not used
     progress_bar: ProgressBarData | None = None,
 ) -> None:
-    command = f"7z a -tzip -bsp1 {destination} {dir_to_compress}"
+    assert store_relative_path is True  # nosec
+
+    compression_option = "-mx=0" if compress else ""
+    command = f"7z a -tzip -bsp1 {compression_option} {destination} {dir_to_compress}"
 
     async def progress_handler(byte_progress: NonNegativeInt) -> None:
         print(f"{byte_progress=}")
@@ -161,7 +164,7 @@ async def unarchive_dir(
     archive_to_extract: Path,
     destination_folder: Path,
     *,
-    max_workers: int = 0,
+    max_workers: int = 0,  # TODO: remove at the end not used
     progress_bar: ProgressBarData | None = None,
     log_cb: Callable[[str], Awaitable[None]] | None = None,
 ) -> set[Path]:
