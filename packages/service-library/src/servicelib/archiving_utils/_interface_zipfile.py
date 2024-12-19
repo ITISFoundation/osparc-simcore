@@ -294,7 +294,6 @@ def _add_to_archive(
     dir_to_compress: Path,
     destination: Path,
     compress: bool,  # noqa: FBT001
-    store_relative_path: bool,  # noqa: FBT001
     update_progress,
     loop,
 ) -> None:
@@ -314,10 +313,8 @@ def _add_to_archive(
     ) as zip_file_handler:
         for file_to_add in _iter_files_to_compress(dir_to_compress):
             progress_bar.set_description(f"{desc}/{file_to_add.name}\n")
-            file_name_in_archive = (
-                _strip_directory_from_path(file_to_add, dir_to_compress)
-                if store_relative_path
-                else file_to_add
+            file_name_in_archive = _strip_directory_from_path(
+                file_to_add, dir_to_compress
             )
 
             # because surrogates are not allowed in zip files,
@@ -341,7 +338,6 @@ async def archive_dir(
     destination: Path,
     *,
     compress: bool,
-    store_relative_path: bool,
     progress_bar: ProgressBarData | None = None,
 ) -> None:
     """
@@ -377,7 +373,6 @@ async def archive_dir(
                 dir_to_compress,
                 destination,
                 compress,
-                store_relative_path,
                 functools.partial(_update_progress, sub_progress),
                 asyncio.get_event_loop(),
             )

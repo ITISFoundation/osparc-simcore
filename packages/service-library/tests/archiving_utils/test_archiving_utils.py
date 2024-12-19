@@ -5,7 +5,6 @@
 
 import asyncio
 import hashlib
-import itertools
 import os
 import secrets
 import string
@@ -213,7 +212,6 @@ def assert_unarchived_paths(
     unarchived_paths: set[Path],
     src_dir: Path,
     dst_dir: Path,
-    is_saved_as_relpath: bool,
     unsupported_replace: bool = False,
 ):
     def is_file_or_emptydir(path: Path) -> bool:
@@ -227,8 +225,6 @@ def assert_unarchived_paths(
 
     # trim basedir and compare relative paths (alias 'tails') against src_dir
     basedir = str(dst_dir)
-    if not is_saved_as_relpath:
-        basedir += str(src_dir)
 
     got_tails = {os.path.relpath(f, basedir) for f in unarchived_paths}
     expected_tails = {
@@ -259,22 +255,15 @@ async def test_archiving_utils_against_sample(
         assert isinstance(p, Path), p
 
     await archive_dir(
-        dir_to_compress=destination,
-        destination=tmp_path / "test_it.zip",
-        compress=True,
-        store_relative_path=True,
+        dir_to_compress=destination, destination=tmp_path / "test_it.zip", compress=True
     )
 
 
-@pytest.mark.parametrize(
-    "compress,store_relative_path",
-    itertools.product([True, False], repeat=2),
-)
+@pytest.mark.parametrize("compress", [True, False])
 async def test_archive_unarchive_same_structure_dir(
     dir_with_random_content: Path,
     tmp_path: Path,
     compress: bool,
-    store_relative_path: bool,
 ):
     temp_dir_one = tmp_path / "one"
     temp_dir_two = tmp_path / "two"
@@ -287,7 +276,6 @@ async def test_archive_unarchive_same_structure_dir(
     await archive_dir(
         dir_to_compress=dir_with_random_content,
         destination=archive_file,
-        store_relative_path=store_relative_path,
         compress=compress,
     )
 
@@ -299,32 +287,22 @@ async def test_archive_unarchive_same_structure_dir(
         unarchived_paths,
         src_dir=dir_with_random_content,
         dst_dir=temp_dir_two,
-        is_saved_as_relpath=store_relative_path,
     )
 
-    await assert_same_directory_content(
-        dir_with_random_content,
-        temp_dir_two,
-        None if store_relative_path else dir_with_random_content,
-    )
+    await assert_same_directory_content(dir_with_random_content, temp_dir_two, None)
 
 
-@pytest.mark.parametrize(
-    "compress,store_relative_path",
-    itertools.product([True, False], repeat=2),
-)
+@pytest.mark.parametrize("compress", [True, False])
 async def test_unarchive_in_same_dir_as_archive(
     dir_with_random_content: Path,
     tmp_path: Path,
     compress: bool,
-    store_relative_path: bool,
 ):
     archive_file = tmp_path / "archive.zip"
 
     await archive_dir(
         dir_to_compress=dir_with_random_content,
         destination=archive_file,
-        store_relative_path=store_relative_path,
         compress=compress,
     )
 
@@ -338,24 +316,14 @@ async def test_unarchive_in_same_dir_as_archive(
         unarchived_paths,
         src_dir=dir_with_random_content,
         dst_dir=tmp_path,
-        is_saved_as_relpath=store_relative_path,
     )
 
-    await assert_same_directory_content(
-        dir_with_random_content,
-        tmp_path,
-        None if store_relative_path else dir_with_random_content,
-    )
+    await assert_same_directory_content(dir_with_random_content, tmp_path, None)
 
 
-@pytest.mark.parametrize(
-    "compress,store_relative_path",
-    itertools.product([True, False], repeat=2),
-)
+@pytest.mark.parametrize("compress", [True, False])
 async def test_regression_unsupported_characters(
-    tmp_path: Path,
-    compress: bool,
-    store_relative_path: bool,
+    tmp_path: Path, compress: bool
 ) -> None:
     archive_path = tmp_path / "archive.zip"
     dir_to_archive = tmp_path / "to_compress"
@@ -376,7 +344,6 @@ async def test_regression_unsupported_characters(
     await archive_dir(
         dir_to_compress=dir_to_archive,
         destination=archive_path,
-        store_relative_path=store_relative_path,
         compress=compress,
     )
 
@@ -388,14 +355,13 @@ async def test_regression_unsupported_characters(
         unarchived_paths,
         src_dir=dir_to_archive,
         dst_dir=dst_dir,
-        is_saved_as_relpath=store_relative_path,
         unsupported_replace=True,
     )
 
     await assert_same_directory_content(
         dir_to_compress=dir_to_archive,
         output_dir=dst_dir,
-        inject_relative_path=None if store_relative_path else dir_to_archive,
+        inject_relative_path=None,
         unsupported_replace=True,
     )
 
@@ -423,10 +389,7 @@ async def test_unarchive_dir_raises_error(
     archive_file = temp_dir_one / "archive.zip"
 
     await archive_dir(
-        dir_to_compress=dir_with_random_content,
-        destination=archive_file,
-        store_relative_path=True,
-        compress=True,
+        dir_to_compress=dir_with_random_content, destination=archive_file, compress=True
     )
 
     with pytest.raises(ArchiveError, match=r"^.*raised as requested.*$"):
@@ -442,10 +405,7 @@ async def _archive_dir_performance(
     global file_suffix  # pylint: disable=global-statement  # noqa: PLW0603
 
     await archive_dir(
-        input_path,
-        destination_path / f"archive_{file_suffix}.zip",
-        compress=compress,
-        store_relative_path=True,
+        input_path, destination_path / f"archive_{file_suffix}.zip", compress=compress
     )
     file_suffix += 1
 
@@ -491,21 +451,9 @@ def _touch_all_files_in_path(path_to_archive: Path) -> None:
         path.touch()
 
 
-@pytest.mark.parametrize(
-    "store_relative_path, compress",
-    [
-        # test that all possible combinations still work
-        pytest.param(False, False, id="no_relative_path_no_compress"),
-        pytest.param(False, True, id="no_relative_path_with_compression"),
-        pytest.param(True, False, id="nodeports_options"),
-        pytest.param(True, True, id="with_relative_path_with_compression"),
-    ],
-)
+@pytest.mark.parametrize("compress", [True, False])
 async def test_regression_archive_hash_does_not_change(
-    mixed_file_types: Path,
-    tmp_path: Path,
-    store_relative_path: bool,
-    compress: bool,
+    mixed_file_types: Path, tmp_path: Path, compress: bool
 ):
     destination_path = tmp_path / "archives_to_compare"
     destination_path.mkdir(parents=True, exist_ok=True)
@@ -516,21 +464,11 @@ async def test_regression_archive_hash_does_not_change(
     assert not second_archive.exists()
     assert first_archive != second_archive
 
-    await archive_dir(
-        mixed_file_types,
-        first_archive,
-        compress=compress,
-        store_relative_path=store_relative_path,
-    )
+    await archive_dir(mixed_file_types, first_archive, compress=compress)
 
     _touch_all_files_in_path(mixed_file_types)
 
-    await archive_dir(
-        mixed_file_types,
-        second_archive,
-        compress=compress,
-        store_relative_path=store_relative_path,
-    )
+    await archive_dir(mixed_file_types, second_archive, compress=compress)
 
     _, first_hash = _compute_hash(first_archive)
     _, second_hash = _compute_hash(second_archive)

@@ -177,7 +177,6 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
                             dir_to_compress=dir_to_compress,
                             destination=destination,
                             compress=False,
-                            store_relative_path=True,
                             progress_bar=sub_progress,
                         )
                     except CancelledError:
