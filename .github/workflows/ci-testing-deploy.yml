@@ -287,6 +287,7 @@ jobs:
       - name: build images
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+          export DOCKER_TARGET_PLATFORMS=linux/arm64
           mkdir --parents /${{ runner.temp }}/build
           make build local-dest=/${{ runner.temp }}/build exclude=static-webserver
       - name: upload build artifacts
@@ -322,6 +323,7 @@ jobs:
       - name: build images
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
+          export DOCKER_TARGET_PLATFORMS=linux/arm64
           mkdir --parents /${{ runner.temp }}/build
           make build local-dest=/${{ runner.temp }}/build target=static-webserver
       - name: upload build artifacts
