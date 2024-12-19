@@ -133,11 +133,6 @@ async def test_override_and_prune_from_archive(
     compress: bool,
 ):
     download_file = tmp_path / "download.zip"
-    expected_paths = {
-        p.relative_to(new_state_dir)
-        for p in new_state_dir.rglob("*")
-        if is_leaf_path(p)
-    }
 
     # archive new_state_dir -> download.zip
     await archive_dir(

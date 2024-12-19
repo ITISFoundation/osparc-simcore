@@ -1,5 +1,4 @@
 import asyncio
-import fnmatch
 import functools
 import logging
 import types
@@ -54,16 +53,11 @@ def _strip_undecodable_in_path(path: Path) -> Path:
     return Path(str(path).encode(errors="replace").decode("utf-8"))
 
 
-def _iter_files_to_compress(
-    dir_path: Path, exclude_patterns: set[str] | None
-) -> Iterator[Path]:
-    exclude_patterns = exclude_patterns if exclude_patterns else set()
+def _iter_files_to_compress(dir_path: Path) -> Iterator[Path]:
     # NOTE: make sure to sort paths othrwise between different runs
     # the zip will have a different structure and hash
     for path in sorted(dir_path.rglob("*")):
-        if path.is_file() and not any(
-            fnmatch.fnmatch(f"{path}", x) for x in exclude_patterns
-        ):
+        if path.is_file():
             yield path
 
 
@@ -303,12 +297,10 @@ def _add_to_archive(
     store_relative_path: bool,  # noqa: FBT001
     update_progress,
     loop,
-    exclude_patterns: set[str] | None = None,
 ) -> None:
     compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
     folder_size_bytes = sum(
-        file.stat().st_size
-        for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
+        file.stat().st_size for file in _iter_files_to_compress(dir_to_compress)
     )
     desc = f"compressing {dir_to_compress} -> {destination}"
     with tqdm_logging_redirect(
@@ -320,7 +312,7 @@ def _add_to_archive(
     ) as progress_bar, _progress_enabled_zip_write_handler(
         ReproducibleZipFile(destination, "w", compression=compression), progress_bar
     ) as zip_file_handler:
-        for file_to_add in _iter_files_to_compress(dir_to_compress, exclude_patterns):
+        for file_to_add in _iter_files_to_compress(dir_to_compress):
             progress_bar.set_description(f"{desc}/{file_to_add.name}\n")
             file_name_in_archive = (
                 _strip_directory_from_path(file_to_add, dir_to_compress)
@@ -350,7 +342,6 @@ async def archive_dir(
     *,
     compress: bool,
     store_relative_path: bool,
-    exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData | None = None,
 ) -> None:
     """
@@ -358,9 +349,6 @@ async def archive_dir(
     zipfile does not like them.
     When unarchiveing, the **escaped version** of the file names
     will be created.
-
-    The **exclude_patterns** is a set of patterns created using
-    Unix shell-style wildcards to exclude files and directories.
 
     destination: Path deleted if errors
 
@@ -373,8 +361,7 @@ async def archive_dir(
 
     async with AsyncExitStack() as stack:
         folder_size_bytes = sum(
-            file.stat().st_size
-            for file in _iter_files_to_compress(dir_to_compress, exclude_patterns)
+            file.stat().st_size for file in _iter_files_to_compress(dir_to_compress)
         )
         sub_progress = await stack.enter_async_context(
             progress_bar.sub_progress(folder_size_bytes, description=IDStr("..."))
@@ -393,7 +380,6 @@ async def archive_dir(
                 store_relative_path,
                 functools.partial(_update_progress, sub_progress),
                 asyncio.get_event_loop(),
-                exclude_patterns,
             )
         except Exception as err:
             if destination.is_file():

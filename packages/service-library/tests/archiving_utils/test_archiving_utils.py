@@ -12,12 +12,10 @@ import string
 import tempfile
 from collections.abc import Callable, Iterable, Iterator
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 from faker import Faker
-from helpers import print_tree
 from pydantic import ByteSize, TypeAdapter
 from pytest_benchmark.plugin import BenchmarkFixture
 from servicelib import archiving_utils
@@ -78,24 +76,6 @@ def dir_with_random_content(faker: Faker) -> Iterable[Path]:
                 )
 
         yield temp_dir_path
-
-
-@pytest.fixture
-def exclude_patterns_validation_dir(tmp_path: Path, faker: Faker) -> Path:
-    """Directory with well known structure"""
-    base_dir = tmp_path / "exclude_patterns_validation_dir"
-    base_dir.mkdir()
-    (base_dir / "empty").mkdir()
-    (base_dir / "d1").mkdir()
-    (base_dir / "d1" / "f1").write_text(faker.text())
-    (base_dir / "d1" / "f2.txt").write_text(faker.text())
-    (base_dir / "d1" / "sd1").mkdir()
-    (base_dir / "d1" / "sd1" / "f1").write_text(faker.text())
-    (base_dir / "d1" / "sd1" / "f2.txt").write_text(faker.text())
-
-    print("exclude_patterns_validation_dir ---")
-    print_tree(base_dir)
-    return base_dir
 
 
 def __raise_error(*arts, **kwargs) -> None:
@@ -427,101 +407,6 @@ ALL_ITEMS_SET: set[Path] = {
     Path("d1/sd1/f1"),
     Path("d1/sd1/f2.txt"),
 }
-
-
-@dataclass(frozen=True)
-class ExcludeParams:
-    exclude_patterns: set[str]
-    expected_result: set[Path]
-
-
-# + /exclude_patterns_validation_dir
-#  + empty
-#  + d1
-#   - f2.txt
-#   + sd1
-#    - f2.txt
-#    - f1
-#   - f1
-@pytest.mark.parametrize(
-    "params",
-    [
-        ExcludeParams(
-            exclude_patterns={"/d1*"},
-            expected_result=EMPTY_SET,
-        ),
-        ExcludeParams(
-            exclude_patterns={"/d1/sd1*"},
-            expected_result={
-                Path("d1/f2.txt"),
-                Path("d1/f1"),
-            },
-        ),
-        ExcludeParams(
-            exclude_patterns={"d1*"},
-            expected_result=EMPTY_SET,
-        ),
-        ExcludeParams(
-            exclude_patterns={"*d1*"},
-            expected_result=EMPTY_SET,
-        ),
-        ExcludeParams(
-            exclude_patterns={"*.txt"},
-            expected_result={
-                Path("d1/f1"),
-                Path("d1/sd1/f1"),
-            },
-        ),
-        ExcludeParams(
-            exclude_patterns={"/absolute/path/does/not/exist*"},
-            expected_result=ALL_ITEMS_SET,
-        ),
-        ExcludeParams(
-            exclude_patterns={"/../../this/is/ignored*"},
-            expected_result=ALL_ITEMS_SET,
-        ),
-        ExcludeParams(
-            exclude_patterns={"*relative/path/does/not/exist"},
-            expected_result=ALL_ITEMS_SET,
-        ),
-    ],
-)
-async def test_archive_unarchive_check_exclude(
-    params: ExcludeParams,
-    exclude_patterns_validation_dir: Path,
-    tmp_path: Path,
-):
-    temp_dir_one = tmp_path / "one"
-    temp_dir_two = tmp_path / "two"
-
-    temp_dir_one.mkdir()
-    temp_dir_two.mkdir()
-
-    archive_file = temp_dir_one / "archive.zip"
-
-    # make exclude_patterns work relative to test directory
-    exclude_patterns = {
-        f"{exclude_patterns_validation_dir}/{x.strip('/') if x.startswith('/') else x}"
-        for x in params.exclude_patterns
-    }
-
-    await archive_dir(
-        dir_to_compress=exclude_patterns_validation_dir,
-        destination=archive_file,
-        store_relative_path=True,
-        compress=False,
-        exclude_patterns=exclude_patterns,
-    )
-
-    unarchived_paths: set[Path] = await unarchive_dir(
-        archive_to_extract=archive_file, destination_folder=temp_dir_two
-    )
-
-    relative_unarchived_paths = {x.relative_to(temp_dir_two) for x in unarchived_paths}
-
-    assert (
-        relative_unarchived_paths == params.expected_result
-    ), f"Exclude rules: {exclude_patterns=}"
 
 
 async def test_unarchive_dir_raises_error(

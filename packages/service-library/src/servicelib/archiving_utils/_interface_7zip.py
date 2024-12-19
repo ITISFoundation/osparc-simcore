@@ -76,10 +76,6 @@ async def _run_cli_command(
         raise ArchiveError(msg)
 
 
-async def print_output_handler(chunk: str) -> None:
-    print(f"{chunk=}")
-
-
 _TOTAL_BYTES_RE: Final[str] = r" (\d+)\s*bytes "
 _PROGRESS_PERCENT_RE: Final[str] = r" (?:100|\d?\d)% "
 _ALL_DONE_RE: Final[str] = r"Everything is Ok"
@@ -151,13 +147,7 @@ async def archive_dir(
         print(f"{byte_progress=}")
 
     parser = ProgressParser(progress_handler)
-    await _run_cli_command(
-        command,
-        [
-            #   print_output_handler,
-            parser.parse_chunk,
-        ],
-    )
+    await _run_cli_command(command, [parser.parse_chunk])
 
 
 async def unarchive_dir(
@@ -168,11 +158,14 @@ async def unarchive_dir(
     progress_bar: ProgressBarData | None = None,
     log_cb: Callable[[str], Awaitable[None]] | None = None,
 ) -> set[Path]:
-    # NOTE: maintained here conserve the interface
-    _ = max_workers  # no longer used
+    _ = max_workers  # not required here, can be removed from the interface
 
     command = f"7z x -bsp1 {archive_to_extract} -o{destination_folder}"
 
-    await _run_cli_command(command, [print_output_handler])
+    async def progress_handler(byte_progress: NonNegativeInt) -> None:
+        print(f"{byte_progress=}")
+
+    parser = ProgressParser(progress_handler)
+    await _run_cli_command(command, [parser.parse_chunk])
 
     return set()

@@ -26,54 +26,46 @@ def unpacked_archive(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def compress_stdout(package_tests_dir: Path) -> list[str]:
-    path = package_tests_dir / "data" / "archive_utils" / "compress_stdout.json"
+def data_archive_utils(package_tests_dir: Path) -> Path:
+    path = package_tests_dir / "data" / "archive_utils"
     assert path.exists()
-    return json.loads(path.read_text())
+    assert path.is_dir()
+    return path
 
 
-@pytest.fixture
-def decompress_stdout(package_tests_dir: Path) -> list[str]:
-    path = package_tests_dir / "data" / "archive_utils" / "decompress_stdout.json"
-    assert path.exists()
-    return json.loads(path.read_text())
+@pytest.mark.parametrize(
+    "progress_stdout, expected_size",
+    [
+        ("compress_stdout.json", 434866026),
+        ("decompress_stdout.json", 434902745),
+    ],
+)
+async def test_compress_progress_parser(
+    data_archive_utils: Path, progress_stdout: str, expected_size: NonNegativeInt
+):
+    stdout_path = data_archive_utils / progress_stdout
+    assert stdout_path.exists()
+    stdout_entries: list[str] = json.loads(stdout_path.read_text())
 
-
-async def test_compress_progress_parser(compress_stdout: list[str]):
     detected_entries: list[NonNegativeInt] = []
 
     async def progress_handler(byte_progress: NonNegativeInt) -> None:
         detected_entries.append(byte_progress)
 
     parser = ProgressParser(progress_handler)
-    for chunk in compress_stdout:
+    for chunk in stdout_entries:
         await parser.parse_chunk(chunk)
 
     print(detected_entries)
-    assert sum(detected_entries) == 434866026
+    assert sum(detected_entries) == expected_size
 
 
-# TODO: unify these 2 tests since they just use some ["compress_stdout.json", "decompress_stdout.json"] and expected sizes at the end of the day
-async def test_decompress_progress_parser(decompress_stdout: list[str]):
-    detected_entries: list[NonNegativeInt] = []
-    # TODO: als an expected length of [detected_entries] would be ideal to make sure all 100% entries are found
-
-    async def progress_handler(byte_progress: NonNegativeInt) -> None:
-        detected_entries.append(byte_progress)
-
-    parser = ProgressParser(progress_handler)
-    for chunk in decompress_stdout:
-        await parser.parse_chunk(chunk)
-
-    print(detected_entries)
-    assert sum(detected_entries) == 434902745
-
-
-async def test_something(
-    mixed_file_types: Path, archive_path: Path, unpacked_archive: Path
+@pytest.mark.parametrize("compress", [True, False])
+async def test_archive_unarchive(
+    mixed_file_types: Path, archive_path: Path, unpacked_archive: Path, compress: bool
 ):
     await archive_dir(
-        mixed_file_types, archive_path, compress=True, store_relative_path=True
+        mixed_file_types, archive_path, compress=compress, store_relative_path=True
     )
 
     await unarchive_dir(archive_path, unpacked_archive)

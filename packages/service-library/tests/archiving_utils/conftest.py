@@ -29,11 +29,11 @@ async def mixed_file_types(tmp_path: Path, faker: Faker) -> AsyncIterable[Path]:
 
     # images cause issues with zipping, below content produced different
     # hashes for zip files
-    for i in range(4):
+    for i in range(2):
         image_dir = base_dir / f"images{i}"
         image_dir.mkdir()
         for n in range(50):
-            a = numpy.random.rand(1900, 1900, 3) * 255  # noqa: NPY002
+            a = numpy.random.rand(900, 900, 3) * 255  # noqa: NPY002
             im_out = Image.fromarray(a.astype("uint8")).convert("RGB")
             image_path = image_dir / f"out{n}.jpg"
             im_out.save(image_path)
