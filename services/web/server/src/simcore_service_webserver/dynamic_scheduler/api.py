@@ -154,6 +154,23 @@ async def stop_dynamic_services_in_project(
         await logged_gather(*services_to_stop)
 
 
+async def restart_user_services(app: web.Application, *, node_id: NodeID) -> None:
+    """Restarts the user service(s) started by the the node_uuid's sidecar
+
+    NOTE: this operation will NOT restart
+    sidecar services (``dy-sidecar`` or ``dy-proxy`` services),
+    but ONLY user services (the ones defined by the compose spec).
+    """
+    settings: DynamicSchedulerSettings = get_plugin_settings(app)
+    await services.restart_user_services(
+        get_rabbitmq_rpc_client(app),
+        node_id=node_id,
+        timeout_s=int(
+            settings.DYNAMIC_SCHEDULER_RESTART_USER_SERVICES_TIMEOUT.total_seconds()
+        ),
+    )
+
+
 async def retrieve_inputs(
     app: web.Application, node_id: NodeID, port_keys: list[ServicePortKey]
 ) -> RetrieveDataOutEnveloped:

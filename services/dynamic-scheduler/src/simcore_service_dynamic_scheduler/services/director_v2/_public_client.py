@@ -125,6 +125,9 @@ class DirectorV2Client(
         )
         return TypeAdapter(list[DynamicServiceGet]).validate_python(response.json())
 
+    async def restart_user_services(self, *, node_id: NodeID) -> None:
+        await self.thin_client.post_restart(node_id=node_id)
+
     async def update_projects_networks(self, *, project_id: ProjectID) -> None:
         await self.thin_client.patch_projects_networks(project_id=project_id)
 

@@ -77,10 +77,6 @@ comp_tasks = sa.Table(
         nullable=True,
         doc="current progress of the task if available",
     ),
-    # utc timestamps for submission/start/end
-    sa.Column(
-        "submit", sa.DateTime(timezone=True), doc="UTC timestamp for task submission"
-    ),
     sa.Column(
         "start", sa.DateTime(timezone=True), doc="UTC timestamp when task started"
     ),

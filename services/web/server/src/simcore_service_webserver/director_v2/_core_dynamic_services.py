@@ -19,24 +19,6 @@ _log = logging.getLogger(__name__)
 
 
 @log_decorator(logger=_log)
-async def restart_dynamic_service(app: web.Application, node_uuid: str) -> None:
-    """User restart the dynamic dynamic service started in the node_uuid
-
-    NOTE that this operation will NOT restart all sidecar services
-    (``simcore-service-dynamic-sidecar`` or ``reverse-proxy caddy`` services) but
-    ONLY those containers in the compose-spec (i.e. the ones exposed to the user)
-    """
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    await request_director_v2(
-        app,
-        "POST",
-        url=settings.base_url / f"dynamic_services/{node_uuid}:restart",
-        expected_status=web.HTTPOk,
-        timeout=settings.DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT,
-    )
-
-
-@log_decorator(logger=_log)
 async def get_project_inactivity(
     app: web.Application,
     project_id: ProjectID,

@@ -376,7 +376,9 @@ async def get_osparc_credits_aggregated_by_service(
 
         subquery = base_query.subquery()
         count_query = sa.select(sa.func.count()).select_from(subquery)
-        count_result = await conn.execute(count_query)
+        count_result = await conn.scalar(count_query)
+        if count_result is None:
+            count_result = 0
 
         # Default ordering and pagination
         list_query = (
@@ -387,7 +389,7 @@ async def get_osparc_credits_aggregated_by_service(
         list_result = await conn.execute(list_query)
 
     return (
-        cast(int, count_result.scalar()),
+        cast(int, count_result),
         [
             OsparcCreditsAggregatedByServiceKeyDB.model_validate(row)
             for row in list_result.fetchall()
@@ -427,10 +429,7 @@ async def export_service_runs_table_to_s3(
                 resource_tracker_service_runs.c.stopped_at,
                 resource_tracker_credit_transactions.c.osparc_credits,
                 resource_tracker_credit_transactions.c.transaction_status,
-                sa.func.coalesce(
-                    _project_tags_subquery.c.project_tags,
-                    sa.cast(sa.text("'{}'"), sa.ARRAY(sa.String)),
-                ).label("project_tags"),
+                _project_tags_subquery.c.project_tags.label("project_tags"),
             )
             .select_from(
                 resource_tracker_service_runs.join(

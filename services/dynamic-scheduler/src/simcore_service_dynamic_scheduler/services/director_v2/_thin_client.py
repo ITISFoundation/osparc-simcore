@@ -144,6 +144,11 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
 
     @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)
+    async def post_restart(self, *, node_id: NodeID) -> Response:
+        return await self.client.post(f"/dynamic_services/{node_id}:restart")
+
+    @retry_on_errors()
+    @expect_status(status.HTTP_204_NO_CONTENT)
     async def patch_projects_networks(self, *, project_id: ProjectID) -> Response:
         return await self.client.patch(
             f"/dynamic_services/projects/{project_id}/-/networks"

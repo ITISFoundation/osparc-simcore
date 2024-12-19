@@ -27,7 +27,6 @@ aiohttp
 aiohttp_jinja2
 aiohttp_security
 aiohttp_session[secure]
-aiohttp-swagger[performance]
 aiopg[sa] # db
 aiosmtplib # email
 asyncpg # db
@@ -50,5 +49,6 @@ pydantic[email] # models
 python-magic # excel
 python-socketio # web-sockets
 redis
+swagger-ui-py
 tenacity
 twilio

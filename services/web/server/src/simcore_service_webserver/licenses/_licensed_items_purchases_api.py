@@ -26,6 +26,7 @@ _logger = logging.getLogger(__name__)
 
 async def list_licensed_items_purchases(
     app: web.Application,
+    *,
     product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
