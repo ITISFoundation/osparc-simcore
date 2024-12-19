@@ -9,7 +9,7 @@ import pytest
 from aiodocker.volumes import DockerVolume
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
-from models_library.services import RunID
+from models_library.services import ServiceRunID
 from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.mounted_fs import (
@@ -56,7 +56,7 @@ async def test_expected_paths_and_volumes(
     inputs_dir: Path,
     outputs_dir: Path,
     state_paths_dirs: list[Path],
-    run_id: RunID,
+    service_run_id: ServiceRunID,
     node_id: NodeID,
 ):
     assert (
@@ -65,7 +65,7 @@ async def test_expected_paths_and_volumes(
             {
                 x
                 async for x in mounted_volumes.iter_state_paths_to_docker_volumes(
-                    run_id
+                    service_run_id
                 )
             }
         )
@@ -89,15 +89,16 @@ async def test_expected_paths_and_volumes(
     # check volume mount point
     assert (
         mounted_volumes.volume_name_outputs
-        == f"dyv_{run_id}_{node_id}_{_replace_slashes(outputs_dir)[::-1]}"
+        == f"dyv_{service_run_id}_{node_id}_{_replace_slashes(outputs_dir)[::-1]}"
     )
     assert (
         mounted_volumes.volume_name_inputs
-        == f"dyv_{run_id}_{node_id}_{_replace_slashes(inputs_dir)[::-1]}"
+        == f"dyv_{service_run_id}_{node_id}_{_replace_slashes(inputs_dir)[::-1]}"
     )
 
     assert set(mounted_volumes.volume_name_state_paths()) == {
-        f"dyv_{run_id}_{node_id}_{_replace_slashes(x)[::-1]}" for x in state_paths_dirs
+        f"dyv_{service_run_id}_{node_id}_{_replace_slashes(x)[::-1]}"
+        for x in state_paths_dirs
     }
 
     def _get_container_mount(mount_path: str) -> str:
@@ -105,15 +106,21 @@ async def test_expected_paths_and_volumes(
 
     # check docker_volume
     assert (
-        _get_container_mount(await mounted_volumes.get_inputs_docker_volume(run_id))
+        _get_container_mount(
+            await mounted_volumes.get_inputs_docker_volume(service_run_id)
+        )
         == f"{mounted_volumes.inputs_path}"
     )
     assert (
-        _get_container_mount(await mounted_volumes.get_outputs_docker_volume(run_id))
+        _get_container_mount(
+            await mounted_volumes.get_outputs_docker_volume(service_run_id)
+        )
         == f"{mounted_volumes.outputs_path}"
     )
 
     assert {
         _get_container_mount(x)
-        async for x in mounted_volumes.iter_state_paths_to_docker_volumes(run_id)
+        async for x in mounted_volumes.iter_state_paths_to_docker_volumes(
+            service_run_id
+        )
     } == {f"{state_path}" for state_path in state_paths_dirs}

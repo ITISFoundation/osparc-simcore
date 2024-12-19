@@ -2,19 +2,15 @@ from collections.abc import Callable
 
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services_resources import (
     ResourceValue,
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from models_library.users import UserID
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
 
-from ...models.comp_runs import Iteration
 from ...models.comp_tasks import CompTaskAtDB
 from ..redis import get_redis_client_manager
 
@@ -53,12 +49,6 @@ COMPLETED_STATES: set[RunningState] = {
     RunningState.SUCCESS,
     RunningState.FAILED,
 }
-
-
-def get_resource_tracking_run_id(
-    user_id: UserID, project_id: ProjectID, node_id: NodeID, iteration: Iteration
-) -> str:
-    return f"comp_{user_id}_{project_id}_{node_id}_{iteration}"
 
 
 def create_service_resources_from_task(task: CompTaskAtDB) -> ServiceResourcesDict:
