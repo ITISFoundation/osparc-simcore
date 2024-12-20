@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
+    GetProjectInactivityResponse,
     RetrieveDataOutEnveloped,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -12,6 +13,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
+from pydantic import NonNegativeInt
 
 from ..core.settings import ApplicationSettings
 from .director_v2 import DirectorV2Client
@@ -77,6 +79,22 @@ async def stop_dynamic_service(
     )
 
     await set_request_as_stopped(app, dynamic_service_stop)
+
+
+async def get_project_inactivity(
+    app: FastAPI, *, project_id: ProjectID, max_inactivity_seconds: NonNegativeInt
+) -> GetProjectInactivityResponse:
+    settings: ApplicationSettings = app.state.settings
+    if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
+        raise NotImplementedError
+
+    director_v2_client = DirectorV2Client.get_from_app_state(app)
+    response: GetProjectInactivityResponse = (
+        await director_v2_client.get_project_inactivity(
+            project_id=project_id, max_inactivity_seconds=max_inactivity_seconds
+        )
+    )
+    return response
 
 
 async def restart_user_services(app: FastAPI, *, node_id: NodeID) -> None:
