@@ -251,22 +251,22 @@ async def archive_dir(
             await shutil_move(f"{destination}.zip", destination)
 
 
-def _extract_file_names_from_archive(archive_listing: str) -> set[str]:
+def _extract_file_names_from_archive(command_output: str) -> set[str]:
     file_name_start: NonNegativeInt | None = None
 
-    for line in archive_listing.splitlines():
+    for line in command_output.splitlines():
         if line.startswith(_TABLE_HEADER_START):
             file_name_start = line.rfind(" ") + 1
             break
 
     lines_with_file_name: list[str] = [
-        line for line in archive_listing.splitlines() if _FILE_PERMISSIONS in line
+        line for line in command_output.splitlines() if _FILE_PERMISSIONS in line
     ]
 
     if lines_with_file_name and file_name_start is None:
         msg = (
             f"Excepted to detect a table header since files were detected {lines_with_file_name=}."
-            f" Command output:\n{archive_listing}"
+            f" Command output:\n{command_output}"
         )
         raise ArchiveError(msg)
 
