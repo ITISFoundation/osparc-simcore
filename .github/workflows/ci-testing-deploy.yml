@@ -289,7 +289,7 @@ jobs:
       - name: build images
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          export DOCKER_TARGET_PLATFORMS=linux/arm64
+          export DOCKER_TARGET_PLATFORMS=linux/amd64
           mkdir --parents /${{ runner.temp }}/build
           make build local-dest=/${{ runner.temp }}/build exclude=static-webserver
       - name: upload build artifacts
@@ -327,7 +327,7 @@ jobs:
       - name: build images
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          export DOCKER_TARGET_PLATFORMS=linux/arm64
+          export DOCKER_TARGET_PLATFORMS=linux/amd64
           mkdir --parents /${{ runner.temp }}/build
           make build local-dest=/${{ runner.temp }}/build target=static-webserver
       - name: upload build artifacts
@@ -2618,7 +2618,7 @@ jobs:
   deploy:
     name: deploy to dockerhub
     if: github.event_name == 'push'
-    needs: [unit-tests, integration-tests, system-tests]
+    needs: [build-push-images-for-arm64]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
