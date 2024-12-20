@@ -1,4 +1,3 @@
-
 7-Zip (z) 24.09 (x64) : Copyright (c) 1999-2024 Igor Pavlov : 2024-11-28
  64-bit locale=en_US.UTF-8 Threads:12 OPEN_MAX:1024, ASM
 

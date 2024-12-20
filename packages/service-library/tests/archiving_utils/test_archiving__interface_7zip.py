@@ -8,7 +8,7 @@ import pytest
 from pydantic import NonNegativeInt
 from servicelib.archiving_utils._interface_7zip import (
     ProgressParser,
-    _extract_files_from_archive,
+    _extract_file_names_from_archive,
     archive_dir,
     unarchive_dir,
 )
@@ -70,10 +70,19 @@ async def test_archive_unarchive(
     await unarchive_dir(archive_path, unpacked_archive)
 
 
-def test__extract_files_from_archive(data_archive_utils: Path):
-    archive_list_stdout_path = data_archive_utils / "list_stdout.txt"
+@pytest.mark.parametrize(
+    "file_name, expected_file_count",
+    [
+        ("list_edge_case.txt", 3),
+        ("list_stdout.txt", 674),
+    ],
+)
+def test__extract_file_names_from_archive(
+    data_archive_utils: Path, file_name: str, expected_file_count: NonNegativeInt
+):
+    archive_list_stdout_path = data_archive_utils / file_name
     assert archive_list_stdout_path.exists()
 
     archive_list_stdout_path.read_text()
-    files = _extract_files_from_archive(archive_list_stdout_path.read_text())
-    assert len(files) == 674
+    files = _extract_file_names_from_archive(archive_list_stdout_path.read_text())
+    assert len(files) == expected_file_count

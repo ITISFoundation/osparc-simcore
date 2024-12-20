@@ -122,6 +122,14 @@ def full_file_path_from_dir_and_subdirs(dir_path: Path) -> list[Path]:
     return [x for x in dir_path.rglob("*") if x.is_file()]
 
 
+def _escape_undecodable_str(s: str) -> str:
+    return s.encode(errors="replace").decode("utf-8")
+
+
+def _escape_undecodable_path(path: Path) -> Path:
+    return Path(_escape_undecodable_str(str(path)))
+
+
 async def assert_same_directory_content(
     dir_to_compress: Path,
     output_dir: Path,
@@ -191,6 +199,8 @@ def assert_unarchived_paths(
         for f in src_dir.rglob("*")
         if is_file_or_emptydir(f)
     }
+    expected_tails = {_escape_undecodable_str(x) for x in expected_tails}
+    got_tails = {x.replace("�", "?") for x in got_tails}
     assert got_tails == expected_tails
 
 

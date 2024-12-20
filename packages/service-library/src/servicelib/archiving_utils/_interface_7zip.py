@@ -34,9 +34,8 @@ _ALL_DONE_RE: Final[str] = r"Everything is Ok"
 
 _7ZIP_PATH: Final[Path] = Path("/usr/bin/7z")
 
-_FILE_SEARCH_PATTERN: Final[re.Pattern] = re.compile(
-    r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+.....\s+\d+\s+\d+\s+(.+\.\w+)$"
-)
+_TABLE_HEADER_START: Final[str] = "------------------- "
+_FILE_PERMISSIONS: Final[str] = " ..... "
 
 
 class ArchiveInfoParser:
@@ -252,15 +251,26 @@ async def archive_dir(
             await shutil_move(f"{destination}.zip", destination)
 
 
-def _extract_files_from_archive(archive_listing: str) -> set[Path]:
-    file_list = set()
+def _extract_file_names_from_archive(archive_listing: str) -> set[str]:
+    file_name_start: NonNegativeInt | None = None
 
     for line in archive_listing.splitlines():
-        match = _FILE_SEARCH_PATTERN.search(line)
-        if match:
-            file_list.add(Path(match.group(1)))
+        if line.startswith(_TABLE_HEADER_START):
+            file_name_start = line.rfind(" ") + 1
+            break
 
-    return file_list
+    lines_with_file_name: list[str] = [
+        line for line in archive_listing.splitlines() if _FILE_PERMISSIONS in line
+    ]
+
+    if lines_with_file_name and file_name_start is None:
+        msg = (
+            f"Excepted to detect a table header since files were detected {lines_with_file_name=}."
+            f" Command output:\n{archive_listing}"
+        )
+        raise ArchiveError(msg)
+
+    return {line[file_name_start:] for line in lines_with_file_name}
 
 
 async def unarchive_dir(
@@ -281,7 +291,7 @@ async def unarchive_dir(
         f"{_7ZIP_PATH} l {archive_to_extract}",
         output_handlers=[archive_info_parser.parse_chunk],
     )
-    files_in_archive = _extract_files_from_archive(list_output)
+    file_names_in_archive = _extract_file_names_from_archive(list_output)
     total_bytes, file_count = archive_info_parser.get_parsed_values()
 
     async with AsyncExitStack() as exit_stack:
@@ -317,4 +327,4 @@ async def unarchive_dir(
             output_handlers=[ProgressParser(progress_handler).parse_chunk],
         )
 
-    return {destination_folder / x for x in files_in_archive}
+    return {destination_folder / x for x in file_names_in_archive}
