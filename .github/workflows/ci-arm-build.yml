@@ -40,6 +40,20 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set deployment variables
+        run: |
+          if [ "${GITHUB_REF}" == "refs/heads/master" ]; then
+            echo "TAG_PREFIX=master-github" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF}" == refs/heads/hotfix_v* ]]; then
+            echo "TAG_PREFIX=hotfix-github" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF}" == refs/heads/hotfix_staging_* ]]; then
+            echo "TAG_PREFIX=hotfix-staging-github" >> $GITHUB_ENV
+          fi
+      - name: build & push images
+        run: |
+          export DOCKER_IMAGE_TAG="$TAG_PREFIX-latest-arm64"
+          export DOCKER_TARGET_PLATFORMS=linux/arm64
+          make build push=true
       - name: build & push images
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)-arm64
@@ -47,5 +61,5 @@ jobs:
           make build push=true
       - name: fuse images in the registry
         run: |
-          export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          make docker-image-fuse
+          export DOCKER_IMAGE_TAG="$TAG_PREFIX-latest-arm64"
+          make docker-image-fuse SUFFIX=arm64
