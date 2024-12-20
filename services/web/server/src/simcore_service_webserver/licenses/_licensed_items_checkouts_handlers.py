@@ -116,7 +116,7 @@ async def list_licensed_item_checkouts_for_wallet(request: web.Request):
         ],
     )
 
-    page = Page[LicensedItemCheckoutRestGetPage].model_validate(
+    page = Page[LicensedItemCheckoutRestGet].model_validate(
         paginate_data(
             chunk=get_page.items,
             request_url=request.url,

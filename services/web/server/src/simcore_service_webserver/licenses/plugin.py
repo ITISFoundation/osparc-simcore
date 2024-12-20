@@ -8,7 +8,12 @@ from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ..rabbitmq import setup_rabbitmq
-from . import _licensed_items_handlers, _licensed_items_purchases_handlers, _rpc
+from . import (
+    _licensed_items_checkouts_handlers,
+    _licensed_items_handlers,
+    _licensed_items_purchases_handlers,
+    _rpc,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -26,6 +31,7 @@ def setup_licenses(app: web.Application):
     # routes
     app.router.add_routes(_licensed_items_handlers.routes)
     app.router.add_routes(_licensed_items_purchases_handlers.routes)
+    app.router.add_routes(_licensed_items_checkouts_handlers.routes)
 
     setup_rabbitmq(app)
     if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
