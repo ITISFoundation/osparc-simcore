@@ -126,10 +126,6 @@ def _escape_undecodable_str(s: str) -> str:
     return s.encode(errors="replace").decode("utf-8")
 
 
-def _escape_undecodable_path(path: Path) -> Path:
-    return Path(_escape_undecodable_str(str(path)))
-
-
 async def assert_same_directory_content(
     dir_to_compress: Path,
     output_dir: Path,
@@ -430,3 +426,21 @@ async def test_regression_archive_hash_does_not_change(
     _, first_hash = _compute_hash(first_archive)
     _, second_hash = _compute_hash(second_archive)
     assert first_hash == second_hash
+
+
+@pytest.mark.parametrize("compress", [True, False])
+async def test_archive_empty_folder(tmp_path: Path, compress: bool):
+    archive_path = tmp_path / "zip_archive"
+    assert not archive_path.exists()
+
+    empty_folder_path = tmp_path / "empty"
+    empty_folder_path.mkdir(parents=True, exist_ok=True)
+    extract_to_path = tmp_path / "extracted_to"
+    extract_to_path.mkdir(parents=True, exist_ok=True)
+
+    await archive_dir(empty_folder_path, archive_path, compress=compress)
+
+    detected_files = await unarchive_dir(archive_path, extract_to_path)
+    assert detected_files == set()
+
+    await assert_same_directory_content(empty_folder_path, extract_to_path)

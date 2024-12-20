@@ -27,7 +27,7 @@ from ._utils import iter_files_to_compress
 
 _logger = logging.getLogger(__name__)
 
-_TOTAL_BYTES_RE: Final[str] = r" (\d+)\s*bytes "
+_TOTAL_BYTES_RE: Final[str] = r" (\d+)\s*bytes"
 _FILE_COUNT_RE: Final[str] = r" (\d+)\s*files"
 _PROGRESS_PERCENT_RE: Final[str] = r" (?:100|\d?\d)% "
 _ALL_DONE_RE: Final[str] = r"Everything is Ok"
@@ -301,7 +301,7 @@ async def unarchive_dir(
 
         tqdm_progress = exit_stack.enter_context(
             tqdm.tqdm(
-                desc=f"decompressing {archive_to_extract} -> {destination_folder} [{file_count} file{'s' if file_count > 1 else ''}"
+                desc=f"decompressing {archive_to_extract} -> {destination_folder} [{file_count} file{'' if file_count == 1 else 's'}"
                 f"/{human_readable_size(archive_to_extract.stat().st_size)}]\n",
                 total=total_bytes,
                 **TQDM_MULTI_FILES_OPTIONS,
