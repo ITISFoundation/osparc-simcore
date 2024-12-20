@@ -153,7 +153,7 @@ async def test_pre_registration_and_invitation_workflow(
     ).model_dump()
 
     # Search user -> nothing
-    response = await client.get("/v0/users:search", params={"email": guest_email})
+    response = await client.get("/v0/admin/users:search", params={"email": guest_email})
     data, _ = await assert_status(response, expected_status)
     # i.e. no info of requester is found, i.e. needs pre-registration
     assert data == []
@@ -164,17 +164,21 @@ async def test_pre_registration_and_invitation_workflow(
     # assert response.status == status.HTTP_409_CONFLICT
 
     # Accept user for registration and create invitation for her
-    response = await client.post("/v0/users:pre-register", json=requester_info)
+    response = await client.post("/v0/admin/users:pre-register", json=requester_info)
     data, _ = await assert_status(response, expected_status)
 
     # Can only  pre-register once
     for _ in range(MANY_TIMES):
-        response = await client.post("/v0/users:pre-register", json=requester_info)
+        response = await client.post(
+            "/v0/admin/users:pre-register", json=requester_info
+        )
         await assert_status(response, status.HTTP_409_CONFLICT)
 
     # Search user again
     for _ in range(MANY_TIMES):
-        response = await client.get("/v0/users:search", params={"email": guest_email})
+        response = await client.get(
+            "/v0/admin/users:search", params={"email": guest_email}
+        )
         data, _ = await assert_status(response, expected_status)
         assert len(data) == 1
         user_found = data[0]
@@ -203,7 +207,7 @@ async def test_pre_registration_and_invitation_workflow(
     await assert_status(response, status.HTTP_200_OK)
 
     # find registered user
-    response = await client.get("/v0/users:search", params={"email": guest_email})
+    response = await client.get("/v0/admin/users:search", params={"email": guest_email})
     data, _ = await assert_status(response, expected_status)
     assert len(data) == 1
     user_found = data[0]

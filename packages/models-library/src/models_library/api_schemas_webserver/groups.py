@@ -29,7 +29,7 @@ from ..groups import (
 )
 from ..users import UserID, UserNameID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
-from ._base import InputSchema, OutputSchema
+from ._base import InputSchema, OutputSchema, OutputSchemaWithoutCamelCase
 
 S = TypeVar("S", bound=BaseModel)
 
@@ -248,8 +248,7 @@ class MyGroupsGet(OutputSchema):
         )
 
 
-class GroupUserGet(BaseModel):
-    # OutputSchema
+class GroupUserGet(OutputSchemaWithoutCamelCase):
 
     # Identifiers
     id: Annotated[UserID | None, Field(description="the user's id")] = None
@@ -275,7 +274,14 @@ class GroupUserGet(BaseModel):
     ] = None
 
     # Access Rights
-    access_rights: GroupAccessRights = Field(..., alias="accessRights")
+    access_rights: Annotated[
+        GroupAccessRights | None,
+        Field(
+            alias="accessRights",
+            description="If group is standard, these are these are the access rights of the user to it."
+            "None if primary group.",
+        ),
+    ] = None
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -293,7 +299,23 @@ class GroupUserGet(BaseModel):
                     "write": False,
                     "delete": False,
                 },
-            }
+            },
+            "examples": [
+                # unique member on a primary group with two different primacy settings
+                {
+                    "id": "16",
+                    "userName": "mrprivate",
+                    "gid": "55",
+                },
+                {
+                    "id": "56",
+                    "userName": "mrpublic",
+                    "login": "mrpublic@email.me",
+                    "first_name": "Mr",
+                    "last_name": "Public",
+                    "gid": "42",
+                },
+            ],
         },
     )
 

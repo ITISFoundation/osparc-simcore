@@ -611,8 +611,9 @@ paths:
     get:
       tags:
       - groups
+      - users
       summary: Get All Group Users
-      description: Gets users in organization groups
+      description: Gets users in organization or primary groups
       operationId: get_all_group_users
       parameters:
       - name: gid
@@ -633,6 +634,7 @@ paths:
     post:
       tags:
       - groups
+      - users
       summary: Add Group User
       description: Adds a user to an organization group using their username, user
         ID, or email (subject to privacy settings)
@@ -659,6 +661,7 @@ paths:
     get:
       tags:
       - groups
+      - users
       summary: Get Group User
       description: Gets specific user in an organization group
       operationId: get_group_user
@@ -689,6 +692,7 @@ paths:
     patch:
       tags:
       - groups
+      - users
       summary: Update Group User
       description: Updates user (access-rights) to an organization group
       operationId: update_group_user
@@ -725,6 +729,7 @@ paths:
     delete:
       tags:
       - groups
+      - users
       summary: Delete Group User
       description: Removes a user from an organization group
       operationId: delete_group_user
@@ -1133,7 +1138,7 @@ paths:
   /v0/me:
     get:
       tags:
-      - user
+      - users
       summary: Get My Profile
       operationId: get_my_profile
       responses:
@@ -1145,7 +1150,7 @@ paths:
                 $ref: '#/components/schemas/Envelope_MyProfileGet_'
     put:
       tags:
-      - user
+      - users
       summary: Replace My Profile
       description: Use PATCH instead
       operationId: replace_my_profile
@@ -1161,7 +1166,7 @@ paths:
       deprecated: true
     patch:
       tags:
-      - user
+      - users
       summary: Update My Profile
       operationId: update_my_profile
       requestBody:
@@ -1176,7 +1181,7 @@ paths:
   /v0/me/preferences/{preference_id}:
     patch:
       tags:
-      - user
+      - users
       summary: Set Frontend Preference
       operationId: set_frontend_preference
       parameters:
@@ -1198,7 +1203,7 @@ paths:
   /v0/me/tokens:
     get:
       tags:
-      - user
+      - users
       summary: List Tokens
       operationId: list_tokens
       responses:
@@ -1210,7 +1215,7 @@ paths:
                 $ref: '#/components/schemas/Envelope_list_MyTokenGet__'
     post:
       tags:
-      - user
+      - users
       summary: Create Token
       operationId: create_token
       requestBody:
@@ -1229,7 +1234,7 @@ paths:
   /v0/me/tokens/{service}:
     get:
       tags:
-      - user
+      - users
       summary: Get Token
       operationId: get_token
       parameters:
@@ -1248,7 +1253,7 @@ paths:
                 $ref: '#/components/schemas/Envelope_MyTokenGet_'
     delete:
       tags:
-      - user
+      - users
       summary: Delete Token
       operationId: delete_token
       parameters:
@@ -1264,7 +1269,7 @@ paths:
   /v0/me/notifications:
     get:
       tags:
-      - user
+      - users
       summary: List User Notifications
       operationId: list_user_notifications
       responses:
@@ -1276,7 +1281,7 @@ paths:
                 $ref: '#/components/schemas/Envelope_list_UserNotification__'
     post:
       tags:
-      - user
+      - users
       summary: Create User Notification
       operationId: create_user_notification
       requestBody:
@@ -1291,7 +1296,7 @@ paths:
   /v0/me/notifications/{notification_id}:
     patch:
       tags:
-      - user
+      - users
       summary: Mark Notification As Read
       operationId: mark_notification_as_read
       parameters:
@@ -1313,7 +1318,7 @@ paths:
   /v0/me/permissions:
     get:
       tags:
-      - user
+      - users
       summary: List User Permissions
       operationId: list_user_permissions
       responses:
@@ -1324,12 +1329,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_list_MyPermissionGet__'
   /v0/users:search:
+    post:
+      tags:
+      - users
+      summary: Search Users
+      description: Search among users who are publicly visible to the caller (i.e.,
+        me) based on their privacy settings.
+      operationId: search_users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsersSearch'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_UserGet__'
+  /v0/admin/users:search:
     get:
       tags:
-      - user
-      - po
-      summary: Search Users
-      operationId: search_users
+      - users
+      - admin
+      summary: Search Users For Admin
+      operationId: search_users_for_admin
       parameters:
       - name: email
         in: query
@@ -1345,14 +1371,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_UserGet__'
-  /v0/users:pre-register:
+                $ref: '#/components/schemas/Envelope_list_UserForAdminGet__'
+  /v0/admin/users:pre-register:
     post:
       tags:
-      - user
-      - po
-      summary: Pre Register User
-      operationId: pre_register_user
+      - users
+      - admin
+      summary: Pre Register User For Admin
+      operationId: pre_register_user_for_admin
       requestBody:
         content:
           application/json:
@@ -1365,7 +1391,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UserGet_'
+                $ref: '#/components/schemas/Envelope_UserForAdminGet_'
   /v0/wallets:
     get:
       tags:
@@ -8556,11 +8582,11 @@ components:
           title: Error
       type: object
       title: Envelope[Union[WalletGet, NoneType]]
-    Envelope_UserGet_:
+    Envelope_UserForAdminGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/UserGet'
+          - $ref: '#/components/schemas/UserForAdminGet'
           - type: 'null'
         error:
           anyOf:
@@ -8568,7 +8594,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[UserGet]
+      title: Envelope[UserForAdminGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -9202,6 +9228,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
+    Envelope_list_UserForAdminGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/UserForAdminGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[UserForAdminGet]]
     Envelope_list_UserGet__:
       properties:
         data:
@@ -10166,11 +10208,14 @@ components:
           description: the user gravatar id hash
           deprecated: true
         accessRights:
-          $ref: '#/components/schemas/GroupAccessRights'
+          anyOf:
+          - $ref: '#/components/schemas/GroupAccessRights'
+          - type: 'null'
+          description: If group is standard, these are these are the access rights
+            of the user to it.None if primary group.
       type: object
       required:
       - userName
-      - accessRights
       title: GroupUserGet
       example:
         accessRights:
@@ -14356,7 +14401,7 @@ components:
       - number
       - e_tag
       title: UploadedPart
-    UserGet:
+    UserForAdminGet:
       properties:
         firstName:
           anyOf:
@@ -14447,6 +14492,45 @@ components:
       - country
       - registered
       - status
+      title: UserForAdminGet
+    UserGet:
+      properties:
+        userId:
+          type: integer
+          exclusiveMinimum: true
+          title: Userid
+          minimum: 0
+        groupId:
+          type: integer
+          exclusiveMinimum: true
+          title: Groupid
+          minimum: 0
+        userName:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Username
+        firstName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Firstname
+        lastName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lastname
+        email:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Email
+      type: object
+      required:
+      - userId
+      - groupId
+      - userName
       title: UserGet
     UserNotification:
       properties:
@@ -14578,6 +14662,25 @@ components:
       - BANNED
       - DELETED
       title: UserStatus
+    UsersSearch:
+      properties:
+        match:
+          type: string
+          maxLength: 80
+          minLength: 1
+          title: Match
+          description: Search string to match with usernames and public profiles (e.g.
+            emails, first/last name)
+        limit:
+          type: integer
+          maximum: 50
+          minimum: 1
+          title: Limit
+          default: 10
+      type: object
+      required:
+      - match
+      title: UsersSearch
     Viewer:
       properties:
         title:
