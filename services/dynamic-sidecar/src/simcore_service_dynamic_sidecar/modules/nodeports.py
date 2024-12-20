@@ -247,59 +247,59 @@ async def _get_data_from_port(
         with log_context(_logger, logging.DEBUG, f"getting {port.key=}"):
             port_data = await port.get(sub_progress)
 
-        if not is_file_type(port.property_type):
-            transferred_bytes = sys.getsizeof(port_data)
+        if is_file_type(port.property_type):
+            # if there are files, move them to the final destination
+            downloaded_file: Path | None = cast(Path | None, port_data)
+            final_path: Path = target_dir / port.key
 
-        # if there are files, move them to the final destination
-        downloaded_file: Path | None = cast(Path | None, port_data)
-        final_path: Path = target_dir / port.key
+            if not downloaded_file or not downloaded_file.exists():
+                # the link may be empty
+                # remove files all files from disk when disconnecting port
+                with log_context(
+                    _logger, logging.DEBUG, f"removing contents of dir '{final_path}'"
+                ):
+                    await remove_directory(
+                        final_path, only_children=True, ignore_errors=True
+                    )
+                return port, None, ByteSize(0)
 
-        if not downloaded_file or not downloaded_file.exists():
-            # the link may be empty
-            # remove files all files from disk when disconnecting port
-            with log_context(
-                _logger, logging.DEBUG, f"removing contents of dir '{final_path}'"
-            ):
-                await remove_directory(
-                    final_path, only_children=True, ignore_errors=True
-                )
-            return port, None, ByteSize(0)
+            transferred_bytes = downloaded_file.stat().st_size
 
-        transferred_bytes = downloaded_file.stat().st_size
+            # in case of valid file, it is either uncompressed and/or moved to the final directory
+            with log_context(_logger, logging.DEBUG, "creating directory"):
+                final_path.mkdir(exist_ok=True, parents=True)
+            port_data = f"{final_path}"
 
-        # in case of valid file, it is either uncompressed and/or moved to the final directory
-        with log_context(_logger, logging.DEBUG, "creating directory"):
-            final_path.mkdir(exist_ok=True, parents=True)
-        port_data = f"{final_path}"
+            archive_files: set[Path]
 
-        archive_files: set[Path]
+            if _is_zip_file(downloaded_file):
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"unzipping '{downloaded_file}' to {final_path}",
+                ):
+                    archive_files = await unarchive_dir(
+                        archive_to_extract=downloaded_file,
+                        destination_folder=final_path,
+                        progress_bar=sub_progress,
+                    )
+            else:
+                # move archive to directory as is
+                final_path = final_path / downloaded_file.name
 
-        if _is_zip_file(downloaded_file):
-            with log_context(
-                _logger,
-                logging.DEBUG,
-                f"unzipping '{downloaded_file}' to {final_path}",
-            ):
-                archive_files = await unarchive_dir(
-                    archive_to_extract=downloaded_file,
-                    destination_folder=final_path,
-                    progress_bar=sub_progress,
-                )
+                with log_context(
+                    _logger, logging.DEBUG, f"moving {downloaded_file} to {final_path}"
+                ):
+                    final_path.parent.mkdir(exist_ok=True, parents=True)
+                    await shutil_move(downloaded_file, final_path)
+
+                archive_files = {final_path}
+
+            # NOTE: after the port content changes, make sure old files
+            # which are no longer part of the port, are removed
+            PrunableFolder(final_path).prune(exclude=archive_files)
         else:
-            # move archive to directory as is
-            final_path = final_path / downloaded_file.name
-
-            with log_context(
-                _logger, logging.DEBUG, f"moving {downloaded_file} to {final_path}"
-            ):
-                final_path.parent.mkdir(exist_ok=True, parents=True)
-                await shutil_move(downloaded_file, final_path)
-
-            archive_files = {final_path}
-
-        # NOTE: after the port content changes, make sure old files
-        # which are no longer part of the port, are removed
-        PrunableFolder(final_path).prune(exclude=archive_files)
+            transferred_bytes = sys.getsizeof(port_data)
 
         return port, port_data, ByteSize(transferred_bytes)
 
