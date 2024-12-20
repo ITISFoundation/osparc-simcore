@@ -25,6 +25,18 @@ PAGE_EXAMPLES: Final[list[dict]] = [
         },
         "data": ["data 5", "data 6", "data 7"],
     },
+    # empty page
+    {
+        "_meta": {"total": 0, "count": 0, "limit": 4, "offset": 0},
+        "_links": {
+            "self": "https://osparc.io/v2/listing?offset=0&limit=4",
+            "first": "https://osparc.io/v2/listing?offset=0&limit=4",
+            "prev": None,
+            "next": None,
+            "last": "https://osparc.io/v2/listing?offset=0&limit=4",
+        },
+        "data": [],
+    },
 ]
 
 RPC_PAGE_EXAMPLES: Final[list[dict]] = [
@@ -51,5 +63,17 @@ RPC_PAGE_EXAMPLES: Final[list[dict]] = [
             "last": {"offset": 1, "limit": 4},
         },
         "data": ["data 5", "data 6", "data 7"],
+    },
+    # empty page
+    {
+        "_meta": {"total": 0, "count": 0, "limit": 4, "offset": 0},
+        "_links": {
+            "self": {"offset": 0, "limit": 4},
+            "first": {"offset": 0, "limit": 4},
+            "prev": None,
+            "next": None,
+            "last": {"offset": 0, "limit": 4},
+        },
+        "data": [],
     },
 ]
