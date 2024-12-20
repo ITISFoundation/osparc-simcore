@@ -27,15 +27,15 @@ from ._utils import iter_files_to_compress
 
 _logger = logging.getLogger(__name__)
 
-_TOTAL_BYTES_RE: Final[str] = r" (\d+)\s*bytes"
-_FILE_COUNT_RE: Final[str] = r" (\d+)\s*files"
-_PROGRESS_PERCENT_RE: Final[str] = r" (?:100|\d?\d)% "
-_ALL_DONE_RE: Final[str] = r"Everything is Ok"
+_TOTAL_BYTES_RE: Final[re.Pattern] = re.compile(r" (\d+)\s*bytes")
+_FILE_COUNT_RE: Final[re.Pattern] = re.compile(r" (\d+)\s*files")
+_PROGRESS_PERCENT_RE: Final[re.Pattern] = re.compile(r" (?:100|\d?\d)% ")
+_ALL_DONE_RE: Final[re.Pattern] = re.compile(r"Everything is Ok")
 
-_7ZIP_PATH: Final[Path] = Path("/usr/bin/7z")
+_TOKEN_TABLE_HEADER_START: Final[str] = "------------------- "
+_TOKEN_FILE_PERMISSIONS: Final[str] = " ..... "
 
-_TABLE_HEADER_START: Final[str] = "------------------- "
-_FILE_PERMISSIONS: Final[str] = " ..... "
+_7ZIP_EXECUTABLE: Final[Path] = Path("/usr/bin/7z")
 
 
 class ArchiveInfoParser:
@@ -216,7 +216,7 @@ async def archive_dir(
             "-mta=off",  # Don't store file access time
         ]
     )
-    command = f"{_7ZIP_PATH} {options} {destination} {dir_to_compress}/*"
+    command = f"{_7ZIP_EXECUTABLE} {options} {destination} {dir_to_compress}/*"
 
     folder_size_bytes = sum(
         file.stat().st_size for file in iter_files_to_compress(dir_to_compress)
@@ -255,12 +255,12 @@ def _extract_file_names_from_archive(command_output: str) -> set[str]:
     file_name_start: NonNegativeInt | None = None
 
     for line in command_output.splitlines():
-        if line.startswith(_TABLE_HEADER_START):
+        if line.startswith(_TOKEN_TABLE_HEADER_START):
             file_name_start = line.rfind(" ") + 1
             break
 
     lines_with_file_name: list[str] = [
-        line for line in command_output.splitlines() if _FILE_PERMISSIONS in line
+        line for line in command_output.splitlines() if _TOKEN_FILE_PERMISSIONS in line
     ]
 
     if lines_with_file_name and file_name_start is None:
@@ -288,7 +288,7 @@ async def unarchive_dir(
     # get archive information
     archive_info_parser = ArchiveInfoParser()
     list_output = await _run_cli_command(
-        f"{_7ZIP_PATH} l {archive_to_extract}",
+        f"{_7ZIP_EXECUTABLE} l {archive_to_extract}",
         output_handlers=[archive_info_parser.parse_chunk],
     )
     file_names_in_archive = _extract_file_names_from_archive(list_output)
@@ -323,7 +323,7 @@ async def unarchive_dir(
             ]
         )
         await _run_cli_command(
-            f"{_7ZIP_PATH} {options} {archive_to_extract} -o{destination_folder}",
+            f"{_7ZIP_EXECUTABLE} {options} {archive_to_extract} -o{destination_folder}",
             output_handlers=[ProgressParser(progress_handler).parse_chunk],
         )
 
