@@ -21,10 +21,7 @@ async def _compress_dir(
         raise SDSException(msg)
 
     await archive_dir(
-        dir_to_compress=folder_to_zip,
-        destination=archive_name,
-        compress=True,
-        store_relative_path=True,
+        dir_to_compress=folder_to_zip, destination=archive_name, compress=True
     )
 
     return archive_name

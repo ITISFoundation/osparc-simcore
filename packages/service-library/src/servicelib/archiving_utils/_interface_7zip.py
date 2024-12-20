@@ -1,0 +1,330 @@
+import asyncio
+import asyncio.subprocess
+import logging
+import os
+import re
+from collections.abc import Awaitable, Callable
+from contextlib import AsyncExitStack
+from pathlib import Path
+from typing import Final
+
+import tqdm
+from models_library.basic_types import IDStr
+from pydantic import NonNegativeInt
+from servicelib.logging_utils import log_catch
+from tqdm.contrib.logging import tqdm_logging_redirect
+
+from ..file_utils import shutil_move
+from ..progress_bar import ProgressBarData
+from ._errors import ArchiveError
+from ._tdqm_utils import (
+    TQDM_FILE_OPTIONS,
+    TQDM_MULTI_FILES_OPTIONS,
+    compute_tqdm_miniters,
+    human_readable_size,
+)
+from ._utils import iter_files_to_compress
+
+_logger = logging.getLogger(__name__)
+
+_TOTAL_BYTES_RE: Final[str] = r" (\d+)\s*bytes"
+_FILE_COUNT_RE: Final[str] = r" (\d+)\s*files"
+_PROGRESS_PERCENT_RE: Final[str] = r" (?:100|\d?\d)% "
+_ALL_DONE_RE: Final[str] = r"Everything is Ok"
+
+_7ZIP_PATH: Final[Path] = Path("/usr/bin/7z")
+
+_TABLE_HEADER_START: Final[str] = "------------------- "
+_FILE_PERMISSIONS: Final[str] = " ..... "
+
+
+class ArchiveInfoParser:
+    def __init__(self) -> None:
+        self.total_bytes: NonNegativeInt | None = None
+        self.file_count: NonNegativeInt | None = None
+
+    async def parse_chunk(self, chunk: str) -> None:
+        # search for ` NUMBER bytes ` -> set byte size
+        if self.total_bytes is None and (match := re.search(_TOTAL_BYTES_RE, chunk)):
+            self.total_bytes = int(match.group(1))
+
+        # search for ` NUMBER files` -> set file count
+        if self.file_count is None and (match := re.search(_FILE_COUNT_RE, chunk)):
+            self.file_count = int(match.group(1))
+
+    def get_parsed_values(self) -> tuple[NonNegativeInt, NonNegativeInt]:
+        if self.total_bytes is None:
+            msg = f"Unexpected value for {self.total_bytes=}. Should not be None"
+            raise ArchiveError(msg)
+
+        if self.file_count is None:
+            msg = f"Unexpected value for {self.file_count=}. Should not be None"
+            raise ArchiveError(msg)
+
+        return (self.total_bytes, self.file_count)
+
+
+class ProgressParser:
+    def __init__(
+        self, decompressed_bytes: Callable[[NonNegativeInt], Awaitable[None]]
+    ) -> None:
+        self.decompressed_bytes = decompressed_bytes
+        self.total_bytes: NonNegativeInt | None = None
+
+        # in range 0% -> 100%
+        self.percent: NonNegativeInt | None = None
+        self.finished: bool = False
+        self.finished_emitted: bool = False
+
+        self.emitted_total: NonNegativeInt = 0
+
+    def _prase_progress(self, chunk: str) -> None:
+        # search for " NUMBER bytes" -> set byte size
+        if self.total_bytes is None and (match := re.search(_TOTAL_BYTES_RE, chunk)):
+            self.total_bytes = int(match.group(1))
+
+        # search for ` dd% ` -> update progress (as last entry inside the string)
+        if matches := re.findall(_PROGRESS_PERCENT_RE, chunk):
+            self.percent = int(matches[-1].strip().strip("%"))
+
+        # search for `Everything is Ok` -> set 100% and finish
+        if re.search(_ALL_DONE_RE, chunk, re.IGNORECASE):
+            self.finished = True
+
+    async def parse_chunk(self, chunk: str) -> None:
+        self._prase_progress(chunk)
+
+        if self.total_bytes is not None and self.percent is not None:
+            # total bytes decompressed
+            current_bytes_progress = int(self.percent * self.total_bytes / 100)
+
+            # only emit an update if something changed since before
+            bytes_diff = current_bytes_progress - self.emitted_total
+            if self.emitted_total == 0 or bytes_diff > 0:
+                await self.decompressed_bytes(bytes_diff)
+
+            self.emitted_total = current_bytes_progress
+
+        # if finished emit the remaining diff
+        if self.total_bytes and self.finished and not self.finished_emitted:
+
+            await self.decompressed_bytes(self.total_bytes - self.emitted_total)
+            self.finished_emitted = True
+
+
+async def _stream_output_reader(
+    stream: asyncio.StreamReader,
+    *,
+    output_handlers: list[Callable[[str], Awaitable[None]]] | None,
+    chunk_size: NonNegativeInt = 16,
+    lookbehind_buffer_size: NonNegativeInt = 40,
+) -> str:
+    # NOTE: content is not read line by line but chunk by chunk to avoid missing progress updates
+    # small chunks are read and of size `chunk_size` and a bigger chunk of
+    # size `lookbehind_buffer_size` + `chunk_size` is emitted
+    # The goal is to not split any important search in half, thus giving a change to the
+    #  `output_handlers` to properly handle it
+
+    # NOTE: at the time of writing this, the biggest possible thing to capture search would be:
+    # ~`9.1TiB` -> literally ` 9999999999999 bytes ` equal to 21 characters to capture,
+    # with the above defaults we the "emitted chunk" is more than double in size
+    # There are no foreseeable issued due to the size of inputs to be captured.
+
+    if output_handlers is None:
+        output_handlers = []
+
+    command_output = ""
+    lookbehind_buffer = ""
+
+    while True:
+        read_chunk = await stream.read(chunk_size)
+
+        if not read_chunk:
+            # process remaining buffer if any
+            if lookbehind_buffer:
+                await asyncio.gather(
+                    *[handler(lookbehind_buffer) for handler in output_handlers]
+                )
+            break
+
+        # `errors=replace`: avoids getting stuck when can't parse utf-8
+        chunk = read_chunk.decode("utf-8", errors="replace")
+
+        command_output += chunk
+        chunk_to_emit = lookbehind_buffer + chunk
+        lookbehind_buffer = chunk_to_emit[-lookbehind_buffer_size:]
+
+        await asyncio.gather(*[handler(chunk_to_emit) for handler in output_handlers])
+
+    return command_output
+
+
+async def _run_cli_command(
+    command: str,
+    *,
+    output_handlers: list[Callable[[str], Awaitable[None]]] | None = None,
+) -> str:
+    """
+    Raises:
+        ArchiveError: when it fails to execute the command
+    """
+
+    process = await asyncio.create_subprocess_shell(
+        command,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+    assert process.stdout  # nosec
+
+    command_output, _ = await asyncio.gather(
+        asyncio.create_task(
+            _stream_output_reader(process.stdout, output_handlers=output_handlers)
+        ),
+        process.wait(),
+    )
+
+    if process.returncode != os.EX_OK:
+        msg = f"Could not run '{command}' error: '{command_output}'"
+        raise ArchiveError(msg)
+
+    return command_output
+
+
+async def archive_dir(
+    dir_to_compress: Path,
+    destination: Path,
+    *,
+    compress: bool,
+    progress_bar: ProgressBarData | None = None,
+) -> None:
+    if progress_bar is None:
+        progress_bar = ProgressBarData(
+            num_steps=1, description=IDStr(f"compressing {dir_to_compress.name}")
+        )
+
+    options = " ".join(
+        [
+            "a",  # archive
+            "-tzip",  # type of archive
+            "-bsp1",  # used for parsing progress
+            f"-mx={9 if compress else 0}",  # compression level
+            # guarantees archive reproducibility
+            "-r",  # recurse into subdirectories if needed.
+            "-mtm=off",  # Don't store last modification time
+            "-mtc=off",  # Don't store file creation time
+            "-mta=off",  # Don't store file access time
+        ]
+    )
+    command = f"{_7ZIP_PATH} {options} {destination} {dir_to_compress}/*"
+
+    folder_size_bytes = sum(
+        file.stat().st_size for file in iter_files_to_compress(dir_to_compress)
+    )
+
+    async with AsyncExitStack() as exit_stack:
+        sub_progress = await exit_stack.enter_async_context(
+            progress_bar.sub_progress(folder_size_bytes, description=IDStr("..."))
+        )
+
+        tqdm_progress = exit_stack.enter_context(
+            tqdm_logging_redirect(
+                desc=f"compressing {dir_to_compress} -> {destination}\n",
+                total=folder_size_bytes,
+                **(
+                    TQDM_FILE_OPTIONS
+                    | {"miniters": compute_tqdm_miniters(folder_size_bytes)}
+                ),
+            )
+        )
+
+        async def progress_handler(byte_progress: NonNegativeInt) -> None:
+            tqdm_progress.update(byte_progress)
+            await sub_progress.update(byte_progress)
+
+        await _run_cli_command(
+            command, output_handlers=[ProgressParser(progress_handler).parse_chunk]
+        )
+
+        # 7zip automatically adds .zip extension if it's missing form the archive name
+        if not destination.exists():
+            await shutil_move(f"{destination}.zip", destination)
+
+
+def _extract_file_names_from_archive(command_output: str) -> set[str]:
+    file_name_start: NonNegativeInt | None = None
+
+    for line in command_output.splitlines():
+        if line.startswith(_TABLE_HEADER_START):
+            file_name_start = line.rfind(" ") + 1
+            break
+
+    lines_with_file_name: list[str] = [
+        line for line in command_output.splitlines() if _FILE_PERMISSIONS in line
+    ]
+
+    if lines_with_file_name and file_name_start is None:
+        msg = (
+            f"Excepted to detect a table header since files were detected {lines_with_file_name=}."
+            f" Command output:\n{command_output}"
+        )
+        raise ArchiveError(msg)
+
+    return {line[file_name_start:] for line in lines_with_file_name}
+
+
+async def unarchive_dir(
+    archive_to_extract: Path,
+    destination_folder: Path,
+    *,
+    progress_bar: ProgressBarData | None = None,
+    log_cb: Callable[[str], Awaitable[None]] | None = None,
+) -> set[Path]:
+    if progress_bar is None:
+        progress_bar = ProgressBarData(
+            num_steps=1, description=IDStr(f"extracting {archive_to_extract.name}")
+        )
+
+    # get archive information
+    archive_info_parser = ArchiveInfoParser()
+    list_output = await _run_cli_command(
+        f"{_7ZIP_PATH} l {archive_to_extract}",
+        output_handlers=[archive_info_parser.parse_chunk],
+    )
+    file_names_in_archive = _extract_file_names_from_archive(list_output)
+    total_bytes, file_count = archive_info_parser.get_parsed_values()
+
+    async with AsyncExitStack() as exit_stack:
+        sub_prog = await exit_stack.enter_async_context(
+            progress_bar.sub_progress(steps=total_bytes, description=IDStr("..."))
+        )
+
+        tqdm_progress = exit_stack.enter_context(
+            tqdm.tqdm(
+                desc=f"decompressing {archive_to_extract} -> {destination_folder} [{file_count} file{'' if file_count == 1 else 's'}"
+                f"/{human_readable_size(archive_to_extract.stat().st_size)}]\n",
+                total=total_bytes,
+                **TQDM_MULTI_FILES_OPTIONS,
+            )
+        )
+
+        # extract archive
+        async def progress_handler(byte_progress: NonNegativeInt) -> None:
+            if tqdm_progress.update(byte_progress) and log_cb:
+                with log_catch(_logger, reraise=False):
+                    await log_cb(f"{tqdm_progress}")
+            await sub_prog.update(byte_progress)
+
+        options = " ".join(
+            [
+                "x",  # extract
+                "-bsp1",  # used for parsing progress
+                "-y",  # reply yes to all
+            ]
+        )
+        await _run_cli_command(
+            f"{_7ZIP_PATH} {options} {archive_to_extract} -o{destination_folder}",
+            output_handlers=[ProgressParser(progress_handler).parse_chunk],
+        )
+
+    return {destination_folder / x for x in file_names_in_archive}

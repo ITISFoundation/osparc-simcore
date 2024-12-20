@@ -25,12 +25,21 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
-  libmagic1 \
+  curl \
   gosu \
+  libmagic1 \
+  xz-utils \
   && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/* \
   # verify that the binary works
   && gosu nobody true
+
+# install 7zip
+ARG TARGETARCH
+ENV TARGETARCH=${TARGETARCH}
+RUN \
+  --mount=type=bind,source=scripts/install_7zip.bash,target=install_7zip.bash \
+  ./install_7zip.bash
 
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)

@@ -21,6 +21,7 @@ class AsyncStream(Protocol):
 
 
 _shutil_rmtree = sync_to_async(shutil.rmtree)
+shutil_move = sync_to_async(shutil.move)
 
 
 async def _rm(path: Path, *, ignore_errors: bool):

@@ -1,0 +1,24 @@
+7-Zip (z) 24.09 (x64) : Copyright (c) 1999-2024 Igor Pavlov : 2024-11-28
+ 64-bit locale=en_US.UTF-8 Threads:12 OPEN_MAX:1024, ASM
+
+Scanning the drive for archives:
+1 file, 672 bytes (1 KiB)
+
+Listing archive: /tmp/pytest-of-silenthk/pytest-654/test_override_and_prune_from_a0/download.zip
+
+--
+Path = /tmp/pytest-of-silenthk/pytest-654/test_override_and_prune_from_a0/download.zip
+Type = zip
+Physical Size = 672
+
+   Date      Time    Attr         Size   Compressed  Name
+------------------- ----- ------------ ------------  ------------------------
+1980-01-01 00:00:00 D....            0            0  d1
+1980-01-01 00:00:00 D....            0            0  d1/d1_1
+1980-01-01 00:00:00 D....            0            0  d1/d1_1/d1_2
+1980-01-01 00:00:00 .....            0            0  d1/d1_1/d1_2/f5
+1980-01-01 00:00:00 D....            0            0  d1/empty
+1980-01-01 00:00:00 .....            1            1  d1/f1
+1980-01-01 00:00:00 .....            1            1  d1/f2
+------------------- ----- ------------ ------------  ------------------------
+1980-01-01 00:00:00                  2            2  3 files, 4 folders
