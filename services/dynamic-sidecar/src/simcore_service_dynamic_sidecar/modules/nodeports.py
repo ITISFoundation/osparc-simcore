@@ -270,13 +270,15 @@ async def _get_data_from_port(
                 final_path.mkdir(exist_ok=True, parents=True)
             port_data = f"{final_path}"
 
+            archive_files: set[Path]
+
             if _is_zip_file(downloaded_file):
                 with log_context(
                     _logger,
                     logging.DEBUG,
                     f"unzipping '{downloaded_file}' to {final_path}",
                 ):
-                    archive_files: set[Path] = await unarchive_dir(
+                    archive_files = await unarchive_dir(
                         archive_to_extract=downloaded_file,
                         destination_folder=final_path,
                         progress_bar=sub_progress,
@@ -291,7 +293,7 @@ async def _get_data_from_port(
                     final_path.parent.mkdir(exist_ok=True, parents=True)
                     await shutil_move(downloaded_file, final_path)
 
-                archive_files: set[Path] = {final_path}
+                archive_files = {final_path}
 
             # NOTE: after the port content changes, make sure old files
             # which are no longer part of the port, are removed
