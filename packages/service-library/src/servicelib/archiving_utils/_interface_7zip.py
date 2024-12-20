@@ -31,10 +31,12 @@ _TOTAL_BYTES_RE: Final[str] = r" (\d+)\s*bytes "
 _FILE_COUNT_RE: Final[str] = r" (\d+)\s*files"
 _PROGRESS_PERCENT_RE: Final[str] = r" (?:100|\d?\d)% "
 _ALL_DONE_RE: Final[str] = r"Everything is Ok"
-# NOTE: the size of `chunk_to_emit` should in theory contain everything that above regexes capture
-_DEFAULT_CHUNK_SIZE: Final[NonNegativeInt] = 20
 
 _7ZIP_PATH: Final[Path] = Path("/usr/bin/7z")
+
+_FILE_SEARCH_PATTERN: Final[re.Pattern] = re.compile(
+    r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s+.....\s+\d+\s+\d+\s+(.+\.\w+)$"
+)
 
 
 class ArchiveInfoParser:
@@ -111,26 +113,35 @@ class ProgressParser:
             self.finished_emitted = True
 
 
-async def _output_reader(
-    stream,
+async def _stream_output_reader(
+    stream: asyncio.StreamReader,
     *,
     output_handlers: list[Callable[[str], Awaitable[None]]] | None,
-    chunk_size: NonNegativeInt = _DEFAULT_CHUNK_SIZE,
+    chunk_size: NonNegativeInt = 16,
+    lookbehind_buffer_size: NonNegativeInt = 40,
 ) -> str:
-    # NOTE: we do not read line by line but chunk by chunk otherwise we'd miss progress updates
-    # the key is to read the smallest possible chunks of data so that the progress can be properly parsed
+    # NOTE: content is not read line by line but chunk by chunk to avoid missing progress updates
+    # small chunks are read and of size `chunk_size` and a bigger chunk of
+    # size `lookbehind_buffer_size` + `chunk_size` is emitted
+    # The goal is to not split any important search in half, thus giving a change to the
+    #  `output_handlers` to properly handle it
+
+    # NOTE: at the time of writing this, the biggest possible thing to capture search would be:
+    # ~`9.1TiB` -> literally ` 9999999999999 bytes ` equal to 21 characters to capture,
+    # with the above defaults we the "emitted chunk" is more than double in size
+    # There are no foreseeable issued due to the size of inputs to be captured.
+
     if output_handlers is None:
         output_handlers = []
 
     command_output = ""
+    lookbehind_buffer = ""
 
-    lookbehind_buffer = ""  # store the last chunk
-
-    # TODO: rewrite the scrolling window to be a bit longer so that we could capture bigger numbers
     while True:
         read_chunk = await stream.read(chunk_size)
+
         if not read_chunk:
-            # Process remaining buffer if any
+            # process remaining buffer if any
             if lookbehind_buffer:
                 await asyncio.gather(
                     *[handler(lookbehind_buffer) for handler in output_handlers]
@@ -141,11 +152,8 @@ async def _output_reader(
         chunk = read_chunk.decode("utf-8", errors="replace")
 
         command_output += chunk
-
-        # Combine lookbehind buffer with new chunk
         chunk_to_emit = lookbehind_buffer + chunk
-        # Keep last window_size characters for next iteration
-        lookbehind_buffer = chunk_to_emit[-len(chunk) :]
+        lookbehind_buffer = chunk_to_emit[-lookbehind_buffer_size:]
 
         await asyncio.gather(*[handler(chunk_to_emit) for handler in output_handlers])
 
@@ -156,7 +164,7 @@ async def _run_cli_command(
     command: str,
     *,
     output_handlers: list[Callable[[str], Awaitable[None]]] | None = None,
-) -> None:
+) -> str:
     """
     Raises:
         ArchiveError: when it fails to execute the command
@@ -168,11 +176,11 @@ async def _run_cli_command(
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
+    assert process.stdout  # nosec
 
-    # Wait for the process to complete and all output to be processed
     command_output, _ = await asyncio.gather(
         asyncio.create_task(
-            _output_reader(process.stdout, output_handlers=output_handlers)
+            _stream_output_reader(process.stdout, output_handlers=output_handlers)
         ),
         process.wait(),
     )
@@ -180,6 +188,8 @@ async def _run_cli_command(
     if process.returncode != os.EX_OK:
         msg = f"Could not run '{command}' error: '{command_output}'"
         raise ArchiveError(msg)
+
+    return command_output
 
 
 async def archive_dir(
@@ -236,8 +246,21 @@ async def archive_dir(
         await _run_cli_command(
             command, output_handlers=[ProgressParser(progress_handler).parse_chunk]
         )
+
+        # 7zip automatically adds .zip extension if it's missing form the archive name
         if not destination.exists():
             await shutil_move(f"{destination}.zip", destination)
+
+
+def _extract_files_from_archive(archive_listing: str) -> set[Path]:
+    file_list = set()
+
+    for line in archive_listing.splitlines():
+        match = _FILE_SEARCH_PATTERN.search(line)
+        if match:
+            file_list.add(Path(match.group(1)))
+
+    return file_list
 
 
 async def unarchive_dir(
@@ -254,10 +277,11 @@ async def unarchive_dir(
 
     # get archive information
     archive_info_parser = ArchiveInfoParser()
-    await _run_cli_command(
+    list_output = await _run_cli_command(
         f"{_7ZIP_PATH} l {archive_to_extract}",
         output_handlers=[archive_info_parser.parse_chunk],
     )
+    files_in_archive = _extract_files_from_archive(list_output)
     total_bytes, file_count = archive_info_parser.get_parsed_values()
 
     async with AsyncExitStack() as exit_stack:
@@ -293,7 +317,4 @@ async def unarchive_dir(
             output_handlers=[ProgressParser(progress_handler).parse_chunk],
         )
 
-    extracted_files = {x for x in destination_folder.rglob("*") if x.is_file()}
-    # when extracting in the same folder as the archive do not list the archive as an extracted file
-    extracted_files.discard(archive_to_extract)
-    return extracted_files
+    return {destination_folder / x for x in files_in_archive}

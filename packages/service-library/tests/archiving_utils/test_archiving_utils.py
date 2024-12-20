@@ -257,6 +257,13 @@ async def test_unarchive_in_same_dir_as_archive(
 ):
     archive_file = tmp_path / "archive.zip"
 
+    existing_files: set[Path] = set()
+    for i in range(10):
+        # add some other files to the folder
+        existing = tmp_path / f"exiting-file-{i}"
+        existing.touch()
+        existing_files.add(existing)
+
     await archive_dir(
         dir_to_compress=dir_with_random_content,
         destination=archive_file,
@@ -268,6 +275,10 @@ async def test_unarchive_in_same_dir_as_archive(
     )
 
     archive_file.unlink()  # delete before comparing contents
+
+    # remove existing files now that the listing was complete
+    for file in existing_files:
+        file.unlink()
 
     assert_unarchived_paths(
         unarchived_paths,
