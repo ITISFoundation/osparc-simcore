@@ -73,7 +73,7 @@ def mock_get_wallet_by_user(mocker: MockerFixture) -> tuple:
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
-async def test_licensed_items_db_crud(
+async def test_licensed_items_purchaches_handlers(
     client: TestClient,
     logged_user: UserInfoDict,
     expected: HTTPStatus,

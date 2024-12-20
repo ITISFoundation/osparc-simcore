@@ -38,6 +38,7 @@ openapi_modules = [
         "_long_running_tasks",
         "_licensed_items",
         "_licensed_items_purchases",
+        "_licensed_items_checkouts",
         "_metamodeling",
         "_nih_sparc",
         "_nih_sparc_redirections",
