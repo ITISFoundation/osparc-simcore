@@ -9,7 +9,6 @@ install() {
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  sudo ./ci/github/helpers/install_7zip.bash
   pushd services/director-v2
   make install-ci
   popd
