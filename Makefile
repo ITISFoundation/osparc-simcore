@@ -867,3 +867,8 @@ release-staging release-prod: .check-on-master-branch  ## Helper to create a sta
 .PHONY: release-hotfix release-staging-hotfix
 release-hotfix release-staging-hotfix: ## Helper to create a hotfix release in Github (usage: make release-hotfix version=1.2.4 git_sha=optional or make release-staging-hotfix name=Sprint version=2)
 	$(create_github_release_url)
+
+.PHONY: docker-image-fuse
+docker-image-fuse:
+	$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
+		docker buildx imagetools --tag $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG)-arm64 $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG))
