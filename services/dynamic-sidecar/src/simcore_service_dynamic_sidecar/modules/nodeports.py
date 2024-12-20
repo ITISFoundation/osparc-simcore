@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import shutil
 import sys
 import time
 from asyncio import CancelledError
@@ -12,7 +11,6 @@ from enum import Enum
 from pathlib import Path
 from typing import cast
 
-import aiofiles.os
 import magic
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from models_library.basic_types import IDStr
@@ -22,7 +20,7 @@ from models_library.services_types import ServicePortKey
 from pydantic import ByteSize, TypeAdapter
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
-from servicelib.file_utils import remove_directory
+from servicelib.file_utils import remove_directory, shutil_move
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import limited_gather
@@ -239,19 +237,6 @@ def _is_zip_file(file_path: Path) -> bool:
     return f"{mime_type}" == "application/zip"
 
 
-_shutil_move = aiofiles.os.wrap(shutil.move)
-
-
-async def _move_archive(final_path: Path, archive_path: Path) -> set[Path]:
-    final_path = final_path / archive_path.name
-
-    with log_context(_logger, logging.DEBUG, f"moving {archive_path} to {final_path}"):
-        final_path.parent.mkdir(exist_ok=True, parents=True)
-        await _shutil_move(archive_path, final_path)
-
-    return {final_path}
-
-
 async def _get_data_from_port(
     port: Port, *, target_dir: Path, progress_bar: ProgressBarData
 ) -> tuple[Port, ItemConcreteValue | None, ByteSize]:
@@ -297,9 +282,16 @@ async def _get_data_from_port(
                         progress_bar=sub_progress,
                     )
             else:
-                archive_files: set[Path] = await _move_archive(
-                    final_path, downloaded_file
-                )
+                # move archive to directory as is
+                final_path = final_path / downloaded_file.name
+
+                with log_context(
+                    _logger, logging.DEBUG, f"moving {downloaded_file} to {final_path}"
+                ):
+                    final_path.parent.mkdir(exist_ok=True, parents=True)
+                    await shutil_move(downloaded_file, final_path)
+
+                archive_files: set[Path] = {final_path}
 
             # NOTE: after the port content changes, make sure old files
             # which are no longer part of the port, are removed
