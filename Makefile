@@ -172,8 +172,14 @@ docker buildx bake --allow=fs.read=.. \
 			,--load\
 		)\
 	)\
+	$(if $(push),\
+		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
+			--set $(service).tags=$(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) \
+			--set $(service).output="type=registry$(comma)push=true" \
+		)\
+	,) \
 	$(if $(push),--push,) \
-	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),$(INCLUDED_SERVICES)) \
+	--file docker-compose-build.yml $(if $(target),$(target),$(INCLUDED_SERVICES)) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) \
