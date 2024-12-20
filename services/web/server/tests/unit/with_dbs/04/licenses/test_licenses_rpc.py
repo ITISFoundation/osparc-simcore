@@ -73,7 +73,7 @@ async def rpc_client(
 @pytest.fixture
 def mock_get_wallet_by_user(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_checkouts_api.get_wallet_by_user",
+        "simcore_service_webserver.licenses._licensed_items_checkouts_api.get_wallet_by_user",
         spec=True,
     )
 
@@ -86,7 +86,7 @@ _LICENSED_ITEM_CHECKOUT_GET = LicensedItemCheckoutGet.model_validate(
 @pytest.fixture
 def mock_checkout_licensed_item(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_checkouts.checkout_licensed_item",
+        "simcore_service_webserver.licenses._licensed_items_checkouts_api.licensed_items_checkouts.checkout_licensed_item",
         spec=True,
         return_value=_LICENSED_ITEM_CHECKOUT_GET,
     )
@@ -95,7 +95,7 @@ def mock_checkout_licensed_item(mocker: MockerFixture) -> tuple:
 @pytest.fixture
 def mock_get_licensed_item_checkout(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_checkouts.get_licensed_item_checkout",
+        "simcore_service_webserver.licenses._licensed_items_checkouts_api.licensed_items_checkouts.get_licensed_item_checkout",
         spec=True,
         return_value=_LICENSED_ITEM_CHECKOUT_GET,
     )
@@ -104,7 +104,7 @@ def mock_get_licensed_item_checkout(mocker: MockerFixture) -> tuple:
 @pytest.fixture
 def mock_release_licensed_item(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_checkouts_api.licensed_items_checkouts.release_licensed_item",
+        "simcore_service_webserver.licenses._licensed_items_checkouts_api.licensed_items_checkouts.release_licensed_item",
         spec=True,
         return_value=_LICENSED_ITEM_CHECKOUT_GET,
     )
