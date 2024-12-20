@@ -4,7 +4,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import re
 import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
 from http import HTTPStatus
@@ -16,9 +15,13 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
+from models_library.api_schemas_directorv2.dynamic_services import (
+    GetProjectInactivityResponse,
+)
 from models_library.products import ProductName
 from models_library.projects_state import ProjectState
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -656,18 +659,11 @@ async def test_new_template_from_project(
 
 
 @pytest.fixture
-def mock_director_v2_inactivity(
-    aioresponses_mocker: aioresponses, is_inactive: bool
-) -> None:
-    aioresponses_mocker.clear()
-    get_services_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/inactivity.*$"
-    )
-    aioresponses_mocker.get(
-        get_services_pattern,
-        status=status.HTTP_200_OK,
-        repeat=True,
-        payload={"is_inactive": is_inactive},
+def mock_dynamic_scheduler_inactivity(mocker: MockerFixture, is_inactive: bool) -> None:
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.get_project_inactivity",
+        autospec=True,
+        return_value=GetProjectInactivityResponse(is_inactive=is_inactive),
     )
 
 
@@ -680,7 +676,7 @@ def mock_director_v2_inactivity(
 )
 @pytest.mark.parametrize("is_inactive", [True, False])
 async def test_get_project_inactivity(
-    mock_director_v2_inactivity: None,
+    mock_dynamic_scheduler_inactivity: None,
     logged_user: UserInfoDict,
     client: TestClient,
     faker: Faker,
