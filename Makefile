@@ -871,4 +871,4 @@ release-hotfix release-staging-hotfix: ## Helper to create a hotfix release in G
 .PHONY: docker-image-fuse
 docker-image-fuse:
 	$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-		docker buildx imagetools --tag $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG)-arm64 $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG))
+		docker buildx imagetools --tag $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG)-$(SUFFIX) $(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG))
