@@ -108,6 +108,25 @@ async def background_sync_task_mocked(
     await services_db_tables_injector(fake_data_for_services)
 
 
+async def test_rpc_catalog_with_no_services_returns_empty_page(
+    background_sync_task_mocked: None,
+    mocked_director_service_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    app: FastAPI,
+):
+    assert app
+
+    page = await list_services_paginated(
+        rpc_client, product_name="not_existing_returns_no_services", user_id=user_id
+    )
+    assert page.data == []
+    assert page.links.next is None
+    assert page.links.prev is None
+    assert page.meta.count == 0
+    assert page.meta.total == 0
+
+
 async def test_rpc_catalog_client(
     background_sync_task_mocked: None,
     mocked_director_service_api: MockRouter,
