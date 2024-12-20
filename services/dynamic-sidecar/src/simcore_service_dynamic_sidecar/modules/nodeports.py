@@ -19,7 +19,7 @@ from models_library.basic_types import IDStr
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
-from pydantic import ByteSize
+from pydantic import ByteSize, TypeAdapter
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.file_utils import remove_directory
@@ -102,7 +102,7 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
     PORTS: Nodeports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
-        node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
+        node_uuid=TypeAdapter(NodeIDStr).validate_python(settings.DY_SIDECAR_NODE_ID),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
         aws_s3_cli_settings=None,
@@ -242,18 +242,14 @@ def _is_zip_file(file_path: Path) -> bool:
 _shutil_move = aiofiles.os.wrap(shutil.move)
 
 
-async def _move_file_to_input_port(
-    final_path: Path, downloaded_file: Path, dest_folder: PrunableFolder
-) -> None:
-    with log_context(_logger, logging.DEBUG, f"moving {downloaded_file}"):
-        final_path = final_path / downloaded_file.name
+async def _move_archive(final_path: Path, archive_path: Path) -> set[Path]:
+    final_path = final_path / archive_path.name
+
+    with log_context(_logger, logging.DEBUG, f"moving {archive_path} to {final_path}"):
         final_path.parent.mkdir(exist_ok=True, parents=True)
+        await _shutil_move(archive_path, final_path)
 
-        await _shutil_move(downloaded_file, final_path)
-
-        # NOTE: after the port content changes, make sure old files
-        # which are no longer part of the port, are removed
-        dest_folder.prune(exclude={final_path})
+    return {final_path}
 
 
 async def _get_data_from_port(
@@ -288,7 +284,6 @@ async def _get_data_from_port(
             with log_context(_logger, logging.DEBUG, "creating directory"):
                 final_path.mkdir(exist_ok=True, parents=True)
             port_data = f"{final_path}"
-            dest_folder = PrunableFolder(final_path)
 
             if _is_zip_file(downloaded_file):
                 with log_context(
@@ -296,16 +291,19 @@ async def _get_data_from_port(
                     logging.DEBUG,
                     f"unzipping '{downloaded_file}' to {final_path}",
                 ):
-                    unarchived: set[Path] = await unarchive_dir(
+                    archive_files: set[Path] = await unarchive_dir(
                         archive_to_extract=downloaded_file,
                         destination_folder=final_path,
                         progress_bar=sub_progress,
                     )
-                    dest_folder.prune(exclude=unarchived)
             else:
-                await _move_file_to_input_port(final_path, downloaded_file, dest_folder)
+                archive_files: set[Path] = await _move_archive(
+                    final_path, downloaded_file
+                )
 
-                _logger.debug("all moved to %s", final_path)
+            # NOTE: after the port content changes, make sure old files
+            # which are no longer part of the port, are removed
+            PrunableFolder(final_path).prune(exclude=archive_files)
         else:
             transferred_bytes = sys.getsizeof(port_data)
 
@@ -328,7 +326,7 @@ async def download_target_ports(
     PORTS: Nodeports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
-        node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
+        node_uuid=TypeAdapter(NodeIDStr).validate_python(settings.DY_SIDECAR_NODE_ID),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
         aws_s3_cli_settings=None,
