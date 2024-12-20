@@ -34,6 +34,8 @@ _ALL_DONE_RE: Final[str] = r"Everything is Ok"
 # NOTE: the size of `chunk_to_emit` should in theory contain everything that above regexes capture
 _DEFAULT_CHUNK_SIZE: Final[NonNegativeInt] = 20
 
+_7ZIP_PATH: Final[Path] = Path("/usr/bin/7z")
+
 
 class ArchiveInfoParser:
     def __init__(self) -> None:
@@ -124,6 +126,7 @@ async def _output_reader(
 
     lookbehind_buffer = ""  # store the last chunk
 
+    # TODO: rewrite the scrolling window to be a bit longer so that we could capture bigger numbers
     while True:
         read_chunk = await stream.read(chunk_size)
         if not read_chunk:
@@ -204,7 +207,7 @@ async def archive_dir(
             "-mta=off",  # Don't store file access time
         ]
     )
-    command = f"7z {options} {destination} {dir_to_compress}/*"
+    command = f"{_7ZIP_PATH} {options} {destination} {dir_to_compress}/*"
 
     folder_size_bytes = sum(
         file.stat().st_size for file in iter_files_to_compress(dir_to_compress)
@@ -252,7 +255,7 @@ async def unarchive_dir(
     # get archive information
     archive_info_parser = ArchiveInfoParser()
     await _run_cli_command(
-        f"7z l {archive_to_extract}",
+        f"{_7ZIP_PATH} l {archive_to_extract}",
         output_handlers=[archive_info_parser.parse_chunk],
     )
     total_bytes, file_count = archive_info_parser.get_parsed_values()
@@ -286,7 +289,7 @@ async def unarchive_dir(
             ]
         )
         await _run_cli_command(
-            f"7z {options} {archive_to_extract} -o{destination_folder}",
+            f"{_7ZIP_PATH} {options} {archive_to_extract} -o{destination_folder}",
             output_handlers=[ProgressParser(progress_handler).parse_chunk],
         )
 
