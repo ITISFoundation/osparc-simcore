@@ -23,6 +23,7 @@ from ..modules import (
     dask_clients_pool,
     db,
     director_v0,
+    docker_client,
     dynamic_services,
     dynamic_sidecar,
     instrumentation,
@@ -205,6 +206,8 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     if settings.DIRECTOR_V2_PROFILING:
         app.add_middleware(ProfilerMiddleware)
+
+    docker_client.setup(app)
 
     # setup app --
     app.add_event_handler("startup", on_startup)

@@ -21,6 +21,8 @@ from .projects import ProjectID
 from .projects_nodes_io import NodeID
 from .users import UserID
 
+DockerNetworkID: TypeAlias = str
+
 
 class DockerLabelKey(ConstrainedStr):
     # NOTE: https://docs.docker.com/config/labels-custom-metadata/#key-format-recommendations
@@ -37,7 +39,15 @@ DockerGenericTag: TypeAlias = Annotated[
     str, StringConstraints(pattern=DOCKER_GENERIC_TAG_KEY_RE)
 ]
 
-DockerPlacementConstraint: TypeAlias = Annotated[str, StringConstraints(strip_whitespace = True, pattern = re.compile(r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"))]
+DockerPlacementConstraint: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        pattern=re.compile(
+            r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
+        ),
+    ),
+]
 
 _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX: Final[str] = "io.simcore.runtime."
 _BACKWARDS_COMPATIBILITY_SIMCORE_RUNTIME_DOCKER_LABELS_MAP: Final[dict[str, str]] = {
