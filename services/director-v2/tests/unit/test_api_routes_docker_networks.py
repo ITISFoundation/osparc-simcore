@@ -76,11 +76,14 @@ async def test_routes_are_protected(
     assert response.status_code == status.HTTP_200_OK, response.text
     network_id: DockerNetworkID = response.json()
 
+    # check network is present
+    docker_network = await async_docker_client.networks.get(network_name)
+    assert docker_network.id == network_id
+
     response = client.delete(f"/v2/docker/networks/{network_id}")
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
 
-    # check it is not here
-
+    # check network was removed
     for name_or_id in (network_name, network_id):
         with pytest.raises(DockerError) as exc:
             await async_docker_client.networks.get(name_or_id)
