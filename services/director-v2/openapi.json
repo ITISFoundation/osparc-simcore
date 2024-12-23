@@ -852,6 +852,83 @@
         }
       }
     },
+    "/v2/docker/networks/": {
+      "post": {
+        "tags": [
+          "docker networks"
+        ],
+        "summary": "create a docker network given the input parameters",
+        "operationId": "create_docker_network_v2_docker_networks__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Network"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Create Docker Network V2 Docker Networks  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/docker/networks/{network_id}": {
+      "delete": {
+        "tags": [
+          "docker networks"
+        ],
+        "summary": "removes an existing docker network",
+        "operationId": "remove_docker_network_v2_docker_networks__network_id__delete",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Network Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v2/dynamic_scheduler/services/{node_uuid}/observation": {
       "patch": {
         "tags": [
@@ -1501,6 +1578,25 @@
           "user_id"
         ],
         "title": "ComputationStop"
+      },
+      "ConfigReference": {
+        "properties": {
+          "Network": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Network",
+            "description": "The name of the config-only network that provides the network's\nconfiguration. The specified network must be an existing config-only\nnetwork. Only network names are allowed, not network IDs.\n"
+          }
+        },
+        "type": "object",
+        "title": "ConfigReference",
+        "description": "The config-only network source to provide the configuration for\nthis network."
       },
       "ContainerState": {
         "properties": {
@@ -2209,6 +2305,108 @@
         "title": "HealthcheckResult",
         "description": "HealthcheckResult stores information about a single run of a healthcheck probe"
       },
+      "IPAM": {
+        "properties": {
+          "Driver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver",
+            "description": "Name of the IPAM driver to use.",
+            "default": "default"
+          },
+          "Config": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IPAMConfig"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config",
+            "description": "List of IPAM configuration options, specified as a map:\n\n```\n{\"Subnet\": <CIDR>, \"IPRange\": <CIDR>, \"Gateway\": <IP address>, \"AuxAddress\": <device_name:IP address>}\n```\n"
+          },
+          "Options": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options",
+            "description": "Driver-specific options, specified as a map."
+          }
+        },
+        "type": "object",
+        "title": "IPAM"
+      },
+      "IPAMConfig": {
+        "properties": {
+          "Subnet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subnet"
+          },
+          "IPRange": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iprange"
+          },
+          "Gateway": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gateway"
+          },
+          "AuxiliaryAddresses": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auxiliaryaddresses"
+          }
+        },
+        "type": "object",
+        "title": "IPAMConfig"
+      },
       "ImageResources": {
         "properties": {
           "image": {
@@ -2316,6 +2514,277 @@
         ],
         "title": "NATRule",
         "description": "Content of \"simcore.service.containers-allowed-outgoing-permit-list\" label"
+      },
+      "Network": {
+        "properties": {
+          "Name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Name of the network.\n"
+          },
+          "Id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id",
+            "description": "ID that uniquely identifies a network on a single machine.\n"
+          },
+          "Created": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created",
+            "description": "Date and time at which the network was created in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n"
+          },
+          "Scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope",
+            "description": "The level at which the network exists (e.g. `swarm` for cluster-wide\nor `local` for machine level)\n"
+          },
+          "Driver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver",
+            "description": "The name of the driver used to create the network (e.g. `bridge`,\n`overlay`).\n"
+          },
+          "EnableIPv6": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enableipv6",
+            "description": "Whether the network was created with IPv6 enabled.\n"
+          },
+          "IPAM": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IPAM"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "Internal": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Internal",
+            "description": "Whether the network is created to only allow internal networking\nconnectivity.\n",
+            "default": false
+          },
+          "Attachable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attachable",
+            "description": "Whether a global / swarm scope network is manually attachable by regular\ncontainers from workers in swarm mode.\n",
+            "default": false
+          },
+          "Ingress": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingress",
+            "description": "Whether the network is providing the routing-mesh for the swarm cluster.\n",
+            "default": false
+          },
+          "ConfigFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfigReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ConfigOnly": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Configonly",
+            "description": "Whether the network is a config-only network. Config-only networks are\nplaceholder networks for network configurations to be used by other\nnetworks. Config-only networks cannot be used directly to run containers\nor services.\n",
+            "default": false
+          },
+          "Containers": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/NetworkContainer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Containers",
+            "description": "Contains endpoints attached to the network.\n"
+          },
+          "Options": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options",
+            "description": "Network-specific options uses when creating the network.\n"
+          },
+          "Labels": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labels",
+            "description": "User-defined key/value metadata."
+          },
+          "Peers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PeerInfo"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peers",
+            "description": "List of peer nodes for an overlay network. This field is only present\nfor overlay networks, and omitted for other network types.\n"
+          }
+        },
+        "type": "object",
+        "title": "Network"
+      },
+      "NetworkContainer": {
+        "properties": {
+          "Name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "EndpointID": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpointid"
+          },
+          "MacAddress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Macaddress"
+          },
+          "IPv4Address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipv4Address"
+          },
+          "IPv6Address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipv6Address"
+          }
+        },
+        "type": "object",
+        "title": "NetworkContainer"
       },
       "NodeState": {
         "properties": {
@@ -2436,6 +2905,37 @@
         ],
         "title": "PathMappingsLabel",
         "description": "Content of \"simcore.service.paths-mapping\" label"
+      },
+      "PeerInfo": {
+        "properties": {
+          "Name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "ID of the peer-node in the Swarm cluster."
+          },
+          "IP": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip",
+            "description": "IP-address of the peer-node in the Swarm cluster."
+          }
+        },
+        "type": "object",
+        "title": "PeerInfo",
+        "description": "PeerInfo represents one peer of an overlay network."
       },
       "PipelineDetails": {
         "properties": {
