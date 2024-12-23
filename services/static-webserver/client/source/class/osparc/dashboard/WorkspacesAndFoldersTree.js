@@ -85,6 +85,8 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
   events: {
     "openChanged": "qx.event.type.Event",
     "locationChanged": "qx.event.type.Data",
+    "studyToFolderRequested": "qx.event.type.Data",
+    "folderToFolderRequested": "qx.event.type.Data",
   },
 
   properties: {
@@ -133,7 +135,13 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
           item.addListener("changeModel", e => {
             const model = e.getData();
             osparc.utils.Utils.setIdToWidget(item, `workspacesAndFoldersTreeItem_${model.getWorkspaceId()}_${model.getFolderId()}`);
-          })
+          });
+          [
+            "studyToFolderRequested",
+            "folderToFolderRequested",
+          ].forEach(ev => {
+            item.addListener(ev, e => this.fireDataEvent(ev, e.getData()));
+          });
         }
       });
 

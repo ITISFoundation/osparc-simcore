@@ -14,8 +14,13 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     CommonServiceDetails,
 )
+from models_library.api_schemas_directorv2.services import (
+    DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+)
 from models_library.basic_types import PortInt
 from models_library.callbacks_mapping import CallbacksMapping
+from models_library.docker import DockerNodeID
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo, PricingInfo
@@ -24,7 +29,7 @@ from models_library.service_settings_labels import (
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
-from models_library.services import RunID
+from models_library.services import ServiceRunID
 from models_library.services_resources import ServiceResourcesDict
 from models_library.wallets import WalletInfo
 from pydantic import (
@@ -39,9 +44,7 @@ from pydantic import (
 from servicelib.exception_utils import DelayedExceptionHandler
 
 from ..constants import (
-    DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
     REGEX_DY_SERVICE_PROXY,
     REGEX_DY_SERVICE_SIDECAR,
 )
@@ -297,7 +300,7 @@ class DynamicSidecar(BaseModel):
         default=None, description="used for starting the proxy"
     )
 
-    docker_node_id: str | None = Field(
+    docker_node_id: DockerNodeID | None = Field(
         default=None,
         description=(
             "contains node id of the docker node where all services "
@@ -376,8 +379,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ...,
         description="Name of the current dynamic-sidecar being observed",
     )
-    run_id: RunID = Field(
-        default_factory=RunID.create,
+    run_id: ServiceRunID = Field(
+        default_factory=ServiceRunID.get_resource_tracking_run_id_for_dynamic,
         description=(
             "Uniquely identify the dynamic sidecar session (a.k.a. 2 "
             "subsequent exact same services will have a different run_id)"
@@ -483,7 +486,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_scheme: str,
         request_simcore_user_agent: str,
         can_save: bool,
-        run_id: RunID | None = None,
+        run_id: ServiceRunID | None = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)

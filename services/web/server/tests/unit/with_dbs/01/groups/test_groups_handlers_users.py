@@ -6,12 +6,14 @@
 
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack
+from typing import AsyncIterable
 
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.groups import GroupGet, GroupUserGet
 from models_library.groups import AccessRightsDict, Group, StandardGroupCreate
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -19,15 +21,16 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
 )
 from servicelib.aiohttp import status
+from servicelib.status_codes_utils import is_2xx_success
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.groups._groups_api import (
-    create_standard_group,
-    delete_standard_group,
-)
-from simcore_service_webserver.groups._groups_db import (
+from simcore_service_webserver.groups._groups_repository import (
     _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
     _DEFAULT_GROUP_READ_ACCESS_RIGHTS,
+)
+from simcore_service_webserver.groups._groups_service import (
+    create_standard_group,
+    delete_standard_group,
 )
 from simcore_service_webserver.groups.api import auto_add_user_to_groups
 from simcore_service_webserver.security.api import clean_auth_policy_cache
@@ -514,3 +517,96 @@ async def test_adding_user_to_group_with_upper_case_email(
 
         assert not data
         assert not error
+
+
+@pytest.fixture
+async def other_user(
+    client: TestClient, logged_user: UserInfoDict, is_private_user: bool
+) -> AsyncIterable[UserInfoDict]:
+    # new user different from logged_user
+    async with NewUser(
+        {
+            "name": f"other_than_{logged_user['name']}",
+            "role": "USER",
+            "privacy_hide_email": is_private_user,
+        },
+        client.app,
+    ) as user:
+        yield user
+
+
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-simcore/pull/6917"
+)
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("is_private_user", [True, False])
+@pytest.mark.parametrize("add_user_by", ["user_email", "user_id", "user_name"])
+async def test_create_organization_and_add_users(
+    client: TestClient,
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    other_user: UserInfoDict,
+    is_private_user: bool,
+    add_user_by: str,
+):
+    assert client.app
+    assert logged_user["id"] != 0
+    assert logged_user["role"] == user_role.value
+
+    # CREATE GROUP
+    url = client.app.router["create_group"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "label": "Amies sans-frontiers",
+            "description": "A desperate attempt to make some friends",
+        },
+    )
+    data, error = await assert_status(resp, status.HTTP_201_CREATED)
+
+    assert not error
+    group = GroupGet.model_validate(data)
+
+    # i have another user
+    user_id = other_user["id"]
+    user_name = other_user["name"]
+    user_email = other_user["email"]
+
+    assert user_id != logged_user["id"]
+    assert user_name != logged_user["name"]
+    assert user_email != logged_user["email"]
+
+    # ADD new user to GROUP
+    url = client.app.router["add_group_user"].url_for(gid=f"{group.gid}")
+
+    expected_status = status.HTTP_204_NO_CONTENT
+    match add_user_by:
+        case "user_email":
+            param = {"email": user_email}
+            if is_private_user:
+                expected_status = status.HTTP_404_NOT_FOUND
+        case "user_id":
+            param = {"uid": user_id}
+        case "user_name":
+            param = {"userName": user_name}
+        case _:
+            pytest.fail(reason=f"parameter {add_user_by} was not accounted for")
+
+    response = await client.post(f"{url}", json=param)
+    await assert_status(response, expected_status)
+
+    # LIST USERS in GROUP
+    url = client.app.router["get_all_group_users"].url_for(gid=f"{group.gid}")
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+
+    group_members = TypeAdapter(list[GroupUserGet]).validate_python(data)
+    if is_2xx_success(expected_status):
+        assert user_id in [
+            u.id for u in group_members
+        ], "failed to add other-user to the group!"
+
+    # DELETE GROUP
+    url = client.app.router["delete_group"].url_for(gid=f"{group.gid}")
+    resp = await client.delete(f"{url}")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)

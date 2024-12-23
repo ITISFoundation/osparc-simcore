@@ -103,6 +103,7 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
         node_id=scheduler_data.node_uuid,
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
         swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+        service_run_id=scheduler_data.run_id,
     )
 
     _logger.debug(
@@ -237,9 +238,9 @@ async def create_user_services(  # pylint: disable=too-many-statements
     start_duration = (
         scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_start_request()
     )
-    assert start_duration is not None  # nosec
-    get_instrumentation(app).dynamic_sidecar_metrics.start_time_duration.labels(
-        **get_metrics_labels(scheduler_data)
-    ).observe(start_duration)
+    if start_duration is not None:
+        get_instrumentation(app).dynamic_sidecar_metrics.start_time_duration.labels(
+            **get_metrics_labels(scheduler_data)
+        ).observe(start_duration)
 
     _logger.info("Internal state after creating user services %s", scheduler_data)

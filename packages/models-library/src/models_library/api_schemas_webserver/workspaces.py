@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import NamedTuple
 
 from models_library.basic_types import IDStr
-from models_library.users import GroupID
+from models_library.groups import GroupID
 from models_library.workspaces import WorkspaceID
 from pydantic import ConfigDict, PositiveInt
 

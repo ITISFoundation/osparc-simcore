@@ -13,7 +13,13 @@ async def pass_or_acquire_connection(
 ) -> AsyncIterator[AsyncConnection]:
     """
     When to use: For READ operations!
-    It ensures that a connection is available for use within the context, either by using an existing connection passed as a parameter or by acquiring a new one from the engine. The caller must manage the lifecycle of any connection explicitly passed in, but the function handles the cleanup for connections it creates itself. This function **does not open new transactions** and therefore is recommended only for read-only database operations.
+    It ensures that a connection is available for use within the context,
+    either by using an existing connection passed as a parameter or by acquiring a new one from the engine.
+
+    The caller must manage the lifecycle of any connection explicitly passed in, but the function handles the
+    cleanup for connections it creates itself.
+
+    This function **does not open new transactions** and therefore is recommended only for read-only database operations.
     """
     # NOTE: When connection is passed, the engine is actually not needed
     # NOTE: Creator is responsible of closing connection
@@ -36,7 +42,8 @@ async def transaction_context(
 ):
     """
     When to use: For WRITE operations!
-    This function manages the database connection and ensures that a transaction context is established for write operations. It supports both outer and nested transactions, providing flexibility for scenarios where transactions may already exist in the calling context.
+    This function manages the database connection and ensures that a transaction context is established for write operations.
+    It supports both outer and nested transactions, providing flexibility for scenarios where transactions may already exist in the calling context.
     """
     async with pass_or_acquire_connection(engine, connection) as conn:
         if conn.in_transaction():

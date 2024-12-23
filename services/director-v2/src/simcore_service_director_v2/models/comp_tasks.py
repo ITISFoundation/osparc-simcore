@@ -128,7 +128,6 @@ class CompTaskAtDB(BaseModel):
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
     )
     image: Image
-    submit: dt.datetime
     start: dt.datetime | None = None
     end: dt.datetime | None = None
     state: RunningState
@@ -163,7 +162,7 @@ class CompTaskAtDB(BaseModel):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
         return v
 
-    @field_validator("start", "end", "submit")
+    @field_validator("start", "end")
     @classmethod
     def _ensure_utc(cls, v: dt.datetime | None) -> dt.datetime | None:
         if v is not None and v.tzinfo is None:
@@ -228,7 +227,6 @@ class CompTaskAtDB(BaseModel):
                         }
                     },
                     "image": image_example,
-                    "submit": "2021-03-01 13:07:34.19161",
                     "node_class": "INTERACTIVE",
                     "state": "NOT_STARTED",
                     "progress": 0.44,

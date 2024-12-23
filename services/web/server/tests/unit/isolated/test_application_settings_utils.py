@@ -1,9 +1,9 @@
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
-from pytest_simcore.helpers.dict_tools import ConfigDict
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.application_settings_utils import (
+    AppConfigDict,
     convert_to_app_config,
     convert_to_environ_vars,
 )
@@ -11,7 +11,7 @@ from simcore_service_webserver.application_settings_utils import (
 
 @pytest.mark.skip(reason="UNDER DEV")
 def test_settings_infered_from_default_tests_config(
-    default_app_cfg: ConfigDict, monkeypatch_setenv_from_app_config: Callable
+    default_app_cfg: AppConfigDict, monkeypatch_setenv_from_app_config: Callable
 ):
     # TODO: use app_config_for_production_legacy
     envs = monkeypatch_setenv_from_app_config(default_app_cfg)

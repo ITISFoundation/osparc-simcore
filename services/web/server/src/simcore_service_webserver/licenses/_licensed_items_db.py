@@ -36,6 +36,7 @@ _logger = logging.getLogger(__name__)
 _SELECTION_ARGS = (
     licensed_items.c.licensed_item_id,
     licensed_items.c.name,
+    licensed_items.c.license_key,
     licensed_items.c.licensed_resource_type,
     licensed_items.c.pricing_plan_id,
     licensed_items.c.product_name,
@@ -145,7 +146,7 @@ async def update(
 ) -> LicensedItemDB:
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
-        **updates.dict(exclude_unset=True),
+        **updates.model_dump(exclude_unset=True),
         "modified": func.now(),
     }
 

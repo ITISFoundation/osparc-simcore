@@ -2,15 +2,20 @@ import datetime
 from typing import Any
 
 from fastapi import FastAPI, status
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
+    GetProjectInactivityResponse,
+    RetrieveDataOutEnveloped,
+)
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services_types import ServicePortKey
 from models_library.users import UserID
-from pydantic import TypeAdapter
+from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import AttachLifespanMixin, HasClientSetupInterface
 from servicelib.fastapi.http_client_thin import UnexpectedStatusError
@@ -75,7 +80,7 @@ class DirectorV2Client(
         node_id: NodeID,
         simcore_user_agent: str,
         save_state: bool,
-        timeout: datetime.timedelta,  # noqa: ASYNC109
+        timeout: datetime.timedelta  # noqa: ASYNC109
     ) -> None:
         try:
             await self.thin_client.delete_dynamic_service(
@@ -100,6 +105,19 @@ class DirectorV2Client(
 
             raise
 
+    async def retrieve_inputs(
+        self,
+        *,
+        node_id: NodeID,
+        port_keys: list[ServicePortKey],
+        timeout: datetime.timedelta  # noqa: ASYNC109
+    ) -> RetrieveDataOutEnveloped:
+        response = await self.thin_client.dynamic_service_retrieve(
+            node_id=node_id, port_keys=port_keys, timeout=timeout
+        )
+        dict_response: dict[str, Any] = response.json()
+        return TypeAdapter(RetrieveDataOutEnveloped).validate_python(dict_response)
+
     async def list_tracked_dynamic_services(
         self, *, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[DynamicServiceGet]:
@@ -107,6 +125,22 @@ class DirectorV2Client(
             user_id=user_id, project_id=project_id
         )
         return TypeAdapter(list[DynamicServiceGet]).validate_python(response.json())
+
+    async def get_project_inactivity(
+        self, *, project_id: ProjectID, max_inactivity_seconds: NonNegativeInt
+    ) -> GetProjectInactivityResponse:
+        response = await self.thin_client.get_projects_inactivity(
+            project_id=project_id, max_inactivity_seconds=max_inactivity_seconds
+        )
+        return TypeAdapter(GetProjectInactivityResponse).validate_python(
+            response.json()
+        )
+
+    async def restart_user_services(self, *, node_id: NodeID) -> None:
+        await self.thin_client.post_restart(node_id=node_id)
+
+    async def update_projects_networks(self, *, project_id: ProjectID) -> None:
+        await self.thin_client.patch_projects_networks(project_id=project_id)
 
 
 def setup_director_v2(app: FastAPI) -> None:

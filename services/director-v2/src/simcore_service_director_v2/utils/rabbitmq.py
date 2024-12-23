@@ -15,6 +15,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeFloat
@@ -70,7 +71,7 @@ async def publish_service_stopped_metrics(
 
 async def publish_service_resource_tracking_started(  # pylint: disable=too-many-arguments # noqa: PLR0913
     rabbitmq_client: RabbitMQClient,
-    service_run_id: str,
+    service_run_id: ServiceRunID,
     *,
     wallet_id: WalletID | None,
     wallet_name: str | None,
@@ -127,7 +128,7 @@ async def publish_service_resource_tracking_started(  # pylint: disable=too-many
 
 async def publish_service_resource_tracking_stopped(
     rabbitmq_client: RabbitMQClient,
-    service_run_id: str,
+    service_run_id: ServiceRunID,
     *,
     simcore_platform_status: SimcorePlatformStatus,
 ) -> None:
@@ -138,7 +139,7 @@ async def publish_service_resource_tracking_stopped(
 
 
 async def publish_service_resource_tracking_heartbeat(
-    rabbitmq_client: RabbitMQClient, service_run_id: str
+    rabbitmq_client: RabbitMQClient, service_run_id: ServiceRunID
 ) -> None:
     message = RabbitResourceTrackingHeartbeatMessage(service_run_id=service_run_id)
     await rabbitmq_client.publish(message.channel_name, message)

@@ -6,6 +6,7 @@
 from unittest.mock import Mock
 
 import pytest
+from pytest_mock import MockerFixture
 from servicelib.aiohttp.application_setup import APP_SETUP_COMPLETED_KEY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
@@ -35,11 +36,13 @@ class MockApp(dict):
 
 
 @pytest.fixture
-def app_mock():
+def app_mock(mocker: MockerFixture):
     app = MockApp()
 
     # emulates security is initialized
     app[APP_SETUP_COMPLETED_KEY] = ["simcore_service_webserver.security"]
+
+    mocker.patch("simcore_service_webserver.rest.plugin.api_doc")
 
     return app
 

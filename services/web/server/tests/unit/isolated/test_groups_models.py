@@ -1,6 +1,4 @@
-import models_library.groups
 import pytest
-import simcore_postgres_database.models.groups
 from faker import Faker
 from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.groups import (
@@ -14,21 +12,11 @@ from models_library.groups import (
     AccessRightsDict,
     Group,
     GroupMember,
-    GroupTypeInModel,
+    GroupType,
     StandardGroupCreate,
     StandardGroupUpdate,
 )
-from models_library.utils.enums import enum_to_dict
 from pydantic import ValidationError
-
-
-def test_models_library_and_postgress_database_enums_are_equivalent():
-    # For the moment these two libraries they do not have a common library to share these
-    # basic types so we test here that they are in sync
-
-    assert enum_to_dict(
-        simcore_postgres_database.models.groups.GroupType
-    ) == enum_to_dict(models_library.groups.GroupTypeInModel)
 
 
 def test_sanitize_legacy_data():
@@ -66,7 +54,7 @@ def test_output_schemas_from_models(faker: Faker):
         gid=1,
         name=faker.word(),
         description=faker.sentence(),
-        group_type=GroupTypeInModel.STANDARD,
+        group_type=GroupType.STANDARD,
         thumbnail=None,
     )
     output_schema = GroupGet.from_model(

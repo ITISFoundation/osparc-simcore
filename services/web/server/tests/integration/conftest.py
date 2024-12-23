@@ -24,8 +24,8 @@ import pytest
 import yaml
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
-from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.docker import get_service_published_port
+from simcore_service_webserver.application_settings_utils import AppConfigDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -100,7 +100,7 @@ def _default_app_config_for_integration_tests(
     default_app_config_integration_file: Path,
     webserver_environ: dict,
     osparc_simcore_root_dir: Path,
-) -> ConfigDict:
+) -> AppConfigDict:
     """
     Swarm with integration stack already started
 
@@ -135,7 +135,7 @@ def _default_app_config_for_integration_tests(
     # recreate config-file
     config_template = Template(default_app_config_integration_file.read_text())
     config_text = config_template.substitute(**test_environ)
-    cfg: ConfigDict = yaml.safe_load(config_text)
+    cfg: AppConfigDict = yaml.safe_load(config_text)
 
     # NOTE:  test webserver works in host
     cfg["main"]["host"] = "127.0.0.1"
@@ -149,8 +149,8 @@ def _default_app_config_for_integration_tests(
 
 @pytest.fixture()
 def app_config(
-    _default_app_config_for_integration_tests: ConfigDict, unused_tcp_port_factory
-) -> ConfigDict:
+    _default_app_config_for_integration_tests: AppConfigDict, unused_tcp_port_factory
+) -> AppConfigDict:
     """
     Swarm with integration stack already started
     This fixture can be safely modified during test since it is renovated on every call

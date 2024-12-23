@@ -2018,7 +2018,8 @@
           "docker_node_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "[a-zA-Z0-9]"
               },
               {
                 "type": "null"
@@ -2057,7 +2058,10 @@
         "required": [
           "is_inactive"
         ],
-        "title": "GetProjectInactivityResponse"
+        "title": "GetProjectInactivityResponse",
+        "example": {
+          "is_inactive": "false"
+        }
       },
       "HTTPValidationError": {
         "properties": {

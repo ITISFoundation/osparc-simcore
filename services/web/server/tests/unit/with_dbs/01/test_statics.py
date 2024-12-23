@@ -11,7 +11,6 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
@@ -19,6 +18,7 @@ from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.rest.plugin import setup_rest
@@ -53,7 +53,7 @@ def client(
     app_environment: EnvVarsDict,
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
-    app_cfg: ConfigDict,
+    app_cfg: AppConfigDict,
     postgres_db: sa.engine.Engine,
     monkeypatch_setenv_from_app_config: Callable,
 ) -> TestClient:

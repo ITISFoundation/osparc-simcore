@@ -1,17 +1,25 @@
 import datetime
 import logging
+import warnings
 from dataclasses import dataclass, fields
-from typing import Any
+from typing import Any, Callable
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .models.groups import GroupType, groups, user_to_groups
 from .models.groups_extra_properties import groups_extra_properties
 from .utils_models import FromRowMixin
+from .utils_repos import pass_or_acquire_connection
 
 _logger = logging.getLogger(__name__)
+
+_WARNING_FMSG = (
+    f"{__name__}.{{}} uses aiopg which has been deprecated in this repo. Use {{}} instead. "
+    "SEE https://github.com/ITISFoundation/osparc-simcore/issues/4529"
+)
 
 
 class GroupExtraPropertiesError(Exception):
@@ -35,10 +43,8 @@ class GroupExtraProperties(FromRowMixin):
     enable_efs: bool
 
 
-async def _list_table_entries_ordered_by_group_type(
-    connection: SAConnection, user_id: int, product_name: str
-) -> list[RowProxy]:
-    list_stmt = (
+def _list_table_entries_ordered_by_group_type_stmt(user_id: int, product_name: str):
+    return (
         sa.select(
             groups_extra_properties,
             groups.c.type,
@@ -68,15 +74,6 @@ async def _list_table_entries_ordered_by_group_type(
         .alias()
     )
 
-    result = await connection.execute(
-        sa.select(list_stmt).order_by(list_stmt.c.type_order)
-    )
-    assert result  # nosec
-
-    rows: list[RowProxy] | None = await result.fetchall()
-    assert rows is not None  # nosec
-    return rows
-
 
 def _merge_extra_properties_booleans(
     instance1: GroupExtraProperties, instance2: GroupExtraProperties
@@ -96,33 +93,54 @@ def _merge_extra_properties_booleans(
 @dataclass(frozen=True, slots=True, kw_only=True)
 class GroupExtraPropertiesRepo:
     @staticmethod
-    async def get(
-        connection: SAConnection, *, gid: int, product_name: str
-    ) -> GroupExtraProperties:
-        get_stmt = sa.select(groups_extra_properties).where(
+    def _get_stmt(gid: int, product_name: str):
+        return sa.select(groups_extra_properties).where(
             (groups_extra_properties.c.group_id == gid)
             & (groups_extra_properties.c.product_name == product_name)
         )
-        result = await connection.execute(get_stmt)
+
+    @staticmethod
+    async def get(
+        connection: SAConnection, *, gid: int, product_name: str
+    ) -> GroupExtraProperties:
+        warnings.warn(
+            _WARNING_FMSG.format("get", "get_v2"),
+            DeprecationWarning,
+            stacklevel=1,
+        )
+
+        query = GroupExtraPropertiesRepo._get_stmt(gid, product_name)
+        result = await connection.execute(query)
         assert result  # nosec
         if row := await result.first():
-            return GroupExtraProperties.from_row(row)
+            return GroupExtraProperties.from_row_proxy(row)
         msg = f"Properties for group {gid} not found"
         raise GroupExtraPropertiesNotFoundError(msg)
 
     @staticmethod
-    async def get_aggregated_properties_for_user(
-        connection: SAConnection,
+    async def get_v2(
+        engine: AsyncEngine,
+        connection: AsyncConnection | None = None,
         *,
-        user_id: int,
+        gid: int,
         product_name: str,
     ) -> GroupExtraProperties:
-        rows = await _list_table_entries_ordered_by_group_type(
-            connection, user_id, product_name
-        )
+        async with pass_or_acquire_connection(engine, connection) as conn:
+            query = GroupExtraPropertiesRepo._get_stmt(gid, product_name)
+            result = await conn.stream(query)
+            assert result  # nosec
+            if row := await result.first():
+                return GroupExtraProperties.from_row(row)
+            msg = f"Properties for group {gid} not found"
+            raise GroupExtraPropertiesNotFoundError(msg)
+
+    @staticmethod
+    def _aggregate(
+        rows, user_id, product_name, from_row: Callable
+    ) -> GroupExtraProperties:
         merged_standard_extra_properties = None
         for row in rows:
-            group_extra_properties = GroupExtraProperties.from_row(row)
+            group_extra_properties: GroupExtraProperties = from_row(row)
             match row.type:
                 case GroupType.PRIMARY:
                     # this always has highest priority
@@ -153,3 +171,56 @@ class GroupExtraPropertiesRepo:
             return merged_standard_extra_properties
         msg = f"Properties for user {user_id} in {product_name} not found"
         raise GroupExtraPropertiesNotFoundError(msg)
+
+    @staticmethod
+    async def get_aggregated_properties_for_user(
+        connection: SAConnection,
+        *,
+        user_id: int,
+        product_name: str,
+    ) -> GroupExtraProperties:
+        warnings.warn(
+            _WARNING_FMSG.format(
+                "get_aggregated_properties_for_user",
+                "get_aggregated_properties_for_user_v2",
+            ),
+            DeprecationWarning,
+            stacklevel=1,
+        )
+
+        list_stmt = _list_table_entries_ordered_by_group_type_stmt(
+            user_id=user_id, product_name=product_name
+        )
+
+        result = await connection.execute(
+            sa.select(list_stmt).order_by(list_stmt.c.type_order)
+        )
+        assert result  # nosec
+
+        rows: list[RowProxy] | None = await result.fetchall()
+        assert rows is not None  # nosec
+
+        return GroupExtraPropertiesRepo._aggregate(
+            rows, user_id, product_name, GroupExtraProperties.from_row_proxy
+        )
+
+    @staticmethod
+    async def get_aggregated_properties_for_user_v2(
+        engine: AsyncEngine,
+        connection: AsyncConnection | None = None,
+        *,
+        user_id: int,
+        product_name: str,
+    ) -> GroupExtraProperties:
+        async with pass_or_acquire_connection(engine, connection) as conn:
+
+            list_stmt = _list_table_entries_ordered_by_group_type_stmt(
+                user_id=user_id, product_name=product_name
+            )
+            result = await conn.stream(
+                sa.select(list_stmt).order_by(list_stmt.c.type_order)
+            )
+            rows = [row async for row in result]
+            return GroupExtraPropertiesRepo._aggregate(
+                rows, user_id, product_name, GroupExtraProperties.from_row
+            )

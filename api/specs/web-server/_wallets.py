@@ -27,8 +27,8 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentInitiated,
 )
 from models_library.generics import Envelope
+from models_library.groups import GroupID
 from models_library.rest_pagination import Page, PageQueryParameters
-from models_library.users import GroupID
 from models_library.wallets import WalletID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.wallets._groups_api import WalletGroupGet
