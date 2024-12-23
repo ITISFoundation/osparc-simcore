@@ -80,7 +80,7 @@ class ProgressParser:
 
         self.emitted_total: NonNegativeInt = 0
 
-    def _prase_progress(self, chunk: str) -> None:
+    def _parse_progress(self, chunk: str) -> None:
         # search for " NUMBER bytes" -> set byte size
         if self.total_bytes is None and (match := _TOTAL_BYTES_RE.search(chunk)):
             self.total_bytes = int(match.group(1))
@@ -94,7 +94,7 @@ class ProgressParser:
             self.finished = True
 
     async def parse_chunk(self, chunk: str) -> None:
-        self._prase_progress(chunk)
+        self._parse_progress(chunk)
 
         if self.total_bytes is not None and self.percent is not None:
             # total bytes decompressed
