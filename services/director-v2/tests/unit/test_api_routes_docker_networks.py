@@ -1,8 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from collections.abc import AsyncIterable
-
 import pytest
 from aiodocker import Docker, DockerError
 from faker import Faker
@@ -39,12 +37,6 @@ def mock_env(
     monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
 
 
-@pytest.fixture
-async def async_docker_client() -> AsyncIterable[Docker]:
-    async with Docker() as client:
-        yield client
-
-
 @pytest.mark.parametrize(
     "network_name, network",
     [
@@ -65,7 +57,7 @@ async def async_docker_client() -> AsyncIterable[Docker]:
         ),
     ],
 )
-async def test_routes_are_protected(
+async def test_network_creation_workflow(
     docker_swarm: None,
     client: TestClient,
     async_docker_client: Docker,
