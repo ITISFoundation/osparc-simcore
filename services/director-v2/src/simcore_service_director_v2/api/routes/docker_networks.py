@@ -22,7 +22,7 @@ async def create_docker_network(
     created_network = await shared_docker_client.networks.create(
         docker_network.model_dump(mode="json")
     )
-    return created_network.id
+    return DockerNetworkID(created_network.id)
 
 
 @router.delete(
