@@ -40,15 +40,38 @@ def mock_env(
 
 
 @pytest.fixture
-async def docker_client() -> AsyncIterable[Docker]:
+async def async_docker_client() -> AsyncIterable[Docker]:
     async with Docker() as client:
         yield client
 
 
-async def test_routes_are_protected(client: TestClient, docker_client: Docker):
-    network_name = "a_test_network"
-    network = Network(name=network_name)
-
+@pytest.mark.parametrize(
+    "network_name, network",
+    [
+        ("test_a_network", Network(name="test_a_network")),
+        (
+            "test_overlay_network",
+            Network(
+                name="test_overlay_network",
+                driver="overlay",
+                labels={
+                    "io.simcore.zone": "mock_value",
+                    "com.simcore.description": "interactive for node: mock_value",
+                    "uuid": "mock_value",
+                },
+                attachable=True,
+                internal=False,
+            ),
+        ),
+    ],
+)
+async def test_routes_are_protected(
+    docker_swarm: None,
+    client: TestClient,
+    async_docker_client: Docker,
+    network_name: str,
+    network: Network,
+):
     response = client.post("/v2/docker/networks/", json=network.model_dump(mode="json"))
     assert response.status_code == status.HTTP_200_OK, response.text
     network_id: DockerNetworkID = response.json()
@@ -60,6 +83,6 @@ async def test_routes_are_protected(client: TestClient, docker_client: Docker):
 
     for name_or_id in (network_name, network_id):
         with pytest.raises(DockerError) as exc:
-            await docker_client.networks.get(name_or_id)
+            await async_docker_client.networks.get(name_or_id)
 
         assert exc.value.status == status.HTTP_404_NOT_FOUND
