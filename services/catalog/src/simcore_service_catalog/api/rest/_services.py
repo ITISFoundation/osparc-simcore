@@ -9,6 +9,7 @@ from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from models_library.api_schemas_catalog.services import ServiceGet, ServiceUpdate
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
+from models_library.services_authoring import Author
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
@@ -127,7 +128,11 @@ async def list_services(
                 name="nodetails",
                 description="nodetails",
                 type=ServiceType.COMPUTATIONAL,
-                authors=[{"name": "nodetails", "email": "nodetails@nodetails.com"}],
+                authors=[
+                    Author.model_construct(
+                        name="nodetails", email="nodetails@nodetails.com"
+                    )
+                ],
                 contact="nodetails@nodetails.com",
                 inputs={},
                 outputs={},
