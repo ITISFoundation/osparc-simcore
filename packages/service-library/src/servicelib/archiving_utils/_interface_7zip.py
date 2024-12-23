@@ -16,7 +16,11 @@ from tqdm.contrib.logging import tqdm_logging_redirect
 
 from ..file_utils import shutil_move
 from ..progress_bar import ProgressBarData
-from ._errors import ArchiveError
+from ._errors import (
+    CouldNotFindValueError,
+    CouldNotRunCommandError,
+    TableHeaderNotFoundError,
+)
 from ._tdqm_utils import (
     TQDM_FILE_OPTIONS,
     TQDM_MULTI_FILES_OPTIONS,
@@ -30,7 +34,7 @@ _logger = logging.getLogger(__name__)
 _TOTAL_BYTES_RE: Final[re.Pattern] = re.compile(r" (\d+)\s*bytes")
 _FILE_COUNT_RE: Final[re.Pattern] = re.compile(r" (\d+)\s*files")
 _PROGRESS_PERCENT_RE: Final[re.Pattern] = re.compile(r" (?:100|\d?\d)% ")
-_ALL_DONE_RE: Final[re.Pattern] = re.compile(r"Everything is Ok")
+_ALL_DONE_RE: Final[re.Pattern] = re.compile(r"Everything is Ok", re.IGNORECASE)
 
 _TOKEN_TABLE_HEADER_START: Final[str] = "------------------- "
 _TOKEN_FILE_PERMISSIONS: Final[str] = " ..... "
@@ -54,12 +58,10 @@ class ArchiveInfoParser:
 
     def get_parsed_values(self) -> tuple[NonNegativeInt, NonNegativeInt]:
         if self.total_bytes is None:
-            msg = f"Unexpected value for {self.total_bytes=}. Should not be None"
-            raise ArchiveError(msg)
+            raise CouldNotFindValueError(field_name="total_bytes")
 
         if self.file_count is None:
-            msg = f"Unexpected value for {self.file_count=}. Should not be None"
-            raise ArchiveError(msg)
+            raise CouldNotFindValueError(field_name="file_count")
 
         return (self.total_bytes, self.file_count)
 
@@ -88,7 +90,7 @@ class ProgressParser:
             self.percent = int(matches[-1].strip().strip("%"))
 
         # search for `Everything is Ok` -> set 100% and finish
-        if re.search(_ALL_DONE_RE, chunk, re.IGNORECASE):
+        if _ALL_DONE_RE.search(chunk):
             self.finished = True
 
     async def parse_chunk(self, chunk: str) -> None:
@@ -185,8 +187,7 @@ async def _run_cli_command(
     )
 
     if process.returncode != os.EX_OK:
-        msg = f"Could not run '{command}' error: '{command_output}'"
-        raise ArchiveError(msg)
+        raise CouldNotRunCommandError(command=command, command_output=command_output)
 
     return command_output
 
@@ -264,11 +265,9 @@ def _extract_file_names_from_archive(command_output: str) -> set[str]:
     ]
 
     if lines_with_file_name and file_name_start is None:
-        msg = (
-            f"Excepted to detect a table header since files were detected {lines_with_file_name=}."
-            f" Command output:\n{command_output}"
+        raise TableHeaderNotFoundError(
+            lines_with_file_name=lines_with_file_name, command_output=command_output
         )
-        raise ArchiveError(msg)
 
     return {line[file_name_start:] for line in lines_with_file_name}
 
