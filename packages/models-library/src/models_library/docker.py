@@ -22,6 +22,7 @@ from .projects_nodes_io import NodeID
 from .users import UserID
 
 DockerNetworkID: TypeAlias = str
+DockerServiceID: TypeAlias = str
 
 
 class DockerLabelKey(ConstrainedStr):
