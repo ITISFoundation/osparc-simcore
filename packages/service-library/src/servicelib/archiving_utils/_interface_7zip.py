@@ -49,11 +49,11 @@ class ArchiveInfoParser:
 
     async def parse_chunk(self, chunk: str) -> None:
         # search for ` NUMBER bytes ` -> set byte size
-        if self.total_bytes is None and (match := re.search(_TOTAL_BYTES_RE, chunk)):
+        if self.total_bytes is None and (match := _TOTAL_BYTES_RE.search(chunk)):
             self.total_bytes = int(match.group(1))
 
         # search for ` NUMBER files` -> set file count
-        if self.file_count is None and (match := re.search(_FILE_COUNT_RE, chunk)):
+        if self.file_count is None and (match := _FILE_COUNT_RE.search(chunk)):
             self.file_count = int(match.group(1))
 
     def get_parsed_values(self) -> tuple[NonNegativeInt, NonNegativeInt]:
@@ -82,11 +82,11 @@ class ProgressParser:
 
     def _prase_progress(self, chunk: str) -> None:
         # search for " NUMBER bytes" -> set byte size
-        if self.total_bytes is None and (match := re.search(_TOTAL_BYTES_RE, chunk)):
+        if self.total_bytes is None and (match := _TOTAL_BYTES_RE.search(chunk)):
             self.total_bytes = int(match.group(1))
 
         # search for ` dd% ` -> update progress (as last entry inside the string)
-        if matches := re.findall(_PROGRESS_PERCENT_RE, chunk):
+        if matches := _PROGRESS_PERCENT_RE.findall(chunk):
             self.percent = int(matches[-1].strip().strip("%"))
 
         # search for `Everything is Ok` -> set 100% and finish
