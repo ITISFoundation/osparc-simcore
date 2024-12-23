@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from collections.abc import AsyncIterable
 
 import pytest
 from aiodocker import Docker, DockerError
@@ -37,12 +36,6 @@ def mock_env(
     monkeypatch.setenv("S3_REGION", faker.pystr())
     monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
     monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
-
-
-@pytest.fixture
-async def async_docker_client() -> AsyncIterable[Docker]:
-    async with Docker() as client:
-        yield client
 
 
 @pytest.mark.parametrize(
