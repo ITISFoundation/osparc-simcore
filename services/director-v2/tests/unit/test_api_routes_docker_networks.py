@@ -58,7 +58,7 @@ def mock_env(
         ),
     ],
 )
-async def test_routes_are_protected(
+async def test_network_creation_workflow(
     docker_swarm: None,
     client: TestClient,
     async_docker_client: Docker,
