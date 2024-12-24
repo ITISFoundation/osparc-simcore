@@ -145,5 +145,4 @@ class DirectorV2Client(
 
 def setup_director_v2(app: FastAPI) -> None:
     public_client = DirectorV2Client(app)
-    public_client.thin_client.attach_lifespan_to(app)
     public_client.set_to_app_state(app)
