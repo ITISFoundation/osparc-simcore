@@ -1,21 +1,25 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import FastAPI
 from models_library.resource_tracker import (
     CreditTransactionStatus,
     ResourceTrackerServiceType,
-    ServiceRunId,
     ServiceRunStatus,
 )
+from models_library.services_types import ServiceRunID
 from pydantic import NonNegativeInt, PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..core.settings import ApplicationSettings
 from ..models.credit_transactions import CreditTransactionCreditsAndStatusUpdate
 from ..models.service_runs import ServiceRunStoppedAtUpdate
-from .modules.db import credit_transactions_db, service_runs_db
+from .modules.db import (
+    credit_transactions_db,
+    licensed_items_checkouts_db,
+    service_runs_db,
+)
 from .utils import compute_service_run_credit_costs, make_negative
 
 _logger = logging.getLogger(__name__)
@@ -28,7 +32,7 @@ async def _check_service_heartbeat(
     base_start_timestamp: datetime,
     resource_usage_tracker_missed_heartbeat_interval: timedelta,
     resource_usage_tracker_missed_heartbeat_counter_fail: NonNegativeInt,
-    service_run_id: ServiceRunId,
+    service_run_id: ServiceRunID,
     last_heartbeat_at: datetime,
     missed_heartbeat_counter: NonNegativeInt,
     modified_at: datetime,
@@ -74,7 +78,7 @@ async def _check_service_heartbeat(
 
 async def _close_unhealthy_service(
     db_engine: AsyncEngine,
-    service_run_id: ServiceRunId,
+    service_run_id: ServiceRunID,
     base_start_timestamp: datetime,
 ):
     # 1. Close the service_run
@@ -116,6 +120,11 @@ async def _close_unhealthy_service(
             db_engine, data=update_credit_transaction
         )
 
+    # 3. Release license seats in case some were checked out but not properly released.
+    await licensed_items_checkouts_db.force_release_license_seats_by_run_id(
+        db_engine, service_run_id=service_run_id
+    )
+
 
 async def periodic_check_of_running_services_task(app: FastAPI) -> None:
     _logger.info("Periodic check started")
@@ -124,7 +133,7 @@ async def periodic_check_of_running_services_task(app: FastAPI) -> None:
     app_settings: ApplicationSettings = app.state.settings
     _db_engine = app.state.engine
 
-    base_start_timestamp = datetime.now(tz=timezone.utc)
+    base_start_timestamp = datetime.now(tz=UTC)
 
     # Get all current running services (across all products)
     total_count: PositiveInt = await service_runs_db.total_service_runs_with_running_status_across_all_products(

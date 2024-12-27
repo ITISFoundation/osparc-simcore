@@ -5,11 +5,11 @@ from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts 
 )
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
-from models_library.resource_tracker import ServiceRunId
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
 from models_library.rest_ordering import OrderBy
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
@@ -64,7 +64,7 @@ async def checkout_licensed_item(
     wallet_id: WalletID,
     product_name: ProductName,
     num_of_seats: int,
-    service_run_id: ServiceRunId,
+    service_run_id: ServiceRunID,
     user_id: UserID,
     user_email: str,
 ) -> LicensedItemCheckoutGet:

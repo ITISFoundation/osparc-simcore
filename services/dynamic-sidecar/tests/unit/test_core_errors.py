@@ -29,7 +29,7 @@ def test_legacy_interface_volume_not_found_error():
         raise VolumeNotFoundError(  # noqa: TRY301
             volume_count=len(volumes),
             source_label="some",
-            run_id="run_id",
+            service_run_id="service_run_id",
             volume_names=volume_names,
             status_code=status.HTTP_404_NOT_FOUND,
         )
@@ -37,6 +37,6 @@ def test_legacy_interface_volume_not_found_error():
         print(e)
         assert (  # noqa: PT017
             e.message
-            == "Expected 1 got 2 volumes labels with source_label=some, run_id=run_id: Found UNKNOWN a_volume"
+            == "Expected 1 got 2 volumes labels with source_label=some, service_run_id=service_run_id: Found UNKNOWN a_volume"
         )
         assert e.status_code == status.HTTP_404_NOT_FOUND  # noqa: PT017

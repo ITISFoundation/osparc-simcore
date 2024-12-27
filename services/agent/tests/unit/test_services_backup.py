@@ -11,7 +11,7 @@ import pytest
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from pydantic import NonNegativeInt
 from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.services.backup import backup_volume
@@ -48,7 +48,7 @@ async def test_backup_volume(
     volume_content: Path,
     project_id: ProjectID,
     swarm_stack_name: str,
-    run_id: RunID,
+    service_run_id: ServiceRunID,
     downlaoded_from_s3: Path,
     create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
     initialized_app: FastAPI,
@@ -80,7 +80,7 @@ async def test_backup_volume(
     async with session.client("s3", endpoint_url=f"{settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT}") as s3_client:  # type: ignore
         list_response = await s3_client.list_objects_v2(
             Bucket=settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET,
-            Prefix=f"{swarm_stack_name}/{project_id}/{node_id}/{run_id}",
+            Prefix=f"{swarm_stack_name}/{project_id}/{node_id}/{service_run_id}",
         )
         synced_keys: list[str] = [o["Key"] for o in list_response["Contents"]]
 

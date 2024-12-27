@@ -20,7 +20,6 @@ from .utils.enums import StrAutoEnum
 
 _logger = logging.getLogger(__name__)
 
-ServiceRunId: TypeAlias = str
 PricingPlanId: TypeAlias = PositiveInt
 PricingUnitId: TypeAlias = PositiveInt
 PricingUnitCostId: TypeAlias = PositiveInt

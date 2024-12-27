@@ -9952,6 +9952,8 @@ components:
       required:
       - is_inactive
       title: GetProjectInactivityResponse
+      example:
+        is_inactive: 'false'
     GetWalletAutoRecharge:
       properties:
         enabled:

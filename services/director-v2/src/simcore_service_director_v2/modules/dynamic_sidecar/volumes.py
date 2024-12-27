@@ -7,7 +7,7 @@ from models_library.api_schemas_directorv2.services import (
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import RunID
+from models_library.services import ServiceRunID
 from models_library.users import UserID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from settings_library.efs import (
@@ -120,7 +120,7 @@ class DynamicSidecarVolumesPathsResolver:
         return f"{path}".replace(os.sep, "_")
 
     @classmethod
-    def source(cls, path: Path, node_uuid: NodeID, run_id: RunID) -> str:
+    def source(cls, path: Path, node_uuid: NodeID, service_run_id: ServiceRunID) -> str:
         """Returns a valid and unique volume name that is composed out of identifiers, namely
             - relative target path
             - node_uuid
@@ -138,7 +138,7 @@ class DynamicSidecarVolumesPathsResolver:
         reversed_volume_name = cls.volume_name(path)[::-1]
 
         # ensure prefix size does not change
-        prefix = f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{run_id}_{node_uuid}"
+        prefix = f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{service_run_id}_{node_uuid}"
         assert len(prefix) == CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME - 1  # nosec
 
         unique_name = f"{prefix}_{reversed_volume_name}"
@@ -150,7 +150,7 @@ class DynamicSidecarVolumesPathsResolver:
         swarm_stack_name: str,
         path: Path,
         node_uuid: NodeID,
-        run_id: RunID,
+        service_run_id: ServiceRunID,
         project_id: ProjectID,
         user_id: UserID,
         volume_size_limit: str | None,
@@ -159,13 +159,13 @@ class DynamicSidecarVolumesPathsResolver:
         Creates specification for mount to be added to containers created as part of a service
         """
         return {
-            "Source": cls.source(path, node_uuid, run_id),
+            "Source": cls.source(path, node_uuid, service_run_id),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
                 "Labels": {
-                    "source": cls.source(path, node_uuid, run_id),
-                    "run_id": f"{run_id}",
+                    "source": cls.source(path, node_uuid, service_run_id),
+                    "run_id": f"{service_run_id}",
                     "node_uuid": f"{node_uuid}",
                     "study_id": f"{project_id}",
                     "user_id": f"{user_id}",
@@ -182,7 +182,7 @@ class DynamicSidecarVolumesPathsResolver:
     @classmethod
     def mount_shared_store(
         cls,
-        run_id: RunID,
+        service_run_id: ServiceRunID,
         node_uuid: NodeID,
         project_id: ProjectID,
         user_id: UserID,
@@ -194,7 +194,7 @@ class DynamicSidecarVolumesPathsResolver:
             swarm_stack_name=swarm_stack_name,
             path=DY_SIDECAR_SHARED_STORE_PATH,
             node_uuid=node_uuid,
-            run_id=run_id,
+            service_run_id=service_run_id,
             project_id=project_id,
             user_id=user_id,
             volume_size_limit="1M" if has_quota_support else None,
@@ -204,7 +204,7 @@ class DynamicSidecarVolumesPathsResolver:
     def mount_user_preferences(
         cls,
         user_preferences_path: Path,
-        run_id: RunID,
+        service_run_id: ServiceRunID,
         node_uuid: NodeID,
         project_id: ProjectID,
         user_id: UserID,
@@ -216,7 +216,7 @@ class DynamicSidecarVolumesPathsResolver:
             swarm_stack_name=swarm_stack_name,
             path=user_preferences_path,
             node_uuid=node_uuid,
-            run_id=run_id,
+            service_run_id=service_run_id,
             project_id=project_id,
             user_id=user_id,
             # NOTE: the contents of this volume will be zipped and much
@@ -231,19 +231,19 @@ class DynamicSidecarVolumesPathsResolver:
         swarm_stack_name: str,
         path: Path,
         node_uuid: NodeID,
-        run_id: RunID,
+        service_run_id: ServiceRunID,
         project_id: ProjectID,
         user_id: UserID,
         r_clone_settings: RCloneSettings,
     ) -> dict[str, Any]:
         return {
-            "Source": cls.source(path, node_uuid, run_id),
+            "Source": cls.source(path, node_uuid, service_run_id),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
                 "Labels": {
-                    "source": cls.source(path, node_uuid, run_id),
-                    "run_id": f"{run_id}",
+                    "source": cls.source(path, node_uuid, service_run_id),
+                    "run_id": f"{service_run_id}",
                     "node_uuid": f"{node_uuid}",
                     "study_id": f"{project_id}",
                     "user_id": f"{user_id}",
@@ -264,20 +264,20 @@ class DynamicSidecarVolumesPathsResolver:
         swarm_stack_name: str,
         path: Path,
         node_uuid: NodeID,
-        run_id: RunID,
+        service_run_id: ServiceRunID,
         project_id: ProjectID,
         user_id: UserID,
         efs_settings: AwsEfsSettings,
         storage_directory_name: str,
     ) -> dict[str, Any]:
         return {
-            "Source": cls.source(path, node_uuid, run_id),
+            "Source": cls.source(path, node_uuid, service_run_id),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
                 "Labels": {
-                    "source": cls.source(path, node_uuid, run_id),
-                    "run_id": f"{run_id}",
+                    "source": cls.source(path, node_uuid, service_run_id),
+                    "run_id": f"{service_run_id}",
                     "node_uuid": f"{node_uuid}",
                     "study_id": f"{project_id}",
                     "user_id": f"{user_id}",

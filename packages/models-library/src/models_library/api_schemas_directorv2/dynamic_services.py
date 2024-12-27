@@ -79,3 +79,5 @@ DynamicServiceGet: TypeAlias = RunningDynamicServiceDetails
 
 class GetProjectInactivityResponse(BaseModel):
     is_inactive: bool
+
+    model_config = ConfigDict(json_schema_extra={"example": {"is_inactive": "false"}})
