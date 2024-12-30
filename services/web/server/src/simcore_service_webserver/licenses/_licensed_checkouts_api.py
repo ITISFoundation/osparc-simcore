@@ -7,10 +7,10 @@ from models_library.api_schemas_webserver import (
 )
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
-from models_library.resource_tracker import ServiceRunId
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
@@ -32,7 +32,7 @@ async def checkout_licensed_item_for_wallet(
     # checkout args
     licensed_item_id: LicensedItemID,
     num_of_seats: int,
-    service_run_id: ServiceRunId,
+    service_run_id: ServiceRunID,
 ) -> webserver_licensed_items_checkouts.LicensedItemCheckoutGet:
     # Check whether user has access to the wallet
     await get_wallet_by_user(

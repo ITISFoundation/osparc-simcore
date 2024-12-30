@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pytest
 from models_library.rest_pagination import Page, PageMetaInfoLimitOffset
-from pydantic.main import BaseModel
+from pydantic import BaseModel, ValidationError
 from pytest_simcore.examples.models_library import PAGE_EXAMPLES
 
 
@@ -26,7 +26,7 @@ def test_page_response_limit_offset_models(cls_model: BaseModel, examples: list[
 
 
 def test_invalid_offset():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         PageMetaInfoLimitOffset(limit=6, total=5, offset=5, count=2)
 
 
@@ -39,14 +39,14 @@ def test_invalid_offset():
     ],
 )
 def test_invalid_count(count: int, offset: int):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         PageMetaInfoLimitOffset(limit=6, total=5, offset=offset, count=count)
 
 
 def test_data_size_does_not_fit_count():
     example = deepcopy(PAGE_EXAMPLES[0])
     example["_meta"]["count"] = len(example["data"]) - 1
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         Page[str](**example)
 
 

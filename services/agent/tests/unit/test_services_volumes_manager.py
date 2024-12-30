@@ -14,7 +14,7 @@ import pytest_mock
 from aiodocker.docker import Docker
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
     NoServiceVolumesFoundRPCError,
 )
@@ -30,12 +30,14 @@ from utils import VOLUMES_TO_CREATE, get_source
 
 @dataclass
 class MockedVolumesProxy:
-    run_id: RunID
+    service_run_id: ServiceRunID
     volumes: set[str] = field(default_factory=set)
 
     def add_unused_volumes_for_service(self, node_id: NodeID) -> None:
         for folder_name in VOLUMES_TO_CREATE:
-            volume_name = get_source(self.run_id, node_id, Path("/apath") / folder_name)
+            volume_name = get_source(
+                self.service_run_id, node_id, Path("/apath") / folder_name
+            )
             self.volumes.add(volume_name)
 
     def remove_volume(self, volume_name: str) -> None:
@@ -47,9 +49,9 @@ class MockedVolumesProxy:
 
 @pytest.fixture
 async def mock_docker_utils(
-    mocker: pytest_mock.MockerFixture, run_id: RunID
+    mocker: pytest_mock.MockerFixture, service_run_id: ServiceRunID
 ) -> MockedVolumesProxy:
-    proxy = MockedVolumesProxy(run_id)
+    proxy = MockedVolumesProxy(service_run_id)
 
     async def _remove_volume(
         app: FastAPI, docker: Docker, *, volume_name: str, requires_backup: bool

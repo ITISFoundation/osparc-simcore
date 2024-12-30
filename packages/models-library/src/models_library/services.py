@@ -7,9 +7,9 @@ from .services_io import BaseServiceIOModel, ServiceInput, ServiceOutput
 from .services_metadata_published import ServiceInputsDict, ServiceMetaDataPublished
 from .services_types import (
     DynamicServiceKey,
-    RunID,
     ServiceKey,
     ServicePortKey,
+    ServiceRunID,
     ServiceVersion,
 )
 
@@ -21,7 +21,6 @@ __all__: tuple[str, ...] = (
     "BootOptions",
     "DynamicServiceKey",
     "LATEST_INTEGRATION_VERSION",
-    "RunID",
     "ServiceInput",
     "ServiceInputsDict",
     "ServiceKey",
@@ -29,6 +28,7 @@ __all__: tuple[str, ...] = (
     "ServiceMetaDataPublished",
     "ServiceOutput",
     "ServicePortKey",
+    "ServiceRunID",
     "ServiceType",
     "ServiceVersion",
 )
