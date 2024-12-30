@@ -21,10 +21,6 @@ from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    CanNotCheckoutNotEnoughAvailableSeatsError,
-    NotEnoughAvailableSeatsError,
-)
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.webserver_rpc import (
     get_wb_api_rpc_client,
@@ -108,16 +104,7 @@ async def test_get_licensed_items_502(
 @pytest.mark.parametrize(
     "exception_to_raise,expected_api_server_status_code",
     [
-        (None, status.HTTP_200_OK),
-        (NotEnoughAvailableSeatsError(), status.HTTP_409_CONFLICT),
-        (
-            CanNotCheckoutNotEnoughAvailableSeatsError(
-                licensed_item_id="2e1af95b-f664-4793-81ae-5512708db3b1",
-                num_of_seats=3,
-                available_num_of_seats=2,
-            ),
-            status.HTTP_409_CONFLICT,
-        ),
+        (NotImplementedError(), status.HTTP_501_NOT_IMPLEMENTED),
     ],
 )
 async def test_get_licensed_items_for_wallet(

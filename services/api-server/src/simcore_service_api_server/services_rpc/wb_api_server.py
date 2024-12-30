@@ -6,10 +6,10 @@ from fastapi import FastAPI
 from fastapi_pagination import Page, create_page
 from models_library.api_schemas_webserver.licensed_items import LicensedItemGetPage
 from models_library.licensed_items import LicensedItemID
-from models_library.resource_tracker import ServiceRunId
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
@@ -101,7 +101,7 @@ class WbApiRpcClient:
         wallet_id: WalletID,
         licensed_item_id: LicensedItemID,
         num_of_seats: int,
-        service_run_id: ServiceRunId,
+        service_run_id: ServiceRunID,
     ) -> LicensedItemCheckoutGet:
         licensed_item_checkout_get = await _checkout_licensed_item_for_wallet(
             self._client,
