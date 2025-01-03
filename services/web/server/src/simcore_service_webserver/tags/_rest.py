@@ -18,7 +18,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _api
+from . import _service
 from .schemas import (
     TagCreate,
     TagGroupCreate,
@@ -61,7 +61,7 @@ async def create_tag(request: web.Request):
     req_ctx = TagRequestContext.model_validate(request)
     new_tag = await parse_request_body_as(TagCreate, request)
 
-    created = await _api.create_tag(
+    created = await _service.create_tag(
         request.app, user_id=req_ctx.user_id, new_tag=new_tag
     )
     return envelope_json_response(created)
@@ -74,7 +74,7 @@ async def create_tag(request: web.Request):
 async def list_tags(request: web.Request):
 
     req_ctx = TagRequestContext.model_validate(request)
-    got = await _api.list_tags(request.app, user_id=req_ctx.user_id)
+    got = await _service.list_tags(request.app, user_id=req_ctx.user_id)
     return envelope_json_response(got)
 
 
@@ -87,7 +87,7 @@ async def update_tag(request: web.Request):
     path_params = parse_request_path_parameters_as(TagPathParams, request)
     tag_updates = await parse_request_body_as(TagUpdate, request)
 
-    updated = await _api.update_tag(
+    updated = await _service.update_tag(
         request.app,
         user_id=req_ctx.user_id,
         tag_id=path_params.tag_id,
@@ -104,7 +104,7 @@ async def delete_tag(request: web.Request):
     req_ctx = TagRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
 
-    await _api.delete_tag(
+    await _service.delete_tag(
         request.app, user_id=req_ctx.user_id, tag_id=path_params.tag_id
     )
 
