@@ -14,7 +14,7 @@
     "**/requirements/*.txt": "pip-requirements",
     "*logs.txt": "log",
     "*Makefile": "makefile",
-    "*sql.*": "sql",
+    "*.sql": "sql",
     "docker-compose*.yml": "dockercompose",
     "Dockerfile*": "dockerfile"
   },
