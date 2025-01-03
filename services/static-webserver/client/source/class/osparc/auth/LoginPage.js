@@ -353,17 +353,13 @@ qx.Class.define("osparc.auth.LoginPage", {
       });
       versionLinkLayout.add(createReleaseNotesLink);
 
-      const organizationLink = new osparc.ui.basic.LinkLabel().set({
-        textColor: "text-darker"
-      });
-      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
-      if (vendor && "url" in vendor && "copyright" in vendor) {
-        organizationLink.set({
-          value: vendor.copyright,
-          url: vendor.url
+      const copyrightLink = osparc.product.Utils.getCopyrightLink();
+      if (copyrightLink) {
+        copyrightLink.set({
+          textColor: "text-darker"
         });
+        versionLinkLayout.add(copyrightLink);
       }
-      versionLinkLayout.add(organizationLink);
 
       versionLinkLayout.add(new qx.ui.core.Spacer(), {
         flex: 1

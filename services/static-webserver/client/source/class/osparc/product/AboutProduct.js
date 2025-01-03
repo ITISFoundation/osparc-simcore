@@ -166,17 +166,13 @@ qx.Class.define("osparc.product.AboutProduct", {
     },
 
     __addCopyright: function() {
-      const copyrightLink = new osparc.ui.basic.LinkLabel().set({
-        font: "link-label-14"
-      });
-      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
-      if (vendor && "url" in vendor && "copyright" in vendor) {
+      const copyrightLink = osparc.product.Utils.getCopyrightLink();
+      if (copyrightLink) {
         copyrightLink.set({
-          value: vendor.copyright,
-          url: vendor.url
+          font: "link-label-14"
         });
+        this.add(copyrightLink);
       }
-      this.add(copyrightLink);
     },
   }
 });

@@ -205,6 +205,27 @@ qx.Class.define("osparc.product.Utils", {
       return "REGISTER";
     },
 
+    getCopyrightLink: function() {
+      const copyrightLink = new osparc.ui.basic.LinkLabel();
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      if (vendor && "url" in vendor && "copyright" in vendor) {
+        let copyrightText = vendor.copyright;
+        // remove the copyright symbol (©)
+        copyrightText = copyrightText.replace("©", "");
+        copyrightText = copyrightText.trim();
+        // remove the year
+        copyrightText = copyrightText.replace(/^\d+\s/, "");
+        // add the copyright symbol (©) and current year
+        copyrightText = `©${new Date().getFullYear()} ` + copyrightText;
+        copyrightLink.set({
+          value: copyrightText,
+          url: vendor.url
+        });
+        return copyrightLink;
+      }
+      return null;
+    },
+
     // All products except oSPARC
     hasIdlingTrackerEnabled: function() {
       const product = this.getProductName();
