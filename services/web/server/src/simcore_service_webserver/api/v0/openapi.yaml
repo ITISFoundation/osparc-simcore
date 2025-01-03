@@ -924,6 +924,7 @@ paths:
       - tags
       - groups
       summary: List Tag Groups
+      description: Lists all groups associated to this tag
       operationId: list_tag_groups
       parameters:
       - name: tag_id
@@ -947,6 +948,8 @@ paths:
       - tags
       - groups
       summary: Create Tag Group
+      description: Shares tag `tag_id` with an organization or user with `group_id`
+        providing access-rights to it
       operationId: create_tag_group
       parameters:
       - name: tag_id
@@ -982,8 +985,10 @@ paths:
       tags:
       - tags
       - groups
-      summary: Replace Tag Groups
-      operationId: replace_tag_groups
+      summary: Replace Tag Group
+      description: Replace access rights on tag for associated organization or user
+        with `group_id`
+      operationId: replace_tag_group
       parameters:
       - name: tag_id
         in: path
@@ -1019,6 +1024,8 @@ paths:
       - tags
       - groups
       summary: Delete Tag Group
+      description: Delete access rights on tag to an associated organization or user
+        with `group_id`
       operationId: delete_tag_group
       parameters:
       - name: tag_id

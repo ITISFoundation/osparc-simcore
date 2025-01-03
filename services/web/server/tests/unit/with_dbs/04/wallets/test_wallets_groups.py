@@ -24,6 +24,8 @@ async def test_wallets_groups_full_workflow(
     expected: HTTPStatus,
     wallets_clean_db: AsyncIterator[None],
 ):
+    assert client.app
+
     # create a new wallet
     url = client.app.router["create_wallet"].url_for()
     resp = await client.post(
@@ -39,9 +41,9 @@ async def test_wallets_groups_full_workflow(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["gid"] == logged_user["primary_gid"]
-    assert data[0]["read"] == True
-    assert data[0]["write"] == True
-    assert data[0]["delete"] == True
+    assert data[0]["read"] is True
+    assert data[0]["write"] is True
+    assert data[0]["delete"] is True
 
     async with NewUser(
         app=client.app,
@@ -64,9 +66,9 @@ async def test_wallets_groups_full_workflow(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
         assert data[1]["gid"] == new_user["primary_gid"]
-        assert data[1]["read"] == True
-        assert data[1]["write"] == False
-        assert data[1]["delete"] == False
+        assert data[1]["read"] is True
+        assert data[1]["write"] is False
+        assert data[1]["delete"] is False
 
         # Update the wallet permissions of the added user
         url = client.app.router["update_wallet_group"].url_for(
@@ -78,9 +80,9 @@ async def test_wallets_groups_full_workflow(
         )
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert data["gid"] == new_user["primary_gid"]
-        assert data["read"] == True
-        assert data["write"] == True
-        assert data["delete"] == False
+        assert data["read"] is True
+        assert data["write"] is True
+        assert data["delete"] is False
 
         # List the wallet groups
         url = client.app.router["list_wallet_groups"].url_for(
@@ -90,9 +92,9 @@ async def test_wallets_groups_full_workflow(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
         assert data[1]["gid"] == new_user["primary_gid"]
-        assert data[1]["read"] == True
-        assert data[1]["write"] == True
-        assert data[1]["delete"] == False
+        assert data[1]["read"] is True
+        assert data[1]["write"] is True
+        assert data[1]["delete"] is False
 
         # Delete the wallet group
         url = client.app.router["delete_wallet_group"].url_for(

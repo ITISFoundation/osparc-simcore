@@ -1,14 +1,14 @@
 import re
-from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Self
 
+from common_library.groups_dicts import AccessRightsDict
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.groups import GroupID
 from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.users import UserID
 from pydantic import Field, PositiveInt, StringConstraints
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_postgres_database.utils_tags import TagDict
+from simcore_postgres_database.utils_tags import TagAccessRightsDict, TagDict
 
 
 class TagRequestContext(RequestParameters):
@@ -84,6 +84,9 @@ class TagGroupCreate(InputSchema):
     write: bool
     delete: bool
 
+    def to_model(self) -> AccessRightsDict:
+        return AccessRightsDict(**self.model_dump())
+
 
 class TagGroupGet(OutputSchema):
     gid: GroupID
@@ -91,6 +94,12 @@ class TagGroupGet(OutputSchema):
     read: bool
     write: bool
     delete: bool
-    # timestamps
-    created: datetime
-    modified: datetime
+
+    @classmethod
+    def from_model(cls, data: TagAccessRightsDict) -> Self:
+        return cls(
+            gid=data["group_id"],
+            read=data["read"],
+            write=data["write"],
+            delete=data["delete"],
+        )
