@@ -99,7 +99,7 @@ qx.Class.define("osparc.po.PreRegistration", {
             return
           }
 
-          osparc.data.Resources.fetch("users", "preRegister", params)
+          osparc.data.Resources.fetch("poUsers", "preRegister", params)
             .then(data => {
               if (data.length) {
                 findingStatus.setValue(this.tr("Pre-Registered as:"));

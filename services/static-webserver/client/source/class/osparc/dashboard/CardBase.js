@@ -148,54 +148,59 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
-    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
-    setIconAndTooltip: function(shareIcon, accessRights, groups) {
-      shareIcon.setSource(osparc.dashboard.CardBase.SHARE_ICON);
-      if (osparc.data.model.Study.canIWrite(accessRights)) {
-        shareIcon.set({
-          toolTipText: qx.locale.Manager.tr("Share")
-        });
+    populateShareIcon: async function(shareIcon, accessRights) {
+      const gids = Object.keys(accessRights).map(key => parseInt(key));
+
+      const groupsStore = osparc.store.Groups.getInstance();
+
+      // Icon
+      const groupEveryone = groupsStore.getEveryoneGroup();
+      const groupProductEveryone = groupsStore.getEveryoneProductGroup();
+      const organizations = groupsStore.getOrganizations();
+      const organizationIds = Object.keys(organizations).map(key => parseInt(key));
+      if (gids.includes(groupEveryone.getGroupId()) || gids.includes(groupProductEveryone.getGroupId())) {
+        shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
+      } else if (organizationIds.filter(value => gids.includes(value)).length) { // find intersection
+        shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
+      } else if (gids.length === 1) {
+        shareIcon.setSource(osparc.dashboard.CardBase.SHARE_ICON);
+      } else {
+        shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
       }
-      let sharedGrps = [];
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      for (let i=0; i<groups.length; i++) {
-        if (groups[i].length === 0) {
-          // user has no read access to the productEveryone
-          continue;
+
+      // Tooltip
+      const sharedGrps = [];
+      const groups = [];
+      groups.push(groupEveryone);
+      groups.push(groupProductEveryone);
+      groups.push(...Object.values(organizations));
+      groups.forEach(group => {
+        const idx = gids.indexOf(group.getGroupId());
+        if (idx > -1) {
+          sharedGrps.push(group);
+          gids.splice(idx, 1);
         }
-        const sharedGrp = [];
-        const gids = Object.keys(accessRights);
-        for (let j=0; j<gids.length; j++) {
-          const gid = parseInt(gids[j]);
-          if (gid === myGroupId) {
-            continue;
+      });
+      // once the groups were removed, the remaining group ids are users' primary groups ids
+      const usersStore = osparc.store.Users.getInstance();
+      const myGroupId = groupsStore.getMyGroupId();
+      for (let i=0; i<gids.length; i++) {
+        const gid = gids[i];
+        if (myGroupId !== gid) {
+          const user = await usersStore.getUser(gid);
+          if (user) {
+            sharedGrps.push(user);
           }
-          const grp = groups[i].find(group => group.getGroupId() === gid);
-          if (grp) {
-            sharedGrp.push(grp);
-          }
-        }
-        if (sharedGrp.length === 0) {
-          continue;
-        } else {
-          sharedGrps = sharedGrps.concat(sharedGrp);
-        }
-        switch (i) {
-          case 0:
-            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
-            break;
-          case 1:
-            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
-            break;
-          case 2:
-          case 3:
-            shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
-            break;
         }
       }
 
-      // tooltip
+      const canIWrite = osparc.data.model.Study.canIWrite(accessRights);
       if (sharedGrps.length === 0) {
+        if (canIWrite) {
+          shareIcon.set({
+            toolTipText: qx.locale.Manager.tr("Share")
+          });
+        }
         return;
       }
       const sharedGrpLabels = [];
@@ -214,17 +219,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
       shareIcon.addListener("mouseover", () => hint.show(), this);
       shareIcon.addListener("mouseout", () => hint.exclude(), this);
-    },
-
-    // groups -> [orgMembs, orgs, [productEveryone], [everyone]];
-    populateShareIcon: function(shareIcon, accessRights) {
-      const groupsStore = osparc.store.Groups.getInstance();
-      const orgMembs = Object.values(groupsStore.getReachableUsers());
-      const orgs = Object.values(groupsStore.getOrganizations());
-      const productEveryone = [groupsStore.getEveryoneProductGroup()];
-      const everyone = [groupsStore.getEveryoneGroup()];
-      const groups = [orgMembs, orgs, productEveryone, everyone];
-      osparc.dashboard.CardBase.setIconAndTooltip(shareIcon, accessRights, groups);
     },
   },
 

@@ -23,13 +23,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this._add(this.__createIntroText());
-    this._add(this.__getMemberInvitation());
-    this._add(this.__getRolesToolbar());
-    this._add(this.__getMembersFilter());
-    this._add(this.__getMembersList(), {
-      flex: 1
-    });
+    this.__createNewMemberLayout();
+    this.__createMembersList();
   },
 
   statics: {
@@ -81,6 +76,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     __currentOrg: null,
     __introLabel: null,
     __memberInvitation: null,
+    __changeRoleLabel: null,
     __membersModel: null,
 
     setCurrentOrg: function(orgModel) {
@@ -91,7 +87,26 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       this.__reloadOrgMembers();
     },
 
-    __createIntroText: function() {
+    __createNewMemberLayout: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      vBox.add(this.__createAddMembersText());
+      vBox.add(this.__getMemberInvitation());
+      this._add(vBox);
+    },
+
+    __createMembersList: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      vBox.add(this.__getRolesToolbar());
+      vBox.add(this.__getMembersFilter());
+      vBox.add(this.__getMembersList(), {
+        flex: 1
+      });
+      this._add(vBox, {
+        flex: 1
+      });
+    },
+
+    __createAddMembersText: function() {
       const intro = this.__introLabel = new qx.ui.basic.Label().set({
         alignX: "left",
         rich: true,
@@ -123,14 +138,24 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     __getRolesToolbar: function() {
-      return osparc.data.Roles.createRolesOrgInfo();
+      const hBoxWithRoles = osparc.data.Roles.createRolesOrgInfo();
+
+      const changeRoleLabel = this.__changeRoleLabel = new qx.ui.basic.Label().set({
+        alignX: "left",
+        value: this.tr("You can change the role of the existing members."),
+        font: "text-13",
+        visibility: "hidden",
+      });
+      hBoxWithRoles.addAt(changeRoleLabel, 0);
+
+      return hBoxWithRoles;
     },
 
     __getMembersFilter: function() {
       const filter = new osparc.filter.TextFilter("text", "organizationMembersList").set({
-        allowStretchX: true,
-        margin: [0, 10, 5, 10]
+        // margin: [0, 10, 5, 10]
       });
+      filter.setCompact(true);
       return filter;
     },
 
@@ -212,13 +237,15 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const canIDelete = organization.getAccessRights()["delete"];
 
       const introText = canIWrite ?
-        this.tr("You can add new members and promote or demote existing ones.<br>In order to add new members, type their username or email if this is public.") :
+        this.tr("In order to add new members, type their username or email if this is public.") :
         this.tr("You can't add new members to this Organization. Please contact an Administrator or Manager.");
       this.__introLabel.setValue(introText);
 
       this.__memberInvitation.set({
         enabled: canIWrite
       });
+
+      this.__changeRoleLabel.setVisibility(canIWrite ? "visible" : "excluded");
 
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const membersList = [];
