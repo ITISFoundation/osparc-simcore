@@ -1685,7 +1685,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         this.setDroppable(true);
         const stopDragging = e => {
           this.__isDraggingLink = null;
-          this.__updateWidgets(false);
+          this.__updateDropHere(false);
         };
         const startDragging = e => {
           this.addListenerOnce("dragleave", stopDragging, this);
@@ -1786,7 +1786,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
       const posX = e.offsetX + 2;
       const posY = e.offsetY + 2;
-      this.__updateWidgets(dragging, posX, posY);
+      this.__updateDropHere(dragging, posX, posY);
     },
 
     __draggingLink: function(e, dragging) {
@@ -1802,10 +1802,10 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }
 
       const pos = this.__pointerEventToWorkbenchPos(e);
-      this.__updateWidgets(dragging, pos.x, pos.y);
+      this.__updateDropHere(dragging, pos.x, pos.y);
     },
 
-    __updateWidgets: function(dragging, posX, posY) {
+    __updateDropHere: function(show, posX, posY) {
       const boxWidth = 120;
       const boxHeight = 60;
       if (this.__dropHereNodeUI === null) {
@@ -1817,19 +1817,21 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         this.__workbenchLayout.add(dropHereNodeUI);
         dropHereNodeUI.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
       }
-      const dropMe = this.__dropHereNodeUI;
-      if (dragging) {
-        dropMe.show();
-        const dropMeBounds = dropMe.getBounds() || dropMe.getSizeHint();
-        dropMe.setLayoutProperties({
+      let dropHere = this.__dropHereNodeUI;
+      if (show) {
+        dropHere.show();
+        const dropMeBounds = dropHere.getBounds() || dropHere.getSizeHint();
+        dropHere.setLayoutProperties({
           left: posX - parseInt(dropMeBounds.width/2) - parseInt(boxWidth/2),
           top: posY - parseInt(dropMeBounds.height/2)- parseInt(boxHeight/2)
         });
-        if ("rect" in dropMe) {
-          osparc.wrapper.Svg.updateItemPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
+        if ("rect" in dropHere) {
+          osparc.wrapper.Svg.updateItemPos(dropHere.rect, posX - boxWidth, posY - boxHeight);
         }
       } else {
-        this.__removeDropHint();
+        dropHere.exclude();
+        osparc.wrapper.Svg.removeItem(dropHere.rect);
+        dropHere = null;
       }
     },
 
@@ -2047,11 +2049,5 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         });
       }
     },
-
-    __removeDropHint: function() {
-      this.__dropHereNodeUI.setVisibility("excluded");
-      osparc.wrapper.Svg.removeItem(this.__dropHereNodeUI.rect);
-      this.__dropHereNodeUI = null;
-    }
   }
 });
