@@ -11,7 +11,7 @@ import sys
 from collections.abc import AsyncIterable
 from copy import deepcopy
 from http import HTTPStatus
-from typing import Any, AsyncIterable
+from typing import Any
 from unittest.mock import MagicMock, Mock
 
 import pytest
