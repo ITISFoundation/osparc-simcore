@@ -234,9 +234,9 @@ class TagsRepo:
     # ACCESS RIGHTS
     #
 
-    async def _has_access_rights(
+    async def has_access_rights(
         self,
-        connection: AsyncConnection,
+        connection: AsyncConnection | None = None,
         *,
         caller_id: int,
         tag_id: int,
@@ -244,35 +244,26 @@ class TagsRepo:
         write: bool = False,
         delete: bool = False,
     ) -> bool:
-        result = await connection.execute(
-            has_access_rights_stmt(
-                tag_id=tag_id,
-                caller_user_id=caller_id,
-                read=read,
-                write=write,
-                delete=delete,
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            result = await conn.execute(
+                has_access_rights_stmt(
+                    tag_id=tag_id,
+                    caller_user_id=caller_id,
+                    read=read,
+                    write=write,
+                    delete=delete,
+                )
             )
-        )
-        return result.fetchone() is not None
+            return result.fetchone() is not None
 
     async def list_access_rights(
         self,
         connection: AsyncConnection | None = None,
         *,
-        # caller
-        user_id: int,
         # target
         tag_id: int,
     ):
         async with pass_or_acquire_connection(self.engine, connection) as conn:
-            if not await self._has_access_rights(
-                conn, caller_id=user_id, tag_id=tag_id, read=True
-            ):
-                # TODO: empyt list or error?
-                raise TagOperationNotAllowedError(
-                    operation="share.list", user_id=user_id, tag_id=tag_id
-                )
-
             result = await conn.execute(list_tag_group_access_stmt(tag_id=tag_id))
             return [dict(row) for row in result.fetchall()]
 
@@ -280,8 +271,6 @@ class TagsRepo:
         self,
         connection: AsyncConnection | None = None,
         *,
-        # caller
-        user_id: int,
         # target
         tag_id: int,
         group_id: int,
@@ -291,13 +280,6 @@ class TagsRepo:
         delete: bool,
     ):
         async with transaction_context(self.engine, connection) as conn:
-            if not await self._has_access_rights(
-                conn, caller_id=user_id, tag_id=tag_id, write=True
-            ):
-                raise TagOperationNotAllowedError(
-                    operation="share.write", user_id=user_id, tag_id=tag_id
-                )
-
             result = await conn.execute(
                 upsert_tags_access_rights_stmt(
                     tag_id=tag_id,
@@ -314,19 +296,11 @@ class TagsRepo:
         self,
         connection: AsyncConnection | None = None,
         *,
-        user_id: int,
         # target
         tag_id: int,
         group_id: int,
     ) -> bool:
         async with transaction_context(self.engine, connection) as conn:
-            if not await self._has_access_rights(
-                conn, caller_id=user_id, tag_id=tag_id, write=True
-            ):
-                raise TagOperationNotAllowedError(
-                    operation="share.delete", user_id=user_id, tag_id=tag_id
-                )
-
             deleted: bool = await conn.scalar(
                 delete_tag_access_rights_stmt(tag_id=tag_id, group_id=group_id)
             )

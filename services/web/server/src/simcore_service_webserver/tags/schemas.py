@@ -1,7 +1,8 @@
 import re
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any, Self
 
+from common_library.groups_dicts import AccessRightsDict
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.groups import GroupID
 from models_library.rest_base import RequestParameters, StrictRequestParameters
@@ -84,6 +85,9 @@ class TagGroupCreate(InputSchema):
     write: bool
     delete: bool
 
+    def to_model(self) -> AccessRightsDict:
+        return AccessRightsDict(**self.model_dump())
+
 
 class TagGroupGet(OutputSchema):
     gid: GroupID
@@ -94,3 +98,7 @@ class TagGroupGet(OutputSchema):
     # timestamps
     created: datetime
     modified: datetime
+
+    @classmethod
+    def from_model(cls, data: dict[str, Any]) -> Self:
+        raise NotImplementedError
