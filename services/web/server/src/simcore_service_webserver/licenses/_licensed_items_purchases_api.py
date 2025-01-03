@@ -75,6 +75,7 @@ async def list_licensed_items_purchases(
 
 async def get_licensed_item_purchase(
     app: web.Application,
+    *,
     product_name: ProductName,
     user_id: UserID,
     licensed_item_purchase_id: LicensedItemPurchaseID,
