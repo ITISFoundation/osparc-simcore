@@ -2,10 +2,12 @@
 """
 
 from aiohttp import web
+from common_library.groups_dicts import AccessRightsDict
 from models_library.basic_types import IdInt
+from models_library.groups import GroupID
 from models_library.users import UserID
 from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
-from simcore_postgres_database.utils_tags import TagsRepo
+from simcore_postgres_database.utils_tags import TagOperationNotAllowedError, TagsRepo
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .schemas import TagCreate, TagGet, TagUpdate
@@ -56,3 +58,68 @@ async def delete_tag(app: web.Application, user_id: UserID, tag_id: IdInt):
 
     repo = TagsRepo(engine)
     await repo.delete(user_id=user_id, tag_id=tag_id)
+
+
+async def share_tag_with_group(
+    app: web.Application,
+    *,
+    caller_user_id: UserID,
+    tag_id: IdInt,
+    group_id: GroupID,
+    access_rights: AccessRightsDict,
+):
+    """
+    Raises:
+        TagOperationNotAllowedError
+    """
+    repo = TagsRepo(get_async_engine(app))
+
+    if not await repo.has_access_rights(
+        caller_id=caller_user_id, tag_id=tag_id, write=True
+    ):
+        raise TagOperationNotAllowedError(
+            operation="share.write", user_id=caller_user_id, tag_id=tag_id
+        )
+
+    await repo.create_or_update_access_rights(
+        tag_id=tag_id,
+        group_id=group_id,
+        **access_rights,
+    )
+
+
+async def unshare_tag_with_group(
+    app: web.Application,
+    *,
+    caller_user_id: UserID,
+    tag_id: IdInt,
+    group_id: GroupID,
+) -> bool:
+    repo = TagsRepo(get_async_engine(app))
+
+    if not await repo.has_access_rights(
+        caller_id=caller_user_id, tag_id=tag_id, delete=True
+    ):
+        raise TagOperationNotAllowedError(
+            operation="share.delete", user_id=caller_user_id, tag_id=tag_id
+        )
+
+    deleted: bool = await repo.delete_access_rights(tag_id=tag_id, group_id=group_id)
+    return deleted
+
+
+async def list_tag_groups(
+    app: web.Application,
+    *,
+    caller_user_id: UserID,
+    tag_id: IdInt,
+):
+
+    repo = TagsRepo(get_async_engine(app))
+
+    if not await repo.has_access_rights(
+        caller_id=caller_user_id, tag_id=tag_id, read=True
+    ):
+        return []
+
+    return await repo.list_access_rights(tag_id=tag_id)

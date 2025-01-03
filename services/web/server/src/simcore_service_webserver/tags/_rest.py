@@ -1,11 +1,9 @@
 from aiohttp import web
-from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
     TagOperationNotAllowedError,
@@ -123,12 +121,15 @@ async def delete_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def list_tag_groups(request: web.Request):
+    req_ctx = TagRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
 
-    assert path_params  # nosec
-    assert envelope_json_response(TypeAdapter(list[TagGroupGet]).validate_python([]))
-
-    raise NotImplementedError
+    got = await _service.list_tag_groups(
+        request.app,
+        caller_user_id=req_ctx.user_id,
+        tag_id=path_params.tag_id,
+    )
+    return envelope_json_response([TagGroupGet.from_model(md) for md in got])
 
 
 @routes.post(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="create_tag_group")
@@ -136,13 +137,21 @@ async def list_tag_groups(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def create_tag_group(request: web.Request):
+    req_ctx = TagRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(TagGroupPathParams, request)
-    new_tag_group = await parse_request_body_as(TagGroupCreate, request)
+    body_params = await parse_request_body_as(TagGroupCreate, request)
 
-    assert path_params  # nosec
-    assert new_tag_group  # nosec
+    got = await _service.share_tag_with_group(
+        request.app,
+        caller_user_id=req_ctx.user_id,
+        tag_id=path_params.tag_id,
+        group_id=path_params.group_id,
+        access_rights=body_params.to_model(),
+    )
 
-    raise NotImplementedError
+    return envelope_json_response(
+        TagGroupGet.from_model(got), status_cls=web.HTTPCreated
+    )
 
 
 @routes.put(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="replace_tag_group")
@@ -150,13 +159,19 @@ async def create_tag_group(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def replace_tag_group(request: web.Request):
+    req_ctx = TagRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(TagGroupPathParams, request)
-    new_tag_group = await parse_request_body_as(TagGroupCreate, request)
+    body_params = await parse_request_body_as(TagGroupCreate, request)
 
-    assert path_params  # nosec
-    assert new_tag_group  # nosec
+    got = await _service.share_tag_with_group(
+        request.app,
+        caller_user_id=req_ctx.user_id,
+        tag_id=path_params.tag_id,
+        group_id=path_params.group_id,
+        access_rights=body_params.to_model(),
+    )
 
-    raise NotImplementedError
+    return envelope_json_response(TagGroupGet.from_model(got))
 
 
 @routes.delete(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="delete_tag_group")
@@ -164,8 +179,14 @@ async def replace_tag_group(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def delete_tag_group(request: web.Request):
+    req_ctx = TagRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(TagGroupPathParams, request)
 
-    assert path_params  # nosec
-    assert web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
-    raise NotImplementedError
+    await _service.unshare_tag_with_group(
+        request.app,
+        caller_user_id=req_ctx.user_id,
+        tag_id=path_params.tag_id,
+        group_id=path_params.group_id,
+    )
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
