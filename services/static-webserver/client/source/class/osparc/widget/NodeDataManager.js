@@ -125,6 +125,10 @@ qx.Class.define("osparc.widget.NodeDataManager", {
       foldersTree.resetCache();
 
       const openSameFolder = () => {
+        if (!this.getStudyId()) {
+          // drop first, which is the study id
+          path.shift();
+        }
         // drop last, which is the file
         path.pop();
         treeFolderView.openPath(path);
