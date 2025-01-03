@@ -7,7 +7,11 @@ from models_library.basic_types import IdInt
 from models_library.groups import GroupID
 from models_library.users import UserID
 from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
-from simcore_postgres_database.utils_tags import TagOperationNotAllowedError, TagsRepo
+from simcore_postgres_database.utils_tags import (
+    TagAccessRightsDict,
+    TagOperationNotAllowedError,
+    TagsRepo,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .schemas import TagCreate, TagGet, TagUpdate
@@ -67,7 +71,7 @@ async def share_tag_with_group(
     tag_id: IdInt,
     group_id: GroupID,
     access_rights: AccessRightsDict,
-):
+) -> TagAccessRightsDict:
     """
     Raises:
         TagOperationNotAllowedError
@@ -78,10 +82,10 @@ async def share_tag_with_group(
         caller_id=caller_user_id, tag_id=tag_id, write=True
     ):
         raise TagOperationNotAllowedError(
-            operation="share.write", user_id=caller_user_id, tag_id=tag_id
+            operation="share or update", user_id=caller_user_id, tag_id=tag_id
         )
 
-    await repo.create_or_update_access_rights(
+    return await repo.create_or_update_access_rights(
         tag_id=tag_id,
         group_id=group_id,
         **access_rights,
@@ -95,6 +99,13 @@ async def unshare_tag_with_group(
     tag_id: IdInt,
     group_id: GroupID,
 ) -> bool:
+    """
+    Raises:
+        TagOperationNotAllowedError
+
+    Returns:
+        True if unshared (NOTE: will not raise if not found)
+    """
     repo = TagsRepo(get_async_engine(app))
 
     if not await repo.has_access_rights(
@@ -113,8 +124,8 @@ async def list_tag_groups(
     *,
     caller_user_id: UserID,
     tag_id: IdInt,
-):
-
+) -> list[TagAccessRightsDict]:
+    """Returns list of groups sharing this tag"""
     repo = TagsRepo(get_async_engine(app))
 
     if not await repo.has_access_rights(

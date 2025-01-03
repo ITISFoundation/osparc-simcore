@@ -280,7 +280,6 @@ async def test_share_tags_by_creating_associated_groups(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    everybody_tag_id: int,
     _clean_tags_table: None,
 ):
     assert client.app
@@ -292,10 +291,10 @@ async def test_share_tags_by_creating_associated_groups(
         f"{url}",
         json={"name": "shared", "color": "#fff"},
     )
-    created, _ = await assert_status(resp, status.HTTP_200_OK)
+    tag, _ = await assert_status(resp, status.HTTP_200_OK)
 
     # LIST
-    url = client.app.router["list_tag_groups"].url_for(tag_id=created["id"])
+    url = client.app.router["list_tag_groups"].url_for(tag_id=f"{tag['id']}")
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
@@ -309,9 +308,9 @@ async def test_share_tags_by_creating_associated_groups(
     async with NewUser(
         app=client.app,
     ) as new_user:
-        # SHARE
+        # CREATE SHARE
         url = client.app.router["create_tag_group"].url_for(
-            tag_id=created["id"],
+            tag_id=f"{tag['id']}",
             group_id=f"{new_user['primary_gid']}",
         )
         resp = await client.post(
@@ -319,22 +318,22 @@ async def test_share_tags_by_creating_associated_groups(
             json={"read": True, "write": False, "delete": False},
         )
         data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+        assert data["gid"] == new_user["primary_gid"]
 
-        # check new group
-        url = client.app.router["list_tag_groups"].url_for(tag_id=created["id"])
+        # check can read
+        url = client.app.router["list_tag_groups"].url_for(tag_id=f"{tag['id']}")
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
-        assert data[1]["gid"] == logged_user["primary_gid"]
+        assert data[1]["gid"] == new_user["primary_gid"]
         assert data[1]["read"] is True
-        assert data[1]["write"] is True
-        assert data[1]["delete"] is True
+        assert data[1]["write"] is False
+        assert data[1]["delete"] is False
 
-        # TODO: check can only read
-
-        # REPLACE SHARE to other combinations
+        # REPLACE SHARE
         url = client.app.router["replace_tag_group"].url_for(
-            tag_id=created["id"], group_id=f"{EVERYONE_GROUP_ID}"
+            tag_id=f"{tag['id']}",
+            group_id=f"{new_user['primary_gid']}",
         )
         resp = await client.put(
             f"{url}",
@@ -343,10 +342,21 @@ async def test_share_tags_by_creating_associated_groups(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
 
         # test can perform new combinations
+        assert data["gid"] == new_user["primary_gid"]
 
-        # DELETE share
+        url = client.app.router["list_tag_groups"].url_for(tag_id=f"{tag['id']}")
+        resp = await client.get(f"{url}")
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+        assert len(data) == 2
+        assert data[1]["gid"] == new_user["primary_gid"]
+        assert data[1]["read"] is True
+        assert data[1]["write"] is True
+        assert data[1]["delete"] is False
+
+        # DELETE SHARE
         url = client.app.router["delete_tag_group"].url_for(
-            tag_id=created["id"], group_id=f"{EVERYONE_GROUP_ID}"
+            tag_id=f"{tag['id']}",
+            group_id=f"{new_user['primary_gid']}",
         )
         resp = await client.delete(
             f"{url}",
@@ -354,3 +364,44 @@ async def test_share_tags_by_creating_associated_groups(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
 
         # test can do nothing
+
+
+async def test_cannot_share_tag_with_everyone_from_rest_api(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    everybody_tag_id: int,
+    _clean_tags_table: None,
+):
+    assert client.app
+    assert logged_user["role"] == user_role
+
+    url = client.app.router["create_tag_group"].url_for(
+        tag_id=f"{everybody_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+    )
+    resp = await client.put(
+        f"{url}",
+        json={"read": True, "write": True, "delete": True},
+    )
+    _, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+    assert error
+
+    url = client.app.router["replace_tag_group"].url_for(
+        tag_id=f"{everybody_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+    )
+    resp = await client.put(
+        f"{url}",
+        json={"read": True, "write": True, "delete": True},
+    )
+    _, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+    assert error
+
+    url = client.app.router["delete_tag_group"].url_for(
+        tag_id=f"{everybody_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+    )
+    resp = await client.delete(
+        f"{url}",
+        json={"read": True, "write": True, "delete": True},
+    )
+    _, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+    assert error
