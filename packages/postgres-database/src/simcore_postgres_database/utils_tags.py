@@ -3,6 +3,7 @@
 
 from typing import TypedDict
 
+from common_library.errors_classes import OsparcErrorMixin
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .utils_repos import pass_or_acquire_connection, transaction_context
@@ -20,15 +21,15 @@ from .utils_tags_sql import (
 #
 # Errors
 #
-class BaseTagError(Exception):
+class _BaseTagError(ValueError, OsparcErrorMixin):
     pass
 
 
-class TagNotFoundError(BaseTagError):
+class TagNotFoundError(_BaseTagError):
     pass
 
 
-class TagOperationNotAllowedError(BaseTagError):  # maps to AccessForbidden
+class TagOperationNotAllowedError(_BaseTagError):  # maps to AccessForbidden
     pass
 
 
@@ -163,8 +164,7 @@ class TagsRepo:
             result = await conn.execute(stmt_get)
             row = result.first()
             if not row:
-                msg = f"{tag_id=} not found: either no access or does not exists"
-                raise TagNotFoundError(msg)
+                raise TagNotFoundError(operation="get", tag_id=tag_id, user_id=user_id)
             return TagDict(
                 id=row.id,
                 name=row.name,
@@ -198,8 +198,9 @@ class TagsRepo:
             result = await conn.execute(update_stmt)
             row = result.first()
             if not row:
-                msg = f"{tag_id=} not updated: either no access or not found"
-                raise TagOperationNotAllowedError(msg)
+                raise TagOperationNotAllowedError(
+                    operation="update", tag_id=tag_id, user_id=user_id
+                )
 
             return TagDict(
                 id=row.id,
@@ -222,8 +223,9 @@ class TagsRepo:
         async with transaction_context(self.engine, connection) as conn:
             deleted = await conn.scalar(stmt_delete)
             if not deleted:
-                msg = f"Could not delete {tag_id=}. Not found or insuficient access."
-                raise TagOperationNotAllowedError(msg)
+                raise TagOperationNotAllowedError(
+                    operation="delete", tag_id=tag_id, user_id=user_id
+                )
 
     #
     # ACCESS RIGHTS
