@@ -1,13 +1,12 @@
 """ Repository pattern, errors and data structures for models.tags
 """
-
-from typing import TypedDict
-
 from common_library.errors_classes import OsparcErrorMixin
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from typing_extensions import TypedDict
 
 from .utils_repos import pass_or_acquire_connection, transaction_context
 from .utils_tags_sql import (
+    TagAccessRightsDict,
     count_groups_with_given_access_rights_stmt,
     create_tag_stmt,
     delete_tag_access_rights_stmt,
@@ -20,12 +19,14 @@ from .utils_tags_sql import (
     upsert_tags_access_rights_stmt,
 )
 
+__all__: tuple[str, ...] = ("TagAccessRightsDict",)
+
 
 #
 # Errors
 #
-class _BaseTagError(ValueError, OsparcErrorMixin):
-    pass
+class _BaseTagError(OsparcErrorMixin, Exception):
+    msg_template = "Tag repo error on tag {tag_id}"
 
 
 class TagNotFoundError(_BaseTagError):
@@ -245,7 +246,7 @@ class TagsRepo:
         delete: bool = False,
     ) -> bool:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
-            result = await conn.execute(
+            group_id_or_none = await conn.scalar(
                 has_access_rights_stmt(
                     tag_id=tag_id,
                     caller_user_id=caller_id,
@@ -254,31 +255,39 @@ class TagsRepo:
                     delete=delete,
                 )
             )
-            return result.fetchone() is not None
+            return bool(group_id_or_none)
 
     async def list_access_rights(
         self,
         connection: AsyncConnection | None = None,
         *,
-        # target
         tag_id: int,
-    ):
+    ) -> list[TagAccessRightsDict]:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             result = await conn.execute(list_tag_group_access_stmt(tag_id=tag_id))
-            return [dict(row) for row in result.fetchall()]
+            return [
+                TagAccessRightsDict(
+                    tag_id=row.tag_id,
+                    group_id=row.group_id,
+                    read=row.read,
+                    write=row.write,
+                    delete=row.delete,
+                )
+                for row in result.fetchall()
+            ]
 
     async def create_or_update_access_rights(
         self,
         connection: AsyncConnection | None = None,
         *,
-        # target
         tag_id: int,
         group_id: int,
         # access-rights
         read: bool,
         write: bool,
         delete: bool,
-    ):
+    ) -> TagAccessRightsDict:
+
         async with transaction_context(self.engine, connection) as conn:
             result = await conn.execute(
                 upsert_tags_access_rights_stmt(
@@ -290,13 +299,20 @@ class TagsRepo:
                 )
             )
             row = result.first()
-            return dict(row)
+            assert row is not None
+
+            return TagAccessRightsDict(
+                tag_id=row.tag_id,
+                group_id=row.group_id,
+                read=row.read,
+                write=row.write,
+                delete=row.delete,
+            )
 
     async def delete_access_rights(
         self,
         connection: AsyncConnection | None = None,
         *,
-        # target
         tag_id: int,
         group_id: int,
     ) -> bool:

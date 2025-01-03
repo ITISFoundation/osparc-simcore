@@ -9,6 +9,7 @@ from simcore_postgres_database.models.tags import tags
 from simcore_postgres_database.models.tags_access_rights import tags_access_rights
 from simcore_postgres_database.models.users import users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from typing_extensions import TypedDict
 
 _TAG_COLUMNS = [
     tags.c.id,
@@ -167,6 +168,21 @@ def delete_tag_stmt(*, user_id: int, tag_id: int):
 # ACCESS RIGHTS
 #
 
+_TAG_ACCESS_RIGHTS_COLS = [
+    tags_access_rights.c.tag_id,
+    tags_access_rights.c.group_id,
+    *_ACCESS_RIGHTS_COLUMNS,
+]
+
+
+class TagAccessRightsDict(TypedDict):
+    tag_id: int
+    group_id: int
+    # access rights
+    read: bool
+    write: bool
+    delete: bool
+
 
 def has_access_rights_stmt(
     *,
@@ -194,6 +210,8 @@ def has_access_rights_stmt(
         raise ValueError(msg)
 
     conditions.append(group_condition)
+
+    # access-right
     if read:
         conditions.append(tags_access_rights.c.read.is_(True))
     if write:
@@ -201,7 +219,7 @@ def has_access_rights_stmt(
     if delete:
         conditions.append(tags_access_rights.c.delete.is_(True))
 
-    return sa.select(tags_access_rights).where(
+    return sa.select(tags_access_rights.c.group_id).where(
         sa.and_(
             tags_access_rights.c.tag_id == tag_id,
             *conditions,
@@ -210,11 +228,9 @@ def has_access_rights_stmt(
 
 
 def list_tag_group_access_stmt(*, tag_id: int):
-    return sa.select(
-        tags_access_rights.c.tag_id,
-        tags_access_rights.c.group_id,
-        *_ACCESS_RIGHTS_COLUMNS,
-    ).where(tags_access_rights.c.tag_id == tag_id)
+    return sa.select(*_TAG_ACCESS_RIGHTS_COLS).where(
+        tags_access_rights.c.tag_id == tag_id
+    )
 
 
 def upsert_tags_access_rights_stmt(
@@ -226,7 +242,8 @@ def upsert_tags_access_rights_stmt(
     write: bool,
     delete: bool,
 ):
-    assert (user_id and group_id) or (not user_id and not group_id)  # nosec
+    assert not (user_id is None and group_id is None)  # nosec
+    assert not (user_id is not None and group_id is not None)  # nosec
 
     if user_id:
         assert not group_id  # nosec
@@ -252,11 +269,7 @@ def upsert_tags_access_rights_stmt(
             index_elements=["tag_id", "group_id"],
             set_={"read": read, "write": write, "delete": delete},
         )
-        .returning(
-            tags_access_rights.c.tag_id,
-            tags_access_rights.c.group_id,
-            *_ACCESS_RIGHTS_COLUMNS,
-        )
+        .returning(*_TAG_ACCESS_RIGHTS_COLS)
     )
 
 
