@@ -22,7 +22,7 @@ from models_library.projects_state import (
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.postgres_tags import create_tag, delete_tag
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_projects import assert_get_same_project
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.tags import tags
@@ -276,7 +276,7 @@ async def test_create_tags_with_order_index(
     assert got == [*expected_tags[::-1], last_created]
 
 
-async def test_share_tags(
+async def test_share_tags_by_creating_associated_groups(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
@@ -294,37 +294,63 @@ async def test_share_tags(
     )
     created, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    # SHARE (all combinations)?
-    url = client.app.router["create_tag_group"].url_for(
-        tag_id=created["id"], group_id=f"{EVERYONE_GROUP_ID}"
-    )
-    resp = await client.post(
-        f"{url}",
-        json={"read": True, "write": False, "delete": False},
-    )
+    # LIST
+    url = client.app.router["list_tag_groups"].url_for(tag_id=created["id"])
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    # test only performed allowed combinations
+    # check ownership
+    assert len(data) == 1
+    assert data[0]["gid"] == logged_user["primary_gid"]
+    assert data[0]["read"] is True
+    assert data[0]["write"] is True
+    assert data[0]["delete"] is True
 
-    # REPLACE SHARE to other combinations
-    url = client.app.router["replace_tag_groups"].url_for(
-        tag_id=created["id"], group_id=f"{EVERYONE_GROUP_ID}"
-    )
-    resp = await client.put(
-        f"{url}",
-        json={"read": True, "write": True, "delete": False},
-    )
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    async with NewUser(
+        app=client.app,
+    ) as new_user:
+        # SHARE
+        url = client.app.router["create_tag_group"].url_for(
+            tag_id=created["id"],
+            group_id=f"{new_user['primary_gid']}",
+        )
+        resp = await client.post(
+            f"{url}",
+            json={"read": True, "write": False, "delete": False},
+        )
+        data, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
-    # test can perform new combinations
+        # check new group
+        url = client.app.router["list_tag_groups"].url_for(tag_id=created["id"])
+        resp = await client.get(f"{url}")
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+        assert len(data) == 2
+        assert data[1]["gid"] == logged_user["primary_gid"]
+        assert data[1]["read"] is True
+        assert data[1]["write"] is True
+        assert data[1]["delete"] is True
 
-    # DELETE share
-    url = client.app.router["delete_tag_group"].url_for(
-        tag_id=created["id"], group_id=f"{EVERYONE_GROUP_ID}"
-    )
-    resp = await client.delete(
-        f"{url}",
-    )
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+        # TODO: check can only read
 
-    # test can do nothing
+        # REPLACE SHARE to other combinations
+        url = client.app.router["replace_tag_group"].url_for(
+            tag_id=created["id"], group_id=f"{EVERYONE_GROUP_ID}"
+        )
+        resp = await client.put(
+            f"{url}",
+            json={"read": True, "write": True, "delete": False},
+        )
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+        # test can perform new combinations
+
+        # DELETE share
+        url = client.app.router["delete_tag_group"].url_for(
+            tag_id=created["id"], group_id=f"{EVERYONE_GROUP_ID}"
+        )
+        resp = await client.delete(
+            f"{url}",
+        )
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+        # test can do nothing
