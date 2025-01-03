@@ -229,3 +229,30 @@ def is_private(hide_attribute: Column, caller_id: int):
 
 def is_public(hide_attribute: Column, caller_id: int):
     return hide_attribute.is_(False) | (users.c.id == caller_id)
+
+
+def visible_user_profile_cols(caller_id: int):
+    """Returns user profile columns with visibility constraints applied based on privacy settings."""
+    return (
+        sa.case(
+            (
+                is_private(users.c.privacy_hide_email, caller_id),
+                None,
+            ),
+            else_=users.c.email,
+        ).label("email"),
+        sa.case(
+            (
+                is_private(users.c.privacy_hide_fullname, caller_id),
+                None,
+            ),
+            else_=users.c.first_name,
+        ).label("first_name"),
+        sa.case(
+            (
+                is_private(users.c.privacy_hide_fullname, caller_id),
+                None,
+            ),
+            else_=users.c.last_name,
+        ).label("last_name"),
+    )

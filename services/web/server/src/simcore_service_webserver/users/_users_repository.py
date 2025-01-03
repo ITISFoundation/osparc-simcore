@@ -30,8 +30,8 @@ from simcore_postgres_database.utils_repos import (
 from simcore_postgres_database.utils_users import (
     UsersRepo,
     generate_alternative_username,
-    is_private,
     is_public,
+    visible_user_profile_cols,
 )
 from sqlalchemy import delete
 from sqlalchemy.engine.row import Row
@@ -59,28 +59,7 @@ def _public_user_cols(caller_id: int):
         # Fits PublicUser model
         users.c.id.label("user_id"),
         users.c.name.label("user_name"),
-        # privacy settings
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_email, caller_id),
-                None,
-            ),
-            else_=users.c.email,
-        ).label("email"),
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_fullname, caller_id),
-                None,
-            ),
-            else_=users.c.first_name,
-        ).label("first_name"),
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_fullname, caller_id),
-                None,
-            ),
-            else_=users.c.last_name,
-        ).label("last_name"),
+        *visible_user_profile_cols(caller_id),
         users.c.primary_gid.label("group_id"),
     )
 

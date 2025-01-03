@@ -25,7 +25,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from simcore_postgres_database.utils_users import is_private, is_public
+from simcore_postgres_database.utils_users import is_public, visible_user_profile_cols
 from sqlalchemy import and_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.row import Row
@@ -443,28 +443,7 @@ def _group_user_cols(caller_id: UserID):
     return (
         users.c.id,
         users.c.name,
-        # privacy settings
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_email, caller_id),
-                None,
-            ),
-            else_=users.c.email,
-        ).label("email"),
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_fullname, caller_id),
-                None,
-            ),
-            else_=users.c.first_name,
-        ).label("first_name"),
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_fullname, caller_id),
-                None,
-            ),
-            else_=users.c.last_name,
-        ).label("last_name"),
+        *visible_user_profile_cols(caller_id),
         users.c.primary_gid,
     )
 
