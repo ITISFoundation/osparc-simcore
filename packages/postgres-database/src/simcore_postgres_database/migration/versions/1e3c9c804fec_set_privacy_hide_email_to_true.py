@@ -1,16 +1,16 @@
 """set privacy_hide_email to true. Reverts "set privacy_hide_email to false temporarily" (5e27063c3ac9)
 
-Revision ID: 58012c1e1b1b
-Revises: 52a0e8148dd5
-Create Date: 2024-12-17 10:13:24.800681+00:00
+Revision ID: 1e3c9c804fec
+Revises: d31c23845017
+Create Date: 2025-01-03 10:16:58.531083+00:00
 
 """
 from alembic import op
 from sqlalchemy.sql import expression
 
 # revision identifiers, used by Alembic.
-revision = "58012c1e1b1b"
-down_revision = "52a0e8148dd5"
+revision = "1e3c9c804fec"
+down_revision = "d31c23845017"
 branch_labels = None
 depends_on = None
 
