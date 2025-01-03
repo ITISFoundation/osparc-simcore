@@ -10,14 +10,14 @@ from .utils_repos import pass_or_acquire_connection, transaction_context
 from .utils_tags_sql import (
     count_groups_with_given_access_rights_stmt,
     create_tag_stmt,
-    delete_tag_sharing_stmt,
+    delete_tag_access_rights_stmt,
     delete_tag_stmt,
     get_tag_stmt,
     has_access_rights_stmt,
     list_tag_group_access_stmt,
     list_tags_stmt,
-    share_tag_stmt,
     update_tag_stmt,
+    upsert_tags_access_rights_stmt,
 )
 
 
@@ -112,7 +112,7 @@ class TagsRepo:
             assert tag  # nosec
 
             # take tag ownership
-            access_stmt = share_tag_stmt(
+            access_stmt = upsert_tags_access_rights_stmt(
                 tag_id=tag.id,
                 user_id=user_id,
                 read=read,
@@ -255,7 +255,7 @@ class TagsRepo:
         )
         return result.fetchone() is not None
 
-    async def list_tag_group_access(
+    async def list_access_rights(
         self,
         connection: AsyncConnection | None = None,
         *,
@@ -299,7 +299,7 @@ class TagsRepo:
                 )
 
             result = await conn.execute(
-                share_tag_stmt(
+                upsert_tags_access_rights_stmt(
                     tag_id=tag_id,
                     group_id=group_id,
                     read=read,
@@ -328,6 +328,6 @@ class TagsRepo:
                 )
 
             deleted: bool = await conn.scalar(
-                delete_tag_sharing_stmt(tag_id=tag_id, group_id=group_id)
+                delete_tag_access_rights_stmt(tag_id=tag_id, group_id=group_id)
             )
             return deleted

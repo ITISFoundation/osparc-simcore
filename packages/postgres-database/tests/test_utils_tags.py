@@ -28,8 +28,8 @@ from simcore_postgres_database.utils_tags_sql import (
     get_tags_for_project_stmt,
     get_tags_for_services_stmt,
     list_tags_stmt,
-    share_tag_stmt,
     update_tag_stmt,
+    upsert_tags_access_rights_stmt,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -690,7 +690,7 @@ def test_building_tags_sql_statements():
     )
 
     _check(
-        share_tag_stmt,
+        upsert_tags_access_rights_stmt,
         tag_id=tag_id,
         user_id=user_id,
         read=True,
