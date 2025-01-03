@@ -205,6 +205,19 @@ qx.Class.define("osparc.product.Utils", {
       return "REGISTER";
     },
 
+    getCopyrightLink: function() {
+      const copyrightLink = new osparc.ui.basic.LinkLabel();
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      if (vendor && "url" in vendor && "copyright" in vendor) {
+        copyrightLink.set({
+          value: vendor.copyright,
+          url: vendor.url
+        });
+        return copyrightLink;
+      }
+      return null;
+    },
+
     // All products except oSPARC
     hasIdlingTrackerEnabled: function() {
       const product = this.getProductName();
