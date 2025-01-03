@@ -10,10 +10,13 @@ from .utils_repos import pass_or_acquire_connection, transaction_context
 from .utils_tags_sql import (
     count_groups_with_given_access_rights_stmt,
     create_tag_stmt,
+    delete_tag_sharing_stmt,
     delete_tag_stmt,
     get_tag_stmt,
+    has_access_rights_stmt,
+    list_tag_group_access_stmt,
     list_tags_stmt,
-    set_tag_access_rights_stmt,
+    share_tag_stmt,
     update_tag_stmt,
 )
 
@@ -109,7 +112,7 @@ class TagsRepo:
             assert tag  # nosec
 
             # take tag ownership
-            access_stmt = set_tag_access_rights_stmt(
+            access_stmt = share_tag_stmt(
                 tag_id=tag.id,
                 user_id=user_id,
                 read=read,
@@ -231,37 +234,100 @@ class TagsRepo:
     # ACCESS RIGHTS
     #
 
-    async def create_access_rights(
+    async def _has_access_rights(
         self,
-        connection: AsyncConnection | None = None,
+        connection: AsyncConnection,
         *,
-        user_id: int,
+        caller_id: int,
         tag_id: int,
-        group_id: int,
-        read: bool,
-        write: bool,
-        delete: bool,
-    ):
-        raise NotImplementedError
+        read: bool = False,
+        write: bool = False,
+        delete: bool = False,
+    ) -> bool:
+        result = await connection.execute(
+            has_access_rights_stmt(
+                tag_id=tag_id,
+                caller_user_id=caller_id,
+                read=read,
+                write=write,
+                delete=delete,
+            )
+        )
+        return result.fetchone() is not None
 
-    async def update_access_rights(
+    async def list_tag_group_access(
         self,
         connection: AsyncConnection | None = None,
         *,
+        # caller
         user_id: int,
+        # target
+        tag_id: int,
+    ):
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            if not await self._has_access_rights(
+                conn, caller_id=user_id, tag_id=tag_id, read=True
+            ):
+                # TODO: empyt list or error?
+                raise TagOperationNotAllowedError(
+                    operation="share.list", user_id=user_id, tag_id=tag_id
+                )
+
+            result = await conn.execute(list_tag_group_access_stmt(tag_id=tag_id))
+            return [dict(row) for row in result.fetchall()]
+
+    async def create_or_update_access_rights(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        # caller
+        user_id: int,
+        # target
         tag_id: int,
         group_id: int,
+        # access-rights
         read: bool,
         write: bool,
         delete: bool,
     ):
-        raise NotImplementedError
+        async with transaction_context(self.engine, connection) as conn:
+            if not await self._has_access_rights(
+                conn, caller_id=user_id, tag_id=tag_id, write=True
+            ):
+                raise TagOperationNotAllowedError(
+                    operation="share.write", user_id=user_id, tag_id=tag_id
+                )
+
+            result = await conn.execute(
+                share_tag_stmt(
+                    tag_id=tag_id,
+                    group_id=group_id,
+                    read=read,
+                    write=write,
+                    delete=delete,
+                )
+            )
+            row = result.first()
+            return dict(row)
 
     async def delete_access_rights(
         self,
         connection: AsyncConnection | None = None,
         *,
         user_id: int,
+        # target
         tag_id: int,
-    ):
-        raise NotImplementedError
+        group_id: int,
+    ) -> bool:
+        async with transaction_context(self.engine, connection) as conn:
+            if not await self._has_access_rights(
+                conn, caller_id=user_id, tag_id=tag_id, write=True
+            ):
+                raise TagOperationNotAllowedError(
+                    operation="share.delete", user_id=user_id, tag_id=tag_id
+                )
+
+            deleted: bool = await conn.scalar(
+                delete_tag_sharing_stmt(tag_id=tag_id, group_id=group_id)
+            )
+            return deleted
