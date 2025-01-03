@@ -31,7 +31,7 @@ router = APIRouter(
     response_model=Envelope[list[TagGroupGet]],
 )
 async def list_tag_groups(_path_params: Annotated[TagPathParams, Depends()]):
-    ...
+    """Lists all groups associated to this tag"""
 
 
 @router.post(
@@ -49,7 +49,7 @@ async def create_tag_group(
     "/tags/{tag_id}/groups/{group_id}",
     response_model=Envelope[list[TagGroupGet]],
 )
-async def replace_tag_groups(
+async def replace_tag_group(
     _path_params: Annotated[TagGroupPathParams, Depends()], _body: TagGroupCreate
 ):
     """Replace access rights on tag for associated organization or user with `group_id`"""

@@ -143,11 +143,11 @@ async def create_tag_group(request: web.Request):
     raise NotImplementedError
 
 
-@routes.put(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="replace_tag_groups")
+@routes.put(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="replace_tag_group")
 @login_required
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
-async def replace_tag_groups(request: web.Request):
+async def replace_tag_group(request: web.Request):
     path_params = parse_request_path_parameters_as(TagGroupPathParams, request)
     new_tag_group = await parse_request_body_as(TagGroupCreate, request)
 
