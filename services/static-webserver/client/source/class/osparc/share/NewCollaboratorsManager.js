@@ -66,12 +66,17 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       });
       this.add(introLabel);
 
-      const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+      const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle",
       }));
       const filter = this.__textFilter = new osparc.filter.TextFilter("name", "collaboratorsManager").set({
         allowGrowX: true,
         margin: 0,
+        allowStretchX: true,
+        maxHeight: 30,
+      });
+      filter.getChildControl("clearbutton").setLayoutProperties({
+        bottom: 4,
       });
       this.addListener("appear", () => filter.getChildControl("textfield").focus());
       toolbar.add(filter, {
