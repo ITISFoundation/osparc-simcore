@@ -209,8 +209,16 @@ qx.Class.define("osparc.product.Utils", {
       const copyrightLink = new osparc.ui.basic.LinkLabel();
       const vendor = osparc.store.VendorInfo.getInstance().getVendor();
       if (vendor && "url" in vendor && "copyright" in vendor) {
+        let copyrightText = vendor.copyright;
+        // remove the copyright symbol (©)
+        copyrightText = copyrightText.replace("©", "");
+        copyrightText = copyrightText.trim();
+        // remove the year
+        copyrightText = copyrightText.replace(/^\d+\s/, "");
+        // add the copyright symbol (©) and current year
+        copyrightText = `©${new Date().getFullYear()} ` + copyrightText;
         copyrightLink.set({
-          value: vendor.copyright,
+          value: copyrightText,
           url: vendor.url
         });
         return copyrightLink;
