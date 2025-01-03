@@ -69,15 +69,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle",
       }));
-      const filter = this.__textFilter = new osparc.filter.TextFilter("name", "collaboratorsManager").set({
-        allowGrowX: true,
-        margin: 0,
-        allowStretchX: true,
-        maxHeight: 30,
-      });
-      filter.getChildControl("clearbutton").setLayoutProperties({
-        bottom: 4,
-      });
+      const filter = this.__textFilter = new osparc.filter.TextFilter("name", "collaboratorsManager");
+      filter.setCompact(true);
       this.addListener("appear", () => filter.getChildControl("textfield").focus());
       toolbar.add(filter, {
         flex: 1
