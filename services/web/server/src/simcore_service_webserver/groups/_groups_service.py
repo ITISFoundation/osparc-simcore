@@ -158,7 +158,7 @@ async def list_group_members(
     app: web.Application, user_id: UserID, group_id: GroupID
 ) -> list[GroupMember]:
     return await _groups_repository.list_users_in_group(
-        app, user_id=user_id, group_id=group_id
+        app, caller_id=user_id, group_id=group_id
     )
 
 
@@ -171,7 +171,7 @@ async def get_group_member(
 
     return await _groups_repository.get_user_in_group(
         app,
-        user_id=user_id,
+        caller_id=user_id,
         group_id=group_id,
         the_user_id_in_group=the_user_id_in_group,
     )
@@ -186,7 +186,7 @@ async def update_group_member(
 ) -> GroupMember:
     return await _groups_repository.update_user_in_group(
         app,
-        user_id=user_id,
+        caller_id=user_id,
         group_id=group_id,
         the_user_id_in_group=the_user_id_in_group,
         access_rights=access_rights,
@@ -201,7 +201,7 @@ async def delete_group_member(
 ) -> None:
     return await _groups_repository.delete_user_from_group(
         app,
-        user_id=user_id,
+        caller_id=user_id,
         group_id=group_id,
         the_user_id_in_group=the_user_id_in_group,
     )
@@ -261,13 +261,13 @@ async def add_user_in_group(
 
     if new_by_user_email:
         user = await _groups_repository.get_user_from_email(
-            app, email=new_by_user_email, caller_user_id=user_id
+            app, email=new_by_user_email, caller_id=user_id
         )
         new_by_user_id = user.id
 
     return await _groups_repository.add_new_user_in_group(
         app,
-        user_id=user_id,
+        caller_id=user_id,
         group_id=group_id,
         new_user_id=new_by_user_id,
         new_user_name=new_by_user_name,

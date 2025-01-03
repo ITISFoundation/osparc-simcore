@@ -30,6 +30,8 @@ from simcore_postgres_database.utils_repos import (
 from simcore_postgres_database.utils_users import (
     UsersRepo,
     generate_alternative_username,
+    is_public,
+    visible_user_profile_cols,
 )
 from sqlalchemy import delete
 from sqlalchemy.engine.row import Row
@@ -49,7 +51,76 @@ def _parse_as_user(user_id: Any) -> UserID:
     try:
         return TypeAdapter(UserID).validate_python(user_id)
     except ValidationError as err:
-        raise UserNotFoundError(uid=user_id, user_id=user_id) from err
+        raise UserNotFoundError(user_id=user_id) from err
+
+
+def _public_user_cols(caller_id: int):
+    return (
+        # Fits PublicUser model
+        users.c.id.label("user_id"),
+        users.c.name.label("user_name"),
+        *visible_user_profile_cols(caller_id),
+        users.c.primary_gid.label("group_id"),
+    )
+
+
+#
+#  PUBLIC User
+#
+
+
+async def get_public_user(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    caller_id: UserID,
+    user_id: UserID,
+):
+    query = sa.select(*_public_user_cols(caller_id=caller_id)).where(
+        users.c.id == user_id
+    )
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.execute(query)
+        user = result.first()
+        if not user:
+            raise UserNotFoundError(user_id=user_id)
+        return user
+
+
+async def search_public_user(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    caller_id: UserID,
+    search_pattern: str,
+    limit: int,
+) -> list:
+
+    _pattern = f"%{search_pattern}%"
+
+    query = (
+        sa.select(*_public_user_cols(caller_id=caller_id))
+        .where(
+            users.c.name.ilike(_pattern)
+            | (
+                is_public(users.c.privacy_hide_email, caller_id)
+                & users.c.email.ilike(_pattern)
+            )
+            | (
+                is_public(users.c.privacy_hide_fullname, caller_id)
+                & (
+                    users.c.first_name.ilike(_pattern)
+                    | users.c.last_name.ilike(_pattern)
+                )
+            )
+        )
+        .limit(limit)
+    )
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.stream(query)
+        return [got async for got in result]
 
 
 async def get_user_or_raise(
@@ -65,15 +136,16 @@ async def get_user_or_raise(
     assert return_column_names is not None  # nosec
     assert set(return_column_names).issubset(users.columns.keys())  # nosec
 
+    query = sa.select(*(users.columns[name] for name in return_column_names)).where(
+        users.c.id == user_id
+    )
+
     async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.stream(
-            sa.select(*(users.columns[name] for name in return_column_names)).where(
-                users.c.id == user_id
-            )
-        )
-        row = await result.first()
+        result = await conn.execute(query)
+        row = result.first()
         if row is None:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
+
         user: dict[str, Any] = row._asdict()
         return user
 
@@ -88,7 +160,7 @@ async def get_user_primary_group_id(
             ).where(users.c.id == user_id)
         )
         if primary_gid is None:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
         return primary_gid
 
 
@@ -100,7 +172,9 @@ async def get_users_ids_in_group(
 ) -> set[UserID]:
     async with pass_or_acquire_connection(engine, connection) as conn:
         result = await conn.stream(
-            sa.select(user_to_groups.c.uid).where(user_to_groups.c.gid == group_id)
+            sa.select(
+                user_to_groups.c.uid,
+            ).where(user_to_groups.c.gid == group_id)
         )
         return {row.uid async for row in result}
 
@@ -108,7 +182,9 @@ async def get_users_ids_in_group(
 async def get_user_id_from_pgid(app: web.Application, primary_gid: int) -> UserID:
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
         user_id: UserID = await conn.scalar(
-            sa.select(users.c.id).where(users.c.primary_gid == primary_gid)
+            sa.select(
+                users.c.id,
+            ).where(users.c.primary_gid == primary_gid)
         )
         return user_id
 
@@ -128,7 +204,7 @@ async def get_user_fullname(app: web.Application, *, user_id: UserID) -> FullNam
         )
         user = await result.first()
         if not user:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
 
         return FullNameDict(
             first_name=user.first_name,
@@ -141,7 +217,10 @@ async def get_guest_user_ids_and_names(
 ) -> list[tuple[UserID, UserNameID]]:
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
         result = await conn.stream(
-            sa.select(users.c.id, users.c.name).where(users.c.role == UserRole.GUEST)
+            sa.select(
+                users.c.id,
+                users.c.name,
+            ).where(users.c.role == UserRole.GUEST)
         )
 
         return TypeAdapter(list[tuple[UserID, UserNameID]]).validate_python(
@@ -157,10 +236,12 @@ async def get_user_role(app: web.Application, *, user_id: UserID) -> UserRole:
 
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
         user_role = await conn.scalar(
-            sa.select(users.c.role).where(users.c.id == user_id)
+            sa.select(
+                users.c.role,
+            ).where(users.c.id == user_id)
         )
         if user_role is None:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
         assert isinstance(user_role, UserRole)  # nosec
         return user_role
 
@@ -198,7 +279,9 @@ async def do_update_expired_users(
     async with transaction_context(engine, connection) as conn:
         result = await conn.stream(
             users.update()
-            .values(status=UserStatus.EXPIRED)
+            .values(
+                status=UserStatus.EXPIRED,
+            )
             .where(
                 (users.c.expires_at.is_not(None))
                 & (users.c.status == UserStatus.ACTIVE)
@@ -218,7 +301,11 @@ async def update_user_status(
 ):
     async with transaction_context(engine, connection) as conn:
         await conn.execute(
-            users.update().values(status=new_status).where(users.c.id == user_id)
+            users.update()
+            .values(
+                status=new_status,
+            )
+            .where(users.c.id == user_id)
         )
 
 
@@ -232,7 +319,9 @@ async def search_users_and_get_profile(
     users_alias = sa.alias(users, name="users_alias")
 
     invited_by = (
-        sa.select(users_alias.c.name)
+        sa.select(
+            users_alias.c.name,
+        )
         .where(users_pre_registration_details.c.created_by == users_alias.c.id)
         .label("invited_by")
     )
@@ -291,11 +380,19 @@ async def get_user_products(
 ) -> list[Row]:
     async with pass_or_acquire_connection(engine, connection) as conn:
         product_name_subq = (
-            sa.select(products.c.name)
+            sa.select(
+                products.c.name,
+            )
             .where(products.c.group_id == groups.c.gid)
             .label("product_name")
         )
-        products_gis_subq = sa.select(products.c.group_id).distinct().subquery()
+        products_gis_subq = (
+            sa.select(
+                products.c.group_id,
+            )
+            .distinct()
+            .subquery()
+        )
         query = (
             sa.select(
                 groups.c.gid,
@@ -326,7 +423,9 @@ async def create_user_details(
     async with transaction_context(engine, connection) as conn:
         await conn.execute(
             sa.insert(users_pre_registration_details).values(
-                created_by=created_by, pre_email=email, **other_values
+                created_by=created_by,
+                pre_email=email,
+                **other_values,
             )
         )
 
@@ -341,7 +440,7 @@ async def get_user_billing_details(
     async with pass_or_acquire_connection(engine, connection) as conn:
         query = UsersRepo.get_billing_details_query(user_id=user_id)
         result = await conn.execute(query)
-        row = result.fetchone()
+        row = result.first()
         if not row:
             raise BillingDetailsNotFoundError(user_id=user_id)
         return UserBillingDetails.model_validate(row)
@@ -356,7 +455,7 @@ async def delete_user_by_id(
             .where(users.c.id == user_id)
             .returning(users.c.id)  # Return the ID of the deleted row otherwise None
         )
-        deleted_user = result.fetchone()
+        deleted_user = result.first()
 
         # If no row was deleted, the user did not exist
         return bool(deleted_user)
@@ -397,7 +496,7 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
         )
         row = await result.first()
         if not row:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
 
         my_profile = MyProfile.model_validate(row, from_attributes=True)
         assert my_profile.id == user_id  # nosec

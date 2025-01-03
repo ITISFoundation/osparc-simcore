@@ -5,7 +5,9 @@ from aiohttp import web
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
     MyProfilePatch,
-    UsersSearchQueryParams,
+    UserGet,
+    UsersForAdminSearchQueryParams,
+    UsersSearch,
 )
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -129,6 +131,32 @@ async def update_my_profile(request: web.Request) -> web.Response:
 
 
 #
+# USERS (public)
+#
+
+
+@routes.post(f"/{API_VTAG}/users:search", name="search_users")
+@login_required
+@permission_required("user.read")
+@_handle_users_exceptions
+async def search_users(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    assert req_ctx.product_name  # nosec
+
+    # NOTE: Decided for body instead of query parameters because it is easier for the front-end
+    search_params = await parse_request_body_as(UsersSearch, request)
+
+    found = await _users_service.search_public_users(
+        request.app,
+        caller_id=req_ctx.user_id,
+        match_=search_params.match_,
+        limit=search_params.limit,
+    )
+
+    return envelope_json_response([UserGet.from_model(user) for user in found])
+
+
+#
 # USERS (only POs)
 #
 
@@ -136,16 +164,16 @@ _RESPONSE_MODEL_MINIMAL_POLICY = RESPONSE_MODEL_POLICY.copy()
 _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 
 
-@routes.get(f"/{API_VTAG}/users:search", name="search_users")
+@routes.get(f"/{API_VTAG}/admin/users:search", name="search_users_for_admin")
 @login_required
-@permission_required("user.users.*")
+@permission_required("admin.users.read")
 @_handle_users_exceptions
-async def search_users(request: web.Request) -> web.Response:
+async def search_users_for_admin(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    query_params: UsersSearchQueryParams = parse_request_query_parameters_as(
-        UsersSearchQueryParams, request
+    query_params: UsersForAdminSearchQueryParams = parse_request_query_parameters_as(
+        UsersForAdminSearchQueryParams, request
     )
 
     found = await _users_service.search_users(
@@ -157,11 +185,13 @@ async def search_users(request: web.Request) -> web.Response:
     )
 
 
-@routes.post(f"/{API_VTAG}/users:pre-register", name="pre_register_user")
+@routes.post(
+    f"/{API_VTAG}/admin/users:pre-register", name="pre_register_user_for_admin"
+)
 @login_required
-@permission_required("user.users.*")
+@permission_required("admin.users.read")
 @_handle_users_exceptions
-async def pre_register_user(request: web.Request) -> web.Response:
+async def pre_register_user_for_admin(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     pre_user_profile = await parse_request_body_as(PreRegisteredUserGet, request)
 
