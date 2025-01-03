@@ -2019,14 +2019,14 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__draggingLink(e, false);
 
       if (this.__isDraggingLink && "dragData" in this.__isDraggingLink) {
+        const data = this.__isDraggingLink["dragData"];
+        this.__isDraggingLink = null;
         const pos = this.__pointerEventToWorkbenchPos(e, false);
         const service = qx.data.marshal.Json.createModel(osparc.service.Utils.getFilePicker());
         const nodeUI = await this.__addNode(service, pos);
         if (nodeUI) {
           const node = nodeUI.getNode();
-          const data = this.__isDraggingLink["dragData"];
           osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
-          this.__isDraggingLink = null;
         }
       }
     },
