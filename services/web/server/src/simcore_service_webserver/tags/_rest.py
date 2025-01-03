@@ -13,7 +13,6 @@ from simcore_postgres_database.utils_tags import (
 
 from .._meta import API_VTAG as VTAG
 from ..exception_handling import (
-    ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
     to_exceptions_handlers_map,
@@ -32,19 +31,19 @@ from .schemas import (
     TagUpdate,
 )
 
-_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
-    TagNotFoundError: HttpErrorInfo(
-        status.HTTP_404_NOT_FOUND,
-        "Tag {tag_id} not found: either no access or does not exists",
-    ),
-    TagOperationNotAllowedError: HttpErrorInfo(
-        status.HTTP_403_FORBIDDEN,
-        "Could not {operation} tag {tag_id}. Not found or insuficient access.",
-    ),
-}
-
 _handle_tags_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
+    to_exceptions_handlers_map(
+        {
+            TagNotFoundError: HttpErrorInfo(
+                status.HTTP_404_NOT_FOUND,
+                "Tag {tag_id} not found: either no access or does not exists",
+            ),
+            TagOperationNotAllowedError: HttpErrorInfo(
+                status.HTTP_403_FORBIDDEN,
+                "Could not {operation} tag {tag_id}. Not found or insuficient access.",
+            ),
+        }
+    )
 )
 
 
