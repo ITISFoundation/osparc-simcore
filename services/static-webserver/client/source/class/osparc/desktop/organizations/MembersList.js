@@ -23,13 +23,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this._add(this.__createAddMembersText());
-    this._add(this.__getMemberInvitation());
-    this._add(this.__getRolesToolbar());
-    this._add(this.__getMembersFilter());
-    this._add(this.__getMembersList(), {
-      flex: 1
-    });
+    this.__createNewMemberLayout();
+    this.__createMembersList();
   },
 
   statics: {
@@ -90,6 +85,25 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       }
       this.__currentOrg = orgModel;
       this.__reloadOrgMembers();
+    },
+
+    __createNewMemberLayout: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      vBox.add(this.__createAddMembersText());
+      vBox.add(this.__getMemberInvitation());
+      this._add(vBox);
+    },
+
+    __createMembersList: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      vBox.add(this.__getRolesToolbar());
+      vBox.add(this.__getMembersFilter());
+      vBox.add(this.__getMembersList(), {
+        flex: 1
+      });
+      this._add(vBox, {
+        flex: 1
+      });
     },
 
     __createAddMembersText: function() {
