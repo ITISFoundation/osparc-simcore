@@ -129,7 +129,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __selectedItemId: null,
     __startHint: null,
     __toolHint: null,
-    __dropHereNodeUI: null,
+    __dropHereUI: null,
     __selectionRectInitPos: null,
     __selectionRectRepr: null,
     __panning: null,
@@ -1808,8 +1808,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __updateDropHere: function(show, posX, posY) {
       const boxWidth = 120;
       const boxHeight = 60;
-      if (this.__dropHereNodeUI === null) {
-        const dropHereNodeUI = this.__dropHereNodeUI = new qx.ui.basic.Label(this.tr("Drop here")).set({
+      if (this.__dropHereUI === null) {
+        const dropHereNodeUI = this.__dropHereUI = new qx.ui.basic.Label(this.tr("Drop here")).set({
           font: "workbench-start-hint",
           textColor: "workbench-start-hint"
         });
@@ -1817,7 +1817,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         this.__workbenchLayout.add(dropHereNodeUI);
         dropHereNodeUI.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
       }
-      let dropHere = this.__dropHereNodeUI;
+      let dropHere = this.__dropHereUI;
       if (show) {
         dropHere.show();
         const dropMeBounds = dropHere.getBounds() || dropHere.getSizeHint();
