@@ -3,7 +3,7 @@ from typing import Any
 
 import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver.users import MyProfilePatch, UserGet
+from models_library.api_schemas_webserver.users import MyProfilePatch, UserForAdminGet
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import GroupID
@@ -43,7 +43,7 @@ async def pre_register_user(
     app: web.Application,
     profile: PreRegisteredUserGet,
     creator_user_id: UserID,
-) -> UserGet:
+) -> UserForAdminGet:
 
     found = await search_users(app, email_glob=profile.email, include_products=False)
     if found:
@@ -87,6 +87,25 @@ async def pre_register_user(
 #
 
 
+async def get_public_user(app: web.Application, *, caller_id: UserID, user_id: UserID):
+    return await _users_repository.get_public_user(
+        get_asyncpg_engine(app),
+        caller_id=caller_id,
+        user_id=user_id,
+    )
+
+
+async def search_public_users(
+    app: web.Application, *, caller_id: UserID, match_: str, limit: int
+) -> list:
+    return await _users_repository.search_public_user(
+        get_asyncpg_engine(app),
+        caller_id=caller_id,
+        search_pattern=match_,
+        limit=limit,
+    )
+
+
 async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
     """
     :raises UserNotFoundError: if missing but NOT if marked for deletion!
@@ -108,7 +127,7 @@ async def get_user_id_from_gid(app: web.Application, primary_gid: GroupID) -> Us
 
 async def search_users(
     app: web.Application, email_glob: str, *, include_products: bool = False
-) -> list[UserGet]:
+) -> list[UserForAdminGet]:
     # NOTE: this search is deploy-wide i.e. independent of the product!
 
     def _glob_to_sql_like(glob_pattern: str) -> str:
@@ -130,7 +149,7 @@ async def search_users(
         return None
 
     return [
-        UserGet(
+        UserForAdminGet(
             first_name=r.first_name or r.pre_first_name,
             last_name=r.last_name or r.pre_last_name,
             email=r.email or r.pre_email,
