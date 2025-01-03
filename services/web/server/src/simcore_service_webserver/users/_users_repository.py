@@ -30,8 +30,8 @@ from simcore_postgres_database.utils_repos import (
 from simcore_postgres_database.utils_users import (
     UsersRepo,
     generate_alternative_username,
-    is_private,
     is_public,
+    visible_user_profile_cols,
 )
 from sqlalchemy import delete
 from sqlalchemy.engine.row import Row
@@ -59,28 +59,7 @@ def _public_user_cols(caller_id: int):
         # Fits PublicUser model
         users.c.id.label("user_id"),
         users.c.name.label("user_name"),
-        # privacy settings
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_email, caller_id),
-                None,
-            ),
-            else_=users.c.email,
-        ).label("email"),
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_fullname, caller_id),
-                None,
-            ),
-            else_=users.c.first_name,
-        ).label("first_name"),
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_fullname, caller_id),
-                None,
-            ),
-            else_=users.c.last_name,
-        ).label("last_name"),
+        *visible_user_profile_cols(caller_id),
         users.c.primary_gid.label("group_id"),
     )
 
@@ -106,96 +85,6 @@ async def get_public_user(
         user = result.first()
         if not user:
             raise UserNotFoundError(user_id=user_id)
-        return user
-
-
-async def search_public_user(
-    engine: AsyncEngine,
-    connection: AsyncConnection | None = None,
-    *,
-    caller_id: UserID,
-    search_pattern: str,
-    limit: int,
-) -> list:
-
-    _pattern = f"%{search_pattern}%"
-
-    query = (
-        sa.select(*_public_user_cols(caller_id=caller_id))
-        .where(
-            users.c.name.ilike(_pattern)
-            | (
-                is_public(users.c.privacy_hide_email, caller_id)
-                & users.c.email.ilike(_pattern)
-            )
-            | (
-                is_public(users.c.privacy_hide_fullname, caller_id)
-                & (
-                    users.c.first_name.ilike(_pattern)
-                    | users.c.last_name.ilike(_pattern)
-                )
-            )
-        )
-        .limit(limit)
-    )
-
-    async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.stream(query)
-        return [got async for got in result]
-
-
-def _public_user_cols(caller_id: int):
-    return (
-        # Fits PublicUser model
-        users.c.id.label("user_id"),
-        users.c.name.label("user_name"),
-        # privacy settings
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_email, caller_id),
-                None,
-            ),
-            else_=users.c.email,
-        ).label("email"),
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_fullname, caller_id),
-                None,
-            ),
-            else_=users.c.first_name,
-        ).label("first_name"),
-        sa.case(
-            (
-                is_private(users.c.privacy_hide_fullname, caller_id),
-                None,
-            ),
-            else_=users.c.last_name,
-        ).label("last_name"),
-        users.c.primary_gid.label("group_id"),
-    )
-
-
-#
-#  PUBLIC User
-#
-
-
-async def get_public_user(
-    engine: AsyncEngine,
-    connection: AsyncConnection | None = None,
-    *,
-    caller_id: UserID,
-    user_id: UserID,
-):
-    query = sa.select(*_public_user_cols(caller_id=caller_id)).where(
-        users.c.id == user_id
-    )
-
-    async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.execute(query)
-        user = result.first()
-        if not user:
-            raise UserNotFoundError(uid=user_id)
         return user
 
 

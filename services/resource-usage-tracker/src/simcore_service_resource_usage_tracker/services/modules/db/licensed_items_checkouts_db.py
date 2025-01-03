@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import cast
 
@@ -8,6 +9,7 @@ from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
 from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.services_types import ServiceRunID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
@@ -26,6 +28,9 @@ from ....models.licensed_items_checkouts import (
     CreateLicensedItemCheckoutDB,
     LicensedItemCheckoutDB,
 )
+
+_logger = logging.getLogger(__name__)
+
 
 _SELECTION_ARGS = (
     resource_tracker_licensed_items_checkouts.c.licensed_item_checkout_id,
@@ -214,3 +219,41 @@ async def get_currently_used_seats_for_item_and_wallet(
         if total_sum is None:
             return 0
         return cast(int, total_sum)
+
+
+async def force_release_license_seats_by_run_id(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    service_run_id: ServiceRunID,
+) -> None:
+    """
+    Purpose: This function is utilized by a periodic heartbeat check task that monitors whether running services are
+    sending heartbeat signals. If heartbeat signals are not received within a specified timeframe and a service is
+    deemed unhealthy, this function ensures the proper release of any licensed seats that were not correctly released by
+    the unhealthy service.
+    Currently, this functionality is primarily used to handle the release of a single seat allocated to the VIP model.
+    """
+    update_stmt = (
+        resource_tracker_licensed_items_checkouts.update()
+        .values(
+            modified=sa.func.now(),
+            stopped_at=sa.func.now(),
+        )
+        .where(
+            (
+                resource_tracker_licensed_items_checkouts.c.service_run_id
+                == service_run_id
+            )
+            & (resource_tracker_licensed_items_checkouts.c.stopped_at.is_(None))
+        )
+        .returning(sa.literal_column("*"))
+    )
+
+    async with transaction_context(engine, connection) as conn:
+        result = await conn.execute(update_stmt)
+        released_seats = result.fetchall()
+        if released_seats:
+            _logger.error(
+                "Force release of %s seats: %s", len(released_seats), released_seats
+            )

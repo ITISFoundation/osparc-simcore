@@ -8,7 +8,7 @@ class BaseDynamicSidecarError(OsparcErrorMixin, Exception):
 class VolumeNotFoundError(BaseDynamicSidecarError):
     msg_template = (
         "Expected 1 got {volume_count} volumes labels with "
-        "source_label={source_label}, run_id={run_id}: Found {volume_names}"
+        "source_label={source_label}, service_run_id={service_run_id}: Found {volume_names}"
     )
 
 

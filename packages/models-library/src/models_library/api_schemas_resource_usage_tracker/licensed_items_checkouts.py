@@ -3,10 +3,10 @@ from typing import NamedTuple
 
 from models_library.licensed_items import LicensedItemID
 from models_library.products import ProductName
-from models_library.resource_tracker import ServiceRunId
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, PositiveInt
@@ -18,7 +18,7 @@ class LicensedItemCheckoutGet(BaseModel):
     wallet_id: WalletID
     user_id: UserID
     product_name: ProductName
-    service_run_id: ServiceRunId
+    service_run_id: ServiceRunID
     started_at: datetime
     stopped_at: datetime | None
     num_of_seats: int
