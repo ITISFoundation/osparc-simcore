@@ -11,6 +11,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.groups import EVERYONE_GROUP_ID
 from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
@@ -151,7 +152,6 @@ async def test_read_tags(
     everybody_tag_id: int,
 ):
     assert client.app
-
     assert user_role == UserRole.USER
 
     url = client.app.router["list_tags"].url_for()
@@ -177,7 +177,6 @@ async def test_create_and_update_tags(
     _clean_tags_table: None,
 ):
     assert client.app
-
     assert user_role == UserRole.USER
 
     # (1) create tag
@@ -224,7 +223,6 @@ async def test_create_tags_with_order_index(
     _clean_tags_table: None,
 ):
     assert client.app
-
     assert user_role == UserRole.USER
 
     # (1) create tags but set the order in reverse order of creation
@@ -276,3 +274,57 @@ async def test_create_tags_with_order_index(
     resp = await client.get(f"{url}")
     got, _ = await assert_status(resp, status.HTTP_200_OK)
     assert got == [*expected_tags[::-1], last_created]
+
+
+async def test_share_tags(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    everybody_tag_id: int,
+    _clean_tags_table: None,
+):
+    assert client.app
+    assert user_role == UserRole.USER
+
+    # CREATE
+    url = client.app.router["create_tag"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={"name": "shared", "color": "#fff"},
+    )
+    created, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # SHARE (all combinations)?
+    url = client.app.router["create_tag_group"].url_for(
+        tag_id=created["id"], group_id=f"{EVERYONE_GROUP_ID}"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={"read": True, "write": False, "delete": False},
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # test only performed allowed combinations
+
+    # REPLACE SHARE to other combinations
+    url = client.app.router["replace_tag_groups"].url_for(
+        tag_id=created["id"], group_id=f"{EVERYONE_GROUP_ID}"
+    )
+    resp = await client.put(
+        f"{url}",
+        json={"read": True, "write": True, "delete": False},
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # test can perform new combinations
+
+    # DELETE share
+    url = client.app.router["delete_tag_group"].url_for(
+        tag_id=created["id"], group_id=f"{EVERYONE_GROUP_ID}"
+    )
+    resp = await client.delete(
+        f"{url}",
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # test can do nothing
