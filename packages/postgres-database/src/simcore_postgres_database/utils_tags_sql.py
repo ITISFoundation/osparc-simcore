@@ -130,25 +130,6 @@ def count_groups_with_given_access_rights_stmt(
     return sa.select(sa.func.count(user_to_groups.c.uid)).select_from(j)
 
 
-def set_tag_access_rights_stmt(
-    *, tag_id: int, user_id: int, read: bool, write: bool, delete: bool
-):
-    scalar_subq = (
-        sa.select(users.c.primary_gid).where(users.c.id == user_id).scalar_subquery()
-    )
-    return (
-        tags_access_rights.insert()
-        .values(
-            tag_id=tag_id,
-            group_id=scalar_subq,
-            read=read,
-            write=write,
-            delete=delete,
-        )
-        .returning(*_ACCESS_RIGHTS_COLUMNS)
-    )
-
-
 def update_tag_stmt(*, user_id: int, tag_id: int, **updates):
     return (
         tags.update()
@@ -179,6 +160,108 @@ def delete_tag_stmt(*, user_id: int, tag_id: int):
             & (user_to_groups.c.uid == user_id)
         )
         .returning(tags_access_rights.c.delete)
+    )
+
+
+#
+# ACCESS RIGHTS AND SHARING: GROUP<--> TAGS
+#
+
+
+def list_tag_group_access_stmt(*, tag_id: int):
+    return sa.select(tags_access_rights.c.group_id, *_ACCESS_RIGHTS_COLUMNS).where(
+        tags_access_rights.c.tag_id == tag_id
+    )
+
+
+def share_tag_stmt(
+    *,
+    tag_id: int,
+    group_id: int | None = None,
+    user_id: int | None = None,
+    read: bool,
+    write: bool,
+    delete: bool,
+):
+    assert (user_id and group_id) or (not user_id and not group_id)  # nosec
+
+    if user_id:
+        assert not group_id  # nosec
+        target_group_id = (
+            sa.select(users.c.primary_gid)
+            .where(users.c.id == user_id)
+            .scalar_subquery()
+        )
+    else:
+        assert group_id  # nosec
+        target_group_id = group_id
+
+    return (
+        pg_insert(tags_access_rights)
+        .values(
+            tag_id=tag_id,
+            group_id=target_group_id,
+            read=read,
+            write=write,
+            delete=delete,
+        )
+        .on_conflict_do_update(
+            index_elements=["tag_id", "group_id"],
+            set_={"read": read, "write": write, "delete": delete},
+        )
+        .returning(tags_access_rights.c.group_id, *_ACCESS_RIGHTS_COLUMNS)
+    )
+
+
+def delete_tag_sharing_stmt(*, tag_id: int, group_id: int):
+    return (
+        sa.delete(tags_access_rights)
+        .where(
+            (tags_access_rights.c.tag_id == tag_id)
+            & (tags_access_rights.c.group_id == group_id)
+        )
+        .returning(tags_access_rights.c.tag_id.is_not(None))
+    )
+
+
+def has_access_rights_stmt(
+    *,
+    tag_id: int,
+    caller_user_id: int | None = None,
+    caller_group_id: int | None = None,
+    read: bool = False,
+    write: bool = False,
+    delete: bool = False,
+):
+    conditions = []
+
+    # caller
+    if caller_user_id is not None:
+        group_condition = (
+            tags_access_rights.c.group_id
+            == sa.select(users.c.primary_gid)
+            .where(users.c.id == caller_user_id)
+            .scalar_subquery()
+        )
+    elif caller_group_id is not None:
+        group_condition = tags_access_rights.c.group_id == caller_group_id
+    else:
+        msg = "Either caller_user_id or caller_group_id must be provided."
+        raise ValueError(msg)
+
+    conditions.append(group_condition)
+    if read:
+        conditions.append(tags_access_rights.c.read.is_(True))
+    if write:
+        conditions.append(tags_access_rights.c.write.is_(True))
+    if delete:
+        conditions.append(tags_access_rights.c.delete.is_(True))
+
+    return sa.select(tags_access_rights).where(
+        sa.and_(
+            tags_access_rights.c.tag_id == tag_id,
+            *conditions,
+        )
     )
 
 
