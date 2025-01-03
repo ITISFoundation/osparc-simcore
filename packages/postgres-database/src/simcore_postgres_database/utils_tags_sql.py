@@ -164,64 +164,8 @@ def delete_tag_stmt(*, user_id: int, tag_id: int):
 
 
 #
-# ACCESS RIGHTS AND SHARING: GROUP<--> TAGS
+# ACCESS RIGHTS
 #
-
-
-def list_tag_group_access_stmt(*, tag_id: int):
-    return sa.select(tags_access_rights.c.group_id, *_ACCESS_RIGHTS_COLUMNS).where(
-        tags_access_rights.c.tag_id == tag_id
-    )
-
-
-def share_tag_stmt(
-    *,
-    tag_id: int,
-    group_id: int | None = None,
-    user_id: int | None = None,
-    read: bool,
-    write: bool,
-    delete: bool,
-):
-    assert (user_id and group_id) or (not user_id and not group_id)  # nosec
-
-    if user_id:
-        assert not group_id  # nosec
-        target_group_id = (
-            sa.select(users.c.primary_gid)
-            .where(users.c.id == user_id)
-            .scalar_subquery()
-        )
-    else:
-        assert group_id  # nosec
-        target_group_id = group_id
-
-    return (
-        pg_insert(tags_access_rights)
-        .values(
-            tag_id=tag_id,
-            group_id=target_group_id,
-            read=read,
-            write=write,
-            delete=delete,
-        )
-        .on_conflict_do_update(
-            index_elements=["tag_id", "group_id"],
-            set_={"read": read, "write": write, "delete": delete},
-        )
-        .returning(tags_access_rights.c.group_id, *_ACCESS_RIGHTS_COLUMNS)
-    )
-
-
-def delete_tag_sharing_stmt(*, tag_id: int, group_id: int):
-    return (
-        sa.delete(tags_access_rights)
-        .where(
-            (tags_access_rights.c.tag_id == tag_id)
-            & (tags_access_rights.c.group_id == group_id)
-        )
-        .returning(tags_access_rights.c.tag_id.is_not(None))
-    )
 
 
 def has_access_rights_stmt(
@@ -262,6 +206,68 @@ def has_access_rights_stmt(
             tags_access_rights.c.tag_id == tag_id,
             *conditions,
         )
+    )
+
+
+def list_tag_group_access_stmt(*, tag_id: int):
+    return sa.select(
+        tags_access_rights.c.tag_id,
+        tags_access_rights.c.group_id,
+        *_ACCESS_RIGHTS_COLUMNS,
+    ).where(tags_access_rights.c.tag_id == tag_id)
+
+
+def upsert_tags_access_rights_stmt(
+    *,
+    tag_id: int,
+    group_id: int | None = None,
+    user_id: int | None = None,
+    read: bool,
+    write: bool,
+    delete: bool,
+):
+    assert (user_id and group_id) or (not user_id and not group_id)  # nosec
+
+    if user_id:
+        assert not group_id  # nosec
+        target_group_id = (
+            sa.select(users.c.primary_gid)
+            .where(users.c.id == user_id)
+            .scalar_subquery()
+        )
+    else:
+        assert group_id  # nosec
+        target_group_id = group_id
+
+    return (
+        pg_insert(tags_access_rights)
+        .values(
+            tag_id=tag_id,
+            group_id=target_group_id,
+            read=read,
+            write=write,
+            delete=delete,
+        )
+        .on_conflict_do_update(
+            index_elements=["tag_id", "group_id"],
+            set_={"read": read, "write": write, "delete": delete},
+        )
+        .returning(
+            tags_access_rights.c.tag_id,
+            tags_access_rights.c.group_id,
+            *_ACCESS_RIGHTS_COLUMNS,
+        )
+    )
+
+
+def delete_tag_access_rights_stmt(*, tag_id: int, group_id: int):
+    return (
+        sa.delete(tags_access_rights)
+        .where(
+            (tags_access_rights.c.tag_id == tag_id)
+            & (tags_access_rights.c.group_id == group_id)
+        )
+        .returning(tags_access_rights.c.tag_id.is_not(None))
     )
 
 
