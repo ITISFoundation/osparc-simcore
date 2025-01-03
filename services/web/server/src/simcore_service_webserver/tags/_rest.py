@@ -1,5 +1,3 @@
-import functools
-
 from aiohttp import web
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
@@ -7,7 +5,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
@@ -15,6 +12,12 @@ from simcore_postgres_database.utils_tags import (
 )
 
 from .._meta import API_VTAG as VTAG
+from ..exception_handling import (
+    ExceptionToHttpErrorMap,
+    HttpErrorInfo,
+    exception_handling_decorator,
+    to_exceptions_handlers_map,
+)
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -29,20 +32,20 @@ from .schemas import (
     TagUpdate,
 )
 
+_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    TagNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        "Tag {tag_id} not found: either no access or does not exists",
+    ),
+    TagOperationNotAllowedError: HttpErrorInfo(
+        status.HTTP_403_FORBIDDEN,
+        "Could not {operation} tag {tag_id}. Not found or insuficient access.",
+    ),
+}
 
-def _handle_tags_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except TagNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except TagOperationNotAllowedError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-
-    return wrapper
+_handle_tags_exceptions = exception_handling_decorator(
+    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
+)
 
 
 routes = web.RouteTableDef()
