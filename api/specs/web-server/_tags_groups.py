@@ -42,7 +42,7 @@ async def list_tag_groups(_path_params: Annotated[TagPathParams, Depends()]):
 async def create_tag_group(
     _path_params: Annotated[TagGroupPathParams, Depends()], _body: TagGroupCreate
 ):
-    ...
+    """Shares tag `tag_id` with an organization or user with `group_id` providing access-rights to it"""
 
 
 @router.put(
@@ -52,7 +52,7 @@ async def create_tag_group(
 async def replace_tag_groups(
     _path_params: Annotated[TagGroupPathParams, Depends()], _body: TagGroupCreate
 ):
-    ...
+    """Replace access rights on tag for associated organization or user with `group_id`"""
 
 
 @router.delete(
@@ -60,4 +60,4 @@ async def replace_tag_groups(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_tag_group(_path_params: Annotated[TagGroupPathParams, Depends()]):
-    ...
+    """Delete access rights on tag to an associated organization or user with `group_id`"""
