@@ -95,7 +95,7 @@ class DirectorV0Client:
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
-    async def get_running_service_details(  # required
+    async def get_running_service_details(
         self, service_uuid: NodeID
     ) -> RunningDynamicServiceDetails:
         resp = await self._request(
@@ -108,7 +108,7 @@ class DirectorV0Client:
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
-    async def get_service_labels(  # required
+    async def get_service_labels(
         self, service: ServiceKeyVersion
     ) -> SimcoreServiceLabels:
         resp = await self._request(
@@ -121,7 +121,7 @@ class DirectorV0Client:
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
-    async def get_running_services(  # required
+    async def get_running_services(
         self, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[RunningDynamicServiceDetails]:
         query_params = {}
