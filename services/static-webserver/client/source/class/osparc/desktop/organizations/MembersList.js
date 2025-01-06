@@ -23,13 +23,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this._add(this.__createIntroText());
-    this._add(this.__getMemberInvitation());
-    this._add(this.__getRolesToolbar());
-    this._add(this.__getMembersFilter());
-    this._add(this.__getMembersList(), {
-      flex: 1
-    });
+    this.__createNewMemberLayout();
+    this.__createMembersList();
   },
 
   statics: {
@@ -80,7 +75,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
   members: {
     __currentOrg: null,
     __introLabel: null,
-    __memberInvitation: null,
+    __addMembersButton: null,
     __membersModel: null,
 
     setCurrentOrg: function(orgModel) {
@@ -91,7 +86,29 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       this.__reloadOrgMembers();
     },
 
-    __createIntroText: function() {
+    __createNewMemberLayout: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      vBox.add(this.__createAddMembersText());
+      vBox.add(this.__getMemberInvitation());
+      this._add(vBox);
+    },
+
+    __createMembersList: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const rolesLayout = this.__getRolesToolbar();
+      const membersFilter = this.__getMembersFilter();
+      membersFilter.setPaddingRight(10);
+      osparc.data.Roles.replaceSpacerWithWidget(rolesLayout, membersFilter);
+      vBox.add(rolesLayout);
+      vBox.add(this.__getMembersList(), {
+        flex: 1
+      });
+      this._add(vBox, {
+        flex: 1
+      });
+    },
+
+    __createAddMembersText: function() {
       const intro = this.__introLabel = new qx.ui.basic.Label().set({
         alignX: "left",
         rich: true,
@@ -101,25 +118,39 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     __getMemberInvitation: function() {
-      const hBox = this.__memberInvitation = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignY: "middle"
-      }));
-
-      const newMemberUserName = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr(" New Member's username")
+      const addBtn = this.__addMembersButton = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        label: this.tr("Add Members..."),
+        allowGrowX: false,
       });
-      hBox.add(newMemberUserName, {
-        flex: 1
-      });
-
-      const addBtn = new qx.ui.form.Button(this.tr("Add"));
       addBtn.addListener("execute", function() {
-        this.__addMember(newMemberUserName.getValue());
+        const serializedData = this.__currentOrg.serialize();
+        serializedData["resourceType"] = "organization";
+        const showOrganizations = false;
+        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(serializedData, showOrganizations);
+        collaboratorsManager.setCaption("Add Members");
+        collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
+        collaboratorsManager.addListener("addCollaborators", e => {
+          const selectedMembers = e.getData();
+          if (selectedMembers.length) {
+            const promises = [];
+            const usersStore = osparc.store.Users.getInstance();
+            selectedMembers.forEach(selectedMemberGId => promises.push(usersStore.getUser(selectedMemberGId)));
+            Promise.all(promises)
+              .then(users => {
+                users.forEach(user => this.__addMember(user.getUsername()));
+              })
+              .catch(err => {
+                console.error(err);
+              })
+              .finally(collaboratorsManager.close());
+          } else {
+            collaboratorsManager.close();
+          }
+        }, this);
       }, this);
-      hBox.add(addBtn);
 
-      return hBox;
+      return addBtn;
     },
 
     __getRolesToolbar: function() {
@@ -127,10 +158,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     __getMembersFilter: function() {
-      const filter = new osparc.filter.TextFilter("text", "organizationMembersList").set({
-        allowStretchX: true,
-        margin: [0, 10, 5, 10]
-      });
+      const filter = new osparc.filter.TextFilter("text", "organizationMembersList");
+      filter.setCompact(true);
       return filter;
     },
 
@@ -212,11 +241,11 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const canIDelete = organization.getAccessRights()["delete"];
 
       const introText = canIWrite ?
-        this.tr("You can add new members and promote or demote existing ones.<br>In order to add new members, type their username or email if this is public.") :
+        this.tr("You can add new members and change their roles.") :
         this.tr("You can't add new members to this Organization. Please contact an Administrator or Manager.");
       this.__introLabel.setValue(introText);
 
-      this.__memberInvitation.set({
+      this.__addMembersButton.set({
         enabled: canIWrite
       });
 

@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
@@ -13,8 +14,10 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePatch,
     MyTokenCreate,
     MyTokenGet,
+    UserForAdminGet,
     UserGet,
-    UsersSearchQueryParams,
+    UsersForAdminSearchQueryParams,
+    UsersSearch,
 )
 from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
@@ -29,7 +32,7 @@ from simcore_service_webserver.users._notifications import (
 from simcore_service_webserver.users._notifications_rest import _NotificationPathParams
 from simcore_service_webserver.users._tokens_rest import _TokenPathParams
 
-router = APIRouter(prefix=f"/{API_VTAG}", tags=["user"])
+router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])
 
 
 @router.get(
@@ -44,7 +47,7 @@ async def get_my_profile():
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def update_my_profile(_profile: MyProfilePatch):
+async def update_my_profile(_body: MyProfilePatch):
     ...
 
 
@@ -54,7 +57,7 @@ async def update_my_profile(_profile: MyProfilePatch):
     deprecated=True,
     description="Use PATCH instead",
 )
-async def replace_my_profile(_profile: MyProfilePatch):
+async def replace_my_profile(_body: MyProfilePatch):
     ...
 
 
@@ -64,7 +67,7 @@ async def replace_my_profile(_profile: MyProfilePatch):
 )
 async def set_frontend_preference(
     preference_id: PreferenceIdentifier,
-    body_item: PatchRequestBody,
+    _body: PatchRequestBody,
 ):
     ...
 
@@ -82,7 +85,7 @@ async def list_tokens():
     response_model=Envelope[MyTokenGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_token(_token: MyTokenCreate):
+async def create_token(_body: MyTokenCreate):
     ...
 
 
@@ -90,7 +93,9 @@ async def create_token(_token: MyTokenCreate):
     "/me/tokens/{service}",
     response_model=Envelope[MyTokenGet],
 )
-async def get_token(_params: Annotated[_TokenPathParams, Depends()]):
+async def get_token(
+    _path: Annotated[_TokenPathParams, Depends()],
+):
     ...
 
 
@@ -98,7 +103,7 @@ async def get_token(_params: Annotated[_TokenPathParams, Depends()]):
     "/me/tokens/{service}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_token(_params: Annotated[_TokenPathParams, Depends()]):
+async def delete_token(_path: Annotated[_TokenPathParams, Depends()]):
     ...
 
 
@@ -114,7 +119,9 @@ async def list_user_notifications():
     "/me/notifications",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def create_user_notification(_notification: UserNotificationCreate):
+async def create_user_notification(
+    _body: UserNotificationCreate,
+):
     ...
 
 
@@ -123,8 +130,8 @@ async def create_user_notification(_notification: UserNotificationCreate):
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def mark_notification_as_read(
-    _params: Annotated[_NotificationPathParams, Depends()],
-    _notification: UserNotificationPatch,
+    _path: Annotated[_NotificationPathParams, Depends()],
+    _body: UserNotificationPatch,
 ):
     ...
 
@@ -137,24 +144,43 @@ async def list_user_permissions():
     ...
 
 
-@router.get(
+#
+# USERS public
+#
+
+
+@router.post(
     "/users:search",
     response_model=Envelope[list[UserGet]],
-    tags=[
-        "po",
-    ],
+    description="Search among users who are publicly visible to the caller (i.e., me) based on their privacy settings.",
 )
-async def search_users(_params: Annotated[UsersSearchQueryParams, Depends()]):
+async def search_users(_body: UsersSearch):
+    ...
+
+
+#
+# USERS admin
+#
+
+_extra_tags: list[str | Enum] = ["admin"]
+
+
+@router.get(
+    "/admin/users:search",
+    response_model=Envelope[list[UserForAdminGet]],
+    tags=_extra_tags,
+)
+async def search_users_for_admin(
+    _query: Annotated[UsersForAdminSearchQueryParams, Depends()]
+):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
 
 
 @router.post(
-    "/users:pre-register",
-    response_model=Envelope[UserGet],
-    tags=[
-        "po",
-    ],
+    "/admin/users:pre-register",
+    response_model=Envelope[UserForAdminGet],
+    tags=_extra_tags,
 )
-async def pre_register_user(_body: PreRegisteredUserGet):
+async def pre_register_user_for_admin(_body: PreRegisteredUserGet):
     ...
