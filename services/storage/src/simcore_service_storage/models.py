@@ -73,6 +73,7 @@ class FileMetaDataAtDB(BaseModel):
     upload_expires_at: datetime.datetime | None = None
     is_directory: bool
     sha256_checksum: SHA256Str | None = None
+    ref_count: int = 0
 
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
