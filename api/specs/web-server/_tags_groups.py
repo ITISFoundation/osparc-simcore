@@ -8,7 +8,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from models_library.generics import Envelope
+from models_library.rest_error import EnvelopedError
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.tags._rest import _TO_HTTP_ERROR_MAP
 from simcore_service_webserver.tags.schemas import (
     TagGet,
     TagGroupCreate,
@@ -23,6 +25,9 @@ router = APIRouter(
         "tags",
         "groups",
     ],
+    responses={
+        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
+    },
 )
 
 

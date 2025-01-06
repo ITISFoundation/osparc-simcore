@@ -11,7 +11,9 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.basic_types import IdInt
 from models_library.groups import EVERYONE_GROUP_ID
+from models_library.products import ProductName
 from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
@@ -28,6 +30,7 @@ from servicelib.aiohttp import status
 from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import get_database_engine
+from simcore_service_webserver.products._api import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -259,11 +262,12 @@ async def test_create_tags_with_order_index(
     assert got == expected_tags[::-1]
 
     # (3) new tag without priority should get last (because is last created)
+    url = client.app.router["create_tag"].url_for()
     resp = await client.post(
         f"{url}",
         json={"name": "New", "color": "#f00", "description": "w/o priority"},
     )
-    last_created, _ = await assert_status(resp, status.HTTP_200_OK)
+    last_created, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     url = client.app.router["list_tags"].url_for()
     resp = await client.get(f"{url}")
@@ -358,18 +362,10 @@ async def test_share_tags_by_creating_associated_groups(
         )
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-        # test can do nothing
 
-
-@pytest.mark.xfail(reason="Under dev")
-async def test_cannot_share_tag_with_everyone(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    user_role: UserRole,
-    _clean_tags_table: None,
-):
+@pytest.fixture
+async def user_tag_id(client: TestClient) -> IdInt:
     assert client.app
-    assert UserRole(logged_user["role"]) == user_role
 
     url = client.app.router["create_tag"].url_for()
     resp = await client.post(
@@ -377,11 +373,25 @@ async def test_cannot_share_tag_with_everyone(
         json={"name": "shared", "color": "#fff"},
     )
     tag, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    tag_id: int = tag["id"]
+    return tag["id"]
+
+
+@pytest.mark.parametrize(
+    "user_role", [role for role in UserRole if role >= UserRole.USER]
+)
+async def test_cannot_share_tag_with_everyone(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    user_tag_id: IdInt,
+    _clean_tags_table: None,
+):
+    assert client.app
+    assert UserRole(logged_user["role"]) == user_role
 
     # cannot SHARE with everyone group
     url = client.app.router["create_tag_group"].url_for(
-        tag_id=f"{tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+        tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
     )
     resp = await client.post(
         f"{url}",
@@ -392,7 +402,7 @@ async def test_cannot_share_tag_with_everyone(
 
     # cannot REPLACE with everyone group
     url = client.app.router["replace_tag_group"].url_for(
-        tag_id=f"{tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+        tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
     )
     resp = await client.put(
         f"{url}",
@@ -403,7 +413,7 @@ async def test_cannot_share_tag_with_everyone(
 
     # cannot DELETE with everyone group
     url = client.app.router["delete_tag_group"].url_for(
-        tag_id=f"{tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+        tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
     )
     resp = await client.delete(
         f"{url}",
@@ -411,3 +421,44 @@ async def test_cannot_share_tag_with_everyone(
     )
     _, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
     assert error
+
+
+@pytest.fixture
+def product_name() -> str:
+    return "osparc"
+
+
+@pytest.mark.parametrize(
+    "user_role,expected_status",
+    [
+        (
+            role,
+            status.HTTP_403_FORBIDDEN if role < UserRole.TESTER else status.HTTP_200_OK,
+        )
+        for role in UserRole
+        if role >= UserRole.USER
+    ],
+)
+async def test_can_share_tag_with_product_group_if_granted_by_role(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    user_tag_id: IdInt,
+    expected_status: int,
+    _clean_tags_table: None,
+    product_name: ProductName,
+):
+    assert client.app
+    assert UserRole(logged_user["role"]) == user_role
+
+    product_group_id = get_product(client.app, product_name=product_name).group_id
+
+    # cannot SHARE with everyone group
+    url = client.app.router["create_tag_group"].url_for(
+        tag_id=f"{user_tag_id}", group_id=f"{product_group_id}"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={"read": True, "write": True, "delete": True},
+    )
+    await assert_status(resp, expected_status)
