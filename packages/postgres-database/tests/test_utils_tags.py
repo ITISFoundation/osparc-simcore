@@ -630,9 +630,6 @@ async def test_tags_repo_create(
         name="T1",
         description="my first tag",
         color="pink",
-        read=True,
-        write=True,
-        delete=True,
     )
     assert tag_1 == {
         "id": 1,
@@ -653,6 +650,108 @@ async def test_tags_repo_create(
         )
         == user.primary_gid
     )
+
+    # Checks defaults to full ownership
+    assert await tags_repo.has_access_rights(
+        caller_id=user.id,
+        tag_id=tag_1["id"],
+        read=True,
+        write=True,
+        delete=True,
+    )
+
+
+async def test_tags_repo_access_rights(
+    asyncpg_engine: AsyncEngine,
+    user: RowProxy,
+    group: RowProxy,
+    other_user: RowProxy,
+):
+    tags_repo = TagsRepo(asyncpg_engine)
+    tag = await tags_repo.create(
+        user_id=user.id,
+        name="T1",
+        description="my first tag",
+        color="pink",
+    )
+
+    # check ownership
+    tag_accesses = await tags_repo.list_access_rights(tag_id=tag["id"])
+    assert len(tag_accesses) == 1
+    user_access = tag_accesses[0]
+    assert user_access == {
+        "group_id": user.primary_gid,
+        "tag_id": tag["id"],
+        "read": True,
+        "write": True,
+        "delete": True,
+    }
+
+    assert await tags_repo.has_access_rights(
+        caller_id=user.id,
+        tag_id=tag["id"],
+        read=True,
+        write=True,
+        delete=True,
+    )
+
+    # CREATE access for other_user
+    other_user_access = await tags_repo.create_or_update_access_rights(
+        tag_id=tag["id"],
+        group_id=other_user.primary_gid,
+        read=True,
+        write=False,
+        delete=False,
+    )
+
+    assert not await tags_repo.has_access_rights(
+        caller_id=other_user.id,
+        tag_id=tag["id"],
+        read=user_access["read"],
+        write=user_access["write"],
+        delete=user_access["delete"],
+    )
+
+    assert await tags_repo.has_access_rights(
+        caller_id=other_user.id,
+        tag_id=tag["id"],
+        read=other_user_access["read"],
+        write=other_user_access["write"],
+        delete=other_user_access["delete"],
+    )
+
+    tag_accesses = await tags_repo.list_access_rights(tag_id=tag["id"])
+    assert len(tag_accesses) == 2
+
+    # UPDATE access
+    updated_access = await tags_repo.create_or_update_access_rights(
+        tag_id=tag["id"],
+        group_id=other_user.primary_gid,
+        read=False,  # <--
+        write=False,
+        delete=False,
+    )
+    assert updated_access != other_user_access
+
+    # checks partial
+    assert await tags_repo.has_access_rights(
+        caller_id=other_user.id,
+        tag_id=tag["id"],
+        read=False,
+    )
+
+    assert not await tags_repo.has_access_rights(
+        caller_id=other_user.id, tag_id=tag["id"], write=True
+    )
+
+    # DELETE access to other-user
+    await tags_repo.delete_access_rights(
+        tag_id=tag["id"],
+        group_id=other_user.primary_gid,
+    )
+
+    tag_accesses = await tags_repo.list_access_rights(tag_id=tag["id"])
+    assert len(tag_accesses) == 1
 
 
 def test_building_tags_sql_statements():

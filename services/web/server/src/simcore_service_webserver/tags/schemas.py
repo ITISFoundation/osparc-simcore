@@ -55,7 +55,7 @@ class TagGet(OutputSchema):
     access_rights: TagAccessRights = Field(..., alias="accessRights")
 
     @classmethod
-    def from_db(cls, tag: TagDict) -> "TagGet":
+    def from_model(cls, tag: TagDict) -> Self:
         # NOTE: cls(access_rights=tag, **tag) would also work because of Config
         return cls(
             id=tag["id"],

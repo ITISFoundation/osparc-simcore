@@ -14069,22 +14069,12 @@ components:
         delete:
           type: boolean
           title: Delete
-        created:
-          type: string
-          format: date-time
-          title: Created
-        modified:
-          type: string
-          format: date-time
-          title: Modified
       type: object
       required:
       - gid
       - read
       - write
       - delete
-      - created
-      - modified
       title: TagGroupGet
     TagUpdate:
       properties:
