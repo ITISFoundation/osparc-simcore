@@ -498,3 +498,157 @@ async def test_trash_empty_workspace(
 
     page = Page[WorkspaceGet].model_validate(await resp.json())
     assert page.meta.total == 0
+
+
+async def test_trash_subfolder(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mocked_catalog: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
+):
+    assert client.app
+
+    # setup --------------------------------
+    #
+    # - /Folder
+    #    - /SubFolder
+
+    # CREATE a folder
+    resp = await client.post("/v0/folders", json={"name": "Folder"})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    folder = FolderGet.model_validate(data)
+
+    # CREATE a SUB-folder
+    resp = await client.post(
+        "/v0/folders",
+        json={"name": "SubFolder1", "parentFolderId": folder.folder_id},
+    )
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    subfolder = FolderGet.model_validate(data)
+
+    # -------------------------------------
+
+    # TRASH subfolder
+    resp = await client.post(f"/v0/folders/{subfolder.folder_id}:trash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # LIST BIN (i.e. use full-depth search)
+    url = client.app.router["list_folders_full_search"].url_for()
+    assert f"{url}" == "/v0/folders:search"
+
+    resp = await client.get(
+        "/v0/folders:search", params={"filters": '{"trashed": true}'}
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+    page = Page[FolderGet].model_validate(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0].folder_id == subfolder.folder_id
+
+    # LIST (NOT full-depth)
+    resp = await client.get(
+        "/v0/folders",
+        params={"filters": '{"trashed": true}'},
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 0
+
+    resp = await client.get(
+        "/v0/folders",
+        params={"filters": '{"trashed": true}', "folder_id": f"{folder.folder_id}"},
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+    assert data[0]["folderId"] == subfolder.folder_id
+
+    # UNTRASH
+    resp = await client.post(f"/v0/folders/{subfolder.folder_id}:untrash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    resp = await client.get(
+        "/v0/folders:search", params={"filters": '{"trashed": true}'}
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+    page = Page[FolderGet].model_validate(await resp.json())
+    assert page.meta.total == 0
+
+
+async def test_trash_project_in_subfolder(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mocked_catalog: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
+):
+    assert client.app
+
+    # setup --------------------------------
+    #
+    # - /Folder
+    #    - /SubFolder
+    #       - user_project
+    #
+
+    # CREATE a folder
+    resp = await client.post("/v0/folders", json={"name": "Folder"})
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    folder = FolderGet.model_validate(data)
+
+    # CREATE a SUB-folder
+    resp = await client.post(
+        "/v0/folders",
+        json={"name": "SubFolder1", "parentFolderId": folder.folder_id},
+    )
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    subfolder = FolderGet.model_validate(data)
+
+    # MOVE project to SUB-folder
+    project_uuid = UUID(user_project["uuid"])
+    resp = await client.put(
+        f"/v0/projects/{project_uuid}/folders/{subfolder.folder_id}"
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+    # -------------------------------------
+
+    # TRASH project
+    resp = await client.post(f"/v0/projects/{project_uuid}:trash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # LIST BIN (i.e. use full-depth search)
+    url = client.app.router["list_projects_full_search"].url_for()
+    assert f"{url}" == "/v0/projects:search"
+
+    resp = await client.get(
+        "/v0/projects:search", params={"filters": '{"trashed": true}'}
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+    page = Page[ProjectGet].model_validate(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0].folder_id == subfolder.folder_id
+
+    # LIST (NOT full-depth)
+    resp = await client.get(
+        "/v0/projects",
+        params={"filters": '{"trashed": true}'},
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 0
+
+    resp = await client.get(
+        "/v0/projectsh",
+        params={"filters": '{"trashed": true}', "folder_id": f"{subfolder.folder_id}"},
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+    assert data[0]["uuid"] == project_uuid
+
+    # UNTRASH
+    resp = await client.post(f"/v0/projects/{project_uuid}:untrash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    resp = await client.get(
+        "/v0/projects:search", params={"filters": '{"trashed": true}'}
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+    page = Page[ProjectGet].model_validate(await resp.json())
+    assert page.meta.total == 0
