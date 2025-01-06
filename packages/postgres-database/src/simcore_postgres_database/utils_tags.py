@@ -286,9 +286,6 @@ class TagsRepo:
         write: bool,
         delete: bool,
     ) -> TagAccessRightsDict:
-        # NOTE that there is no reference to the caller which implies
-        # that we assume that the rigths to create or update these access_rights
-        # have been checked (via has_access_rights) before calling this function
         async with transaction_context(self.engine, connection) as conn:
             result = await conn.execute(
                 upsert_tags_access_rights_stmt(
@@ -317,9 +314,6 @@ class TagsRepo:
         tag_id: int,
         group_id: int,
     ) -> bool:
-        # NOTE that there is no reference to the caller which implies
-        # that we assume that the rigths to delete these access_rights
-        # have been checked (via has_access_rights) before calling this function
         async with transaction_context(self.engine, connection) as conn:
             deleted: bool = await conn.scalar(
                 delete_tag_access_rights_stmt(tag_id=tag_id, group_id=group_id)
