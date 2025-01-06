@@ -151,7 +151,7 @@ class CompTaskAtDB(BaseModel):
     hardware_info: HardwareInfo
 
     submit: dt.datetime | None = Field(
-        deprecated=True, description="Required for legacy services"
+        default=None, deprecated=True, description="Required for legacy services"
     )
 
     @field_validator("state", mode="before")
@@ -243,8 +243,8 @@ class CompTaskAtDB(BaseModel):
                         "pricing_unit_cost_id": 1,
                     },
                     "hardware_info": next(
-                        iter(HardwareInfo.model_config["json_schema_extra"]["examples"])
-                    ),  # type: ignore
+                        iter(HardwareInfo.model_config["json_schema_extra"]["examples"])  # type: ignore
+                    ),
                 }
                 for image_example in Image.model_config["json_schema_extra"]["examples"]  # type: ignore
             ]
