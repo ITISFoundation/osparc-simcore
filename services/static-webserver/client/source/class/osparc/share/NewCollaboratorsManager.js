@@ -75,6 +75,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const searchButton = this.__searchButton = new osparc.ui.form.FetchButton(this.tr("Search"), "@FontAwesome5Solid/search/12").set({
         maxHeight: 30,
       });
+      const command = new qx.ui.command.Command("Enter");
+      searchButton.setCommand(command);
       searchButton.addListener("execute", () => this.__searchUsers(), this);
       toolbar.add(searchButton);
       this.add(toolbar);
