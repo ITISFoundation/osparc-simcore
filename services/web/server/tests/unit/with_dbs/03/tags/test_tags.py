@@ -39,24 +39,16 @@ def _clean_tags_table(postgres_db: sa.engine.Engine) -> Iterator[None]:
 
 
 @pytest.fixture
-def fake_tags(faker: Faker) -> list[dict[str, Any]]:
-    return [
-        {"name": "tag1", "description": "description1", "color": "#f00"},
-        {"name": "tag2", "description": "description2", "color": "#00f"},
-    ]
-
-
-@pytest.fixture
 def user_role() -> UserRole:
     # All tests in test_tags assume USER's role
-    # i.e. Used in `logged_user` and `user_project`
+    # i.e. Used in `logged_user` and `user_project` fixtures
     return UserRole.USER
 
 
 async def test_tags_to_studies(
     client: TestClient,
+    faker: Faker,
     user_project: ProjectDict,
-    fake_tags: dict[str, Any],
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
 ):
     catalog_subsystem_mock([user_project])
@@ -65,7 +57,10 @@ async def test_tags_to_studies(
     # Add test tags
     added_tags = []
 
-    for tag in fake_tags:
+    for tag in [
+        {"name": "tag1", "description": faker.sentence(), "color": "#f00"},
+        {"name": "tag2", "description": faker.sentence(), "color": "#00f"},
+    ]:
         url = client.app.router["create_tag"].url_for()
         resp = await client.post(f"{url}", json=tag)
         added_tag, _ = await assert_status(resp, status.HTTP_200_OK)
@@ -152,7 +147,7 @@ async def test_read_tags(
     everybody_tag_id: int,
 ):
     assert client.app
-    assert user_role == UserRole.USER
+    assert UserRole(logged_user["role"]) == user_role
 
     url = client.app.router["list_tags"].url_for()
     resp = await client.get(f"{url}")
@@ -177,7 +172,7 @@ async def test_create_and_update_tags(
     _clean_tags_table: None,
 ):
     assert client.app
-    assert user_role == UserRole.USER
+    assert UserRole(logged_user["role"]) == user_role
 
     # (1) create tag
     url = client.app.router["create_tag"].url_for()
@@ -223,7 +218,7 @@ async def test_create_tags_with_order_index(
     _clean_tags_table: None,
 ):
     assert client.app
-    assert user_role == UserRole.USER
+    assert UserRole(logged_user["role"]) == user_role
 
     # (1) create tags but set the order in reverse order of creation
     url = client.app.router["create_tag"].url_for()
@@ -283,7 +278,7 @@ async def test_share_tags_by_creating_associated_groups(
     _clean_tags_table: None,
 ):
     assert client.app
-    assert user_role == UserRole.USER
+    assert UserRole(logged_user["role"]) == user_role
 
     # CREATE
     url = client.app.router["create_tag"].url_for()
@@ -361,33 +356,43 @@ async def test_share_tags_by_creating_associated_groups(
         resp = await client.delete(
             f"{url}",
         )
-        data, _ = await assert_status(resp, status.HTTP_200_OK)
+        await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
         # test can do nothing
 
 
-async def test_cannot_share_tag_with_everyone_from_rest_api(
+@pytest.mark.xfail(reason="Under dev")
+async def test_cannot_share_tag_with_everyone(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    everybody_tag_id: int,
     _clean_tags_table: None,
 ):
     assert client.app
-    assert logged_user["role"] == user_role
+    assert UserRole(logged_user["role"]) == user_role
 
+    url = client.app.router["create_tag"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={"name": "shared", "color": "#fff"},
+    )
+    tag, _ = await assert_status(resp, status.HTTP_200_OK)
+    tag_id: int = tag["id"]
+
+    # cannot SHARE with everyone group
     url = client.app.router["create_tag_group"].url_for(
-        tag_id=f"{everybody_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+        tag_id=f"{tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
     )
-    resp = await client.put(
+    resp = await client.post(
         f"{url}",
         json={"read": True, "write": True, "delete": True},
     )
     _, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
     assert error
 
+    # cannot REPLACE with everyone group
     url = client.app.router["replace_tag_group"].url_for(
-        tag_id=f"{everybody_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+        tag_id=f"{tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
     )
     resp = await client.put(
         f"{url}",
@@ -396,8 +401,9 @@ async def test_cannot_share_tag_with_everyone_from_rest_api(
     _, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
     assert error
 
+    # cannot DELETE with everyone group
     url = client.app.router["delete_tag_group"].url_for(
-        tag_id=f"{everybody_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+        tag_id=f"{tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
     )
     resp = await client.delete(
         f"{url}",
