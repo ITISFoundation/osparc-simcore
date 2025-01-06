@@ -73,12 +73,12 @@ def _create_redirect_response_to_error_page(
 
 
 def _create_service_info_from(service: ValidService) -> ServiceInfo:
-    values_map = dict(
-        key=service.key,
-        version=service.version,
-        label=service.title,
-        is_guest_allowed=service.is_public,
-    )
+    values_map = {
+        "key": service.key,
+        "version": service.version,
+        "label": service.title,
+        "is_guest_allowed": service.is_public,
+    }
     if service.thumbnail:
         values_map["thumbnail"] = service.thumbnail
     return ServiceInfo.model_construct(_fields_set=set(values_map.keys()), **values_map)
@@ -335,7 +335,7 @@ async def get_redirection_to_viewer(request: web.Request):
 
     else:
         # NOTE: if query is done right, this should never happen
-        raise InvalidRedirectionParams()
+        raise InvalidRedirectionParams
 
     # Adds auth cookies (login)
     await ensure_authentication(user, request, response)

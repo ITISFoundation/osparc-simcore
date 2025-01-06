@@ -28,7 +28,7 @@ MSG_TOO_MANY_GUESTS: Final[str] = (
 )
 
 MSG_UNEXPECTED_DISPATCH_ERROR: Final[str] = (
-    "Sorry, but looks like something unexpected went wrong!<br/>"
-    "We track these errors automatically, but if the problem persists feel free to contact us. "
+    "Sorry, but looks like something unexpected went wrong!"
+    "We track these errors automatically, but if the problem persists feel free to contact us."
     "In the meantime, try refreshing."
 )
