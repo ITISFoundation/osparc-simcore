@@ -2,7 +2,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.licensed_items import LicensedItemGetPage
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
-    LicensedItemCheckoutGet,
+    LicensedItemCheckoutRpcGet,
 )
 from models_library.basic_types import IDStr
 from models_library.licensed_items import LicensedItemID
@@ -20,7 +20,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_server
-from . import _licensed_checkouts_api, _licensed_items_api
+from . import _licensed_items_checkouts_service, _licensed_items_service
 
 router = RPCRouter()
 
@@ -34,7 +34,7 @@ async def get_licensed_items(
     limit: int,
 ) -> LicensedItemGetPage:
     licensed_item_get_page: LicensedItemGetPage = (
-        await _licensed_items_api.list_licensed_items(
+        await _licensed_items_service.list_licensed_items(
             app=app,
             product_name=product_name,
             offset=offset,
@@ -68,15 +68,27 @@ async def checkout_licensed_item_for_wallet(
     licensed_item_id: LicensedItemID,
     num_of_seats: int,
     service_run_id: ServiceRunID,
-) -> LicensedItemCheckoutGet:
-    return await _licensed_checkouts_api.checkout_licensed_item_for_wallet(
-        app,
-        licensed_item_id=licensed_item_id,
-        wallet_id=wallet_id,
-        product_name=product_name,
-        num_of_seats=num_of_seats,
-        service_run_id=service_run_id,
-        user_id=user_id,
+) -> LicensedItemCheckoutRpcGet:
+    licensed_item_get = (
+        await _licensed_items_checkouts_service.checkout_licensed_item_for_wallet(
+            app,
+            licensed_item_id=licensed_item_id,
+            wallet_id=wallet_id,
+            product_name=product_name,
+            num_of_seats=num_of_seats,
+            service_run_id=service_run_id,
+            user_id=user_id,
+        )
+    )
+    return LicensedItemCheckoutRpcGet.model_construct(
+        licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
+        licensed_item_id=licensed_item_get.licensed_item_id,
+        wallet_id=licensed_item_get.wallet_id,
+        user_id=licensed_item_get.user_id,
+        product_name=licensed_item_get.product_name,
+        started_at=licensed_item_get.started_at,
+        stopped_at=licensed_item_get.stopped_at,
+        num_of_seats=licensed_item_get.num_of_seats,
     )
 
 
@@ -87,12 +99,24 @@ async def release_licensed_item_for_wallet(
     product_name: ProductName,
     user_id: UserID,
     licensed_item_checkout_id: LicensedItemCheckoutID,
-) -> LicensedItemCheckoutGet:
-    return await _licensed_checkouts_api.release_licensed_item_for_wallet(
-        app,
-        product_name=product_name,
-        user_id=user_id,
-        licensed_item_checkout_id=licensed_item_checkout_id,
+) -> LicensedItemCheckoutRpcGet:
+    licensed_item_get = (
+        await _licensed_items_checkouts_service.release_licensed_item_for_wallet(
+            app,
+            product_name=product_name,
+            user_id=user_id,
+            licensed_item_checkout_id=licensed_item_checkout_id,
+        )
+    )
+    return LicensedItemCheckoutRpcGet.model_construct(
+        licensed_item_checkout_id=licensed_item_get.licensed_item_checkout_id,
+        licensed_item_id=licensed_item_get.licensed_item_id,
+        wallet_id=licensed_item_get.wallet_id,
+        user_id=licensed_item_get.user_id,
+        product_name=licensed_item_get.product_name,
+        started_at=licensed_item_get.started_at,
+        stopped_at=licensed_item_get.stopped_at,
+        num_of_seats=licensed_item_get.num_of_seats,
     )
 
 

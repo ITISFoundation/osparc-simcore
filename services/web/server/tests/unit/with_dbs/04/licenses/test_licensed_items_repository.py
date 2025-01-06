@@ -16,7 +16,7 @@ from models_library.rest_ordering import OrderBy
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.licenses import _licensed_items_db
+from simcore_service_webserver.licenses import _licensed_items_repository
 from simcore_service_webserver.licenses.errors import LicensedItemNotFoundError
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -32,7 +32,7 @@ async def test_licensed_items_db_crud(
 ):
     assert client.app
 
-    output: tuple[int, list[LicensedItemDB]] = await _licensed_items_db.list_(
+    output: tuple[int, list[LicensedItemDB]] = await _licensed_items_repository.list_(
         client.app,
         product_name=osparc_product_name,
         offset=0,
@@ -41,7 +41,7 @@ async def test_licensed_items_db_crud(
     )
     assert output[0] == 0
 
-    licensed_item_db = await _licensed_items_db.create(
+    licensed_item_db = await _licensed_items_repository.create(
         client.app,
         product_name=osparc_product_name,
         name="Model A",
@@ -50,7 +50,7 @@ async def test_licensed_items_db_crud(
     )
     _licensed_item_id = licensed_item_db.licensed_item_id
 
-    output: tuple[int, list[LicensedItemDB]] = await _licensed_items_db.list_(
+    output: tuple[int, list[LicensedItemDB]] = await _licensed_items_repository.list_(
         client.app,
         product_name=osparc_product_name,
         offset=0,
@@ -59,35 +59,35 @@ async def test_licensed_items_db_crud(
     )
     assert output[0] == 1
 
-    licensed_item_db = await _licensed_items_db.get(
+    licensed_item_db = await _licensed_items_repository.get(
         client.app,
         licensed_item_id=_licensed_item_id,
         product_name=osparc_product_name,
     )
     assert licensed_item_db.name == "Model A"
 
-    await _licensed_items_db.update(
+    await _licensed_items_repository.update(
         client.app,
         licensed_item_id=_licensed_item_id,
         product_name=osparc_product_name,
         updates=LicensedItemUpdateDB(name="Model B"),
     )
 
-    licensed_item_db = await _licensed_items_db.get(
+    licensed_item_db = await _licensed_items_repository.get(
         client.app,
         licensed_item_id=_licensed_item_id,
         product_name=osparc_product_name,
     )
     assert licensed_item_db.name == "Model B"
 
-    licensed_item_db = await _licensed_items_db.delete(
+    licensed_item_db = await _licensed_items_repository.delete(
         client.app,
         licensed_item_id=_licensed_item_id,
         product_name=osparc_product_name,
     )
 
     with pytest.raises(LicensedItemNotFoundError):
-        await _licensed_items_db.get(
+        await _licensed_items_repository.get(
             client.app,
             licensed_item_id=_licensed_item_id,
             product_name=osparc_product_name,
