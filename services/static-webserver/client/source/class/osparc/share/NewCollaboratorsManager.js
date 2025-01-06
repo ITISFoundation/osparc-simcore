@@ -43,11 +43,9 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   members: {
     __resourceData: null,
     __showOrganizations: null,
-    __introLabel: null,
     __textFilter: null,
     __searchButton: null,
     __collabButtonsContainer: null,
-    __orgsButton: null,
     __shareButton: null,
     __selectedCollaborators: null,
     __potentialCollaborators: null,
@@ -57,12 +55,11 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     },
 
     __renderLayout: function() {
-      const introText = this.tr("In order to start Sharing, you need to belong to an Organization or Search other users.");
-      const introLabel = this.__introLabel = new qx.ui.basic.Label(introText).set({
+      const introLabel = new qx.ui.basic.Label().set({
+        value: this.tr("Select users or organizations from the list bellow. Search them if they aren't listed."),
         rich: true,
         wrap: true,
-        visibility: "excluded",
-        padding: 8
+        paddingBottom: 5
       });
       this.add(introLabel);
 
@@ -92,13 +89,6 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right"
       }));
-      // Quick access for users that still don't belong to any organization
-      const orgsButton = this.__orgsButton = new qx.ui.form.Button(this.tr("My Organizations...")).set({
-        appearance: "form-button",
-        visibility: "excluded",
-      });
-      orgsButton.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
-      buttons.add(orgsButton);
       const shareButton = this.__shareButton = new osparc.ui.form.FetchButton(this.tr("Share")).set({
         appearance: "form-button",
         enabled: false,
@@ -138,16 +128,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         includeProductEveryone = true;
       }
 
-      this.__potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, includeProductEveryone)
-      const anyCollaborator = Object.keys(this.__potentialCollaborators).length;
-      // tell the user that belonging to an organization or searching for "unknown users" is required to start sharing
-      this.__introLabel.setVisibility(anyCollaborator ? "excluded" : "visible");
-      this.__orgsButton.setVisibility(anyCollaborator ? "excluded" : "visible");
-      // or start sharing
-      this.__textFilter.setVisibility(anyCollaborator ? "visible" : "excluded");
-      this.__collabButtonsContainer.setVisibility(anyCollaborator ? "visible" : "excluded");
-      this.__shareButton.setVisibility(anyCollaborator ? "visible" : "excluded");
-
+      this.__potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, includeProductEveryone);
       const potentialCollaborators = Object.values(this.__potentialCollaborators);
       this.__addPotentialCollaborators(potentialCollaborators);
     },
