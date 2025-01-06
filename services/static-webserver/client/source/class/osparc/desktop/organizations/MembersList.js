@@ -96,9 +96,9 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     __createMembersList: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       const rolesLayout = this.__getRolesToolbar();
-      rolesLayout.addAt(this.__getMembersFilter(), 0, {
-        flex: 3
-      });
+      const membersFilter = this.__getMembersFilter();
+      membersFilter.setPaddingRight(10);
+      osparc.data.Roles.replaceSpacerWithWidget(rolesLayout, membersFilter);
       vBox.add(rolesLayout);
       vBox.add(this.__getMembersList(), {
         flex: 1
