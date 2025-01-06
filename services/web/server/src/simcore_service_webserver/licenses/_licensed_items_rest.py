@@ -21,7 +21,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _licensed_items_api
+from . import _licensed_items_service
 from ._exceptions_handlers import handle_plugin_requests_exceptions
 from ._models import (
     LicensedItemsBodyParams,
@@ -47,7 +47,7 @@ async def list_licensed_items(request: web.Request):
     )
 
     licensed_item_get_page: LicensedItemGetPage = (
-        await _licensed_items_api.list_licensed_items(
+        await _licensed_items_service.list_licensed_items(
             app=request.app,
             product_name=req_ctx.product_name,
             offset=query_params.offset,
@@ -81,10 +81,12 @@ async def get_licensed_item(request: web.Request):
     req_ctx = LicensedItemsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
 
-    licensed_item_get: LicensedItemGet = await _licensed_items_api.get_licensed_item(
-        app=request.app,
-        licensed_item_id=path_params.licensed_item_id,
-        product_name=req_ctx.product_name,
+    licensed_item_get: LicensedItemGet = (
+        await _licensed_items_service.get_licensed_item(
+            app=request.app,
+            licensed_item_id=path_params.licensed_item_id,
+            product_name=req_ctx.product_name,
+        )
     )
 
     return envelope_json_response(licensed_item_get)
@@ -102,7 +104,7 @@ async def purchase_licensed_item(request: web.Request):
     path_params = parse_request_path_parameters_as(LicensedItemsPathParams, request)
     body_params = await parse_request_body_as(LicensedItemsBodyParams, request)
 
-    await _licensed_items_api.purchase_licensed_item(
+    await _licensed_items_service.purchase_licensed_item(
         app=request.app,
         user_id=req_ctx.user_id,
         licensed_item_id=path_params.licensed_item_id,
