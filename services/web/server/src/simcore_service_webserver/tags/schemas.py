@@ -85,7 +85,12 @@ class TagGroupCreate(InputSchema):
     delete: bool
 
     def to_model(self) -> AccessRightsDict:
-        return AccessRightsDict(**self.model_dump())
+        data = self.model_dump()
+        return AccessRightsDict(
+            read=data["read"],
+            write=data["write"],
+            delete=data["delete"],
+        )
 
 
 class TagGroupGet(OutputSchema):
