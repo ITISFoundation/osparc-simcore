@@ -275,8 +275,6 @@ jobs:
     name: "[build] docker images (excluding frontend)"
     steps:
       - uses: actions/checkout@v4
-      - name: setup QEMU
-        uses: docker/setup-qemu-action@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -289,7 +287,6 @@ jobs:
       - name: build images
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          export DOCKER_TARGET_PLATFORMS=linux/amd64
           mkdir --parents /${{ runner.temp }}/build
           make build local-dest=/${{ runner.temp }}/build exclude=static-webserver
       - name: upload build artifacts
@@ -313,8 +310,6 @@ jobs:
     name: "[build] docker images (frontend-only)"
     steps:
       - uses: actions/checkout@v4
-      - name: setup QEMU
-        uses: docker/setup-qemu-action@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -327,7 +322,6 @@ jobs:
       - name: build images
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
-          export DOCKER_TARGET_PLATFORMS=linux/amd64
           mkdir --parents /${{ runner.temp }}/build
           make build local-dest=/${{ runner.temp }}/build target=static-webserver
       - name: upload build artifacts
