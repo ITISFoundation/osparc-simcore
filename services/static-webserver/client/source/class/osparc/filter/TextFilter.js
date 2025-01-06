@@ -101,8 +101,8 @@ qx.Class.define("osparc.filter.TextFilter", {
         margin: compact ? 0 : null,
       });
 
-      this.getChildControl("clearbutton").setLayoutProperties({
-        bottom: compact ? 4 : 6,
+      this.getChildControl("textfield").set({
+        margin: compact ? 0 : null,
       });
     },
 

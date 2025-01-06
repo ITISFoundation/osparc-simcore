@@ -158,9 +158,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     __getMembersFilter: function() {
-      const filter = new osparc.filter.TextFilter("text", "organizationMembersList").set({
-        // margin: [0, 10, 5, 10]
-      });
+      const filter = new osparc.filter.TextFilter("text", "organizationMembersList");
       filter.setCompact(true);
       return filter;
     },
