@@ -151,7 +151,7 @@ class BaseProjectDB:
             sa.select(users.c.primary_gid).where(users.c.id == str(user_id))
         )
         if not primary_gid:
-            raise UserNotFoundError(uid=user_id)
+            raise UserNotFoundError(user_id=user_id)
         assert isinstance(primary_gid, int)
         return primary_gid
 
