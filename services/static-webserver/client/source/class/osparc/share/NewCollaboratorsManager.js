@@ -113,21 +113,25 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         .finally(() => this.__searchButton.setFetching(false));
     },
 
-    __reloadPotentialCollaborators: function() {
-      let includeProductEveryone = false;
+    __showProductEveryone: function() {
+      let showProductEveryone = false;
       if (this.__showOrganizations === false) {
-        includeProductEveryone = false;
+        showProductEveryone = false;
       } else if (this.__resourceData && this.__resourceData["resourceType"] === "study") {
         // studies can't be shared with ProductEveryone
-        includeProductEveryone = false;
+        showProductEveryone = false;
       } else if (this.__resourceData && this.__resourceData["resourceType"] === "template") {
         // only users with permissions can share templates with ProductEveryone
-        includeProductEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
+        showProductEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
       } else if (this.__resourceData && this.__resourceData["resourceType"] === "service") {
         // all users can share services with ProductEveryone
-        includeProductEveryone = true;
+        showProductEveryone = true;
       }
+      return showProductEveryone;
+    },
 
+    __reloadPotentialCollaborators: function() {
+      const includeProductEveryone = this.__showProductEveryone();
       this.__potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators(false, includeProductEveryone);
       const potentialCollaborators = Object.values(this.__potentialCollaborators);
       this.__addPotentialCollaborators(potentialCollaborators);
