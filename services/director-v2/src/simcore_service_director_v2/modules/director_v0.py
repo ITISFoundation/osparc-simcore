@@ -19,9 +19,9 @@ from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersio
 from models_library.users import UserID
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_decorator
+from settings_library.director_v0 import DirectorV0Settings
 from settings_library.tracing import TracingSettings
 
-from ..core.settings import DirectorV0Settings
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 
