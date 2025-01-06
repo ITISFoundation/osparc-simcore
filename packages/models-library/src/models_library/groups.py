@@ -108,7 +108,7 @@ class GroupMember(BaseModel):
     last_name: str | None
 
     # group access
-    access_rights: AccessRightsDict
+    access_rights: AccessRightsDict | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -3,21 +3,31 @@ from datetime import date
 from enum import Enum
 from typing import Annotated, Any, Literal, Self
 
+import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
 from common_library.users_enums import UserStatus
 from models_library.groups import AccessRightsDict
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import (
+    ConfigDict,
+    EmailStr,
+    Field,
+    StringConstraints,
+    ValidationInfo,
+    field_validator,
+)
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
-from ..groups import AccessRightsDict, Group, GroupsByTypeTuple
+from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple
 from ..products import ProductName
+from ..rest_base import RequestParameters
 from ..users import (
     FirstNameStr,
     LastNameStr,
     MyProfile,
     UserID,
+    UserNameID,
     UserPermission,
     UserThirdPartyToken,
 )
@@ -185,7 +195,37 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
 #
 
 
-class UsersSearchQueryParams(BaseModel):
+class UsersGetParams(RequestParameters):
+    user_id: UserID
+
+
+class UsersSearch(InputSchema):
+    match_: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=80),
+        Field(
+            description="Search string to match with usernames and public profiles (e.g. emails, first/last name)",
+            alias="match",
+        ),
+    ]
+    limit: Annotated[int, annotated_types.Interval(ge=1, le=50)] = 10
+
+
+class UserGet(OutputSchema):
+    # Public profile of a user subject to its privacy settings
+    user_id: UserID
+    group_id: GroupID
+    user_name: UserNameID
+    first_name: str | None = None
+    last_name: str | None = None
+    email: EmailStr | None = None
+
+    @classmethod
+    def from_model(cls, data):
+        return cls.model_validate(data, from_attributes=True)
+
+
+class UsersForAdminSearchQueryParams(RequestParameters):
     email: Annotated[
         str,
         Field(
@@ -196,7 +236,8 @@ class UsersSearchQueryParams(BaseModel):
     ]
 
 
-class UserGet(OutputSchema):
+class UserForAdminGet(OutputSchema):
+    # ONLY for admins
     first_name: str | None
     last_name: str | None
     email: LowerCaseEmailStr
