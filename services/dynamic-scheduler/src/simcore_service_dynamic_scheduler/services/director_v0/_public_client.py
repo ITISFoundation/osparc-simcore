@@ -19,7 +19,7 @@ from ._thin_client import DirectorV0ThinClient
 logger = logging.getLogger(__name__)
 
 
-def _unenvelope_or_raise_error(resp: httpx.Response) -> list[Any] | dict[str, Any]:
+def _unenvelope_or_raise_error(resp: httpx.Response) -> dict | list:
     """
     Director responses are enveloped
     If successful response, we un-envelop it and return data as a dict
@@ -27,7 +27,7 @@ def _unenvelope_or_raise_error(resp: httpx.Response) -> list[Any] | dict[str, An
     """
     body = resp.json()
     if "data" in body:
-        return body["data"]
+        return body["data"]  # type: ignore[no-any-return]
 
     msg = f"Unexpected, data was not returned: {body=}"
     raise ValueError(msg)
