@@ -49,17 +49,19 @@ jobs:
           elif [[ "${GITHUB_REF}" == refs/heads/hotfix_staging_* ]]; then
             echo "TAG_PREFIX=hotfix-staging-github" >> $GITHUB_ENV
           fi
-      - name: build & push images
+      - name: build & push images for latest tag
         run: |
           export DOCKER_IMAGE_TAG="$TAG_PREFIX-latest-arm64"
           export DOCKER_TARGET_PLATFORMS=linux/arm64
           make build push=true
-      - name: build & push images
+      - name: build & push images for specific tag
         run: |
           export DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)-arm64
           export DOCKER_TARGET_PLATFORMS=linux/arm64
           make build push=true
-      - name: fuse images in the registry
+      - name: fuse images in the registry for latest tag
         run: |
           export DOCKER_IMAGE_TAG="$TAG_PREFIX-latest"
           make docker-image-fuse SUFFIX=arm64
+      - name: set git tag
+        run: echo "GIT_TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
