@@ -535,6 +535,7 @@ class ProjectDBAPI(BaseProjectDB):
                     )
 
                 else:
+                    # FIXME: PC: Aks Matus why test_trash_project_in_subfolder fails here!
                     assert (  # nosec
                         workspace_query.workspace_scope == WorkspaceScope.SHARED
                     )
