@@ -75,7 +75,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
   members: {
     __currentOrg: null,
     __introLabel: null,
-    __memberInvitation: null,
+    __memberInvitationButton: null,
     __changeRoleLabel: null,
     __membersModel: null,
 
@@ -116,25 +116,39 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     __getMemberInvitation: function() {
-      const hBox = this.__memberInvitation = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignY: "middle"
-      }));
-
-      const newMemberUserName = new qx.ui.form.TextField().set({
-        required: true,
-        placeholder: this.tr(" New Member's username")
+      const addBtn = this.__memberInvitationButton = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        label: this.tr("Add Member..."),
+        allowGrowX: false,
       });
-      hBox.add(newMemberUserName, {
-        flex: 1
-      });
-
-      const addBtn = new qx.ui.form.Button(this.tr("Add"));
       addBtn.addListener("execute", function() {
-        this.__addMember(newMemberUserName.getValue());
+        const serializedData = this.__currentOrg.serialize();
+        serializedData["resourceType"] = "organization";
+        const showOrganizations = false;
+        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(serializedData, showOrganizations);
+        collaboratorsManager.setCaption("Add Member");
+        collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
+        collaboratorsManager.addListener("addCollaborators", e => {
+          const selectedMembers = e.getData();
+          if (selectedMembers.length) {
+            const promises = [];
+            const usersStore = osparc.store.Users.getInstance();
+            selectedMembers.forEach(selectedMemberGId => promises.push(usersStore.getUser(selectedMemberGId)));
+            Promise.all(promises)
+              .then(users => {
+                users.forEach(user => this.__addMember(user.getUsername()));
+              })
+              .catch(err => {
+                console.error(err);
+              })
+              .finally(collaboratorsManager.close());
+          } else {
+            collaboratorsManager.close();
+          }
+        }, this);
       }, this);
-      hBox.add(addBtn);
 
-      return hBox;
+      return addBtn;
     },
 
     __getRolesToolbar: function() {
@@ -241,7 +255,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         this.tr("You can't add new members to this Organization. Please contact an Administrator or Manager.");
       this.__introLabel.setValue(introText);
 
-      this.__memberInvitation.set({
+      this.__memberInvitationButton.set({
         enabled: canIWrite
       });
 
