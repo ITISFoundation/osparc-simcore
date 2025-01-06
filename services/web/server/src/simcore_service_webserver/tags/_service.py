@@ -1,4 +1,4 @@
-""" _api: implements `tags` plugin **service layer**
+""" Implements `tags` plugin **service layer**
 """
 
 from aiohttp import web
