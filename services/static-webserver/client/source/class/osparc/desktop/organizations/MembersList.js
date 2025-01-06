@@ -75,7 +75,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
   members: {
     __currentOrg: null,
     __introLabel: null,
-    __memberInvitationButton: null,
+    __addMembersButton: null,
     __membersModel: null,
 
     setCurrentOrg: function(orgModel) {
@@ -118,7 +118,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     __getMemberInvitation: function() {
-      const addBtn = this.__memberInvitationButton = new qx.ui.form.Button().set({
+      const addBtn = this.__addMembersButton = new qx.ui.form.Button().set({
         appearance: "strong-button",
         label: this.tr("Add Members..."),
         allowGrowX: false,
@@ -247,7 +247,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         this.tr("You can't add new members to this Organization. Please contact an Administrator or Manager.");
       this.__introLabel.setValue(introText);
 
-      this.__memberInvitationButton.set({
+      this.__addMembersButton.set({
         enabled: canIWrite
       });
 
