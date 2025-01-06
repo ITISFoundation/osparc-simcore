@@ -76,7 +76,6 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     __currentOrg: null,
     __introLabel: null,
     __memberInvitationButton: null,
-    __changeRoleLabel: null,
     __membersModel: null,
 
     setCurrentOrg: function(orgModel) {
@@ -96,8 +95,11 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
     __createMembersList: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      vBox.add(this.__getRolesToolbar());
-      vBox.add(this.__getMembersFilter());
+      const rolesLayout = this.__getRolesToolbar();
+      rolesLayout.addAt(this.__getMembersFilter(), 0, {
+        flex: 3
+      });
+      vBox.add(rolesLayout);
       vBox.add(this.__getMembersList(), {
         flex: 1
       });
@@ -118,7 +120,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     __getMemberInvitation: function() {
       const addBtn = this.__memberInvitationButton = new qx.ui.form.Button().set({
         appearance: "strong-button",
-        label: this.tr("Add Member..."),
+        label: this.tr("Add Members..."),
         allowGrowX: false,
       });
       addBtn.addListener("execute", function() {
@@ -126,7 +128,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         serializedData["resourceType"] = "organization";
         const showOrganizations = false;
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(serializedData, showOrganizations);
-        collaboratorsManager.setCaption("Add Member");
+        collaboratorsManager.setCaption("Add Members");
         collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
         collaboratorsManager.addListener("addCollaborators", e => {
           const selectedMembers = e.getData();
@@ -152,17 +154,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     __getRolesToolbar: function() {
-      const hBoxWithRoles = osparc.data.Roles.createRolesOrgInfo();
-
-      const changeRoleLabel = this.__changeRoleLabel = new qx.ui.basic.Label().set({
-        alignX: "left",
-        value: this.tr("You can change the role of the existing members."),
-        font: "text-13",
-        visibility: "hidden",
-      });
-      hBoxWithRoles.addAt(changeRoleLabel, 0);
-
-      return hBoxWithRoles;
+      return osparc.data.Roles.createRolesOrgInfo();
     },
 
     __getMembersFilter: function() {
@@ -251,15 +243,13 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const canIDelete = organization.getAccessRights()["delete"];
 
       const introText = canIWrite ?
-        this.tr("In order to add new members, type their username or email if this is public.") :
+        this.tr("You can add new members and change their roles.") :
         this.tr("You can't add new members to this Organization. Please contact an Administrator or Manager.");
       this.__introLabel.setValue(introText);
 
       this.__memberInvitationButton.set({
         enabled: canIWrite
       });
-
-      this.__changeRoleLabel.setVisibility(canIWrite ? "visible" : "excluded");
 
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const membersList = [];
