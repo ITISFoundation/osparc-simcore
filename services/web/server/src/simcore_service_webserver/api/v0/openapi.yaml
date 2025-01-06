@@ -942,6 +942,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_TagGroupGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
   /v0/tags/{tag_id}/groups/{group_id}:
     post:
       tags:
@@ -981,6 +993,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TagGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
     put:
       tags:
       - tags
@@ -1019,6 +1043,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_TagGroupGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
     delete:
       tags:
       - tags
@@ -1047,6 +1083,18 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
   /v0/credits-price:
     get:
       tags:
