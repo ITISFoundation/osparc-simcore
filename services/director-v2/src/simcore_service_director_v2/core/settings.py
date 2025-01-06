@@ -8,7 +8,7 @@ from typing import Annotated, cast
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from fastapi import FastAPI
-from models_library.basic_types import LogLevel, PortInt, VersionTag
+from models_library.basic_types import LogLevel, PortInt
 from models_library.clusters import (
     BaseCluster,
     ClusterAuthentication,
@@ -28,6 +28,7 @@ from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
+from settings_library.director_v0 import DirectorV0Settings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.node_ports import (
@@ -47,26 +48,6 @@ from settings_library.utils_logging import MixinLoggingSettings
 from simcore_sdk.node_ports_v2 import FileLinkType
 
 from .dynamic_services_settings import DynamicServicesSettings
-
-
-class DirectorV0Settings(BaseCustomSettings):
-    DIRECTOR_V0_ENABLED: bool = True
-
-    DIRECTOR_HOST: str = "director"
-    DIRECTOR_PORT: PortInt = PortInt(8080)
-    DIRECTOR_V0_VTAG: VersionTag = Field(
-        default="v0", description="Director-v0 service API's version tag"
-    )
-
-    @cached_property
-    def endpoint(self) -> str:
-        url = AnyHttpUrl.build(  # pylint: disable=no-member
-            scheme="http",
-            host=self.DIRECTOR_HOST,
-            port=self.DIRECTOR_PORT,
-            path=f"{self.DIRECTOR_V0_VTAG}",
-        )
-        return f"{url}"
 
 
 class ComputationalBackendSettings(BaseCustomSettings):
