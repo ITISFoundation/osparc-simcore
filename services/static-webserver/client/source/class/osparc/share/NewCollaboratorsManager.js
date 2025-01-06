@@ -159,7 +159,10 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         if (selected) {
           this.__selectedCollaborators.push(collaborator.getGroupId());
         } else {
-          this.__selectedCollaborators.remove(collaborator.getGroupId());
+          const idx = this.__selectedCollaborators.indexOf(collaborator.getGroupId());
+          if (idx > -1) {
+            this.__selectedCollaborators.splice(idx, 1);
+          }
         }
         this.__shareButton.setEnabled(Boolean(this.__selectedCollaborators.length));
       }, this);
