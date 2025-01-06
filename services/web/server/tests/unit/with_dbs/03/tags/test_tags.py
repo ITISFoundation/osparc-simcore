@@ -63,7 +63,7 @@ async def test_tags_to_studies(
     ]:
         url = client.app.router["create_tag"].url_for()
         resp = await client.post(f"{url}", json=tag)
-        added_tag, _ = await assert_status(resp, status.HTTP_200_OK)
+        added_tag, _ = await assert_status(resp, status.HTTP_201_CREATED)
         added_tags.append(added_tag)
 
         # Add tag to study
@@ -180,7 +180,7 @@ async def test_create_and_update_tags(
         f"{url}",
         json={"name": "T", "color": "#f00"},
     )
-    created, _ = await assert_status(resp, status.HTTP_200_OK)
+    created, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     assert created == {
         "id": created["id"],
@@ -234,7 +234,7 @@ async def test_create_tags_with_order_index(
                 "priority": priority_index,
             },
         )
-        created, _ = await assert_status(resp, status.HTTP_200_OK)
+        created, _ = await assert_status(resp, status.HTTP_201_CREATED)
         expected_tags[priority_index] = created
 
     url = client.app.router["list_tags"].url_for()
@@ -286,7 +286,7 @@ async def test_share_tags_by_creating_associated_groups(
         f"{url}",
         json={"name": "shared", "color": "#fff"},
     )
-    tag, _ = await assert_status(resp, status.HTTP_200_OK)
+    tag, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # LIST
     url = client.app.router["list_tag_groups"].url_for(tag_id=f"{tag['id']}")
@@ -376,7 +376,7 @@ async def test_cannot_share_tag_with_everyone(
         f"{url}",
         json={"name": "shared", "color": "#fff"},
     )
-    tag, _ = await assert_status(resp, status.HTTP_200_OK)
+    tag, _ = await assert_status(resp, status.HTTP_201_CREATED)
     tag_id: int = tag["id"]
 
     # cannot SHARE with everyone group

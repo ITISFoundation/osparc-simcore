@@ -64,7 +64,7 @@ async def create_tag(request: web.Request):
     created = await _service.create_tag(
         request.app, user_id=req_ctx.user_id, new_tag=new_tag
     )
-    return envelope_json_response(created)
+    return envelope_json_response(created, status_cls=web.HTTPCreated)
 
 
 @routes.get(f"/{VTAG}/tags", name="list_tags")
