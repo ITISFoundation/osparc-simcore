@@ -126,7 +126,7 @@ def fake_service_resources() -> ServiceResourcesDict:
 @pytest.fixture
 def fake_service_labels() -> dict[str, Any]:
     return choice(  # noqa: S311
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"]  # type: ignore
+        SimcoreServiceLabels.model_json_schema()["examples"]  # type: ignore
     )
 
 
@@ -258,7 +258,11 @@ def mocked_catalog_service_fcts_deprecated(
             ).isoformat()
         }
 
-        data = {**ServiceGet.model_config["json_schema_extra"]["examples"][0], **data_published, **deprecated}  # type: ignore
+        data = {
+            **ServiceGet.model_config["json_schema_extra"]["examples"][0],
+            **data_published,
+            **deprecated,
+        }  # type: ignore
 
         payload = ServiceGet.model_validate(data)
 
@@ -354,7 +358,6 @@ def mocked_resource_usage_tracker_service_fcts(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-
         respx_mock.get(
             re.compile(
                 r"services/(?P<service_key>simcore/services/(comp|dynamic|frontend)/[^/]+)/(?P<service_version>[^\.]+.[^\.]+.[^/\?]+)/pricing-plan.+"
@@ -915,13 +918,7 @@ async def test_get_computation_from_not_started_computation_task(
         stopped=None,
         submitted=None,
     )
-    _CHANGED_FIELDS = {"submitted"}
-    assert returned_computation.model_dump(
-        exclude=_CHANGED_FIELDS
-    ) == expected_computation.model_dump(exclude=_CHANGED_FIELDS)
-    assert returned_computation.model_dump(
-        include=_CHANGED_FIELDS
-    ) != expected_computation.model_dump(include=_CHANGED_FIELDS)
+    assert returned_computation == expected_computation
 
 
 async def test_get_computation_from_published_computation_task(

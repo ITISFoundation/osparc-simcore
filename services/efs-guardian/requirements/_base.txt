@@ -155,7 +155,7 @@ fastapi==0.115.5
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   prometheus-fastapi-instrumentator
-faststream==0.5.28
+faststream==0.5.31
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -278,6 +278,7 @@ opentelemetry-api==1.27.0
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-propagator-aws-xray
@@ -302,6 +303,7 @@ opentelemetry-instrumentation==0.48b0
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-asgi==0.48b0
@@ -314,6 +316,10 @@ opentelemetry-instrumentation-fastapi==0.48b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-httpx==0.48b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+opentelemetry-instrumentation-logging==0.48b0
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.48b0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -418,7 +424,7 @@ psutil==6.1.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.10
     # via sqlalchemy
-pydantic==2.9.2
+pydantic==2.10.2
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -475,7 +481,7 @@ pydantic==2.9.2
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.23.4
+pydantic-core==2.27.1
     # via pydantic
 pydantic-extra-types==2.9.0
     # via
@@ -580,8 +586,6 @@ redis==5.1.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 referencing==0.29.3
     # via
-    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 repro-zipfile==0.3.1
@@ -758,7 +762,9 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-redis
 yarl==1.15.4
     # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq

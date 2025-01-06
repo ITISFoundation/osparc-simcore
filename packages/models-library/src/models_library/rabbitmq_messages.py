@@ -15,6 +15,7 @@ from .projects_nodes_io import NodeID
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceType, ServiceVersion
 from .services_resources import ServiceResourcesDict
+from .services_types import ServiceRunID
 from .users import UserID
 from .utils.enums import StrAutoEnum
 from .wallets import WalletID
@@ -178,7 +179,7 @@ class RabbitResourceTrackingMessageType(StrAutoEnum):
 class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
     channel_name: Literal["io.simcore.service.tracking"] = "io.simcore.service.tracking"
 
-    service_run_id: str = Field(
+    service_run_id: ServiceRunID = Field(
         ..., description="uniquely identitifies the service run"
     )
     created_at: datetime.datetime = Field(

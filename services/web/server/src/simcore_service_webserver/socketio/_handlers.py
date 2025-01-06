@@ -17,7 +17,7 @@ from servicelib.aiohttp.observer import emit
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.request_keys import RQT_USERID_KEY
 
-from ..groups.api import list_user_groups_with_read_access
+from ..groups.api import list_user_groups_ids_with_read_access
 from ..login.decorators import login_required
 from ..products.api import Product, get_current_product
 from ..resource_manager.user_sessions import managed_resource
@@ -89,15 +89,13 @@ async def _set_user_in_group_rooms(
     app: web.Application, user_id: UserID, socket_id: SocketID
 ) -> None:
     """Adds user in rooms associated to its groups"""
-    primary_group, user_groups, all_group = await list_user_groups_with_read_access(
-        app, user_id
-    )
-    groups = [primary_group] + user_groups + ([all_group] if bool(all_group) else [])
+
+    group_ids = await list_user_groups_ids_with_read_access(app, user_id=user_id)
 
     sio = get_socket_server(app)
-    for group in groups:
+    for gid in group_ids:
         # NOTE socketio need to be upgraded that's why enter_room is not an awaitable
-        sio.enter_room(socket_id, SocketIORoomStr.from_group_id(group["gid"]))
+        sio.enter_room(socket_id, SocketIORoomStr.from_group_id(gid))
 
     sio.enter_room(socket_id, SocketIORoomStr.from_user_id(user_id))
 

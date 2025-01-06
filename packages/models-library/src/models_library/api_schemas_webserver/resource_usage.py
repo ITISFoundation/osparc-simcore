@@ -1,8 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
@@ -12,12 +11,12 @@ from ..resource_tracker import (
     PricingPlanId,
     PricingUnitCostUpdate,
     PricingUnitId,
-    ServiceRunId,
     ServiceRunStatus,
     SpecificInfo,
     UnitExtraInfo,
 )
 from ..services import ServiceKey, ServiceVersion
+from ..services_types import ServiceRunID
 from ..users import UserID
 from ..wallets import WalletID
 from ._base import InputSchema, OutputSchema
@@ -28,7 +27,7 @@ from ._base import InputSchema, OutputSchema
 class ServiceRunGet(
     BaseModel
 ):  # NOTE: this is already in use so I didnt modidy inheritance from OutputSchema
-    service_run_id: ServiceRunId
+    service_run_id: ServiceRunID
     wallet_id: WalletID | None
     wallet_name: str | None
     user_id: UserID
@@ -50,9 +49,7 @@ class PricingUnitGet(OutputSchema):
     pricing_unit_id: PricingUnitId
     unit_name: str
     unit_extra_info: UnitExtraInfo
-    current_cost_per_unit: Annotated[
-        Decimal, PlainSerializer(float, return_type=float, when_used="json")
-    ]
+    current_cost_per_unit: Decimal
     default: bool
 
 

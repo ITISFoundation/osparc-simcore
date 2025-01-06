@@ -1458,17 +1458,13 @@
           },
           "url": {
             "type": "string",
-            "minLength": 1,
-            "format": "uri",
             "title": "Url",
             "description": "the link where to get the status of the task"
           },
           "stop_url": {
             "anyOf": [
               {
-                "type": "string",
-                "minLength": 1,
-                "format": "uri"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -2022,7 +2018,8 @@
           "docker_node_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "[a-zA-Z0-9]"
               },
               {
                 "type": "null"
@@ -2061,7 +2058,10 @@
         "required": [
           "is_inactive"
         ],
-        "title": "GetProjectInactivityResponse"
+        "title": "GetProjectInactivityResponse",
+        "example": {
+          "is_inactive": "false"
+        }
       },
       "HTTPValidationError": {
         "properties": {
@@ -2447,6 +2447,9 @@
               },
               "type": "array"
             },
+            "propertyNames": {
+              "format": "uuid"
+            },
             "type": "object",
             "title": "Adjacency List",
             "description": "The adjacency list of the current pipeline in terms of {NodeID: [successor NodeID]}"
@@ -2468,6 +2471,9 @@
           "node_states": {
             "additionalProperties": {
               "$ref": "#/components/schemas/NodeState"
+            },
+            "propertyNames": {
+              "format": "uuid"
             },
             "type": "object",
             "title": "Node States",
@@ -2978,9 +2984,16 @@
             "description": "contains harware information so we know on which hardware to run the service"
           },
           "product_name": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Product Name",
-            "description": "Current product upon which this service is scheduled. If set to None, the current product is undefined. Mostly for backwards compatibility"
+            "description": "Current product upon which this service is scheduledIf set to None, the current product is undefined. Mostly for backwards compatibility"
           }
         },
         "additionalProperties": true,
@@ -3000,7 +3013,8 @@
           "service_resources",
           "request_dns",
           "request_scheme",
-          "request_simcore_user_agent"
+          "request_simcore_user_agent",
+          "proxy_service_name"
         ],
         "title": "SchedulerData"
       },
@@ -3106,9 +3120,7 @@
           "download_link": {
             "anyOf": [
               {
-                "type": "string",
-                "minLength": 1,
-                "format": "uri"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -3128,7 +3140,14 @@
         "properties": {
           "nodes_outputs": {
             "additionalProperties": {
+              "propertyNames": {
+                "maxLength": 100,
+                "minLength": 1
+              },
               "type": "object"
+            },
+            "propertyNames": {
+              "format": "uuid"
             },
             "type": "object",
             "title": "Nodes Outputs"

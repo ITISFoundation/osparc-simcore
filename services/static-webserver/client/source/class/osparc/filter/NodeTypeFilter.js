@@ -27,7 +27,7 @@ qx.Class.define("osparc.filter.NodeTypeFilter", {
    * @extends osparc.filter.TagsFilter
    */
   construct: function(filterId, filterGroupId) {
-    this.base(arguments, this.tr("Service types"), filterId, filterGroupId);
+    this.base(arguments, this.tr("Type"), filterId, filterGroupId);
     this._setLayout(new qx.ui.layout.HBox());
 
     this.__buildMenu();

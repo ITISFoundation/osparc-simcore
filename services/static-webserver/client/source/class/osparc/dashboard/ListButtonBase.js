@@ -27,15 +27,16 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
 
   construct: function() {
     this.base(arguments);
-    this.set({
-      minHeight: osparc.dashboard.ListButtonBase.ITEM_HEIGHT,
-      allowGrowX: true
-    });
 
     const layout = new qx.ui.layout.Grid();
     layout.setSpacing(10);
     layout.setColumnFlex(osparc.dashboard.ListButtonBase.POS.SPACER, 1);
     this._setLayout(layout);
+
+    this.set({
+      minHeight: osparc.dashboard.ListButtonBase.ITEM_HEIGHT,
+      allowGrowX: true
+    });
 
     this.getChildControl("spacer");
   },

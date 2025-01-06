@@ -418,11 +418,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           getWithWallet: {
             method: "GET",
-            url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}&filters={filters}&order_by={orderBy}"
-          },
-          getWithWallet2: {
-            method: "GET",
             url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}"
+          },
+          getWithWalletFiltered: {
+            method: "GET",
+            url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}&filters={filters}&order_by={orderBy}"
           },
           getUsagePerService: {
             method: "GET",
@@ -631,7 +631,7 @@ qx.Class.define("osparc.data.Resources", {
        * PRICING PLANS
        */
       "pricingPlans": {
-        useCache: true,
+        useCache: false, // handled in osparc.store.Pricing
         endpoints: {
           get: {
             method: "GET",
@@ -656,7 +656,7 @@ qx.Class.define("osparc.data.Resources", {
        * PRICING UNITS
        */
       "pricingUnits": {
-        useCache: true,
+        useCache: false, // handled in osparc.store.Pricing
         endpoints: {
           getOne: {
             method: "GET",
@@ -722,7 +722,11 @@ qx.Class.define("osparc.data.Resources", {
           getOne: {
             method: "GET",
             url: statics.API + "/me"
-          }
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/me"
+          },
         }
       },
       /*
@@ -763,7 +767,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           delete: {
             method: "DELETE",
-            url: statics.API + "/auth/api-keys"
+            url: statics.API + "/auth/api-keys/{apiKeyId}"
           }
         }
       },
@@ -914,7 +918,11 @@ qx.Class.define("osparc.data.Resources", {
           putAutoRecharge: {
             method: "PUT",
             url: statics.API + "/wallets/{walletId}/auto-recharge"
-          }
+          },
+          purchases: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/licensed-items-purchases"
+          },
         }
       },
       /*
@@ -954,11 +962,11 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           search: {
             method: "GET",
-            url: statics.API + "/users:search?email={email}"
+            url: statics.API + "/admin/users:search?email={email}"
           },
           preRegister: {
             method: "POST",
-            url: statics.API + "/users:pre-register"
+            url: statics.API + "/admin/users:pre-register"
           }
         }
       },
@@ -1117,7 +1125,11 @@ qx.Class.define("osparc.data.Resources", {
           postResetPassword: {
             method: "POST",
             url: statics.API + "/auth/reset-password/{code}"
-          }
+          },
+          changeEmail: {
+            method: "POST",
+            url: statics.API + "/auth/change-email"
+          },
         }
       },
       /*
@@ -1253,6 +1265,27 @@ qx.Class.define("osparc.data.Resources", {
           deleteAccessRights: {
             method: "DELETE",
             url: statics.API + "/tags/{tagId}/groups/{groupId}"
+          },
+        }
+      },
+
+      /*
+       * LICENSED ITEMS
+       */
+      "licensedItems": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/catalog/licensed-items"
+          },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/catalog/licensed-items?offset={offset}&limit={limit}"
+          },
+          purchase: {
+            method: "POST",
+            url: statics.API + "/catalog/licensed-items/{licensedItemId}:purchase"
           },
         }
       }

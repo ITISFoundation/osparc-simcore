@@ -11,8 +11,6 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
-from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
-from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS
@@ -35,23 +33,27 @@ from ...models.schemas.jobs import (
     JobMetadata,
     JobOutputs,
 )
+from ...models.schemas.model_adapter import (
+    PricingUnitGetLegacy,
+    WalletGetWithAvailableCreditsLegacy,
+)
 from ...models.schemas.solvers import SolverKeyId
-from ...services.catalog import CatalogApi
-from ...services.director_v2 import DirectorV2Api
-from ...services.jobs import (
+from ...services_http.catalog import CatalogApi
+from ...services_http.director_v2 import DirectorV2Api
+from ...services_http.jobs import (
     get_custom_metadata,
     raise_if_job_not_associated_with_solver,
 )
-from ...services.log_streaming import LogDistributor, LogStreamer
-from ...services.solver_job_models_converters import create_job_from_project
-from ...services.solver_job_outputs import ResultsTypes, get_solver_output_results
-from ...services.storage import StorageApi, to_file_api_model
+from ...services_http.log_streaming import LogDistributor, LogStreamer
+from ...services_http.solver_job_models_converters import create_job_from_project
+from ...services_http.solver_job_outputs import ResultsTypes, get_solver_output_results
+from ...services_http.storage import StorageApi, to_file_api_model
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
-from ..dependencies.webserver import AuthSession, get_webserver_session
+from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
@@ -376,7 +378,7 @@ async def get_job_custom_metadata(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
-    response_model=WalletGetWithAvailableCredits,
+    response_model=WalletGetWithAvailableCreditsLegacy,
     responses=WALLET_STATUS_CODES,
     description=("Get job wallet\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")),
 )
@@ -385,7 +387,7 @@ async def get_job_wallet(
     version: VersionStr,
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-) -> WalletGetWithAvailableCredits:
+) -> WalletGetWithAvailableCreditsLegacy:
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Getting wallet for job '%s'", job_name)
 
@@ -396,7 +398,7 @@ async def get_job_wallet(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/pricing_unit",
-    response_model=PricingUnitGet,
+    response_model=PricingUnitGetLegacy,
     responses=_PRICING_UNITS_STATUS_CODES,
     description=(
         "Get job pricing unit\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")

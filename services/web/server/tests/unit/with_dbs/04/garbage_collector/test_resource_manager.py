@@ -232,11 +232,6 @@ async def empty_user_project2(
         print("<----- removed project", project["name"])
 
 
-@pytest.fixture(autouse=True)
-async def director_v2_mock(director_v2_service_mock) -> aioresponses:
-    return director_v2_service_mock
-
-
 async def test_anonymous_websocket_connection(
     client_session_id_factory: Callable[[], str],
     socketio_url_factory: Callable,
@@ -478,7 +473,7 @@ async def test_interactive_services_removed_after_logout(
     client: TestClient,
     logged_user: dict[str, Any],
     empty_user_project: dict[str, Any],
-    mocked_director_v2_api: dict[str, mock.MagicMock],
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
     client_session_id_factory: Callable[[], str],
     socketio_client_factory: Callable,
@@ -517,7 +512,7 @@ async def test_interactive_services_removed_after_logout(
             print(
                 f"--> Waiting for stop_dynamic_service with: {service.node_uuid}, {expected_save_state=}",
             )
-            mocked_director_v2_api[
+            mocked_dynamic_services_interface[
                 "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_awaited_with(
                 app=client.app,
@@ -541,10 +536,11 @@ async def test_interactive_services_removed_after_logout(
     ],
 )
 async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(
+    director_v2_service_mock: aioresponses,
     client: TestClient,
     logged_user: UserInfoDict,
     empty_user_project,
-    mocked_director_v2_api,
+    mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
@@ -609,14 +605,14 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     await gc_core.collect_garbage(client.app)
 
     # assert dynamic service is still around
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_not_called()
     # disconnect second websocket
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic service is still around for now
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_not_called()
     # reconnect websocket
@@ -625,7 +621,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
 
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_not_called()
     # now really disconnect
@@ -652,7 +648,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
             progress=mock.ANY,
         )
     ]
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
 
@@ -678,11 +674,12 @@ async def mocked_notification_system(mocker):
     ],
 )
 async def test_interactive_services_removed_per_project(
+    director_v2_service_mock: aioresponses,
     client,
     logged_user,
     empty_user_project,
     empty_user_project2,
-    mocked_director_v2_api,
+    mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
     mocked_notification_system,
     socketio_client_factory: Callable,
@@ -716,7 +713,7 @@ async def test_interactive_services_removed_per_project(
     await sio1.disconnect()
     assert not sio1.sid
     # assert dynamic service is still around
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_not_called()
     # wait the defined delay
@@ -736,16 +733,18 @@ async def test_interactive_services_removed_per_project(
             progress=mock.ANY,
         )
     ]
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
-    mocked_director_v2_api["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
+    mocked_dynamic_services_interface[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].reset_mock()
 
     # disconnect websocket2
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic services are still around
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_not_called()
     # wait the defined delay
@@ -776,10 +775,12 @@ async def test_interactive_services_removed_per_project(
             progress=mock.ANY,
         ),
     ]
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
-    mocked_director_v2_api["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
+    mocked_dynamic_services_interface[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].reset_mock()
 
 
 @pytest.mark.xfail(
@@ -795,11 +796,12 @@ async def test_interactive_services_removed_per_project(
     ],
 )
 async def test_services_remain_after_closing_one_out_of_two_tabs(
+    director_v2_service_mock: aioresponses,
     client,
     logged_user,
     empty_user_project,
     empty_user_project2,
-    mocked_director_v2_api,
+    mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
@@ -826,7 +828,7 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
     # assert dynamic service is still around
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_not_called()
     # close project in tab2
@@ -834,7 +836,7 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(
         [call(client.server.app, service.node_uuid, expected_save_state)]
@@ -850,10 +852,11 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     ],
 )
 async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
+    director_v2_service_mock: aioresponses,
     client,
     logged_user,
     empty_user_project,
-    mocked_director_v2_api,
+    mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
     client_session_id_factory: Callable[[], str],
     socketio_client_factory: Callable,
@@ -898,7 +901,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
             progress=mock.ANY,
         )
     ]
-    mocked_director_v2_api[
+    mocked_dynamic_services_interface[
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
 
@@ -919,6 +922,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER, UserRole.GUEST])
 async def test_regression_removing_unexisting_user(
+    director_v2_service_mock: aioresponses,
     client: TestClient,
     logged_user: dict[str, Any],
     empty_user_project: dict[str, Any],

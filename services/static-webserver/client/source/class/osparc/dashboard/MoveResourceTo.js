@@ -30,9 +30,9 @@ qx.Class.define("osparc.dashboard.MoveResourceTo", {
 
     const workspacesAndFoldersTree = this.getChildControl("workspaces-and-folders-tree");
     this.getChildControl("cancel-btn");
-    const moveButton = this.getChildControl("move-btn");
 
-    moveButton.setEnabled(false);
+    const moveButton = this.getChildControl("move-btn");
+    moveButton.setEnabled(currentWorkspaceId !== null || currentFolderId !== null); // disable if current location is My Workspace's root
     workspacesAndFoldersTree.getSelection().addListener("change", () => {
       const selection = workspacesAndFoldersTree.getSelection();
       if (selection.getLength() > 0) {
@@ -73,7 +73,7 @@ qx.Class.define("osparc.dashboard.MoveResourceTo", {
       switch (id) {
         case "current-location": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          const intro = new qx.ui.basic.Label(this.tr("Current location"));
+          const intro = new qx.ui.basic.Label(this.tr("Current location:"));
           control.add(intro);
           const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.__currentWorkspaceId);
           const workspaceText = workspace ? workspace.getName() : "My Workspace";

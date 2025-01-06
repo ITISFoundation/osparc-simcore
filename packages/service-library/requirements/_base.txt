@@ -63,7 +63,7 @@ email-validator==2.2.0
     # via pydantic
 fast-depends==2.4.12
     # via faststream
-faststream==0.5.28
+faststream==0.5.31
     # via -r requirements/_base.in
 frozenlist==1.4.1
     # via
@@ -101,6 +101,7 @@ opentelemetry-api==1.27.0
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -117,8 +118,11 @@ opentelemetry-exporter-otlp-proto-http==1.27.0
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.48b0
     # via
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-logging==0.48b0
+    # via -r requirements/_base.in
 opentelemetry-instrumentation-redis==0.48b0
     # via -r requirements/_base.in
 opentelemetry-instrumentation-requests==0.48b0
@@ -160,7 +164,7 @@ protobuf==4.25.5
     #   opentelemetry-proto
 psutil==6.0.0
     # via -r requirements/_base.in
-pydantic==2.9.2
+pydantic==2.10.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -177,7 +181,7 @@ pydantic==2.9.2
     #   fast-depends
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.23.4
+pydantic-core==2.27.1
     # via pydantic
 pydantic-extra-types==2.9.0
     # via

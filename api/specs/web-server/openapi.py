@@ -20,6 +20,7 @@ openapi_modules = [
         #
         # core ---
         "_auth",
+        "_auth_api_keys",
         "_groups",
         "_tags",
         "_tags_groups",  # after _tags
@@ -35,6 +36,9 @@ openapi_modules = [
         "_exporter",
         "_folders",
         "_long_running_tasks",
+        "_licensed_items",
+        "_licensed_items_purchases",
+        "_licensed_items_checkouts",
         "_metamodeling",
         "_nih_sparc",
         "_nih_sparc_redirections",
@@ -97,6 +101,9 @@ def main():
 
     # .yaml
     oas_path = webserver_resources.get_path("api/v0/openapi.yaml").resolve()
+    if not oas_path.exists():
+        oas_path.parent.mkdir(parents=True)
+        oas_path.write_text("")
     print(f"Writing {oas_path}...", end=None)
     with oas_path.open("wt") as fh:
         yaml.safe_dump(openapi, stream=fh, sort_keys=False)

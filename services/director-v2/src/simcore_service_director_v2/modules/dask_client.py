@@ -16,7 +16,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any, cast
+from typing import Any, Final, cast
 
 import dask.typing
 import distributed
@@ -47,6 +47,7 @@ from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
+from models_library.services import ServiceRunID
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
 from pydantic.networks import AnyUrl
@@ -99,7 +100,7 @@ _DASK_TASK_STATUS_DASK_CLIENT_TASK_STATE_MAP: dict[
 }
 
 
-_DASK_DEFAULT_TIMEOUT_S = 1
+_DASK_DEFAULT_TIMEOUT_S: Final[int] = 5
 
 
 _UserCallbackInSepThread = Callable[[], None]
@@ -263,6 +264,9 @@ class DaskClient:
             )
             # NOTE: the callback is running in a secondary thread, and takes a future as arg
             task_future.add_done_callback(lambda _: callback())
+            await distributed.Variable(job_id, client=self.backend.client).set(
+                task_future
+            )
 
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.publish_dataset(task_future, name=job_id)
@@ -290,6 +294,7 @@ class DaskClient:
         remote_fct: ContainerRemoteFct | None = None,
         metadata: RunMetadataDict,
         hardware_info: HardwareInfo,
+        resource_tracking_run_id: ServiceRunID,
     ) -> list[PublishedComputationTask]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started.
@@ -393,6 +398,7 @@ class DaskClient:
                     node_id=node_id,
                     node_image=node_image,
                     metadata=metadata,
+                    resource_tracking_run_id=resource_tracking_run_id,
                 )
                 task_owner = dask_utils.compute_task_owner(
                     user_id, project_id, node_id, metadata.get("project_metadata", {})
@@ -450,23 +456,34 @@ class DaskClient:
                 DaskSchedulerTaskState | None, task_statuses.get(job_id, "lost")
             )
             if dask_status == "erred":
-                # find out if this was a cancellation
-                exception = await distributed.Future(job_id).exception(
-                    timeout=_DASK_DEFAULT_TIMEOUT_S
-                )
-                assert isinstance(exception, Exception)  # nosec
-
-                if isinstance(exception, TaskCancelledError):
-                    running_states.append(DaskClientTaskState.ABORTED)
-                else:
-                    assert exception  # nosec
-                    _logger.warning(
-                        "Task  %s completed in error:\n%s\nTrace:\n%s",
-                        job_id,
-                        exception,
-                        "".join(traceback.format_exception(exception)),
+                try:
+                    # find out if this was a cancellation
+                    var = distributed.Variable(job_id, client=self.backend.client)
+                    future: distributed.Future = await var.get(
+                        timeout=_DASK_DEFAULT_TIMEOUT_S
                     )
-                    running_states.append(DaskClientTaskState.ERRED)
+                    exception = await future.exception(timeout=_DASK_DEFAULT_TIMEOUT_S)
+                    assert isinstance(exception, Exception)  # nosec
+
+                    if isinstance(exception, TaskCancelledError):
+                        running_states.append(DaskClientTaskState.ABORTED)
+                    else:
+                        assert exception  # nosec
+                        _logger.warning(
+                            "Task  %s completed in error:\n%s\nTrace:\n%s",
+                            job_id,
+                            exception,
+                            "".join(traceback.format_exception(exception)),
+                        )
+                        running_states.append(DaskClientTaskState.ERRED)
+                except TimeoutError:
+                    _logger.warning(
+                        "Task  %s could not be retrieved from dask-scheduler, it is lost\n"
+                        "TIP:If the task was unpublished this can happen, or if the dask-scheduler was restarted.",
+                        job_id,
+                    )
+                    running_states.append(DaskClientTaskState.LOST)
+
             elif dask_status is None:
                 running_states.append(DaskClientTaskState.LOST)
             else:
@@ -522,13 +539,21 @@ class DaskClient:
     async def release_task_result(self, job_id: str) -> None:
         _logger.debug("releasing results for %s", f"{job_id=}")
         try:
+            # NOTE: The distributed Variable holds the future of the tasks in the dask-scheduler
+            # Alas, deleting the variable is done asynchronously and there is no way to ensure
+            # the variable was effectively deleted.
+            # This is annoying as one can re-create the variable without error.
+            var = distributed.Variable(job_id, client=self.backend.client)
+            var.delete()
             # first check if the key exists
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
             )
+
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.unpublish_dataset(name=job_id)
             )
+
         except KeyError:
             _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 

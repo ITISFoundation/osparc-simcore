@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Final
+from typing import Annotated, Final
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, field_validator
 
@@ -31,14 +31,17 @@ class CallbacksMapping(BaseModel):
         None,
         description="command to recover prometheus metrics from a specific user service",
     )
-    before_shutdown: list[UserServiceCommand] = Field(
-        default_factory=list,
-        description=(
-            "commands to run before shutting down the user services"
-            "commands get executed first to last, multiple commands for the same"
-            "user services are allowed"
+    before_shutdown: Annotated[
+        list[UserServiceCommand],
+        Field(
+            default_factory=list,
+            description=(
+                "commands to run before shutting down the user services"
+                "commands get executed first to last, multiple commands for the same"
+                "user services are allowed"
+            ),
         ),
-    )
+    ]
     inactivity: UserServiceCommand | None = Field(
         None,
         description=(

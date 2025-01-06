@@ -47,7 +47,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
     },
 
     confirmAction: {
-      check: [null, "create", "delete"],
+      check: [null, "create", "warning", "delete"],
       init: null,
       nullable: true,
       apply: "__applyConfirmAppearance"
@@ -74,7 +74,10 @@ qx.Class.define("osparc.ui.window.Confirmation", {
       const confBtn = this.__confirmButton;
       switch (confirmationAction) {
         case "create":
-          confBtn.setAppearance("form-button");
+          confBtn.setAppearance("strong-button");
+          break;
+        case "warning":
+          confBtn.setAppearance("warning-button");
           break;
         case "delete":
           confBtn.setAppearance("danger-button");

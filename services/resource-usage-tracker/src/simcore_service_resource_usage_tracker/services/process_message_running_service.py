@@ -33,7 +33,12 @@ from ..models.service_runs import (
     ServiceRunLastHeartbeatUpdate,
     ServiceRunStoppedAtUpdate,
 )
-from .modules.db import credit_transactions_db, pricing_plans_db, service_runs_db
+from .modules.db import (
+    credit_transactions_db,
+    licensed_items_checkouts_db,
+    pricing_plans_db,
+    service_runs_db,
+)
 from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client
 from .utils import (
     compute_service_run_credit_costs,
@@ -143,6 +148,7 @@ async def _process_start_event(
             transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
             service_run_id=service_run_id,
             payment_transaction_id=None,
+            licensed_item_purchase_id=None,
             created_at=msg.created_at,
             last_heartbeat_at=msg.created_at,
         )
@@ -268,9 +274,15 @@ async def _process_stop_event(
     running_service = await service_runs_db.update_service_run_stopped_at(
         db_engine, data=update_service_run_stopped_at
     )
+    await licensed_items_checkouts_db.force_release_license_seats_by_run_id(
+        db_engine, service_run_id=msg.service_run_id
+    )
 
     if running_service is None:
-        _logger.error("Nothing to update. This should not happen investigate.")
+        _logger.error(
+            "Nothing to update. This should not happen investigate. service_run_id: %s",
+            msg.service_run_id,
+        )
         return
 
     if running_service.wallet_id and running_service.pricing_unit_cost is not None:

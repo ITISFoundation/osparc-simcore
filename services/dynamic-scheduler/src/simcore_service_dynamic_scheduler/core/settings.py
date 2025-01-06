@@ -62,9 +62,31 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=60),
+        validation_alias=AliasChoices(
+            "DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT",
+            "DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT",
+        ),
         description=(
             "Time to wait before timing out when stopping a dynamic service. "
             "Since services require data to be stopped, this operation is timed out after 1 hour"
+        ),
+    )
+
+    DYNAMIC_SCHEDULER_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=60),
+        description=(
+            "When dynamic services upload and download data from storage, "
+            "sometimes very big payloads are involved. In order to handle "
+            "such payloads it is required to have long timeouts which "
+            "allow the service to finish the operation."
+        ),
+    )
+
+    DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER: bool = Field(
+        default=False,
+        description=(
+            "this is a way to switch between different dynamic schedulers for the new style services"
+            # NOTE: this option should be removed when the scheduling will be done via this service
         ),
     )
 
@@ -86,6 +108,10 @@ class ApplicationSettings(_BaseApplicationSettings):
             "secret required to enabled browser-based storage for the UI. "
             "Enables the full set of features to be used for NiceUI"
         ),
+    )
+    DYNAMIC_SCHEDULER_UI_MOUNT_PATH: str = Field(
+        "/dynamic-scheduler/",
+        description="path on the URL where the dashboard is mounted",
     )
 
     DYNAMIC_SCHEDULER_RABBITMQ: RabbitSettings = Field(
@@ -114,3 +140,11 @@ class ApplicationSettings(_BaseApplicationSettings):
         json_schema_extra={"auto_default_from_env": True},
         description="settings for opentelemetry tracing",
     )
+
+    @field_validator("DYNAMIC_SCHEDULER_UI_MOUNT_PATH", mode="before")
+    @classmethod
+    def _ensure_ends_with_slash(cls, v: str) -> str:
+        if not v.endswith("/"):
+            msg = f"Provided mount path: '{v}' must be '/' terminated"
+            raise ValueError(msg)
+        return v

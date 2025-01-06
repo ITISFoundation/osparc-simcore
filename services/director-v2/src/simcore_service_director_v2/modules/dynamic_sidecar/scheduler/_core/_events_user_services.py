@@ -73,7 +73,9 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
     )
 
     groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
-    assert scheduler_data.product_name is not None  # nosec
+    assert (
+        scheduler_data.product_name is not None  # nosec
+    ), "ONLY for legacy. This function should not be called with product_name==None"
     allow_internet_access: bool = await groups_extra_properties.has_internet_access(
         user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
     )
@@ -101,6 +103,7 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
         node_id=scheduler_data.node_uuid,
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
         swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+        service_run_id=scheduler_data.run_id,
     )
 
     _logger.debug(
@@ -117,6 +120,10 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
 async def create_user_services(  # pylint: disable=too-many-statements
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
+    assert (
+        scheduler_data.product_name is not None  # nosec
+    ), "ONLY for legacy. This function should not be called with product_name==None"
+
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
@@ -168,7 +175,9 @@ async def create_user_services(  # pylint: disable=too-many-statements
         project_name=project_name,
         node_name=node_name,
         service_key=scheduler_data.key,
-        service_version=TypeAdapter(ServiceVersion).validate_python(scheduler_data.version),
+        service_version=TypeAdapter(ServiceVersion).validate_python(
+            scheduler_data.version
+        ),
         service_resources=scheduler_data.service_resources,
         service_additional_metadata={},
     )
@@ -229,9 +238,9 @@ async def create_user_services(  # pylint: disable=too-many-statements
     start_duration = (
         scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_start_request()
     )
-    assert start_duration is not None  # nosec
-    get_instrumentation(app).dynamic_sidecar_metrics.start_time_duration.labels(
-        **get_metrics_labels(scheduler_data)
-    ).observe(start_duration)
+    if start_duration is not None:
+        get_instrumentation(app).dynamic_sidecar_metrics.start_time_duration.labels(
+            **get_metrics_labels(scheduler_data)
+        ).observe(start_duration)
 
     _logger.info("Internal state after creating user services %s", scheduler_data)

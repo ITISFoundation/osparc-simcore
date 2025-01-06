@@ -11,7 +11,7 @@ import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Final, cast, get_args
+from typing import Any, Final, TypeAlias, cast, get_args
 from unittest import mock
 
 import aiodocker
@@ -28,11 +28,16 @@ from aws_library.ec2 import (
     EC2InstanceType,
     Resources,
 )
+from common_library.json_serialization import json_dumps
 from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.docker import (
+    DockerGenericTag,
+    DockerLabelKey,
+    StandardSimcoreDockerLabels,
+)
 from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
@@ -45,7 +50,8 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     TaskSpec,
 )
-from pydantic import ByteSize, PositiveInt, TypeAdapter
+from pydantic import ByteSize, NonNegativeInt, PositiveInt, TypeAdapter
+from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.logging_tools import log_context
@@ -56,6 +62,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.ssm import SSMSettings
+from simcore_service_autoscaling.constants import PRE_PULLED_IMAGES_EC2_TAG_KEY
 from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.settings import (
     AUTOSCALING_ENV_PREFIX,
@@ -69,8 +76,15 @@ from simcore_service_autoscaling.models import (
     Cluster,
     DaskTaskResources,
 )
+from simcore_service_autoscaling.modules import auto_scaling_core
+from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
+    DynamicAutoscaling,
+)
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
+from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
+    get_deactivated_buffer_ec2_tags,
+)
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
@@ -79,7 +93,9 @@ from tenacity import after_log, before_sleep_log, retry
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from types_aiobotocore_ec2.literals import InstanceTypeType
+from types_aiobotocore_ec2 import EC2Client
+from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
+from types_aiobotocore_ec2.type_defs import TagTypeDef
 
 pytest_plugins = [
     "pytest_simcore.aws_server",
@@ -176,7 +192,11 @@ def app_with_docker_join_drained(
 @pytest.fixture(scope="session")
 def fake_ssm_settings() -> SSMSettings:
     assert "json_schema_extra" in SSMSettings.model_config
-    return SSMSettings(**SSMSettings.model_config["json_schema_extra"]["examples"][0])
+    assert isinstance(SSMSettings.model_config["json_schema_extra"], dict)
+    assert isinstance(SSMSettings.model_config["json_schema_extra"]["examples"], list)
+    return SSMSettings.model_validate(
+        SSMSettings.model_config["json_schema_extra"]["examples"][0]
+    )
 
 
 @pytest.fixture
@@ -220,6 +240,11 @@ def app_environment(
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
         return setenvs_from_dict(monkeypatch, {**external_envfile_dict})
 
+    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
+    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
+    assert isinstance(
+        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
+    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -263,6 +288,11 @@ def mocked_ec2_instances_envs(
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
     aws_instance_profile: str,
 ) -> EnvVarsDict:
+    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
+    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
+    assert isinstance(
+        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
+    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -271,10 +301,13 @@ def mocked_ec2_instances_envs(
             "EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
-                    ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                            "examples"
-                        ]
+                    ec2_type_name: cast(
+                        dict,
+                        random.choice(  # noqa: S311
+                            EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                                "examples"
+                            ]
+                        ),
                     )
                     | {"ami_id": aws_ami_id}
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
@@ -419,7 +452,7 @@ def service_monitored_labels(
 @pytest.fixture
 async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     async with httpx.AsyncClient(
-        app=initialized_app,
+        transport=httpx.ASGITransport(app=initialized_app),
         base_url=f"http://{initialized_app.title}.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
@@ -491,22 +524,23 @@ def create_fake_node(faker: Faker) -> Callable[..., DockerNode]:
     def _creator(**node_overrides) -> DockerNode:
         default_config = {
             "ID": faker.uuid4(),
-            "Version": ObjectVersion(Index=faker.pyint()),
-            "CreatedAt": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
-            "UpdatedAt": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            "Version": ObjectVersion(index=faker.pyint()),
+            "CreatedAt": datetime.datetime.now(tz=datetime.UTC).isoformat(),
+            "UpdatedAt": datetime.datetime.now(tz=datetime.UTC).isoformat(),
             "Description": NodeDescription(
-                Hostname=faker.pystr(),
-                Resources=ResourceObject(
-                    NanoCPUs=int(9 * 1e9), MemoryBytes=256 * 1024 * 1024 * 1024
+                hostname=faker.pystr(),
+                resources=ResourceObject(
+                    nano_cp_us=int(9 * 1e9),
+                    memory_bytes=TypeAdapter(ByteSize).validate_python("256GiB"),
                 ),
             ),
             "Spec": NodeSpec(
-                Name=None,
-                Labels=faker.pydict(allowed_types=(str,)),
-                Role=None,
-                Availability=Availability.drain,
+                name=None,
+                labels=faker.pydict(allowed_types=(str,)),
+                role=None,
+                availability=Availability.drain,
             ),
-            "Status": NodeStatus(State=NodeState.unknown, Message=None, Addr=None),
+            "Status": NodeStatus(state=NodeState.unknown, message=None, addr=None),
         }
         default_config.update(**node_overrides)
         return DockerNode(**default_config)
@@ -529,7 +563,7 @@ def task_template() -> dict[str, Any]:
 
 
 _GIGA_NANO_CPU = 10**9
-NUM_CPUS = PositiveInt
+NUM_CPUS: TypeAlias = PositiveInt
 
 
 @pytest.fixture
@@ -704,6 +738,7 @@ async def _assert_wait_for_service_state(
             after=after_log(ctx.logger, logging.DEBUG),
         )
         async def _() -> None:
+            assert service.id
             services = await async_docker_client.services.list(
                 filters={"id": service.id}
             )
@@ -761,7 +796,9 @@ def aws_allowed_ec2_instance_type_names_env(
 
 @pytest.fixture
 def host_cpu_count() -> int:
-    return psutil.cpu_count()
+    cpus = psutil.cpu_count()
+    assert cpus is not None
+    return cpus
 
 
 @pytest.fixture
@@ -853,9 +890,7 @@ def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
         returned_node.spec.availability = (
             Availability.active if available else Availability.drain
         )
-        returned_node.updated_at = datetime.datetime.now(
-            tz=datetime.timezone.utc
-        ).isoformat()
+        returned_node.updated_at = datetime.datetime.now(tz=datetime.UTC).isoformat()
         return returned_node
 
     return mocker.patch(
@@ -890,7 +925,7 @@ def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def patch_ec2_client_launch_instancess_min_number_of_instances(
+def patch_ec2_client_launch_instances_min_number_of_instances(
     mocker: MockerFixture,
 ) -> mock.Mock:
     """the moto library always returns min number of instances instead of max number of instances which makes
@@ -954,7 +989,7 @@ def create_associated_instance(
         return AssociatedInstance(
             node=node,
             ec2_instance=fake_ec2_instance_data(
-                launch_time=datetime.datetime.now(datetime.timezone.utc)
+                launch_time=datetime.datetime.now(datetime.UTC)
                 - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
                 - datetime.timedelta(
                     days=faker.pyint(min_value=0, max_value=100),
@@ -970,10 +1005,22 @@ def create_associated_instance(
 
 
 @pytest.fixture
-def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> int:
-    num_machines_in_buffer = 5
-    monkeypatch.setenv("EC2_INSTANCES_MACHINES_BUFFER", f"{num_machines_in_buffer}")
-    return num_machines_in_buffer
+def num_hot_buffer() -> NonNegativeInt:
+    return 5
+
+
+@pytest.fixture
+def with_instances_machines_hot_buffer(
+    num_hot_buffer: int,
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_MACHINES_BUFFER": f"{num_hot_buffer}",
+        },
+    )
 
 
 @pytest.fixture
@@ -1002,3 +1049,184 @@ def with_short_ec2_instances_max_start_time(
             "EC2_INSTANCES_MAX_START_TIME": f"{short_ec2_instance_max_start_time}",
         },
     )
+
+
+@pytest.fixture
+async def spied_cluster_analysis(mocker: MockerFixture) -> MockType:
+    return mocker.spy(auto_scaling_core, "_analyze_current_cluster")
+
+
+@pytest.fixture
+async def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mock.Mock:
+    async def _(
+        nodes: list[DockerNode], ec2_instances: list[EC2InstanceData]
+    ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
+        return [], ec2_instances
+
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.associate_ec2_instances_with_nodes",
+        autospec=True,
+        side_effect=_,
+    )
+
+
+@pytest.fixture
+def fake_pre_pull_images() -> list[DockerGenericTag]:
+    return TypeAdapter(list[DockerGenericTag]).validate_python(
+        [
+            "nginx:latest",
+            "itisfoundation/my-very-nice-service:latest",
+            "simcore/services/dynamic/another-nice-one:2.4.5",
+            "asd",
+        ]
+    )
+
+
+@pytest.fixture
+def ec2_instances_allowed_types_with_only_1_buffered(
+    faker: Faker,
+    fake_pre_pull_images: list[DockerGenericTag],
+    external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
+) -> dict[InstanceTypeType, EC2InstanceBootSpecific]:
+    if not external_ec2_instances_allowed_types:
+        return {
+            "t2.micro": EC2InstanceBootSpecific(
+                ami_id=faker.pystr(),
+                pre_pull_images=fake_pre_pull_images,
+                buffer_count=faker.pyint(min_value=1, max_value=10),
+            )
+        }
+
+    allowed_ec2_types = external_ec2_instances_allowed_types
+    allowed_ec2_types_with_buffer_defined = dict(
+        filter(
+            lambda instance_type_and_settings: instance_type_and_settings[
+                1
+            ].buffer_count
+            > 0,
+            allowed_ec2_types.items(),
+        )
+    )
+    assert (
+        allowed_ec2_types_with_buffer_defined
+    ), "one type with buffer is needed for the tests!"
+    assert (
+        len(allowed_ec2_types_with_buffer_defined) == 1
+    ), "more than one type with buffer is disallowed in this test!"
+    return {
+        TypeAdapter(InstanceTypeType).validate_python(k): v
+        for k, v in allowed_ec2_types_with_buffer_defined.items()
+    }
+
+
+@pytest.fixture
+def buffer_count(
+    ec2_instances_allowed_types_with_only_1_buffered: dict[
+        InstanceTypeType, EC2InstanceBootSpecific
+    ],
+) -> int:
+    def _by_buffer_count(
+        instance_type_and_settings: tuple[InstanceTypeType, EC2InstanceBootSpecific]
+    ) -> bool:
+        _, boot_specific = instance_type_and_settings
+        return boot_specific.buffer_count > 0
+
+    allowed_ec2_types = ec2_instances_allowed_types_with_only_1_buffered
+    allowed_ec2_types_with_buffer_defined = dict(
+        filter(_by_buffer_count, allowed_ec2_types.items())
+    )
+    assert allowed_ec2_types_with_buffer_defined, "you need one type with buffer"
+    assert (
+        len(allowed_ec2_types_with_buffer_defined) == 1
+    ), "more than one type with buffer is disallowed in this test!"
+    return next(iter(allowed_ec2_types_with_buffer_defined.values())).buffer_count
+
+
+@pytest.fixture
+async def create_buffer_machines(
+    ec2_client: EC2Client,
+    aws_ami_id: str,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+) -> Callable[
+    [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag] | None],
+    Awaitable[list[str]],
+]:
+    async def _do(
+        num: int,
+        instance_type: InstanceTypeType,
+        instance_state_name: InstanceStateNameType,
+        pre_pull_images: list[DockerGenericTag] | None,
+    ) -> list[str]:
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+
+        assert instance_state_name in [
+            "running",
+            "stopped",
+        ], "only 'running' and 'stopped' are supported for testing"
+
+        resource_tags: list[TagTypeDef] = [
+            {"Key": tag_key, "Value": tag_value}
+            for tag_key, tag_value in get_deactivated_buffer_ec2_tags(
+                initialized_app, DynamicAutoscaling()
+            ).items()
+        ]
+        if pre_pull_images is not None and instance_state_name == "stopped":
+            resource_tags.append(
+                {
+                    "Key": PRE_PULLED_IMAGES_EC2_TAG_KEY,
+                    "Value": f"{json_dumps(pre_pull_images)}",
+                }
+            )
+        with log_context(
+            logging.INFO, f"creating {num} buffer machines of {instance_type}"
+        ):
+            instances = await ec2_client.run_instances(
+                ImageId=aws_ami_id,
+                MaxCount=num,
+                MinCount=num,
+                InstanceType=instance_type,
+                KeyName=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
+                SecurityGroupIds=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                SubnetId=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
+                IamInstanceProfile={
+                    "Arn": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE
+                },
+                TagSpecifications=[
+                    {"ResourceType": "instance", "Tags": resource_tags},
+                    {"ResourceType": "volume", "Tags": resource_tags},
+                    {"ResourceType": "network-interface", "Tags": resource_tags},
+                ],
+                UserData="echo 'I am pytest'",
+            )
+            instance_ids = [
+                i["InstanceId"] for i in instances["Instances"] if "InstanceId" in i
+            ]
+
+        waiter = ec2_client.get_waiter("instance_exists")
+        await waiter.wait(InstanceIds=instance_ids)
+        instances = await ec2_client.describe_instances(InstanceIds=instance_ids)
+        assert "Reservations" in instances
+        assert instances["Reservations"]
+        assert "Instances" in instances["Reservations"][0]
+        assert len(instances["Reservations"][0]["Instances"]) == num
+        for instance in instances["Reservations"][0]["Instances"]:
+            assert "State" in instance
+            assert "Name" in instance["State"]
+            assert instance["State"]["Name"] == "running"
+
+        if instance_state_name == "stopped":
+            await ec2_client.stop_instances(InstanceIds=instance_ids)
+            instances = await ec2_client.describe_instances(InstanceIds=instance_ids)
+            assert "Reservations" in instances
+            assert instances["Reservations"]
+            assert "Instances" in instances["Reservations"][0]
+            assert len(instances["Reservations"][0]["Instances"]) == num
+            for instance in instances["Reservations"][0]["Instances"]:
+                assert "State" in instance
+                assert "Name" in instance["State"]
+                assert instance["State"]["Name"] == "stopped"
+
+        return instance_ids
+
+    return _do

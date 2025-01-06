@@ -24,7 +24,16 @@ class InputSchemaWithoutCamelCase(BaseModel):
 
 class InputSchema(BaseModel):
     model_config = ConfigDict(
-        **InputSchemaWithoutCamelCase.model_config, alias_generator=snake_to_camel
+        **InputSchemaWithoutCamelCase.model_config,
+        alias_generator=snake_to_camel,
+    )
+
+
+class OutputSchemaWithoutCamelCase(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="ignore",
+        frozen=True,
     )
 
 
@@ -50,7 +59,7 @@ class OutputSchema(BaseModel):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
-            **kwargs
+            **kwargs,
         )
 
     def data_json(
@@ -67,5 +76,5 @@ class OutputSchema(BaseModel):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
-            **kwargs
+            **kwargs,
         )

@@ -30,14 +30,14 @@ __all__: tuple[str, ...] = (
 class PageRefsParams(PageRefs[PageQueryParameters]):
     @classmethod
     def create(cls, total: int, limit: int, offset: int) -> "PageRefsParams":
-        last_page = ceil(total / limit) - 1
+        last_page = ceil(total / limit) - 1 if total > 0 else 0
         return cls.model_validate(
             {
                 "self": {"offset": offset, "limit": limit},
                 "first": {"offset": 0, "limit": limit},
                 "prev": (
                     {"offset": max(offset - limit, 0), "limit": limit}
-                    if offset > 0
+                    if offset > 0 and total > 0
                     else None
                 ),
                 "next": (
@@ -45,7 +45,7 @@ class PageRefsParams(PageRefs[PageQueryParameters]):
                         "offset": min(offset + limit, last_page * limit),
                         "limit": limit,
                     }
-                    if offset < (last_page * limit)
+                    if offset < (last_page * limit) and total > 0
                     else None
                 ),
                 "last": {"offset": last_page * limit, "limit": limit},

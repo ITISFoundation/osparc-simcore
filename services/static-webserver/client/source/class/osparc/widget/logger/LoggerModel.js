@@ -26,7 +26,7 @@
  *
  * <pre class='javascript'>
  *   let tableModel = this.__logModel = new osparc.widget.logger.LoggerTable();
- *   tableModel.setColumns(["Timestamp", "Origin", "Message"], ["time", "who", "whatRich"]);
+ *   tableModel.setColumns(["Level", "Time", "Origin", "Message"], ["level", "time", "who", "whatRich"]);
  *   let custom = {
  *     tableColumnModel : function(obj) {
  *       return new qx.ui.table.columnmodel.Resize(obj);
@@ -49,19 +49,18 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
     this.base(arguments);
 
     this.setColumns([
+      "",
       "Time",
       "Origin",
       "Message"
     ], [
+      "level",
       "time",
       "who",
       "msgRich"
     ]);
 
     this.__rawData = [];
-
-    const themeManager = qx.theme.manager.Meta.getInstance();
-    themeManager.addListener("changeTheme", () => this.__themeChanged());
   },
 
   properties: {
@@ -79,22 +78,21 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
   },
 
   statics: {
-    addColorTag: function(msg, color) {
-      return ("<font color=" + color +">" + msg + "</font>");
-    },
-
-    getLevelColor: function(logLevel) {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      let logColor = null;
+    getLevelIcon: function(logLevel) {
       const logLevels = osparc.widget.logger.LoggerView.LOG_LEVELS;
-      Object.keys(logLevels).forEach(logLevelKey => {
-        const logString = logLevelKey.toLowerCase();
-        const logNumber = logLevels[logLevelKey];
-        if (logNumber === logLevel) {
-          logColor = colorManager.resolve("logger-"+logString+"-message");
-        }
-      });
-      return logColor ? logColor : colorManager.resolve("logger-info-message");
+      let iconSource = "";
+      switch (logLevel) {
+        case logLevels.INFO:
+          iconSource = "osparc/circle-info-solid.svg";
+          break;
+        case logLevels.WARNING:
+          iconSource = "osparc/circle-exclamation-solid.svg";
+          break;
+        case logLevels.ERROR:
+          iconSource = "osparc/circle-xmark-solid.svg";
+          break;
+      }
+      return iconSource;
     }
   },
 
@@ -112,10 +110,10 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
 
     addRows: function(newRows) {
       newRows.forEach(newRow => {
-        const levelColor = this.self().getLevelColor(newRow.logLevel);
+        newRow["level"] = this.self().getLevelIcon(newRow.logLevel);
         newRow["time"] = osparc.utils.Utils.formatTime(newRow.timeStamp, true);
         newRow["who"] = newRow.label;
-        newRow["msgRich"] = this.self().addColorTag(newRow.msg, levelColor);
+        newRow["msgRich"] = newRow.msg.replace(/\n/g, "<br>");
         this.__rawData.push(newRow);
       });
     },
@@ -126,15 +124,6 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
           row.label = newLabel;
           row["who"] = row.label;
         }
-      });
-    },
-
-    __themeChanged: function() {
-      this.__rawData.forEach(row => {
-        const levelColor = this.self().getLevelColor(row.logLevel);
-        row["time"] = osparc.utils.Utils.formatTime(row.timeStamp, true);
-        row["who"] = row.label;
-        row["msgRich"] = this.self().addColorTag(row.msg, levelColor);
       });
     },
 

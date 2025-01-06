@@ -5,7 +5,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import APP_SETTINGS_KEY
 from ..products.plugin import setup_products
-from . import _handlers
+from . import _classifiers_rest, _groups_rest
 
 _logger = logging.getLogger(__name__)
 
@@ -23,4 +23,5 @@ def setup_groups(app: web.Application):
     # plugin dependencies
     setup_products(app)
 
-    app.router.add_routes(_handlers.routes)
+    app.router.add_routes(_groups_rest.routes)
+    app.router.add_routes(_classifiers_rest.routes)

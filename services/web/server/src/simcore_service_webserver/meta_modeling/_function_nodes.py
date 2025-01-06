@@ -36,7 +36,7 @@ def create_param_node_from_iterator_with_outputs(iterator_node: Node) -> Node:
         version=ServiceVersion("1.0.0"),
         label=iterator_node.label,
         inputs={},
-        inputNodes=[],
+        input_nodes=[],
         thumbnail="",  # NOTE: hack due to issue in projects json-schema
         outputs=deepcopy(iterator_node.outputs),
     )

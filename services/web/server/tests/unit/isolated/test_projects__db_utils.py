@@ -11,9 +11,9 @@ from typing import Any, Callable
 
 import pytest
 from faker import Faker
+from models_library.groups import GroupID
 from models_library.projects_nodes import Node
 from models_library.services import ServiceKey
-from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from simcore_service_webserver.projects._db_utils import (
     DB_EXCLUSIVE_COLUMNS,

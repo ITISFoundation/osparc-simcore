@@ -1,5 +1,5 @@
 # mypy: disable-error-code=truthy-function
-from typing import Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import ConfigDict, Field
 
@@ -29,16 +29,23 @@ class NodePatch(InputSchemaWithoutCamelCase):
     service_key: ServiceKey | None = Field(default=None, alias="key")
     service_version: ServiceVersion | None = Field(default=None, alias="version")
     label: str | None = Field(default=None)
-    inputs: InputsDict = Field(default=None)
+    inputs: Annotated[
+        InputsDict, Field(default_factory=dict, json_schema_extra={"default": {}})
+    ]
     inputs_required: list[InputID] | None = Field(default=None, alias="inputsRequired")
     input_nodes: list[NodeID] | None = Field(default=None, alias="inputNodes")
-    progress: float | None = Field(
-        default=None, ge=0, le=100
-    )  # NOTE: it is used by frontend for File Picker progress
-    boot_options: BootOptions | None = Field(default=None, alias="bootOptions")
-    outputs: dict[str, Any] | None = Field(
-        default=None
-    )  # NOTE: it is used by frontend for File Picker
+    progress: Annotated[
+        float | None,
+        Field(
+            # NOTE: it is used by frontend for File Picker progress
+            ge=0,
+            le=100,
+        ),
+    ] = None
+    boot_options: Annotated[BootOptions | None, Field(alias="bootOptions")] = None
+    outputs: dict[
+        str, Any
+    ] | None = None  # NOTE: it is used by frontend for File Picker
 
 
 class NodeCreated(OutputSchema):

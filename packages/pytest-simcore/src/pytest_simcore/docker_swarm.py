@@ -7,15 +7,16 @@ import asyncio
 import json
 import logging
 import subprocess
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import aiodocker
 import docker
 import pytest
 import yaml
+from common_library.dict_tools import copy_from_dict
 from docker.errors import APIError
 from faker import Faker
 from tenacity import AsyncRetrying, Retrying, TryAgain, retry
@@ -25,7 +26,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed, wait_random_exponential
 
 from .helpers.constants import HEADER_STR, MINUTE
-from .helpers.dict_tools import copy_from_dict
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
 
@@ -222,7 +222,7 @@ def _deploy_stack(compose_file: Path, stack_name: str) -> None:
                     f"{stack_name}",
                 ]
                 subprocess.run(
-                    cmd,  # noqa: S603
+                    cmd,
                     check=True,
                     cwd=compose_file.parent,
                     capture_output=True,
@@ -238,7 +238,7 @@ def _deploy_stack(compose_file: Path, stack_name: str) -> None:
 def _make_dask_sidecar_certificates(simcore_service_folder: Path) -> None:
     dask_sidecar_root_folder = simcore_service_folder / "dask-sidecar"
     subprocess.run(
-        ["make", "certificates"],  # noqa: S603, S607
+        ["make", "certificates"],  # noqa: S607
         cwd=dask_sidecar_root_folder,
         check=True,
         capture_output=True,

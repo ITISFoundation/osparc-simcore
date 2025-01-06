@@ -8,6 +8,7 @@ from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
 
+from ...models._utils_pydantic import UriSchema
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr
 
@@ -52,7 +53,11 @@ class Solver(BaseModel):
     # TODO: consider version_aliases: list[str] = []  # remaining tags
 
     # Get links to other resources
-    url: Annotated[HttpUrl | None, Field(..., description="Link to get this resource")]
+    url: Annotated[
+        Annotated[HttpUrl, UriSchema()] | None,
+        Field(..., description="Link to get this resource"),
+    ]
+
     model_config = ConfigDict(
         extra="ignore",
         json_schema_extra={

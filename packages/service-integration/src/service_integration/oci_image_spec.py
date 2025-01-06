@@ -7,7 +7,7 @@ SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md
 
 import os
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from models_library.basic_types import SHA1Str, VersionStr
 from models_library.utils.labels_annotations import from_labels, to_labels
@@ -43,62 +43,89 @@ def _underscore_as_dot(field_name: str):
 class OciImageSpecAnnotations(BaseModel):
     # TODO: review and polish constraints
 
-    created: datetime = Field(
-        None,
-        description="date and time on which the image was built (string, date-time as defined by RFC 3339)",
-    )
+    created: Annotated[
+        datetime | None,
+        Field(
+            description="date and time on which the image was built (string, date-time as defined by RFC 3339)",
+        ),
+    ] = None
 
-    authors: str = Field(
-        None,
-        description="contact details of the people or organization responsible for the image (freeform string)",
-    )
+    authors: Annotated[
+        str | None,
+        Field(
+            description="contact details of the people or organization responsible for the image (freeform string)",
+        ),
+    ] = None
 
-    url: AnyUrl = Field(
-        None, description="URL to find more information on the image (string)"
-    )
+    url: Annotated[
+        AnyUrl | None,
+        Field(None, description="URL to find more information on the image (string)"),
+    ] = None
 
-    documentation: AnyUrl = Field(
-        None, description="URL to get documentation on the image (string)"
-    )
+    documentation: Annotated[
+        AnyUrl | None,
+        Field(None, description="URL to get documentation on the image (string)"),
+    ] = None
 
-    source: AnyUrl = Field(
-        None, description="URL to get source code for building the image (string)"
-    )
+    source: Annotated[
+        AnyUrl | None,
+        Field(
+            None, description="URL to get source code for building the image (string)"
+        ),
+    ] = None
 
-    version: VersionStr = Field(
-        None,
-        description="version of the packaged software"
-        "The version MAY match a label or tag in the source code repository"
-        "version MAY be Semantic versioning-compatible",
-    )
-    revision: str = Field(
-        None,
-        description="Source control revision identifier for the packaged software.",
-    )
-
-    vendor: str = Field(
-        None, description="Name of the distributing entity, organization or individual."
-    )
+    version: Annotated[
+        VersionStr | None,
+        Field(
+            description="version of the packaged software"
+            "The version MAY match a label or tag in the source code repository"
+            "version MAY be Semantic versioning-compatible",
+        ),
+    ] = None
+    revision: Annotated[
+        str | None,
+        Field(
+            description="Source control revision identifier for the packaged software.",
+        ),
+    ] = None
+    vendor: Annotated[
+        str | None,
+        Field(
+            description="Name of the distributing entity, organization or individual."
+        ),
+    ] = None
 
     # SEE https://spdx.dev/spdx-specification-21-web-version/#h.jxpfx0ykyb60
-    licenses: str = Field(
-        "MIT",
-        description="License(s) under which contained software is distributed as an SPDX License Expression.",
-    )
-    ref_name: str = Field(
-        None,
-        description="Name of the reference for a target (string).",
-    )
+    licenses: Annotated[
+        str,
+        Field(
+            description="License(s) under which contained software is distributed as an SPDX License Expression.",
+        ),
+    ] = "MIT"
 
-    title: str = Field(None, description="Human-readable title of the image (string)")
-    description: str = Field(
-        None,
-        description="Human-readable description of the software packaged in the image (string)",
-    )
-    base_digest: SHA1Str = Field(
-        None,
-        description="Digest of the image this image is based on (string)",
-    )
+    ref_name: Annotated[
+        str | None,
+        Field(
+            description="Name of the reference for a target (string).",
+        ),
+    ] = None
+
+    title: Annotated[
+        str | None, Field(description="Human-readable title of the image (string)")
+    ] = None
+    description: Annotated[
+        str | None,
+        Field(
+            description="Human-readable description of the software packaged in the image (string)",
+        ),
+    ] = None
+    base_digest: Annotated[
+        SHA1Str | None,
+        Field(
+            description="Digest of the image this image is based on (string)",
+        ),
+    ] = None
+
     model_config = ConfigDict(
         alias_generator=_underscore_as_dot, populate_by_name=True, extra="forbid"
     )
@@ -123,7 +150,7 @@ class LabelSchemaAnnotations(BaseModel):
     NOTE:  DEPRECATED IN FAVOUR OF OCI IMAGE SPEC
     """
 
-    schema_version: VersionStr = Field("1.0.0", alias="schema-version")
+    schema_version: Annotated[VersionStr, Field(alias="schema-version")] = "1.0.0"
 
     build_date: datetime
     vcs_ref: str

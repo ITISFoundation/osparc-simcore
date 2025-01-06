@@ -36,9 +36,10 @@ qx.Class.define("osparc.file.FolderViewer", {
     if (allowMultiselection) {
       multiSelectButton = this.getChildControl("multi-select-button");
     }
-    const iconsButton = this.getChildControl("view-options-icons");
-    const listButton = this.getChildControl("view-options-list");
+    const gridViewButton = this.getChildControl("view-options-icons");
+    const listViewButton = this.getChildControl("view-options-list");
     const folderContent = this.getChildControl("folder-content");
+    const selectedFileLayout = this.getChildControl("selected-file-layout");
 
     this.bind("folder", this.getChildControl("folder-up"), "enabled", {
       converter: folder => Boolean(folder && folder.getPathLabel && folder.getPathLabel().length > 1)
@@ -51,14 +52,36 @@ qx.Class.define("osparc.file.FolderViewer", {
     this.bind("folder", folderContent, "folder");
 
     if (allowMultiselection) {
-      multiSelectButton.addListener("changeValue", e => folderContent.setMultiSelect(e.getData()));
+      multiSelectButton.addListener("changeValue", e => {
+        folderContent.setMultiSelect(e.getData());
+        selectedFileLayout.setMultiSelect(e.getData());
+      });
     }
-    iconsButton.addListener("execute", () => folderContent.setMode("icons"));
-    listButton.addListener("execute", () => folderContent.setMode("list"));
+    gridViewButton.addListener("execute", () => {
+      folderContent.setMode("icons");
+      selectedFileLayout.resetItemSelected();
+    });
+    listViewButton.addListener("execute", () => {
+      folderContent.setMode("list");
+      selectedFileLayout.resetItemSelected();
+    });
 
-    folderContent.addListener("selectionChanged", e => this.fireDataEvent("selectionChanged", e.getData()));
-    folderContent.addListener("itemSelected", e => this.fireDataEvent("itemSelected", e.getData()));
     folderContent.addListener("requestDatasetFiles", e => this.fireDataEvent("requestDatasetFiles", e.getData()));
+    folderContent.addListener("selectionChanged", e => {
+      const selectionData = e.getData();
+      selectedFileLayout.setItemSelected(selectionData);
+    }, this);
+    folderContent.addListener("multiSelectionChanged", e => {
+      const multiSelectionData = e.getData();
+      selectedFileLayout.setMultiItemSelected(multiSelectionData);
+    }, this);
+    folderContent.addListener("openItemSelected", e => {
+      const entry = e.getData();
+      this.fireDataEvent("openItemSelected", entry);
+      if (osparc.file.FilesTree.isDir(entry)) {
+        this.setFolder(entry);
+      }
+    });
   },
 
   properties: {
@@ -67,12 +90,12 @@ qx.Class.define("osparc.file.FolderViewer", {
       init: null,
       nullable: true,
       event: "changeFolder",
+      apply: "__applyFolder",
     },
   },
 
   events: {
-    "selectionChanged": "qx.event.type.Data", // tap
-    "itemSelected": "qx.event.type.Data", // dbltap
+    "openItemSelected": "qx.event.type.Data", // dbltap
     "folderUp": "qx.event.type.Data",
     "requestDatasetFiles": "qx.event.type.Data"
   },
@@ -107,7 +130,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           });
           break;
         }
-        case "multi-select-button":
+        case "multi-select-button": {
           control = new qx.ui.form.ToggleButton(this.tr("Multiselect")).set({
             value: false,
             marginRight: 10,
@@ -115,6 +138,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           const header = this.getChildControl("header");
           header.addAt(control, 2);
           break;
+        }
         case "view-options-rgroup":
           control = new qx.ui.form.RadioGroup();
           break;
@@ -141,8 +165,18 @@ qx.Class.define("osparc.file.FolderViewer", {
           });
           break;
         }
+        case "selected-file-layout":
+          control = new osparc.file.FileLabelWithActions().set({
+            alignY: "middle"
+          });
+          this._add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
+
+    __applyFolder: function() {
+      this.getChildControl("selected-file-layout").resetItemSelected();
+    }
   }
 });

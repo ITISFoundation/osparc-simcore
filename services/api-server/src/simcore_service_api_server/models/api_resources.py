@@ -1,8 +1,8 @@
 import re
 import urllib.parse
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, TypeAlias
 
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import Field, TypeAdapter
 from pydantic.types import StringConstraints
 
 # RESOURCE NAMES https://cloud.google.com/apis/design/resource_names
@@ -56,20 +56,3 @@ def compose_resource_name(*collection_or_resource_ids) -> RelativeResourceName:
 def split_resource_name(resource_name: RelativeResourceName) -> list[str]:
     quoted_parts = resource_name.split("/")
     return [f"{urllib.parse.unquote_plus(p)}" for p in quoted_parts]
-
-
-#
-# For resource definitions, the first field should be a string field for the resource name,
-# and it should be called *name*
-# Resource IDs must be clearly documented whether they are assigned by the client, the server, or either
-#
-class BaseResource(BaseModel):
-    name: RelativeResourceName = Field(None, examples=["solvers/isolve/releases/1.2.3"])
-    id: Any = Field(None, description="Resource ID", examples=["1.2.3"])  # noqa: A003
-
-
-class BaseCollection(BaseModel):
-    name: RelativeResourceName = Field(None, examples=["solvers/isolve/releases"])
-    id: Any = Field(
-        None, description="Collection ID", examples=["releases"]
-    )  # noqa: A003

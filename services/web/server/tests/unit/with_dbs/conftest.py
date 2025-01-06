@@ -19,7 +19,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, I
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Final
+from typing import Any
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -42,12 +42,12 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.products import ProductName
 from models_library.services_enums import ServiceState
 from pydantic import ByteSize, TypeAdapter
+from pytest_docker.plugin import Services
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
 from redis import Redis
@@ -68,13 +68,8 @@ from simcore_postgres_database.utils_products import (
 )
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
+from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.db.plugin import get_database_engine
-from simcore_service_webserver.groups.api import (
-    add_user_in_group,
-    create_user_group,
-    delete_user_group,
-    list_user_groups_with_read_access,
-)
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.statics._constants import (
     FRONTEND_APP_DEFAULT,
@@ -99,7 +94,7 @@ def disable_swagger_doc_generation(
 
 
 @pytest.fixture(scope="session")
-def docker_compose_env(default_app_cfg: ConfigDict) -> Iterator[pytest.MonkeyPatch]:
+def docker_compose_env(default_app_cfg: AppConfigDict) -> Iterator[pytest.MonkeyPatch]:
     postgres_cfg = default_app_cfg["db"]["postgres"]
     redis_cfg = default_app_cfg["resource_manager"]["redis"]
     # docker-compose reads these environs
@@ -124,7 +119,7 @@ def docker_compose_file(docker_compose_env: pytest.MonkeyPatch) -> str:
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
+def app_cfg(default_app_cfg: AppConfigDict, unused_tcp_port_factory) -> AppConfigDict:
     """
     NOTE: SHOULD be overriden in any test module to configure the app accordingly
     """
@@ -140,8 +135,8 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    app_cfg: ConfigDict,
-    monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
+    app_cfg: AppConfigDict,
+    monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], dict[str, str]],
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
@@ -196,7 +191,7 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
-    app_cfg: ConfigDict,
+    app_cfg: AppConfigDict,
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     # tools
@@ -396,33 +391,14 @@ def asyncpg_storage_system_mock(mocker):
     )
 
 
-_LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH: Final[list[str]] = [
-    "director_v2.api",
-    "director_v2._core_dynamic_services",
-    "dynamic_scheduler.api",
-]
-
-
 @pytest.fixture
-async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
+async def mocked_dynamic_services_interface(
+    mocker: MockerFixture,
+) -> dict[str, MagicMock]:
     mock = {}
 
-    #
-    # NOTE: depending on the test, function might have to be patched
-    #  via the director_v2_api or director_v2_core_dynamic_services modules
-    #
-    for mod_name in _LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH:
-        name = f"{mod_name}.list_dynamic_services"
-        mock[name] = mocker.patch(
-            f"simcore_service_webserver.{name}",
-            autospec=True,
-            return_value=[],
-        )
-    # add here redirects from director-v2 via dynamic-scheduler
-    # NOTE: once all above are moved to dynamic-scheduler
-    # this fixture needs to be renamed to mocked_dynamic_scheduler
-
     for func_name in (
+        "list_dynamic_services",
         "get_dynamic_service",
         "run_dynamic_service",
         "stop_dynamic_service",
@@ -444,7 +420,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
 
 @pytest.fixture
 def create_dynamic_service_mock(
-    client: TestClient, mocked_director_v2_api: dict, faker: Faker
+    client: TestClient, mocked_dynamic_services_interface: dict, faker: Faker
 ) -> Callable[..., Awaitable[DynamicServiceGet]]:
     services = []
 
@@ -469,17 +445,16 @@ def create_dynamic_service_mock(
 
         services.append(running_service)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        for module_name in _LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH:
-            mocked_director_v2_api[
-                f"{module_name}.list_dynamic_services"
-            ].return_value = services
+        mocked_dynamic_services_interface[
+            "dynamic_scheduler.api.list_dynamic_services"
+        ].return_value = services
 
         return running_service
 
     return _create
 
 
-def _is_postgres_responsive(url):
+def _is_postgres_responsive(url: str):
     """Check if something responds to url"""
     try:
         engine = sa.create_engine(url)
@@ -491,7 +466,9 @@ def _is_postgres_responsive(url):
 
 
 @pytest.fixture(scope="session")
-def postgres_dsn(docker_services, docker_ip, default_app_cfg: dict) -> dict:
+def postgres_dsn(
+    docker_services: Services, docker_ip: str | Any, default_app_cfg: dict
+) -> dict:
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
     cfg["host"] = docker_ip
     cfg["port"] = docker_services.port_for("postgres", 5432)
@@ -499,7 +476,7 @@ def postgres_dsn(docker_services, docker_ip, default_app_cfg: dict) -> dict:
 
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, postgres_dsn):
+def postgres_service(docker_services: Services, postgres_dsn: dict) -> str:
     url = DSN.format(**postgres_dsn)
 
     # Wait until service is responsive.
@@ -612,97 +589,6 @@ async def redis_locks_client(
 # Moved to packages/pytest-simcore/src/pytest_simcore/websocket_client.py
 
 
-# USER GROUP FIXTURES -------------------------------------------------------
-
-
-@pytest.fixture
-async def primary_group(
-    client: TestClient,
-    logged_user: UserInfoDict,
-) -> dict[str, Any]:
-    assert client.app
-    primary_group, _, _ = await list_user_groups_with_read_access(
-        client.app, logged_user["id"]
-    )
-    return primary_group
-
-
-@pytest.fixture
-async def standard_groups(
-    client: TestClient,
-    logged_user: UserInfoDict,
-) -> AsyncIterator[list[dict[str, Any]]]:
-    assert client.app
-    sparc_group = {
-        "gid": "5",  # this will be replaced
-        "label": "SPARC",
-        "description": "Stimulating Peripheral Activity to Relieve Conditions",
-        "thumbnail": "https://commonfund.nih.gov/sites/default/files/sparc-image-homepage500px.png",
-        "inclusionRules": {"email": r"@(sparc)+\.(io|com)$"},
-    }
-    team_black_group = {
-        "gid": "5",  # this will be replaced
-        "label": "team Black",
-        "description": "THE incredible black team",
-        "thumbnail": None,
-        "inclusionRules": {"email": r"@(black)+\.(io|com)$"},
-    }
-
-    # create a separate account to own standard groups
-    async with NewUser(
-        {"name": f"{logged_user['name']}_groups_owner", "role": "USER"}, client.app
-    ) as owner_user:
-        # creates two groups
-        sparc_group = await create_user_group(
-            app=client.app,
-            user_id=owner_user["id"],
-            new_group=sparc_group,
-        )
-        team_black_group = await create_user_group(
-            app=client.app,
-            user_id=owner_user["id"],
-            new_group=team_black_group,
-        )
-
-        # adds logged_user  to sparc group
-        await add_user_in_group(
-            app=client.app,
-            user_id=owner_user["id"],
-            gid=sparc_group["gid"],
-            new_user_id=logged_user["id"],
-        )
-
-        # adds logged_user  to team-black group
-        await add_user_in_group(
-            app=client.app,
-            user_id=owner_user["id"],
-            gid=team_black_group["gid"],
-            new_user_email=logged_user["email"],
-        )
-
-        _, std_groups, _ = await list_user_groups_with_read_access(
-            client.app, logged_user["id"]
-        )
-
-        yield std_groups
-
-        # clean groups
-        await delete_user_group(client.app, owner_user["id"], sparc_group["gid"])
-        await delete_user_group(client.app, owner_user["id"], team_black_group["gid"])
-
-
-@pytest.fixture
-async def all_group(
-    client: TestClient,
-    logged_user: UserInfoDict,
-) -> dict[str, str]:
-    assert client.app
-    _, _, all_group = await list_user_groups_with_read_access(
-        client.app, logged_user["id"]
-    )
-    return all_group
-
-
 @pytest.fixture
 def mock_dynamic_scheduler_rabbitmq(mocker: MockerFixture) -> None:
     mocker.patch(
@@ -765,6 +651,7 @@ async def with_permitted_override_services_specifications(
             .where(groups_extra_properties.c.group_id == 1)
             .values(override_services_specifications=True)
         )
+
     yield
 
     async with aiopg_engine.acquire() as conn:

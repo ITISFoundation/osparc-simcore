@@ -1,5 +1,8 @@
 from contextlib import suppress
+from typing import Annotated, Self, TypeVar
 
+from common_library.basic_types import DEFAULT_FACTORY
+from common_library.dict_tools import remap_keys
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -11,11 +14,24 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic.config import JsonDict
 
 from ..emails import LowerCaseEmailStr
-from ..users import UserID
+from ..groups import (
+    EVERYONE_GROUP_ID,
+    AccessRightsDict,
+    Group,
+    GroupID,
+    GroupMember,
+    GroupsByTypeTuple,
+    StandardGroupCreate,
+    StandardGroupUpdate,
+)
+from ..users import UserID, UserNameID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
-from ._base import InputSchema, OutputSchema
+from ._base import InputSchema, OutputSchema, OutputSchemaWithoutCamelCase
+
+S = TypeVar("S", bound=BaseModel)
 
 
 class GroupAccessRights(BaseModel):
@@ -26,6 +42,7 @@ class GroupAccessRights(BaseModel):
     read: bool
     write: bool
     delete: bool
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
@@ -38,52 +55,86 @@ class GroupAccessRights(BaseModel):
 
 
 class GroupGet(OutputSchema):
-    gid: int = Field(..., description="the group ID")
+    gid: GroupID = Field(..., description="the group ID")
     label: str = Field(..., description="the group name")
     description: str = Field(..., description="the group description")
     thumbnail: AnyUrl | None = Field(
         default=None, description="url to the group thumbnail"
     )
     access_rights: GroupAccessRights = Field(..., alias="accessRights")
-    inclusion_rules: dict[str, str] = Field(
-        default_factory=dict,
-        description="Maps user's column and regular expression",
-        alias="inclusionRules",
-    )
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "gid": "27",
-                    "label": "A user",
-                    "description": "A very special user",
-                    "thumbnail": "https://placekitten.com/10/10",
-                    "accessRights": {"read": True, "write": False, "delete": False},
-                },
-                {
-                    "gid": 1,
-                    "label": "ITIS Foundation",
-                    "description": "The Foundation for Research on Information Technologies in Society",
-                    "accessRights": {"read": True, "write": False, "delete": False},
-                },
-                {
-                    "gid": "0",
-                    "label": "All",
-                    "description": "Open to all users",
-                    "accessRights": {"read": True, "write": True, "delete": True},
-                },
-                {
-                    "gid": 5,
-                    "label": "SPARCi",
-                    "description": "Stimulating Peripheral Activity to Relieve Conditions",
-                    "thumbnail": "https://placekitten.com/15/15",
-                    "inclusionRules": {"email": r"@(sparc)+\.(io|com|us)$"},
-                    "accessRights": {"read": True, "write": True, "delete": True},
-                },
-            ]
-        }
-    )
+    inclusion_rules: Annotated[
+        dict[str, str],
+        Field(
+            default_factory=dict,
+            alias="inclusionRules",
+            deprecated=True,
+        ),
+    ] = DEFAULT_FACTORY
+
+    @classmethod
+    def from_model(cls, group: Group, access_rights: AccessRightsDict) -> Self:
+        # Adapts these domain models into this schema
+        return cls.model_validate(
+            {
+                **remap_keys(
+                    group.model_dump(
+                        include={
+                            "gid",
+                            "name",
+                            "description",
+                            "thumbnail",
+                        },
+                        exclude={
+                            "inclusion_rules",  # deprecated
+                        },
+                        exclude_unset=True,
+                        by_alias=False,
+                    ),
+                    rename={
+                        "name": "label",
+                    },
+                ),
+                "access_rights": access_rights,
+            }
+        )
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "gid": "27",
+                        "label": "A user",
+                        "description": "A very special user",
+                        "thumbnail": "https://placekitten.com/10/10",
+                        "accessRights": {"read": True, "write": False, "delete": False},
+                    },
+                    {
+                        "gid": 1,
+                        "label": "ITIS Foundation",
+                        "description": "The Foundation for Research on Information Technologies in Society",
+                        "accessRights": {"read": True, "write": False, "delete": False},
+                    },
+                    {
+                        "gid": "1",
+                        "label": "All",
+                        "description": "Open to all users",
+                        "accessRights": {"read": True, "write": True, "delete": True},
+                    },
+                    {
+                        "gid": 5,
+                        "label": "SPARCi",
+                        "description": "Stimulating Peripheral Activity to Relieve Conditions",
+                        "thumbnail": "https://placekitten.com/15/15",
+                        "accessRights": {"read": True, "write": True, "delete": True},
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
     @field_validator("thumbnail", mode="before")
     @classmethod
@@ -100,11 +151,35 @@ class GroupCreate(InputSchema):
     description: str
     thumbnail: AnyUrl | None = None
 
+    def to_model(self) -> StandardGroupCreate:
+        data = remap_keys(
+            self.model_dump(
+                mode="json",
+                # NOTE: intentionally inclusion_rules are not exposed to the REST api
+                include={"label", "description", "thumbnail"},
+                exclude_unset=True,
+            ),
+            rename={"label": "name"},
+        )
+        return StandardGroupCreate(**data)
+
 
 class GroupUpdate(InputSchema):
     label: str | None = None
     description: str | None = None
     thumbnail: AnyUrl | None = None
+
+    def to_model(self) -> StandardGroupUpdate:
+        data = remap_keys(
+            self.model_dump(
+                mode="json",
+                # NOTE: intentionally inclusion_rules are not exposed to the REST api
+                include={"label", "description", "thumbnail"},
+                exclude_unset=True,
+            ),
+            rename={"label": "name"},
+        )
+        return StandardGroupUpdate(**data)
 
 
 class MyGroupsGet(OutputSchema):
@@ -145,7 +220,7 @@ class MyGroupsGet(OutputSchema):
                     },
                 ],
                 "all": {
-                    "gid": "0",
+                    "gid": EVERYONE_GROUP_ID,
                     "label": "All",
                     "description": "Open to all users",
                     "accessRights": {"read": True, "write": False, "delete": False},
@@ -154,22 +229,66 @@ class MyGroupsGet(OutputSchema):
         }
     )
 
+    @classmethod
+    def from_model(
+        cls,
+        groups_by_type: GroupsByTypeTuple,
+        my_product_group: tuple[Group, AccessRightsDict] | None,
+    ) -> Self:
+        assert groups_by_type.primary  # nosec
+        assert groups_by_type.everyone  # nosec
 
-class GroupUserGet(BaseModel):
-    id: str | None = Field(None, description="the user id", coerce_numbers_to_str=True)
-    login: LowerCaseEmailStr | None = Field(None, description="the user login email")
-    first_name: str | None = Field(None, description="the user first name")
-    last_name: str | None = Field(None, description="the user last name")
-    gravatar_id: str | None = Field(None, description="the user gravatar id hash")
-    gid: str | None = Field(
-        None, description="the user primary gid", coerce_numbers_to_str=True
-    )
-    access_rights: GroupAccessRights = Field(..., alias="accessRights")
+        return cls(
+            me=GroupGet.from_model(*groups_by_type.primary),
+            organizations=[GroupGet.from_model(*gi) for gi in groups_by_type.standard],
+            all=GroupGet.from_model(*groups_by_type.everyone),
+            product=GroupGet.from_model(*my_product_group)
+            if my_product_group
+            else None,
+        )
+
+
+class GroupUserGet(OutputSchemaWithoutCamelCase):
+
+    # Identifiers
+    id: Annotated[UserID | None, Field(description="the user's id")] = None
+    user_name: Annotated[UserNameID, Field(alias="userName")]
+    gid: Annotated[
+        GroupID | None,
+        Field(description="the user primary gid"),
+    ] = None
+
+    # Private Profile
+    login: Annotated[
+        LowerCaseEmailStr | None,
+        Field(description="the user's email, if privacy settings allows"),
+    ] = None
+    first_name: Annotated[
+        str | None, Field(description="If privacy settings allows")
+    ] = None
+    last_name: Annotated[
+        str | None, Field(description="If privacy settings allows")
+    ] = None
+    gravatar_id: Annotated[
+        str | None, Field(description="the user gravatar id hash", deprecated=True)
+    ] = None
+
+    # Access Rights
+    access_rights: Annotated[
+        GroupAccessRights | None,
+        Field(
+            alias="accessRights",
+            description="If group is standard, these are these are the access rights of the user to it."
+            "None if primary group.",
+        ),
+    ] = None
 
     model_config = ConfigDict(
+        populate_by_name=True,
         json_schema_extra={
             "example": {
                 "id": "1",
+                "userName": "mrmith",
                 "login": "mr.smith@matrix.com",
                 "first_name": "Mr",
                 "last_name": "Smith",
@@ -180,9 +299,39 @@ class GroupUserGet(BaseModel):
                     "write": False,
                     "delete": False,
                 },
-            }
-        }
+            },
+            "examples": [
+                # unique member on a primary group with two different primacy settings
+                {
+                    "id": "16",
+                    "userName": "mrprivate",
+                    "gid": "55",
+                },
+                {
+                    "id": "56",
+                    "userName": "mrpublic",
+                    "login": "mrpublic@email.me",
+                    "first_name": "Mr",
+                    "last_name": "Public",
+                    "gid": "42",
+                },
+            ],
+        },
     )
+
+    @classmethod
+    def from_model(cls, user: GroupMember) -> Self:
+        return cls.model_validate(
+            {
+                "id": user.id,
+                "user_name": user.name,
+                "login": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "gid": user.primary_gid,
+                "access_rights": user.access_rights,
+            }
+        )
 
 
 class GroupUserAdd(InputSchema):
@@ -191,14 +340,25 @@ class GroupUserAdd(InputSchema):
     """
 
     uid: UserID | None = None
-    email: LowerCaseEmailStr | None = None
+    user_name: Annotated[UserNameID | None, Field(alias="userName")] = None
+    email: Annotated[
+        LowerCaseEmailStr | None,
+        Field(
+            description="Accessible only if the user has opted to share their email in privacy settings"
+        ),
+    ] = None
 
     _check_uid_or_email = model_validator(mode="after")(
-        create__check_only_one_is_set__root_validator(["uid", "email"])
+        create__check_only_one_is_set__root_validator(["uid", "email", "user_name"])
     )
 
     model_config = ConfigDict(
-        json_schema_extra={"examples": [{"uid": 42}, {"email": "foo@email.com"}]}
+        json_schema_extra={
+            "examples": [
+                {"uid": 42},
+                {"email": "foo@email.com"},
+            ]
+        }
     )
 
 

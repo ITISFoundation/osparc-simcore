@@ -57,6 +57,7 @@ async def test_projects_groups_full_workflow(
     mock_project_uses_available_services,
     mock_catalog_api_get_services_for_user_in_product_2,
 ):
+    assert client.app
     # check the default project permissions
     url = client.app.router["list_project_groups"].url_for(
         project_id=f"{user_project['uuid']}"
@@ -65,9 +66,9 @@ async def test_projects_groups_full_workflow(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["gid"] == logged_user["primary_gid"]
-    assert data[0]["read"] == True
-    assert data[0]["write"] == True
-    assert data[0]["delete"] == True
+    assert data[0]["read"] is True
+    assert data[0]["write"] is True
+    assert data[0]["delete"] is True
 
     # Get project endpoint and check permissions
     url = client.app.router["get_project"].url_for(

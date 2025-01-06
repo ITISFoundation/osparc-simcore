@@ -6,16 +6,15 @@
 
 import logging
 from datetime import datetime
-from typing import Final
 
 from aiohttp import web
+from common_library.exclude import UnSet, as_dict_exclude_unset
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
 from simcore_postgres_database.utils_repos import transaction_context
-from simcore_service_webserver.utils import UnSet, as_dict_exclude_unset
 from sqlalchemy import func, literal_column
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
@@ -24,7 +23,6 @@ from ..db.plugin import get_asyncpg_engine, get_database_engine
 
 _logger = logging.getLogger(__name__)
 
-_unset: Final = UnSet()
 
 ### Models
 
@@ -126,12 +124,12 @@ async def update_project_to_folder(
     *,
     folders_id_or_ids: FolderID | set[FolderID],
     # updatable columns
-    user_id: UserID | None | UnSet = _unset,
+    user_id: UserID | None | UnSet = UnSet.VALUE,
 ) -> None:
     """
     Batch/single patch of project to folders
     """
-    # NOTE: exclude unset can also be done using a pydantic model and dict(exclude_unset=True)
+    # NOTE: exclude unset can also be done using a pydantic model and model_dump(exclude_unset=True)
     updated = as_dict_exclude_unset(
         user_id=user_id,
     )

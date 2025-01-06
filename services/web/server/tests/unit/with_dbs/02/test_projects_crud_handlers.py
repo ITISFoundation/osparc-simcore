@@ -4,7 +4,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import re
 import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
 from http import HTTPStatus
@@ -16,9 +15,13 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
+from models_library.api_schemas_directorv2.dynamic_services import (
+    GetProjectInactivityResponse,
+)
 from models_library.products import ProductName
 from models_library.projects_state import ProjectState
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -33,10 +36,8 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.groups.api import (
-    auto_add_user_to_product_group,
-    get_product_group_for_user,
-)
+from simcore_service_webserver.groups._groups_service import get_product_group_for_user
+from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.groups.exceptions import GroupNotFoundError
 from simcore_service_webserver.products.api import get_product
 from simcore_service_webserver.projects._permalink_api import ProjectPermalink
@@ -294,9 +295,14 @@ async def logged_user_registed_in_two_products(
     # registered to osparc
     osparc_product = get_product(client.app, "osparc")
     assert osparc_product.group_id
-    assert await get_product_group_for_user(
-        client.app, user_id=logged_user["id"], product_gid=osparc_product.group_id
+
+    group, _ = await get_product_group_for_user(
+        # should not raise
+        client.app,
+        user_id=logged_user["id"],
+        product_gid=osparc_product.group_id,
     )
+    assert group.gid == osparc_product.group_id
 
     # not registered to s4l
     s4l_product = get_product(client.app, s4l_products_db_name)
@@ -312,9 +318,13 @@ async def logged_user_registed_in_two_products(
         client.app, user_id=logged_user["id"], product_name=s4l_products_db_name
     )
 
-    assert await get_product_group_for_user(
-        client.app, user_id=logged_user["id"], product_gid=s4l_product.group_id
+    group, _ = await get_product_group_for_user(
+        # should not raise
+        client.app,
+        user_id=logged_user["id"],
+        product_gid=s4l_product.group_id,
     )
+    assert group.gid == s4l_product.group_id
 
 
 @pytest.mark.parametrize(
@@ -405,6 +415,7 @@ async def test_get_project(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group,
@@ -420,6 +431,7 @@ async def test_new_project(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -446,6 +458,7 @@ async def test_new_project_from_template(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_other_study(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -475,6 +488,7 @@ async def test_new_project_from_other_study(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template_with_body(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -529,6 +543,7 @@ async def test_new_project_from_template_with_body(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_template_from_project(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],
@@ -644,18 +659,11 @@ async def test_new_template_from_project(
 
 
 @pytest.fixture
-def mock_director_v2_inactivity(
-    aioresponses_mocker: aioresponses, is_inactive: bool
-) -> None:
-    aioresponses_mocker.clear()
-    get_services_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/inactivity.*$"
-    )
-    aioresponses_mocker.get(
-        get_services_pattern,
-        status=status.HTTP_200_OK,
-        repeat=True,
-        payload={"is_inactive": is_inactive},
+def mock_dynamic_scheduler_inactivity(mocker: MockerFixture, is_inactive: bool) -> None:
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.get_project_inactivity",
+        autospec=True,
+        return_value=GetProjectInactivityResponse(is_inactive=is_inactive),
     )
 
 
@@ -668,7 +676,7 @@ def mock_director_v2_inactivity(
 )
 @pytest.mark.parametrize("is_inactive", [True, False])
 async def test_get_project_inactivity(
-    mock_director_v2_inactivity: None,
+    mock_dynamic_scheduler_inactivity: None,
     logged_user: UserInfoDict,
     client: TestClient,
     faker: Faker,

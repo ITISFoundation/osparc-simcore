@@ -323,7 +323,7 @@ def test_sort_empty_drained_nodes(
 
 
 def test_sort_drained_nodes(
-    mock_machines_buffer: int,
+    with_instances_machines_hot_buffer: EnvVarsDict,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     random_fake_available_instances: list[EC2InstanceType],
@@ -332,7 +332,9 @@ def test_sort_drained_nodes(
 ):
     machine_buffer_type = get_machine_buffer_type(random_fake_available_instances)
     _NUM_DRAINED_NODES = 20
-    _NUM_NODE_WITH_TYPE_BUFFER = 3 * mock_machines_buffer
+    _NUM_NODE_WITH_TYPE_BUFFER = (
+        3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    )
     _NUM_NODES_TERMINATING = 13
     fake_drained_nodes = []
     for _ in range(_NUM_DRAINED_NODES):
@@ -388,10 +390,6 @@ def test_sort_drained_nodes(
         app_settings, fake_drained_nodes, random_fake_available_instances
     )
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    assert (
-        mock_machines_buffer
-        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-    )
     assert len(sorted_drained_nodes) == (
         _NUM_DRAINED_NODES
         + _NUM_NODE_WITH_TYPE_BUFFER

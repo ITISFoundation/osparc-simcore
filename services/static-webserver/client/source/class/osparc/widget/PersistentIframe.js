@@ -27,27 +27,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
   construct: function(source, el) {
     this.base(arguments, source);
 
-    this.themeSwitchHandler = msg => {
-      this.postThemeSwitch(msg.getData());
-    };
-
-    this.postThemeSwitch = theme => {
-      const iframe = this._getIframeElement();
-      if (this._getIframeElement()) {
-        const iframeDomEl = iframe.getDomElement();
-        const iframeSource = iframe.getSource();
-        if (iframeDomEl && iframeSource) {
-          const msg = "osparc;theme=" + theme;
-          try {
-            iframeDomEl.contentWindow.postMessage(msg, iframeSource);
-          } catch (err) {
-            console.log(`Failed posting message ${msg} to iframe ${iframeSource}\n${err.message}`);
-          }
-        }
-      }
-    };
-
-    qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler);
+    this.__attachInterframeMessageHandlers();
   },
 
   statics: {
@@ -263,6 +243,83 @@ qx.Class.define("osparc.widget.PersistentIframe", {
 
     _applySource: function(newValue) {
       this.__iframe.setSource(newValue);
+    },
+
+    __attachInterframeMessageHandlers: function() {
+      this.__attachTriggerers();
+      this.__attachListeners();
+    },
+
+    __attachTriggerers: function() {
+      this.postThemeSwitch = theme => {
+        const msg = "osparc;theme=" + theme;
+        this.sendMessageToIframe(msg);
+      };
+
+      this.themeSwitchHandler = msg => {
+        this.postThemeSwitch(msg.getData());
+      };
+      qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler);
+    },
+
+    sendMessageToIframe: function(msg) {
+      const iframe = this._getIframeElement();
+      if (iframe) {
+        const iframeDomEl = iframe.getDomElement();
+        const iframeSource = iframe.getSource();
+        if (iframeDomEl && iframeSource) {
+          try {
+            iframeDomEl.contentWindow.postMessage(msg, iframeSource);
+          } catch (err) {
+            console.log(`Failed posting message ${msg} to iframe ${iframeSource}\n${err.message}`);
+          }
+        }
+      }
+    },
+
+    __attachListeners: function() {
+      this.__iframe.addListener("load", () => {
+        const iframe = this._getIframeElement();
+        if (iframe) {
+          const iframeDomEl = iframe.getDomElement();
+          if (iframeDomEl) {
+            window.addEventListener("message", message => {
+              const data = message.data;
+              if (data) {
+                const origin = new URL(message.origin).hostname; // nodeId.services.deployment
+                const nodeId = origin.split(".")[0];
+                this.__handleIframeMessage(data, nodeId);
+              }
+            });
+          }
+        }
+      }, this);
+    },
+
+    __handleIframeMessage: function(data, nodeId) {
+      if (data["type"] && data["message"]) {
+        switch (data["type"]) {
+          case "theme": {
+            // switch theme driven by the iframe
+            const message = data["message"];
+            if (message.includes("osparc;theme=")) {
+              const themeName = message.replace("osparc;theme=", "");
+              const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
+              const themeFound = validThemes.find(theme => theme.basename === themeName);
+              const themeManager = qx.theme.manager.Meta.getInstance();
+              if (themeFound !== themeManager.getTheme()) {
+                themeManager.setTheme(themeFound);
+              }
+            }
+            break;
+          }
+          case "openMarket": {
+            const category = data["message"] && data["message"]["category"];
+            osparc.vipMarket.MarketWindow.openWindow(nodeId, category);
+            break;
+          }
+        }
+      }
     },
 
     // override

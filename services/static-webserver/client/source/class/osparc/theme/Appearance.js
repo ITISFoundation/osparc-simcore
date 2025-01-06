@@ -19,6 +19,39 @@ qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.common.Appearance,
 
   appearances: {
+    "strong-ui": {
+      style: () => {
+        return {
+          textColor: "default-button-text",
+          backgroundColor: "product-color",
+        };
+      }
+    },
+
+    "dragdrop-no-cursor": {
+      style: () => {
+        return {
+          source: "",
+        }
+      }
+    },
+
+    "dragdrop-own-cursor": {
+      style: states => {
+        let icon = "";
+        if (states.move) {
+          icon = "@FontAwesome5Solid/check/14";
+        } else {
+          icon = "@FontAwesome5Solid/times/14";
+        }
+        return {
+          source: icon,
+          position: "right-top",
+          offset: [12, 0, 0, 12],
+        }
+      }
+    },
+
     "material-button-invalid": {},
     "pb-list": {
       include: "list",
@@ -537,13 +570,12 @@ qx.Theme.define("osparc.theme.Appearance", {
     "widget/reset-button": {},
 
     "form-button": {
+      include: "strong-ui",
       style: function(states) {
         const style = {
           decorator: "form-button",
           cursor: "pointer",
-          textColor: "default-button-text",
           padding: 5,
-          backgroundColor: "default-button"
         };
         if (states.hovered) {
           style.decorator = "form-button-hovered";
@@ -929,9 +961,17 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
-    // override in product
     "strong-button": {
       include: "form-button"
+    },
+
+    "warning-button": {
+      include: "form-button",
+      style: state => ({
+        decorator: state.hovered || state.focused ? "form-button-warning-hover" : "form-button-warning",
+        backgroundColor: state.hovered || state.focused ? "default-button-hover-background" : "warning",
+        textColor: state.hovered || state.focused ? "default-button-text" : "black",
+      })
     },
 
     "danger-button": {

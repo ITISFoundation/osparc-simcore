@@ -28,14 +28,28 @@ qx.Class.define("osparc.data.model.User", {
   construct: function(userData) {
     this.base(arguments);
 
-    const label = this.self().namesToLabel(userData["first_name"], userData["last_name"]) || userData["login"];
+    let description = "";
+    if (userData["first_name"]) {
+      description = userData["first_name"];
+      if (userData["last_name"]) {
+        description += " " + userData["last_name"];
+      }
+      description += " - ";
+    }
+    if (userData["login"]) {
+      description += userData["login"];
+    }
+    const thumbnail = osparc.utils.Avatar.emailToThumbnail(userData["login"], userData["userName"]);
     this.set({
-      userId: userData.id,
-      groupId: userData.gid,
-      label: label,
-      login: userData.login,
-      thumbnail: this.self().emailToThumbnail(userData.login),
-      accessRights: userData.accessRights,
+      userId: parseInt(userData["id"]),
+      groupId: parseInt(userData["gid"]),
+      username: userData["userName"],
+      firstName: userData["first_name"],
+      lastName: userData["last_name"],
+      email: userData["login"],
+      label: userData["userName"],
+      description,
+      thumbnail,
     });
   },
 
@@ -61,18 +75,39 @@ qx.Class.define("osparc.data.model.User", {
       event: "changeLabel",
     },
 
-    login: {
+    description: {
       check: "String",
       nullable: true,
       init: null,
-      event: "changeLogin",
+      event: "changeDescription",
     },
 
-    accessRights: {
-      check: "Object",
+    username: {
+      check: "String",
       nullable: false,
       init: null,
-      event: "changeAccessRights",
+      event: "changeUsername",
+    },
+
+    firstName: {
+      check: "String",
+      nullable: true,
+      init: "",
+      event: "changeFirstName"
+    },
+
+    lastName: {
+      check: "String",
+      nullable: true,
+      init: "",
+      event: "changeLastName"
+    },
+
+    email: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeEmail",
     },
 
     thumbnail: {
@@ -82,21 +117,4 @@ qx.Class.define("osparc.data.model.User", {
       event: "changeThumbnail",
     },
   },
-
-  statics: {
-    namesToLabel: function(firstName, lastName) {
-      let label = "";
-      if (firstName) {
-        label = osparc.utils.Utils.firstsUp(firstName);
-        if (lastName) {
-          label += " " + osparc.utils.Utils.firstsUp(lastName);
-        }
-      }
-      return label;
-    },
-
-    emailToThumbnail: function(email) {
-      return osparc.utils.Avatar.getUrl(email, 32)
-    },
-  }
 });

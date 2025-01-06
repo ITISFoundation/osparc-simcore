@@ -5,6 +5,7 @@
 import pytest
 from faker import Faker
 from models_library.basic_types import BootModeEnum
+from models_library.docker import DockerNodeID
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -25,8 +26,8 @@ def swarm_stack_name() -> str:
 
 
 @pytest.fixture
-def docker_node_id() -> str:
-    return "test-node-id"
+def docker_node_id() -> DockerNodeID:
+    return TypeAdapter(DockerNodeID).validate_python("testnodeid")
 
 
 @pytest.fixture
@@ -40,7 +41,7 @@ def mock_environment(
     mocked_s3_server_url: HttpUrl,
     bucket: str,
     swarm_stack_name: str,
-    docker_node_id: str,
+    docker_node_id: DockerNodeID,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,

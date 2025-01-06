@@ -16,11 +16,11 @@ import aiopg.sa
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from common_library.dict_tools import copy_from_dict_ex
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from psycopg2.errors import UniqueViolation
-from pytest_simcore.helpers.dict_tools import copy_from_dict_ex
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in

@@ -21,6 +21,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from models_library.groups import EVERYONE_GROUP_ID, StandardGroupCreate
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
@@ -34,12 +35,10 @@ from simcore_service_webserver.db.models import projects, users
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import _core as gc_core
+from simcore_service_webserver.garbage_collector._tasks_core import _GC_TASK_NAME
 from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
-from simcore_service_webserver.groups.api import (
-    add_user_in_group,
-    create_user_group,
-    list_user_groups_with_read_access,
-)
+from simcore_service_webserver.groups._groups_service import create_standard_group
+from simcore_service_webserver.groups.api import add_user_in_group
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
@@ -56,6 +55,7 @@ from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.plugin import setup_users
 from sqlalchemy import func, select
+from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 log = logging.getLogger(__name__)
 
@@ -101,7 +101,9 @@ def osparc_product_name() -> str:
 
 
 @pytest.fixture
-async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
+async def director_v2_service_mock(
+    mocker: MockerFixture,
+) -> AsyncIterable[aioresponses]:
     """uses aioresponses to mock all calls of an aiohttpclient
     WARNING: any request done through the client will go through aioresponses. It is
     unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
@@ -112,12 +114,13 @@ async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
         r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$"
     )
     delete_computation_pattern = get_computation_pattern
-    projects_networks_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/-/networks$"
+
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
+        autospec=True,
+        return_value={},
     )
-    dynamic_services_list_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services?.*"
-    )
+
     # NOTE: GitHK I have to copy paste that fixture for some unclear reason for now.
     # I think this is due to some conflict between these non-pytest-simcore fixtures and the loop fixture being defined at different locations?? not sure..
     # anyway I think this should disappear once the garbage collector moves to its own micro-service
@@ -129,8 +132,6 @@ async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
             repeat=True,
         )
         mock.delete(delete_computation_pattern, status=204, repeat=True)
-        mock.patch(projects_networks_pattern, status=204, repeat=True)
-        mock.get(dynamic_services_list_pattern, status=200, repeat=True, payload=[])
         yield mock
 
 
@@ -255,13 +256,12 @@ async def get_template_project(
 ):
     """returns a tempalte shared with all"""
     assert client.app
-    _, _, all_group = await list_user_groups_with_read_access(client.app, user["id"])
 
     # the information comes from a file, randomize it
     project_data["name"] = f"Fake template {uuid4()}"
     project_data["uuid"] = f"{uuid4()}"
     project_data["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": False, "delete": False}
+        str(EVERYONE_GROUP_ID): {"read": True, "write": False, "delete": False}
     }
     if access_rights is not None:
         project_data["accessRights"].update(access_rights)
@@ -275,22 +275,33 @@ async def get_template_project(
     )
 
 
-async def get_group(client: TestClient, user):
+async def get_group(client: TestClient, user: UserInfoDict):
     """Creates a group for a given user"""
-    return await create_user_group(
+    assert client.app
+
+    group, _ = await create_standard_group(
         app=client.app,
         user_id=user["id"],
-        new_group={"label": uuid4(), "description": uuid4(), "thumbnail": None},
+        create=StandardGroupCreate.model_validate(
+            {
+                "name": f"name-{uuid4()}",
+                "description": f"desc-{uuid4()}",
+                "thumbnail": None,
+            }
+        ),
     )
+    return group.model_dump(mode="json")
 
 
 async def invite_user_to_group(client: TestClient, owner, invitee, group):
     """Invite a user to a group on which the owner has writes over"""
+    assert client.app
+
     await add_user_in_group(
         client.app,
         owner["id"],
         group["gid"],
-        new_user_id=invitee["id"],
+        new_by_user_id=invitee["id"],
     )
 
 
@@ -343,10 +354,18 @@ async def disconnect_user_from_socketio(
     socket_registry = get_registry(client.app)
     await sio.disconnect()
     assert not sio.sid
-    await asyncio.sleep(0)  # just to ensure there is a context switch
-    assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-    assert sid not in await socket_registry.find_resources(resource_key, "socket_id")
-    assert not await socket_registry.find_resources(resource_key, "socket_id")
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(10),
+        reraise=True,
+    ):
+        with attempt:
+            assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
+            assert sid not in await socket_registry.find_resources(
+                resource_key, "socket_id"
+            )
+            assert not await socket_registry.find_resources(resource_key, "socket_id")
 
 
 async def assert_users_count(
@@ -613,7 +632,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     await assert_projects_count(aiopg_engine, 1)
     await assert_user_is_owner_of_project(aiopg_engine, u1, project)
 
-    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+    await asyncio.sleep(2 * WAIT_FOR_COMPLETE_GC_CYCLE)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
     await assert_user_not_in_db(aiopg_engine, u1)
@@ -997,6 +1016,12 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     USER "u1", "u2" and "u3" are manually marked as "GUEST";
     EXPECTED: the project and all the users are removed
     """
+
+    gc_task: asyncio.Task = next(
+        task for task in asyncio.all_tasks() if task.get_name() == _GC_TASK_NAME
+    )
+    assert not gc_task.done()
+
     u1 = await login_user(client)
     u2 = await login_user(client)
     u3 = await login_user(client)

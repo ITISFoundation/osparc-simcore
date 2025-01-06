@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -55,7 +55,7 @@ WorkersDict: TypeAlias = dict[AnyUrl, Worker]
 
 class Scheduler(BaseModel):
     status: str = Field(..., description="The running status of the scheduler")
-    workers: WorkersDict | None = Field(default_factory=dict)
+    workers: Annotated[WorkersDict | None, Field(default_factory=dict)]
 
     @field_validator("workers", mode="before")
     @classmethod

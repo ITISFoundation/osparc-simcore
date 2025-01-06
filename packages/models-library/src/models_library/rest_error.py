@@ -8,7 +8,7 @@ from .basic_types import IDStr, LogLevel
 
 
 class Log(BaseModel):
-    level: LogLevel | None = Field("INFO", description="log level")
+    level: Annotated[LogLevel | None, Field(description="log level")] = LogLevel.INFO
     message: str = Field(
         ...,
         description="log message. If logger is USER, then it MUST be human readable",

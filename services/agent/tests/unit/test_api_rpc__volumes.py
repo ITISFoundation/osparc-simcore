@@ -8,6 +8,7 @@ from uuid import uuid4
 import pytest
 import pytest_mock
 from fastapi import FastAPI
+from models_library.docker import DockerNodeID
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.agent import volumes
 
@@ -41,7 +42,7 @@ def mocked_remove_all_volumes(mocker: pytest_mock.MockerFixture) -> AsyncMock:
 async def test_backup_and_remove_volumes_for_all_services(
     rpc_client: RabbitMQRPCClient,
     swarm_stack_name: str,
-    docker_node_id: str,
+    docker_node_id: DockerNodeID,
     mocked_remove_all_volumes: AsyncMock,
 ):
     assert mocked_remove_all_volumes.call_count == 0

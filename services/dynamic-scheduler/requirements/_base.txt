@@ -110,7 +110,7 @@ fastapi==0.115.5
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   nicegui
-faststream==0.5.30
+faststream==0.5.31
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.5.0
     # via
@@ -231,6 +231,7 @@ opentelemetry-api==1.28.2
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -251,6 +252,7 @@ opentelemetry-instrumentation==0.49b2
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-asgi==0.49b2
@@ -261,7 +263,9 @@ opentelemetry-instrumentation-fastapi==0.49b2
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-httpx==0.49b2
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-opentelemetry-instrumentation-redis==0.49b2
+opentelemetry-instrumentation-logging==0.48b0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
+opentelemetry-instrumentation-redis==0.48b0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-requests==0.49b2
     # via -r requirements/../../../packages/service-library/requirements/_base.in

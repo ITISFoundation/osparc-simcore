@@ -17,6 +17,7 @@ from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import retry
+from yarl import URL
 
 from .background_task import periodic_task
 from .logging_utils import log_catch, log_context
@@ -94,7 +95,8 @@ class RedisClientSDK:
     async def setup(self) -> None:
         if not await self.ping():
             await self.shutdown()
-            raise CouldNotConnectToRedisError(dsn=self.redis_dsn)
+            url_safe: URL = URL(self.redis_dsn).with_password("???")
+            raise CouldNotConnectToRedisError(dsn=f"{url_safe}")
 
         self._health_check_task = asyncio.create_task(
             self._check_health(),

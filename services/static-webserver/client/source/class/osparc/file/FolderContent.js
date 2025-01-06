@@ -54,7 +54,7 @@ qx.Class.define("osparc.file.FolderContent", {
   events: {
     "selectionChanged": "qx.event.type.Data", // tap
     "multiSelectionChanged": "qx.event.type.Data", // tap
-    "itemSelected": "qx.event.type.Data", // dbltap
+    "openItemSelected": "qx.event.type.Data", // dbltap
     "requestDatasetFiles": "qx.event.type.Data",
   },
 
@@ -167,22 +167,23 @@ qx.Class.define("osparc.file.FolderContent", {
           if (data["lastModified"]) {
             toolTip += "<br>" + data["lastModified"];
           }
-          const item = this.self().getItemButton().set({
+          const gridItem = this.self().getItemButton().set({
             label: data["label"],
             icon: data["icon"],
             toolTipText: toolTip
           });
-          const icon = item.getChildControl("icon", true);
+          const icon = gridItem.getChildControl("icon", true);
           if (icon.getSource() === "@FontAwesome5Solid/circle-notch/12") {
             icon.setPadding(0);
             icon.setMarginRight(4);
             icon.getContentElement().addClass("rotate");
           }
           if (data["itemId"]) {
-            item.itemId = data["itemId"];
+            gridItem.itemId = data["itemId"];
           }
-          this.__attachListenersToItems(item, data["entry"]);
-          items.push(item);
+          gridItem.entry = data["entry"];
+          this.__attachListenersToGridItem(gridItem);
+          items.push(gridItem);
         });
       }
       return items;
@@ -222,7 +223,7 @@ qx.Class.define("osparc.file.FolderContent", {
       if (this.getMode() === "list") {
         const table = this.getChildControl("table");
         table.setData(entries);
-        this.__attachListenersTotable(table);
+        this.__attachListenersToTableItem(table);
       } else if (this.getMode() === "icons") {
         const iconsLayout = this.getChildControl("icons-layout");
         iconsLayout.removeAll();
@@ -239,31 +240,46 @@ qx.Class.define("osparc.file.FolderContent", {
       this.setSelection([this.getSelectables()[this.getMode() === "icons" ? 0 : 1]]);
     },
 
-    __itemTapped: function(item) {
+    __itemTapped: function(entry, buttonSelected) {
       if (this.isMultiSelect()) {
-        this.fireDataEvent("multiSelectionChanged", item);
+        this.fireDataEvent("multiSelectionChanged", entry);
+      } else if (buttonSelected === false) {
+        this.fireDataEvent("selectionChanged", null);
       } else {
-        this.fireDataEvent("selectionChanged", item);
+        this.fireDataEvent("selectionChanged", entry);
       }
     },
 
-    __itemDblTapped: function(item) {
-      this.fireDataEvent("itemSelected", item);
-      if (osparc.file.FilesTree.isDir(item)) {
-        this.setFolder(item);
-      }
+    __itemDblTapped: function(entry) {
+      this.fireDataEvent("openItemSelected", entry);
     },
 
-    __attachListenersToItems: function(btn, entry) {
-      btn.addListener("tap", () => {
-        this.__itemTapped(entry);
+    __attachListenersToGridItem: function(gridItem) {
+      gridItem.addListener("tap", () => {
+        if (this.isMultiSelect()) {
+          // pass all buttons that are selected
+          const selectedFiles = [];
+          const iconsLayout = this.getChildControl("icons-layout");
+          iconsLayout.getChildren().forEach(btn => {
+            if (osparc.file.FilesTree.isFile(btn.entry) && btn.getValue()) {
+              selectedFiles.push(btn.entry);
+            }
+          });
+          this.__itemTapped(selectedFiles, gridItem.getValue());
+        } else {
+          this.__itemTapped(gridItem.entry, gridItem.getValue());
+        }
+        // folders can't be selected
+        if (osparc.file.FilesTree.isDir(gridItem.entry)) {
+          gridItem.setValue(false);
+        }
       }, this);
-      btn.addListener("dbltap", () => {
-        this.__itemDblTapped(entry);
+      gridItem.addListener("dbltap", () => {
+        this.__itemDblTapped(gridItem.entry);
       }, this);
     },
 
-    __attachListenersTotable: function(table) {
+    __attachListenersToTableItem: function(table) {
       table.addListener("cellTap", e => {
         const selectedRow = e.getRow();
         const rowData = table.getTableModel().getRowData(selectedRow);

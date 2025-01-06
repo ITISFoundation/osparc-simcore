@@ -118,7 +118,7 @@ types-botocore==1.0.2
     # via -r requirements/_test.in
 types-s3transfer==0.10.2
     # via boto3-stubs
-typing-extensions==4.10.0
+typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   boto3-stubs

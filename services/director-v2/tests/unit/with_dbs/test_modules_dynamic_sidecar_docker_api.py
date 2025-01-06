@@ -14,11 +14,12 @@ import aiodocker
 import pytest
 from aiodocker.utils import clean_filters
 from faker import Faker
-from models_library.docker import to_simcore_runtime_docker_label_key
+from models_library.docker import DockerNodeID, to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -331,9 +332,7 @@ def service_name() -> str:
 @pytest.fixture(
     params=[
         SimcoreServiceLabels.model_validate(example)
-        for example in SimcoreServiceLabels.model_config["json_schema_extra"][
-            "examples"
-        ]
+        for example in SimcoreServiceLabels.model_json_schema()["examples"]
     ],
 )
 def labels_example(request: pytest.FixtureRequest) -> SimcoreServiceLabels:
@@ -765,16 +764,16 @@ async def test_regression_update_service_update_out_of_sequence(
 
 
 @pytest.fixture
-async def target_node_id(async_docker_client: aiodocker.Docker) -> str:
+async def target_node_id(async_docker_client: aiodocker.Docker) -> DockerNodeID:
     # get a node's ID
     docker_nodes = await async_docker_client.nodes.list()
-    return docker_nodes[0]["ID"]
+    return TypeAdapter(DockerNodeID).validate_python(docker_nodes[0]["ID"])
 
 
 async def test_constrain_service_to_node(
     async_docker_client: aiodocker.Docker,
     mock_service: str,
-    target_node_id: str,
+    target_node_id: DockerNodeID,
     docker_swarm: None,
 ):
     await docker_api.constrain_service_to_node(

@@ -19,6 +19,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic.config import JsonDict
 
 from .callbacks_mapping import CallbacksMapping
 from .generics import ListModel
@@ -332,11 +333,14 @@ class DynamicSidecarServiceLabels(BaseModel):
         description="allow complete internet access to containers in here",
     )
 
-    callbacks_mapping: Json[CallbacksMapping] | None = Field(
-        default_factory=CallbacksMapping,  # type: ignore[arg-type] # this one ANE I am not sure about
-        alias="simcore.service.callbacks-mapping",
-        description="exposes callbacks from user services to the sidecar",
-    )
+    callbacks_mapping: Annotated[
+        Json[CallbacksMapping] | None,
+        Field(
+            default_factory=CallbacksMapping,  # NOTE: PC->ANE I still think this could be an issue
+            alias="simcore.service.callbacks-mapping",
+            description="exposes callbacks from user services to the sidecar",
+        ),
+    ]
 
     @cached_property
     def needs_dynamic_sidecar(self) -> bool:
@@ -487,58 +491,28 @@ class DynamicSidecarServiceLabels(BaseModel):
     model_config = _BaseConfig
 
 
-class SimcoreServiceLabels(DynamicSidecarServiceLabels):
-    """
-    Validate all the simcores.services.* labels on a service.
+def _update_json_schema_extra(schema: JsonDict) -> None:
+    #
+    # NOTE: this will be automatically called with SimcoreServiceLabels.model_json_schema
+    #
 
-    When no other fields expect `settings` are present
-    the service will be started as legacy by director-v0.
-
-    If `paths_mapping` is present the service will be started
-    via dynamic-sidecar by director-v2.
-
-    When starting via dynamic-sidecar, if `compose_spec` is
-    present, also `container_http_entry` must be present.
-    When both of these fields are missing a docker-compose
-    spec will be generated before starting the service.
-    """
-
-    settings: Json[SimcoreServiceSettingsLabel] = Field(
-        default_factory=dict,
-        alias="simcore.service.settings",
-        description=(
-            "Json encoded. Contains setting like environment variables and "
-            "resource constraints which are required by the service. "
-            "Should be compatible with Docker REST API."
-        ),
-    )
-
-    model_config = _BaseConfig | ConfigDict(
-        extra="allow",
-        json_schema_extra={
+    schema.update(
+        {
             "examples": [
                 # WARNING: do not change order. Used in tests!
                 # legacy service
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.model_config[
-                            "json_schema_extra"
-                        ][
-                            "examples"
-                        ]  # type: ignore[index]
+                        SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
                     )
                 },
                 # dynamic-service
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.model_config[
-                            "json_schema_extra"
-                        ][
-                            "examples"
-                        ]  # type: ignore[index]
+                        SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][0]  # type: ignore [index]
+                        PathMappingsLabel.model_json_schema()["examples"][0]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
                     "simcore.service.callbacks-mapping": json_dumps(
@@ -557,14 +531,10 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                 # dynamic-service with compose spec
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.model_config[
-                            "json_schema_extra"
-                        ][
-                            "examples"
-                        ]  # type: ignore[index]
+                        SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index]
+                        PathMappingsLabel.model_json_schema()["examples"][0],
                     ),
                     "simcore.service.compose-spec": json_dumps(
                         {
@@ -592,9 +562,44 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.container-http-entrypoint": "rt-web",
                     "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
                     "simcore.service.callbacks-mapping": json_dumps(
-                        CallbacksMapping.model_config["json_schema_extra"]["examples"][3]  # type: ignore [index]
+                        CallbacksMapping.model_json_schema()["examples"][3]
                     ),
                 },
             ]
         },
+    )
+
+
+class SimcoreServiceLabels(DynamicSidecarServiceLabels):
+    """
+    Validate all the simcores.services.* labels on a service.
+
+    When no other fields expect `settings` are present
+    the service will be started as legacy by director-v0.
+
+    If `paths_mapping` is present the service will be started
+    via dynamic-sidecar by director-v2.
+
+    When starting via dynamic-sidecar, if `compose_spec` is
+    present, also `container_http_entry` must be present.
+    When both of these fields are missing a docker-compose
+    spec will be generated before starting the service.
+    """
+
+    settings: Annotated[
+        Json[SimcoreServiceSettingsLabel],
+        Field(
+            default_factory=dict,
+            alias="simcore.service.settings",
+            description=(
+                "Json encoded. Contains setting like environment variables and "
+                "resource constraints which are required by the service. "
+                "Should be compatible with Docker REST API."
+            ),
+        ),
+    ]
+
+    model_config = _BaseConfig | ConfigDict(
+        extra="allow",
+        json_schema_extra=_update_json_schema_extra,
     )

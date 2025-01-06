@@ -61,14 +61,11 @@ aiohttp==3.8.5
     #   aiohttp-jinja2
     #   aiohttp-security
     #   aiohttp-session
-    #   aiohttp-swagger
 aiohttp-jinja2==1.5
     # via -r requirements/_base.in
 aiohttp-security==0.4.0
     # via -r requirements/_base.in
 aiohttp-session==2.11.0
-    # via -r requirements/_base.in
-aiohttp-swagger==1.0.16
     # via -r requirements/_base.in
 aiopg==1.4.0
     # via
@@ -205,7 +202,7 @@ faker==19.6.1
     # via -r requirements/_base.in
 fast-depends==2.4.12
     # via faststream
-faststream==0.5.28
+faststream==0.5.31
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
@@ -269,7 +266,7 @@ jinja2==3.1.2
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   aiohttp-jinja2
-    #   aiohttp-swagger
+    #   swagger-ui-py
 json2html==1.3.0
     # via -r requirements/_base.in
 jsondiff==2.0.0
@@ -340,6 +337,7 @@ opentelemetry-api==1.27.0
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -363,6 +361,7 @@ opentelemetry-instrumentation==0.48b0
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-aiohttp-client==0.48b0
@@ -380,6 +379,10 @@ opentelemetry-instrumentation-asyncpg==0.48b0
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
 opentelemetry-instrumentation-dbapi==0.48b0
     # via opentelemetry-instrumentation-aiopg
+opentelemetry-instrumentation-logging==0.48b0
+    # via
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.48b0
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
@@ -467,6 +470,7 @@ packaging==24.1
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
     #   gunicorn
+    #   swagger-ui-py
 pamqp==3.2.1
     # via aiormq
 passlib==1.7.4
@@ -495,7 +499,7 @@ pycountry==23.12.11
     # via -r requirements/_base.in
 pycparser==2.21
     # via cffi
-pydantic==2.9.2
+pydantic==2.10.2
     # via
     #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -557,7 +561,7 @@ pydantic==2.9.2
     #   fast-depends
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.23.4
+pydantic-core==2.27.1
     # via pydantic
 pydantic-extra-types==2.9.0
     # via
@@ -645,7 +649,7 @@ pyyaml==6.0.1
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-    #   aiohttp-swagger
+    #   swagger-ui-py
 redis==5.0.4
     # via
     #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -742,6 +746,8 @@ sqlalchemy==1.4.47
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
+swagger-ui-py==23.9.23
+    # via -r requirements/_base.in
 tenacity==8.5.0
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
@@ -765,7 +771,7 @@ typer==0.12.3
     #   -r requirements/../../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==4.12.0
+typing-extensions==4.12.2
     # via
     #   aiodebug
     #   aiodocker
@@ -777,37 +783,6 @@ typing-extensions==4.12.0
     #   pydantic
     #   pydantic-core
     #   typer
-ujson==5.5.0
-    # via
-    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../requirements/constraints.txt
-    #   aiohttp-swagger
 urllib3==2.2.3
     # via
     #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -854,7 +829,9 @@ yarl==1.9.4
     # via
     #   -c requirements/./constraints.txt
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq

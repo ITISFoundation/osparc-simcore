@@ -9,7 +9,11 @@ import respx
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
+    GetProjectInactivityResponse,
+    RetrieveDataOutEnveloped,
+)
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
@@ -20,6 +24,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
@@ -54,14 +59,14 @@ def node_not_found(faker: Faker) -> NodeID:
 @pytest.fixture
 def service_status_new_style() -> DynamicServiceGet:
     return TypeAdapter(DynamicServiceGet).validate_python(
-        DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
+        DynamicServiceGet.model_json_schema()["examples"][1]
     )
 
 
 @pytest.fixture
 def service_status_legacy() -> NodeGet:
     return TypeAdapter(NodeGet).validate_python(
-        NodeGet.model_config["json_schema_extra"]["examples"][1]
+        NodeGet.model_json_schema()["examples"][1]
     )
 
 
@@ -108,6 +113,13 @@ def mock_director_v2_service_state(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
+        mock.get("/dynamic_services").respond(
+            status.HTTP_200_OK,
+            text=json.dumps(
+                jsonable_encoder(DynamicServiceGet.model_json_schema()["examples"])
+            ),
+        )
+
         mock.get(f"/dynamic_services/{node_id_new_style}").respond(
             status.HTTP_200_OK, text=service_status_new_style.model_dump_json()
         )
@@ -133,12 +145,35 @@ def mock_director_v2_service_state(
         yield None
 
 
+@pytest.fixture(
+    params=[
+        False,
+        pytest.param(
+            True,
+            marks=pytest.mark.xfail(
+                reason="INTERNAL scheduler implementation is missing"
+            ),
+        ),
+    ]
+)
+def use_internal_scheduler(request: pytest.FixtureRequest) -> bool:
+    return request.param
+
+
 @pytest.fixture
 def app_environment(
     app_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
+    use_internal_scheduler: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER": f"{use_internal_scheduler}",
+        },
+    )
     return app_environment
 
 
@@ -151,6 +186,17 @@ async def rpc_client(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ) -> RabbitMQRPCClient:
     return await rabbitmq_rpc_client("client")
+
+
+async def test_list_tracked_dynamic_services(rpc_client: RabbitMQRPCClient):
+    results = await services.list_tracked_dynamic_services(
+        rpc_client, user_id=None, project_id=None
+    )
+    assert len(results) == 2
+    assert results == [
+        TypeAdapter(DynamicServiceGet).validate_python(x)
+        for x in DynamicServiceGet.model_json_schema()["examples"]
+    ]
 
 
 async def test_get_state(
@@ -179,7 +225,7 @@ async def test_get_state(
 def dynamic_service_start() -> DynamicServiceStart:
     # one for legacy and one for new style?
     return TypeAdapter(DynamicServiceStart).validate_python(
-        DynamicServiceStart.model_config["json_schema_extra"]["example"]
+        DynamicServiceStart.model_json_schema()["example"]
     )
 
 
@@ -446,3 +492,112 @@ async def test_stop_dynamic_service_serializes_generic_errors(
             ),
             timeout_s=5,
         )
+
+
+@pytest.fixture
+def inactivity_response() -> GetProjectInactivityResponse:
+    return TypeAdapter(GetProjectInactivityResponse).validate_python(
+        GetProjectInactivityResponse.model_json_schema()["example"]
+    )
+
+
+@pytest.fixture
+def mock_director_v2_get_project_inactivity(
+    project_id: ProjectID, inactivity_response: GetProjectInactivityResponse
+) -> Iterator[None]:
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.get(f"/dynamic_services/projects/{project_id}/inactivity").respond(
+            status.HTTP_200_OK, text=inactivity_response.model_dump_json()
+        )
+        yield None
+
+
+async def test_get_project_inactivity(
+    mock_director_v2_get_project_inactivity: None,
+    rpc_client: RabbitMQRPCClient,
+    project_id: ProjectID,
+    inactivity_response: GetProjectInactivityResponse,
+):
+    result = await services.get_project_inactivity(
+        rpc_client, project_id=project_id, max_inactivity_seconds=5
+    )
+    assert result == inactivity_response
+
+
+@pytest.fixture
+def mock_director_v2_restart_user_services(node_id: NodeID) -> Iterator[None]:
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.post(f"/dynamic_services/{node_id}:restart").respond(
+            status.HTTP_204_NO_CONTENT
+        )
+        yield None
+
+
+async def test_restart_user_services(
+    mock_director_v2_restart_user_services: None,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+):
+    await services.restart_user_services(rpc_client, node_id=node_id, timeout_s=5)
+
+
+@pytest.fixture
+def mock_director_v2_service_retrieve_inputs(node_id: NodeID) -> Iterator[None]:
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.post(f"/dynamic_services/{node_id}:retrieve").respond(
+            status.HTTP_200_OK,
+            text=TypeAdapter(RetrieveDataOutEnveloped)
+            .validate_python(
+                RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
+            )
+            .model_dump_json(),
+        )
+
+        yield None
+
+
+async def test_retrieve_inputs(
+    mock_director_v2_service_retrieve_inputs: None,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+):
+    results = await services.retrieve_inputs(
+        rpc_client, node_id=node_id, port_keys=[], timeout_s=10
+    )
+    assert (
+        results.model_dump(mode="python")
+        == RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
+    )
+
+
+@pytest.fixture
+def mock_director_v2_update_projects_networks(project_id: ProjectID) -> Iterator[None]:
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.patch(f"/dynamic_services/projects/{project_id}/-/networks").respond(
+            status.HTTP_204_NO_CONTENT
+        )
+        yield None
+
+
+async def test_update_projects_networks(
+    mock_director_v2_update_projects_networks: None,
+    rpc_client: RabbitMQRPCClient,
+    project_id: ProjectID,
+):
+    await services.update_projects_networks(rpc_client, project_id=project_id)

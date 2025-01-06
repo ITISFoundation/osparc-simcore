@@ -1,4 +1,13 @@
 from enum import StrEnum
+from typing import Any
+
+from pydantic_core import PydanticUndefined
+
+# SEE https://github.com/fastapi/fastapi/blob/master/fastapi/_compat.py#L75-L78
+Undefined = PydanticUndefined
+DEFAULT_FACTORY: Any = Undefined
+# Use `UNSET` as default when default_factory
+# SEE https://github.com/ITISFoundation/osparc-simcore/pull/6882
 
 
 class LogLevel(StrEnum):

@@ -9,7 +9,7 @@ import functools
 import traceback
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from dataclasses import dataclass
-from typing import Any, NoReturn
+from typing import Any, NoReturn, cast
 from unittest import mock
 from uuid import uuid4
 
@@ -45,6 +45,7 @@ from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_mock.plugin import MockerFixture
@@ -91,7 +92,7 @@ async def _assert_wait_for_task_status(
     job_id: str,
     dask_client: DaskClient,
     expected_status: DaskClientTaskState,
-    timeout: int | None = None,
+    timeout: int | None = None,  # noqa: ASYNC109
 ):
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -104,24 +105,20 @@ async def _assert_wait_for_task_status(
                 f"waiting for task to be {expected_status=}, "
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
-            current_task_status = (await dask_client.get_tasks_status([job_id]))[0]
-            assert isinstance(current_task_status, DaskClientTaskState)
-            print(f"{current_task_status=} vs {expected_status=}")
-            if (
-                current_task_status is DaskClientTaskState.ERRED
-                and expected_status
-                not in [
-                    DaskClientTaskState.ERRED,
-                    DaskClientTaskState.LOST,
-                ]
-            ):
+            got = (await dask_client.get_tasks_status([job_id]))[0]
+            assert isinstance(got, DaskClientTaskState)
+            print(f"{got=} vs {expected_status=}")
+            if got is DaskClientTaskState.ERRED and expected_status not in [
+                DaskClientTaskState.ERRED,
+                DaskClientTaskState.LOST,
+            ]:
                 try:
                     # we can fail fast here
                     # this will raise and we catch the Assertion to not reraise too long
                     await dask_client.get_task_result(job_id)
                 except AssertionError as exc:
                     raise RuntimeError from exc
-            assert current_task_status is expected_status
+            assert got is expected_status
 
 
 @pytest.fixture
@@ -364,7 +361,9 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
 async def test_dask_does_not_report_base_exception_in_task(dask_client: DaskClient):
     def fct_that_raise_base_exception() -> NoReturn:
         err_msg = "task triggers a base exception, but dask does not care..."
-        raise BaseException(err_msg)  # pylint: disable=broad-exception-raised
+        raise BaseException(  # pylint: disable=broad-exception-raised  # noqa: TRY002
+            err_msg
+        )
 
     future = dask_client.backend.client.submit(fct_that_raise_base_exception)
     # NOTE: Since asyncio.CancelledError is derived from BaseException and the worker code checks Exception only
@@ -402,7 +401,7 @@ def comp_run_metadata(faker: Faker) -> RunMetadataDict:
     return RunMetadataDict(
         product_name=faker.pystr(),
         simcore_user_agent=faker.pystr(),
-    ) | faker.pydict(allowed_types=(str,))
+    ) | cast(dict[str, str], faker.pydict(allowed_types=(str,)))
 
 
 @pytest.fixture
@@ -418,6 +417,9 @@ def task_labels(comp_run_metadata: RunMetadataDict) -> ContainerLabelsDict:
 
 @pytest.fixture
 def hardware_info() -> HardwareInfo:
+    assert "json_schema_extra" in HardwareInfo.model_config
+    assert isinstance(HardwareInfo.model_config["json_schema_extra"], dict)
+    assert isinstance(HardwareInfo.model_config["json_schema_extra"]["examples"], list)
     return HardwareInfo.model_validate(
         HardwareInfo.model_config["json_schema_extra"]["examples"][0]
     )
@@ -441,6 +443,7 @@ async def test_send_computation_task(
     task_labels: ContainerLabelsDict,
     empty_hardware_info: HardwareInfo,
     faker: Faker,
+    resource_tracking_run_id: ServiceRunID,
 ):
     _DASK_EVENT_NAME = faker.pystr()
 
@@ -476,7 +479,9 @@ async def test_send_computation_task(
     assert node_params.node_requirements.ram
     assert "product_name" in comp_run_metadata
     assert "simcore_user_agent" in comp_run_metadata
-    assert image_params.fake_tasks[node_id].node_requirements is not None
+    node_requirements = image_params.fake_tasks[node_id].node_requirements
+    assert node_requirements
+
     node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
@@ -491,8 +496,8 @@ async def test_send_computation_task(
                 f"{to_simcore_runtime_docker_label_key('user-id')}": f"{user_id}",
                 f"{to_simcore_runtime_docker_label_key('project-id')}": f"{project_id}",
                 f"{to_simcore_runtime_docker_label_key('node-id')}": f"{node_id}",
-                f"{to_simcore_runtime_docker_label_key('cpu-limit')}": f"{image_params.fake_tasks[node_id].node_requirements.cpu}",
-                f"{to_simcore_runtime_docker_label_key('memory-limit')}": f"{image_params.fake_tasks[node_id].node_requirements.ram}",
+                f"{to_simcore_runtime_docker_label_key('cpu-limit')}": f"{node_requirements.cpu}",
+                f"{to_simcore_runtime_docker_label_key('memory-limit')}": f"{node_requirements.ram}",
                 f"{to_simcore_runtime_docker_label_key('product-name')}": f"{comp_run_metadata['product_name']}",
                 f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": f"{comp_run_metadata['simcore_user_agent']}",
                 f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": "undefined-label",
@@ -500,6 +505,7 @@ async def test_send_computation_task(
         ),
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
@@ -556,6 +562,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     """rationale:
     When a task is submitted to the dask backend, a dask future is returned.
@@ -591,6 +598,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         remote_fct=fake_sidecar_fct,
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -605,7 +613,9 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     )
     assert published_computation_task[0].node_id in image_params.fake_tasks
     # creating a new future shows that it is not done????
-    assert not distributed.Future(published_computation_task[0].job_id).done()
+    assert not distributed.Future(
+        published_computation_task[0].job_id, client=dask_client.backend.client
+    ).done()
 
     # as the task is published on the dask-scheduler when sending, it shall still be published on the dask scheduler
     list_of_persisted_datasets = await dask_client.backend.client.list_datasets()  # type: ignore
@@ -628,7 +638,9 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     assert isinstance(task_result, TaskOutputData)
     assert task_result.get("some_output_key") == 123
     # try to create another future and this one is already done
-    assert distributed.Future(published_computation_task[0].job_id).done()
+    assert distributed.Future(
+        published_computation_task[0].job_id, client=dask_client.backend.client
+    ).done()
 
 
 async def test_abort_computation_tasks(
@@ -642,6 +654,7 @@ async def test_abort_computation_tasks(
     faker: Faker,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     _DASK_EVENT_NAME = faker.pystr()
 
@@ -680,6 +693,7 @@ async def test_abort_computation_tasks(
         remote_fct=fake_remote_fct,
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -731,6 +745,7 @@ async def test_failed_task_returns_exceptions(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -751,6 +766,7 @@ async def test_failed_task_returns_exceptions(
         remote_fct=fake_failing_sidecar_fct,
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -793,6 +809,7 @@ async def test_send_computation_task_with_missing_resources_raises(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # remove the workers that can handle gpu
     scheduler_info = dask_client.backend.client.scheduler_info()
@@ -819,6 +836,7 @@ async def test_send_computation_task_with_missing_resources_raises(
             remote_fct=None,
             metadata=comp_run_metadata,
             hardware_info=empty_hardware_info,
+            resource_tracking_run_id=resource_tracking_run_id,
         )
     mocked_user_completed_cb.assert_not_called()
 
@@ -837,6 +855,7 @@ async def test_send_computation_task_with_hardware_info_raises(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # NOTE: running on the default cluster will raise missing resources
     with pytest.raises(MissingComputationalResourcesError):
@@ -848,6 +867,7 @@ async def test_send_computation_task_with_hardware_info_raises(
             remote_fct=None,
             metadata=comp_run_metadata,
             hardware_info=hardware_info,
+            resource_tracking_run_id=resource_tracking_run_id,
         )
     mocked_user_completed_cb.assert_not_called()
 
@@ -865,6 +885,7 @@ async def test_too_many_resources_send_computation_task(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # create an image that needs a huge amount of CPU
     image = Image(
@@ -888,6 +909,7 @@ async def test_too_many_resources_send_computation_task(
             remote_fct=None,
             metadata=comp_run_metadata,
             hardware_info=empty_hardware_info,
+            resource_tracking_run_id=resource_tracking_run_id,
         )
 
     mocked_user_completed_cb.assert_not_called()
@@ -904,6 +926,7 @@ async def test_disconnected_backend_raises_exception(
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # DISCONNECT THE CLUSTER
     await dask_spec_local_cluster.close()  # type: ignore
@@ -916,6 +939,7 @@ async def test_disconnected_backend_raises_exception(
             remote_fct=None,
             metadata=comp_run_metadata,
             hardware_info=empty_hardware_info,
+            resource_tracking_run_id=resource_tracking_run_id,
         )
     mocked_user_completed_cb.assert_not_called()
 
@@ -935,6 +959,7 @@ async def test_changed_scheduler_raises_exception(
     unused_tcp_port_factory: Callable,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # change the scheduler (stop the current one and start another at the same address)
     scheduler_address = URL(dask_spec_local_cluster.scheduler_address)
@@ -964,6 +989,7 @@ async def test_changed_scheduler_raises_exception(
                 remote_fct=None,
                 metadata=comp_run_metadata,
                 hardware_info=empty_hardware_info,
+                resource_tracking_run_id=resource_tracking_run_id,
             )
     mocked_user_completed_cb.assert_not_called()
 
@@ -981,6 +1007,7 @@ async def test_get_tasks_status(
     fail_remote_fct: bool,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -1008,14 +1035,12 @@ async def test_get_tasks_status(
         remote_fct=fake_remote_fct,
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
 
     assert published_computation_task[0].node_id in cpu_image.fake_tasks
-    # let's get a dask future for the task here so dask will not remove the task from the scheduler at the end
-    computation_future = distributed.Future(key=published_computation_task[0].job_id)
-    assert computation_future
 
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
@@ -1034,15 +1059,11 @@ async def test_get_tasks_status(
     )
     # release the task results
     await dask_client.release_task_result(published_computation_task[0].job_id)
-    # the task is still present since we hold a future here
-    await _assert_wait_for_task_status(
-        published_computation_task[0].job_id,
-        dask_client,
-        DaskClientTaskState.ERRED if fail_remote_fct else DaskClientTaskState.SUCCESS,
-    )
 
-    # removing the future will let dask eventually delete the task from its memory, so its status becomes undefined
-    del computation_future
+    await asyncio.sleep(
+        5  # NOTE: here we wait to be sure that the dask-scheduler properly updates its state
+    )
+    # the task is gone, since the distributed Variable was removed above
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
@@ -1069,6 +1090,7 @@ async def test_dask_sub_handlers(
     fake_task_handlers: TaskHandlers,
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
 ):
     dask_client.register_handlers(fake_task_handlers)
     _DASK_START_EVENT = "start"
@@ -1098,14 +1120,19 @@ async def test_dask_sub_handlers(
         remote_fct=fake_remote_fct,
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
 
     assert published_computation_task[0].node_id in cpu_image.fake_tasks
-    computation_future = distributed.Future(published_computation_task[0].job_id)
+    computation_future = distributed.Future(
+        published_computation_task[0].job_id, client=dask_client.backend.client
+    )
     print("--> waiting for job to finish...")
-    await distributed.wait(computation_future, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
+    await distributed.wait(
+        computation_future, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
+    )
     assert computation_future.done()
     print("job finished, now checking that we received the publications...")
 
@@ -1138,6 +1165,7 @@ async def test_get_cluster_details(
     comp_run_metadata: RunMetadataDict,
     empty_hardware_info: HardwareInfo,
     faker: Faker,
+    resource_tracking_run_id: ServiceRunID,
 ):
     cluster_details = await dask_client.get_cluster_details()
     assert cluster_details
@@ -1174,6 +1202,7 @@ async def test_get_cluster_details(
         ),
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert published_computation_task
     assert len(published_computation_task) == 1

@@ -2,9 +2,9 @@ import logging
 
 import asyncpg.exceptions
 from aiohttp import web
-from models_library.groups import Group, GroupTypeInModel
+from models_library.groups import Group, GroupID, GroupType
 from models_library.projects import ProjectID
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from simcore_postgres_database.errors import DatabaseError
 
 from ..groups.api import get_group_from_gid
@@ -31,7 +31,7 @@ async def _fetch_new_project_owner_from_groups(
     # go through user_to_groups table and fetch all uid for matching gid
     for group_gid in standard_groups:
         # remove the current owner from the bunch
-        target_group_users = await get_users_in_group(app=app, gid=group_gid) - {
+        target_group_users = await get_users_in_group(app=app, gid=int(group_gid)) - {
             user_id
         }
         _logger.info("Found group users '%s'", target_group_users)
@@ -78,7 +78,7 @@ async def get_new_project_owner_gid(
     standard_groups = {}  # groups of users, multiple users can be part of this
     primary_groups = {}  # each individual user has a unique primary group
     for other_gid in other_users_access_rights:
-        group: Group | None = await get_group_from_gid(app=app, gid=int(other_gid))
+        group: Group | None = await get_group_from_gid(app=app, group_id=int(other_gid))
 
         # only process for users and groups with write access right
         if group is None:
@@ -86,9 +86,9 @@ async def get_new_project_owner_gid(
         if access_rights[other_gid]["write"] is not True:
             continue
 
-        if group.group_type == GroupTypeInModel.STANDARD:
+        if group.group_type == GroupType.STANDARD:
             standard_groups[other_gid] = access_rights[other_gid]
-        elif group.group_type == GroupTypeInModel.PRIMARY:
+        elif group.group_type == GroupType.PRIMARY:
             primary_groups[other_gid] = access_rights[other_gid]
 
     _logger.debug(

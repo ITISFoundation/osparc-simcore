@@ -356,9 +356,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__workbenchUI.openServiceCatalog({
           x: 50,
           y: 50
-        }, {
-          x: 50,
-          y: 50
         });
       });
       homeAndNodesTree.add(addNewNodeBtn);
@@ -752,7 +749,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __iFrameChanged: function(node) {
       this.__iframePage.removeAll();
 
-      if (node) {
+      if (node && node.getIFrame()) {
         const loadingPage = node.getLoadingPage();
         const iFrame = node.getIFrame();
         const src = iFrame.getSource();

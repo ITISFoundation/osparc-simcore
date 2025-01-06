@@ -34,6 +34,7 @@ from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
+from models_library.services import ServiceRunID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pydantic.networks import AnyUrl
@@ -647,6 +648,7 @@ async def test_compute_task_envs(
     run_metadata: RunMetadataDict,
     input_task_envs: ContainerEnvsDict,
     expected_computed_task_envs: ContainerEnvsDict,
+    resource_tracking_run_id: ServiceRunID,
 ):
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
     sleeper_task.image.envs = input_task_envs
@@ -658,5 +660,6 @@ async def test_compute_task_envs(
         node_id=sleeper_task.node_id,
         node_image=sleeper_task.image,
         metadata=run_metadata,
+        resource_tracking_run_id=resource_tracking_run_id,
     )
     assert task_envs == expected_computed_task_envs

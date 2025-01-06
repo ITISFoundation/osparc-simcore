@@ -31,7 +31,7 @@ def test_building_sql_statements(faker: Faker):
         file_id_prefix=None,
         partial_file_id=None,
         sha256_checksum=None,
-        only_files=True,
+        is_directory=False,
     )
     # WHERE file_meta_data.is_directory IS false ORDER BY file_meta_data.created_at ASC
 
@@ -41,7 +41,7 @@ def test_building_sql_statements(faker: Faker):
         file_id_prefix=None,
         partial_file_id=None,
         sha256_checksum=None,
-        only_files=True,
+        is_directory=False,
     )
     # WHERE file_meta_data.user_id = '42' AND file_meta_data.is_directory IS false ORDER BY file_meta_data.created_at ASC
 
@@ -53,7 +53,7 @@ def test_building_sql_statements(faker: Faker):
         file_id_prefix=None,
         partial_file_id=None,
         sha256_checksum=None,
-        only_files=True,
+        is_directory=False,
     )
     # WHERE (file_meta_data.user_id = '42' OR file_meta_data.project_id IN ('18d5'..., )) AND file_meta_data.is_directory IS false ORDER BY file_meta_data.created_at ASC
 
@@ -65,7 +65,7 @@ def test_building_sql_statements(faker: Faker):
         file_id_prefix=None,
         partial_file_id=None,
         sha256_checksum=None,
-        only_files=True,
+        is_directory=False,
         limit=10,
         offset=1,
     )
@@ -76,9 +76,9 @@ def test_building_sql_statements(faker: Faker):
         _list_filter_with_partial_file_id_stmt,
         user_or_project_filter=UserOrProjectFilter(user_id=42, project_ids=[]),
         file_id_prefix=None,
+        is_directory=None,
         partial_file_id="{project_id}/",
         sha256_checksum=None,
-        only_files=False,
     )
 
     # As used in SimcoreS3DataManager.search_owned_files
@@ -88,7 +88,7 @@ def test_building_sql_statements(faker: Faker):
         file_id_prefix="api/",
         partial_file_id=None,
         sha256_checksum=faker.sha256(),
-        only_files=True,
+        is_directory=False,
         limit=10,
         offset=0,
     )

@@ -55,6 +55,14 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    announcements: {
+      check: "Array",
+      init: []
+    },
+    maintenance: {
+      check: "Object",
+      init: {}
+    },
     currentStudy: {
       check: "osparc.data.model.Study",
       init: null,
@@ -110,10 +118,6 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: [],
       event: "changeIterations"
-    },
-    maintenance: {
-      check: "Object",
-      init: {}
     },
     templates: {
       check: "Array",
@@ -217,7 +221,11 @@ qx.Class.define("osparc.store.Store", {
     tasks: {
       check: "Array",
       init: []
-    }
+    },
+    licensedItems: {
+      check: "Array",
+      init: []
+    },
   },
 
   members: {
@@ -610,7 +618,7 @@ qx.Class.define("osparc.store.Store", {
     __getOrgClassifiers: function(orgId, useCache = false) {
       const params = {
         url: {
-          "gid": orgId
+          "gid": parseInt(orgId)
         }
       };
       return osparc.data.Resources.get("classifiers", params, useCache);
@@ -632,7 +640,7 @@ qx.Class.define("osparc.store.Store", {
         }
         const classifierPromises = [];
         orgs.forEach(org => {
-          classifierPromises.push(this.__getOrgClassifiers(org["gid"], !reload));
+          classifierPromises.push(this.__getOrgClassifiers(org.getGroupId(), !reload));
         });
         Promise.all(classifierPromises)
           .then(orgsClassifiersMD => {

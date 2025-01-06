@@ -10,6 +10,7 @@ from typing import Final, cast
 
 import sqlalchemy as sa
 from aiohttp import web
+from common_library.exclude import UnSet, as_dict_exclude_unset
 from models_library.folders import (
     FolderDB,
     FolderID,
@@ -17,10 +18,11 @@ from models_library.folders import (
     FolderScope,
     UserFolderAccessRightsDB,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.folders_v2 import folders_v2
@@ -33,7 +35,6 @@ from simcore_postgres_database.utils_repos import (
 from simcore_postgres_database.utils_workspaces_sql import (
     create_my_workspace_access_rights_subquery,
 )
-from simcore_service_webserver.utils import UnSet, as_dict_exclude_unset
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.orm import aliased
@@ -312,17 +313,17 @@ async def update(
     folders_id_or_ids: FolderID | set[FolderID],
     product_name: ProductName,
     # updatable columns
-    name: str | UnSet = _unset,
-    parent_folder_id: FolderID | None | UnSet = _unset,
-    trashed_at: datetime | None | UnSet = _unset,
-    trashed_explicitly: bool | UnSet = _unset,
-    workspace_id: WorkspaceID | None | UnSet = _unset,
-    user_id: UserID | None | UnSet = _unset,
+    name: str | UnSet = UnSet.VALUE,
+    parent_folder_id: FolderID | None | UnSet = UnSet.VALUE,
+    trashed_at: datetime | None | UnSet = UnSet.VALUE,
+    trashed_explicitly: bool | UnSet = UnSet.VALUE,
+    workspace_id: WorkspaceID | None | UnSet = UnSet.VALUE,
+    user_id: UserID | None | UnSet = UnSet.VALUE,
 ) -> FolderDB:
     """
     Batch/single patch of folder/s
     """
-    # NOTE: exclude unset can also be done using a pydantic model and dict(exclude_unset=True)
+    # NOTE: exclude unset can also be done using a pydantic model and model_dump(exclude_unset=True)
     updated = as_dict_exclude_unset(
         name=name,
         parent_folder_id=parent_folder_id,

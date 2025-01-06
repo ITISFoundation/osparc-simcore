@@ -12,8 +12,8 @@ from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
-from ..services import catalog, director_v2, storage, webserver
-from ..services.rabbitmq import setup_rabbitmq
+from ..services_http import catalog, director_v2, storage, webserver
+from ..services_http.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
@@ -54,6 +54,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     config_all_loggers(
         log_format_local_dev_enabled=settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.API_SERVER_LOG_FILTER_MAPPING,
+        tracing_settings=settings.API_SERVER_TRACING,
     )
     _logger.debug("App settings:\n%s", settings.model_dump_json(indent=2))
 

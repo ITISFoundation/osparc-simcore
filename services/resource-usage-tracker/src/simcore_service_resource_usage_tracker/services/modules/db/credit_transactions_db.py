@@ -48,6 +48,7 @@ async def create_credit_transaction(
                 transaction_classification=data.transaction_classification,
                 service_run_id=data.service_run_id,
                 payment_transaction_id=data.payment_transaction_id,
+                licensed_item_purchase_id=data.licensed_item_purchase_id,
                 created=data.created_at,
                 last_heartbeat_at=data.last_heartbeat_at,
                 modified=sa.func.now(),

@@ -91,7 +91,7 @@ async def mock_is_node_id_present_in_any_project_workbench(
 @pytest.fixture
 async def mock_list_dynamic_services(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.patch(
-        f"{MODULE_GC_CORE_ORPHANS}.director_v2_api.list_dynamic_services",
+        f"{MODULE_GC_CORE_ORPHANS}.dynamic_scheduler_api.list_dynamic_services",
         autospec=True,
         return_value=[],
     )
@@ -240,7 +240,9 @@ async def test_remove_orphaned_services_inexisting_user_does_not_save_state(
         mock.ANY, fake_running_service.node_uuid
     )
     mock_list_node_ids_in_project.assert_called_once_with(mock.ANY, project_id)
-    mock_get_user_role.assert_called_once_with(mock_app, fake_running_service.user_id)
+    mock_get_user_role.assert_called_once_with(
+        mock_app, user_id=fake_running_service.user_id
+    )
     mock_has_write_permission.assert_not_called()
     mock_stop_dynamic_service.assert_called_once_with(
         mock_app,

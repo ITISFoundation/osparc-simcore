@@ -10,7 +10,7 @@ import yaml
 from aiodocker.containers import DockerContainer
 from faker import Faker
 from models_library.generated_models.docker_rest_api import ContainerState
-from models_library.services import RunID
+from models_library.services import ServiceRunID
 from pydantic import PositiveInt
 from simcore_service_dynamic_sidecar.core.docker_utils import (
     _get_containers_inspect_from_names,
@@ -28,17 +28,19 @@ def volume_name() -> str:
 
 
 @pytest.fixture
-def run_id() -> RunID:
-    return RunID.create()
+def service_run_id() -> ServiceRunID:
+    return ServiceRunID.get_resource_tracking_run_id_for_dynamic()
 
 
 @pytest.fixture
-async def volume_with_label(volume_name: str, run_id: RunID) -> AsyncIterable[None]:
+async def volume_with_label(
+    volume_name: str, service_run_id: ServiceRunID
+) -> AsyncIterable[None]:
     async with aiodocker.Docker() as docker_client:
         volume = await docker_client.volumes.create(
             {
                 "Name": "test_volume_name_1",
-                "Labels": {"source": volume_name, "run_id": run_id},
+                "Labels": {"source": volume_name, "run_id": service_run_id},
             }
         )
 
@@ -77,17 +79,17 @@ async def started_services(container_names: list[str]) -> AsyncIterator[None]:
 
 
 async def test_volume_with_label(
-    volume_with_label: None, volume_name: str, run_id: RunID
+    volume_with_label: None, volume_name: str, service_run_id: ServiceRunID
 ) -> None:
-    assert await get_volume_by_label(volume_name, run_id)
+    assert await get_volume_by_label(volume_name, service_run_id)
 
 
-async def test_volume_label_missing(run_id: RunID) -> None:
+async def test_volume_label_missing(service_run_id: ServiceRunID) -> None:
     with pytest.raises(VolumeNotFoundError) as exc_info:
-        await get_volume_by_label("not_exist", run_id)
+        await get_volume_by_label("not_exist", service_run_id)
 
     error_msg = f"{exc_info.value}"
-    assert run_id in error_msg
+    assert service_run_id in error_msg
     assert "not_exist" in error_msg
 
 

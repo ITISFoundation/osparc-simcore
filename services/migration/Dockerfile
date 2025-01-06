@@ -40,8 +40,7 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # --------------------------------------------
 FROM base AS build
 
-RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
-  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -63,7 +62,7 @@ WORKDIR /build/packages/postgres-database
 
 # install only base 3rd party dependencies
 RUN \
-  --mount=type=bind,source=packages/postgres-database,target=/build/packages/postgres-database,rw \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=cache,target=/root/.cache/uv \
   uv pip install \
   --requirement requirements/prod.txt \

@@ -37,7 +37,7 @@ from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
 )
-from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
+from ...services_http.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
@@ -261,7 +261,7 @@ async def get_upload_links(
     abort_url: URL = request.url_for("abort_multipart_upload", file_id=file_meta.id)
     upload_data: FileUploadData = FileUploadData(
         chunk_size=upload_links.chunk_size,
-        urls=upload_links.urls,
+        urls=upload_links.urls,  # type: ignore[arg-type]
         links=UploadLinks(
             complete_upload=completion_url.path, abort_upload=abort_url.path
         ),
