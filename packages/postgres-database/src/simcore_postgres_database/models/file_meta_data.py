@@ -56,4 +56,11 @@ file_meta_data = sa.Table(
         doc="SHA256 checksum of the file content",
         index=True,
     ),
+    sa.Column(
+        "ref_count",
+        sa.Integer(),
+        nullable=False,
+        server_default=sa.text("0"),
+        doc="Number of references to the file",
+    ),
 )
