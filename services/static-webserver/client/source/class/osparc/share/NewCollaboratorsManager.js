@@ -141,6 +141,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     __collaboratorButton: function(collaborator) {
       const collaboratorButton = new osparc.filter.CollaboratorToggleButton(collaborator);
+      collaboratorButton.groupId = collaborator.getGroupId();
       collaboratorButton.addListener("changeValue", e => {
         const selected = e.getData();
         if (selected) {
@@ -190,8 +191,12 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
       const existingCollaborators = existingCollabs.map(c => parseInt(c));
       potentialCollaborators.forEach(potentialCollaborator => {
-        // do not list the visibleCollaborators that are already collaborators
+        // do not list the potentialCollaborators that are already collaborators
         if (existingCollaborators.includes(potentialCollaborator.getGroupId())) {
+          return;
+        }
+        // do not list those that were already listed
+        if (this.__collabButtonsContainer.getChildren().find(c => "groupId" in c && c["groupId"] === potentialCollaborator.getGroupId())) {
           return;
         }
         if (this.__showOrganizations === false && potentialCollaborator["collabType"] !== 2) {
