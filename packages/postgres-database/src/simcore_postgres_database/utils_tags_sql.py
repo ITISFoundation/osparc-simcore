@@ -9,6 +9,7 @@ from simcore_postgres_database.models.tags import tags
 from simcore_postgres_database.models.tags_access_rights import tags_access_rights
 from simcore_postgres_database.models.users import users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.sql.selectable import ScalarSelect
 from typing_extensions import TypedDict
 
 _TAG_COLUMNS = [
@@ -244,6 +245,8 @@ def upsert_tags_access_rights_stmt(
 ):
     assert not (user_id is None and group_id is None)  # nosec
     assert not (user_id is not None and group_id is not None)  # nosec
+
+    target_group_id: int | ScalarSelect
 
     if user_id:
         assert not group_id  # nosec
