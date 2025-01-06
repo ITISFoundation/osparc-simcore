@@ -20,7 +20,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ..wallets._handlers import WalletsPathParams
-from . import _licensed_items_purchases_api
+from . import _licensed_items_purchases_service
 from ._exceptions_handlers import handle_plugin_requests_exceptions
 from ._models import (
     LicensedItemsPurchasesListQueryParams,
@@ -47,7 +47,7 @@ async def get_licensed_item_purchase(request: web.Request):
     )
 
     licensed_item_purchase_get: LicensedItemPurchaseGet = (
-        await _licensed_items_purchases_api.get_licensed_item_purchase(
+        await _licensed_items_purchases_service.get_licensed_item_purchase(
             app=request.app,
             product_name=req_ctx.product_name,
             user_id=req_ctx.user_id,
@@ -75,7 +75,7 @@ async def list_wallet_licensed_items_purchases(request: web.Request):
     )
 
     licensed_item_purchase_get_page: LicensedItemPurchaseGetPage = (
-        await _licensed_items_purchases_api.list_licensed_items_purchases(
+        await _licensed_items_purchases_service.list_licensed_items_purchases(
             app=request.app,
             product_name=req_ctx.product_name,
             user_id=req_ctx.user_id,
