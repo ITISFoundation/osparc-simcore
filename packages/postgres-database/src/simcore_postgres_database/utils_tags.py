@@ -282,7 +282,6 @@ class TagsRepo:
         *,
         tag_id: int,
         group_id: int,
-        # access-rights
         read: bool,
         write: bool,
         delete: bool,
