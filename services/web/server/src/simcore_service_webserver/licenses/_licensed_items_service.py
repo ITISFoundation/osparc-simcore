@@ -25,7 +25,7 @@ from ..resource_usage.api import get_pricing_plan_unit
 from ..users.api import get_user
 from ..wallets.api import get_wallet_with_available_credits_by_user_and_wallet
 from ..wallets.errors import WalletNotEnoughCreditsError
-from . import _licensed_items_db
+from . import _licensed_items_repository
 from ._models import LicensedItemsBodyParams
 from .errors import LicensedItemPricingPlanMatchError
 
@@ -39,7 +39,7 @@ async def get_licensed_item(
     product_name: ProductName,
 ) -> LicensedItemGet:
 
-    licensed_item_db = await _licensed_items_db.get(
+    licensed_item_db = await _licensed_items_repository.get(
         app, licensed_item_id=licensed_item_id, product_name=product_name
     )
     return LicensedItemGet(
@@ -61,7 +61,7 @@ async def list_licensed_items(
     limit: int,
     order_by: OrderBy,
 ) -> LicensedItemGetPage:
-    total_count, licensed_item_db_list = await _licensed_items_db.list_(
+    total_count, licensed_item_db_list = await _licensed_items_repository.list_(
         app, product_name=product_name, offset=offset, limit=limit, order_by=order_by
     )
     return LicensedItemGetPage(
