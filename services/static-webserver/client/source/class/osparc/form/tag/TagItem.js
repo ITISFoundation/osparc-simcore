@@ -68,7 +68,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
       check: "String",
       init: "display",
       nullable: false,
-      apply: "_applyMode"
+      apply: "__applyMode"
     },
 
     appearance: {
@@ -100,6 +100,20 @@ qx.Class.define("osparc.form.tag.TagItem", {
             allowGrowX: true,
           });
           this.bind("description", control, "value");
+          break;
+        case "shared-icon":
+          control = new qx.ui.basic.Image().set({
+            minWidth: 30,
+            alignY: "middle"
+          });
+          this.addListener("changeAccessRights", e => {
+            const accessRights = e.getData();
+            console.log(accessRights);
+            if (accessRights) {
+              osparc.dashboard.CardBase.populateShareIcon(control, accessRights);
+            }
+          }, this);
+          control.addListener("tap", e => this.__openAccessRights(), this);
           break;
         case "name-input":
           control = new qx.ui.form.TextField().set({
@@ -186,8 +200,13 @@ qx.Class.define("osparc.form.tag.TagItem", {
       this._add(this.getChildControl("description"), {
         flex: 1
       });
+      this._add(this.getChildControl("shared-icon"));
       this._add(this.__tagItemButtons());
       this.resetBackgroundColor();
+    },
+
+    __openAccessRights: function() {
+
     },
 
     /**
@@ -296,7 +315,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
         color: color
       };
     },
-    _applyMode: function() {
+    __applyMode: function() {
       this.__renderLayout();
     }
   }
