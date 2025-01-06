@@ -1,6 +1,6 @@
 from typing import Any, Final
 
-from pydantic import NonNegativeFloat
+from pydantic import ByteSize, NonNegativeFloat, NonNegativeInt
 
 _UNIT_MULTIPLIER: Final[NonNegativeFloat] = 1024.0
 TQDM_FILE_OPTIONS: Final[dict[str, Any]] = {
@@ -16,16 +16,8 @@ TQDM_MULTI_FILES_OPTIONS: Final[dict[str, Any]] = TQDM_FILE_OPTIONS | {
 }
 
 
-def human_readable_size(size, decimal_places=3):
-    human_readable_file_size = float(size)
-    unit = "B"
-    for t_unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
-        if human_readable_file_size < _UNIT_MULTIPLIER:
-            unit = t_unit
-            break
-        human_readable_file_size /= _UNIT_MULTIPLIER
-
-    return f"{human_readable_file_size:.{decimal_places}f}{unit}"
+def human_readable_size(size: NonNegativeInt) -> str:
+    return ByteSize(size).human_readable()
 
 
 def compute_tqdm_miniters(byte_size: int) -> float:
