@@ -239,7 +239,7 @@ class TagsRepo:
         self,
         connection: AsyncConnection | None = None,
         *,
-        caller_id: int,
+        user_id: int,
         tag_id: int,
         read: bool = False,
         write: bool = False,
@@ -249,7 +249,7 @@ class TagsRepo:
             group_id_or_none = await conn.scalar(
                 has_access_rights_stmt(
                     tag_id=tag_id,
-                    caller_user_id=caller_id,
+                    caller_user_id=user_id,
                     read=read,
                     write=write,
                     delete=delete,

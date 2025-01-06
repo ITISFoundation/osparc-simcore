@@ -653,7 +653,7 @@ async def test_tags_repo_create(
 
     # Checks defaults to full ownership
     assert await tags_repo.has_access_rights(
-        caller_id=user.id,
+        user_id=user.id,
         tag_id=tag_1["id"],
         read=True,
         write=True,
@@ -688,7 +688,7 @@ async def test_tags_repo_access_rights(
     }
 
     assert await tags_repo.has_access_rights(
-        caller_id=user.id,
+        user_id=user.id,
         tag_id=tag["id"],
         read=True,
         write=True,
@@ -705,7 +705,7 @@ async def test_tags_repo_access_rights(
     )
 
     assert not await tags_repo.has_access_rights(
-        caller_id=other_user.id,
+        user_id=other_user.id,
         tag_id=tag["id"],
         read=user_access["read"],
         write=user_access["write"],
@@ -713,7 +713,7 @@ async def test_tags_repo_access_rights(
     )
 
     assert await tags_repo.has_access_rights(
-        caller_id=other_user.id,
+        user_id=other_user.id,
         tag_id=tag["id"],
         read=other_user_access["read"],
         write=other_user_access["write"],
@@ -735,13 +735,13 @@ async def test_tags_repo_access_rights(
 
     # checks partial
     assert await tags_repo.has_access_rights(
-        caller_id=other_user.id,
+        user_id=other_user.id,
         tag_id=tag["id"],
         read=False,
     )
 
     assert not await tags_repo.has_access_rights(
-        caller_id=other_user.id, tag_id=tag["id"], write=True
+        user_id=other_user.id, tag_id=tag["id"], write=True
     )
 
     # DELETE access to other-user
