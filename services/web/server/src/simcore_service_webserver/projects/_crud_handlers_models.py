@@ -163,7 +163,10 @@ class ProjectActiveQueryParams(BaseModel):
     client_session_id: str
 
 
-class ProjectSearchExtraQueryParams(PageQueryParameters):
+class ProjectSearchExtraQueryParams(
+    PageQueryParameters,
+    FiltersQueryParameters[ProjectFilters],
+):
     text: str | None = Field(
         default=None,
         description="Multi column full text search, across all folders and workspaces",

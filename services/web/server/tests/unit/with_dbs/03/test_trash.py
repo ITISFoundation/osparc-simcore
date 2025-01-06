@@ -635,7 +635,7 @@ async def test_trash_project_in_subfolder(
     assert len(data) == 0
 
     resp = await client.get(
-        "/v0/projectsh",
+        "/v0/projects",
         params={"filters": '{"trashed": true}', "folder_id": f"{subfolder.folder_id}"},
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)

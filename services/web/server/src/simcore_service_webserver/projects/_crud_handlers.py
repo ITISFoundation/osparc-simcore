@@ -232,17 +232,21 @@ async def list_projects_full_search(request: web.Request):
     query_params: ProjectsSearchQueryParams = parse_request_query_parameters_as(
         ProjectsSearchQueryParams, request
     )
+    if not query_params.filters:
+        query_params.filters = ProjectFilters()
+
     tag_ids_list = query_params.tag_ids_list()
 
-    projects, total_number_of_projects = await _crud_api_read.list_projects_full_search(
+    projects, total_number_of_projects = await _crud_api_read.list_projects_full_depth(
         request,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        limit=query_params.limit,
-        offset=query_params.offset,
-        text=query_params.text,
-        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
+        trashed=query_params.filters.trashed,
         tag_ids_list=tag_ids_list,
+        offset=query_params.offset,
+        limit=query_params.limit,
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
+        text=query_params.text,
     )
 
     page = Page[ProjectDict].model_validate(

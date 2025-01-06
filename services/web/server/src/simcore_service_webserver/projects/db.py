@@ -378,6 +378,7 @@ class ProjectDBAPI(BaseProjectDB):
             field=IDStr("last_change_date"), direction=OrderDirection.DESC
         ),
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
+
         if filter_tag_ids_list is None:
             filter_tag_ids_list = []
 
@@ -473,10 +474,11 @@ class ProjectDBAPI(BaseProjectDB):
             ###
 
             if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
-                assert workspace_query.workspace_scope in (
+
+                assert workspace_query.workspace_scope in (  # nosec
                     WorkspaceScope.SHARED,
                     WorkspaceScope.ALL,
-                )  # nosec
+                )
 
                 shared_workspace_query = (
                     sa.select(
@@ -531,9 +533,9 @@ class ProjectDBAPI(BaseProjectDB):
                     )
 
                 else:
-                    assert (
+                    assert (  # nosec
                         workspace_query.workspace_scope == WorkspaceScope.SHARED
-                    )  # nosec
+                    )
                     shared_workspace_query = shared_workspace_query.where(
                         projects.c.workspace_id
                         == workspace_query.workspace_id  # <-- Specific shared workspace
