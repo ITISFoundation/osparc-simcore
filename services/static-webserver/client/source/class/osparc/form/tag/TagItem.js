@@ -84,83 +84,53 @@ qx.Class.define("osparc.form.tag.TagItem", {
   },
 
   members: {
-    __tag: null,
-    __description: null,
-    __nameInput: null,
-    __descriptionInput: null,
-    __colorInput: null,
-    __colorButton: null,
-    __loadingIcon: null,
     __validationManager: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "tag":
-          // Tag sample on display mode
-          if (this.__tag === null) {
-            this.__tag = new osparc.ui.basic.Tag();
-            this.bind("name", this.__tag, "value");
-            this.bind("color", this.__tag, "color");
-          }
-          control = this.__tag;
+          control = new osparc.ui.basic.Tag();
+          this.bind("name", control, "value");
+          this.bind("color", control, "color");
           break;
         case "description":
-          // Description label on display mode
-          if (this.__description === null) {
-            this.__description = new qx.ui.basic.Label().set({
-              rich: true
-            });
-            this.bind("description", this.__description, "value");
-          }
-          control = this.__description;
+          control = new qx.ui.basic.Label().set({
+            rich: true,
+            allowGrowX: true,
+          });
+          this.bind("description", control, "value");
           break;
         case "name-input":
-          // Tag name input in edit mode
-          if (this.__nameInput === null) {
-            this.__nameInput = new qx.ui.form.TextField().set({
-              required: true
-            });
-            this.__validationManager.add(this.__nameInput);
-            this.__nameInput.getContentElement().setAttribute("autocomplete", "off");
-          }
-          control = this.__nameInput;
+          control = new qx.ui.form.TextField().set({
+            required: true
+          });
+          this.__validationManager.add(control);
+          control.getContentElement().setAttribute("autocomplete", "off");
           break;
         case "description-input":
-          // Tag description input in edit mode
-          if (this.__descriptionInput === null) {
-            this.__descriptionInput = new qx.ui.form.TextArea().set({
-              autoSize: true,
-              minimalLineHeight: 1
-            });
-          }
-          control = this.__descriptionInput;
+          control = new qx.ui.form.TextArea().set({
+            autoSize: true,
+            minimalLineHeight: 1
+          });
           break;
         case "color-input":
-          // Color input in edit mode
-          if (this.__colorInput === null) {
-            this.__colorInput = new qx.ui.form.TextField().set({
-              value: this.getColor(),
-              width: 60,
-              required: true
-            });
-            this.__colorInput.bind("value", this.getChildControl("color-button"), "backgroundColor");
-            this.__colorInput.bind("value", this.getChildControl("color-button"), "textColor", {
-              converter: value => osparc.utils.Utils.getContrastedBinaryColor(value)
-            });
-            this.__validationManager.add(this.__colorInput, osparc.utils.Validators.hexColor);
-          }
-          control = this.__colorInput;
+          control = new qx.ui.form.TextField().set({
+            value: this.getColor(),
+            width: 60,
+            required: true
+          });
+          control.bind("value", this.getChildControl("color-button"), "backgroundColor");
+          control.bind("value", this.getChildControl("color-button"), "textColor", {
+            converter: value => osparc.utils.Utils.getContrastedBinaryColor(value)
+          });
+          this.__validationManager.add(control, osparc.utils.Validators.hexColor);
           break;
         case "color-button":
-          // Random color generator button in edit mode
-          if (this.__colorButton === null) {
-            this.__colorButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
-            this.__colorButton.addListener("execute", () => {
-              this.getChildControl("color-input").setValue(osparc.utils.Utils.getRandomColor());
-            }, this);
-          }
-          control = this.__colorButton;
+          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
+          control.addListener("execute", () => {
+            this.getChildControl("color-input").setValue(osparc.utils.Utils.getRandomColor());
+          }, this);
           break;
       }
       return control || this.base(arguments, id);
@@ -212,16 +182,8 @@ qx.Class.define("osparc.form.tag.TagItem", {
     },
 
     __renderDisplayMode: function() {
-      const tagContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
-        width: 100
-      });
-      tagContainer.add(this.getChildControl("tag"));
-      this._add(tagContainer);
-      const descriptionContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      descriptionContainer.add(this.getChildControl("description"), {
-        width: "100%"
-      });
-      this._add(descriptionContainer, {
+      this._add(this.getChildControl("tag"));
+      this._add(this.getChildControl("description"), {
         flex: 1
       });
       this._add(this.__tagItemButtons());
