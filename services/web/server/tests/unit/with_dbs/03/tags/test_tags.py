@@ -433,13 +433,16 @@ def product_name() -> str:
     [
         (
             role,
-            status.HTTP_403_FORBIDDEN if role < UserRole.TESTER else status.HTTP_200_OK,
+            # granted only to:
+            status.HTTP_403_FORBIDDEN
+            if role < UserRole.TESTER
+            else status.HTTP_201_CREATED,
         )
         for role in UserRole
         if role >= UserRole.USER
     ],
 )
-async def test_can_share_tag_with_product_group_if_granted_by_role(
+async def test_can_only_share_tag_with_product_group_if_granted_by_role(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
