@@ -20,7 +20,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_server
-from . import _licensed_items_api, _licensed_items_checkouts_api
+from . import _licensed_items_checkouts_service, _licensed_items_service
 
 router = RPCRouter()
 
@@ -34,7 +34,7 @@ async def get_licensed_items(
     limit: int,
 ) -> LicensedItemGetPage:
     licensed_item_get_page: LicensedItemGetPage = (
-        await _licensed_items_api.list_licensed_items(
+        await _licensed_items_service.list_licensed_items(
             app=app,
             product_name=product_name,
             offset=offset,
@@ -70,7 +70,7 @@ async def checkout_licensed_item_for_wallet(
     service_run_id: ServiceRunID,
 ) -> LicensedItemCheckoutRpcGet:
     licensed_item_get = (
-        await _licensed_items_checkouts_api.checkout_licensed_item_for_wallet(
+        await _licensed_items_checkouts_service.checkout_licensed_item_for_wallet(
             app,
             licensed_item_id=licensed_item_id,
             wallet_id=wallet_id,
@@ -101,7 +101,7 @@ async def release_licensed_item_for_wallet(
     licensed_item_checkout_id: LicensedItemCheckoutID,
 ) -> LicensedItemCheckoutRpcGet:
     licensed_item_get = (
-        await _licensed_items_checkouts_api.release_licensed_item_for_wallet(
+        await _licensed_items_checkouts_service.release_licensed_item_for_wallet(
             app,
             product_name=product_name,
             user_id=user_id,

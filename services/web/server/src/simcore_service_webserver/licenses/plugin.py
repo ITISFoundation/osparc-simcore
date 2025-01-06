@@ -9,9 +9,9 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from ..rabbitmq import setup_rabbitmq
 from . import (
-    _licensed_items_checkouts_handlers,
-    _licensed_items_handlers,
-    _licensed_items_purchases_handlers,
+    _licensed_items_checkouts_rest,
+    _licensed_items_purchases_rest,
+    _licensed_items_rest,
     _rpc,
 )
 
@@ -29,9 +29,9 @@ def setup_licenses(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_LICENSES  # nosec
 
     # routes
-    app.router.add_routes(_licensed_items_handlers.routes)
-    app.router.add_routes(_licensed_items_purchases_handlers.routes)
-    app.router.add_routes(_licensed_items_checkouts_handlers.routes)
+    app.router.add_routes(_licensed_items_rest.routes)
+    app.router.add_routes(_licensed_items_purchases_rest.routes)
+    app.router.add_routes(_licensed_items_checkouts_rest.routes)
 
     setup_rabbitmq(app)
     if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:

@@ -26,7 +26,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.licenses import _licensed_items_db
+from simcore_service_webserver.licenses import _licensed_items_repository
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -73,7 +73,7 @@ async def rpc_client(
 @pytest.fixture
 def mock_get_wallet_by_user(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_checkouts_api.get_wallet_by_user",
+        "simcore_service_webserver.licenses._licensed_items_checkouts_service.get_wallet_by_user",
         spec=True,
     )
 
@@ -86,7 +86,7 @@ _LICENSED_ITEM_CHECKOUT_GET = LicensedItemCheckoutGet.model_validate(
 @pytest.fixture
 def mock_checkout_licensed_item(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_checkouts_api.licensed_items_checkouts.checkout_licensed_item",
+        "simcore_service_webserver.licenses._licensed_items_checkouts_service.licensed_items_checkouts.checkout_licensed_item",
         spec=True,
         return_value=_LICENSED_ITEM_CHECKOUT_GET,
     )
@@ -95,7 +95,7 @@ def mock_checkout_licensed_item(mocker: MockerFixture) -> tuple:
 @pytest.fixture
 def mock_get_licensed_item_checkout(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_checkouts_api.licensed_items_checkouts.get_licensed_item_checkout",
+        "simcore_service_webserver.licenses._licensed_items_checkouts_service.licensed_items_checkouts.get_licensed_item_checkout",
         spec=True,
         return_value=_LICENSED_ITEM_CHECKOUT_GET,
     )
@@ -104,7 +104,7 @@ def mock_get_licensed_item_checkout(mocker: MockerFixture) -> tuple:
 @pytest.fixture
 def mock_release_licensed_item(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_checkouts_api.licensed_items_checkouts.release_licensed_item",
+        "simcore_service_webserver.licenses._licensed_items_checkouts_service.licensed_items_checkouts.release_licensed_item",
         spec=True,
         return_value=_LICENSED_ITEM_CHECKOUT_GET,
     )
@@ -132,7 +132,7 @@ async def test_license_checkout_workflow(
     assert len(result.items) == 0
     assert result.total == 0
 
-    license_item_db = await _licensed_items_db.create(
+    license_item_db = await _licensed_items_repository.create(
         client.app,
         product_name=osparc_product_name,
         name="Model A",

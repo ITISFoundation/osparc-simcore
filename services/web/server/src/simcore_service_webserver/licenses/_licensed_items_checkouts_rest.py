@@ -20,7 +20,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ..wallets._handlers import WalletsPathParams
-from . import _licensed_items_checkouts_api
+from . import _licensed_items_checkouts_service
 from ._exceptions_handlers import handle_plugin_requests_exceptions
 from ._licensed_items_checkouts_models import (
     LicensedItemCheckoutGet,
@@ -49,7 +49,7 @@ async def get_licensed_item_checkout(request: web.Request):
     )
 
     checkout_item: LicensedItemCheckoutGet = (
-        await _licensed_items_checkouts_api.get_licensed_item_checkout(
+        await _licensed_items_checkouts_service.get_licensed_item_checkout(
             app=request.app,
             product_name=req_ctx.product_name,
             user_id=req_ctx.user_id,
@@ -87,16 +87,14 @@ async def list_licensed_item_checkouts_for_wallet(request: web.Request):
         )
     )
 
-    result: LicensedItemCheckoutGetPage = (
-        await _licensed_items_checkouts_api.list_licensed_items_checkouts_for_wallet(
-            app=request.app,
-            product_name=req_ctx.product_name,
-            user_id=req_ctx.user_id,
-            wallet_id=path_params.wallet_id,
-            offset=query_params.offset,
-            limit=query_params.limit,
-            order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
-        )
+    result: LicensedItemCheckoutGetPage = await _licensed_items_checkouts_service.list_licensed_items_checkouts_for_wallet(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        offset=query_params.offset,
+        limit=query_params.limit,
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
     get_page = LicensedItemCheckoutRestGetPage(

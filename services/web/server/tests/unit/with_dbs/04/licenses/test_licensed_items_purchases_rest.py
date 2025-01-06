@@ -49,7 +49,7 @@ _LICENSED_ITEM_PURCHASE_PAGE = rut_licensed_items_purchases.LicensedItemsPurchas
 @pytest.fixture
 def mock_get_licensed_items_purchases_page(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_purchases_api.licensed_items_purchases.get_licensed_items_purchases_page",
+        "simcore_service_webserver.licenses._licensed_items_purchases_service.licensed_items_purchases.get_licensed_items_purchases_page",
         spec=True,
         return_value=_LICENSED_ITEM_PURCHASE_PAGE,
     )
@@ -58,7 +58,7 @@ def mock_get_licensed_items_purchases_page(mocker: MockerFixture) -> tuple:
 @pytest.fixture
 def mock_get_licensed_item_purchase(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_purchases_api.licensed_items_purchases.get_licensed_item_purchase",
+        "simcore_service_webserver.licenses._licensed_items_purchases_service.licensed_items_purchases.get_licensed_item_purchase",
         spec=True,
         return_value=_LICENSED_ITEM_PURCHASE_GET,
     )
@@ -67,7 +67,7 @@ def mock_get_licensed_item_purchase(mocker: MockerFixture) -> tuple:
 @pytest.fixture
 def mock_get_wallet_by_user(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_purchases_api.get_wallet_by_user",
+        "simcore_service_webserver.licenses._licensed_items_purchases_service.get_wallet_by_user",
         spec=True,
     )
 

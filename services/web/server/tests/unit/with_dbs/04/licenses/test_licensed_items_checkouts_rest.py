@@ -33,7 +33,7 @@ _LICENSED_ITEM_CHECKOUT_PAGE = LicensedItemsCheckoutsPage(
 @pytest.fixture
 def mock_get_licensed_items_checkouts_page(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_checkouts_api.licensed_items_checkouts.get_licensed_items_checkouts_page",
+        "simcore_service_webserver.licenses._licensed_items_checkouts_service.licensed_items_checkouts.get_licensed_items_checkouts_page",
         spec=True,
         return_value=_LICENSED_ITEM_CHECKOUT_PAGE,
     )
@@ -42,7 +42,7 @@ def mock_get_licensed_items_checkouts_page(mocker: MockerFixture) -> tuple:
 @pytest.fixture
 def mock_get_licensed_item_checkout(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_checkouts_api.licensed_items_checkouts.get_licensed_item_checkout",
+        "simcore_service_webserver.licenses._licensed_items_checkouts_service.licensed_items_checkouts.get_licensed_item_checkout",
         spec=True,
         return_value=_LICENSED_ITEM_CHECKOUT_GET,
     )
@@ -51,7 +51,7 @@ def mock_get_licensed_item_checkout(mocker: MockerFixture) -> tuple:
 @pytest.fixture
 def mock_get_wallet_by_user(mocker: MockerFixture) -> tuple:
     return mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_checkouts_api.get_wallet_by_user",
+        "simcore_service_webserver.licenses._licensed_items_checkouts_service.get_wallet_by_user",
         spec=True,
     )
 
