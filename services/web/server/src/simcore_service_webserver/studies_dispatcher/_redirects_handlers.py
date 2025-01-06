@@ -23,7 +23,7 @@ from ..products.api import get_product_name
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response
 from ._catalog import ValidService, validate_requested_service
-from ._constants import MSG_UNEXPECTED_ERROR
+from ._constants import MSG_UNEXPECTED_DISPATCH_ERROR
 from ._core import validate_requested_file, validate_requested_viewer
 from ._errors import InvalidRedirectionParams, StudyDispatcherError
 from ._models import FileParams, ServiceInfo, ServiceParams, ViewerInfo
@@ -127,7 +127,7 @@ def _handle_errors_with_error_page(handler: Handler):
             error_code = create_error_code(err)
 
             user_error_msg = compose_support_error_msg(
-                msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
+                msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
             )
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
