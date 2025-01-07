@@ -33,7 +33,7 @@ qx.Class.define("osparc.data.model.Tag", {
       name: tagData.name,
       description: tagData.description,
       color: tagData.color,
-      accessRights: tagData.accessRights,
+      myAccessRights: tagData.accessRights,
     });
   },
 
@@ -65,6 +65,13 @@ qx.Class.define("osparc.data.model.Tag", {
       init: "#303030"
     },
 
+    myAccessRights: {
+      check: "Object",
+      nullable: false,
+      init: null,
+      event: "changeMyAccessRights"
+    },
+
     accessRights: {
       check: "Object",
       nullable: false,
@@ -74,24 +81,12 @@ qx.Class.define("osparc.data.model.Tag", {
   },
 
   statics: {
-    canIWrite: function(tagAccessRights) {
-      const groupsStore = osparc.store.Groups.getInstance();
-      const orgIDs = groupsStore.getOrganizationIds();
-      orgIDs.push(groupsStore.getMyGroupId());
-      if (orgIDs.length) {
-        return osparc.share.CollaboratorsTag.canGroupsWrite(tagAccessRights, (orgIDs));
-      }
-      return false;
+    canIWrite: function(myAccessRights) {
+      return myAccessRights["write"];
     },
 
-    canIDelete: function(tagAccessRights) {
-      const groupsStore = osparc.store.Groups.getInstance();
-      const orgIDs = groupsStore.getOrganizationIds();
-      orgIDs.push(groupsStore.getMyGroupId());
-      if (orgIDs.length) {
-        return osparc.share.CollaboratorsTag.canGroupsDelete(tagAccessRights, (orgIDs));
-      }
-      return false;
+    canIDelete: function(myAccessRights) {
+      return myAccessRights["delete"];
     },
   },
 
