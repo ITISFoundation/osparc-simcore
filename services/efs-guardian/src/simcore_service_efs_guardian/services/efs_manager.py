@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import shutil
@@ -153,7 +154,8 @@ class EfsManager:
         if Path.exists(_dir_path):
             # Remove the directory and all its contents
             try:
-                shutil.rmtree(_dir_path)
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(None, shutil.rmtree, _dir_path)
                 _logger.info("%s has been deleted.", _dir_path)
             except FileNotFoundError:
                 _logger.exception("Directory %s does not exist.", _dir_path)
