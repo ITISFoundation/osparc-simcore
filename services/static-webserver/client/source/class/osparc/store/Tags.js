@@ -108,7 +108,7 @@ qx.Class.define("osparc.store.Tags", {
           "tagId": tag.getTagId()
         }
       };
-      osparc.data.Resources.fetch("tags", "getAccessRights", params)
+      return osparc.data.Resources.fetch("tags", "getAccessRights", params)
         .then(accessRightsArray => {
           const accessRights = {};
           accessRightsArray.forEach(ar => accessRights[ar.gid] = ar);

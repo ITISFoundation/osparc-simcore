@@ -272,20 +272,31 @@ qx.Class.define("osparc.form.tag.TagItem", {
         if (this.__validationManager.validate()) {
           const data = this.__serializeData();
           saveButton.setFetching(true);
-          let fetch;
+          const tagsStore = osparc.store.Tags.getInstance();
           if (this.isPropertyInitialized("id")) {
-            fetch = osparc.store.Tags.getInstance().putTag(this.getId(), data);
+            tagsStore.putTag(this.getId(), data)
+              .then(tag => this.setTag(tag))
+              .catch(console.error)
+              .finally(() => {
+                this.fireEvent("tagSaved");
+                this.setMode(this.self().modes.DISPLAY);
+                saveButton.setFetching(false);
+              });
           } else {
-            fetch = osparc.store.Tags.getInstance().postTag(data);
+            let newTag = null;
+            tagsStore.postTag(data)
+              .then(tag => {
+                newTag = tag;
+                return tagsStore.fetchAccessRights(tag);
+              })
+              .then(() => this.setTag(newTag))
+              .catch(console.error)
+              .finally(() => {
+                this.fireEvent("tagSaved");
+                this.setMode(this.self().modes.DISPLAY);
+                saveButton.setFetching(false);
+              });
           }
-          fetch
-            .then(tag => this.setTag(tag))
-            .catch(console.error)
-            .finally(() => {
-              this.fireEvent("tagSaved");
-              this.setMode(this.self().modes.DISPLAY);
-              saveButton.setFetching(false);
-            });
         }
       }, this);
       cancelButton.addListener("execute", () => {
