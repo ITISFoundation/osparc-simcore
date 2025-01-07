@@ -565,12 +565,37 @@ async def test_trash_subfolder(
     resp = await client.post(f"/v0/folders/{subfolder.folder_id}:untrash")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
+    # check not in the bin
     resp = await client.get(
         "/v0/folders:search", params={"filters": '{"trashed": true}'}
     )
     await assert_status(resp, status.HTTP_200_OK)
     page = Page[FolderGet].model_validate(await resp.json())
     assert page.meta.total == 0
+
+    # check "back in place"
+    resp = await client.get(
+        "/v0/folders:search", params={"filters": '{"trashed": false}'}
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+    page = Page[FolderGet].model_validate(await resp.json())
+    assert page.meta.total == 2
+
+    resp = await client.get(
+        "/v0/folders",
+        params={"filters": '{"trashed": false}', "folder_id": f"{folder.folder_id}"},
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+    assert data[0]["folderId"] == subfolder.folder_id
+
+    expected = data
+    resp = await client.get(
+        "/v0/folders",
+        params={"folder_id": f"{folder.folder_id}"},
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert data == expected
 
 
 async def test_trash_project_in_subfolder(
@@ -586,7 +611,7 @@ async def test_trash_project_in_subfolder(
     #
     # - /Folder
     #    - /SubFolder
-    #       - user_project
+    #       - user_project <-- NOTE: this is a project!
     #
 
     # CREATE a folder
@@ -652,3 +677,11 @@ async def test_trash_project_in_subfolder(
     await assert_status(resp, status.HTTP_200_OK)
     page = Page[ProjectGet].model_validate(await resp.json())
     assert page.meta.total == 0
+
+    resp = await client.get(
+        "/v0/projects:search", params={"filters": '{"trashed": false}'}
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+    page = Page[ProjectGet].model_validate(await resp.json())
+    assert page.meta.total == 1
+    assert page.data[0].uuid == project_uuid
