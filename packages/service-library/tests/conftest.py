@@ -33,7 +33,7 @@ pytest_plugins = [
 
 
 @pytest.fixture(scope="session")
-def here():
+def package_tests_dir():
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
@@ -45,12 +45,12 @@ def package_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir(here) -> Path:
-    root_dir = here.parent.parent.parent.resolve()
+def osparc_simcore_root_dir(package_tests_dir: Path) -> Path:
+    root_dir = package_tests_dir.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
-    assert any(root_dir.glob("packages/service-library")), (
-        "%s not look like rootdir" % root_dir
-    )
+    assert any(
+        root_dir.glob("packages/service-library")
+    ), f"{root_dir} not look like rootdir"
     return root_dir
 
 
