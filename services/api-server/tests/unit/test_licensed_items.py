@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 import asyncio
 from functools import partial
+from typing import cast
 
 import pytest
 from faker import Faker
@@ -208,7 +209,8 @@ async def test_get_licensed_items_checkout(
         side_effect,
     )
     body = LicensedItemCheckoutData(
-        number_of_seats=faker.pyint(min_value=1), service_run_id="myservice"
+        number_of_seats=faker.pyint(min_value=1),
+        service_run_id=cast(ServiceRunID, "myservice"),
     )
     resp = await client.post(
         f"{API_VTAG}/wallets/{_wallet_id}/licensed-items/{_licensed_item_id}/checkout",
