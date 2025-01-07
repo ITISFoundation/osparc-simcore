@@ -11,6 +11,9 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.basic_types import IdInt
+from models_library.groups import EVERYONE_GROUP_ID
+from models_library.products import ProductName
 from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
@@ -21,12 +24,13 @@ from models_library.projects_state import (
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.postgres_tags import create_tag, delete_tag
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_projects import assert_get_same_project
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import get_database_engine
+from simcore_service_webserver.products._api import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -38,24 +42,16 @@ def _clean_tags_table(postgres_db: sa.engine.Engine) -> Iterator[None]:
 
 
 @pytest.fixture
-def fake_tags(faker: Faker) -> list[dict[str, Any]]:
-    return [
-        {"name": "tag1", "description": "description1", "color": "#f00"},
-        {"name": "tag2", "description": "description2", "color": "#00f"},
-    ]
-
-
-@pytest.fixture
 def user_role() -> UserRole:
     # All tests in test_tags assume USER's role
-    # i.e. Used in `logged_user` and `user_project`
+    # i.e. Used in `logged_user` and `user_project` fixtures
     return UserRole.USER
 
 
 async def test_tags_to_studies(
     client: TestClient,
+    faker: Faker,
     user_project: ProjectDict,
-    fake_tags: dict[str, Any],
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
 ):
     catalog_subsystem_mock([user_project])
@@ -64,10 +60,13 @@ async def test_tags_to_studies(
     # Add test tags
     added_tags = []
 
-    for tag in fake_tags:
+    for tag in [
+        {"name": "tag1", "description": faker.sentence(), "color": "#f00"},
+        {"name": "tag2", "description": faker.sentence(), "color": "#00f"},
+    ]:
         url = client.app.router["create_tag"].url_for()
         resp = await client.post(f"{url}", json=tag)
-        added_tag, _ = await assert_status(resp, status.HTTP_200_OK)
+        added_tag, _ = await assert_status(resp, status.HTTP_201_CREATED)
         added_tags.append(added_tag)
 
         # Add tag to study
@@ -151,8 +150,7 @@ async def test_read_tags(
     everybody_tag_id: int,
 ):
     assert client.app
-
-    assert user_role == UserRole.USER
+    assert UserRole(logged_user["role"]) == user_role
 
     url = client.app.router["list_tags"].url_for()
     resp = await client.get(f"{url}")
@@ -177,8 +175,7 @@ async def test_create_and_update_tags(
     _clean_tags_table: None,
 ):
     assert client.app
-
-    assert user_role == UserRole.USER
+    assert UserRole(logged_user["role"]) == user_role
 
     # (1) create tag
     url = client.app.router["create_tag"].url_for()
@@ -186,7 +183,7 @@ async def test_create_and_update_tags(
         f"{url}",
         json={"name": "T", "color": "#f00"},
     )
-    created, _ = await assert_status(resp, status.HTTP_200_OK)
+    created, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     assert created == {
         "id": created["id"],
@@ -224,8 +221,7 @@ async def test_create_tags_with_order_index(
     _clean_tags_table: None,
 ):
     assert client.app
-
-    assert user_role == UserRole.USER
+    assert UserRole(logged_user["role"]) == user_role
 
     # (1) create tags but set the order in reverse order of creation
     url = client.app.router["create_tag"].url_for()
@@ -241,7 +237,7 @@ async def test_create_tags_with_order_index(
                 "priority": priority_index,
             },
         )
-        created, _ = await assert_status(resp, status.HTTP_200_OK)
+        created, _ = await assert_status(resp, status.HTTP_201_CREATED)
         expected_tags[priority_index] = created
 
     url = client.app.router["list_tags"].url_for()
@@ -266,13 +262,206 @@ async def test_create_tags_with_order_index(
     assert got == expected_tags[::-1]
 
     # (3) new tag without priority should get last (because is last created)
+    url = client.app.router["create_tag"].url_for()
     resp = await client.post(
         f"{url}",
         json={"name": "New", "color": "#f00", "description": "w/o priority"},
     )
-    last_created, _ = await assert_status(resp, status.HTTP_200_OK)
+    last_created, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     url = client.app.router["list_tags"].url_for()
     resp = await client.get(f"{url}")
     got, _ = await assert_status(resp, status.HTTP_200_OK)
     assert got == [*expected_tags[::-1], last_created]
+
+
+async def test_share_tags_by_creating_associated_groups(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    _clean_tags_table: None,
+):
+    assert client.app
+    assert UserRole(logged_user["role"]) == user_role
+
+    # CREATE
+    url = client.app.router["create_tag"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={"name": "shared", "color": "#fff"},
+    )
+    tag, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # LIST
+    url = client.app.router["list_tag_groups"].url_for(tag_id=f"{tag['id']}")
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    # check ownership
+    assert len(data) == 1
+    assert data[0]["gid"] == logged_user["primary_gid"]
+    assert data[0]["read"] is True
+    assert data[0]["write"] is True
+    assert data[0]["delete"] is True
+
+    async with NewUser(
+        app=client.app,
+    ) as new_user:
+        # CREATE SHARE
+        url = client.app.router["create_tag_group"].url_for(
+            tag_id=f"{tag['id']}",
+            group_id=f"{new_user['primary_gid']}",
+        )
+        resp = await client.post(
+            f"{url}",
+            json={"read": True, "write": False, "delete": False},
+        )
+        data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+        assert data["gid"] == new_user["primary_gid"]
+
+        # check can read
+        url = client.app.router["list_tag_groups"].url_for(tag_id=f"{tag['id']}")
+        resp = await client.get(f"{url}")
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+        assert len(data) == 2
+        assert data[1]["gid"] == new_user["primary_gid"]
+        assert data[1]["read"] is True
+        assert data[1]["write"] is False
+        assert data[1]["delete"] is False
+
+        # REPLACE SHARE
+        url = client.app.router["replace_tag_group"].url_for(
+            tag_id=f"{tag['id']}",
+            group_id=f"{new_user['primary_gid']}",
+        )
+        resp = await client.put(
+            f"{url}",
+            json={"read": True, "write": True, "delete": False},
+        )
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+        # test can perform new combinations
+        assert data["gid"] == new_user["primary_gid"]
+
+        url = client.app.router["list_tag_groups"].url_for(tag_id=f"{tag['id']}")
+        resp = await client.get(f"{url}")
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+        assert len(data) == 2
+        assert data[1]["gid"] == new_user["primary_gid"]
+        assert data[1]["read"] is True
+        assert data[1]["write"] is True
+        assert data[1]["delete"] is False
+
+        # DELETE SHARE
+        url = client.app.router["delete_tag_group"].url_for(
+            tag_id=f"{tag['id']}",
+            group_id=f"{new_user['primary_gid']}",
+        )
+        resp = await client.delete(
+            f"{url}",
+        )
+        await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+
+@pytest.fixture
+async def user_tag_id(client: TestClient) -> IdInt:
+    assert client.app
+
+    url = client.app.router["create_tag"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={"name": "shared", "color": "#fff"},
+    )
+    tag, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    return tag["id"]
+
+
+@pytest.mark.parametrize(
+    "user_role", [role for role in UserRole if role >= UserRole.USER]
+)
+async def test_cannot_share_tag_with_everyone(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    user_tag_id: IdInt,
+    _clean_tags_table: None,
+):
+    assert client.app
+    assert UserRole(logged_user["role"]) == user_role
+
+    # cannot SHARE with everyone group
+    url = client.app.router["create_tag_group"].url_for(
+        tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={"read": True, "write": True, "delete": True},
+    )
+    _, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+    assert error
+
+    # cannot REPLACE with everyone group
+    url = client.app.router["replace_tag_group"].url_for(
+        tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+    )
+    resp = await client.put(
+        f"{url}",
+        json={"read": True, "write": True, "delete": True},
+    )
+    _, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+    assert error
+
+    # cannot DELETE with everyone group
+    url = client.app.router["delete_tag_group"].url_for(
+        tag_id=f"{user_tag_id}", group_id=f"{EVERYONE_GROUP_ID}"
+    )
+    resp = await client.delete(
+        f"{url}",
+        json={"read": True, "write": True, "delete": True},
+    )
+    _, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
+    assert error
+
+
+@pytest.fixture
+def product_name() -> str:
+    return "osparc"
+
+
+@pytest.mark.parametrize(
+    "user_role,expected_status",
+    [
+        (
+            role,
+            # granted only to:
+            status.HTTP_403_FORBIDDEN
+            if role < UserRole.TESTER
+            else status.HTTP_201_CREATED,
+        )
+        for role in UserRole
+        if role >= UserRole.USER
+    ],
+)
+async def test_can_only_share_tag_with_product_group_if_granted_by_role(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    user_tag_id: IdInt,
+    expected_status: int,
+    _clean_tags_table: None,
+    product_name: ProductName,
+):
+    assert client.app
+    assert UserRole(logged_user["role"]) == user_role
+
+    product_group_id = get_product(client.app, product_name=product_name).group_id
+
+    # cannot SHARE with everyone group
+    url = client.app.router["create_tag_group"].url_for(
+        tag_id=f"{user_tag_id}", group_id=f"{product_group_id}"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={"read": True, "write": True, "delete": True},
+    )
+    await assert_status(resp, expected_status)

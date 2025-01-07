@@ -203,6 +203,8 @@ async def user(client: TestClient) -> AsyncIterable[UserInfoDict]:
 async def project(
     client: TestClient, template_path: Path, user: UserInfoDict, product_name: str
 ) -> AsyncIterable[ProjectDict]:
+    assert client.app
+
     project = await _new_project(
         client=client,
         user=user,
