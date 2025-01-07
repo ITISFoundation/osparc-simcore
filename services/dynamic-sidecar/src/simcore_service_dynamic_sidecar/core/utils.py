@@ -49,7 +49,7 @@ def _close_transport(proc: Process):
 
 async def async_command(
     command: str,
-    timeout: float | None = None,
+    timeout: float | None = None,  # noqa: ASYNC109
     pipe_as_input: str | None = None,
     env_vars: dict[str, str] | None = None,
 ) -> CommandResult:
