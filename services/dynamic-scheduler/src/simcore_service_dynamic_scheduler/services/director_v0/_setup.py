@@ -21,6 +21,7 @@ def setup_director_v0(app: FastAPI) -> None:
                 "set_to_app_state",
             },
             base_url=settings.DYNAMIC_SCHEDULER_DIRECTOR_V0_SETTINGS.endpoint,
+            tracing_settings=settings.DYNAMIC_SCHEDULER_TRACING,
         )
         thin_client.set_to_app_state(app)
         thin_client.attach_lifespan_to(app)
