@@ -73,6 +73,28 @@ qx.Class.define("osparc.data.model.Tag", {
     },
   },
 
+  statics: {
+    canIWrite: function(tagAccessRights) {
+      const groupsStore = osparc.store.Groups.getInstance();
+      const orgIDs = groupsStore.getOrganizationIds();
+      orgIDs.push(groupsStore.getMyGroupId());
+      if (orgIDs.length) {
+        return osparc.share.CollaboratorsTag.canGroupsWrite(tagAccessRights, (orgIDs));
+      }
+      return false;
+    },
+
+    canIDelete: function(tagAccessRights) {
+      const groupsStore = osparc.store.Groups.getInstance();
+      const orgIDs = groupsStore.getOrganizationIds();
+      orgIDs.push(groupsStore.getMyGroupId());
+      if (orgIDs.length) {
+        return osparc.share.CollaboratorsTag.canGroupsDelete(tagAccessRights, (orgIDs));
+      }
+      return false;
+    },
+  },
+
   members: {
     serialize: function() {
       const jsonObject = {};

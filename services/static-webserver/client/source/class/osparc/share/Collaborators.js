@@ -202,6 +202,9 @@ qx.Class.define("osparc.share.Collaborators", {
         case "workspace":
           canIShare = osparc.share.CollaboratorsWorkspace.canIDelete(this._serializedDataCopy["myAccessRights"]);
           break;
+        case "tag":
+          canIShare = osparc.data.model.Tag.canIDelete(this._serializedDataCopy["accessRights"]);
+          break;
       }
       return canIShare;
     },

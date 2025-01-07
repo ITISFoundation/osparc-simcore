@@ -215,20 +215,21 @@ qx.Class.define("osparc.form.tag.TagItem", {
      * Generates and returns the buttons for deleting and editing an existing label (display mode)
      */
     __tagItemButtons: function() {
+      const canIWrite = osparc.data.model.Tag.canIWrite(this.getAccessRights());
+      const canIDelete = osparc.data.model.Tag.canIDelete(this.getAccessRights());
+
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const editButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/pencil-alt/12",
-        toolTipText: this.tr("Edit")
+        toolTipText: this.tr("Edit"),
+        enabled: canIWrite,
       });
       const deleteButton = new osparc.ui.form.FetchButton().set({
         appearance: "danger-button",
         icon: "@FontAwesome5Solid/trash/12",
-        toolTipText: this.tr("Delete")
+        toolTipText: this.tr("Delete"),
+        enabled: canIDelete,
       });
-      if (this.isPropertyInitialized("accessRights")) {
-        editButton.setEnabled(this.getAccessRights()["write"]);
-        deleteButton.setEnabled(this.getAccessRights()["delete"]);
-      }
       buttonContainer.add(editButton);
       buttonContainer.add(deleteButton);
       editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
