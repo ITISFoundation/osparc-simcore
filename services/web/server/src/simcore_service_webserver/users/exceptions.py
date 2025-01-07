@@ -8,24 +8,23 @@ class UsersBaseError(WebServerBaseError):
 
 
 class UserNotFoundError(UsersBaseError):
-    def __init__(self, *, uid: int | None = None, email: str | None = None, **ctx: Any):
+    def __init__(
+        self, *, user_id: int | None = None, email: str | None = None, **ctx: Any
+    ):
         super().__init__(
             msg_template=(
-                "User id {uid} not found"
-                if uid
+                "User id {user_id} not found"
+                if user_id
                 else f"User with email {email} not found"
             ),
             **ctx,
         )
-        self.uid = uid
+        self.user_id = user_id
         self.email = email
 
 
 class UserNameDuplicateError(UsersBaseError):
-    msg_template = (
-        "The username '{user_name}' is already taken. "
-        "Consider using '{alternative_user_name}' instead."
-    )
+    msg_template = "username is a unique ID and cannot create a new as '{user_name}' since it already exists "
 
 
 class TokenNotFoundError(UsersBaseError):

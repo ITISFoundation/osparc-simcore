@@ -10,7 +10,7 @@ import pytest
 from aiodocker.docker import Docker
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from pytest_mock import MockerFixture
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from simcore_service_agent.services.docker_utils import (
@@ -43,9 +43,9 @@ def test__reverse_string():
     ],
 )
 def test__does_volume_require_backup(
-    run_id: RunID, volume_path_part: str, expected: bool
+    service_run_id: ServiceRunID, volume_path_part: str, expected: bool
 ) -> None:
-    volume_name = get_source(run_id, uuid4(), Path("/apath") / volume_path_part)
+    volume_name = get_source(service_run_id, uuid4(), Path("/apath") / volume_path_part)
     print(volume_name)
     assert _does_volume_require_backup(volume_name) is expected
 

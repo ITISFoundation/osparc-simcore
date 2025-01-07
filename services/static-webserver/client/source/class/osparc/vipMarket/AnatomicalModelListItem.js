@@ -163,7 +163,10 @@ qx.Class.define("osparc.vipMarket.AnatomicalModelListItem", {
 
     __applyPurchases: function(purchases) {
       if (purchases.length) {
-        this.setBackgroundColor("strong-main");
+        this.set({
+          textColor: "default-button-text",
+          backgroundColor: "strong-main",
+        })
       }
     },
 

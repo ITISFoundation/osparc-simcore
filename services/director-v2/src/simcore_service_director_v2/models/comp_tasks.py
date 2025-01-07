@@ -128,7 +128,6 @@ class CompTaskAtDB(BaseModel):
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
     )
     image: Image
-    submit: dt.datetime
     start: dt.datetime | None = None
     end: dt.datetime | None = None
     state: RunningState
@@ -151,6 +150,10 @@ class CompTaskAtDB(BaseModel):
     pricing_info: dict | None
     hardware_info: HardwareInfo
 
+    submit: dt.datetime | None = Field(
+        default=None, deprecated=True, description="Required for legacy services"
+    )
+
     @field_validator("state", mode="before")
     @classmethod
     def _convert_state_from_state_type_enum_if_needed(cls, v):
@@ -163,7 +166,7 @@ class CompTaskAtDB(BaseModel):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
         return v
 
-    @field_validator("start", "end", "submit")
+    @field_validator("start", "end")
     @classmethod
     def _ensure_utc(cls, v: dt.datetime | None) -> dt.datetime | None:
         if v is not None and v.tzinfo is None:
@@ -228,7 +231,6 @@ class CompTaskAtDB(BaseModel):
                         }
                     },
                     "image": image_example,
-                    "submit": "2021-03-01 13:07:34.19161",
                     "node_class": "INTERACTIVE",
                     "state": "NOT_STARTED",
                     "progress": 0.44,
@@ -240,7 +242,9 @@ class CompTaskAtDB(BaseModel):
                         "pricing_unit_id": 1,
                         "pricing_unit_cost_id": 1,
                     },
-                    "hardware_info": next(iter(HardwareInfo.model_config["json_schema_extra"]["examples"])),  # type: ignore
+                    "hardware_info": next(
+                        iter(HardwareInfo.model_config["json_schema_extra"]["examples"])  # type: ignore
+                    ),
                 }
                 for image_example in Image.model_config["json_schema_extra"]["examples"]  # type: ignore
             ]

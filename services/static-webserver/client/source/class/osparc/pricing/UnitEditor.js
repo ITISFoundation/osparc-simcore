@@ -36,7 +36,6 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     const manager = this.__validator = new qx.ui.form.validation.Manager();
     unitName.setRequired(true);
     costPerUnit.setRequired(true);
-    specificInfo.setRequired(true);
     unitExtraInfoCPU.setRequired(true);
     unitExtraInfoRAM.setRequired(true);
     unitExtraInfoVRAM.setRequired(true);
@@ -114,8 +113,8 @@ qx.Class.define("osparc.pricing.UnitEditor", {
 
     specificInfo: {
       check: "String",
-      init: "t2.medium",
-      nullable: false,
+      init: null,
+      nullable: true,
       event: "changeSpecificInfo"
     },
 
@@ -307,7 +306,11 @@ qx.Class.define("osparc.pricing.UnitEditor", {
       const unitName = this.getUnitName();
       const costPerUnit = this.getCostPerUnit();
       const comment = this.getComment();
+      const awsEc2Instances = [];
       const specificInfo = this.getSpecificInfo();
+      if (specificInfo) {
+        awsEc2Instances.push(specificInfo);
+      }
       const extraInfo = {};
       extraInfo["CPU"] = this.getUnitExtraInfoCPU();
       extraInfo["RAM"] = this.getUnitExtraInfoRAM();
@@ -323,7 +326,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           "costPerUnit": costPerUnit,
           "comment": comment,
           "specificInfo": {
-            "aws_ec2_instances": [specificInfo]
+            "aws_ec2_instances": awsEc2Instances
           },
           "unitExtraInfo": extraInfo,
           "default": isDefault

@@ -3,8 +3,11 @@ from typing import Annotated, Final, NamedTuple, TypeAlias
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.groups_enums import GroupType as GroupType
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic.config import JsonDict
 from pydantic.types import PositiveInt
-from typing_extensions import TypedDict
+from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    TypedDict,
+)
 
 from .basic_types import IDStr
 from .users import UserID
@@ -35,7 +38,47 @@ class Group(BaseModel):
         create_enums_pre_validator(GroupType)
     )
 
-    model_config = ConfigDict(populate_by_name=True)
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "gid": 1,
+                        "name": "Everyone",
+                        "type": "everyone",
+                        "description": "all users",
+                        "thumbnail": None,
+                    },
+                    {
+                        "gid": 2,
+                        "name": "User",
+                        "description": "primary group",
+                        "type": "primary",
+                        "thumbnail": None,
+                    },
+                    {
+                        "gid": 3,
+                        "name": "Organization",
+                        "description": "standard group",
+                        "type": "standard",
+                        "thumbnail": None,
+                        "inclusionRules": {},
+                    },
+                    {
+                        "gid": 4,
+                        "name": "Product",
+                        "description": "standard group for products",
+                        "type": "standard",
+                        "thumbnail": None,
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        populate_by_name=True, json_schema_extra=_update_json_schema_extra
+    )
 
 
 class AccessRightsDict(TypedDict):
@@ -65,7 +108,7 @@ class GroupMember(BaseModel):
     last_name: str | None
 
     # group access
-    access_rights: AccessRightsDict
+    access_rights: AccessRightsDict | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

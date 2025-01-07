@@ -106,3 +106,27 @@ async def remove_volume(
         get_instrumentation(app).agent_metrics.remove_volumes(
             settings.AGENT_DOCKER_NODE_ID
         )
+
+
+async def get_containers_with_prefixes(docker: Docker, prefixes: set[str]) -> set[str]:
+    """Returns a set of container names matching any of the given prefixes"""
+    all_containers = await docker.containers.list(all=True)
+
+    result: set[str] = set()
+    for container in all_containers:
+        container_info = await container.show()
+        container_name = container_info.get("Name", "").lstrip("/")
+        if any(container_name.startswith(prefix) for prefix in prefixes):
+            result.add(container_name)
+
+    return result
+
+
+async def remove_container_forcefully(docker: Docker, container_id: str) -> None:
+    """Removes a container regardless of it's state"""
+    try:
+        container = await docker.containers.get(container_id)
+        await container.delete(force=True)
+    except DockerError as e:
+        if e.status != status.HTTP_404_NOT_FOUND:
+            raise

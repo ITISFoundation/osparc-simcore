@@ -31,7 +31,7 @@ async def _fetch_new_project_owner_from_groups(
     # go through user_to_groups table and fetch all uid for matching gid
     for group_gid in standard_groups:
         # remove the current owner from the bunch
-        target_group_users = await get_users_in_group(app=app, gid=group_gid) - {
+        target_group_users = await get_users_in_group(app=app, gid=int(group_gid)) - {
             user_id
         }
         _logger.info("Found group users '%s'", target_group_users)

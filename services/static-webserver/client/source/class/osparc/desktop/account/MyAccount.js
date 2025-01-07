@@ -64,16 +64,16 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       authData.bind("username", usernameLabel, "value");
       layout.add(usernameLabel);
 
-      const name = new qx.ui.basic.Label().set({
+      const fullNameLabel = new qx.ui.basic.Label().set({
         font: "text-13",
         alignX: "center"
       });
-      layout.add(name);
-      authData.bind("firstName", name, "value", {
-        converter: firstName => firstName + " " + authData.getLastName()
+      layout.add(fullNameLabel);
+      authData.bind("firstName", fullNameLabel, "value", {
+        converter: () => authData.getFullName()
       });
-      authData.bind("lastName", name, "value", {
-        converter: lastName => authData.getFirstName() + " " + lastName
+      authData.bind("lastName", fullNameLabel, "value", {
+        converter: () => authData.getFullName()
       });
 
       if (authData.getRole() !== "user") {

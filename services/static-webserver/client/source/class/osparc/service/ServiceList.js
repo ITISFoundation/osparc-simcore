@@ -29,14 +29,14 @@ qx.Class.define("osparc.service.ServiceList", {
    */
   construct: function(filterGroupId) {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.Flow(5, 5));
+    this._setLayout(new qx.ui.layout.VBox(5));
     if (filterGroupId) {
       this.__filterGroup = filterGroupId;
     }
   },
 
   events: {
-    "changeValue": "qx.event.type.Data",
+    "changeSelected": "qx.event.type.Data",
     "serviceAdd": "qx.event.type.Data"
   },
 
@@ -53,33 +53,26 @@ qx.Class.define("osparc.service.ServiceList", {
   },
 
   members: {
-    __buttonGroup: null,
     __filterGroup: null,
 
     _applyModel: function(model) {
       this._removeAll();
-      const group = this.__buttonGroup = new qx.ui.form.RadioGroup().set({
-        allowEmptySelection: true
-      });
 
+      this.__serviceListItem = [];
       model.toArray().forEach(service => {
-        const button = new osparc.service.ServiceListItem(service);
+        const item = new osparc.service.ServiceListItem(service);
         if (this.__filterGroup !== null) {
-          button.subscribeToFilterGroup(this.__filterGroup);
+          item.subscribeToFilterGroup(this.__filterGroup);
         }
-        group.add(button);
-        this._add(button);
-        button.addListener("dbltap", () => {
-          this.fireDataEvent("serviceAdd", button.getService());
-        }, this);
-        button.addListener("keypress", e => {
+        this._add(item);
+        item.addListener("tap", () => this.__setSelected(item));
+        item.addListener("dbltap", () => this.fireDataEvent("serviceAdd", item.getService()), this);
+        item.addListener("keypress", e => {
           if (e.getKeyIdentifier() === "Enter") {
-            this.fireDataEvent("serviceAdd", button.getService());
+            this.fireDataEvent("serviceAdd", item.getService());
           }
         }, this);
       });
-
-      group.addListener("changeValue", e => this.dispatchEvent(e.clone()), this);
     },
 
     /**
@@ -88,10 +81,19 @@ qx.Class.define("osparc.service.ServiceList", {
      * @return Returns the model of the selected service or null if selection is empty.
      */
     getSelected: function() {
-      if (this.__buttonGroup && this.__buttonGroup.getSelection().length) {
-        return this.__buttonGroup.getSelection()[0].getService();
+      const items = this._getChildren();
+      for (let i=0; i<items.length; i++) {
+        const item = items[i];
+        if (item.isVisible() && item.getSelected()) {
+          return item.getService();
+        }
       }
       return null;
+    },
+
+    __setSelected: function(selectedItem) {
+      this._getChildren().forEach(item => item.setSelected(item === selectedItem));
+      this.fireDataEvent("changeSelected", selectedItem);
     },
 
     /**
@@ -100,25 +102,20 @@ qx.Class.define("osparc.service.ServiceList", {
      * @return True if no item is selected, false if there one or more item selected.
      */
     isSelectionEmpty: function() {
-      if (this.__buttonGroup == null) {
-        return true;
-      }
-      return this.__buttonGroup.getSelection().length === 0;
+      const selecetedItems = this._getChildren().filter(item => item.getSelected());
+      selecetedItems.length === 0;
     },
 
     /**
      * Function that selects the first visible button.
      */
     selectFirstVisible: function() {
-      if (this._hasChildren()) {
-        const buttons = this._getChildren();
-        let current = buttons[0];
-        let i = 1;
-        while (i<buttons.length && !current.isVisible()) {
-          current = buttons[i++];
-        }
-        if (current.isVisible()) {
-          this.__buttonGroup.setSelection([this._getChildren()[i-1]]);
+      const items = this._getChildren();
+      for (let i=0; i<items.length; i++) {
+        const item = items[i];
+        if (item.isVisible()) {
+          this.__setSelected(item);
+          return;
         }
       }
     }

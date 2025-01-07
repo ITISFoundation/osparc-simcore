@@ -8,7 +8,11 @@ from ..exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ..projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
+from ..projects.exceptions import (
+    ProjectInvalidRightsError,
+    ProjectRunningConflictError,
+    ProjectStoppingError,
+)
 from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceFolderInconsistencyError,
@@ -52,6 +56,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     FoldersValueError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         "Invalid folder value set: {reason}",
+    ),
+    ProjectInvalidRightsError: HttpErrorInfo(
+        status.HTTP_403_FORBIDDEN,
+        "Access Denied: You do not have permission to move the project with UUID: {project_uuid}. Tip: Copy and paste the UUID into the search bar to locate the project.",
     ),
     # Trashing
     ProjectRunningConflictError: HttpErrorInfo(

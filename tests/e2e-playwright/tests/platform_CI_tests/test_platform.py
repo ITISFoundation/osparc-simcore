@@ -1,13 +1,17 @@
+# pylint: disable=no-name-in-module
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
-# pylint: disable=no-name-in-module
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from pathlib import Path
+from typing import Iterable
 
 import pytest
+from playwright.sync_api import expect
+from playwright.sync_api._generated import BrowserContext, Playwright
+from pydantic import AnyUrl
 
 
 @pytest.fixture(scope="session")
@@ -17,11 +21,12 @@ def store_browser_context() -> bool:
 
 @pytest.fixture
 def logged_in_context(
-    playwright,
+    playwright: Playwright,
     store_browser_context: bool,
     request: pytest.FixtureRequest,
-    pytestconfig,
-):
+    pytestconfig: pytest.Config,
+    results_path: Path,
+) -> Iterable[BrowserContext]:
     is_headed = "--headed" in pytestconfig.invocation_params.args
 
     file_path = Path("state.json")
@@ -30,13 +35,20 @@ def logged_in_context(
 
     browser = playwright.chromium.launch(headless=not is_headed)
     context = browser.new_context(storage_state="state.json")
+    test_name = request.node.name
+    context.tracing.start(
+        title=f"Trace for Browser 2 in test {test_name}",
+        snapshots=True,
+        screenshots=True,
+    )
     yield context
+    context.tracing.stop(path=f"{results_path}/second_browser_trace.zip")
     context.close()
     browser.close()
 
 
 @pytest.fixture(scope="module")
-def test_module_teardown():
+def test_module_teardown() -> Iterable[None]:
 
     yield  # Run the tests
 
@@ -45,7 +57,9 @@ def test_module_teardown():
         file_path.unlink()
 
 
-def test_simple_folder_workflow(logged_in_context, product_url, test_module_teardown):
+def test_simple_folder_workflow(
+    logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None
+):
     page = logged_in_context.new_page()
 
     page.goto(f"{product_url}")
@@ -66,7 +80,7 @@ def test_simple_folder_workflow(logged_in_context, product_url, test_module_tear
 
 
 def test_simple_workspace_workflow(
-    logged_in_context, product_url, test_module_teardown
+    logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None
 ):
     page = logged_in_context.new_page()
 
@@ -80,7 +94,12 @@ def test_simple_workspace_workflow(
         and response.request.method == "POST"
     ) as response_info:
         page.get_by_test_id("newWorkspaceButton").click()
+
+        workspace_title_field = page.get_by_test_id("workspaceEditorTitle")
+        # wait until the title is automatically filled up
+        expect(workspace_title_field).not_to_have_value("")
         page.get_by_test_id("workspaceEditorSave").click()
+
     _workspace_id = response_info.value.json()["data"]["workspaceId"]
     page.get_by_test_id(f"workspaceItem_{_workspace_id}").click()
     page.get_by_test_id("workspacesAndFoldersTreeItem_null_null").click()

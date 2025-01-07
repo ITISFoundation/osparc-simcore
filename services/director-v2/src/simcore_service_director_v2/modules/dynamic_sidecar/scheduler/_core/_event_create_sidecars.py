@@ -17,7 +17,7 @@ from models_library.rabbitmq_messages import (
     ProgressType,
 )
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
-from models_library.services import RunID
+from models_library.services import ServiceRunID
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
@@ -237,7 +237,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # Each time a new dynamic-sidecar service is created
         # generate a new `run_id` to avoid resource collisions
-        scheduler_data.run_id = RunID.create()
+        scheduler_data.run_id = ServiceRunID.get_resource_tracking_run_id_for_dynamic()
 
         rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
 

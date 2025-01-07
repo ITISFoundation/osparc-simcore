@@ -611,8 +611,9 @@ paths:
     get:
       tags:
       - groups
+      - users
       summary: Get All Group Users
-      description: Gets users in organization groups
+      description: Gets users in organization or primary groups
       operationId: get_all_group_users
       parameters:
       - name: gid
@@ -633,6 +634,7 @@ paths:
     post:
       tags:
       - groups
+      - users
       summary: Add Group User
       description: Adds a user to an organization group using their username, user
         ID, or email (subject to privacy settings)
@@ -659,6 +661,7 @@ paths:
     get:
       tags:
       - groups
+      - users
       summary: Get Group User
       description: Gets specific user in an organization group
       operationId: get_group_user
@@ -689,6 +692,7 @@ paths:
     patch:
       tags:
       - groups
+      - users
       summary: Update Group User
       description: Updates user (access-rights) to an organization group
       operationId: update_group_user
@@ -725,6 +729,7 @@ paths:
     delete:
       tags:
       - groups
+      - users
       summary: Delete Group User
       description: Removes a user from an organization group
       operationId: delete_group_user
@@ -1133,7 +1138,7 @@ paths:
   /v0/me:
     get:
       tags:
-      - user
+      - users
       summary: Get My Profile
       operationId: get_my_profile
       responses:
@@ -1145,7 +1150,7 @@ paths:
                 $ref: '#/components/schemas/Envelope_MyProfileGet_'
     put:
       tags:
-      - user
+      - users
       summary: Replace My Profile
       description: Use PATCH instead
       operationId: replace_my_profile
@@ -1161,7 +1166,7 @@ paths:
       deprecated: true
     patch:
       tags:
-      - user
+      - users
       summary: Update My Profile
       operationId: update_my_profile
       requestBody:
@@ -1176,7 +1181,7 @@ paths:
   /v0/me/preferences/{preference_id}:
     patch:
       tags:
-      - user
+      - users
       summary: Set Frontend Preference
       operationId: set_frontend_preference
       parameters:
@@ -1198,7 +1203,7 @@ paths:
   /v0/me/tokens:
     get:
       tags:
-      - user
+      - users
       summary: List Tokens
       operationId: list_tokens
       responses:
@@ -1207,17 +1212,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_ThirdPartyToken__'
+                $ref: '#/components/schemas/Envelope_list_MyTokenGet__'
     post:
       tags:
-      - user
+      - users
       summary: Create Token
       operationId: create_token
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenCreate'
+              $ref: '#/components/schemas/MyTokenCreate'
         required: true
       responses:
         '201':
@@ -1225,11 +1230,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
+                $ref: '#/components/schemas/Envelope_MyTokenGet_'
   /v0/me/tokens/{service}:
     get:
       tags:
-      - user
+      - users
       summary: Get Token
       operationId: get_token
       parameters:
@@ -1245,10 +1250,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
+                $ref: '#/components/schemas/Envelope_MyTokenGet_'
     delete:
       tags:
-      - user
+      - users
       summary: Delete Token
       operationId: delete_token
       parameters:
@@ -1264,7 +1269,7 @@ paths:
   /v0/me/notifications:
     get:
       tags:
-      - user
+      - users
       summary: List User Notifications
       operationId: list_user_notifications
       responses:
@@ -1276,7 +1281,7 @@ paths:
                 $ref: '#/components/schemas/Envelope_list_UserNotification__'
     post:
       tags:
-      - user
+      - users
       summary: Create User Notification
       operationId: create_user_notification
       requestBody:
@@ -1291,7 +1296,7 @@ paths:
   /v0/me/notifications/{notification_id}:
     patch:
       tags:
-      - user
+      - users
       summary: Mark Notification As Read
       operationId: mark_notification_as_read
       parameters:
@@ -1313,7 +1318,7 @@ paths:
   /v0/me/permissions:
     get:
       tags:
-      - user
+      - users
       summary: List User Permissions
       operationId: list_user_permissions
       responses:
@@ -1322,14 +1327,35 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_PermissionGet__'
+                $ref: '#/components/schemas/Envelope_list_MyPermissionGet__'
   /v0/users:search:
+    post:
+      tags:
+      - users
+      summary: Search Users
+      description: Search among users who are publicly visible to the caller (i.e.,
+        me) based on their privacy settings.
+      operationId: search_users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsersSearch'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_UserGet__'
+  /v0/admin/users:search:
     get:
       tags:
-      - user
-      - po
-      summary: Search Users
-      operationId: search_users
+      - users
+      - admin
+      summary: Search Users For Admin
+      operationId: search_users_for_admin
       parameters:
       - name: email
         in: query
@@ -1345,19 +1371,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_UserProfile__'
-  /v0/users:pre-register:
+                $ref: '#/components/schemas/Envelope_list_UserForAdminGet__'
+  /v0/admin/users:pre-register:
     post:
       tags:
-      - user
-      - po
-      summary: Pre Register User
-      operationId: pre_register_user
+      - users
+      - admin
+      summary: Pre Register User For Admin
+      operationId: pre_register_user_for_admin
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PreUserProfile'
+              $ref: '#/components/schemas/PreRegisteredUserGet'
         required: true
       responses:
         '200':
@@ -1365,7 +1391,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UserProfile_'
+                $ref: '#/components/schemas/Envelope_UserForAdminGet_'
   /v0/wallets:
     get:
       tags:
@@ -3221,6 +3247,121 @@ paths:
           type: string
           format: uuid
           title: Licensed Item Purchase Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_LicensedItemPurchaseGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+  /v0/wallets/{wallet_id}/licensed-items-checkouts:
+    get:
+      tags:
+      - licenses
+      - wallets
+      summary: List Licensed Item Checkouts For Wallet
+      operationId: list_licensed_item_checkouts_for_wallet
+      parameters:
+      - name: wallet_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Wallet Id
+          minimum: 0
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"started_at","direction":"desc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_LicensedItemPurchaseGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '402':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Payment Required
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Bad Request
+  /v0/licensed-items-checkouts/{licensed_item_checkout_id}:
+    get:
+      tags:
+      - licenses
+      summary: Get Licensed Item Checkout
+      operationId: get_licensed_item_checkout
+      parameters:
+      - name: licensed_item_checkout_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Licensed Item Checkout Id
       responses:
         '200':
           description: Successful Response
@@ -8185,6 +8326,19 @@ components:
           title: Error
       type: object
       title: Envelope[MyProfileGet]
+    Envelope_MyTokenGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/MyTokenGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[MyTokenGet]
     Envelope_NodeCreated_:
       properties:
         data:
@@ -8484,19 +8638,6 @@ components:
           title: Error
       type: object
       title: Envelope[TaskStatus]
-    Envelope_ThirdPartyToken_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/ThirdPartyToken'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[ThirdPartyToken]
     Envelope_Union_EmailTestFailed__EmailTestPassed__:
       properties:
         data:
@@ -8556,11 +8697,11 @@ components:
           title: Error
       type: object
       title: Envelope[Union[WalletGet, NoneType]]
-    Envelope_UserProfile_:
+    Envelope_UserForAdminGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/UserProfile'
+          - $ref: '#/components/schemas/UserForAdminGet'
           - type: 'null'
         error:
           anyOf:
@@ -8568,7 +8709,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[UserProfile]
+      title: Envelope[UserForAdminGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -8930,6 +9071,38 @@ components:
           title: Error
       type: object
       title: Envelope[list[LicensedItemGet]]
+    Envelope_list_MyPermissionGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/MyPermissionGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[MyPermissionGet]]
+    Envelope_list_MyTokenGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/MyTokenGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[MyTokenGet]]
     Envelope_list_OsparcCreditsAggregatedByServiceGet__:
       properties:
         data:
@@ -8962,22 +9135,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[PaymentMethodGet]]
-    Envelope_list_PermissionGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/PermissionGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[PermissionGet]]
     Envelope_list_PricingPlanAdminGet__:
       properties:
         data:
@@ -9186,12 +9343,12 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
-    Envelope_list_ThirdPartyToken__:
+    Envelope_list_UserForAdminGet__:
       properties:
         data:
           anyOf:
           - items:
-              $ref: '#/components/schemas/ThirdPartyToken'
+              $ref: '#/components/schemas/UserForAdminGet'
             type: array
           - type: 'null'
           title: Data
@@ -9201,7 +9358,23 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[ThirdPartyToken]]
+      title: Envelope[list[UserForAdminGet]]
+    Envelope_list_UserGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/UserGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[UserGet]]
     Envelope_list_UserNotification__:
       properties:
         data:
@@ -9218,22 +9391,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[UserNotification]]
-    Envelope_list_UserProfile__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/UserProfile'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[UserProfile]]
     Envelope_list_Viewer__:
       properties:
         data:
@@ -9952,6 +10109,8 @@ components:
       required:
       - is_inactive
       title: GetProjectInactivityResponse
+      example:
+        is_inactive: 'false'
     GetWalletAutoRecharge:
       properties:
         enabled:
@@ -10164,11 +10323,14 @@ components:
           description: the user gravatar id hash
           deprecated: true
         accessRights:
-          $ref: '#/components/schemas/GroupAccessRights'
+          anyOf:
+          - $ref: '#/components/schemas/GroupAccessRights'
+          - type: 'null'
+          description: If group is standard, these are these are the access rights
+            of the user to it.None if primary group.
       type: object
       required:
       - userName
-      - accessRights
       title: GroupUserGet
       example:
         accessRights:
@@ -10342,6 +10504,11 @@ components:
         name:
           type: string
           title: Name
+        licenseKey:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Licensekey
         licensedResourceType:
           $ref: '#/components/schemas/LicensedResourceType'
         pricingPlanId:
@@ -10361,6 +10528,7 @@ components:
       required:
       - licensedItemId
       - name
+      - licenseKey
       - licensedResourceType
       - pricingPlanId
       - createdAt
@@ -10662,6 +10830,19 @@ components:
           description: Some foundation
           gid: '16'
           label: Blue Fundation
+    MyPermissionGet:
+      properties:
+        name:
+          type: string
+          title: Name
+        allowed:
+          type: boolean
+          title: Allowed
+      type: object
+      required:
+      - name
+      - allowed
+      title: MyPermissionGet
     MyProfileGet:
       properties:
         id:
@@ -10792,6 +10973,56 @@ components:
           title: Hideemail
       type: object
       title: MyProfilePrivacyPatch
+    MyTokenCreate:
+      properties:
+        service:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Service
+          description: uniquely identifies the service where this token is used
+        token_key:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Token Key
+        token_secret:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Token Secret
+      type: object
+      required:
+      - service
+      - token_key
+      - token_secret
+      title: MyTokenCreate
+    MyTokenGet:
+      properties:
+        service:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Service
+        token_key:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Token Key
+        token_secret:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Token Secret
+          description: Will be removed
+          deprecated: true
+      type: object
+      required:
+      - service
+      - token_key
+      title: MyTokenGet
     Node-Input:
       properties:
         key:
@@ -11761,19 +11992,6 @@ components:
       - completedAt
       - completedStatus
       title: PaymentTransaction
-    PermissionGet:
-      properties:
-        name:
-          type: string
-          title: Name
-        allowed:
-          type: boolean
-          title: Allowed
-      type: object
-      required:
-      - name
-      - allowed
-      title: PermissionGet
     PhoneConfirmationBody:
       properties:
         email:
@@ -11869,7 +12087,7 @@ components:
       - x
       - y
       title: Position
-    PreUserProfile:
+    PreRegisteredUserGet:
       properties:
         firstName:
           type: string
@@ -11912,8 +12130,7 @@ components:
         extras:
           type: object
           title: Extras
-          description: Keeps extra information provided in the request form. At most
-            MAX_NUM_EXTRAS fields
+          description: Keeps extra information provided in the request form.
       type: object
       required:
       - firstName
@@ -11924,7 +12141,7 @@ components:
       - city
       - postalCode
       - country
-      title: PreUserProfile
+      title: PreRegisteredUserGet
     Preference:
       properties:
         defaultValue:
@@ -14167,58 +14384,6 @@ components:
       - url
       - thumbnail
       title: ThirdPartyInfoDict
-    ThirdPartyToken:
-      properties:
-        service:
-          type: string
-          title: Service
-          description: uniquely identifies the service where this token is used
-        token_key:
-          type: string
-          format: uuid
-          title: Token Key
-          description: basic token key
-        token_secret:
-          anyOf:
-          - type: string
-            format: uuid
-          - type: 'null'
-          title: Token Secret
-      type: object
-      required:
-      - service
-      - token_key
-      title: ThirdPartyToken
-      description: Tokens used to access third-party services connected to osparc
-        (e.g. pennsieve, scicrunch, etc)
-      example:
-        service: github-api-v1
-        token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
-    TokenCreate:
-      properties:
-        service:
-          type: string
-          title: Service
-          description: uniquely identifies the service where this token is used
-        token_key:
-          type: string
-          format: uuid
-          title: Token Key
-          description: basic token key
-        token_secret:
-          anyOf:
-          - type: string
-            format: uuid
-          - type: 'null'
-          title: Token Secret
-      type: object
-      required:
-      - service
-      - token_key
-      title: TokenCreate
-      example:
-        service: github-api-v1
-        token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
     UnitExtraInfo-Input:
       properties:
         CPU:
@@ -14351,6 +14516,137 @@ components:
       - number
       - e_tag
       title: UploadedPart
+    UserForAdminGet:
+      properties:
+        firstName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Firstname
+        lastName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lastname
+        email:
+          type: string
+          format: email
+          title: Email
+        institution:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        address:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Address
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+          description: State, province, canton, ...
+        postalCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Postalcode
+        country:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country
+        extras:
+          type: object
+          title: Extras
+          description: Keeps extra information provided in the request form
+        invitedBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Invitedby
+        registered:
+          type: boolean
+          title: Registered
+        status:
+          anyOf:
+          - $ref: '#/components/schemas/UserStatus'
+          - type: 'null'
+        products:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Products
+          description: List of products this users is included or None if fields is
+            unset
+      type: object
+      required:
+      - firstName
+      - lastName
+      - email
+      - institution
+      - phone
+      - address
+      - city
+      - state
+      - postalCode
+      - country
+      - registered
+      - status
+      title: UserForAdminGet
+    UserGet:
+      properties:
+        userId:
+          type: integer
+          exclusiveMinimum: true
+          title: Userid
+          minimum: 0
+        groupId:
+          type: integer
+          exclusiveMinimum: true
+          title: Groupid
+          minimum: 0
+        userName:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Username
+        firstName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Firstname
+        lastName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lastname
+        email:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Email
+      type: object
+      required:
+      - userId
+      - groupId
+      - userName
+      title: UserGet
     UserNotification:
       properties:
         user_id:
@@ -14472,98 +14768,6 @@ components:
       required:
       - read
       title: UserNotificationPatch
-    UserProfile:
-      properties:
-        firstName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Firstname
-        lastName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Lastname
-        email:
-          type: string
-          format: email
-          title: Email
-        institution:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Institution
-        phone:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Phone
-        address:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Address
-        city:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: City
-        state:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: State
-          description: State, province, canton, ...
-        postalCode:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Postalcode
-        country:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Country
-        extras:
-          type: object
-          title: Extras
-          description: Keeps extra information provided in the request form
-        invitedBy:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Invitedby
-        registered:
-          type: boolean
-          title: Registered
-        status:
-          anyOf:
-          - $ref: '#/components/schemas/UserStatus'
-          - type: 'null'
-        products:
-          anyOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
-          title: Products
-          description: List of products this users is included or None if fields is
-            unset
-      type: object
-      required:
-      - firstName
-      - lastName
-      - email
-      - institution
-      - phone
-      - address
-      - city
-      - state
-      - postalCode
-      - country
-      - registered
-      - status
-      title: UserProfile
     UserStatus:
       type: string
       enum:
@@ -14573,6 +14777,25 @@ components:
       - BANNED
       - DELETED
       title: UserStatus
+    UsersSearch:
+      properties:
+        match:
+          type: string
+          maxLength: 80
+          minLength: 1
+          title: Match
+          description: Search string to match with usernames and public profiles (e.g.
+            emails, first/last name)
+        limit:
+          type: integer
+          maximum: 50
+          minimum: 1
+          title: Limit
+          default: 10
+      type: object
+      required:
+      - match
+      title: UsersSearch
     Viewer:
       properties:
         title:

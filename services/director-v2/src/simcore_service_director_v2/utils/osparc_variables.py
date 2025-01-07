@@ -25,7 +25,7 @@ def factory_context_getter(parameter_name: str) -> ContextGetter:
         try:
             return context[parameter_name]
         except KeyError as err:
-            msg = "Parameter {keyname} missing from substitution context"
+            msg = f"{parameter_name=} missing from substitution context"
             raise CaptureError(msg) from err
 
     # For context["foo"] -> return operator.methodcaller("__getitem__", keyname)

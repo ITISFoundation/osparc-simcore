@@ -418,11 +418,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           getWithWallet: {
             method: "GET",
-            url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}&filters={filters}&order_by={orderBy}"
-          },
-          getWithWallet2: {
-            method: "GET",
             url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}"
+          },
+          getWithWalletFiltered: {
+            method: "GET",
+            url: statics.API + "/services/-/resource-usages?wallet_id={walletId}&offset={offset}&limit={limit}&filters={filters}&order_by={orderBy}"
           },
           getUsagePerService: {
             method: "GET",
@@ -879,6 +879,22 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * USERS
+       */
+      "users": {
+        useCache: false, // osparc.store.Groups handles the cache
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/groups/{gid}/users"
+          },
+          search: {
+            method: "POST",
+            url: statics.API + "/users:search"
+          }
+        }
+      },
+      /*
        * WALLETS
        */
       "wallets": {
@@ -958,15 +974,15 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
-      "users": {
+      "poUsers": {
         endpoints: {
           search: {
             method: "GET",
-            url: statics.API + "/users:search?email={email}"
+            url: statics.API + "/admin/users:search?email={email}"
           },
           preRegister: {
             method: "POST",
-            url: statics.API + "/users:pre-register"
+            url: statics.API + "/admin/users:pre-register"
           }
         }
       },

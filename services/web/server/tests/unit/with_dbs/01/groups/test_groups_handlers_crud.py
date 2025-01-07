@@ -71,8 +71,8 @@ async def test_list_user_groups_and_try_modify_organizations(
     my_groups = MyGroupsGet.model_validate(data)
     assert not error
 
-    assert my_groups.me.model_dump(by_alias=True) == primary_group
-    assert my_groups.all.model_dump(by_alias=True) == all_group
+    assert my_groups.me.model_dump(by_alias=True, exclude_unset=True) == primary_group
+    assert my_groups.all.model_dump(by_alias=True, exclude_unset=True) == all_group
 
     assert my_groups.organizations
     assert len(my_groups.organizations) == len(standard_groups)
@@ -80,7 +80,7 @@ async def test_list_user_groups_and_try_modify_organizations(
     by_gid = operator.itemgetter("gid")
     assert sorted(
         TypeAdapter(list[GroupGet]).dump_python(
-            my_groups.organizations, mode="json", by_alias=True
+            my_groups.organizations, mode="json", by_alias=True, exclude_unset=True
         ),
         key=by_gid,
     ) == sorted(standard_groups, key=by_gid)

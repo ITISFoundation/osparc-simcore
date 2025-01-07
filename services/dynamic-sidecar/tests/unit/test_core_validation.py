@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
-from models_library.services_types import RunID
+from models_library.services_types import ServiceRunID
 from pytest_mock import MockerFixture
 from servicelib.docker_constants import DEFAULT_USER_SERVICES_NETWORK_NAME
 from simcore_service_dynamic_sidecar.core.validation import (
@@ -156,7 +156,7 @@ def no_internet_spec(project_tests_dir: Path) -> str:
 @pytest.fixture
 def fake_mounted_volumes() -> MountedVolumes:
     return MountedVolumes(
-        run_id=RunID.create(),
+        service_run_id=ServiceRunID.get_resource_tracking_run_id_for_dynamic(),
         node_id=NodeID("a019b83f-7cce-46bf-90cf-d02f7f0f089a"),
         inputs_path=Path("/"),
         outputs_path=Path("/"),
