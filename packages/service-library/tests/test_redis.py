@@ -170,17 +170,14 @@ async def test_issue_cannot_acquire_lock_anymore(
     redis_client_sdk: RedisClientSDK, faker: Faker
 ):
     lock_name = faker.pystr()
-    with pytest.raises(LockLostError):
+    with pytest.raises(LockLostError):  # noqa: PT012
         async with redis_client_sdk.lock_context(lock_name) as ttl_lock:
             assert await _is_locked(redis_client_sdk, lock_name) is True
             assert await ttl_lock.owned() is True
-            # let's force release the lock
-            await redis_client_sdk._client.delete(lock_name)
-
+            # let's simlulate lost lock by forcefully deleting it
+            await redis_client_sdk._client.delete(lock_name)  # noqa: SLF001
+            # now we wait for the exception to be raised
             await asyncio.sleep(20)
-            # assert await _is_locked(redis_client_sdk, lock_name) is False
-            # assert await ttl_lock.owned() is False
-            # actually it should even raise here
 
 
 async def test_lock_context_with_already_locked_lock_raises(
