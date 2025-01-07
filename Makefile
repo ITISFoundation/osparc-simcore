@@ -172,10 +172,10 @@ docker buildx bake --allow=fs.read=.. \
 			,--load\
 		)\
 	)\
-	$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-			--set $(service).tags=$(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) \
-	) \
 	$(if $(push),\
+		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
+				--set $(service).tags=$(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) \
+		) \
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 			--set $(service).output="type=registry$(comma)push=true" \
 		)\
