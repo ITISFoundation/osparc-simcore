@@ -84,7 +84,7 @@ projects_nodes = sa.Table(
     sa.Column(
         "thumbnail",
         sa.String,
-        nullable=False,
+        nullable=True,
         doc="Url of the latest screenshot of the node",
     ),
     sa.Column(

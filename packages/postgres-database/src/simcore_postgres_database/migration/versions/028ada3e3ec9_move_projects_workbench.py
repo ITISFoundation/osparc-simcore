@@ -1,8 +1,8 @@
-"""Migrate workbench
+"""Move projects workbench
 
-Revision ID: e11f9d1e3f44
+Revision ID: 028ada3e3ec9
 Revises: 307017ee1a49
-Create Date: 2025-01-07 10:16:43.305789+00:00
+Create Date: 2025-01-07 10:25:54.137095+00:00
 
 """
 import sqlalchemy as sa
@@ -10,7 +10,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "e11f9d1e3f44"
+revision = "028ada3e3ec9"
 down_revision = "307017ee1a49"
 branch_labels = None
 depends_on = None
@@ -22,7 +22,7 @@ def upgrade():
     op.add_column("projects_nodes", sa.Column("version", sa.String(), nullable=False))
     op.add_column("projects_nodes", sa.Column("label", sa.String(), nullable=False))
     op.add_column("projects_nodes", sa.Column("progress", sa.Numeric(), nullable=True))
-    op.add_column("projects_nodes", sa.Column("thumbnail", sa.String(), nullable=False))
+    op.add_column("projects_nodes", sa.Column("thumbnail", sa.String(), nullable=True))
     op.add_column(
         "projects_nodes",
         sa.Column("inputs", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
