@@ -44,6 +44,6 @@ class ResourceUsageTrackerClient:
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
-    app.state.wb_api_rpc_client = ResourceUsageTrackerClient(
+    app.state.resource_usage_tracker_rpc_client = ResourceUsageTrackerClient(
         _client=rabbitmq_rmp_client
     )
