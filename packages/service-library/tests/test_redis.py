@@ -166,7 +166,7 @@ async def test_lock_context(
     assert await ttl_lock.owned() is False
 
 
-async def test_issue_cannot_acquire_lock_anymore(
+async def test_lock_context_raises_if_lock_is_lost(
     redis_client_sdk: RedisClientSDK, faker: Faker
 ):
     lock_name = faker.pystr()
