@@ -37,8 +37,12 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     });
     this._add(intro);
 
-    this._add(this.__getOrganizationsFilter());
-    this._add(osparc.data.Roles.createRolesOrgInfo());
+    const rolesLayout = osparc.data.Roles.createRolesOrgInfo();
+    const orgsFilter = this.__getOrganizationsFilter();
+    orgsFilter.setPaddingRight(10);
+    osparc.data.Roles.replaceSpacerWithWidget(rolesLayout, orgsFilter);
+    this._add(rolesLayout);
+
     this._add(this.__getOrganizationsList(), {
       flex: 1
     });

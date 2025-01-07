@@ -18,7 +18,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.licenses import _licensed_items_db
+from simcore_service_webserver.licenses import _licensed_items_repository
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -39,7 +39,7 @@ async def test_licensed_items_listing(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data == []
 
-    licensed_item_db = await _licensed_items_db.create(
+    licensed_item_db = await _licensed_items_repository.create(
         client.app,
         product_name=osparc_product_name,
         name="Model A",
@@ -67,7 +67,7 @@ async def test_licensed_items_listing(
 @pytest.fixture
 def mock_licensed_items_purchase_functions(mocker: MockerFixture) -> tuple:
     mock_wallet_credits = mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_api.get_wallet_with_available_credits_by_user_and_wallet",
+        "simcore_service_webserver.licenses._licensed_items_service.get_wallet_with_available_credits_by_user_and_wallet",
         spec=True,
         return_value=WalletGetWithAvailableCredits.model_validate(
             WalletGetWithAvailableCredits.model_config["json_schema_extra"]["examples"][
@@ -76,14 +76,14 @@ def mock_licensed_items_purchase_functions(mocker: MockerFixture) -> tuple:
         ),
     )
     mock_get_pricing_unit = mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_api.get_pricing_plan_unit",
+        "simcore_service_webserver.licenses._licensed_items_service.get_pricing_plan_unit",
         spec=True,
         return_value=PricingUnitGet.model_validate(
             PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
         ),
     )
     mock_create_licensed_item_purchase = mocker.patch(
-        "simcore_service_webserver.licenses._licensed_items_api.licensed_items_purchases.create_licensed_item_purchase",
+        "simcore_service_webserver.licenses._licensed_items_service.licensed_items_purchases.create_licensed_item_purchase",
         spec=True,
     )
 
@@ -106,7 +106,7 @@ async def test_licensed_items_purchase(
 ):
     assert client.app
 
-    licensed_item_db = await _licensed_items_db.create(
+    licensed_item_db = await _licensed_items_repository.create(
         client.app,
         product_name=osparc_product_name,
         name="Model A",
