@@ -18,7 +18,7 @@ case "${TARGETARCH}" in \
 esac
 
 SEVEN_ZIP_VERSION="2409"
-## 7z compression
+
 echo "create install dir"
 rm -rf /tmp/7zip
 mkdir -p /tmp/7zip
