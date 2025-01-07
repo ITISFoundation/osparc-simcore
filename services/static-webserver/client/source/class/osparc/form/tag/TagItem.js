@@ -57,6 +57,12 @@ qx.Class.define("osparc.form.tag.TagItem", {
       init: "#303030"
     },
 
+    myAccessRights: {
+      check: "Object",
+      nullable: false,
+      event: "changeMyAccessRights",
+    },
+
     accessRights: {
       check: "Object",
       nullable: false,
@@ -104,16 +110,18 @@ qx.Class.define("osparc.form.tag.TagItem", {
         case "shared-icon":
           control = new qx.ui.basic.Image().set({
             minWidth: 30,
-            alignY: "middle"
+            alignY: "middle",
+            cursor: "pointer",
           });
           this.addListener("changeAccessRights", e => {
             const accessRights = e.getData();
-            console.log(accessRights);
+            console.log("changeAccessRights", accessRights);
             if (accessRights) {
               osparc.dashboard.CardBase.populateShareIcon(control, accessRights);
             }
           }, this);
-          control.addListener("tap", e => this.__openAccessRights(), this);
+          osparc.dashboard.CardBase.populateShareIcon(control, this.getAccessRights())
+          control.addListener("tap", () => this.__openAccessRights(), this);
           break;
         case "name-input":
           control = new qx.ui.form.TextField().set({
@@ -155,6 +163,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
       tag.bind("name", this, "name");
       tag.bind("description", this, "description");
       tag.bind("color", this, "color");
+      tag.bind("myAccessRights", this, "myAccessRights");
       tag.bind("accessRights", this, "accessRights");
     },
 
@@ -215,8 +224,8 @@ qx.Class.define("osparc.form.tag.TagItem", {
      * Generates and returns the buttons for deleting and editing an existing label (display mode)
      */
     __tagItemButtons: function() {
-      const canIWrite = osparc.data.model.Tag.canIWrite(this.getAccessRights());
-      const canIDelete = osparc.data.model.Tag.canIDelete(this.getAccessRights());
+      const canIWrite = osparc.share.CollaboratorsTag.canIWrite(this.getMyAccessRights());
+      const canIDelete = osparc.share.CollaboratorsTag.canIDelete(this.getMyAccessRights());
 
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const editButton = new qx.ui.form.Button().set({

@@ -109,7 +109,11 @@ qx.Class.define("osparc.store.Tags", {
         }
       };
       osparc.data.Resources.fetch("tags", "getAccessRights", params)
-        .then(accessRights => tag.setAccessRights(accessRights))
+        .then(accessRightsArray => {
+          const accessRights = {};
+          accessRightsArray.forEach(ar => accessRights[ar.gid] = ar);
+          tag.setAccessRights(accessRights)
+        })
         .catch(err => console.error(err));
     },
 
