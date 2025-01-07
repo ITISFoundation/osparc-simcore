@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.licensed_items import (
     LicensedItemGet as _LicensedItemGet,
 )
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
-    LicensedItemCheckoutGet as _LicensedItemCheckoutGet,
+    LicensedItemCheckoutRpcGet as _LicensedItemCheckoutRpcGet,
 )
 from models_library.api_schemas_webserver.product import (
     GetCreditPrice as _GetCreditPrice,
@@ -165,5 +165,5 @@ class LicensedItemCheckoutGet(BaseModel):
 
 
 assert set(LicensedItemCheckoutGet.model_fields.keys()) == set(
-    _LicensedItemCheckoutGet.model_fields.keys()
+    _LicensedItemCheckoutRpcGet.model_fields.keys()
 )
