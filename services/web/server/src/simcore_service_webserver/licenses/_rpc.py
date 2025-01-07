@@ -17,6 +17,11 @@ from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     LICENSES_ERRORS,
+    CanNotCheckoutNotEnoughAvailableSeatsError,
+    NotEnoughAvailableSeatsError,
+)
+from simcore_service_api_server.exceptions.backend_errors import (
+    CanNotCheckoutServiceIsNotRunningError,
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_server
@@ -58,7 +63,13 @@ async def get_available_licensed_items_for_wallet(
     raise NotImplementedError
 
 
-@router.expose(reraise_if_error_type=LICENSES_ERRORS)
+@router.expose(
+    reraise_if_error_type=(
+        NotEnoughAvailableSeatsError,
+        CanNotCheckoutNotEnoughAvailableSeatsError,
+        CanNotCheckoutServiceIsNotRunningError,
+    )
+)
 async def checkout_licensed_item_for_wallet(
     app: web.Application,
     *,

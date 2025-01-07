@@ -13,6 +13,15 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CanNotCheckoutNotEnoughAvailableSeatsError,
+)
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CanNotCheckoutServiceIsNotRunningError as _CanNotCheckoutServiceIsNotRunningError,
+)
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    NotEnoughAvailableSeatsError,
+)
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     checkout_licensed_item_for_wallet as _checkout_licensed_item_for_wallet,
 )
@@ -26,6 +35,10 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
     release_licensed_item_for_wallet as _release_licensed_item_for_wallet,
 )
 
+from ..exceptions.backend_errors import (
+    CanNotCheckoutServiceIsNotRunningError,
+    InsufficientNumberOfSeatsError,
+)
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.pagination import PaginationParams
 from ..models.schemas.model_adapter import LicensedItemCheckoutGet, LicensedItemGet
@@ -94,6 +107,13 @@ class WbApiRpcClient:
             licensed_items_page=licensed_items_page, page_params=page_params
         )
 
+    @_exception_mapper(
+        rpc_exception_map={
+            NotEnoughAvailableSeatsError: InsufficientNumberOfSeatsError,
+            CanNotCheckoutNotEnoughAvailableSeatsError: InsufficientNumberOfSeatsError,
+            _CanNotCheckoutServiceIsNotRunningError: CanNotCheckoutServiceIsNotRunningError,
+        }
+    )
     async def checkout_licensed_item_for_wallet(
         self,
         *,
