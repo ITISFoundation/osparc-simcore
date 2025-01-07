@@ -119,15 +119,14 @@ qx.Class.define("osparc.file.TreeFolderView", {
       let found = false;
       while (!found && path.length) {
         found = foldersTree.findItemId(path.join("/"));
-        if (found) {
-          foldersTree.openNodeAndParents(found);
-          foldersTree.setSelection(new qx.data.Array([found]));
-          foldersTree.fireEvent("selectionChanged");
-        }
         // look for next parent
         path.pop();
       }
-      if (!found) {
+      if (found) {
+        foldersTree.openNodeAndParents(found);
+        foldersTree.setSelection(new qx.data.Array([found]));
+        foldersTree.fireEvent("selectionChanged");
+      } else {
         folderViewer.resetFolder();
       }
     }
