@@ -33,30 +33,31 @@ from ..models.schemas.model_adapter import LicensedItemCheckoutGet, LicensedItem
 _exception_mapper = partial(service_exception_mapper, service_name="WebApiServer")
 
 
+def _create_licensed_items_get_page(
+    *, licensed_items_page: LicensedItemGetPage, page_params: PaginationParams
+) -> Page[LicensedItemGet]:
+    page = create_page(
+        [
+            LicensedItemGet(
+                licensed_item_id=elm.licensed_item_id,
+                name=elm.name,
+                license_key=elm.license_key,
+                licensed_resource_type=elm.licensed_resource_type,
+                pricing_plan_id=elm.pricing_plan_id,
+                created_at=elm.created_at,
+                modified_at=elm.modified_at,
+            )
+            for elm in licensed_items_page.items
+        ],
+        total=licensed_items_page.total,
+        params=page_params,
+    )
+    return cast(Page[LicensedItemGet], page)
+
+
 @dataclass
 class WbApiRpcClient:
     _client: RabbitMQRPCClient
-
-    def _create_licensed_items_get_page(
-        self, *, licensed_items_page: LicensedItemGetPage, page_params: PaginationParams
-    ) -> Page[LicensedItemGet]:
-        page = create_page(
-            [
-                LicensedItemGet(
-                    licensed_item_id=elm.licensed_item_id,
-                    name=elm.name,
-                    license_key=elm.license_key,
-                    licensed_resource_type=elm.licensed_resource_type,
-                    pricing_plan_id=elm.pricing_plan_id,
-                    created_at=elm.created_at,
-                    modified_at=elm.modified_at,
-                )
-                for elm in licensed_items_page.items
-            ],
-            total=licensed_items_page.total,
-            params=page_params,
-        )
-        return cast(Page[LicensedItemGet], page)
 
     @_exception_mapper(rpc_exception_map={})
     async def get_licensed_items(
@@ -68,7 +69,7 @@ class WbApiRpcClient:
             offset=page_params.offset,
             limit=page_params.limit,
         )
-        return self._create_licensed_items_get_page(
+        return _create_licensed_items_get_page(
             licensed_items_page=licensed_items_page, page_params=page_params
         )
 
@@ -89,7 +90,7 @@ class WbApiRpcClient:
             offset=page_params.offset,
             limit=page_params.limit,
         )
-        return self._create_licensed_items_get_page(
+        return _create_licensed_items_get_page(
             licensed_items_page=licensed_items_page, page_params=page_params
         )
 
