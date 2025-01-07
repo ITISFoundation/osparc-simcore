@@ -40,6 +40,9 @@ class ProjectNodesDuplicateNodeError(BaseProjectNodesError):
 class ProjectNodeCreate(BaseModel):
     node_id: uuid.UUID
     required_resources: dict[str, Any] = Field(default_factory=dict)
+    key: str
+    version: str
+    label: str
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
@@ -65,7 +68,7 @@ class ProjectNodesRepo:
         *,
         nodes: list[ProjectNodeCreate],
     ) -> list[ProjectNode]:
-        """creates a new entry in *projects_nodes* and *projects_to_projects_nodes* tables
+        """Creates a new entry in *projects_nodes* table
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
 
