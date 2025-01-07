@@ -111,13 +111,6 @@ qx.Class.define("osparc.form.tag.TagItem", {
             alignY: "middle",
             cursor: "pointer",
           });
-          this.addListener("changeAccessRights", e => {
-            const accessRights = e.getData();
-            console.log("changeAccessRights", accessRights);
-            if (accessRights) {
-              osparc.dashboard.CardBase.populateShareIcon(control, accessRights);
-            }
-          }, this);
           osparc.dashboard.CardBase.populateShareIcon(control, this.getAccessRights())
           control.addListener("tap", () => this.__openAccessRights(), this);
           break;
@@ -218,6 +211,14 @@ qx.Class.define("osparc.form.tag.TagItem", {
       const permissionsView = new osparc.share.CollaboratorsTag(this.getTag());
       const title = this.tr("Share Tag");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 600, 600);
+
+      permissionsView.addListener("updateAccessRights", () => {
+        const accessRights = this.getTag().getAccessRights();
+        if (accessRights) {
+          const sharedIcon = this.getChildControl("shared-icon");
+          osparc.dashboard.CardBase.populateShareIcon(sharedIcon, accessRights);
+        }
+      }, this);
     },
 
     /**
