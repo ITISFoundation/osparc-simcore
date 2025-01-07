@@ -288,7 +288,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         converter: val => val ? "tab-button-selected" : "tab-button"
       });
       if (widget) {
-        tabPage.add(widget, {
+        const scrollView = new qx.ui.container.Scroll();
+        scrollView.add(widget);
+        tabPage.add(scrollView, {
           flex: 1
         });
       }
