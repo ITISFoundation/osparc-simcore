@@ -1,34 +1,39 @@
 """ Repository pattern, errors and data structures for models.tags
 """
-
-from typing import TypedDict
-
+from common_library.errors_classes import OsparcErrorMixin
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from typing_extensions import TypedDict
 
 from .utils_repos import pass_or_acquire_connection, transaction_context
 from .utils_tags_sql import (
+    TagAccessRightsDict,
     count_groups_with_given_access_rights_stmt,
     create_tag_stmt,
+    delete_tag_access_rights_stmt,
     delete_tag_stmt,
     get_tag_stmt,
+    has_access_rights_stmt,
+    list_tag_group_access_stmt,
     list_tags_stmt,
-    set_tag_access_rights_stmt,
     update_tag_stmt,
+    upsert_tags_access_rights_stmt,
 )
+
+__all__: tuple[str, ...] = ("TagAccessRightsDict",)
 
 
 #
 # Errors
 #
-class BaseTagError(Exception):
+class _BaseTagError(OsparcErrorMixin, Exception):
+    msg_template = "Tag repo error on tag {tag_id}"
+
+
+class TagNotFoundError(_BaseTagError):
     pass
 
 
-class TagNotFoundError(BaseTagError):
-    pass
-
-
-class TagOperationNotAllowedError(BaseTagError):  # maps to AccessForbidden
+class TagOperationNotAllowedError(_BaseTagError):  # maps to AccessForbidden
     pass
 
 
@@ -108,7 +113,7 @@ class TagsRepo:
             assert tag  # nosec
 
             # take tag ownership
-            access_stmt = set_tag_access_rights_stmt(
+            access_stmt = upsert_tags_access_rights_stmt(
                 tag_id=tag.id,
                 user_id=user_id,
                 read=read,
@@ -163,8 +168,7 @@ class TagsRepo:
             result = await conn.execute(stmt_get)
             row = result.first()
             if not row:
-                msg = f"{tag_id=} not found: either no access or does not exists"
-                raise TagNotFoundError(msg)
+                raise TagNotFoundError(operation="get", tag_id=tag_id, user_id=user_id)
             return TagDict(
                 id=row.id,
                 name=row.name,
@@ -198,8 +202,9 @@ class TagsRepo:
             result = await conn.execute(update_stmt)
             row = result.first()
             if not row:
-                msg = f"{tag_id=} not updated: either no access or not found"
-                raise TagOperationNotAllowedError(msg)
+                raise TagOperationNotAllowedError(
+                    operation="update", tag_id=tag_id, user_id=user_id
+                )
 
             return TagDict(
                 id=row.id,
@@ -222,44 +227,95 @@ class TagsRepo:
         async with transaction_context(self.engine, connection) as conn:
             deleted = await conn.scalar(stmt_delete)
             if not deleted:
-                msg = f"Could not delete {tag_id=}. Not found or insuficient access."
-                raise TagOperationNotAllowedError(msg)
+                raise TagOperationNotAllowedError(
+                    operation="delete", tag_id=tag_id, user_id=user_id
+                )
 
     #
     # ACCESS RIGHTS
     #
 
-    async def create_access_rights(
+    async def has_access_rights(
         self,
         connection: AsyncConnection | None = None,
         *,
         user_id: int,
         tag_id: int,
-        group_id: int,
-        read: bool,
-        write: bool,
-        delete: bool,
-    ):
-        raise NotImplementedError
+        read: bool = False,
+        write: bool = False,
+        delete: bool = False,
+    ) -> bool:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            group_id_or_none = await conn.scalar(
+                has_access_rights_stmt(
+                    tag_id=tag_id,
+                    caller_user_id=user_id,
+                    read=read,
+                    write=write,
+                    delete=delete,
+                )
+            )
+            return bool(group_id_or_none)
 
-    async def update_access_rights(
+    async def list_access_rights(
         self,
         connection: AsyncConnection | None = None,
         *,
-        user_id: int,
+        tag_id: int,
+    ) -> list[TagAccessRightsDict]:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            result = await conn.execute(list_tag_group_access_stmt(tag_id=tag_id))
+            return [
+                TagAccessRightsDict(
+                    tag_id=row.tag_id,
+                    group_id=row.group_id,
+                    read=row.read,
+                    write=row.write,
+                    delete=row.delete,
+                )
+                for row in result.fetchall()
+            ]
+
+    async def create_or_update_access_rights(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
         tag_id: int,
         group_id: int,
         read: bool,
         write: bool,
         delete: bool,
-    ):
-        raise NotImplementedError
+    ) -> TagAccessRightsDict:
+        async with transaction_context(self.engine, connection) as conn:
+            result = await conn.execute(
+                upsert_tags_access_rights_stmt(
+                    tag_id=tag_id,
+                    group_id=group_id,
+                    read=read,
+                    write=write,
+                    delete=delete,
+                )
+            )
+            row = result.first()
+            assert row is not None
+
+            return TagAccessRightsDict(
+                tag_id=row.tag_id,
+                group_id=row.group_id,
+                read=row.read,
+                write=row.write,
+                delete=row.delete,
+            )
 
     async def delete_access_rights(
         self,
         connection: AsyncConnection | None = None,
         *,
-        user_id: int,
         tag_id: int,
-    ):
-        raise NotImplementedError
+        group_id: int,
+    ) -> bool:
+        async with transaction_context(self.engine, connection) as conn:
+            deleted: bool = await conn.scalar(
+                delete_tag_access_rights_stmt(tag_id=tag_id, group_id=group_id)
+            )
+            return deleted
