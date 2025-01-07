@@ -790,13 +790,17 @@ async def add_project_node(
     default_resources = await catalog_client.get_service_resources(
         request.app, user_id, service_key, service_version
     )
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     assert db  # nosec
     await db.add_project_node(
         user_id,
         ProjectID(project["uuid"]),
         ProjectNodeCreate(
-            node_id=node_uuid, required_resources=jsonable_encoder(default_resources)
+            node_id=node_uuid,
+            required_resources=jsonable_encoder(default_resources),
+            key=service_key,
+            version=service_version,
+            label=service_key.split("/")[-1]
         ),
         Node.model_validate(
             {

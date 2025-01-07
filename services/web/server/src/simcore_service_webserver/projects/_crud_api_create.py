@@ -2,6 +2,7 @@ import asyncio
 import logging
 from collections.abc import Coroutine
 from contextlib import AsyncExitStack
+from platform import node
 from typing import Any, TypeAlias
 
 from aiohttp import web
@@ -215,6 +216,9 @@ async def _compose_project_data(
                         app, user_id, node_data["key"], node_data["version"]
                     )
                 ),
+                key=node_data.get("key"),
+                version=node_data.get("version"),
+                label=node_data.get("label"),
             )
             for node_id, node_data in predefined_project.get("workbench", {}).items()
         }
