@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from pydantic import NonNegativeInt
 from servicelib.archiving_utils._interface_7zip import (
-    ProgressParser,
+    _7ZipProgressParser,
     _extract_file_names_from_archive,
     archive_dir,
     unarchive_dir,
@@ -50,10 +50,10 @@ async def test_compress_progress_parser(
 
     detected_entries: list[NonNegativeInt] = []
 
-    async def progress_handler(byte_progress: NonNegativeInt) -> None:
+    async def _progress_handler(byte_progress: NonNegativeInt) -> None:
         detected_entries.append(byte_progress)
 
-    parser = ProgressParser(progress_handler)
+    parser = _7ZipProgressParser(_progress_handler)
     for chunk in stdout_entries:
         await parser.parse_chunk(chunk)
 

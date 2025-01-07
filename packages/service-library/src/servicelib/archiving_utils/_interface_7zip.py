@@ -43,7 +43,7 @@ _TOKEN_FILE_PERMISSIONS: Final[str] = " ..... "
 _7ZIP_EXECUTABLE: Final[Path] = Path("/usr/bin/7z")
 
 
-class ArchiveInfoParser:
+class _7ZipArchiveInfoParser:  # noqa: N801
     def __init__(self) -> None:
         self.total_bytes: NonNegativeInt | None = None
         self.file_count: NonNegativeInt | None = None
@@ -67,11 +67,11 @@ class ArchiveInfoParser:
         return (self.total_bytes, self.file_count)
 
 
-class ProgressParser:
+class _7ZipProgressParser:  # noqa: N801
     def __init__(
-        self, decompressed_bytes: Callable[[NonNegativeInt], Awaitable[None]]
+        self, progress_handler: Callable[[NonNegativeInt], Awaitable[None]]
     ) -> None:
-        self.decompressed_bytes = decompressed_bytes
+        self.progress_handler = progress_handler
         self.total_bytes: NonNegativeInt | None = None
 
         # in range 0% -> 100%
@@ -105,14 +105,14 @@ class ProgressParser:
             # only emit an update if something changed since before
             bytes_diff = current_bytes_progress - self.emitted_total
             if self.emitted_total == 0 or bytes_diff > 0:
-                await self.decompressed_bytes(bytes_diff)
+                await self.progress_handler(bytes_diff)
 
             self.emitted_total = current_bytes_progress
 
         # if finished emit the remaining diff
         if self.total_bytes and self.finished and not self.finished_emitted:
 
-            await self.decompressed_bytes(self.total_bytes - self.emitted_total)
+            await self.progress_handler(self.total_bytes - self.emitted_total)
             self.finished_emitted = True
 
 
@@ -237,12 +237,12 @@ async def archive_dir(
             )
         )
 
-        async def progress_handler(byte_progress: NonNegativeInt) -> None:
+        async def _compressed_bytes(byte_progress: NonNegativeInt) -> None:
             tqdm_progress.update(byte_progress)
             await sub_progress.update(byte_progress)
 
         await _run_cli_command(
-            command, output_handler=ProgressParser(progress_handler).parse_chunk
+            command, output_handler=_7ZipProgressParser(_compressed_bytes).parse_chunk
         )
 
         # 7zip automatically adds .zip extension if it's missing form the archive name
@@ -283,7 +283,7 @@ async def unarchive_dir(
         )
 
     # get archive information
-    archive_info_parser = ArchiveInfoParser()
+    archive_info_parser = _7ZipArchiveInfoParser()
     list_output = await _run_cli_command(
         f"{_7ZIP_EXECUTABLE} l {archive_to_extract}",
         output_handler=archive_info_parser.parse_chunk,
@@ -306,7 +306,7 @@ async def unarchive_dir(
         )
 
         # extract archive
-        async def progress_handler(byte_progress: NonNegativeInt) -> None:
+        async def _decompressed_bytes(byte_progress: NonNegativeInt) -> None:
             if tqdm_progress.update(byte_progress) and log_cb:
                 with log_catch(_logger, reraise=False):
                     await log_cb(f"{tqdm_progress}")
@@ -321,7 +321,7 @@ async def unarchive_dir(
         )
         await _run_cli_command(
             f"{_7ZIP_EXECUTABLE} {options} {archive_to_extract} -o{destination_folder}",
-            output_handler=ProgressParser(progress_handler).parse_chunk,
+            output_handler=_7ZipProgressParser(_decompressed_bytes).parse_chunk,
         )
 
     return {destination_folder / x for x in file_names_in_archive}

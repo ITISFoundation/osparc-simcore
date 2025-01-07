@@ -1,16 +1,16 @@
-from typing import Any, Final
+from typing import Final
 
 from pydantic import ByteSize, NonNegativeFloat, NonNegativeInt
 
 _UNIT_MULTIPLIER: Final[NonNegativeFloat] = 1024.0
-TQDM_FILE_OPTIONS: Final[dict[str, Any]] = {
+TQDM_FILE_OPTIONS: Final[dict] = {
     "unit": "byte",
     "unit_scale": True,
     "unit_divisor": 1024,
     "colour": "yellow",
     "miniters": 1,
 }
-TQDM_MULTI_FILES_OPTIONS: Final[dict[str, Any]] = TQDM_FILE_OPTIONS | {
+TQDM_MULTI_FILES_OPTIONS: Final[dict] = TQDM_FILE_OPTIONS | {
     "unit": "file",
     "unit_divisor": 1000,
 }
