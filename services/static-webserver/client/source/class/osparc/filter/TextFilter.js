@@ -35,8 +35,7 @@ qx.Class.define("osparc.filter.TextFilter", {
       allowStretchY: false
     });
 
-    this.__textField = this.getChildControl("textfield");
-
+    this.getChildControl("textfield");
     this.getChildControl("clearbutton");
 
     this.__attachEventHandlers();
@@ -46,18 +45,23 @@ qx.Class.define("osparc.filter.TextFilter", {
     appearance: {
       refine: true,
       init: "textfilter"
-    }
+    },
+
+    compact: {
+      check: "Boolean",
+      init: false,
+      apply: "__applyCompact",
+    },
   },
 
   members: {
-    __textField: null,
-
     /**
      * Function that resets the field and dispatches the update.
      */
     reset: function() {
-      this.__textField.resetValue();
-      this.__textField.fireDataEvent("input", "");
+      const textField = this.getChildControl("textfield");
+      textField.resetValue();
+      textField.fireDataEvent("input", "");
     },
 
     _createChildControlImpl: function(id) {
@@ -78,7 +82,7 @@ qx.Class.define("osparc.filter.TextFilter", {
         case "clearbutton":
           control = new osparc.ui.basic.IconButton("@MaterialIcons/close/12", () => {
             this.reset();
-            this.__textField.focus();
+            this.getChildControl("textfield").focus();
           });
           this._add(control, {
             right: 0,
@@ -89,8 +93,21 @@ qx.Class.define("osparc.filter.TextFilter", {
       return control || this.base(arguments, id);
     },
 
+    __applyCompact: function(compact) {
+      this.set({
+        allowStretchX: compact,
+        allowGrowX: compact,
+        maxHeight: compact ? 30 : null,
+        margin: compact ? 0 : null,
+      });
+
+      this.getChildControl("textfield").set({
+        margin: compact ? 0 : null,
+      });
+    },
+
     __attachEventHandlers: function() {
-      this.__textField.addListener("input", evt => {
+      this.getChildControl("textfield").addListener("input", evt => {
         this._filterChange(evt.getData().trim().toLowerCase());
       });
     }

@@ -1,12 +1,14 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
 
 import functools
 import sys
+from collections.abc import AsyncIterable
 from copy import deepcopy
 from http import HTTPStatus
 from typing import Any
@@ -19,15 +21,21 @@ from aiopg.sa.connection import SAConnection
 from common_library.users_enums import UserRole, UserStatus
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
-from models_library.api_schemas_webserver.users import MyProfileGet, UserGet
+from models_library.api_schemas_webserver.groups import GroupUserGet
+from models_library.api_schemas_webserver.users import (
+    MyProfileGet,
+    UserForAdminGet,
+    UserGet,
+)
 from psycopg2 import OperationalError
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import (
     DEFAULT_TEST_PASSWORD,
     random_pre_registration_details,
 )
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.users._common.schemas import (
@@ -51,6 +59,188 @@ def app_environment(
             "WEBSERVER_DB_LISTENER": "0",
         },
     )
+
+
+@pytest.fixture
+async def private_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
+    assert client.app
+    async with NewUser(
+        app=client.app,
+        user_data={
+            "name": "jamie01",
+            "first_name": "James",
+            "last_name": "Bond",
+            "email": "james@find.me",
+            "privacy_hide_email": True,
+            "privacy_hide_fullname": True,
+        },
+    ) as usr:
+        yield usr
+
+
+@pytest.fixture
+async def semi_private_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
+    assert client.app
+    async with NewUser(
+        app=client.app,
+        user_data={
+            "name": "maxwell",
+            "first_name": "James",
+            "last_name": "Maxwell",
+            "email": "j@maxwell.me",
+            "privacy_hide_email": True,
+            "privacy_hide_fullname": False,  # <--
+        },
+    ) as usr:
+        yield usr
+
+
+@pytest.fixture
+async def public_user(client: TestClient) -> AsyncIterable[UserInfoDict]:
+    assert client.app
+    async with NewUser(
+        app=client.app,
+        user_data={
+            "name": "taylie01",
+            "first_name": "Taylor",
+            "last_name": "Swift",
+            "email": "taylor@find.me",
+            "privacy_hide_email": False,
+            "privacy_hide_fullname": False,
+        },
+    ) as usr:
+        yield usr
+
+
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-issues/issues/1779"
+)
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_search_users(
+    logged_user: UserInfoDict,
+    client: TestClient,
+    user_role: UserRole,
+    public_user: UserInfoDict,
+    semi_private_user: UserInfoDict,
+    private_user: UserInfoDict,
+):
+    assert client.app
+    assert user_role.value == logged_user["role"]
+
+    assert private_user["id"] != logged_user["id"]
+    assert public_user["id"] != logged_user["id"]
+
+    # SEARCH by partial first_name
+    partial_name = "james"
+    assert partial_name in private_user.get("first_name", "").lower()
+    assert partial_name in semi_private_user.get("first_name", "").lower()
+
+    url = client.app.router["search_users"].url_for()
+    resp = await client.post(f"{url}", json={"match": partial_name})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    found = TypeAdapter(list[UserGet]).validate_python(data)
+    assert found
+    assert len(found) == 1
+    assert semi_private_user["name"] == found[0].user_name
+    assert found[0].first_name == semi_private_user.get("first_name")
+    assert found[0].last_name == semi_private_user.get("last_name")
+    assert found[0].email is None
+
+    # SEARCH by partial email
+    partial_email = "@find.m"
+    assert partial_email in private_user["email"]
+    assert partial_email in public_user["email"]
+
+    url = client.app.router["search_users"].url_for()
+    resp = await client.post(f"{url}", json={"match": partial_email})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    found = TypeAdapter(list[UserGet]).validate_python(data)
+    assert found
+    assert len(found) == 1
+    assert found[0].user_id == public_user["id"]
+    assert found[0].user_name == public_user["name"]
+    assert found[0].email == public_user["email"]
+    assert found[0].first_name == public_user.get("first_name")
+    assert found[0].last_name == public_user.get("last_name")
+
+    # SEARCH by partial username
+    partial_username = "ie01"
+    assert partial_username in private_user["name"]
+    assert partial_username in public_user["name"]
+
+    url = client.app.router["search_users"].url_for()
+    resp = await client.post(f"{url}", json={"match": partial_username})
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    found = TypeAdapter(list[UserGet]).validate_python(data)
+    assert found
+    assert len(found) == 2
+
+    index = [u.user_id for u in found].index(public_user["id"])
+    assert found[index].user_name == public_user["name"]
+
+    # check privacy
+    index = (index + 1) % 2
+    assert found[index].user_name == private_user["name"]
+    assert found[index].email is None
+    assert found[index].first_name is None
+    assert found[index].last_name is None
+
+    # SEARCH user for admin (from a USER)
+    url = (
+        client.app.router["search_users_for_admin"]
+        .url_for()
+        .with_query(email=partial_email)
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, status.HTTP_403_FORBIDDEN)
+
+
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-issues/issues/1779"
+)
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_user_by_group_id(
+    logged_user: UserInfoDict,
+    client: TestClient,
+    user_role: UserRole,
+    public_user: UserInfoDict,
+    private_user: UserInfoDict,
+):
+    assert client.app
+    assert user_role.value == logged_user["role"]
+
+    assert private_user["id"] != logged_user["id"]
+    assert public_user["id"] != logged_user["id"]
+
+    # GET user by primary GID
+    url = client.app.router["get_all_group_users"].url_for(
+        gid=f"{public_user['primary_gid']}"
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    users = TypeAdapter(list[GroupUserGet]).validate_python(data)
+    assert len(users) == 1
+    assert users[0].id == public_user["id"]
+    assert users[0].user_name == public_user["name"]
+    assert users[0].first_name == public_user.get("first_name")
+    assert users[0].last_name == public_user.get("last_name")
+
+    url = client.app.router["get_all_group_users"].url_for(
+        gid=f"{private_user['primary_gid']}"
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    users = TypeAdapter(list[GroupUserGet]).validate_python(data)
+    assert len(users) == 1
+    assert users[0].id == private_user["id"]
+    assert users[0].user_name == private_user["name"]
+    assert users[0].first_name is None
+    assert users[0].last_name is None
 
 
 @pytest.mark.parametrize(
@@ -345,8 +535,8 @@ async def test_access_rights_on_search_users_only_product_owners_can_access(
 ):
     assert client.app
 
-    url = client.app.router["search_users"].url_for()
-    assert url.path == "/v0/users:search"
+    url = client.app.router["search_users_for_admin"].url_for()
+    assert url.path == "/v0/admin/users:search"
 
     resp = await client.get(url.path, params={"email": "do-not-exists@foo.com"})
     await assert_status(resp, expected)
@@ -396,12 +586,14 @@ async def test_search_and_pre_registration(
     assert client.app
 
     # ONLY in `users` and NOT `users_pre_registration_details`
-    resp = await client.get("/v0/users:search", params={"email": logged_user["email"]})
+    resp = await client.get(
+        "/v0/admin/users:search", params={"email": logged_user["email"]}
+    )
     assert resp.status == status.HTTP_200_OK
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserGet(
+    got = UserForAdminGet(
         **found[0],
         institution=None,
         address=None,
@@ -430,15 +622,15 @@ async def test_search_and_pre_registration(
     # NOT in `users` and ONLY `users_pre_registration_details`
 
     # create pre-registration
-    resp = await client.post("/v0/users:pre-register", json=account_request_form)
+    resp = await client.post("/v0/admin/users:pre-register", json=account_request_form)
     assert resp.status == status.HTTP_200_OK
 
     resp = await client.get(
-        "/v0/users:search", params={"email": account_request_form["email"]}
+        "/v0/admin/users:search", params={"email": account_request_form["email"]}
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserGet(**found[0], state=None, status=None)
+    got = UserForAdminGet(**found[0], state=None, status=None)
 
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": False,
@@ -457,11 +649,11 @@ async def test_search_and_pre_registration(
     )
 
     resp = await client.get(
-        "/v0/users:search", params={"email": account_request_form["email"]}
+        "/v0/admin/users:search", params={"email": account_request_form["email"]}
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserGet(**found[0], state=None)
+    got = UserForAdminGet(**found[0], state=None)
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": True,
         "status": new_user["status"].name,

@@ -165,7 +165,7 @@ qx.Class.define("osparc.data.Roles", {
       }
     },
 
-    __createIntoFromRoles: function(roles, showWording = true) {
+    __createRolesLayout: function(roles, showWording = true) {
       const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
         alignY: "middle",
         paddingRight: 10
@@ -202,23 +202,34 @@ qx.Class.define("osparc.data.Roles", {
     },
 
     createRolesOrgInfo: function() {
-      return this.__createIntoFromRoles(osparc.data.Roles.ORG);
+      return this.__createRolesLayout(osparc.data.Roles.ORG);
     },
 
     createRolesWalletInfo: function() {
-      return this.__createIntoFromRoles(osparc.data.Roles.WALLET);
+      return this.__createRolesLayout(osparc.data.Roles.WALLET);
     },
 
     createRolesStudyInfo: function() {
-      return this.__createIntoFromRoles(osparc.data.Roles.STUDY);
+      return this.__createRolesLayout(osparc.data.Roles.STUDY);
     },
 
     createRolesServicesInfo: function() {
-      return this.__createIntoFromRoles(osparc.data.Roles.SERVICES);
+      return this.__createRolesLayout(osparc.data.Roles.SERVICES);
     },
 
     createRolesWorkspaceInfo: function(showWording = true) {
-      return this.__createIntoFromRoles(osparc.data.Roles.WORKSPACE, showWording);
-    }
+      return this.__createRolesLayout(osparc.data.Roles.WORKSPACE, showWording);
+    },
+
+    replaceSpacerWithWidget: function(rolesLayout, widget) {
+      if (rolesLayout && rolesLayout.getChildren()) {
+        // remove spacer
+        rolesLayout.remove(rolesLayout.getChildren()[0]);
+        // add widget
+        rolesLayout.addAt(widget, 0, {
+          flex: 1
+        });
+      }
+    },
   }
 });

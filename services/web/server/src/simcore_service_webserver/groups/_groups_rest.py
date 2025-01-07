@@ -164,7 +164,7 @@ async def delete_group(request: web.Request):
 @permission_required("groups.*")
 @handle_plugin_requests_exceptions
 async def get_all_group_users(request: web.Request):
-    """Gets users in organization groups"""
+    """Gets users in organization or primary groups"""
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
