@@ -165,12 +165,11 @@ async def test_workspaces__list_projects_full_search(
     assert sorted_data[2]["folderId"] == root_folder["folderId"]
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test__list_projects_full_search_with_query_parameters(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     fake_project: ProjectDict,
     workspaces_clean_db: None,
@@ -220,14 +219,14 @@ async def test__list_projects_full_search_with_query_parameters(
     resp = await client.post(
         f"{url}", json={"name": "tag1", "description": "description1", "color": "#f00"}
     )
-    added_tag, _ = await assert_status(resp, expected)
+    added_tag, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # Add tag to study
     url = client.app.router["add_project_tag"].url_for(
         project_uuid=project["uuid"], tag_id=str(added_tag.get("id"))
     )
     resp = await client.post(f"{url}")
-    data, _ = await assert_status(resp, expected)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     # Full search with tag_ids
     base_url = client.app.router["list_projects_full_search"].url_for()
