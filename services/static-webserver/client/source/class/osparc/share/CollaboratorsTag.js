@@ -133,8 +133,8 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE[2].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.WORKSPACE[2].label}`),
+        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Something went wrong promoting to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
     },
@@ -143,50 +143,28 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
-        this.tr(`Successfully promoted to ${osparc.data.Roles.WORKSPACE[3].label}`),
-        this.tr(`Something went wrong promoting to ${osparc.data.Roles.WORKSPACE[3].label}`),
+        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[3].label}`),
+        this.tr(`Something went wrong promoting to ${osparc.data.Roles.STUDY[3].label}`),
         item
       );
     },
 
     _demoteToUser: async function(collaborator, item) {
-      const groupId = collaborator["gid"];
-      const demoteToUser = (gid, itm) => {
-        this.__make(
-          gid,
-          this.self().getViewerAccessRight(),
-          this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE[1].label}`),
-          this.tr(`Something went wrong demoting to ${osparc.data.Roles.WORKSPACE[1].label}`),
-          itm
-        );
-      };
-
-      const group = osparc.store.Groups.getInstance().getOrganization(groupId);
-      if (group) {
-        const msg = this.tr(`Demoting to ${osparc.data.Roles.WORKSPACE[1].label} will remove write access to all the members of the Organization. Are you sure?`);
-        const win = new osparc.ui.window.Confirmation(msg).set({
-          caption: this.tr("Demote"),
-          confirmAction: "delete",
-          confirmText: this.tr("Yes")
-        });
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            demoteToUser(groupId, item);
-          }
-        }, this);
-      } else {
-        demoteToUser(groupId, item);
-      }
+      this.__make(
+        collaborator["gid"],
+        this.self().getViewerAccessRight(),
+        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[1].label}`),
+        this.tr(`Something went wrong demoting to ${osparc.data.Roles.STUDY[1].label}`),
+        item
+      );
     },
 
     _demoteToEditor: function(collaborator, item) {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`Successfully demoted to ${osparc.data.Roles.WORKSPACE[2].label}`),
-        this.tr(`Something went wrong demoting to ${osparc.data.Roles.WORKSPACE[2].label}`),
+        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Something went wrong demoting to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
     }

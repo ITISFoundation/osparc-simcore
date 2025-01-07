@@ -117,6 +117,71 @@ qx.Class.define("osparc.store.Tags", {
         .catch(err => console.error(err));
     },
 
+    addCollaborators: function(tagId, newCollaborators) {
+      const promises = [];
+      Object.keys(newCollaborators).forEach(groupId => {
+        const params = {
+          url: {
+            tagId,
+            groupId,
+          },
+          data: newCollaborators[groupId]
+        };
+        promises.push(osparc.data.Resources.fetch("tags", "postAccessRights", params));
+      });
+      return Promise.all(promises)
+        .then(() => {
+          const tag = this.getTag(tagId);
+          const newAccessRights = tag.getAccessRights();
+          Object.keys(newCollaborators).forEach(gid => {
+            newAccessRights[gid] = newCollaborators[gid];
+          });
+          tag.set({
+            accessRights: newAccessRights,
+          });
+        })
+        .catch(console.error);
+    },
+
+    removeCollaborator: function(tagId, groupId) {
+      const params = {
+        url: {
+          tagId,
+          groupId,
+        }
+      };
+      return osparc.data.Resources.fetch("tags", "deleteAccessRights", params)
+        .then(() => {
+          const tag = this.getTag(tagId);
+          const newAccessRights = tag.getAccessRights();
+          delete newAccessRights[groupId];
+          tag.set({
+            accessRights: newAccessRights,
+          });
+        })
+        .catch(console.error);
+    },
+
+    updateCollaborator: function(tagId, groupId, newPermissions) {
+      const params = {
+        url: {
+          tagId,
+          groupId,
+        },
+        data: newPermissions
+      };
+      return osparc.data.Resources.fetch("tags", "putAccessRights", params)
+        .then(() => {
+          const tag = this.getTag(tagId);
+          const newAccessRights = tag.getAccessRights();
+          newAccessRights[groupId] = newPermissions;
+          tag.set({
+            accessRights: tag.newAccessRights,
+          });
+        })
+        .catch(console.error);
+    },
+
     __addToCache: function(tagData) {
       let tag = this.tagsCached.find(f => f.getTagId() === tagData["id"]);
       if (tag) {
