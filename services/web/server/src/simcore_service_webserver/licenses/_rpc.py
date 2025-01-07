@@ -18,11 +18,9 @@ from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     LICENSES_ERRORS,
     CanNotCheckoutNotEnoughAvailableSeatsError,
+    CanNotCheckoutServiceIsNotRunningError,
     LicensedItemCheckoutNotFoundError,
     NotEnoughAvailableSeatsError,
-)
-from simcore_service_api_server.exceptions.backend_errors import (
-    CanNotCheckoutServiceIsNotRunningError,
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_server
