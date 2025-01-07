@@ -15,6 +15,11 @@ from models_library.api_schemas_webserver.licensed_items import (
 from models_library.api_schemas_webserver.licensed_items import (
     LicensedItemGetPage as _LicensedItemGetPage,
 )
+from models_library.api_schemas_webserver.licensed_items_checkouts import (
+    LicensedItemCheckoutRpcGet,
+)
+from models_library.licensed_items import LicensedItemID
+from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
@@ -26,6 +31,9 @@ from simcore_service_api_server.api.dependencies.webserver_rpc import (
     get_wb_api_rpc_client,
 )
 from simcore_service_api_server.models.pagination import Page
+from simcore_service_api_server.models.schemas.licensed_items import (
+    LicensedItemCheckoutData,
+)
 from simcore_service_api_server.models.schemas.model_adapter import LicensedItemGet
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
@@ -143,5 +151,57 @@ async def test_get_licensed_items_for_wallet(
     )
     resp = await client.get(
         f"{API_VTAG}/wallets/{_wallet_id}/licensed-items", auth=auth
+    )
+    assert resp.status_code == expected_api_server_status_code
+
+
+@pytest.mark.parametrize(
+    "exception_to_raise,expected_api_server_status_code",
+    [
+        (None, status.HTTP_200_OK),
+    ],
+)
+async def test_get_licensed_items_checkout(
+    mock_wb_api_server_rcp: MockerFixture,
+    client: AsyncClient,
+    auth: BasicAuth,
+    exception_to_raise: Exception | None,
+    expected_api_server_status_code: int,
+    faker: Faker,
+):
+    _wallet_id = faker.pyint(min_value=1)
+    _licensed_item_id = faker.uuid4()
+
+    async def side_effect(
+        rabbitmq_rpc_client: RabbitMQRPCClient,
+        product_name: str,
+        user_id: UserID,
+        wallet_id: WalletID,
+        licensed_item_id: LicensedItemID,
+        num_of_seats: int,
+        service_run_id: ServiceRunID,
+    ) -> LicensedItemCheckoutRpcGet:
+        if exception_to_raise is not None:
+            raise exception_to_raise
+        extra = LicensedItemCheckoutRpcGet.model_config.get("json_schema_extra")
+        assert isinstance(extra, dict)
+        examples = extra.get("examples")
+        assert isinstance(examples, list)
+        assert len(examples) > 0
+        example = examples[0]
+        assert isinstance(example, dict)
+        return LicensedItemCheckoutRpcGet.model_validate(example)
+
+    mock_wb_api_server_rcp.patch(
+        "simcore_service_api_server.services_rpc.wb_api_server._checkout_licensed_item_for_wallet",
+        side_effect,
+    )
+    body = LicensedItemCheckoutData(
+        number_of_seats=faker.pyint(min_value=1), service_run_id="myservice"
+    )
+    resp = await client.post(
+        f"{API_VTAG}/wallets/{_wallet_id}/licensed-items/{_licensed_item_id}/checkout",
+        auth=auth,
+        content=body.model_dump_json(),
     )
     assert resp.status_code == expected_api_server_status_code
