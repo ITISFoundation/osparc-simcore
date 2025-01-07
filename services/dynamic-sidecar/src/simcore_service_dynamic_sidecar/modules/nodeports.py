@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import cast
 
 import magic
+from aiofiles.os import remove
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from models_library.basic_types import IDStr
 from models_library.projects import ProjectIDStr
@@ -285,6 +286,11 @@ async def _get_data_from_port(
                         destination_folder=final_path,
                         progress_bar=sub_progress,
                     )
+
+                with log_context(
+                    _logger, logging.DEBUG, f"archive removal '{downloaded_file}'"
+                ):
+                    await remove(downloaded_file)
             else:
                 # move archive to directory as is
                 final_path = final_path / downloaded_file.name
