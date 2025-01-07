@@ -189,10 +189,13 @@ qx.Class.define("osparc.share.Collaborators", {
         // Access Rights are set at workspace level
         return false;
       }
+
       let canIShare = false;
       switch (this._resourceType) {
         case "study":
         case "template":
+          canIShare = osparc.study.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+          break;
         case "service":
           canIShare = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
