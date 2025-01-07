@@ -867,7 +867,7 @@ paths:
               $ref: '#/components/schemas/TagCreate'
         required: true
       responses:
-        '200':
+        '201':
           description: Successful Response
           content:
             application/json:
@@ -924,6 +924,7 @@ paths:
       - tags
       - groups
       summary: List Tag Groups
+      description: Lists all groups associated to this tag
       operationId: list_tag_groups
       parameters:
       - name: tag_id
@@ -941,12 +942,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_TagGroupGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
   /v0/tags/{tag_id}/groups/{group_id}:
     post:
       tags:
       - tags
       - groups
       summary: Create Tag Group
+      description: Shares tag `tag_id` with an organization or user with `group_id`
+        providing access-rights to it
       operationId: create_tag_group
       parameters:
       - name: tag_id
@@ -978,12 +993,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TagGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
     put:
       tags:
       - tags
       - groups
-      summary: Replace Tag Groups
-      operationId: replace_tag_groups
+      summary: Replace Tag Group
+      description: Replace access rights on tag for associated organization or user
+        with `group_id`
+      operationId: replace_tag_group
       parameters:
       - name: tag_id
         in: path
@@ -1014,11 +1043,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_TagGroupGet__'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
     delete:
       tags:
       - tags
       - groups
       summary: Delete Tag Group
+      description: Delete access rights on tag to an associated organization or user
+        with `group_id`
       operationId: delete_tag_group
       parameters:
       - name: tag_id
@@ -1040,6 +1083,18 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
   /v0/credits-price:
     get:
       tags:
@@ -14177,22 +14232,12 @@ components:
         delete:
           type: boolean
           title: Delete
-        created:
-          type: string
-          format: date-time
-          title: Created
-        modified:
-          type: string
-          format: date-time
-          title: Modified
       type: object
       required:
       - gid
       - read
       - write
       - delete
-      - created
-      - modified
       title: TagGroupGet
     TagUpdate:
       properties:
