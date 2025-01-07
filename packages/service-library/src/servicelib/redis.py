@@ -62,6 +62,15 @@ async def _cancel_or_warn(task: Task) -> None:
         _logger.warning("Could not cancel task_name=%s pending=%s", task_name, pending)
 
 
+async def _auto_extend_lock(lock: Lock) -> None:
+    try:
+        with log_context(_logger, logging.DEBUG, f"Autoextend lock {lock.name}"):
+            # TODO: if we cannot re-acquire that means the lock is lost, and we are not anymore safe and should raise all the way to the caller
+            await lock.reacquire()
+    except redis.exceptions.LockNotOwnedError as exc:
+        raise LockLostError(lock=lock) from exc
+
+
 @dataclass
 class RedisClientSDK:
     redis_dsn: str
@@ -182,21 +191,9 @@ class RedisClientSDK:
         if not await ttl_lock.acquire(token=lock_value):
             raise CouldNotAcquireLockError(lock=ttl_lock)
 
-        async def _extend_lock(lock: Lock) -> None:
-            try:
-                with (
-                    log_context(
-                        _logger, logging.DEBUG, f"Extending lock {lock_unique_id}"
-                    ),
-                ):
-                    # TODO: if we cannot re-acquire that means the lock is lost, and we are not anymore safe and should raise all the way to the caller
-                    await lock.reacquire()
-            except redis.exceptions.LockNotOwnedError as exc:
-                raise LockLostError(lock=lock) from exc
-
         try:
             async with periodic_task(
-                _extend_lock,
+                _auto_extend_lock,
                 interval=total_lock_duration / 2,
                 task_name=lock_unique_id,
                 lock=ttl_lock,
