@@ -38,7 +38,6 @@ _PROGRESS_EXTRACT_PERCENT_RE: Final[re.Pattern] = re.compile(r" (\d+)% ")
 _ALL_DONE_RE: Final[re.Pattern] = re.compile(r"Everything is Ok", re.IGNORECASE)
 
 _TOKEN_TABLE_HEADER_START: Final[str] = "------------------- "
-_TOKEN_FILE_PERMISSIONS: Final[str] = " ..... "
 
 _7ZIP_EXECUTABLE: Final[Path] = Path("/usr/bin/7z")
 
@@ -250,24 +249,35 @@ async def archive_dir(
             await shutil_move(f"{destination}.zip", destination)
 
 
+def _is_folder(line: str) -> bool:
+    folder_attribute = line[20]
+    return folder_attribute == "D"
+
+
 def _extract_file_names_from_archive(command_output: str) -> set[str]:
     file_name_start: NonNegativeInt | None = None
 
+    entries_lines: list[str] = []
+    can_add_to_entries: bool = False
+
+    # extract all lines containing files or folders
     for line in command_output.splitlines():
         if line.startswith(_TOKEN_TABLE_HEADER_START):
             file_name_start = line.rfind(" ") + 1
-            break
+            can_add_to_entries = not can_add_to_entries
+            continue
 
-    lines_with_file_name: list[str] = [
-        line for line in command_output.splitlines() if _TOKEN_FILE_PERMISSIONS in line
-    ]
+        if can_add_to_entries:
+            entries_lines.append(line)
 
-    if lines_with_file_name and file_name_start is None:
+    file_lines: list[str] = [line for line in entries_lines if not _is_folder(line)]
+
+    if file_lines and file_name_start is None:
         raise TableHeaderNotFoundError(
-            lines_with_file_name=lines_with_file_name, command_output=command_output
+            file_lines=file_lines, command_output=command_output
         )
 
-    return {line[file_name_start:] for line in lines_with_file_name}
+    return {line[file_name_start:] for line in file_lines}
 
 
 async def unarchive_dir(

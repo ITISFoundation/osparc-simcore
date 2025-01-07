@@ -66,7 +66,21 @@ async def test_archive_unarchive(
     mixed_file_types: Path, archive_path: Path, unpacked_archive: Path, compress: bool
 ):
     await archive_dir(mixed_file_types, archive_path, compress=compress)
+    await unarchive_dir(archive_path, unpacked_archive)
 
+
+@pytest.fixture
+def empty_folder(tmp_path: Path) -> Path:
+    path = tmp_path / "empty_folder"
+    path.mkdir()
+    return path
+
+
+@pytest.mark.parametrize("compress", [True, False])
+async def test_archive_unarchive_empty_folder(
+    empty_folder: Path, archive_path: Path, unpacked_archive: Path, compress: bool
+):
+    await archive_dir(empty_folder, archive_path, compress=compress)
     await unarchive_dir(archive_path, unpacked_archive)
 
 
@@ -75,6 +89,8 @@ async def test_archive_unarchive(
     [
         ("list_edge_case.txt", 3),
         ("list_stdout.txt", 674),
+        ("list_broken_format.txt", 22),
+        ("list_empty_archive.txt", 0),
     ],
 )
 def test__extract_file_names_from_archive(

@@ -16,6 +16,6 @@ class CouldNotRunCommandError(ArchiveError):
 class TableHeaderNotFoundError(ArchiveError):
     msg_template = (
         "Excepted to detect a table header since files were detected "
-        "lines_with_file_name='{lines_with_file_name}'. "
+        "file_lines='{file_lines}'. "
         "Command output:\n{command_output}"
     )
