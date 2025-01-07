@@ -20,6 +20,9 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CanNotCheckoutServiceIsNotRunningError as _CanNotCheckoutServiceIsNotRunningError,
 )
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    LicensedItemCheckoutNotFoundError as _LicensedItemCheckoutNotFoundError,
+)
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
@@ -38,6 +41,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
     InsufficientNumberOfSeatsError,
+    LicensedItemCheckoutNotFoundError,
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.pagination import PaginationParams
@@ -144,6 +148,11 @@ class WbApiRpcClient:
             num_of_seats=licensed_item_checkout_get.num_of_seats,
         )
 
+    @_exception_mapper(
+        rpc_exception_map={
+            _LicensedItemCheckoutNotFoundError: LicensedItemCheckoutNotFoundError
+        }
+    )
     async def release_licensed_item_for_wallet(
         self,
         *,

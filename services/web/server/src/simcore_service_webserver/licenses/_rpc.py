@@ -18,6 +18,7 @@ from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     LICENSES_ERRORS,
     CanNotCheckoutNotEnoughAvailableSeatsError,
+    LicensedItemCheckoutNotFoundError,
     NotEnoughAvailableSeatsError,
 )
 from simcore_service_api_server.exceptions.backend_errors import (
@@ -103,7 +104,7 @@ async def checkout_licensed_item_for_wallet(
     )
 
 
-@router.expose(reraise_if_error_type=LICENSES_ERRORS)
+@router.expose(reraise_if_error_type=(LicensedItemCheckoutNotFoundError,))
 async def release_licensed_item_for_wallet(
     app: web.Application,
     *,

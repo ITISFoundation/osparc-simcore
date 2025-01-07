@@ -6,10 +6,14 @@ from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    LicensedItemCheckoutNotFoundError as _LicensedItemCheckoutNotFoundError,
+)
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.licensed_items_checkouts import (
     get_licensed_item_checkout as _get_licensed_item_checkout,
 )
 
+from ..exceptions.backend_errors import LicensedItemCheckoutNotFoundError
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.schemas.model_adapter import LicensedItemCheckoutGet
 
@@ -22,7 +26,11 @@ _exception_mapper = partial(
 class ResourceUsageTrackerClient:
     _client: RabbitMQRPCClient
 
-    @_exception_mapper(rpc_exception_map={})
+    @_exception_mapper(
+        rpc_exception_map={
+            _LicensedItemCheckoutNotFoundError: LicensedItemCheckoutNotFoundError
+        }
+    )
     async def get_licensed_item_checkout(
         self, *, product_name: str, licensed_item_checkout_id: LicensedItemCheckoutID
     ) -> LicensedItemCheckoutGet:
