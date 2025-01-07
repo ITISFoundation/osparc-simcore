@@ -150,6 +150,10 @@ class CompTaskAtDB(BaseModel):
     pricing_info: dict | None
     hardware_info: HardwareInfo
 
+    submit: dt.datetime | None = Field(
+        default=None, deprecated=True, description="Required for legacy services"
+    )
+
     @field_validator("state", mode="before")
     @classmethod
     def _convert_state_from_state_type_enum_if_needed(cls, v):
@@ -238,7 +242,9 @@ class CompTaskAtDB(BaseModel):
                         "pricing_unit_id": 1,
                         "pricing_unit_cost_id": 1,
                     },
-                    "hardware_info": next(iter(HardwareInfo.model_config["json_schema_extra"]["examples"])),  # type: ignore
+                    "hardware_info": next(
+                        iter(HardwareInfo.model_config["json_schema_extra"]["examples"])  # type: ignore
+                    ),
                 }
                 for image_example in Image.model_config["json_schema_extra"]["examples"]  # type: ignore
             ]
