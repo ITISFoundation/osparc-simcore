@@ -1,0 +1,17 @@
+7-Zip (z) 24.09 (x64) : Copyright (c) 1999-2024 Igor Pavlov : 2024-11-28
+ 64-bit locale=en_US.UTF-8 Threads:12 OPEN_MAX:1024, ASM
+
+Scanning the drive for archives:
+1 file, 22 bytes (1 KiB)
+
+Listing archive: /tmp/pytest-of-silenthk/pytest-692/test_archive_unarchive_empty_f1/mixed_types_dir.zip
+
+--
+Path = /tmp/pytest-of-silenthk/pytest-692/test_archive_unarchive_empty_f1/mixed_types_dir.zip
+Type = zip
+Physical Size = 22
+
+   Date      Time    Attr         Size   Compressed  Name
+------------------- ----- ------------ ------------  ------------------------
+------------------- ----- ------------ ------------  ------------------------
+                                     0            0  0 files
