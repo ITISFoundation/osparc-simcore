@@ -120,9 +120,6 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       const vBox = this.__memberInvitation = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       vBox.exclude();
 
-      const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
-      vBox.add(label);
-
       const addMemberBtn = new qx.ui.form.Button(this.tr("Add Members...")).set({
         appearance: "strong-button",
         allowGrowX: false

@@ -181,7 +181,7 @@ qx.Class.define("osparc.file.FilesTree", {
             newChildren[0].children[0].children.length) { // node
             const nodeData = newChildren[0].children[0].children[0];
             const nodeTreeName = nodeData.label;
-            this.__resetTree(nodeTreeName);
+            this.__resetTree(nodeTreeName, nodeId);
             const rootNodeModel = this.getModel();
             if (nodeData.children.length) {
               const nodeItemsOnly = nodeData.children;
@@ -253,12 +253,12 @@ qx.Class.define("osparc.file.FilesTree", {
       }
     },
 
-    __resetTree: function(treeName) {
-      // FIXME: It is not resetting the model
+    __resetTree: function(treeName, itemId) {
+      itemId = itemId || treeName.replace(/\s/g, ""); // default to tree name without white spaces
       this.resetModel();
       const rootData = {
         label: treeName,
-        itemId: treeName.replace(/\s/g, ""), // remove all white spaces
+        itemId,
         location: null,
         path: null,
         pathLabel: [treeName],
