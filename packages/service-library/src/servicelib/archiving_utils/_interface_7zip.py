@@ -33,7 +33,8 @@ _logger = logging.getLogger(__name__)
 
 _TOTAL_BYTES_RE: Final[re.Pattern] = re.compile(r" (\d+)\s*bytes")
 _FILE_COUNT_RE: Final[re.Pattern] = re.compile(r" (\d+)\s*files")
-_PROGRESS_PERCENT_RE: Final[re.Pattern] = re.compile(r" (?:100|\d?\d)% ")
+_PROGRESS_FIND_PERCENT_RE: Final[re.Pattern] = re.compile(r" (?:100|\d?\d)% ")
+_PROGRESS_EXTRACT_PERCENT_RE: Final[re.Pattern] = re.compile(r" (\d+)% ")
 _ALL_DONE_RE: Final[re.Pattern] = re.compile(r"Everything is Ok", re.IGNORECASE)
 
 _TOKEN_TABLE_HEADER_START: Final[str] = "------------------- "
@@ -86,8 +87,9 @@ class ProgressParser:
             self.total_bytes = int(match.group(1))
 
         # search for ` dd% ` -> update progress (as last entry inside the string)
-        if matches := _PROGRESS_PERCENT_RE.findall(chunk):
-            self.percent = int(matches[-1].strip().strip("%"))
+        if matches := _PROGRESS_FIND_PERCENT_RE.findall(chunk):  # noqa: SIM102
+            if percent_match := _PROGRESS_EXTRACT_PERCENT_RE.search(matches[-1]):
+                self.percent = int(percent_match.group(1))
 
         # search for `Everything is Ok` -> set 100% and finish
         if _ALL_DONE_RE.search(chunk):
