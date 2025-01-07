@@ -356,7 +356,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -404,7 +404,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -446,7 +446,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -488,7 +488,7 @@ jobs:
           uses: astral-sh/setup-uv@v5
           with:
             version: "0.5.x"
-            enable-cache: true
+            enable-cache: false
             cache-dependency-glob: "**/web/server/requirements/ci.txt"
         - name: show system version
           run: ./ci/helpers/show_system_versions.bash
@@ -533,7 +533,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/storage/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -580,7 +580,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/agent/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -625,7 +625,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/api/tests/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -667,7 +667,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/api-server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -715,7 +715,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -760,7 +760,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/catalog/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -811,7 +811,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -867,7 +867,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -918,7 +918,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/director/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -969,7 +969,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1020,7 +1020,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/aws-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1065,7 +1065,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1110,7 +1110,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/dask-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1155,7 +1155,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/payments/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1200,7 +1200,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1245,7 +1245,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/resource-usage-tracker/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1300,7 +1300,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1345,7 +1345,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/efs-guardian/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1401,7 +1401,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/ci/helpers/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1436,7 +1436,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/postgres-database/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1481,7 +1481,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1526,7 +1526,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/service-integration/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1571,7 +1571,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/service-library/requirements/ci*.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1616,7 +1616,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/settings-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1661,7 +1661,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/models-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1748,7 +1748,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1795,7 +1795,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1901,7 +1901,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -1965,7 +1965,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -2029,7 +2029,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -2102,7 +2102,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -2168,7 +2168,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -2232,7 +2232,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -2319,7 +2319,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/public-api/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -2379,7 +2379,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -2450,7 +2450,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/e2e/requirements/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
@@ -2513,7 +2513,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
@@ -2575,7 +2575,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
           cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash

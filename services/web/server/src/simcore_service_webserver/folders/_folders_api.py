@@ -196,8 +196,9 @@ async def list_folders(
     )
 
 
-async def list_folders_full_search(
+async def list_folders_full_depth(
     app: web.Application,
+    *,
     user_id: UserID,
     product_name: ProductName,
     text: str | None,
