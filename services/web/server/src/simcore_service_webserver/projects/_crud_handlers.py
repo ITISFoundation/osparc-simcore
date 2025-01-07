@@ -113,6 +113,7 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
+@_handle_projects_exceptions
 async def create_project(request: web.Request):
     #
     # - Create https://google.aip.dev/133
@@ -267,6 +268,7 @@ async def list_projects_full_search(request: web.Request):
 @routes.get(f"/{VTAG}/projects/active", name="get_active_project")
 @login_required
 @permission_required("project.read")
+@_handle_projects_exceptions
 async def get_active_project(request: web.Request) -> web.Response:
     #
     # - Get https://google.aip.dev/131
@@ -314,6 +316,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 @routes.get(f"/{VTAG}/projects/{{project_id}}", name="get_project")
 @login_required
 @permission_required("project.read")
+@_handle_projects_exceptions
 async def get_project(request: web.Request):
     """
 
@@ -377,6 +380,7 @@ async def get_project(request: web.Request):
 )
 @login_required
 @permission_required("project.read")
+@_handle_projects_exceptions
 async def get_project_inactivity(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
@@ -413,6 +417,7 @@ async def patch_project(request: web.Request):
 @routes.delete(f"/{VTAG}/projects/{{project_id}}", name="delete_project")
 @login_required
 @permission_required("project.delete")
+@_handle_projects_exceptions
 async def delete_project(request: web.Request):
     # Delete https://google.aip.dev/135
     """
@@ -502,6 +507,7 @@ async def delete_project(request: web.Request):
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
+@_handle_projects_exceptions
 async def clone_project(request: web.Request):
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
