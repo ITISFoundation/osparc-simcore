@@ -119,7 +119,7 @@ class ProgressParser:
 async def _stream_output_reader(
     stream: asyncio.StreamReader,
     *,
-    output_handlers: list[Callable[[str], Awaitable[None]]] | None,
+    output_handler: Callable[[str], Awaitable[None]] | None,
     chunk_size: NonNegativeInt = 16,
     lookbehind_buffer_size: NonNegativeInt = 40,
 ) -> str:
@@ -134,9 +134,6 @@ async def _stream_output_reader(
     # with the above defaults we the "emitted chunk" is more than double in size
     # There are no foreseeable issued due to the size of inputs to be captured.
 
-    if output_handlers is None:
-        output_handlers = []
-
     command_output = ""
     lookbehind_buffer = ""
 
@@ -145,10 +142,8 @@ async def _stream_output_reader(
 
         if not read_chunk:
             # process remaining buffer if any
-            if lookbehind_buffer:
-                await asyncio.gather(
-                    *[handler(lookbehind_buffer) for handler in output_handlers]
-                )
+            if lookbehind_buffer and output_handler:
+                await output_handler(lookbehind_buffer)
             break
 
         # `errors=replace`: avoids getting stuck when can't parse utf-8
@@ -158,7 +153,8 @@ async def _stream_output_reader(
         chunk_to_emit = lookbehind_buffer + chunk
         lookbehind_buffer = chunk_to_emit[-lookbehind_buffer_size:]
 
-        await asyncio.gather(*[handler(chunk_to_emit) for handler in output_handlers])
+        if output_handler:
+            await output_handler(chunk_to_emit)
 
     return command_output
 
@@ -166,7 +162,7 @@ async def _stream_output_reader(
 async def _run_cli_command(
     command: str,
     *,
-    output_handlers: list[Callable[[str], Awaitable[None]]] | None = None,
+    output_handler: Callable[[str], Awaitable[None]] | None = None,
 ) -> str:
     """
     Raises:
@@ -183,7 +179,7 @@ async def _run_cli_command(
 
     command_output, _ = await asyncio.gather(
         asyncio.create_task(
-            _stream_output_reader(process.stdout, output_handlers=output_handlers)
+            _stream_output_reader(process.stdout, output_handler=output_handler)
         ),
         process.wait(),
     )
@@ -246,7 +242,7 @@ async def archive_dir(
             await sub_progress.update(byte_progress)
 
         await _run_cli_command(
-            command, output_handlers=[ProgressParser(progress_handler).parse_chunk]
+            command, output_handler=ProgressParser(progress_handler).parse_chunk
         )
 
         # 7zip automatically adds .zip extension if it's missing form the archive name
@@ -290,7 +286,7 @@ async def unarchive_dir(
     archive_info_parser = ArchiveInfoParser()
     list_output = await _run_cli_command(
         f"{_7ZIP_EXECUTABLE} l {archive_to_extract}",
-        output_handlers=[archive_info_parser.parse_chunk],
+        output_handler=archive_info_parser.parse_chunk,
     )
     file_names_in_archive = _extract_file_names_from_archive(list_output)
     total_bytes, file_count = archive_info_parser.get_parsed_values()
@@ -325,7 +321,7 @@ async def unarchive_dir(
         )
         await _run_cli_command(
             f"{_7ZIP_EXECUTABLE} {options} {archive_to_extract} -o{destination_folder}",
-            output_handlers=[ProgressParser(progress_handler).parse_chunk],
+            output_handler=ProgressParser(progress_handler).parse_chunk,
         )
 
     return {destination_folder / x for x in file_names_in_archive}
