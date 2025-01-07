@@ -206,7 +206,9 @@ qx.Class.define("osparc.form.tag.TagItem", {
     },
 
     __openAccessRights: function() {
-
+      const permissionsView = new osparc.share.CollaboratorsTag(this.getTag());
+      const title = this.tr("Share Tag");
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 600, 600);
     },
 
     /**
