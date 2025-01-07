@@ -112,7 +112,7 @@ async def list_folders_full_search(request: web.Request):
     if not query_params.filters:
         query_params.filters = FolderFilters()
 
-    folders: FolderGetPage = await _folders_api.list_folders_full_search(
+    folders: FolderGetPage = await _folders_api.list_folders_full_depth(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,

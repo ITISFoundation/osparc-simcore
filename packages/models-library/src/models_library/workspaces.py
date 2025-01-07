@@ -36,6 +36,7 @@ class WorkspaceQuery(BaseModel):
         if scope == WorkspaceScope.SHARED and value is None:
             msg = f"workspace_id must be provided when workspace_scope is SHARED. Got {scope=}, {value=}"
             raise ValueError(msg)
+
         if scope != WorkspaceScope.SHARED and value is not None:
             msg = f"workspace_id should be None when workspace_scope is not SHARED. Got {scope=}, {value=}"
             raise ValueError(msg)
