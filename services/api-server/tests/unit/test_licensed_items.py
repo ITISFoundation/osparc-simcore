@@ -37,6 +37,7 @@ from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CanNotCheckoutNotEnoughAvailableSeatsError,
     CanNotCheckoutServiceIsNotRunningError,
+    LicensedItemCheckoutNotFoundError,
     NotEnoughAvailableSeatsError,
 )
 from simcore_service_api_server._meta import API_VTAG
@@ -244,9 +245,12 @@ async def test_checkout_licensed_item(
 
 
 @pytest.mark.parametrize(
-    "backend_exception_to_raise,expected_api_server_status_code,valid_license_checkout_id",
+    "wb_api_exception_to_raise,rut_exception_to_raise,expected_api_server_status_code,valid_license_checkout_id",
     [
-        (None, status.HTTP_200_OK, True),
+        (LicensedItemCheckoutNotFoundError, None, status.HTTP_404_NOT_FOUND, True),
+        (None, LicensedItemCheckoutNotFoundError, status.HTTP_404_NOT_FOUND, True),
+        (None, None, status.HTTP_200_OK, True),
+        (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY, False),
     ],
 )
 async def test_release_checked_out_licensed_item(
@@ -254,7 +258,8 @@ async def test_release_checked_out_licensed_item(
     mock_rut_rpc: MockerFixture,
     client: AsyncClient,
     auth: BasicAuth,
-    backend_exception_to_raise: Exception | None,
+    wb_api_exception_to_raise: Exception | None,
+    rut_exception_to_raise: Exception | None,
     expected_api_server_status_code: int,
     valid_license_checkout_id: bool,
     faker: Faker,
@@ -267,8 +272,8 @@ async def test_release_checked_out_licensed_item(
         product_name: str,
         licensed_item_checkout_id: LicensedItemCheckoutID,
     ) -> LicensedItemCheckoutGet:
-        if backend_exception_to_raise is not None:
-            raise backend_exception_to_raise
+        if rut_exception_to_raise is not None:
+            raise rut_exception_to_raise
         extra = LicensedItemCheckoutGet.model_config.get("json_schema_extra")
         assert isinstance(extra, dict)
         examples = extra.get("examples")
@@ -287,8 +292,8 @@ async def test_release_checked_out_licensed_item(
         user_id: int,
         licensed_item_checkout_id: LicensedItemCheckoutID,
     ) -> LicensedItemCheckoutRpcGet:
-        if backend_exception_to_raise is not None:
-            raise backend_exception_to_raise
+        if wb_api_exception_to_raise is not None:
+            raise wb_api_exception_to_raise
         extra = LicensedItemCheckoutRpcGet.model_config.get("json_schema_extra")
         assert isinstance(extra, dict)
         examples = extra.get("examples")
