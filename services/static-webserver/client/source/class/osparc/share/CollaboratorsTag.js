@@ -31,6 +31,14 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
   },
 
   statics: {
+    canIWrite: function(myAccessRights) {
+      return myAccessRights["write"];
+    },
+
+    canIDelete: function(myAccessRights) {
+      return myAccessRights["delete"];
+    },
+
     getViewerAccessRight: function() {
       return {
         "read": true,

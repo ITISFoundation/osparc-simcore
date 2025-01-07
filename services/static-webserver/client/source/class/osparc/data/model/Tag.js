@@ -80,16 +80,6 @@ qx.Class.define("osparc.data.model.Tag", {
     },
   },
 
-  statics: {
-    canIWrite: function(myAccessRights) {
-      return myAccessRights["write"];
-    },
-
-    canIDelete: function(myAccessRights) {
-      return myAccessRights["delete"];
-    },
-  },
-
   members: {
     serialize: function() {
       const jsonObject = {};
