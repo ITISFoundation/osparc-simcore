@@ -100,7 +100,9 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
     PORTS: Nodeports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
-        node_uuid=TypeAdapter(NodeIDStr).validate_python(settings.DY_SIDECAR_NODE_ID),
+        node_uuid=TypeAdapter(NodeIDStr).validate_python(
+            f"{settings.DY_SIDECAR_NODE_ID}"
+        ),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
         aws_s3_cli_settings=None,
@@ -320,7 +322,9 @@ async def download_target_ports(
     PORTS: Nodeports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
-        node_uuid=TypeAdapter(NodeIDStr).validate_python(settings.DY_SIDECAR_NODE_ID),
+        node_uuid=TypeAdapter(NodeIDStr).validate_python(
+            f"{settings.DY_SIDECAR_NODE_ID}"
+        ),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
         aws_s3_cli_settings=None,
