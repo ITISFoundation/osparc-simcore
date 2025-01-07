@@ -91,7 +91,7 @@ async def test_get_licensed_items_timeout(
 ):
     mock_wb_api_server_rcp.patch(
         "simcore_service_api_server.services_rpc.wb_api_server._get_licensed_items",
-        partial(_get_backend_licensed_items, exception_to_raise=asyncio.TimeoutError()),
+        partial(_get_backend_licensed_items, exception_to_raise=TimeoutError()),
     )
     resp = await client.get(f"{API_VTAG}/licensed-items", auth=auth)
     assert resp.status_code == status.HTTP_504_GATEWAY_TIMEOUT

@@ -58,7 +58,7 @@ class DummyFileData:
             id=File.create_id(
                 cls._file_size,
                 cls._file_name,
-                datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                datetime.datetime.now(datetime.UTC).isoformat(),
             ),
             filename=cls._file_name,
             e_tag="",
