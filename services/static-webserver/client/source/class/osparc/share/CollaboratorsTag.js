@@ -73,7 +73,7 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
       }
 
       const newCollaborators = {};
-      gids.forEach(gid => newCollaborators[gid] = this.self().getCollaboratorAccessRight());
+      gids.forEach(gid => newCollaborators[gid] = this.self().getViewerAccessRight());
       osparc.store.Tags.getInstance().addCollaborators(this.__tag.getTagId(), newCollaborators)
         .then(() => {
           const text = this.tr("Tag successfully shared");
