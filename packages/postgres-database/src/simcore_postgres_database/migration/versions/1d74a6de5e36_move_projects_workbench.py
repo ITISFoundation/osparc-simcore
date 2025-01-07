@@ -39,19 +39,32 @@ def upgrade():
     )
     # ### end Alembic commands ###
 
+    # Populate the new columns with data from the workbench
     op.execute(
         """
 UPDATE projects_nodes
 SET key = subquery.key,
     version = subquery.version,
-    label = subquery.label
+    label = subquery.label,
+    progress = subquery.progress::numeric,
+    thumbnail = subquery.thumbnail,
+    inputs = subquery.inputs::jsonb,
+    outputs = subquery.outputs::jsonb,
+    run_hash = subquery.run_hash,
+    state = subquery.state::jsonb
 FROM (
     SELECT
         projects.uuid AS project_id,
         js.key AS node_id,
         js.value::jsonb ->> 'key' AS key,
         js.value::jsonb ->> 'label' AS label,
-        js.value::jsonb ->> 'version' AS version
+        js.value::jsonb ->> 'version' AS version,
+        (js.value::jsonb ->> 'progress')::numeric AS progress,
+        js.value::jsonb ->> 'thumbnail' AS thumbnail,
+        js.value::jsonb ->> 'inputs' AS inputs,
+        js.value::jsonb ->> 'outputs' AS outputs,
+        js.value::jsonb ->> 'runHash' AS run_hash,
+        js.value::jsonb ->> 'state' AS state
     FROM projects,
     json_each(projects.workbench) AS js
 ) AS subquery
