@@ -17,6 +17,7 @@ from redis.exceptions import LockError, LockNotOwnedError
 from servicelib import redis as servicelib_redis
 from servicelib.redis import (
     CouldNotAcquireLockError,
+    LockLostError,
     RedisClientSDK,
     RedisClientsManager,
     RedisManagerDBConfig,
@@ -35,7 +36,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = [
-    # "redis-commander",
+    "redis-commander",
 ]
 
 
@@ -48,7 +49,7 @@ async def _is_locked(redis_client_sdk: RedisClientSDK, lock_name: str) -> bool:
 async def redis_client_sdk(
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ]
+    ],
 ) -> AsyncIterator[RedisClientSDK]:
     async with get_redis_client_sdk(RedisDatabase.RESOURCES) as client:
         yield client
@@ -165,6 +166,23 @@ async def test_lock_context(
     assert await ttl_lock.owned() is False
 
 
+async def test_issue_cannot_acquire_lock_anymore(
+    redis_client_sdk: RedisClientSDK, faker: Faker
+):
+    lock_name = faker.pystr()
+    with pytest.raises(LockLostError):
+        async with redis_client_sdk.lock_context(lock_name) as ttl_lock:
+            assert await _is_locked(redis_client_sdk, lock_name) is True
+            assert await ttl_lock.owned() is True
+            # let's force release the lock
+            await redis_client_sdk._client.delete(lock_name)
+
+            await asyncio.sleep(20)
+            # assert await _is_locked(redis_client_sdk, lock_name) is False
+            # assert await ttl_lock.owned() is False
+            # actually it should even raise here
+
+
 async def test_lock_context_with_already_locked_lock_raises(
     redis_client_sdk: RedisClientSDK, faker: Faker
 ):
@@ -272,7 +290,6 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
 async def test_redis_client_sdks_manager(
     mock_redis_socket_timeout: None, redis_service: RedisSettings
 ):
-
     all_redis_configs: set[RedisManagerDBConfig] = {
         RedisManagerDBConfig(db) for db in RedisDatabase
     }

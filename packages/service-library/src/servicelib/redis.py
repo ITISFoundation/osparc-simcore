@@ -49,6 +49,10 @@ class CouldNotConnectToRedisError(BaseRedisError):
     msg_template: str = "Connection to '{dsn}' failed"
 
 
+class LockLostError(BaseRedisError):
+    msg_template: str = "Lock {lock.name} has been lost"
+
+
 async def _cancel_or_warn(task: Task) -> None:
     if not task.cancelled():
         task.cancel()
@@ -179,13 +183,16 @@ class RedisClientSDK:
             raise CouldNotAcquireLockError(lock=ttl_lock)
 
         async def _extend_lock(lock: Lock) -> None:
-            with (
-                log_context(_logger, logging.DEBUG, f"Extending lock {lock_unique_id}"),
-                log_catch(_logger, reraise=False),
-            ):
-                # TODO: if we cannot re-acquire that means the lock is lost, and we are not anymore safe and should raise all the way to the caller
-
-                await lock.reacquire()
+            try:
+                with (
+                    log_context(
+                        _logger, logging.DEBUG, f"Extending lock {lock_unique_id}"
+                    ),
+                ):
+                    # TODO: if we cannot re-acquire that means the lock is lost, and we are not anymore safe and should raise all the way to the caller
+                    await lock.reacquire()
+            except redis.exceptions.LockNotOwnedError as exc:
+                raise LockLostError(lock=lock) from exc
 
         try:
             async with periodic_task(
