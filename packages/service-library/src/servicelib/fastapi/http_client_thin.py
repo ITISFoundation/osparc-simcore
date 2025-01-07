@@ -200,10 +200,10 @@ class BaseThinClient(BaseHTTPApi):
         self,
         *,
         total_retry_interval: float,
+        tracing_settings: TracingSettings | None,
         base_url: URLTypes | None = None,
         default_http_client_timeout: TimeoutTypes | None = None,
         extra_allowed_method_names: set[str] | None = None,
-        tracing_settings: TracingSettings | None = None,
     ) -> None:
         _assert_public_interface(self, extra_allowed_method_names)
 
