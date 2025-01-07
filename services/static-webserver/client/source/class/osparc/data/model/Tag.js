@@ -80,6 +80,12 @@ qx.Class.define("osparc.data.model.Tag", {
     },
   },
 
+  statics: {
+    getProperties: function() {
+      return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Tag));
+    }
+  },
+
   members: {
     serialize: function() {
       const jsonObject = {};

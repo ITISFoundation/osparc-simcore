@@ -15,7 +15,6 @@ qx.Class.define("osparc.form.tag.TagItem", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(5));
     this.__validationManager = new qx.ui.form.validation.Manager();
-    this.__renderLayout();
   },
 
   statics: {
@@ -67,7 +66,6 @@ qx.Class.define("osparc.form.tag.TagItem", {
       check: "Object",
       nullable: false,
       event: "changeAccessRights",
-      apply: "__renderLayout",
     },
 
     mode: {
@@ -165,6 +163,8 @@ qx.Class.define("osparc.form.tag.TagItem", {
       tag.bind("color", this, "color");
       tag.bind("myAccessRights", this, "myAccessRights");
       tag.bind("accessRights", this, "accessRights");
+
+      this.__renderLayout();
     },
 
     /**
