@@ -85,6 +85,7 @@ async def _exclusive_task_starter(
         _logger.debug(
             "Could not acquire lock '%s' with value '%s'", lock_key, lock_value
         )
+        # TODO: why is this silenced?
     except Exception as e:
         _logger.exception(e)  # noqa: TRY401
         raise

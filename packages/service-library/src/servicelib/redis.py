@@ -179,9 +179,12 @@ class RedisClientSDK:
             raise CouldNotAcquireLockError(lock=ttl_lock)
 
         async def _extend_lock(lock: Lock) -> None:
-            with log_context(
-                _logger, logging.DEBUG, f"Extending lock {lock_unique_id}"
-            ), log_catch(_logger, reraise=False):
+            with (
+                log_context(_logger, logging.DEBUG, f"Extending lock {lock_unique_id}"),
+                log_catch(_logger, reraise=False),
+            ):
+                # TODO: if we cannot re-acquire that means the lock is lost, and we are not anymore safe and should raise all the way to the caller
+
                 await lock.reacquire()
 
         try:
@@ -213,6 +216,8 @@ class RedisClientSDK:
 
             # Above implies that only one "task" `owns` and `extends` the lock at a time.
             # The issue appears to be related some timings (being too low).
+
+            # TODO: Why are we silencing this because of a TEST?????
             try:
                 await ttl_lock.release()
             except redis.exceptions.LockNotOwnedError:
