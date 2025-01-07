@@ -10,6 +10,7 @@ install_all() {
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
+  sudo ./ci/github/helpers/install_7zip.bash
   pushd packages/service-library
   make "install-ci[all]"
   popd

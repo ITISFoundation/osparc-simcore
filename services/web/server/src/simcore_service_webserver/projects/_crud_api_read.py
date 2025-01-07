@@ -144,16 +144,20 @@ async def list_projects(  # pylint: disable=too-many-arguments
     return projects, total_number_projects
 
 
-async def list_projects_full_search(
+async def list_projects_full_depth(
     request,
     *,
     user_id: UserID,
     product_name: str,
+    # attrs filter
+    trashed: bool | None,
+    tag_ids_list: list[int],
+    # pagination
     offset: NonNegativeInt,
     limit: int,
-    text: str | None,
     order_by: OrderBy,
-    tag_ids_list: list[int],
+    # search
+    text: str | None,
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(request.app)
 
@@ -161,11 +165,12 @@ async def list_projects_full_search(
         request.app, user_id, product_name, only_key_versions=True
     )
 
-    (db_projects, db_project_types, total_number_projects,) = await db.list_projects(
+    db_projects, db_project_types, total_number_projects = await db.list_projects(
         product_name=product_name,
         user_id=user_id,
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
+        filter_trashed=trashed,
         filter_by_services=user_available_services,
         filter_by_text=text,
         filter_tag_ids_list=tag_ids_list,
