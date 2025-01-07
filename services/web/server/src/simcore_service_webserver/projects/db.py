@@ -529,19 +529,19 @@ class ProjectDBAPI(BaseProjectDB):
                             None
                         )  # <-- All shared workspaces
                     )
-                if filter_by_text is not None:
-                    shared_workspace_query = shared_workspace_query.join(
-                        users, users.c.id == projects.c.prj_owner, isouter=True
-                    )
-
                 else:
-                    # FIXME: PC: Aks Matus why test_trash_project_in_subfolder fails here!
                     assert (  # nosec
                         workspace_query.workspace_scope == WorkspaceScope.SHARED
                     )
                     shared_workspace_query = shared_workspace_query.where(
                         projects.c.workspace_id
                         == workspace_query.workspace_id  # <-- Specific shared workspace
+                    )
+
+                if filter_by_text is not None:
+                    # NOTE: fields searched with text include user's email
+                    shared_workspace_query = shared_workspace_query.join(
+                        users, users.c.id == projects.c.prj_owner, isouter=True
                     )
 
             else:

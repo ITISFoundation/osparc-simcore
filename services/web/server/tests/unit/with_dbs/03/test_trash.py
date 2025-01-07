@@ -665,7 +665,7 @@ async def test_trash_project_in_subfolder(
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
-    assert data[0]["uuid"] == project_uuid
+    assert data[0]["uuid"] == f"{project_uuid}"
 
     # UNTRASH
     resp = await client.post(f"/v0/projects/{project_uuid}:untrash")
