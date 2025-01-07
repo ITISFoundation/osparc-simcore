@@ -44,7 +44,7 @@ async def get_licensed_items(
 
 
 @router.post(
-    "{licensed_item_id}/checked_out_items/{licensed_item_checkout_id}/release",
+    "/{licensed_item_id}/checked-out-items/{licensed_item_checkout_id}/release",
     response_model=LicensedItemCheckoutGet,
     status_code=status.HTTP_200_OK,
     responses=_LICENSE_ITEMS_STATUS_CODES,
