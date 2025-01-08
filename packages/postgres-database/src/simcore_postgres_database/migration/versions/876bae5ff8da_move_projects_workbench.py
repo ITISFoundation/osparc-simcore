@@ -51,7 +51,7 @@ SET key = subquery.key,
     outpuy_nodes = subquery.output_nodes::jsonb,
     outputs = subquery.outputs::jsonb,
     run_hash = subquery.run_hash,
-    state = subquery.state::jsonb
+    state = subquery.state::jsonb,
     parent = subquery.parent,
     boot_options = subquery.boot_options::jsonb
 FROM (
@@ -70,7 +70,7 @@ FROM (
         js.value::jsonb ->> 'outputNodes' AS output_nodes,
         js.value::jsonb ->> 'outputs' AS outputs,
         js.value::jsonb ->> 'runHash' AS run_hash,
-        js.value::jsonb ->> 'state' AS state
+        js.value::jsonb ->> 'state' AS state,
         js.value::jsonb ->> 'parent' AS parent,
         js.value::jsonb ->> 'bootOptions' AS boot_options
     FROM projects,
