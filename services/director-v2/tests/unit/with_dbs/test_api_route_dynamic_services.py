@@ -460,7 +460,7 @@ def test_get_service_status(
 @pytest.mark.parametrize(
     "can_save, exp_save_state", [(None, True), (True, True), (False, False)]
 )
-def test_delete_service(
+def test_delete_service(  # pylint:disable=too-many-arguments
     docker_swarm: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_catalog_service_api: MockRouter,
