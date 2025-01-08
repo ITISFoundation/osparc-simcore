@@ -143,7 +143,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageTrashed: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/projects:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           postToTemplate: {
             method: "POST",
@@ -327,7 +327,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageTrashed: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/folders?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/folders:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           post: {
             method: "POST",
@@ -373,6 +373,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageTrashed: {
             useCache: false,
             method: "GET",
+            // url: statics.API + "/workspaces:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
             url: statics.API + "/workspaces?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           post: {

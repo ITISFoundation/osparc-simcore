@@ -4,7 +4,7 @@ from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
-from servicelib.redis_utils import exclusive
+from servicelib.redis import exclusive
 
 from .._meta import APP_NAME
 from ..core.settings import ApplicationSettings

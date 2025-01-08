@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -8,6 +7,7 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import ByteSize, TypeAdapter, ValidationError
+from servicelib.file_utils import remove_directory
 
 from ..core.settings import ApplicationSettings, get_application_settings
 from . import efs_manager_utils
@@ -153,7 +153,7 @@ class EfsManager:
         if Path.exists(_dir_path):
             # Remove the directory and all its contents
             try:
-                shutil.rmtree(_dir_path)
+                await remove_directory(_dir_path)
                 _logger.info("%s has been deleted.", _dir_path)
             except FileNotFoundError:
                 _logger.exception("Directory %s does not exist.", _dir_path)
