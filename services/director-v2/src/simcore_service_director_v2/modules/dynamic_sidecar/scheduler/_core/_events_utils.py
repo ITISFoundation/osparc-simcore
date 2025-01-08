@@ -12,7 +12,6 @@ from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import ServiceKeyVersion
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
 )
@@ -52,6 +51,7 @@ from .....models.dynamic_services_scheduler import (
     DockerStatus,
     SchedulerData,
 )
+from .....modules.catalog import CatalogClient
 from .....modules.instrumentation import (
     get_instrumentation,
     get_metrics_labels,
@@ -534,12 +534,10 @@ async def prepare_services_environment(
     await limited_gather(*tasks, limit=3)
 
     # inside this directory create the missing dirs, fetch those form the labels
-    director_v0_client: DirectorV0Client = get_director_v0_client(app)
+    catalog_client = CatalogClient.instance(app)
     simcore_service_labels: SimcoreServiceLabels = (
-        await director_v0_client.get_service_labels(
-            service=ServiceKeyVersion(
-                key=scheduler_data.key, version=scheduler_data.version
-            )
+        await catalog_client.get_service_labels(
+            scheduler_data.key, scheduler_data.version
         )
     )
     service_outputs_labels = json.loads(

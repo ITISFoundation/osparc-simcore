@@ -188,8 +188,10 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
         _logger.info("%s", f"{boot_options=}")
 
+        catalog_client = CatalogClient.instance(app)
+
         settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
-            director_v0_client=director_v0_client,
+            catalog_client=catalog_client,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
             service_user_selection_boot_options=boot_options,
@@ -257,7 +259,6 @@ class CreateSidecars(DynamicSchedulerEvent):
             rpc_client=rpc_client,
         )
 
-        catalog_client = CatalogClient.instance(app)
         user_specific_service_spec = (
             await catalog_client.get_service_specifications(
                 scheduler_data.user_id, scheduler_data.key, scheduler_data.version

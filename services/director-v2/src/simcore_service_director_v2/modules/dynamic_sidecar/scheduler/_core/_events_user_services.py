@@ -5,7 +5,7 @@ from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import ServiceKeyVersion, ServiceVersion
+from models_library.services import ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import TypeAdapter
 from servicelib.fastapi.long_running_tasks.client import TaskId
@@ -19,16 +19,15 @@ from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from .....models.dynamic_services_scheduler import SchedulerData
+from .....modules.catalog import CatalogClient
 from .....modules.instrumentation import get_instrumentation, get_metrics_labels
 from .....utils.db import get_repository
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.users import UsersRepository
-from ....director_v0 import DirectorV0Client
 from ...api_client import get_sidecars_client
 from ...docker_compose_specs import assemble_spec
 from ...errors import EntrypointContainerNotFoundError
-from ._events_utils import get_director_v0_client
 
 _logger = logging.getLogger(__name__)
 
@@ -63,12 +62,10 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
     # creates a docker compose spec given the service key and tag
     # fetching project form DB and fetching user settings
 
-    director_v0_client: DirectorV0Client = get_director_v0_client(app)
+    catalog_client = CatalogClient.instance(app)
     simcore_service_labels: SimcoreServiceLabels = (
-        await director_v0_client.get_service_labels(
-            service=ServiceKeyVersion(
-                key=scheduler_data.key, version=scheduler_data.version
-            )
+        await catalog_client.get_service_labels(
+            scheduler_data.key, scheduler_data.version
         )
     )
 
