@@ -20,9 +20,9 @@ def handle_invalid_invitation_code_error(request: Request, exception: Exception)
             user_msg,
             error=exception,
             error_context={
-                "request": f"{request}",
                 "request.method": f"{request.method}",
                 "request.url": f"{request.url}",
+                "request.body": getattr(request, "_json", None),
             },
             tip="An invitation link could not be extracted",
         )
