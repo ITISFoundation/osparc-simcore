@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.background_task import stop_periodic_task
-from servicelib.redis_utils import start_exclusive_periodic_task
+from servicelib.redis import start_exclusive_periodic_task
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 
@@ -34,7 +34,6 @@ async def _start_get_status_deferred(
 
 
 def _can_be_removed(model: TrackedServiceModel) -> bool:
-
     # requested **as** `STOPPED`
     # service **reports** `IDLE`
     if (

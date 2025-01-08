@@ -1,4 +1,4 @@
-""" backround task that cleans the DSM pending/expired uploads
+"""backround task that cleans the DSM pending/expired uploads
 
 # Rationale:
  - for each upload an entry is created in the file_meta_data table in the database
@@ -26,7 +26,7 @@ from typing import cast
 from aiohttp import web
 from servicelib.background_task import stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis_utils import start_exclusive_periodic_task
+from servicelib.redis import start_exclusive_periodic_task
 
 from .constants import APP_CONFIG_KEY, APP_DSM_KEY
 from .dsm_factory import DataManagerProvider
@@ -57,8 +57,9 @@ async def dsm_cleaner_task(app: web.Application) -> None:
 
 def setup_dsm_cleaner(app: web.Application):
     async def _setup(app: web.Application):
-        with log_context(_logger, logging.INFO, msg="setup dsm cleaner"), log_catch(
-            _logger, reraise=False
+        with (
+            log_context(_logger, logging.INFO, msg="setup dsm cleaner"),
+            log_catch(_logger, reraise=False),
         ):
             cfg: Settings = app[APP_CONFIG_KEY]
             assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec

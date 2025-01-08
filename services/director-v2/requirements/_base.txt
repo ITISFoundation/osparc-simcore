@@ -760,7 +760,7 @@ pyyaml==6.0.2
     #   distributed
     #   fastapi
     #   uvicorn
-redis==5.0.4
+redis==5.2.1
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

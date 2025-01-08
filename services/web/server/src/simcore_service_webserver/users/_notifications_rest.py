@@ -11,7 +11,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.redis_utils import handle_redis_returns_union_types
+from servicelib.redis import handle_redis_returns_union_types
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
