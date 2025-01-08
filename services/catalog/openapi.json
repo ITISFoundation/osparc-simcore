@@ -171,7 +171,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_dict_str__Any__"
+                  "type": "object",
+                  "title": "Response Get Service Labels V0 Services  Service Key   Service Version  Labels Get"
                 }
               }
             }
@@ -1522,32 +1523,6 @@
         "type": "object",
         "title": "EndpointSpec",
         "description": "Properties that can be configured to access and load balance a service."
-      },
-      "Envelope_dict_str__Any__": {
-        "properties": {
-          "data": {
-            "anyOf": [
-              {
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          },
-          "error": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "title": "Envelope[dict[str, Any]]"
       },
       "FailureAction": {
         "type": "string",
