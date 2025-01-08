@@ -1,9 +1,16 @@
+import contextlib
 import functools
 import logging
 from collections.abc import Awaitable, Callable
 from typing import ParamSpec, TypeVar
 
+import redis.exceptions
+
+from ..background_task import periodic_task
 from ._client import RedisClientSDK
+from ._constants import DEFAULT_LOCK_TTL
+from ._errors import CouldNotAcquireLockError
+from ._utils import auto_extend_lock
 
 _logger = logging.getLogger(__file__)
 
@@ -12,7 +19,7 @@ R = TypeVar("R")
 
 
 def exclusive(
-    redis: RedisClientSDK | Callable[..., RedisClientSDK],
+    redis_client: RedisClientSDK | Callable[..., RedisClientSDK],
     *,
     lock_key: str | Callable[..., str],
     lock_value: bytes | str | None = None,
@@ -43,8 +50,32 @@ def exclusive(
             )
             assert isinstance(redis_lock_key, str)  # nosec
 
-            redis_client = redis(*args, **kwargs) if callable(redis) else redis
+            client = (
+                redis_client(*args, **kwargs)
+                if callable(redis_client)
+                else redis_client
+            )
             assert isinstance(redis_client, RedisClientSDK)  # nosec
+
+            lock_ttl = DEFAULT_LOCK_TTL
+
+            lock = client.create_lock(redis_lock_key, ttl=lock_ttl)
+            if not await lock.acquire(token=lock_value):
+                raise CouldNotAcquireLockError(lock=lock)
+
+            try:
+                async with periodic_task(
+                    auto_extend_lock,
+                    interval=lock_ttl / 2,
+                    task_name=f"autoextend_lock_{redis_lock_key}",
+                    lock=lock,
+                ) as auto_extend_task:
+                    result = await func(*args, **kwargs)
+                return result
+            finally:
+                with contextlib.suppress(redis.exceptions.LockNotOwnedError):
+                    # in the case where the lock would have been lost, this would raise
+                    await lock.release()
 
             async with redis_client.lock_context(
                 lock_key=redis_lock_key, lock_value=lock_value
