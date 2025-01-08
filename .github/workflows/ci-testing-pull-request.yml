@@ -28,7 +28,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.x"
-          enable-cache: true
+          enable-cache: false
       - name: checkout source branch
         uses: actions/checkout@v4
       - name: Regenerate specs and check

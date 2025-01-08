@@ -7,7 +7,7 @@
 
 import logging
 from contextlib import AsyncExitStack
-from typing import Any, cast
+from typing import Any, Self, cast
 from uuid import uuid1
 
 import sqlalchemy as sa
@@ -43,6 +43,7 @@ from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_tags import projects_tags
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
 from simcore_postgres_database.models.projects_to_products import projects_to_products
+from simcore_postgres_database.models.projects_to_wallet import projects_to_wallet
 from simcore_postgres_database.models.wallets import wallets
 from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
@@ -64,7 +65,6 @@ from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
-from ..db.models import projects_tags, projects_to_wallet
 from ..utils import now_str
 from ._comments_db import (
     create_project_comment,
@@ -104,6 +104,10 @@ _logger = logging.getLogger(__name__)
 APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 ANY_USER = ANY_USER_ID_SENTINEL
 
+DEFAULT_ORDER_BY = OrderBy(
+    field=IDStr("last_change_date"), direction=OrderDirection.DESC
+)
+
 # pylint: disable=too-many-public-methods
 # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3516
 
@@ -121,16 +125,16 @@ class ProjectDBAPI(BaseProjectDB):
             raise ValueError(msg)
 
     @classmethod
-    def get_from_app_context(cls, app: web.Application) -> "ProjectDBAPI":
-        db: "ProjectDBAPI" = app[APP_PROJECT_DBAPI]
+    def get_from_app_context(cls, app: web.Application) -> Self:
+        db = app[APP_PROJECT_DBAPI]
+        assert isinstance(db, cls)  # nosec
         return db
 
     @classmethod
-    def set_once_in_app_context(cls, app: web.Application) -> "ProjectDBAPI":
+    def set_once_in_app_context(cls, app: web.Application) -> Self:
         if app.get(APP_PROJECT_DBAPI) is None:
-            app[APP_PROJECT_DBAPI] = ProjectDBAPI(app)
-        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-        return db
+            app[APP_PROJECT_DBAPI] = cls(app)
+        return cls.get_from_app_context(app)
 
     @property
     def engine(self) -> Engine:
@@ -382,10 +386,9 @@ class ProjectDBAPI(BaseProjectDB):
         offset: int | None = 0,
         limit: int | None = None,
         # order
-        order_by: OrderBy = OrderBy(
-            field=IDStr("last_change_date"), direction=OrderDirection.DESC
-        ),
+        order_by: OrderBy = DEFAULT_ORDER_BY,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
+
         if filter_tag_ids_list is None:
             filter_tag_ids_list = []
 
@@ -481,10 +484,11 @@ class ProjectDBAPI(BaseProjectDB):
             ###
 
             if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
-                assert workspace_query.workspace_scope in (
+
+                assert workspace_query.workspace_scope in (  # nosec
                     WorkspaceScope.SHARED,
                     WorkspaceScope.ALL,
-                )  # nosec
+                )
 
                 shared_workspace_query = (
                     sa.select(
@@ -533,18 +537,19 @@ class ProjectDBAPI(BaseProjectDB):
                             None
                         )  # <-- All shared workspaces
                     )
-                if filter_by_text is not None:
-                    shared_workspace_query = shared_workspace_query.join(
-                        users, users.c.id == projects.c.prj_owner, isouter=True
-                    )
-
                 else:
-                    assert (
+                    assert (  # nosec
                         workspace_query.workspace_scope == WorkspaceScope.SHARED
-                    )  # nosec
+                    )
                     shared_workspace_query = shared_workspace_query.where(
                         projects.c.workspace_id
                         == workspace_query.workspace_id  # <-- Specific shared workspace
+                    )
+
+                if filter_by_text is not None:
+                    # NOTE: fields searched with text include user's email
+                    shared_workspace_query = shared_workspace_query.join(
+                        users, users.c.id == projects.c.prj_owner, isouter=True
                     )
 
             else:

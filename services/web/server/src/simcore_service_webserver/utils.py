@@ -156,13 +156,13 @@ def get_tracemalloc_info(top=10) -> list[str]:
 def compose_support_error_msg(
     msg: str, error_code: ErrorCodeStr, support_email: str = "support"
 ) -> str:
-    sentences = []
-    for line in msg.split("\n"):
-        if sentence := line.strip(" ."):
-            sentences.append(sentence[0].upper() + sentence[1:])
-
+    sentences = [
+        sentence[0].upper() + sentence[1:]
+        for line in msg.split("\n")
+        if (sentence := line.strip(" ."))
+    ]
     sentences.append(
-        f"For more information please forward this message to {support_email} [{error_code}]"
+        f"For more information please forward this message to {support_email} (supportID={error_code})"
     )
 
     return ". ".join(sentences)

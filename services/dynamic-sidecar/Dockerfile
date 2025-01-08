@@ -32,6 +32,7 @@ RUN \
   curl \
   gnupg \
   lsb-release \
+  xz-utils \
   && mkdir -p /etc/apt/keyrings \
   && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
   && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
@@ -41,7 +42,6 @@ RUN \
   docker-ce-cli=${DOCKER_APT_VERSION} \
   docker-compose-plugin=${DOCKER_COMPOSE_APT_VERSION} \
   gosu \
-  libcap2-bin \
   ca-certificates \
   # required by python-magic
   libmagic1 \
@@ -53,12 +53,25 @@ RUN \
   && gosu nobody true
 
 # install RClone, we do it in a separate layer such that the cache is not locked forever, as this seems to take a long time
+ARG TARGETARCH
+ENV TARGETARCH=${TARGETARCH}
 RUN \
   --mount=type=bind,source=scripts/install_rclone.bash,target=install_rclone.bash \
   ./install_rclone.bash
+# install 7zip
+ARG TARGETARCH
+ENV TARGETARCH=${TARGETARCH}
+RUN \
+  --mount=type=bind,source=scripts/install_7zip.bash,target=install_7zip.bash \
+  ./install_7zip.bash
 
 RUN AWS_CLI_VERSION="2.11.11" \
-  && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
+  && case "${TARGETARCH}" in \
+  "amd64") ARCH="x86_64" ;; \
+  "arm64") ARCH="aarch64" ;; \
+  *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+  esac \
+  && curl "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
   && apt-get update && apt-get install -y unzip \
   && unzip awscliv2.zip \
   && ./aws/install \
