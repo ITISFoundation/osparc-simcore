@@ -7,9 +7,7 @@ from .._constants import APP_SETTINGS_KEY
 
 class TrashSettings(BaseCustomSettings):
     TRASH_RETENTION_DAYS: NonNegativeInt = Field(
-        default=7,
         description="Trashed items will be deleted after this time",
-        alias="PROJECTS_TRASH_RETENTION_DAYS",
     )
 
 
