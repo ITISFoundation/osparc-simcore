@@ -1,14 +1,14 @@
-""" Wrapper around a Redis-backed registry for storing resources in a hash (https://redis.io/topics/data-types).
+"""Wrapper around a Redis-backed registry for storing resources in a hash (https://redis.io/topics/data-types).
 
-    Redis stores key/values.
+Redis stores key/values.
 
-    key hashes are generated from a dictionary (e.g. {"user_id":"a_user_id, "some_other_id":123} will
-    create a hash named "user_id=a_user_id:some_other_id=123:resources")
-    resources are tuples (resource_name, resource_value) that are stored with a key as Redis fields.
-    A same key can have a lot of fields provided they have a different name.
+key hashes are generated from a dictionary (e.g. {"user_id":"a_user_id, "some_other_id":123} will
+create a hash named "user_id=a_user_id:some_other_id=123:resources")
+resources are tuples (resource_name, resource_value) that are stored with a key as Redis fields.
+A same key can have a lot of fields provided they have a different name.
 
-    A key can be set as "alive". This creates a secondary key (e.g. "user_id=a_user_id:some_other_id=123:alive").
-    This key can have a timeout value. When the key times out then the key disappears from Redis automatically.
+A key can be set as "alive". This creates a secondary key (e.g. "user_id=a_user_id:some_other_id=123:alive").
+This key can have a timeout value. When the key times out then the key disappears from Redis automatically.
 
 
 """
@@ -18,7 +18,7 @@ import logging
 import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.basic_types import UUIDStr
-from servicelib.redis_utils import handle_redis_returns_union_types
+from servicelib.redis import handle_redis_returns_union_types
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )
