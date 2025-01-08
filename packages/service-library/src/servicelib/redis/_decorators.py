@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import functools
 import logging
@@ -67,10 +68,30 @@ def exclusive(
                 async with periodic_task(
                     auto_extend_lock,
                     interval=lock_ttl / 2,
-                    task_name=f"autoextend_lock_{redis_lock_key}",
+                    task_name=f"autoextend_exclusive_lock_{redis_lock_key}",
+                    raise_on_error=True,
                     lock=lock,
                 ) as auto_extend_task:
-                    result = await func(*args, **kwargs)
+                    work_task = asyncio.create_task(
+                        func(*args, **kwargs), name=f"exclusive_{func.__name__}"
+                    )
+                    done, pending = await asyncio.wait(
+                        [work_task, auto_extend_task],
+                        return_when=asyncio.FIRST_COMPLETED,
+                    )
+                    # the task finished first, let's return it
+                    if work_task in done:
+                        return await work_task
+
+                    # the auto extend tasks finished first, meaning it could not extend the lock!
+                    # let's cancel the work task and raise an error
+                    work_task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError, TimeoutError):
+                        # TODO: shall we raise the other errors?
+                        await asyncio.wait_for(work_task, timeout=3)
+
+                    return await auto_extend_task
+
                 return result
             finally:
                 with contextlib.suppress(redis.exceptions.LockNotOwnedError):
