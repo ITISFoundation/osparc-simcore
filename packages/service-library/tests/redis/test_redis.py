@@ -166,7 +166,6 @@ async def test_lock_context(
     assert await ttl_lock.owned() is False
 
 
-@pytest.mark.xfail(reason="This test shows an issue, that will be fixed in the next PR")
 async def test_lock_context_raises_if_lock_is_lost(
     redis_client_sdk: RedisClientSDK, faker: Faker
 ):
