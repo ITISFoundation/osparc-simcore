@@ -156,7 +156,7 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     getMyGroupId: function() {
-      return this.getGroupMe().getGroupId();
+      return osparc.auth.Data.getInstance().getGroupId();
     },
 
     getOrganizationIds: function() {
