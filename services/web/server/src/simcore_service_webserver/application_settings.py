@@ -53,6 +53,7 @@ from .session.settings import SessionSettings
 from .statics.settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage.settings import StorageSettings
 from .studies_dispatcher.settings import StudiesDispatcherSettings
+from .trash.settings import TrashSettings
 from .users.settings import UsersSettings
 
 _logger = logging.getLogger(__name__)
@@ -175,8 +176,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True},
         description="director-v2 service client's plugin",
     )
+
+    WEBSERVER_DYNAMIC_SCHEDULER: DynamicSchedulerSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True},
+    )
+
     WEBSERVER_EMAIL: SMTPSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}, description="email plugin"
+        json_schema_extra={"auto_default_from_env": True}
     )
     WEBSERVER_EXPORTER: ExporterSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True}, description="exporter plugin"
@@ -204,9 +210,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="payments plugin settings",
     )
 
-    WEBSERVER_DYNAMIC_SCHEDULER: DynamicSchedulerSettings | None = Field(
-        description="dynamic-scheduler plugin settings",
-        json_schema_extra={"auto_default_from_env": True},
+    WEBSERVER_PROJECTS: ProjectsSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     WEBSERVER_REDIS: RedisSettings | None = Field(
@@ -254,15 +259,25 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="tracing plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
-    WEBSERVER_PROJECTS: ProjectsSettings | None = Field(
-        description="projects plugin", json_schema_extra={"auto_default_from_env": True}
-    )
-    WEBSERVER_RABBITMQ: RabbitSettings | None = Field(
-        description="rabbitmq plugin", json_schema_extra={"auto_default_from_env": True}
-    )
-    WEBSERVER_USERS: UsersSettings | None = Field(
-        description="users plugin", json_schema_extra={"auto_default_from_env": True}
-    )
+    WEBSERVER_TRASH: Annotated[
+        TrashSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
+
+    WEBSERVER_RABBITMQ: Annotated[
+        RabbitSettings | None,
+        Field(
+            description="rabbitmq plugin",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+
+    WEBSERVER_USERS: Annotated[
+        UsersSettings | None,
+        Field(
+            description="users plugin",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_ANNOUNCEMENTS: bool = False
