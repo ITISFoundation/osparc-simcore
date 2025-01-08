@@ -23,7 +23,6 @@ from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
-from simcore_service_director_v2.api.dependencies.catalog import get_catalog_client
 from starlette import status
 from starlette.datastructures import URL
 from tenacity import RetryCallState, TryAgain
@@ -32,6 +31,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+from ...api.dependencies.catalog import get_catalog_client
 from ...api.dependencies.database import get_repository
 from ...api.dependencies.rabbitmq import get_rabbitmq_client_from_request
 from ...core.dynamic_services_settings import DynamicServicesSettings
@@ -105,7 +105,7 @@ async def list_tracked_dynamic_services(
 @log_decorator(logger=logger)
 async def create_dynamic_service(
     service: DynamicServiceCreate,
-    catalog_client: CatalogClient,
+    catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
     dynamic_services_settings: Annotated[
         DynamicServicesSettings, Depends(get_dynamic_services_settings)
