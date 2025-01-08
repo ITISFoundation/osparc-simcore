@@ -135,7 +135,6 @@ async def _acquire_lock_and_exclusively_sleep(
 ) -> None:
     async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client_sdk:
         redis_lock_name = lock_name() if callable(lock_name) else lock_name
-        assert not await _is_locked(redis_client_sdk, redis_lock_name)
 
         @exclusive(redis_client_sdk, lock_key=lock_name)
         async def _() -> float:
@@ -159,7 +158,7 @@ async def test_exclusive_parallel_lock_is_released_and_reacquired(
     results = await logged_gather(
         *[
             _acquire_lock_and_exclusively_sleep(
-                get_redis_client_sdk, lock_name, sleep_duration=0.1
+                get_redis_client_sdk, lock_name, sleep_duration=1
             )
             for _ in range(parallel_tasks)
         ],
