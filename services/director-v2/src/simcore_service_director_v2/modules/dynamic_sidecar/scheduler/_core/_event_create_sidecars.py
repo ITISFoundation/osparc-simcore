@@ -36,7 +36,6 @@ from .....utils.dict_utils import nested_update
 from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
-from ....director_v0 import DirectorV0Client
 from ...docker_api import (
     constrain_service_to_node,
     create_network,
@@ -52,7 +51,7 @@ from ...docker_service_specs import (
     merge_settings_before_use,
 )
 from ._abc import DynamicSchedulerEvent
-from ._events_utils import get_allow_metrics_collection, get_director_v0_client
+from ._events_utils import get_allow_metrics_collection
 
 _logger = logging.getLogger(__name__)
 
@@ -171,7 +170,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         # resources and placement derived from all the images in
         # the provided docker-compose spec
         # also other encodes the env vars to target the proper container
-        director_v0_client: DirectorV0Client = get_director_v0_client(app)
+
         # fetching project form DB and fetching user settings
         projects_repository = get_repository(app, ProjectsRepository)
 
