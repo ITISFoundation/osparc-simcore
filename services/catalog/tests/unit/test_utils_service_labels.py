@@ -28,7 +28,4 @@ async def test_get_service_labels(
     service_version = "3.0.0"
     result = await aclient.get(f"/v0/services/{service_key}/{service_version}/labels")
     assert result.status_code == 200, result.text
-    assert result.json() == {
-        "data": get_mocked_service_labels(service_key, service_version),
-        "error": None,
-    }
+    assert result.json() == get_mocked_service_labels(service_key, service_version)
