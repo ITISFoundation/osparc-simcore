@@ -1,4 +1,6 @@
 import datetime
+from re import S
+from tkinter import N
 import uuid
 from dataclasses import dataclass
 from typing import Any
@@ -43,10 +45,22 @@ class ProjectNodeCreate(BaseModel):
     key: str
     version: str
     label: str
+    progress: float | None = None
+    thumbnail: str | None = None
+    input_access: dict[str, Any] | None = None
+    input_nodes: list[dict[str, Any]] | None = None
+    inputs: dict[str, Any] | None = None
+    inputs_units: dict[str, Any] | None = None
+    output_nodes: list[dict[str, Any]] | None = None
+    outputs: dict[str, Any] | None = None
+    run_hash: str | None = None
+    state: dict[str, Any] | None = None
+    parent: str | None = None
+    boot_options: dict[str, Any] | None = None
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
-        return {name for name in cls.model_fields.keys() if name not in exclude}
+        return cls.model_fields.keys() - exclude
 
     model_config = ConfigDict(frozen=True)
 
