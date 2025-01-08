@@ -136,6 +136,59 @@
         }
       }
     },
+    "/v0/services/{service_key}/{service_version}/labels": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Get Service Labels",
+        "operationId": "get_service_labels_v0_services__service_key___service_version__labels_get",
+        "parameters": [
+          {
+            "name": "service_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Service Key"
+            }
+          },
+          {
+            "name": "service_version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Service Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_dict_str__Any__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/services/{service_key}/{service_version}/specifications": {
       "get": {
         "tags": [
@@ -1469,6 +1522,32 @@
         "type": "object",
         "title": "EndpointSpec",
         "description": "Properties that can be configured to access and load balance a service."
+      },
+      "Envelope_dict_str__Any__": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "title": "Envelope[dict[str, Any]]"
       },
       "FailureAction": {
         "type": "string",
