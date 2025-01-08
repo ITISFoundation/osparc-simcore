@@ -188,6 +188,13 @@ class RedisClientSDK:
                     "Attention: lock is no longer owned. This is unexpected and requires investigation"
                 )
 
+    def create_lock(
+        self, lock_name: str, *, ttl: datetime.timedelta = DEFAULT_LOCK_TTL
+    ) -> Lock:
+        return self._client.lock(
+            name=lock_name, timeout=ttl.total_seconds(), blocking=False
+        )
+
     async def lock_value(self, lock_name: str) -> str | None:
         output: str | None = await self._client.get(lock_name)
         return output
