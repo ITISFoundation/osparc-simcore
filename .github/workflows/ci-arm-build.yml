@@ -14,6 +14,7 @@ on:
 jobs:
   build-and-push-arm64:
     if: github.event_name == 'workflow_dispatch'
+    timeout-minutes: 60 # intentionally long to allow for slow builds
     runs-on: ubuntu-latest
     strategy:
       matrix:
