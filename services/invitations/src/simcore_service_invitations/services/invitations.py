@@ -118,15 +118,16 @@ def create_invitation_link_and_content(
 def extract_invitation_code_from_query(invitation_url: HttpUrl) -> str:
     """Parses url and extracts invitation code from url's query"""
     if not invitation_url.fragment:
-        raise InvalidInvitationCodeError
+        msg = "Invalid link format: fragment missing"
+        raise InvalidInvitationCodeError(msg)
 
     try:
         query_params = dict(parse.parse_qsl(URL(invitation_url.fragment).query))
         invitation_code: str = query_params["invitation"]
         return invitation_code
     except KeyError as err:
-        _logger.debug("Invalid invitation: %s", err)
-        raise InvalidInvitationCodeError from err
+        msg = "Invalid link format: fragment misses `invitation` link"
+        raise InvalidInvitationCodeError(msg) from err
 
 
 def decrypt_invitation(
@@ -167,5 +168,5 @@ def extract_invitation_content(
         return content
 
     except (InvalidToken, ValidationError, binascii.Error) as err:
-        _logger.debug("Invalid code: %s", err)
-        raise InvalidInvitationCodeError from err
+        msg = "Failed while decripting"
+        raise InvalidInvitationCodeError(msg) from err
