@@ -8,11 +8,13 @@ from ._errors import (
     LockLostError,
 )
 from ._models import RedisManagerDBConfig
+from ._utils import handle_redis_returns_union_types
 
 __all__: tuple[str, ...] = (
     "CouldNotAcquireLockError",
     "CouldNotConnectToRedisError",
     "exclusive",
+    "handle_redis_returns_union_types",
     "LockLostError",
     "RedisClientSDK",
     "RedisClientsManager",
