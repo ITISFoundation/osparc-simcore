@@ -10,7 +10,11 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 R_CLONE_VERSION="1.63.1"
-curl --silent --location --remote-name "https://downloads.rclone.org/v${R_CLONE_VERSION}/rclone-v${R_CLONE_VERSION}-linux-amd64.deb"
-dpkg --install "rclone-v${R_CLONE_VERSION}-linux-amd64.deb"
-rm "rclone-v${R_CLONE_VERSION}-linux-amd64.deb"
+TARGETARCH="${TARGETARCH:-amd64}"
+
+echo "platform ${TARGETARCH}"
+
+curl --silent --location --remote-name "https://downloads.rclone.org/v${R_CLONE_VERSION}/rclone-v${R_CLONE_VERSION}-linux-${TARGETARCH}.deb"
+dpkg --install "rclone-v${R_CLONE_VERSION}-linux-${TARGETARCH}.deb"
+rm "rclone-v${R_CLONE_VERSION}-linux-${TARGETARCH}.deb"
 rclone --version
