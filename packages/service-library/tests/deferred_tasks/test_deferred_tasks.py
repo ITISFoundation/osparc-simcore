@@ -20,9 +20,9 @@ from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock import MockerFixture
-from servicelib import redis as servicelib_redis
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
+from servicelib.redis import _constants as redis_client_constants
 from servicelib.sequences_utils import partition_gen
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -353,7 +353,6 @@ class ServiceManager:
     async def _pause_container(
         self, container_name: str, client: ClientWithPingProtocol
     ) -> AsyncIterator[None]:
-
         async with self.paused_container(container_name):
             async for attempt in AsyncRetrying(
                 wait=wait_fixed(0.1),
@@ -391,7 +390,9 @@ class ServiceManager:
 @pytest.fixture
 def mock_default_socket_timeout(mocker: MockerFixture) -> None:
     mocker.patch.object(
-        servicelib_redis, "_DEFAULT_SOCKET_TIMEOUT", datetime.timedelta(seconds=0.25)
+        redis_client_constants,
+        "DEFAULT_SOCKET_TIMEOUT",
+        datetime.timedelta(seconds=0.25),
     )
 
 
@@ -420,7 +421,6 @@ async def test_workflow_with_third_party_services_outages(
         redis_service,
         max_workers,
     ) as manager:
-
         # start all in parallel
         await asyncio.gather(
             *[manager.start_task(0.1, i) for i in range(deferred_tasks_to_start)]

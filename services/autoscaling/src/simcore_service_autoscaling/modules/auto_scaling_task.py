@@ -4,7 +4,7 @@ from typing import Final
 
 from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
-from servicelib.redis_utils import exclusive
+from servicelib.redis import exclusive
 
 from ..core.settings import ApplicationSettings
 from ..utils.redis import create_lock_key_and_value
