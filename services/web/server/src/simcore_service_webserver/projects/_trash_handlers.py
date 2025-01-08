@@ -53,21 +53,6 @@ _handle_exceptions = exception_handling_decorator(
 routes = web.RouteTableDef()
 
 
-@routes.delete(f"/{VTAG}/trash", name="empty_trash")
-@login_required
-@permission_required("project.delete")
-@_handle_exceptions
-async def empty_trash(request: web.Request):
-    user_id = get_user_id(request)
-    product_name = get_product_name(request)
-
-    await _trash_api.empty_trash(
-        request.app, product_name=product_name, user_id=user_id
-    )
-
-    return web.json_response(status=status.HTTP_204_NO_CONTENT)
-
-
 @routes.post(f"/{VTAG}/projects/{{project_id}}:trash", name="trash_project")
 @login_required
 @permission_required("project.delete")
