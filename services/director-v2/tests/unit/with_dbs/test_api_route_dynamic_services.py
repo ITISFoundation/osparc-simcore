@@ -223,7 +223,7 @@ def mocked_catalog_service_api(
         respx_mock.get(
             f"/services/{urllib.parse.quote_plus(service['key'])}/{service['version']}/labels",
             name="service labels",
-        ).respond(json={"data": service_labels})
+        ).respond(json=service_labels)
 
         yield respx_mock
 

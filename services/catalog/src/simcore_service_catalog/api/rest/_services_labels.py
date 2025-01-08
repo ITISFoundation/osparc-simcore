@@ -2,7 +2,6 @@ import urllib.parse
 from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends
-from models_library.generics import Envelope
 from models_library.services import ServiceKey, ServiceVersion
 
 from ...services.director import DirectorApi
@@ -16,9 +15,8 @@ async def get_service_labels(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     director_client: Annotated[DirectorApi, Depends(get_director_api)],
-) -> Envelope[dict[str, Any]]:  # TODO: change the type
+) -> dict[str, Any]:
     response = await director_client.get(
         f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/labels"
     )
-    # TODO: remove the envelope since it does not make sense
-    return Envelope[dict[str, Any]](data=cast(dict[str, Any], response))
+    return cast(dict[str, Any], response)

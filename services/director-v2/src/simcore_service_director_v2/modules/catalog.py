@@ -15,7 +15,6 @@ from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
 
 from ..utils.client_decorators import handle_errors, handle_retry
-from ..utils.clients import unenvelope_or_raise_error
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +117,7 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return SimcoreServiceLabels.model_validate(unenvelope_or_raise_error(resp))
+            return SimcoreServiceLabels.model_validate(resp)
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_specifications(
