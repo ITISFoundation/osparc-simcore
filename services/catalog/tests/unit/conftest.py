@@ -394,10 +394,40 @@ def mocked_director_service_api_base(
 
 
 @pytest.fixture
+def get_mocked_service_labels() -> Callable[[str, str], dict]:
+    def _(service_key: str, service_version: str) -> dict:
+        return {
+            "io.simcore.authors": '{"authors": [{"name": "John Smith", "email": "john@acme.com", "affiliation": "ACME\'IS Foundation"}]}',
+            "io.simcore.contact": '{"contact": "john@acme.com"}',
+            "io.simcore.description": '{"description": "Autonomous Nervous System Network model"}',
+            "io.simcore.inputs": '{"inputs": {"input_1": {"displayOrder": 1.0, "label": "Simulation time", "description": "Duration of the simulation", "type": "ref_contentSchema", "contentSchema": {"type": "number", "x_unit": "milli-second"}, "defaultValue": 2.0}}}',
+            "io.simcore.integration-version": '{"integration-version": "1.0.0"}',
+            "io.simcore.key": '{"key": "xxxxx"}'.replace("xxxxx", service_key),
+            "io.simcore.name": '{"name": "Autonomous Nervous System Network model"}',
+            "io.simcore.outputs": '{"outputs": {"output_1": {"displayOrder": 1.0, "label": "ANS output", "description": "Output of simulation of Autonomous Nervous System Network model", "type": "data:*/*", "fileToKeyMap": {"ANS_output.txt": "output_1"}}, "output_2": {"displayOrder": 2.0, "label": "Stimulation parameters", "description": "stim_param.txt file containing the input provided in the inputs port", "type": "data:*/*", "fileToKeyMap": {"ANS_stim_param.txt": "output_2"}}}}',
+            "io.simcore.thumbnail": '{"thumbnail": "https://www.statnews.com/wp-content/uploads/2020/05/3D-rat-heart.-iScience--768x432.png"}',
+            "io.simcore.type": '{"type": "computational"}',
+            "io.simcore.version": '{"version": "xxxxx"}'.replace(
+                "xxxxx", service_version
+            ),
+            "maintainer": "johnsmith",
+            "org.label-schema.build-date": "2023-04-17T08:04:15Z",
+            "org.label-schema.schema-version": "1.0",
+            "org.label-schema.vcs-ref": "",
+            "org.label-schema.vcs-url": "",
+            "simcore.service.restart-policy": "no-restart",
+            "simcore.service.settings": '[{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}, "Reservations": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]',
+        }
+
+    return _
+
+
+@pytest.fixture
 def mocked_director_service_api(
     mocked_director_service_api_base: respx.MockRouter,
     director_service_openapi_specs: dict[str, Any],
     expected_director_list_services: list[dict[str, Any]],
+    get_mocked_service_labels: Callable[[str, str], dict],
 ) -> respx.MockRouter:
     """
     STANDARD fixture to mock director service API
@@ -461,30 +491,7 @@ def mocked_director_service_api(
             return httpx.Response(
                 status_code=status.HTTP_200_OK,
                 json={
-                    "data": {
-                        "io.simcore.authors": '{"authors": [{"name": "John Smith", "email": "john@acme.com", "affiliation": "ACME\'IS Foundation"}]}',
-                        "io.simcore.contact": '{"contact": "john@acme.com"}',
-                        "io.simcore.description": '{"description": "Autonomous Nervous System Network model"}',
-                        "io.simcore.inputs": '{"inputs": {"input_1": {"displayOrder": 1.0, "label": "Simulation time", "description": "Duration of the simulation", "type": "ref_contentSchema", "contentSchema": {"type": "number", "x_unit": "milli-second"}, "defaultValue": 2.0}}}',
-                        "io.simcore.integration-version": '{"integration-version": "1.0.0"}',
-                        "io.simcore.key": '{"key": "xxxxx"}'.replace(
-                            "xxxxx", found["key"]
-                        ),
-                        "io.simcore.name": '{"name": "Autonomous Nervous System Network model"}',
-                        "io.simcore.outputs": '{"outputs": {"output_1": {"displayOrder": 1.0, "label": "ANS output", "description": "Output of simulation of Autonomous Nervous System Network model", "type": "data:*/*", "fileToKeyMap": {"ANS_output.txt": "output_1"}}, "output_2": {"displayOrder": 2.0, "label": "Stimulation parameters", "description": "stim_param.txt file containing the input provided in the inputs port", "type": "data:*/*", "fileToKeyMap": {"ANS_stim_param.txt": "output_2"}}}}',
-                        "io.simcore.thumbnail": '{"thumbnail": "https://www.statnews.com/wp-content/uploads/2020/05/3D-rat-heart.-iScience--768x432.png"}',
-                        "io.simcore.type": '{"type": "computational"}',
-                        "io.simcore.version": '{"version": "xxxxx"}'.replace(
-                            "xxxxx", found["version"]
-                        ),
-                        "maintainer": "iavarone",
-                        "org.label-schema.build-date": "2023-04-17T08:04:15Z",
-                        "org.label-schema.schema-version": "1.0",
-                        "org.label-schema.vcs-ref": "",
-                        "org.label-schema.vcs-url": "",
-                        "simcore.service.restart-policy": "no-restart",
-                        "simcore.service.settings": '[{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}, "Reservations": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]',
-                    }
+                    "data": get_mocked_service_labels(found["key"], found["version"])
                 },
             )
         return httpx.Response(
