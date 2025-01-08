@@ -66,7 +66,7 @@ class CatalogClient:
 
     @classmethod
     def instance(cls, app: FastAPI) -> "CatalogClient":
-        assert type(app.state.catalog_client) == CatalogClient  # nosec
+        assert isinstance(app.state.catalog_client, CatalogClient)  # nosec
         return app.state.catalog_client
 
     @handle_errors("Catalog", logger)

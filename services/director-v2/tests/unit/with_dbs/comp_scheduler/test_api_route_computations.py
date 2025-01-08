@@ -135,7 +135,6 @@ def mocked_director_service_fcts(
     minimal_app: FastAPI,
     fake_service_details: ServiceMetaDataPublished,
     fake_service_extras: ServiceExtras,
-    fake_service_labels: dict[str, Any],
 ) -> Iterator[respx.MockRouter]:
     # pylint: disable=not-context-manager
     with respx.mock(
@@ -151,12 +150,6 @@ def mocked_director_service_fcts(
         ).respond(
             json={"data": [fake_service_details.model_dump(mode="json", by_alias=True)]}
         )
-        respx_mock.get(
-            re.compile(
-                r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/labels"
-            ),
-            name="get_service_labels",
-        ).respond(json={"data": fake_service_labels})
 
         respx_mock.get(
             re.compile(
@@ -175,6 +168,7 @@ def mocked_catalog_service_fcts(
     minimal_app: FastAPI,
     fake_service_details: ServiceMetaDataPublished,
     fake_service_resources: ServiceResourcesDict,
+    fake_service_labels: dict[str, Any],
 ) -> Iterator[respx.MockRouter]:
     def _mocked_service_resources(request) -> httpx.Response:
         return httpx.Response(
@@ -225,6 +219,12 @@ def mocked_catalog_service_fcts(
         ).mock(side_effect=_mocked_service_resources)
         respx_mock.get(
             re.compile(
+                r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/labels"
+            ),
+            name="get_service_labels",
+        ).respond(json={"data": fake_service_labels})
+        respx_mock.get(
+            re.compile(
                 r"services/(?P<service_key>simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+)/(?P<service_version>[^\.]+.[^\.]+.[^/\?]+).*"
             ),
             name="get_service",
@@ -238,7 +238,7 @@ def mocked_catalog_service_fcts_deprecated(
     minimal_app: FastAPI,
     fake_service_details: ServiceMetaDataPublished,
     fake_service_extras: ServiceExtras,
-):
+) -> Iterator[respx.MockRouter]:
     def _mocked_services_details(
         request, service_key: str, service_version: str
     ) -> httpx.Response:
@@ -259,7 +259,7 @@ def mocked_catalog_service_fcts_deprecated(
         }
 
         data = {
-            **ServiceGet.model_config["json_schema_extra"]["examples"][0],
+            **ServiceGet.model_json_schema()["examples"][0],
             **data_published,
             **deprecated,
         }  # type: ignore
@@ -402,8 +402,8 @@ async def test_computation_create_validators(
 
 async def test_create_computation(
     minimal_configuration: None,
-    mocked_director_service_fcts,
-    mocked_catalog_service_fcts,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
@@ -678,8 +678,8 @@ async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503
 
 async def test_start_computation_without_product_fails(
     minimal_configuration: None,
-    mocked_director_service_fcts,
-    mocked_catalog_service_fcts,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
@@ -702,8 +702,8 @@ async def test_start_computation_without_product_fails(
 
 async def test_start_computation(
     minimal_configuration: None,
-    mocked_director_service_fcts,
-    mocked_catalog_service_fcts,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
@@ -734,8 +734,8 @@ async def test_start_computation(
 
 async def test_start_computation_with_project_node_resources_defined(
     minimal_configuration: None,
-    mocked_director_service_fcts,
-    mocked_catalog_service_fcts,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
@@ -779,8 +779,8 @@ async def test_start_computation_with_project_node_resources_defined(
 
 async def test_start_computation_with_deprecated_services_raises_406(
     minimal_configuration: None,
-    mocked_director_service_fcts,
-    mocked_catalog_service_fcts_deprecated,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts_deprecated: respx.MockRouter,
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
