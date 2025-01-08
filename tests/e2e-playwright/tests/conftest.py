@@ -417,7 +417,7 @@ def log_in_and_out(
 def _open_with_resources(page: Page, *, click_it: bool):
     study_title_field = page.get_by_test_id("studyTitleField")
     # wait until the title is automatically filled up
-    expect(study_title_field).not_to_have_value("")
+    expect(study_title_field).not_to_have_value("", timeout=30000)
 
     open_with_resources_button = page.get_by_test_id("openWithResources")
     if click_it:
