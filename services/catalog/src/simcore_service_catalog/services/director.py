@@ -4,7 +4,7 @@ import logging
 import urllib.parse
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
-from typing import Any
+from typing import Any, cast
 
 import httpx
 from common_library.json_serialization import json_dumps
@@ -155,6 +155,16 @@ class DirectorApi:
         assert isinstance(data, list)  # nosec
         assert len(data) == 1  # nosec
         return ServiceMetaDataPublished.model_validate(data[0])
+
+    async def get_service_labels(
+        self,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ) -> dict[str, Any]:
+        response = await self.get(
+            f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/labels"
+        )
+        return cast(dict[str, Any], response)
 
 
 async def setup_director(

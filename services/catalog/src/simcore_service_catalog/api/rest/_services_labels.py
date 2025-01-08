@@ -1,5 +1,4 @@
-import urllib.parse
-from typing import Annotated, Any, cast
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from models_library.services import ServiceKey, ServiceVersion
@@ -11,12 +10,9 @@ router = APIRouter()
 
 
 @router.get("/{service_key:path}/{service_version}/labels")
-async def get_service_labels(
+async def get_service_labels_(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     director_client: Annotated[DirectorApi, Depends(get_director_api)],
 ) -> dict[str, Any]:
-    response = await director_client.get(
-        f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/labels"
-    )
-    return cast(dict[str, Any], response)
+    return await director_client.get_service_labels(service_key, service_version)
