@@ -266,7 +266,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_RABBITMQ: Annotated[
         RabbitSettings | None,
         Field(
-            description="rabbitmq plugin",
             json_schema_extra={"auto_default_from_env": True},
         ),
     ]
@@ -274,7 +273,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_USERS: Annotated[
         UsersSettings | None,
         Field(
-            description="users plugin",
             json_schema_extra={"auto_default_from_env": True},
         ),
     ]
@@ -455,7 +453,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_PROJECTS": {
                     "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES",
-                    "PROJECTS_TRASH_RETENTION_DAYS",
+                },
+                "WEBSERVER_TRASH": {
+                    "TRASH_RETENTION_DAYS",
                 },
                 "WEBSERVER_LOGIN": {
                     "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",

@@ -24,7 +24,7 @@ async def empty_trash(app: web.Application, product_name: ProductName, user_id: 
 
 async def prune_trash(app: web.Application) -> list[str]:
     settings = get_plugin_settings(app)
-    retention = timedelta(days=settings.PROJECTS_TRASH_RETENTION_DAYS)
+    retention = timedelta(days=settings.TRASH_RETENTION_DAYS)
 
     _logger.debug(
         "CODE PLACEHOLDER: **ALL** projects marked as trashed during %s days are deleted",
