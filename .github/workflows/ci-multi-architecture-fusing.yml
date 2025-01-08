@@ -1,0 +1,58 @@
+name: CI Multi-Architecture Fusing
+
+on:
+  workflow_run:
+    workflows: ["CI ARM64 Build and Push", "CI"]
+    types:
+      - completed
+    branches:
+      - "master"
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  multi-architecture-fusing:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    timeout-minutes: 60 # intentionally long to allow for slow builds
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        python: ["3.11"]
+    env:
+      # secrets can be set in settings/secrets on github
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v3
+      - name: show system environs
+        run: ./ci/helpers/show_system_versions.bash
+      - name: login to Dockerhub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set deployment variables
+        run: |
+          if [ "${GITHUB_REF}" == "refs/heads/master" ]; then
+            echo "TAG_PREFIX=master-github" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF}" == refs/heads/hotfix_v* ]]; then
+            echo "TAG_PREFIX=hotfix-github" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF}" == refs/heads/hotfix_staging_* ]]; then
+            echo "TAG_PREFIX=hotfix-staging-github" >> $GITHUB_ENV
+          fi
+      - name: fuse images in the registry for latest tag
+        run: |
+          export DOCKER_IMAGE_TAG="$TAG_PREFIX-latest"
+          make docker-image-fuse SUFFIX=arm64

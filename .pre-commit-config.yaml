@@ -30,7 +30,7 @@ repos:
         name: upgrade code
         exclude: ^scripts/maintenance/computational-clusters/autoscaled_monitor/cli\.py$ # Optional get replaced and typer does not like it
   - repo: https://github.com/hadialqattan/pycln
-    rev: v2.1.4
+    rev: v2.5.0
     hooks:
       - id: pycln
         args: [--all, --expand-stars]

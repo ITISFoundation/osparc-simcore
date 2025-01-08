@@ -9,8 +9,7 @@ from models_library.users import UserID
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.exception_utils import silence_exceptions
 from servicelib.logging_utils import log_context
-from servicelib.redis import CouldNotAcquireLockError
-from servicelib.redis_utils import exclusive
+from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.utils import limited_gather
 
 from ...models.comp_runs import RunMetadataDict
