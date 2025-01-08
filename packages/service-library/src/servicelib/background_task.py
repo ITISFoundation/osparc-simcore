@@ -56,11 +56,14 @@ async def _periodic_scheduled_task(
         wait=wait_fixed(interval.total_seconds()),
     ):
         with attempt:
-            with log_context(
-                _logger,
-                logging.DEBUG,
-                msg=f"iteration {attempt.retry_state.attempt_number} of '{task_name}'",
-            ), log_catch(_logger):
+            with (
+                log_context(
+                    _logger,
+                    logging.DEBUG,
+                    msg=f"iteration {attempt.retry_state.attempt_number} of '{task_name}'",
+                ),
+                log_catch(_logger),
+            ):
                 await task(**task_kwargs)
 
             raise TryAgain
@@ -140,6 +143,7 @@ async def periodic_task(
     interval: datetime.timedelta,
     task_name: str,
     stop_timeout: float = _DEFAULT_STOP_TIMEOUT_S,
+    raise_on_error: bool = False,
     **kwargs,
 ) -> AsyncIterator[asyncio.Task]:
     asyncio_task: asyncio.Task | None = None
