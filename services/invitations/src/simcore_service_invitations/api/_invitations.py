@@ -9,10 +9,10 @@ from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContentAndLink,
     ApiInvitationInputs,
 )
+from models_library.invitations import InvitationContent
 
 from ..core.settings import ApplicationSettings
 from ..services.invitations import (
-    InvitationContent,
     create_invitation_link_and_content,
     extract_invitation_code_from_query,
     extract_invitation_content,
