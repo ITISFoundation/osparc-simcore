@@ -1,8 +1,9 @@
 import contextlib
 import logging
+from contextlib import contextmanager
 from dataclasses import dataclass
 
-from aiohttp import BasicAuth, ClientSession, web
+from aiohttp import BasicAuth, ClientResponseError, ClientSession, web
 from aiohttp.client_exceptions import ClientError
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContent,
@@ -11,17 +12,53 @@ from models_library.api_schemas_invitations.invitations import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl
+from servicelib.aiohttp import status
 from yarl import URL
 
 from .._constants import APP_SETTINGS_KEY
+from ._client import InvitationsServiceApi
+from .errors import (
+    InvalidInvitationError,
+    InvitationsError,
+    InvitationsServiceUnavailableError,
+)
 from .settings import InvitationsSettings
 
 _logger = logging.getLogger(__name__)
 
 
-#
-# CLIENT
-#
+@contextmanager
+def _handle_exceptions_as_invitations_errors():
+    try:
+        yield  # API function calls happen
+
+    except ClientResponseError as err:
+        # check possible errors
+        if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
+            raise InvalidInvitationError(
+                invitations_api_response={
+                    "err": err,
+                    "status": err.status,
+                    "message": err.message,
+                    "url": err.request_info.real_url,
+                },
+            ) from err
+
+        assert err.status >= status.HTTP_400_BAD_REQUEST  # nosec
+
+        # any other error status code
+        raise InvitationsServiceUnavailableError(
+            client_response_error=err,
+        ) from err
+
+    except InvitationsError:
+        # bypass: prevents that the Exceptions handler catches this exception
+        raise
+
+    except Exception as err:
+        raise InvitationsServiceUnavailableError(
+            unexpected_error=err,
+        ) from err
 
 
 @dataclass(frozen=True)
