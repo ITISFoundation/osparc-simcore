@@ -12,8 +12,12 @@ import arrow
 import pytest
 from faker import Faker
 from servicelib.background_task import stop_periodic_task
-from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK
-from servicelib.redis_utils import exclusive, start_exclusive_periodic_task
+from servicelib.redis import (
+    CouldNotAcquireLockError,
+    RedisClientSDK,
+    exclusive,
+    start_exclusive_periodic_task,
+)
 from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase
 from tenacity.asyncio import AsyncRetrying
@@ -67,7 +71,6 @@ async def test_exclusive_decorator(
     lock_name: str,
     sleep_duration: float,
 ):
-
     async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client:
         for _ in range(3):
             assert (
@@ -220,7 +223,7 @@ async def _assert_task_completes_once(
 async def test_start_exclusive_periodic_task_single(
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ]
+    ],
 ):
     await _assert_task_completes_once(get_redis_client_sdk, stop_after=2)
 
@@ -241,7 +244,7 @@ def test__check_elements_lower():
 async def test_start_exclusive_periodic_task_parallel_all_finish(
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ]
+    ],
 ):
     parallel_tasks = 10
     results: list[tuple[float, float]] = await logged_gather(

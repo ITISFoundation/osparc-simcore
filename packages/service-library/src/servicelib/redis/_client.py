@@ -47,7 +47,7 @@ class RedisClientSDK:
     def redis(self) -> aioredis.Redis:
         return self._client
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._client = aioredis.from_url(
             self.redis_dsn,
             # Run 3 retries with exponential backoff strategy source: https://redis.readthedocs.io/en/stable/backoff.html
