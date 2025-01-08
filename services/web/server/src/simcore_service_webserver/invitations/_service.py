@@ -60,9 +60,9 @@ async def validate_invitation_url(
         raise InvalidInvitationError(reason=MSG_INVALID_INVITATION_URL) from err
 
     # check with service
-    invitation = await get_invitations_service_api(app=app).extract_invitation(
-        invitation_url=valid_url
-    )
+    invitation: ApiInvitationContent = await get_invitations_service_api(
+        app=app
+    ).extract_invitation(invitation_url=valid_url)
 
     # check email
     if invitation.guest.lower() != guest_email.lower():
@@ -108,9 +108,10 @@ async def extract_invitation(
         raise InvalidInvitationError(reason=MSG_INVALID_INVITATION_URL) from err
 
     # check with service
-    return await get_invitations_service_api(app=app).extract_invitation(
-        invitation_url=valid_url
-    )
+    invitation: ApiInvitationContent = await get_invitations_service_api(
+        app=app
+    ).extract_invitation(invitation_url=valid_url)
+    return invitation
 
 
 async def generate_invitation(
@@ -122,4 +123,7 @@ async def generate_invitation(
         InvalidInvitationError:
         InvitationsServiceUnavailableError:
     """
-    return await get_invitations_service_api(app=app).generate_invitation(params)
+    invitation: ApiInvitationContentAndLink = await get_invitations_service_api(
+        app=app
+    ).generate_invitation(params)
+    return invitation
