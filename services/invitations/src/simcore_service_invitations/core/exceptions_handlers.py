@@ -14,6 +14,7 @@ INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 def handle_invalid_invitation_code_error(request: Request, exception: Exception):
     assert isinstance(exception, InvalidInvitationCodeError)  # nosec
     user_msg = INVALID_INVITATION_URL_MSG
+
     _logger.warning(
         **create_troubleshotting_log_kwargs(
             user_msg,
@@ -21,15 +22,15 @@ def handle_invalid_invitation_code_error(request: Request, exception: Exception)
             error_context={
                 "request": f"{request}",
                 "request.method": f"{request.method}",
-                "request.path": f"{request.url.path}",
+                "request.url": f"{request.url}",
             },
-            tip="Some invitation link is invalid. Note that the encryption key for generation/check must be the same!",
+            tip="An invitation link could not be extracted",
         )
     )
 
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": INVALID_INVITATION_URL_MSG},
+        content={"detail": user_msg},
     )
 
 

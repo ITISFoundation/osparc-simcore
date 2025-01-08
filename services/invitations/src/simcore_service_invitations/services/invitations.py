@@ -168,5 +168,7 @@ def extract_invitation_content(
         return content
 
     except (InvalidToken, ValidationError, binascii.Error) as err:
-        msg = "Failed while decripting"
+        msg = (
+            "Failed while decripting. TIP: secret key at encryption might be different"
+        )
         raise InvalidInvitationCodeError(msg) from err
