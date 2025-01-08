@@ -135,7 +135,7 @@ async def app(
 @pytest.fixture
 async def remove_redis_data(redis_service: RedisSettings) -> None:
     async with RedisClientsManager(
-        {RedisManagerDBConfig(x) for x in RedisDatabase},
+        {RedisManagerDBConfig(database=x) for x in RedisDatabase},
         redis_service,
         client_name="pytest",
     ) as manager:
