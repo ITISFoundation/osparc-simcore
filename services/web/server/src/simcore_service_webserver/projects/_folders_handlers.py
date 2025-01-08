@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
-from pydantic import ConfigDict, BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -14,7 +14,7 @@ from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import _folders_api
-from ._common_models import RequestContext
+from ._common.models import RequestContext
 from .exceptions import ProjectGroupNotFoundError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -44,9 +44,9 @@ class _ProjectsFoldersPathParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     # validators
-    _null_or_none_str_to_none_validator = field_validator(
-        "folder_id", mode="before"
-    )(null_or_none_str_to_none_validator)
+    _null_or_none_str_to_none_validator = field_validator("folder_id", mode="before")(
+        null_or_none_str_to_none_validator
+    )
 
 
 @routes.put(
