@@ -5,78 +5,38 @@ import logging
 from asyncio import Task
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Final
 from uuid import uuid4
 
 import redis.asyncio as aioredis
 import redis.exceptions
-from common_library.errors_classes import OsparcErrorMixin
-from pydantic import NonNegativeFloat, NonNegativeInt
+from pydantic import NonNegativeFloat
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
-from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import retry
 from yarl import URL
 
-from .background_task import periodic_task
-from .logging_utils import log_catch, log_context
-from .retry_policies import RedisRetryPolicyUponInitialization
-
-_DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
-_DEFAULT_SOCKET_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
-
-
-_DEFAULT_DECODE_RESPONSES: Final[bool] = True
-_DEFAULT_HEALTH_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
-    seconds=5
+from ..background_task import periodic_task
+from ..logging_utils import log_catch
+from ..retry_policies import RedisRetryPolicyUponInitialization
+from ._constants import (
+    DEFAULT_DECODE_RESPONSES,
+    DEFAULT_HEALTH_CHECK_INTERVAL,
+    DEFAULT_LOCK_TTL,
+    DEFAULT_SOCKET_TIMEOUT,
 )
-_SHUTDOWN_TIMEOUT_S: Final[NonNegativeInt] = 5
-
+from ._errors import CouldNotAcquireLockError, CouldNotConnectToRedisError
+from ._utils import auto_extend_lock, cancel_or_warn
 
 _logger = logging.getLogger(__name__)
-
-
-class BaseRedisError(OsparcErrorMixin, RuntimeError):
-    ...
-
-
-class CouldNotAcquireLockError(BaseRedisError):
-    msg_template: str = "Lock {lock.name} could not be acquired!"
-
-
-class CouldNotConnectToRedisError(BaseRedisError):
-    msg_template: str = "Connection to '{dsn}' failed"
-
-
-class LockLostError(BaseRedisError):
-    msg_template: str = "Lock {lock.name} has been lost"
-
-
-async def _cancel_or_warn(task: Task) -> None:
-    if not task.cancelled():
-        task.cancel()
-    _, pending = await asyncio.wait((task,), timeout=_SHUTDOWN_TIMEOUT_S)
-    if pending:
-        task_name = task.get_name()
-        _logger.warning("Could not cancel task_name=%s pending=%s", task_name, pending)
-
-
-async def _auto_extend_lock(lock: Lock) -> None:
-    try:
-        with log_context(_logger, logging.DEBUG, f"Autoextend lock {lock.name}"):
-            # TODO: if we cannot re-acquire that means the lock is lost, and we are not anymore safe and should raise all the way to the caller
-            await lock.reacquire()
-    except redis.exceptions.LockNotOwnedError as exc:
-        raise LockLostError(lock=lock) from exc
 
 
 @dataclass
 class RedisClientSDK:
     redis_dsn: str
     client_name: str
-    decode_responses: bool = _DEFAULT_DECODE_RESPONSES
-    health_check_interval: datetime.timedelta = _DEFAULT_HEALTH_CHECK_INTERVAL
+    decode_responses: bool = DEFAULT_DECODE_RESPONSES
+    health_check_interval: datetime.timedelta = DEFAULT_HEALTH_CHECK_INTERVAL
 
     _client: aioredis.Redis = field(init=False)
     _health_check_task: Task | None = None
@@ -97,8 +57,8 @@ class RedisClientSDK:
                 redis.exceptions.ConnectionError,
                 redis.exceptions.TimeoutError,
             ],
-            socket_timeout=_DEFAULT_SOCKET_TIMEOUT.total_seconds(),
-            socket_connect_timeout=_DEFAULT_SOCKET_TIMEOUT.total_seconds(),
+            socket_timeout=DEFAULT_SOCKET_TIMEOUT.total_seconds(),
+            socket_connect_timeout=DEFAULT_SOCKET_TIMEOUT.total_seconds(),
             encoding="utf-8",
             decode_responses=self.decode_responses,
             client_name=self.client_name,
@@ -126,7 +86,7 @@ class RedisClientSDK:
     async def shutdown(self) -> None:
         if self._health_check_task:
             self._continue_health_checking = False
-            await _cancel_or_warn(self._health_check_task)
+            await cancel_or_warn(self._health_check_task)
             self._health_check_task = None
 
         await self._client.aclose(close_connection_pool=True)
@@ -178,7 +138,7 @@ class RedisClientSDK:
             2. `blocking==True` timeouts out while waiting for lock to be free (another entity holds the lock)
         """
 
-        total_lock_duration: datetime.timedelta = _DEFAULT_LOCK_TTL
+        total_lock_duration: datetime.timedelta = DEFAULT_LOCK_TTL
         lock_unique_id = f"lock_extender_{lock_key}_{uuid4()}"
 
         ttl_lock: Lock = self._client.lock(
@@ -193,7 +153,7 @@ class RedisClientSDK:
 
         try:
             async with periodic_task(
-                _auto_extend_lock,
+                auto_extend_lock,
                 interval=total_lock_duration / 2,
                 task_name=lock_unique_id,
                 lock=ttl_lock,
@@ -220,8 +180,6 @@ class RedisClientSDK:
 
             # Above implies that only one "task" `owns` and `extends` the lock at a time.
             # The issue appears to be related some timings (being too low).
-
-            # TODO: Why are we silencing this because of a TEST?????
             try:
                 await ttl_lock.release()
             except redis.exceptions.LockNotOwnedError:
@@ -233,51 +191,3 @@ class RedisClientSDK:
     async def lock_value(self, lock_name: str) -> str | None:
         output: str | None = await self._client.get(lock_name)
         return output
-
-
-@dataclass(frozen=True)
-class RedisManagerDBConfig:
-    database: RedisDatabase
-    decode_responses: bool = _DEFAULT_DECODE_RESPONSES
-    health_check_interval: datetime.timedelta = _DEFAULT_HEALTH_CHECK_INTERVAL
-
-
-@dataclass
-class RedisClientsManager:
-    """
-    Manages the lifetime of redis client sdk connections
-    """
-
-    databases_configs: set[RedisManagerDBConfig]
-    settings: RedisSettings
-    client_name: str
-
-    _client_sdks: dict[RedisDatabase, RedisClientSDK] = field(default_factory=dict)
-
-    async def setup(self) -> None:
-        for config in self.databases_configs:
-            self._client_sdks[config.database] = RedisClientSDK(
-                redis_dsn=self.settings.build_redis_dsn(config.database),
-                decode_responses=config.decode_responses,
-                health_check_interval=config.health_check_interval,
-                client_name=f"{self.client_name}",
-            )
-
-        for client in self._client_sdks.values():
-            await client.setup()
-
-    async def shutdown(self) -> None:
-        # NOTE: somehow using logged_gather is not an option
-        # doing so will make the shutdown procedure hang
-        for client in self._client_sdks.values():
-            await client.shutdown()
-
-    def client(self, database: RedisDatabase) -> RedisClientSDK:
-        return self._client_sdks[database]
-
-    async def __aenter__(self) -> "RedisClientsManager":
-        await self.setup()
-        return self
-
-    async def __aexit__(self, *args):
-        await self.shutdown()

@@ -1,71 +1,45 @@
 import asyncio
-import functools
+import datetime
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import timedelta
-from typing import Any, ParamSpec, TypeVar
+from typing import Any
 
 import arrow
+import redis.exceptions
+from redis.asyncio.lock import Lock
+from servicelib.background_task import start_periodic_task
 
-from .background_task import start_periodic_task
-from .redis import CouldNotAcquireLockError, RedisClientSDK
+from ..logging_utils import log_context
+from ._client import RedisClientSDK
+from ._constants import SHUTDOWN_TIMEOUT_S
+from ._decorators import exclusive
+from ._errors import CouldNotAcquireLockError, LockLostError
 
-_logger = logging.getLogger(__file__)
-
-P = ParamSpec("P")
-R = TypeVar("R")
+_logger = logging.getLogger(__name__)
 
 
-def exclusive(
-    redis: RedisClientSDK | Callable[..., RedisClientSDK],
-    *,
-    lock_key: str | Callable[..., str],
-    lock_value: bytes | str | None = None,
-) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
-    """
-    Define a method to run exclusively across
-    processes by leveraging a Redis Lock.
+async def cancel_or_warn(task: asyncio.Task) -> None:
+    if not task.cancelled():
+        task.cancel()
+    _, pending = await asyncio.wait((task,), timeout=SHUTDOWN_TIMEOUT_S)
+    if pending:
+        task_name = task.get_name()
+        _logger.warning("Could not cancel task_name=%s pending=%s", task_name, pending)
 
-    parameters:
-    redis: the redis client SDK
-    lock_key: a string as the name of the lock (good practice: app_name:lock_name)
-    lock_value: some additional data that can be retrieved by another client
 
-    Raises:
-        - ValueError if used incorrectly
-        - CouldNotAcquireLockError if the lock could not be acquired
-    """
-
-    if not lock_key:
-        msg = "lock_key cannot be empty string!"
-        raise ValueError(msg)
-
-    def decorator(func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
-        @functools.wraps(func)
-        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            redis_lock_key = (
-                lock_key(*args, **kwargs) if callable(lock_key) else lock_key
-            )
-            assert isinstance(redis_lock_key, str)  # nosec
-
-            redis_client = redis(*args, **kwargs) if callable(redis) else redis
-            assert isinstance(redis_client, RedisClientSDK)  # nosec
-
-            async with redis_client.lock_context(
-                lock_key=redis_lock_key, lock_value=lock_value
-            ):
-                return await func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
+async def auto_extend_lock(lock: Lock) -> None:
+    try:
+        with log_context(_logger, logging.DEBUG, f"Autoextend lock {lock.name}"):
+            await lock.reacquire()
+    except redis.exceptions.LockNotOwnedError as exc:
+        raise LockLostError(lock=lock) from exc
 
 
 async def _exclusive_task_starter(
-    redis: RedisClientSDK,
+    client: RedisClientSDK,
     usr_tsk_task: Callable[..., Awaitable[None]],
     *,
-    usr_tsk_interval: timedelta,
+    usr_tsk_interval: datetime.timedelta,
     usr_tsk_task_name: str,
     **kwargs,
 ) -> None:
@@ -73,7 +47,7 @@ async def _exclusive_task_starter(
     lock_value = f"locked since {arrow.utcnow().format()}"
 
     try:
-        await exclusive(redis, lock_key=lock_key, lock_value=lock_value)(
+        await exclusive(client, lock_key=lock_key, lock_value=lock_value)(
             start_periodic_task
         )(
             usr_tsk_task,
@@ -85,18 +59,17 @@ async def _exclusive_task_starter(
         _logger.debug(
             "Could not acquire lock '%s' with value '%s'", lock_key, lock_value
         )
-        # TODO: why is this silenced?
     except Exception as e:
         _logger.exception(e)  # noqa: TRY401
         raise
 
 
 def start_exclusive_periodic_task(
-    redis: RedisClientSDK,
+    client: RedisClientSDK,
     task: Callable[..., Awaitable[None]],
     *,
-    task_period: timedelta,
-    retry_after: timedelta = timedelta(seconds=1),
+    task_period: datetime.timedelta,
+    retry_after: datetime.timedelta = datetime.timedelta(seconds=1),
     task_name: str,
     **kwargs,
 ) -> asyncio.Task:
@@ -120,7 +93,7 @@ def start_exclusive_periodic_task(
         _exclusive_task_starter,
         interval=retry_after,
         task_name=f"exclusive_task_starter_{task_name}",
-        redis=redis,
+        client=client,
         usr_tsk_task=task,
         usr_tsk_interval=task_period,
         usr_tsk_task_name=task_name,
