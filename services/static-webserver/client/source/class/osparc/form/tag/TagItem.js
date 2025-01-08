@@ -15,7 +15,6 @@ qx.Class.define("osparc.form.tag.TagItem", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(5));
     this.__validationManager = new qx.ui.form.validation.Manager();
-    this.__renderLayout();
   },
 
   statics: {
@@ -57,18 +56,23 @@ qx.Class.define("osparc.form.tag.TagItem", {
       init: "#303030"
     },
 
+    myAccessRights: {
+      check: "Object",
+      nullable: false,
+      event: "changeMyAccessRights",
+    },
+
     accessRights: {
       check: "Object",
       nullable: false,
       event: "changeAccessRights",
-      apply: "__renderLayout",
     },
 
     mode: {
       check: "String",
       init: "display",
       nullable: false,
-      apply: "_applyMode"
+      apply: "__applyMode"
     },
 
     appearance: {
@@ -84,83 +88,62 @@ qx.Class.define("osparc.form.tag.TagItem", {
   },
 
   members: {
-    __tag: null,
-    __description: null,
-    __nameInput: null,
-    __descriptionInput: null,
-    __colorInput: null,
-    __colorButton: null,
-    __loadingIcon: null,
     __validationManager: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "tag":
-          // Tag sample on display mode
-          if (this.__tag === null) {
-            this.__tag = new osparc.ui.basic.Tag();
-            this.bind("name", this.__tag, "value");
-            this.bind("color", this.__tag, "color");
-          }
-          control = this.__tag;
+          control = new osparc.ui.basic.Tag();
+          this.bind("name", control, "value");
+          this.bind("color", control, "color");
           break;
         case "description":
-          // Description label on display mode
-          if (this.__description === null) {
-            this.__description = new qx.ui.basic.Label().set({
-              rich: true
-            });
-            this.bind("description", this.__description, "value");
-          }
-          control = this.__description;
+          control = new qx.ui.basic.Label().set({
+            rich: true,
+            allowGrowX: true,
+          });
+          this.bind("description", control, "value");
+          break;
+        case "shared-icon":
+          control = new qx.ui.basic.Image().set({
+            minWidth: 30,
+            alignY: "middle",
+            cursor: "pointer",
+          });
+          osparc.dashboard.CardBase.populateShareIcon(control, this.getAccessRights())
+          control.addListener("tap", () => this.__openAccessRights(), this);
           break;
         case "name-input":
-          // Tag name input in edit mode
-          if (this.__nameInput === null) {
-            this.__nameInput = new qx.ui.form.TextField().set({
-              required: true
-            });
-            this.__validationManager.add(this.__nameInput);
-            this.__nameInput.getContentElement().setAttribute("autocomplete", "off");
-          }
-          control = this.__nameInput;
+          control = new qx.ui.form.TextField().set({
+            required: true
+          });
+          this.__validationManager.add(control);
+          control.getContentElement().setAttribute("autocomplete", "off");
           break;
         case "description-input":
-          // Tag description input in edit mode
-          if (this.__descriptionInput === null) {
-            this.__descriptionInput = new qx.ui.form.TextArea().set({
-              autoSize: true,
-              minimalLineHeight: 1
-            });
-          }
-          control = this.__descriptionInput;
+          control = new qx.ui.form.TextArea().set({
+            autoSize: true,
+            minimalLineHeight: 1
+          });
           break;
         case "color-input":
-          // Color input in edit mode
-          if (this.__colorInput === null) {
-            this.__colorInput = new qx.ui.form.TextField().set({
-              value: this.getColor(),
-              width: 60,
-              required: true
-            });
-            this.__colorInput.bind("value", this.getChildControl("color-button"), "backgroundColor");
-            this.__colorInput.bind("value", this.getChildControl("color-button"), "textColor", {
-              converter: value => osparc.utils.Utils.getContrastedBinaryColor(value)
-            });
-            this.__validationManager.add(this.__colorInput, osparc.utils.Validators.hexColor);
-          }
-          control = this.__colorInput;
+          control = new qx.ui.form.TextField().set({
+            value: this.getColor(),
+            width: 60,
+            required: true
+          });
+          control.bind("value", this.getChildControl("color-button"), "backgroundColor");
+          control.bind("value", this.getChildControl("color-button"), "textColor", {
+            converter: value => osparc.utils.Utils.getContrastedBinaryColor(value)
+          });
+          this.__validationManager.add(control, osparc.utils.Validators.hexColor);
           break;
         case "color-button":
-          // Random color generator button in edit mode
-          if (this.__colorButton === null) {
-            this.__colorButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
-            this.__colorButton.addListener("execute", () => {
-              this.getChildControl("color-input").setValue(osparc.utils.Utils.getRandomColor());
-            }, this);
-          }
-          control = this.__colorButton;
+          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
+          control.addListener("execute", () => {
+            this.getChildControl("color-input").setValue(osparc.utils.Utils.getRandomColor());
+          }, this);
           break;
       }
       return control || this.base(arguments, id);
@@ -171,7 +154,10 @@ qx.Class.define("osparc.form.tag.TagItem", {
       tag.bind("name", this, "name");
       tag.bind("description", this, "description");
       tag.bind("color", this, "color");
+      tag.bind("myAccessRights", this, "myAccessRights");
       tag.bind("accessRights", this, "accessRights");
+
+      this.__renderLayout();
     },
 
     /**
@@ -212,40 +198,48 @@ qx.Class.define("osparc.form.tag.TagItem", {
     },
 
     __renderDisplayMode: function() {
-      const tagContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
-        width: 100
-      });
-      tagContainer.add(this.getChildControl("tag"));
-      this._add(tagContainer);
-      const descriptionContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      descriptionContainer.add(this.getChildControl("description"), {
-        width: "100%"
-      });
-      this._add(descriptionContainer, {
+      this._add(this.getChildControl("tag"));
+      this._add(this.getChildControl("description"), {
         flex: 1
       });
+      this._add(this.getChildControl("shared-icon"));
       this._add(this.__tagItemButtons());
       this.resetBackgroundColor();
+    },
+
+    __openAccessRights: function() {
+      const permissionsView = new osparc.share.CollaboratorsTag(this.getTag());
+      const title = this.tr("Share Tag");
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 600, 600);
+
+      permissionsView.addListener("updateAccessRights", () => {
+        const accessRights = this.getTag().getAccessRights();
+        if (accessRights) {
+          const sharedIcon = this.getChildControl("shared-icon");
+          osparc.dashboard.CardBase.populateShareIcon(sharedIcon, accessRights);
+        }
+      }, this);
     },
 
     /**
      * Generates and returns the buttons for deleting and editing an existing label (display mode)
      */
     __tagItemButtons: function() {
+      const canIWrite = osparc.share.CollaboratorsTag.canIWrite(this.getMyAccessRights());
+      const canIDelete = osparc.share.CollaboratorsTag.canIDelete(this.getMyAccessRights());
+
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const editButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/pencil-alt/12",
-        toolTipText: this.tr("Edit")
+        toolTipText: this.tr("Edit"),
+        enabled: canIWrite,
       });
       const deleteButton = new osparc.ui.form.FetchButton().set({
         appearance: "danger-button",
         icon: "@FontAwesome5Solid/trash/12",
-        toolTipText: this.tr("Delete")
+        toolTipText: this.tr("Delete"),
+        enabled: canIDelete,
       });
-      if (this.isPropertyInitialized("accessRights")) {
-        editButton.setEnabled(this.getAccessRights()["write"]);
-        deleteButton.setEnabled(this.getAccessRights()["delete"]);
-      }
       buttonContainer.add(editButton);
       buttonContainer.add(deleteButton);
       editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
@@ -279,20 +273,31 @@ qx.Class.define("osparc.form.tag.TagItem", {
         if (this.__validationManager.validate()) {
           const data = this.__serializeData();
           saveButton.setFetching(true);
-          let fetch;
+          const tagsStore = osparc.store.Tags.getInstance();
           if (this.isPropertyInitialized("id")) {
-            fetch = osparc.store.Tags.getInstance().putTag(this.getId(), data);
+            tagsStore.putTag(this.getId(), data)
+              .then(tag => this.setTag(tag))
+              .catch(console.error)
+              .finally(() => {
+                this.fireEvent("tagSaved");
+                this.setMode(this.self().modes.DISPLAY);
+                saveButton.setFetching(false);
+              });
           } else {
-            fetch = osparc.store.Tags.getInstance().postTag(data);
+            let newTag = null;
+            tagsStore.postTag(data)
+              .then(tag => {
+                newTag = tag;
+                return tagsStore.fetchAccessRights(tag);
+              })
+              .then(() => this.setTag(newTag))
+              .catch(console.error)
+              .finally(() => {
+                this.fireEvent("tagSaved");
+                this.setMode(this.self().modes.DISPLAY);
+                saveButton.setFetching(false);
+              });
           }
-          fetch
-            .then(tag => this.setTag(tag))
-            .catch(console.error)
-            .finally(() => {
-              this.fireEvent("tagSaved");
-              this.setMode(this.self().modes.DISPLAY);
-              saveButton.setFetching(false);
-            });
         }
       }, this);
       cancelButton.addListener("execute", () => {
@@ -334,7 +339,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
         color: color
       };
     },
-    _applyMode: function() {
+    __applyMode: function() {
       this.__renderLayout();
     }
   }

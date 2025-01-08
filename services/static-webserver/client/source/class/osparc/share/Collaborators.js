@@ -189,15 +189,21 @@ qx.Class.define("osparc.share.Collaborators", {
         // Access Rights are set at workspace level
         return false;
       }
+
       let canIShare = false;
       switch (this._resourceType) {
         case "study":
         case "template":
+          canIShare = osparc.study.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+          break;
         case "service":
           canIShare = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
         case "workspace":
           canIShare = osparc.share.CollaboratorsWorkspace.canIDelete(this._serializedDataCopy["myAccessRights"]);
+          break;
+        case "tag":
+          canIShare = osparc.share.CollaboratorsTag.canIWrite(this._serializedDataCopy["myAccessRights"]);
           break;
       }
       return canIShare;
@@ -220,6 +226,9 @@ qx.Class.define("osparc.share.Collaborators", {
         case "workspace":
           fullOptions = osparc.share.CollaboratorsWorkspace.canIDelete(this._serializedDataCopy["myAccessRights"]);
           break;
+        case "tag":
+          fullOptions = osparc.share.CollaboratorsTag.canIDelete(this._serializedDataCopy["myAccessRights"]);
+          break;
       }
       return fullOptions;
     },
@@ -227,13 +236,17 @@ qx.Class.define("osparc.share.Collaborators", {
     __createRolesLayout: function() {
       let rolesLayout = null;
       switch (this._resourceType) {
+        case "study":
+        case "template":
+          rolesLayout = osparc.data.Roles.createRolesStudyInfo();
+          break;
         case "service":
           rolesLayout = osparc.data.Roles.createRolesServicesInfo();
           break;
         case "workspace":
           rolesLayout = osparc.data.Roles.createRolesWorkspaceInfo();
           break;
-        default:
+        case "tag":
           rolesLayout = osparc.data.Roles.createRolesStudyInfo();
           break;
       }

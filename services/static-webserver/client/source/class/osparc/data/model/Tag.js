@@ -33,7 +33,7 @@ qx.Class.define("osparc.data.model.Tag", {
       name: tagData.name,
       description: tagData.description,
       color: tagData.color,
-      accessRights: tagData.accessRights,
+      myAccessRights: tagData.accessRights,
     });
   },
 
@@ -65,12 +65,25 @@ qx.Class.define("osparc.data.model.Tag", {
       init: "#303030"
     },
 
+    myAccessRights: {
+      check: "Object",
+      nullable: false,
+      init: null,
+      event: "changeMyAccessRights"
+    },
+
     accessRights: {
       check: "Object",
       nullable: false,
       init: null,
       event: "changeAccessRights"
     },
+  },
+
+  statics: {
+    getProperties: function() {
+      return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Tag));
+    }
   },
 
   members: {
