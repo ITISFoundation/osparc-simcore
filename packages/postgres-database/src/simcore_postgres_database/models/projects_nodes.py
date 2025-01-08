@@ -88,17 +88,47 @@ projects_nodes = sa.Table(
         doc="Url of the latest screenshot of the node",
     ),
     sa.Column(
+        "input_access",
+        JSONB,
+        nullable=True,
+        doc="Map with key - access level pairs",
+    ),
+    sa.Column(
+        "input_nodes",
+        JSONB,  # Array
+        nullable=True,
+        doc="Node IDs of where the node is connected to",
+    ),
+    sa.Column(
         "inputs",
         JSONB,
         nullable=True,
-        doc="Values of input properties",
+        doc="Input properties values",
+    ),
+    sa.Column(
+        "inputs_units",
+        JSONB,
+        nullable=True,
+        doc="Input unit values",
+    ),
+    sa.Column(
+        "output_nodes",
+        JSONB,  # Array
+        nullable=True,
+        doc="Node IDs of those connected to the output",
     ),
     sa.Column(
         "outputs",
         JSONB,
         nullable=True,
-        doc="Values of output properties",
+        doc="Output properties values",
     ),
+    # sa.Column(
+    #     "output_node",
+    #     sa.BOOLEAN,
+    #     nullable=True,
+    #     doc="Deprecated",
+    # ),
     sa.Column(
         "run_hash",
         sa.String,
@@ -111,60 +141,25 @@ projects_nodes = sa.Table(
         nullable=True,
         doc="Node state",
     ),
-    # sa.Column(
-    #     "inputs_units",
-    #     JSONB,
-    #     nullable=False,
-    #     server_default=sa.text("'{}'::jsonb"),
-    #     doc="Values of input unit",
-    # ),
-    # sa.Column(
-    #     "input_access",
-    #     JSONB,
-    #     nullable=False,
-    #     server_default=sa.text("'{}'::jsonb"),
-    #     doc="Map with key - access level pairs",
-    # ),
-    # sa.Column(
-    #     "input_nodes",
-    #     JSONB,  # <-- ARRAY
-    #     nullable=False,
-    #     server_default=sa.text("'[]'::jsonb"),
-    #     doc="Node IDs of where the node is connected to",
-    # ),
-    # sa.Column(
-    #     "output_node",
-    #     sa.BOOLEAN,
-    #     nullable=False,
-    #     doc="Deprecated",
-    # ),
-    # sa.Column(
-    #     "output_nodes",
-    #     JSONB,  # <-- ARRAY
-    #     nullable=False,
-    #     server_default=sa.text("'[]'::jsonb"),
-    #     doc="Used in group-nodes. Node IDs of those connected to the output",
-    # ),
-    # sa.Column(
-    #     "parent",
-    #     sa.String,
-    #     nullable=True,
-    #     doc="Parent's (group-nodes) node IDs.",
-    # ),
+    sa.Column(
+        "parent",
+        sa.String,
+        nullable=True,
+        doc="Parent's (group-nodes) node ID",
+    ),
     # sa.Column(
     #     "position",
     #     JSONB,
     #     nullable=True,
-    #     server_default=sa.text("'{}'::jsonb"),
     #     doc="Deprecated",
     # ),
-    # sa.Column(
-    #     "boot_options",
-    #     JSONB,
-    #     nullable=True,
-    #     server_default=sa.text("'{}'::jsonb"),
-    #     doc="Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services's defaults.",
-    # ),
+    sa.Column(
+        "boot_options",
+        JSONB,
+        nullable=True,
+        doc="Some services provide alternative parameters to be injected at boot time."
+        "The user selection should be stored here, and it will overwrite the services's defaults",
+    ),
     sa.UniqueConstraint("project_uuid", "node_id"),
 )
 
