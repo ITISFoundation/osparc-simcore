@@ -238,12 +238,6 @@ def mocked_director_v0_service_api(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        # get services labels
-        respx_mock.get(
-            f"/services/{urllib.parse.quote_plus(service['key'])}/{service['version']}/labels",
-            name="service labels",
-        ).respond(json={"data": service_labels})
-
         respx_mock.get(
             f"/running_interactive_services/{service['node_uuid']}",
             name="running interactive service",

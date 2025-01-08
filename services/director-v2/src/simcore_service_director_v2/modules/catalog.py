@@ -117,7 +117,7 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return SimcoreServiceLabels.model_validate(resp)
+            return SimcoreServiceLabels.model_validate(resp.json())
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_specifications(
