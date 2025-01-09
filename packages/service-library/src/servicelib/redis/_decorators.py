@@ -2,13 +2,13 @@ import asyncio
 import contextlib
 import functools
 import logging
-from collections.abc import Callable
-from typing import Any, Coroutine, ParamSpec, TypeVar
+from collections.abc import Callable, Coroutine
+from typing import Any, ParamSpec, TypeVar
 
 import redis.exceptions
-from servicelib.logging_utils import log_context
 
 from ..background_task import periodic_task
+from ..logging_utils import log_context
 from ._client import RedisClientSDK
 from ._constants import DEFAULT_LOCK_TTL, SHUTDOWN_TIMEOUT_S
 from ._errors import CouldNotAcquireLockError
