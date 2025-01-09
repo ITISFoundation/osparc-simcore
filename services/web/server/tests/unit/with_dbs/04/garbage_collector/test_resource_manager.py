@@ -8,7 +8,6 @@
 import asyncio
 from asyncio import Future
 from collections.abc import AsyncIterator, Awaitable, Callable
-from copy import deepcopy
 from pathlib import Path
 from typing import Any
 from unittest import mock
@@ -28,6 +27,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
@@ -37,8 +37,8 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import _core as gc_core
@@ -104,45 +104,44 @@ async def open_project() -> AsyncIterator[Callable[..., Awaitable[None]]]:
 
 @pytest.fixture
 def app_environment(
-    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
-) -> dict[str, str]:
-    overrides = setenvs_from_dict(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+) -> EnvVarsDict:
+
+    # NOTE: undos some app_environment settings
+    monkeypatch.delenv("WEBSERVER_GARBAGE_COLLECTOR", raising=False)
+    app_environment.pop("WEBSERVER_GARBAGE_COLLECTOR", None)
+
+    return app_environment | setenvs_from_dict(
         monkeypatch,
         {
             "WEBSERVER_COMPUTATION": "1",
             "WEBSERVER_NOTIFICATIONS": "1",
+            # sets TTL of a resource after logout
+            "RESOURCE_MANAGER_RESOURCE_TTL_S": f"{SERVICE_DELETION_DELAY}",
+            "GARBAGE_COLLECTOR_INTERVAL_S": "30",
         },
     )
-    return app_environment | overrides
 
 
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
-    app_cfg: dict[str, Any],
+    app_cfg: AppConfigDict,
+    app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     mock_orphaned_services,
     redis_client: Redis,
-    monkeypatch_setenv_from_app_config: Callable,
     mock_dynamic_scheduler_rabbitmq: None,
 ) -> TestClient:
-    cfg = deepcopy(app_cfg)
-    assert cfg["rest"]["version"] == API_VTAG
-    assert cfg["rest"]["enabled"]
-    cfg["projects"]["enabled"] = True
+    app = create_safe_application()
 
-    # sets TTL of a resource after logout
-    cfg["resource_manager"][
-        "resource_deletion_timeout_seconds"
-    ] = SERVICE_DELETION_DELAY
+    assert "WEBSERVER_GARBAGE_COLLECTOR" not in app_environment
 
-    monkeypatch_setenv_from_app_config(cfg)
-    app = create_safe_application(cfg)
-
-    # activates only security+restAPI sub-modules
-
-    assert setup_settings(app)
+    settings = setup_settings(app)
+    assert settings.WEBSERVER_GARBAGE_COLLECTOR is not None
+    assert settings.WEBSERVER_PROJECTS is not None
 
     setup_db(app)
     setup_session(app)
@@ -151,7 +150,7 @@ def client(
     setup_login(app)
     setup_users(app)
     setup_socketio(app)
-    setup_projects(app)
+    assert setup_projects(app)
     setup_director_v2(app)
     assert setup_resource_manager(app)
     setup_rabbitmq(app)
@@ -167,7 +166,10 @@ def client(
     return event_loop.run_until_complete(
         aiohttp_client(
             app,
-            server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
+            server_kwargs={
+                "port": app_cfg["main"]["port"],
+                "host": app_cfg["main"]["host"],
+            },
         )
     )
 
