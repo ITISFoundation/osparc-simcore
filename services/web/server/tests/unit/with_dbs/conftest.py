@@ -119,11 +119,26 @@ def docker_compose_file(docker_compose_env: pytest.MonkeyPatch) -> str:
 
 
 @pytest.fixture
+def web_test_server_port(unused_tcp_port_factory: Callable):
+    return unused_tcp_port_factory()
+
+
+@pytest.fixture
+def storage_test_server_port(
+    unused_tcp_port_factory: Callable, web_test_server_port: int
+):
+    port = unused_tcp_port_factory()
+    assert port != web_test_server_port
+    return port
+
+
+@pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     default_app_cfg: AppConfigDict,
     unused_tcp_port_factory: Callable,
     mock_env_devel_environment: EnvVarsDict,
+    storage_test_server_port: int,
     monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
@@ -138,7 +153,7 @@ def app_environment(
     """
     # NOTE: remains from from old cfg
     cfg = deepcopy(default_app_cfg)
-    cfg["storage"]["port"] = unused_tcp_port_factory()
+    cfg["storage"]["port"] = storage_test_server_port
     envs_app_cfg = monkeypatch_setenv_from_app_config(cfg)
 
     return (
@@ -189,6 +204,7 @@ def web_server(
     unused_tcp_port_factory: Callable,
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
+    web_test_server_port: int,
     # tools
     aiohttp_server: Callable,
     mocked_send_email: None,
@@ -201,7 +217,7 @@ def web_server(
     disable_static_webserver(app)
 
     server = event_loop.run_until_complete(
-        aiohttp_server(app, port=unused_tcp_port_factory())
+        aiohttp_server(app, port=web_test_server_port)
     )
 
     assert isinstance(postgres_db, sa.engine.Engine)

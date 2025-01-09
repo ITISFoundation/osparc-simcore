@@ -5,10 +5,13 @@
 
 import asyncio
 import textwrap
+from collections.abc import Callable
 from pathlib import Path
+from typing import Awaitable
 
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 
 
 @pytest.fixture
@@ -34,7 +37,11 @@ def index_static_path(tmpdir):
 
 
 @pytest.fixture
-def client(event_loop: asyncio.AbstractEventLoop, aiohttp_client, index_static_path):
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
+    index_static_path,
+):
 
     routes = web.RouteTableDef()
 

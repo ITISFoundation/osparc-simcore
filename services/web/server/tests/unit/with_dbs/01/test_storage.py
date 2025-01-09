@@ -1,13 +1,15 @@
-# pylint:disable=unused-import
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from urllib.parse import quote
 
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestServer
+from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -22,9 +24,10 @@ API_VERSION = "v0"
 @pytest.fixture()
 def storage_server(
     event_loop: asyncio.AbstractEventLoop,
-    aiohttp_server: TestServer,
+    aiohttp_server: Callable[..., Awaitable[TestServer]],
     app_environment: EnvVarsDict,
-):
+    storage_test_server_port: int,
+) -> TestServer:
     async def _get_locs(request: web.Request):
         assert not request.can_read_body
 
@@ -125,6 +128,7 @@ def storage_server(
 
     storage_api_version = app_environment["STORAGE_VTAG"]
     storage_port = int(app_environment["STORAGE_PORT"])
+    assert storage_port == storage_test_server_port
 
     assert (
         storage_api_version != API_VERSION
@@ -164,7 +168,9 @@ PREFIX = "/" + API_VERSION + "/storage"
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_storage_locations(client, storage_server, logged_user, expected):
+async def test_get_storage_locations(
+    client: TestClient, storage_server: TestServer, logged_user, expected
+):
     url = "/v0/storage/locations"
     assert url.startswith(PREFIX)
 
@@ -186,7 +192,9 @@ async def test_get_storage_locations(client, storage_server, logged_user, expect
         (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
-async def test_sync_file_meta_table(client, storage_server, logged_user, expected):
+async def test_sync_file_meta_table(
+    client: TestClient, storage_server: TestServer, logged_user, expected
+):
     url = "/v0/storage/locations/0:sync"
     assert url.startswith(PREFIX)
 
@@ -208,7 +216,9 @@ async def test_sync_file_meta_table(client, storage_server, logged_user, expecte
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_datasets_metadata(client, storage_server, logged_user, expected):
+async def test_get_datasets_metadata(
+    client: TestClient, storage_server: TestServer, logged_user, expected
+):
     url = "/v0/storage/locations/0/datasets"
     assert url.startswith(PREFIX)
 
@@ -234,7 +244,7 @@ async def test_get_datasets_metadata(client, storage_server, logged_user, expect
     ],
 )
 async def test_get_files_metadata_dataset(
-    client, storage_server, logged_user, expected
+    client: TestClient, storage_server: TestServer, logged_user, expected
 ):
     url = "/v0/storage/locations/0/datasets/N:asdfsdf/metadata"
     assert url.startswith(PREFIX)
@@ -263,7 +273,7 @@ async def test_get_files_metadata_dataset(
     ],
 )
 async def test_storage_file_meta(
-    client, storage_server, logged_user, expected, faker: Faker
+    client: TestClient, storage_server: TestServer, logged_user, expected, faker: Faker
 ):
     # tests redirect of path with quotes in path
     file_id = f"{faker.uuid4()}/{faker.uuid4()}/a/b/c/d/e/dat"
@@ -289,7 +299,9 @@ async def test_storage_file_meta(
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_storage_list_filter(client, storage_server, logged_user, expected):
+async def test_storage_list_filter(
+    client: TestClient, storage_server: TestServer, logged_user, expected
+):
     # tests composition of 2 queries
     file_id = "a/b/c/d/e/dat"
     url = "/v0/storage/locations/0/files/metadata?uuid_filter={}".format(

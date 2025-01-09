@@ -4,6 +4,7 @@
 
 import asyncio
 import time
+from collections.abc import Awaitable
 from typing import Callable
 
 import pytest
@@ -28,7 +29,10 @@ async def get_ok_handler(_request: web.Request):
 
 
 @pytest.fixture
-def client(event_loop, aiohttp_client: Callable) -> TestClient:
+def client(
+    event_loop,
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
+) -> TestClient:
     app = web.Application()
     app.router.add_get("/", get_ok_handler)
 
