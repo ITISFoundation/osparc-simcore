@@ -48,8 +48,7 @@ from servicelib.background_task import (
 )
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
-from servicelib.redis import RedisClientsManager
-from servicelib.redis_utils import exclusive
+from servicelib.redis import RedisClientsManager, exclusive
 from settings_library.redis import RedisDatabase
 
 from .....core.dynamic_services_settings.scheduler import (
@@ -158,7 +157,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                     "Following observation tasks completed with an unexpected error:%s",
                     f"{bad_results}",
                 )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.exception(
                 "Timed-out waiting for %s to complete. Action: Check why this is blocking",
                 f"{running_tasks=}",

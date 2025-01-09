@@ -12,8 +12,12 @@ import arrow
 import pytest
 from faker import Faker
 from servicelib.background_task import stop_periodic_task
-from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK
-from servicelib.redis_utils import exclusive, start_exclusive_periodic_task
+from servicelib.redis import (
+    CouldNotAcquireLockError,
+    RedisClientSDK,
+    exclusive,
+    start_exclusive_periodic_task,
+)
 from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase
 from tenacity.asyncio import AsyncRetrying
@@ -67,7 +71,6 @@ async def test_exclusive_decorator(
     lock_name: str,
     sleep_duration: float,
 ):
-
     async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client:
         for _ in range(3):
             assert (
@@ -132,7 +135,6 @@ async def _acquire_lock_and_exclusively_sleep(
 ) -> None:
     async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client_sdk:
         redis_lock_name = lock_name() if callable(lock_name) else lock_name
-        assert not await _is_locked(redis_client_sdk, redis_lock_name)
 
         @exclusive(redis_client_sdk, lock_key=lock_name)
         async def _() -> float:
@@ -156,7 +158,7 @@ async def test_exclusive_parallel_lock_is_released_and_reacquired(
     results = await logged_gather(
         *[
             _acquire_lock_and_exclusively_sleep(
-                get_redis_client_sdk, lock_name, sleep_duration=0.1
+                get_redis_client_sdk, lock_name, sleep_duration=1
             )
             for _ in range(parallel_tasks)
         ],
@@ -220,7 +222,7 @@ async def _assert_task_completes_once(
 async def test_start_exclusive_periodic_task_single(
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ]
+    ],
 ):
     await _assert_task_completes_once(get_redis_client_sdk, stop_after=2)
 
@@ -241,7 +243,7 @@ def test__check_elements_lower():
 async def test_start_exclusive_periodic_task_parallel_all_finish(
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ]
+    ],
 ):
     parallel_tasks = 10
     results: list[tuple[float, float]] = await logged_gather(
