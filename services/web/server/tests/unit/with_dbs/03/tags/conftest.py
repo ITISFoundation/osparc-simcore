@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 from aioresponses import aioresponses
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
@@ -40,21 +41,21 @@ DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    app_cfg: AppConfigDict,
     app_environment: EnvVarsDict,
-    monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
 ) -> EnvVarsDict:
-    cfg = deepcopy(app_cfg)
+    # NOTE: undos some app_environment settings
+    monkeypatch.delenv("WEBSERVER_GARBAGE_COLLECTOR", raising=False)
+    app_environment.pop("WEBSERVER_GARBAGE_COLLECTOR", None)
 
-    cfg["projects"]["enabled"] = True
-    cfg["resource_manager"][
-        "garbage_collection_interval_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS  # increase speed of garbage collection
-    cfg["resource_manager"][
-        "resource_deletion_timeout_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
-
-    return app_environment | monkeypatch_setenv_from_app_config(cfg)
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            # reduce deletion delay
+            "RESOURCE_MANAGER_RESOURCE_TTL_S": f"{DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS}",
+            # increase speed of garbage collection
+            "GARBAGE_COLLECTOR_INTERVAL_S": f"{DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS}",
+        },
+    )
 
 
 @pytest.fixture
@@ -68,10 +69,13 @@ def client(
     mock_orphaned_services,
     redis_client,  # this ensure redis is properly cleaned
 ):
-    # config app
     app = create_safe_application()
 
+    assert "WEBSERVER_GARBAGE_COLLECTOR" not in app_environment
+
     settings = setup_settings(app)
+    assert settings.WEBSERVER_GARBAGE_COLLECTOR is not None
+    assert settings.WEBSERVER_PROJECTS is not None
     assert settings.WEBSERVER_TAGS is not None
 
     # setup app
