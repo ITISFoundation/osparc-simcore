@@ -1,15 +1,21 @@
 import asyncio
+import datetime
 import logging
 from collections import deque
+from collections.abc import Awaitable, Callable, Coroutine
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Deque
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 
 from . import tracing
 from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
 
 if TYPE_CHECKING:
     Queue = asyncio.Queue
@@ -54,7 +60,7 @@ async def _safe_cancel(context: Context) -> None:
                 await context.task
     except RuntimeError as e:
         if "Event loop is closed" in f"{e}":
-            logger.warning("event loop is closed and could not cancel %s", context)
+            _logger.warning("event loop is closed and could not cancel %s", context)
         else:
             raise
 
@@ -65,7 +71,7 @@ async def cancel_sequential_workers() -> None:
         await _safe_cancel(context)
 
     _sequential_jobs_contexts.clear()
-    logger.info("All run_sequentially_in_context pending workers stopped")
+    _logger.info("All run_sequentially_in_context pending workers stopped")
 
 
 # NOTE: If you get funny mismatches with mypy in returned values it might be due to this decorator.
@@ -118,10 +124,10 @@ def run_sequentially_in_context(
             arg_names = decorated_function.__code__.co_varnames[
                 : decorated_function.__code__.co_argcount
             ]
-            search_args = dict(zip(arg_names, args))
+            search_args = dict(zip(arg_names, args, strict=False))
             search_args.update(kwargs)
 
-            key_parts: Deque[str] = deque()
+            key_parts: deque[str] = deque()
             for arg in target_args:
                 sub_args = arg.split(".")
                 main_arg = sub_args[0]
@@ -201,6 +207,24 @@ def run_sequentially_in_context(
                 raise wrapped_result
 
             return wrapped_result
+
+        return wrapper
+
+    return decorator
+
+
+def with_delay(
+    delay: datetime.timedelta,
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+]:
+    def decorator(
+        func: Callable[P, Coroutine[Any, Any, R]],
+    ) -> Callable[P, Coroutine[Any, Any, R]]:
+        @wraps(func)
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            await asyncio.sleep(delay.total_seconds())
+            return await func(*args, **kwargs)
 
         return wrapper
 

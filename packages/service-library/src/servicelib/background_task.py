@@ -11,7 +11,7 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-from .decorators import async_delayed
+from .async_utils import with_delay
 from .logging_utils import log_catch, log_context
 
 _logger = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ def start_periodic_task(
     with log_context(
         _logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"
     ):
-        delayed_periodic_scheduled_task = async_delayed(wait_before_running)(
+        delayed_periodic_scheduled_task = with_delay(wait_before_running)(
             _periodic_scheduled_task
         )
         return asyncio.create_task(
