@@ -415,7 +415,7 @@ qx.Class.define("osparc.share.Collaborators", {
       const allGroups = groupsStore.getAllGroups();
       const usersStore = osparc.store.Users.getInstance();
       for (let i=0; i<Object.keys(accessRights).length; i++) {
-        const gid = Object.keys(accessRights)[i];
+        const gid = parseInt(Object.keys(accessRights)[i]);
         let collab = null;
         if (gid in allGroups) {
           collab = allGroups[gid];
