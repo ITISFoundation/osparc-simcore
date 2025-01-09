@@ -1,8 +1,10 @@
 import contextlib
+import functools
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 
-from aiohttp import BasicAuth, ClientSession, web
+from aiohttp import BasicAuth, ClientResponseError, ClientSession, web
 from aiohttp.client_exceptions import ClientError
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContent,
@@ -11,17 +13,62 @@ from models_library.api_schemas_invitations.invitations import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl
+from servicelib.aiohttp import status
 from yarl import URL
 
 from .._constants import APP_SETTINGS_KEY
+from .errors import (
+    InvalidInvitationError,
+    InvitationsError,
+    InvitationsServiceUnavailableError,
+)
 from .settings import InvitationsSettings
 
 _logger = logging.getLogger(__name__)
 
 
-#
-# CLIENT
-#
+def _handle_exceptions_as_invitations_errors(member_func: Callable):
+    @functools.wraps(member_func)
+    async def _wrapper(*args, **kwargs):
+        """
+        Raises:
+            InvalidInvitationError:
+            InvitationsServiceUnavailableError:
+        """
+        try:
+
+            return await member_func(*args, **kwargs)
+
+        except ClientResponseError as err:
+
+            if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
+                raise InvalidInvitationError(
+                    api_funcname=member_func.__name__,
+                    status=err.status,
+                    message=err.message,
+                    url=err.request_info.real_url,
+                ) from err
+
+            assert err.status >= status.HTTP_400_BAD_REQUEST  # nosec
+
+            # any other error status code
+            raise InvitationsServiceUnavailableError(
+                api_funcname=member_func.__name__,
+                status=err.status,
+                message=err.message,
+                url=err.request_info.real_url,
+            ) from err
+
+        except InvitationsError:
+            # bypass: prevents that the Exceptions handler catches this exception
+            raise
+
+        except Exception as err:
+            raise InvitationsServiceUnavailableError(
+                unexpected_error=err,
+            ) from err
+
+    return _wrapper
 
 
 @dataclass(frozen=True)
@@ -79,6 +126,7 @@ class InvitationsServiceApi:
     # service API
     #
 
+    @_handle_exceptions_as_invitations_errors
     async def extract_invitation(
         self, invitation_url: AnyHttpUrl
     ) -> ApiInvitationContent:
@@ -88,6 +136,7 @@ class InvitationsServiceApi:
         )
         return ApiInvitationContent.model_validate(await response.json())
 
+    @_handle_exceptions_as_invitations_errors
     async def generate_invitation(
         self, params: ApiInvitationInputs
     ) -> ApiInvitationContentAndLink:
