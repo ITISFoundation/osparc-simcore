@@ -5,41 +5,11 @@ from collections.abc import Awaitable, Callable
 
 import arrow
 
-from ..background_task import start_periodic_task
+from ..background_task import periodic
 from ._client import RedisClientSDK
 from ._decorators import exclusive
-from ._errors import CouldNotAcquireLockError
 
 _logger = logging.getLogger(__name__)
-
-
-async def _exclusive_task_starter(
-    client: RedisClientSDK,
-    usr_tsk_task: Callable[..., Awaitable[None]],
-    *,
-    usr_tsk_interval: datetime.timedelta,
-    usr_tsk_task_name: str,
-    **kwargs,
-) -> None:
-    lock_key = f"lock:exclusive_task_starter:{usr_tsk_task_name}"
-    lock_value = f"locked since {arrow.utcnow().format()}"
-
-    try:
-        await exclusive(client, lock_key=lock_key, lock_value=lock_value)(
-            start_periodic_task
-        )(
-            usr_tsk_task,
-            interval=usr_tsk_interval,
-            task_name=usr_tsk_task_name,
-            **kwargs,
-        )
-    except CouldNotAcquireLockError:
-        _logger.debug(
-            "Could not acquire lock '%s' with value '%s'", lock_key, lock_value
-        )
-    except Exception as e:
-        _logger.exception(e)  # noqa: TRY401
-        raise
 
 
 def start_exclusive_periodic_task(
@@ -67,13 +37,16 @@ def start_exclusive_periodic_task(
         If Redis connectivity is lost, the periodic `_exclusive_task_starter` ensures the lock is
         reacquired
     """
-    return start_periodic_task(
-        _exclusive_task_starter,
-        interval=retry_after,
-        task_name=f"exclusive_task_starter_{task_name}",
-        client=client,
-        usr_tsk_task=task,
-        usr_tsk_interval=task_period,
-        usr_tsk_task_name=task_name,
-        **kwargs,
+
+    @periodic(interval=retry_after)
+    @exclusive(
+        client,
+        lock_key=f"lock:exclusive_task_starter:{task_name}",
+        lock_value=f"locked since {arrow.utcnow().format()}",
     )
+    @periodic(interval=task_period)
+    async def _() -> None:
+        await task(**kwargs)
+
+    assert asyncio.iscoroutinefunction(_)  # nosec
+    return asyncio.create_task(_())
