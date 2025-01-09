@@ -6,7 +6,7 @@ from aiopg.sa import Engine
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from servicelib.async_utils import retried_cancel_task
+from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.exception_utils import silence_exceptions
 from servicelib.logging_utils import log_context
@@ -165,4 +165,4 @@ async def setup_manager(app: FastAPI) -> None:
 
 
 async def shutdown_manager(app: FastAPI) -> None:
-    await retried_cancel_task(app.state.scheduler_manager)
+    await cancel_wait_task(app.state.scheduler_manager)

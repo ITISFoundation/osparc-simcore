@@ -3,7 +3,7 @@ from collections.abc import Awaitable, Callable
 from typing import TypedDict
 
 from fastapi import FastAPI
-from servicelib.async_utils import retried_cancel_task
+from servicelib.async_utils import cancel_wait_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis import start_exclusive_periodic_task
 
@@ -68,7 +68,7 @@ def _on_app_shutdown(
         ):
             assert _app  # nosec
             if _app.state.rut_background_task__periodic_check_of_running_services:
-                await retried_cancel_task(
+                await cancel_wait_task(
                     _app.state.rut_background_task__periodic_check_of_running_services
                 )
 

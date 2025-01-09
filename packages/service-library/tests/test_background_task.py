@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock
 import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
-from servicelib.async_utils import retried_cancel_task
+from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import (  # Assuming the module is imported correctly
     create_periodic_task,
     periodic,
@@ -73,7 +73,7 @@ async def create_background_task(
     yield _creator
     # cleanup
     await asyncio.gather(
-        *(retried_cancel_task(t, timeout=stop_task_timeout) for t in created_tasks)
+        *(cancel_wait_task(t, max_delay=stop_task_timeout) for t in created_tasks)
     )
 
 

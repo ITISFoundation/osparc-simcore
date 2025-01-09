@@ -7,7 +7,7 @@ import arrow
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
-from servicelib.async_utils import retried_cancel_task
+from servicelib.async_utils import cancel_wait_task
 from servicelib.redis import start_exclusive_periodic_task
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
@@ -143,4 +143,4 @@ class Monitor:
 
     async def shutdown(self) -> None:
         if getattr(self.app.state, "status_monitor_background_task", None):
-            await retried_cancel_task(self.app.state.status_monitor_background_task)
+            await cancel_wait_task(self.app.state.status_monitor_background_task)

@@ -3,7 +3,7 @@ from collections.abc import Awaitable, Callable
 from typing import Final
 
 from fastapi import FastAPI
-from servicelib.async_utils import retried_cancel_task
+from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.redis import exclusive
 
@@ -44,7 +44,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
         if hasattr(app.state, "buffers_pool_task"):
-            await retried_cancel_task(app.state.buffers_pool_task)
+            await cancel_wait_task(app.state.buffers_pool_task)
 
     return _stop
 

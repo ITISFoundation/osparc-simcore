@@ -11,7 +11,7 @@ from unittest.mock import Mock
 import arrow
 import pytest
 from faker import Faker
-from servicelib.async_utils import retried_cancel_task
+from servicelib.async_utils import cancel_wait_task
 from servicelib.redis import (
     CouldNotAcquireLockError,
     RedisClientSDK,
@@ -217,7 +217,7 @@ async def _assert_task_completes_once(
 
         await _assert_on_sleep_done(sleep_events, stop_after=stop_after)
 
-        await retried_cancel_task(started_task, timeout=5)
+        await cancel_wait_task(started_task, max_delay=5)
 
         events_timestamps: tuple[float, ...] = tuple(
             x.args[0].timestamp() for x in sleep_events.call_args_list

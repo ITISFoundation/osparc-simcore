@@ -5,7 +5,7 @@ from datetime import timedelta
 from typing import TypedDict
 
 from fastapi import FastAPI
-from servicelib.async_utils import retried_cancel_task
+from servicelib.async_utils import cancel_wait_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis import start_exclusive_periodic_task
 
@@ -66,7 +66,7 @@ def _on_app_shutdown(
             if _app.state.efs_guardian_background_tasks:
                 await asyncio.gather(
                     *[
-                        retried_cancel_task(task)
+                        cancel_wait_task(task)
                         for task in _app.state.efs_guardian_background_tasks
                     ]
                 )

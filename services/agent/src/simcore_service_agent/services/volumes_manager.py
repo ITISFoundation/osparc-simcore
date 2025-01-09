@@ -9,7 +9,7 @@ from aiodocker.docker import Docker
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat
-from servicelib.async_utils import retried_cancel_task
+from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
@@ -61,10 +61,10 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
         await self.docker.close()
 
         if self._task_bookkeeping:
-            await retried_cancel_task(self._task_bookkeeping)
+            await cancel_wait_task(self._task_bookkeeping)
 
         if self._task_periodic_volume_cleanup:
-            await retried_cancel_task(self._task_periodic_volume_cleanup)
+            await cancel_wait_task(self._task_periodic_volume_cleanup)
 
     async def _bookkeeping_task(self) -> None:
         with log_context(_logger, logging.DEBUG, "volume bookkeeping"):
