@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from fastapi.security import HTTPBasicCredentials
 from models_library.api_schemas_invitations.invitations import (
     ApiEncryptedInvitation,
@@ -9,10 +9,10 @@ from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContentAndLink,
     ApiInvitationInputs,
 )
+from models_library.invitations import InvitationContent
 
 from ..core.settings import ApplicationSettings
 from ..services.invitations import (
-    InvalidInvitationCodeError,
     create_invitation_link_and_content,
     extract_invitation_code_from_query,
     extract_invitation_content,
@@ -71,18 +71,10 @@ async def extracts_invitation_from_code(
 ):
     """Decrypts the invitation code and returns its content"""
 
-    try:
-        invitation = extract_invitation_content(
-            invitation_code=extract_invitation_code_from_query(
-                encrypted.invitation_url
-            ),
-            secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
-            default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
-        )
-    except InvalidInvitationCodeError as err:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=INVALID_INVITATION_URL_MSG,
-        ) from err
+    invitation: InvitationContent = extract_invitation_content(
+        invitation_code=extract_invitation_code_from_query(encrypted.invitation_url),
+        secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
+        default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
+    )
 
     return invitation

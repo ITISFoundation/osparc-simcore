@@ -1,3 +1,8 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 import base64
 import json
 import os
@@ -5,6 +10,7 @@ from urllib.parse import parse_qsl, urlparse
 
 import pytest
 from cryptography.fernet import Fernet, InvalidToken
+from faker import Faker
 from starlette.datastructures import URL
 
 
@@ -44,18 +50,45 @@ def consume(url):
         raise
 
     except InvalidToken as err:
-        # TODO: cannot decode
         print("Invalid Key", err)
         raise
 
 
-def test_encrypt_and_decrypt(monkeypatch: pytest.MonkeyPatch):
+@pytest.fixture(
+    params=[
+        "en_US",  # English (United States)
+        "fr_FR",  # French (France)
+        "de_DE",  # German (Germany)
+        "ru_RU",  # Russian
+        "ja_JP",  # Japanese
+        "zh_CN",  # Chinese (Simplified)
+        "ko_KR",  # Korean
+        "ar_EG",  # Arabic (Egypt)
+        "he_IL",  # Hebrew (Israel)
+        "hi_IN",  # Hindi (India)
+        "th_TH",  # Thai (Thailand)
+        "vi_VN",  # Vietnamese (Vietnam)
+        "ta_IN",  # Tamil (India)
+    ]
+)
+def fake_email(request):
+    locale = request.param
+    faker = Faker(locale)
+    # Use a localized name for the username part of the email
+    name = faker.name().replace(" ", "").replace(".", "").lower()
+    # Construct the email address
+    return f"{name}@example.{locale.split('_')[-1].lower()}"
+
+
+def test_encrypt_and_decrypt(monkeypatch: pytest.MonkeyPatch, fake_email: str):
     secret_key = Fernet.generate_key()
     monkeypatch.setenv("SECRET_KEY", secret_key.decode())
 
     # invitation generator app
-    invitation_url = produce(guest_email="guest@gmail.com")
+    invitation_url = produce(guest_email=fake_email)
+    assert invitation_url.fragment
 
     # osparc side
     invitation_data = consume(invitation_url)
     print(json.dumps(invitation_data, indent=1))
+    assert invitation_data["guest"] == fake_email
