@@ -29,7 +29,7 @@ def app_environment(
             "WEBSERVER_GROUPS": "0",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
-            "WEBSERVER_SMTP": "null",
+            "WEBSERVER_EMAIL": "null",
             "WEBSERVER_SOCKETIO": "0",
             "WEBSERVER_STORAGE": "null",
             "WEBSERVER_STUDIES_DISPATCHER": "null",
