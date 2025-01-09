@@ -10,7 +10,8 @@ from typing import Any, Final, cast
 import httpx
 from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
 from fastapi import FastAPI, status
-from servicelib.background_task import create_periodic_task, stop_periodic_task
+from servicelib.async_utils import retried_cancel_task
+from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed
 from tenacity import retry
@@ -256,7 +257,7 @@ def setup(app: FastAPI) -> None:
 
     async def on_shutdown() -> None:
         if app.state.auto_cache_task:
-            await stop_periodic_task(app.state.auto_cache_task)
+            await retried_cancel_task(app.state.auto_cache_task)
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)

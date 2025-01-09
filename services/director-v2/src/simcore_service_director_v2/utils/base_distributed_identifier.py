@@ -5,7 +5,8 @@ from datetime import timedelta
 from typing import Final, Generic, TypeVar
 
 from pydantic import NonNegativeInt
-from servicelib.background_task import create_periodic_task, stop_periodic_task
+from servicelib.async_utils import retried_cancel_task
+from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis import RedisClientSDK
 from servicelib.utils import logged_gather
@@ -75,7 +76,7 @@ class BaseDistributedIdentifierManager(
 
     async def shutdown(self) -> None:
         if self._cleanup_task:
-            await stop_periodic_task(self._cleanup_task, timeout=5)
+            await retried_cancel_task(self._cleanup_task, timeout=5)
 
     @classmethod
     def class_path(cls) -> str:

@@ -9,7 +9,8 @@ from fastapi import Depends, FastAPI
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt, PositiveFloat, PositiveInt
-from servicelib.background_task import create_periodic_task, stop_periodic_task
+from servicelib.async_utils import retried_cancel_task
+from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.dependencies import get_app
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
@@ -62,7 +63,7 @@ class ApiServerHealthChecker:
     async def teardown(self):
         if self._background_task:
             with log_catch(_logger, reraise=False):
-                await stop_periodic_task(
+                await retried_cancel_task(
                     self._background_task, timeout=self._timeout_seconds
                 )
         await self._log_distributor.deregister(job_id=self._dummy_job_id)

@@ -24,7 +24,7 @@ from datetime import timedelta
 from typing import cast
 
 from aiohttp import web
-from servicelib.background_task import stop_periodic_task
+from servicelib.async_utils import retried_cancel_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis import start_exclusive_periodic_task
 
@@ -75,6 +75,6 @@ def setup_dsm_cleaner(app: web.Application):
 
             yield
 
-            await stop_periodic_task(storage_background_task)
+            await retried_cancel_task(storage_background_task)
 
     app.cleanup_ctx.append(_setup)

@@ -14,11 +14,11 @@ from unittest.mock import AsyncMock
 import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
+from servicelib.async_utils import retried_cancel_task
 from servicelib.background_task import (  # Assuming the module is imported correctly
     create_periodic_task,
     periodic,
     periodic_task,
-    stop_periodic_task,
 )
 
 _FAST_POLL_INTERVAL: Final[int] = 1
@@ -73,7 +73,7 @@ async def create_background_task(
     yield _creator
     # cleanup
     await asyncio.gather(
-        *(stop_periodic_task(t, timeout=stop_task_timeout) for t in created_tasks)
+        *(retried_cancel_task(t, timeout=stop_task_timeout) for t in created_tasks)
     )
 
 

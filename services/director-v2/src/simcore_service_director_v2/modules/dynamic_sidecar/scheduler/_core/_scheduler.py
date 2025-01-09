@@ -42,7 +42,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeFloat
 from servicelib.async_utils import retried_cancel_task
-from servicelib.background_task import create_periodic_task, stop_periodic_task
+from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.redis import RedisClientsManager, exclusive
@@ -126,7 +126,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         self._to_observe = {}
 
         if self._scheduler_task is not None:
-            await stop_periodic_task(self._scheduler_task, timeout=5)
+            await retried_cancel_task(self._scheduler_task, timeout=5)
             self._scheduler_task = None
 
         if self._trigger_observation_queue_task is not None:
