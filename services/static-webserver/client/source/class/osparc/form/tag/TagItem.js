@@ -109,10 +109,8 @@ qx.Class.define("osparc.form.tag.TagItem", {
           control = new qx.ui.basic.Image().set({
             minWidth: 30,
             alignY: "middle",
-            cursor: "pointer",
           });
-          osparc.dashboard.CardBase.populateShareIcon(control, this.getAccessRights())
-          control.addListener("tap", () => this.__openAccessRights(), this);
+          osparc.dashboard.CardBase.populateShareIcon(control, this.getAccessRights());
           break;
         case "name-input":
           control = new qx.ui.form.TextField().set({
@@ -202,7 +200,6 @@ qx.Class.define("osparc.form.tag.TagItem", {
       this._add(this.getChildControl("description"), {
         flex: 1
       });
-      this._add(this.getChildControl("shared-icon"));
       this._add(this.__tagItemButtons());
       this.resetBackgroundColor();
     },
@@ -228,21 +225,32 @@ qx.Class.define("osparc.form.tag.TagItem", {
       const canIWrite = osparc.share.CollaboratorsTag.canIWrite(this.getMyAccessRights());
       const canIDelete = osparc.share.CollaboratorsTag.canIDelete(this.getMyAccessRights());
 
-      const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+      const sharedIcon = this.getChildControl("shared-icon");
+      sharedIcon.set({
+        cursor: canIWrite ? "pointer" : null,
+      });
+      if (canIWrite) {
+        sharedIcon.addListener("tap", () => this.__openAccessRights(), this);
+      }
+      buttonContainer.add(sharedIcon);
+
       const editButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/pencil-alt/12",
         toolTipText: this.tr("Edit"),
         enabled: canIWrite,
       });
+      buttonContainer.add(editButton);
+      editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
+
       const deleteButton = new osparc.ui.form.FetchButton().set({
         appearance: "danger-button",
         icon: "@FontAwesome5Solid/trash/12",
         toolTipText: this.tr("Delete"),
         enabled: canIDelete,
       });
-      buttonContainer.add(editButton);
       buttonContainer.add(deleteButton);
-      editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
       deleteButton.addListener("execute", () => {
         deleteButton.setFetching(true);
         osparc.store.Tags.getInstance().deleteTag(this.getId())
@@ -250,6 +258,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
           .catch(console.error)
           .finally(() => deleteButton.setFetching(false));
       }, this);
+
       return buttonContainer;
     },
     /**
