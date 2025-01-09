@@ -15,11 +15,7 @@ import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
 from servicelib.async_utils import cancel_wait_task
-from servicelib.background_task import (  # Assuming the module is imported correctly
-    create_periodic_task,
-    periodic,
-    periodic_task,
-)
+from servicelib.background_task import create_periodic_task, periodic, periodic_task
 
 _FAST_POLL_INTERVAL: Final[int] = 1
 _VERY_SLOW_POLL_INTERVAL: Final[int] = 100
