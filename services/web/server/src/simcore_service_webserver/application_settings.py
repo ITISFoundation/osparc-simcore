@@ -175,8 +175,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True},
         description="director-v2 service client's plugin",
     )
+
+    WEBSERVER_DYNAMIC_SCHEDULER: DynamicSchedulerSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True},
+    )
+
     WEBSERVER_EMAIL: SMTPSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}, description="email plugin"
+        json_schema_extra={"auto_default_from_env": True}
     )
     WEBSERVER_EXPORTER: ExporterSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True}, description="exporter plugin"
@@ -204,9 +209,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="payments plugin settings",
     )
 
-    WEBSERVER_DYNAMIC_SCHEDULER: DynamicSchedulerSettings | None = Field(
-        description="dynamic-scheduler plugin settings",
-        json_schema_extra={"auto_default_from_env": True},
+    WEBSERVER_PROJECTS: ProjectsSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     WEBSERVER_REDIS: RedisSettings | None = Field(
@@ -254,15 +258,19 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="tracing plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
-    WEBSERVER_PROJECTS: ProjectsSettings | None = Field(
-        description="projects plugin", json_schema_extra={"auto_default_from_env": True}
-    )
-    WEBSERVER_RABBITMQ: RabbitSettings | None = Field(
-        description="rabbitmq plugin", json_schema_extra={"auto_default_from_env": True}
-    )
-    WEBSERVER_USERS: UsersSettings | None = Field(
-        description="users plugin", json_schema_extra={"auto_default_from_env": True}
-    )
+    WEBSERVER_RABBITMQ: Annotated[
+        RabbitSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+
+    WEBSERVER_USERS: Annotated[
+        UsersSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_ANNOUNCEMENTS: bool = False
@@ -440,7 +448,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_PROJECTS": {
                     "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES",
-                    "PROJECTS_TRASH_RETENTION_DAYS",
+                },
+                "WEBSERVER_TRASH": {
+                    "TRASH_RETENTION_DAYS",
                 },
                 "WEBSERVER_LOGIN": {
                     "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
