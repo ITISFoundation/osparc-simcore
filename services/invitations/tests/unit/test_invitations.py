@@ -4,8 +4,8 @@
 # pylint: disable=too-many-arguments
 
 import binascii
-from datetime import datetime, timezone
-from typing import Counter
+from collections import Counter
+from datetime import UTC, datetime
 from urllib import parse
 
 import cryptography.fernet
@@ -40,7 +40,7 @@ def test_import_and_export_invitation_alias_by_alias(
 ):
     expected_content = InvitationContent(
         **invitation_data.model_dump(),
-        created=datetime.now(tz=timezone.utc),
+        created=datetime.now(tz=UTC),
     )
     raw_data = _ContentWithShortNames.serialize(expected_content)
 
@@ -53,7 +53,7 @@ def test_export_by_alias_produces_smaller_strings(
 ):
     content = InvitationContent(
         **invitation_data.model_dump(),
-        created=datetime.now(tz=timezone.utc),
+        created=datetime.now(tz=UTC),
     )
     raw_data = _ContentWithShortNames.serialize(content)
 

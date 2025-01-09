@@ -105,3 +105,18 @@ class PricingPlanNotFoundError(BaseBackEndError):
 class ProjectAlreadyStartedError(BaseBackEndError):
     msg_template = "Project already started"
     status_code = status.HTTP_200_OK
+
+
+class InsufficientNumberOfSeatsError(BaseBackEndError):
+    msg_template = "Not enough available seats. Current available seats {num_of_seats} for license item {licensed_item_id}"
+    status_code = status.HTTP_409_CONFLICT
+
+
+class CanNotCheckoutServiceIsNotRunningError(BaseBackEndError):
+    msg_template = "Can not checkout license item {licensed_item_id} as dynamic service is not running. Current service id: {service_run_id}"
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+class LicensedItemCheckoutNotFoundError(BaseBackEndError):
+    msg_template = "Licensed item checkout {licensed_item_checkout_id} not found."
+    status_code = status.HTTP_404_NOT_FOUND

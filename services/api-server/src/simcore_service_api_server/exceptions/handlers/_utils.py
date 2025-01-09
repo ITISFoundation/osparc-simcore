@@ -1,4 +1,5 @@
-from typing import Any, Awaitable, Callable, TypeAlias
+from collections.abc import Awaitable, Callable
+from typing import Any, TypeAlias
 
 from fastapi.encoders import jsonable_encoder
 from fastapi.requests import Request

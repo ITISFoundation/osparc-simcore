@@ -88,8 +88,8 @@ class OnePage(BaseModel, Generic[T]):
 
 
 __all__: tuple[str, ...] = (
-    "PaginationParams",
     "MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE",
     "OnePage",
     "Page",
+    "PaginationParams",
 )

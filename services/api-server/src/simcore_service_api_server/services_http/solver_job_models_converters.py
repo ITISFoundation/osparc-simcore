@@ -6,7 +6,7 @@
 import urllib.parse
 import uuid
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import lru_cache
 
 import arrow
@@ -45,7 +45,7 @@ def format_datetime(snapshot: datetime) -> str:
 
 def now_str() -> str:
     # NOTE: backend MUST use UTC
-    return format_datetime(datetime.now(timezone.utc))
+    return format_datetime(datetime.now(UTC))
 
 
 # CONVERTERS --------------
