@@ -69,6 +69,7 @@ def _create_licensed_items_get_page(
         total=licensed_items_page.total,
         params=page_params,
     )
+    assert isinstance(page, Page)
     return page
 
 
