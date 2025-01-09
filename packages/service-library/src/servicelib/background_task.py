@@ -4,15 +4,9 @@ import datetime
 import functools
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Final, ParamSpec, TypeVar
+from typing import Any, Coroutine, Final, ParamSpec, TypeVar
 
-from tenacity import (
-    TryAgain,
-    before_sleep_log,
-    retry,
-    retry_always,
-    retry_if_exception_type,
-)
+from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
 from tenacity.asyncio import AsyncRetrying
 from tenacity.wait import wait_fixed
 
@@ -46,8 +40,12 @@ def periodic(
     interval: datetime.timedelta,
     raise_on_error: bool = False,
     early_wake_up_event: asyncio.Event | None = None,
-) -> Callable[[Callable[P, Awaitable[None]]], Callable[P, Awaitable[None]]]:
-    def _decorator(func: Callable[P, Awaitable[None]]) -> Callable[P, Awaitable[None]]:
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]
+]:
+    def _decorator(
+        func: Callable[P, Coroutine[Any, Any, None]],
+    ) -> Callable[P, Coroutine[Any, Any, None]]:
         nap = (
             asyncio.sleep
             if early_wake_up_event is None
@@ -99,7 +97,9 @@ async def _periodic_scheduled_task(
         sleep=nap,
         wait=wait_fixed(interval.total_seconds()),
         reraise=True,
-        retry=retry_if_exception_type(TryAgain) if raise_on_error else retry_always,
+        retry=retry_if_exception_type(TryAgain)
+        if raise_on_error
+        else retry_if_exception_type(),
     ):
         with attempt:
             with (

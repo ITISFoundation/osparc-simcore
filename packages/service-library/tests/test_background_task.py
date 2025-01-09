@@ -9,11 +9,13 @@ import datetime
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Final
 from unittest import mock
+from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
-from servicelib.background_task import (
+from servicelib.background_task import (  # Assuming the module is imported correctly
+    periodic,
     periodic_task,
     start_periodic_task,
     stop_periodic_task,
@@ -177,3 +179,24 @@ async def test_periodic_task_context_manager(
         assert asyncio_task.cancelled() is False
         assert asyncio_task.done() is False
     assert asyncio_task.cancelled() is True
+
+
+async def test_periodic_decorator():
+    # This mock function will allow us to test if the function is called periodically
+    mock_func = AsyncMock()
+
+    @periodic(interval=datetime.timedelta(seconds=0.1))
+    async def _func() -> None:
+        await mock_func()
+
+    task = asyncio.create_task(_func())
+
+    # Give some time for the periodic calls to happen
+    await asyncio.sleep(0.5)
+
+    # Once enough time has passed, cancel the task
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert mock_func.call_count > 1
