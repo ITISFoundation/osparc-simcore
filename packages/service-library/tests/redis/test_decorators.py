@@ -1,4 +1,8 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=protected-access
+
 
 import asyncio
 import datetime
@@ -66,6 +70,15 @@ def _exclusive_sleeping_task(
 @pytest.fixture
 def sleep_duration(faker: Faker) -> float:
     return faker.pyfloat(positive=True, min_value=0.2, max_value=0.8)
+
+
+async def test_exclusive_with_empty_lock_key_raises(redis_client_sdk: RedisClientSDK):
+    @exclusive(redis_client_sdk, lock_key="")
+    async def _():
+        pass
+
+    with pytest.raises(ValueError, match="lock_key cannot be empty"):
+        await _()
 
 
 async def test_exclusive_decorator(
