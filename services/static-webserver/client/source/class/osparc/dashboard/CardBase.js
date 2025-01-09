@@ -170,7 +170,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
       // Tooltip
       const canIWrite = osparc.data.model.Study.canIWrite(accessRights);
-      if (gids.length === 0) {
+      const myGroupId = groupsStore.getMyGroupId();
+      if (gids.length === 0 || (gids.length === 1 && gids[0] === myGroupId)) {
         if (canIWrite) {
           shareIcon.set({
             toolTipText: qx.locale.Manager.tr("Share")
@@ -200,7 +201,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
         // once the groups were removed, the remaining group ids are users' primary groups ids
         const usersStore = osparc.store.Users.getInstance();
-        const myGroupId = groupsStore.getMyGroupId();
         for (let i=0; i<gids.length; i++) {
           const gid = gids[i];
           if (myGroupId !== gid) {
@@ -225,7 +225,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
             }
           }
           const hintText = sharedGrpLabels.join("<br>");
-          hint.setText(hintText)
+          if (hintText) {
+            hint.setText(hintText)
+          }
         }
       }, this);
       shareIcon.addListener("mouseout", () => hint.exclude(), this);
