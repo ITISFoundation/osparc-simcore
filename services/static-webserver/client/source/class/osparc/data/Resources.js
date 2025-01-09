@@ -1259,7 +1259,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/tags"
           },
-          put: {
+          patch: {
             method: "PATCH",
             url: statics.API + "/tags/{tagId}"
           },

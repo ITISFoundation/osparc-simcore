@@ -275,7 +275,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
           saveButton.setFetching(true);
           const tagsStore = osparc.store.Tags.getInstance();
           if (this.isPropertyInitialized("id")) {
-            tagsStore.putTag(this.getId(), data)
+            tagsStore.patchTag(this.getId(), data)
               .then(tag => this.setTag(tag))
               .catch(console.error)
               .finally(() => {
@@ -336,7 +336,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
       return {
         name: name.trim(),
         description: description ? description.trim() : "",
-        color: color
+        color: color,
       };
     },
     __applyMode: function() {

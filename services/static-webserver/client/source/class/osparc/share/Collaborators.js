@@ -194,7 +194,7 @@ qx.Class.define("osparc.share.Collaborators", {
       switch (this._resourceType) {
         case "study":
         case "template":
-          canIShare = osparc.study.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+          canIShare = osparc.data.model.Study.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
         case "service":
           canIShare = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);

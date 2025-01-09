@@ -115,12 +115,6 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeServiceUrl"
     },
 
-    thumbnail: {
-      check: "String",
-      nullable: true,
-      init: ""
-    },
-
     portsConnected: {
       check: "Array",
       init: [],
@@ -421,9 +415,12 @@ qx.Class.define("osparc.data.model.Node", {
 
     __getInputUnits: function() {
       if (this.isPropertyInitialized("propsForm") && this.getPropsForm()) {
-        return this.getPropsForm().getChangedXUnits();
+        const changedUnits = this.getPropsForm().getChangedXUnits();
+        if (Object.keys(changedUnits).length) {
+          return changedUnits;
+        }
       }
-      return {};
+      return null;
     },
 
     getInput: function(inputId) {
@@ -478,9 +475,6 @@ qx.Class.define("osparc.data.model.Node", {
         }
         this.populateInputOutputData(nodeData);
         this.populateStates(nodeData);
-        if (nodeData.thumbnail) {
-          this.setThumbnail(nodeData.thumbnail);
-        }
         if (nodeData.bootOptions) {
           this.setBootOptions(nodeData.bootOptions);
         }
@@ -1254,7 +1248,6 @@ qx.Class.define("osparc.data.model.Node", {
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
         inputsRequired: this.getInputsRequired(),
-        thumbnail: this.getThumbnail(),
         bootOptions: this.getBootOptions()
       };
       if (!clean) {
