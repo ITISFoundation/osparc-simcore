@@ -12,6 +12,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from cryptography.fernet import Fernet
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser
 from simcore_service_webserver.application import create_application
@@ -25,6 +26,20 @@ from simcore_service_webserver.session.settings import SessionSettings
 @pytest.fixture
 def session_url_path() -> str:
     return "/v0/test-session"
+
+
+@pytest.fixture
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            # do not include static entrypoint
+            "WEBSERVER_STATICWEB": "null",
+        },
+    )
 
 
 @pytest.fixture

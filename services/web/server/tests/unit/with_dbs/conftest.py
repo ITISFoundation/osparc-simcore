@@ -194,6 +194,7 @@ def web_server(
     mocked_send_email: None,
     disable_static_webserver: Callable,
 ) -> TestServer:
+
     # original APP
     app = create_application()
 
