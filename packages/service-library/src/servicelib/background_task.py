@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Final
 
 from common_library.errors_classes import OsparcErrorMixin
-from tenacity import TryAgain
+from tenacity import TryAgain, retry_always, retry_if_exception_type
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
@@ -26,14 +26,14 @@ class PeriodicTaskCancellationError(OsparcErrorMixin, Exception):
 
 
 class SleepUsingAsyncioEvent:
-    """Sleep strategy that waits on an event to be set."""
+    """Sleep strategy that waits on an event to be set or sleeps."""
 
     def __init__(self, event: "asyncio.Event") -> None:
         self.event = event
 
-    async def __call__(self, timeout: float | None) -> None:
+    async def __call__(self, delay: float | None) -> None:
         with contextlib.suppress(TimeoutError):
-            await asyncio.wait_for(self.event.wait(), timeout=timeout)
+            await asyncio.wait_for(self.event.wait(), timeout=delay)
             self.event.clear()
 
 
@@ -42,10 +42,18 @@ async def _periodic_scheduled_task(
     *,
     interval: datetime.timedelta,
     task_name: str,
+    raise_on_error: bool,
     early_wake_up_event: asyncio.Event | None,
     **task_kwargs,
 ) -> None:
-    # NOTE: This retries forever unless cancelled
+    """periodically runs task with a given interval.
+    If raise_on_error is False, the task will be retried indefinitely unless cancelled.
+    If raise_on_error is True, the task will be retried indefinitely unless cancelled or an exception is raised.
+    If early_wake_up_event is set, the task might be woken up earlier than interval when the event is set.
+
+    Raises:
+        task exception if raise_on_error is True
+    """
     nap = (
         asyncio.sleep
         if early_wake_up_event is None
@@ -54,6 +62,8 @@ async def _periodic_scheduled_task(
     async for attempt in AsyncRetrying(
         sleep=nap,
         wait=wait_fixed(interval.total_seconds()),
+        reraise=True,
+        retry=retry_if_exception_type(TryAgain) if raise_on_error else retry_always,
     ):
         with attempt:
             with (
@@ -74,6 +84,7 @@ def start_periodic_task(
     *,
     interval: datetime.timedelta,
     task_name: str,
+    raise_on_error: bool = False,
     wait_before_running: datetime.timedelta = datetime.timedelta(0),
     early_wake_up_event: asyncio.Event | None = None,
     **kwargs,
@@ -89,6 +100,7 @@ def start_periodic_task(
                 task,
                 interval=interval,
                 task_name=task_name,
+                raise_on_error=raise_on_error,
                 early_wake_up_event=early_wake_up_event,
                 **kwargs,
             ),
@@ -149,7 +161,11 @@ async def periodic_task(
     asyncio_task: asyncio.Task | None = None
     try:
         asyncio_task = start_periodic_task(
-            task, interval=interval, task_name=task_name, **kwargs
+            task,
+            interval=interval,
+            task_name=task_name,
+            raise_on_error=raise_on_error,
+            **kwargs,
         )
         yield asyncio_task
     finally:

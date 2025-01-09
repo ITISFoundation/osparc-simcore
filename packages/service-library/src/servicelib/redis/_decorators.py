@@ -2,14 +2,15 @@ import asyncio
 import contextlib
 import functools
 import logging
-from collections.abc import Awaitable, Callable
-from typing import ParamSpec, TypeVar
+from collections.abc import Callable
+from typing import Any, Coroutine, ParamSpec, TypeVar
 
 import redis.exceptions
+from servicelib.logging_utils import log_context
 
 from ..background_task import periodic_task
 from ._client import RedisClientSDK
-from ._constants import DEFAULT_LOCK_TTL
+from ._constants import DEFAULT_LOCK_TTL, SHUTDOWN_TIMEOUT_S
 from ._errors import CouldNotAcquireLockError
 from ._utils import auto_extend_lock
 
@@ -24,26 +25,30 @@ def exclusive(
     *,
     lock_key: str | Callable[..., str],
     lock_value: bytes | str | None = None,
-) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+]:
     """
-    Define a method to run exclusively across
-    processes by leveraging a Redis Lock.
+        Define a method to run exclusively across
+        processes by leveraging a Redis Lock.
+    a1f69fdefa14fae2fee03fac7e89f27e44b13aa9
+        parameters:
+        redis: the redis client SDK
+        lock_key: a string as the name of the lock (good practice: app_name:lock_name)
+        lock_value: some additional data that can be retrieved by another client
 
-    parameters:
-    redis: the redis client SDK
-    lock_key: a string as the name of the lock (good practice: app_name:lock_name)
-    lock_value: some additional data that can be retrieved by another client
-
-    Raises:
-        - ValueError if used incorrectly
-        - CouldNotAcquireLockError if the lock could not be acquired
+        Raises:
+            - ValueError if used incorrectly
+            - CouldNotAcquireLockError if the lock could not be acquired
     """
 
     if not lock_key:
         msg = "lock_key cannot be empty string!"
         raise ValueError(msg)
 
-    def decorator(func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
+    def decorator(
+        func: Callable[P, Coroutine[Any, Any, R]],
+    ) -> Callable[P, Coroutine[Any, Any, R]]:
         @functools.wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             redis_lock_key = (
@@ -58,16 +63,14 @@ def exclusive(
             )
             assert isinstance(redis_client, RedisClientSDK)  # nosec
 
-            lock_ttl = DEFAULT_LOCK_TTL
-
-            lock = client.create_lock(redis_lock_key, ttl=lock_ttl)
+            lock = client.create_lock(redis_lock_key, ttl=DEFAULT_LOCK_TTL)
             if not await lock.acquire(token=lock_value):
                 raise CouldNotAcquireLockError(lock=lock)
 
             try:
                 async with periodic_task(
                     auto_extend_lock,
-                    interval=lock_ttl / 2,
+                    interval=DEFAULT_LOCK_TTL / 2,
                     task_name=f"autoextend_exclusive_lock_{redis_lock_key}",
                     raise_on_error=True,
                     lock=lock,
@@ -75,33 +78,36 @@ def exclusive(
                     work_task = asyncio.create_task(
                         func(*args, **kwargs), name=f"exclusive_{func.__name__}"
                     )
-                    done, pending = await asyncio.wait(
+                    done, _pending = await asyncio.wait(
                         [work_task, auto_extend_task],
                         return_when=asyncio.FIRST_COMPLETED,
                     )
-                    # the task finished first, let's return it
+                    # the task finished, let's return its result whatever it is
                     if work_task in done:
                         return await work_task
 
-                    # the auto extend tasks finished first, meaning it could not extend the lock!
-                    # let's cancel the work task and raise an error
-                    work_task.cancel()
-                    with contextlib.suppress(asyncio.CancelledError, TimeoutError):
-                        # TODO: shall we raise the other errors?
-                        await asyncio.wait_for(work_task, timeout=3)
-
+                    # the auto extend task can only finish if it raised an error, so it's bad
+                    _logger.error(
+                        "lock %s could not be auto-extended, cancelling work task! "
+                        "TIP: check connection to Redis DBs or look for Synchronous "
+                        "code that might block the auto-extender task.",
+                        lock.name,
+                    )
+                    with log_context(_logger, logging.DEBUG, msg="cancel work task"):
+                        work_task.cancel()
+                        with contextlib.suppress(asyncio.CancelledError, TimeoutError):
+                            # this will raise any other error that could have happened in the work task
+                            await asyncio.wait_for(
+                                work_task, timeout=SHUTDOWN_TIMEOUT_S
+                            )
+                    # return the extend task raised error
                     return await auto_extend_task
 
-                return result
             finally:
                 with contextlib.suppress(redis.exceptions.LockNotOwnedError):
-                    # in the case where the lock would have been lost, this would raise
+                    # in the case where the lock would have been lost,
+                    # this would raise again and is not necessary
                     await lock.release()
-
-            async with redis_client.lock_context(
-                lock_key=redis_lock_key, lock_value=lock_value
-            ):
-                return await func(*args, **kwargs)
 
         return wrapper
 
