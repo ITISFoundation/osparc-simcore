@@ -1,10 +1,10 @@
-""" Interface to other subsystems
+"""Interface to other subsystems
 
-    - Data validation
-    - Operations on projects
-        - are NOT handlers, therefore do not return web.Response
-        - return data and successful HTTP responses (or raise them)
-        - upon failure raise errors that can be also HTTP reponses
+- Data validation
+- Operations on projects
+    - are NOT handlers, therefore do not return web.Response
+    - return data and successful HTTP responses (or raise them)
+    - upon failure raise errors that can be also HTTP reponses
 """
 
 import asyncio
@@ -81,6 +81,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
 )
+from servicelib.redis._decorators import exclusive
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
@@ -488,11 +489,7 @@ async def update_project_node_resources_from_hardware_info(
 
     except KeyError as exc:
         raise InvalidKeysInResourcesSpecsError(missing_key=f"{exc}") from exc
-    except (
-        RemoteMethodNotRegisteredError,
-        RPCServerError,
-        asyncio.TimeoutError,
-    ) as exc:
+    except (TimeoutError, RemoteMethodNotRegisteredError, RPCServerError) as exc:
         raise ClustersKeeperNotAvailableError from exc
 
 
@@ -503,7 +500,6 @@ async def _check_project_node_has_all_required_inputs(
     project_uuid: ProjectID,
     node_id: NodeID,
 ) -> None:
-
     product_name = await db.get_project_product(project_uuid)
     await check_user_project_permission(
         app,
@@ -603,13 +599,17 @@ async def _start_dynamic_service(
     redis_client_sdk = get_redis_lock_manager_client_sdk(request.app)
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
 
-    async with redis_client_sdk.lock_context(
-        lock_key,
+    @exclusive(
+        redis_client_sdk,
+        lock_key=lock_key,
         blocking=True,
-        blocking_timeout_s=_nodes_api.get_total_project_dynamic_nodes_creation_interval(
-            project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+        blocking_timeout=datetime.timedelta(
+            seconds=_nodes_api.get_total_project_dynamic_nodes_creation_interval(
+                project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+            )
         ),
-    ):
+    )
+    async def _() -> None:
         project_running_nodes = await dynamic_scheduler_api.list_dynamic_services(
             request.app, user_id=user_id, project_id=project_uuid
         )
@@ -758,6 +758,8 @@ async def _start_dynamic_service(
                 hardware_info=hardware_info,
             ),
         )
+
+    await _()
 
 
 async def add_project_node(
