@@ -2,8 +2,8 @@ import asyncio
 import contextlib
 import functools
 import logging
-from collections.abc import Callable
-from typing import Awaitable, ParamSpec, TypeVar
+from collections.abc import Callable, Coroutine
+from typing import Any, ParamSpec, TypeVar
 
 import redis.exceptions
 
@@ -25,7 +25,9 @@ def exclusive(
     *,
     lock_key: str | Callable[..., str],
     lock_value: bytes | str | None = None,
-) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+]:
     """
         Define a method to run exclusively across
         processes by leveraging a Redis Lock.
@@ -45,8 +47,8 @@ def exclusive(
         raise ValueError(msg)
 
     def decorator(
-        func: Callable[P, Awaitable[R]],
-    ) -> Callable[P, Awaitable[R]]:
+        func: Callable[P, Coroutine[Any, Any, R]],
+    ) -> Callable[P, Coroutine[Any, Any, R]]:
         @functools.wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             redis_lock_key = (
