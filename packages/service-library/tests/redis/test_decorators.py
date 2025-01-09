@@ -7,7 +7,6 @@
 import asyncio
 import datetime
 from collections.abc import Awaitable, Callable
-from contextlib import AbstractAsyncContextManager
 from datetime import timedelta
 from itertools import chain
 from unittest.mock import Mock
@@ -24,7 +23,6 @@ from servicelib.redis import (
 )
 from servicelib.redis._errors import LockLostError
 from servicelib.utils import logged_gather
-from settings_library.redis import RedisDatabase
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -41,11 +39,6 @@ pytest_simcore_ops_services_selection = [
 async def _is_locked(redis_client_sdk: RedisClientSDK, lock_name: str) -> bool:
     lock = redis_client_sdk.redis.lock(lock_name)
     return await lock.locked()
-
-
-@pytest.fixture
-def lock_name(faker: Faker) -> str:
-    return faker.pystr()
 
 
 def _exclusive_sleeping_task(
@@ -69,39 +62,33 @@ def _exclusive_sleeping_task(
 
 @pytest.fixture
 def sleep_duration(faker: Faker) -> float:
-    return faker.pyfloat(positive=True, min_value=0.2, max_value=0.8)
+    return faker.pyfloat(min_value=0.2, max_value=0.8)
 
 
 async def test_exclusive_with_empty_lock_key_raises(redis_client_sdk: RedisClientSDK):
-    @exclusive(redis_client_sdk, lock_key="")
-    async def _():
-        pass
-
     with pytest.raises(ValueError, match="lock_key cannot be empty"):
-        await _()
+
+        @exclusive(redis_client_sdk, lock_key="")
+        async def _():
+            pass
 
 
 async def test_exclusive_decorator(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    redis_client_sdk: RedisClientSDK,
     lock_name: str,
     sleep_duration: float,
 ):
-    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client:
-        for _ in range(3):
-            assert (
-                await _exclusive_sleeping_task(
-                    redis_client, lock_name, sleep_duration
-                )()
-                == sleep_duration
-            )
+    for _ in range(3):
+        assert (
+            await _exclusive_sleeping_task(
+                redis_client_sdk, lock_name, sleep_duration
+            )()
+            == sleep_duration
+        )
 
 
 async def test_exclusive_decorator_with_key_builder(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    redis_client_sdk: RedisClientSDK,
     lock_name: str,
     sleep_duration: float,
 ):
@@ -110,72 +97,62 @@ async def test_exclusive_decorator_with_key_builder(
         assert kwargs is not None
         return lock_name
 
-    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client:
-        for _ in range(3):
-            assert (
-                await _exclusive_sleeping_task(
-                    redis_client, _get_lock_name, sleep_duration
-                )()
-                == sleep_duration
-            )
+    for _ in range(3):
+        assert (
+            await _exclusive_sleeping_task(
+                redis_client_sdk, _get_lock_name, sleep_duration
+            )()
+            == sleep_duration
+        )
 
 
 async def test_exclusive_decorator_with_client_builder(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    redis_client_sdk: RedisClientSDK,
     lock_name: str,
     sleep_duration: float,
 ):
-    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client:
+    def _get_redis_client_builder(*args, **kwargs) -> RedisClientSDK:
+        assert args is not None
+        assert kwargs is not None
+        return redis_client_sdk
 
-        def _get_redis_client_builder(*args, **kwargs) -> RedisClientSDK:
-            assert args is not None
-            assert kwargs is not None
-            return redis_client
-
-        for _ in range(3):
-            assert (
-                await _exclusive_sleeping_task(
-                    _get_redis_client_builder, lock_name, sleep_duration
-                )()
-                == sleep_duration
-            )
+    for _ in range(3):
+        assert (
+            await _exclusive_sleeping_task(
+                _get_redis_client_builder, lock_name, sleep_duration
+            )()
+            == sleep_duration
+        )
 
 
 async def _acquire_lock_and_exclusively_sleep(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    redis_client_sdk: RedisClientSDK,
     lock_name: str | Callable[..., str],
     sleep_duration: float,
 ) -> None:
-    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client_sdk:
-        redis_lock_name = lock_name() if callable(lock_name) else lock_name
+    redis_lock_name = lock_name() if callable(lock_name) else lock_name
 
-        @exclusive(redis_client_sdk, lock_key=lock_name)
-        async def _() -> float:
-            assert await _is_locked(redis_client_sdk, redis_lock_name)
-            await asyncio.sleep(sleep_duration)
-            assert await _is_locked(redis_client_sdk, redis_lock_name)
-            return sleep_duration
+    @exclusive(redis_client_sdk, lock_key=lock_name)
+    async def _() -> float:
+        assert await _is_locked(redis_client_sdk, redis_lock_name)
+        await asyncio.sleep(sleep_duration)
+        assert await _is_locked(redis_client_sdk, redis_lock_name)
+        return sleep_duration
 
-        assert await _() == sleep_duration
+    assert await _() == sleep_duration
 
-        assert not await _is_locked(redis_client_sdk, redis_lock_name)
+    assert not await _is_locked(redis_client_sdk, redis_lock_name)
 
 
 async def test_exclusive_parallel_lock_is_released_and_reacquired(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    redis_client_sdk: RedisClientSDK,
     lock_name: str,
 ):
     parallel_tasks = 10
     results = await logged_gather(
         *[
             _acquire_lock_and_exclusively_sleep(
-                get_redis_client_sdk, lock_name, sleep_duration=1
+                redis_client_sdk, lock_name, sleep_duration=1
             )
             for _ in range(parallel_tasks)
         ],
@@ -187,8 +164,7 @@ async def test_exclusive_parallel_lock_is_released_and_reacquired(
     ) == parallel_tasks - 1
 
     # check lock is released
-    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client_sdk:
-        assert not await _is_locked(redis_client_sdk, lock_name)
+    assert not await _is_locked(redis_client_sdk, lock_name)
 
 
 async def _sleep_task(sleep_interval: float, on_sleep_events: Mock) -> None:
@@ -211,39 +187,34 @@ async def _assert_on_sleep_done(on_sleep_events: Mock, *, stop_after: float):
 
 
 async def _assert_task_completes_once(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    redis_client_sdk: RedisClientSDK,
     stop_after: float,
 ) -> tuple[float, ...]:
-    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client_sdk:
-        sleep_events = Mock()
+    sleep_events = Mock()
 
-        started_task = start_exclusive_periodic_task(
-            redis_client_sdk,
-            _sleep_task,
-            task_period=timedelta(seconds=1),
-            task_name="pytest_sleep_task",
-            sleep_interval=1,
-            on_sleep_events=sleep_events,
-        )
+    started_task = start_exclusive_periodic_task(
+        redis_client_sdk,
+        _sleep_task,
+        task_period=timedelta(seconds=1),
+        task_name="pytest_sleep_task",
+        sleep_interval=1,
+        on_sleep_events=sleep_events,
+    )
 
-        await _assert_on_sleep_done(sleep_events, stop_after=stop_after)
+    await _assert_on_sleep_done(sleep_events, stop_after=stop_after)
 
-        await cancel_wait_task(started_task, max_delay=5)
+    await cancel_wait_task(started_task, max_delay=5)
 
-        events_timestamps: tuple[float, ...] = tuple(
-            x.args[0].timestamp() for x in sleep_events.call_args_list
-        )
-        return events_timestamps
+    events_timestamps: tuple[float, ...] = tuple(
+        x.args[0].timestamp() for x in sleep_events.call_args_list
+    )
+    return events_timestamps
 
 
 async def test_start_exclusive_periodic_task_single(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    redis_client_sdk: RedisClientSDK,
 ):
-    await _assert_task_completes_once(get_redis_client_sdk, stop_after=2)
+    await _assert_task_completes_once(redis_client_sdk, stop_after=2)
 
 
 def _check_elements_lower(lst: list) -> bool:
@@ -260,14 +231,12 @@ def test__check_elements_lower():
 
 
 async def test_start_exclusive_periodic_task_parallel_all_finish(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    redis_client_sdk: RedisClientSDK,
 ):
     parallel_tasks = 10
     results: list[tuple[float, float]] = await logged_gather(
         *[
-            _assert_task_completes_once(get_redis_client_sdk, stop_after=60)
+            _assert_task_completes_once(redis_client_sdk, stop_after=60)
             for _ in range(parallel_tasks)
         ],
         reraise=False,
@@ -289,27 +258,21 @@ async def test_start_exclusive_periodic_task_parallel_all_finish(
 
 
 async def test_exclusive_raises_if_lock_is_lost(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
-    faker: Faker,
+    redis_client_sdk: RedisClientSDK,
+    lock_name: str,
 ):
-    lock_name = faker.pystr()
-
     started_event = asyncio.Event()
 
-    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client_sdk:
+    @exclusive(redis_client_sdk, lock_key=lock_name)
+    async def _(time_to_sleep: datetime.timedelta) -> datetime.timedelta:
+        started_event.set()
+        await asyncio.sleep(time_to_sleep.total_seconds())
+        return time_to_sleep
 
-        @exclusive(redis_client_sdk, lock_key=lock_name)
-        async def _(time_to_sleep: datetime.timedelta) -> datetime.timedelta:
-            started_event.set()
-            await asyncio.sleep(time_to_sleep.total_seconds())
-            return time_to_sleep
+    exclusive_task = asyncio.create_task(_(datetime.timedelta(seconds=10)))
+    await asyncio.wait_for(started_event.wait(), timeout=2)
+    # let's simlulate lost lock by forcefully deleting it
+    await redis_client_sdk.redis.delete(lock_name)
 
-        exclusive_task = asyncio.create_task(_(datetime.timedelta(seconds=10)))
-        await asyncio.wait_for(started_event.wait(), timeout=2)
-        # let's simlulate lost lock by forcefully deleting it
-        await redis_client_sdk._client.delete(lock_name)  # noqa: SLF001
-
-        with pytest.raises(LockLostError):
-            await exclusive_task
+    with pytest.raises(LockLostError):
+        await exclusive_task
