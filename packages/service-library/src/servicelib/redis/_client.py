@@ -114,10 +114,12 @@ class RedisClientSDK:
         return self._is_healthy
 
     def create_lock(
-        self, lock_name: str, *, ttl: datetime.timedelta = DEFAULT_LOCK_TTL
+        self, lock_name: str, *, ttl: datetime.timedelta | None = DEFAULT_LOCK_TTL
     ) -> Lock:
         return self._client.lock(
-            name=lock_name, timeout=ttl.total_seconds(), blocking=False
+            name=lock_name,
+            timeout=ttl.total_seconds() if ttl is not None else None,
+            blocking=False,
         )
 
     async def lock_value(self, lock_name: str) -> str | None:
