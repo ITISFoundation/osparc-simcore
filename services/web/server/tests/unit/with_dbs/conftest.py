@@ -119,24 +119,12 @@ def docker_compose_file(docker_compose_env: pytest.MonkeyPatch) -> str:
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg: AppConfigDict, unused_tcp_port_factory) -> AppConfigDict:
-    """
-    NOTE: SHOULD be overriden in any test module to configure the app accordingly
-    """
-    cfg = deepcopy(default_app_cfg)
-    # fills ports on the fly
-    cfg["main"]["port"] = unused_tcp_port_factory()
-    cfg["storage"]["port"] = unused_tcp_port_factory()
-
-    # this fixture can be safely modified during test since it is renovated on every call
-    return cfg
-
-
-@pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    app_cfg: AppConfigDict,
-    monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], dict[str, str]],
+    default_app_cfg: AppConfigDict,
+    unused_tcp_port_factory: Callable,
+    mock_env_devel_environment: EnvVarsDict,
+    monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
@@ -144,20 +132,27 @@ def app_environment(
 
     override like so:
     @pytest.fixture
-    def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
+    def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
         monkeypatch.setenv("MODIFIED_ENV", "VALUE")
         return app_environment | {"MODIFIED_ENV":"VALUE"}
     """
-    print("+ web_server:")
-    cfg = deepcopy(app_cfg)
-    envs = monkeypatch_setenv_from_app_config(cfg)
+    # NOTE: remains from from old cfg
+    cfg = deepcopy(default_app_cfg)
+    cfg["main"]["port"] = unused_tcp_port_factory()
+    cfg["storage"]["port"] = unused_tcp_port_factory()
 
-    #
-    # NOTE: this emulates hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" in docker-compose that
-    # affects PostgresSettings.POSTGRES_CLIENT_NAME
-    #
-    extra = setenvs_from_dict(monkeypatch, {"HOSTNAME": "wb-test_host.0"})
-    return envs | extra
+    return (
+        mock_env_devel_environment
+        | monkeypatch_setenv_from_app_config(cfg)
+        | setenvs_from_dict(
+            monkeypatch,
+            {
+                # this emulates hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" in docker-compose that
+                # affects PostgresSettings.POSTGRES_CLIENT_NAME
+                "HOSTNAME": "wb-test_host.0"
+            },
+        )
+    )
 
 
 @pytest.fixture

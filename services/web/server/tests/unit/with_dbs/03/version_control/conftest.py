@@ -2,11 +2,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
-from copy import deepcopy
 from pathlib import Path
-from typing import Any
 from unittest import mock
 from uuid import UUID
 
@@ -21,6 +18,8 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_project
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import NewProject
 from servicelib.aiohttp import status
@@ -31,7 +30,6 @@ from simcore_postgres_database.models.projects_version_control import (
 from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import APP_AIOPG_ENGINE_KEY
-from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.db import ProjectDBAPI
 from simcore_service_webserver.projects.models import ProjectDict
 from tenacity.asyncio import AsyncRetrying
@@ -69,69 +67,34 @@ def catalog_subsystem_mock_override(
 
 
 @pytest.fixture
-def app_cfg(
-    default_app_cfg,
-    unused_tcp_port_factory,
+def app_environment(
     catalog_subsystem_mock_override: None,
-    monkeypatch,
-) -> dict[str, Any]:
-    """App's configuration used for every test in this module
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+) -> EnvVarsDict:
 
-    NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
-    """
-    cfg = deepcopy(default_app_cfg)
-
-    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
-
-    cfg["main"]["port"] = unused_tcp_port_factory()
-    cfg["main"]["studies_access_enabled"] = True
-
-    exclude = {
-        "activity",
-        "clusters",
-        "computation",
-        "diagnostics",
-        "groups",
-        "publications",
-        "garbage_collector",
-        "smtp",
-        "socketio",
-        "storage",
-        "studies_dispatcher",
-        "tags",
-        "tracing",
-    }
-    include = {
-        "catalog",
-        "db",
-        "login",
-        "products",
-        "projects",
-        "resource_manager",
-        "rest",
-        "users",
-        "version_control",  # MODULE UNDER TEST
-    }
-
-    assert include.intersection(exclude) == set()
-
-    for section in include:
-        cfg[section]["enabled"] = True
-    for section in exclude:
-        cfg[section]["enabled"] = False
-
-    # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    setup_logging(
-        level=logging.DEBUG,
-        log_format_local_dev_enabled=True,
-        logger_filter_mapping={},
-        tracing_settings=None,
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            # exclude
+            "WEBSERVER_ACTIVITY": "null",
+            "WEBSERVER_CLUSTERS": "null",
+            "WEBSERVER_COMPUTATION": "null",
+            "WEBSERVER_DIAGNOSTICS": "null",
+            "WEBSERVER_GROUPS": "0",
+            "WEBSERVER_PUBLICATIONS": "0",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_EMAIL": "null",
+            "WEBSERVER_SOCKETIO": "0",
+            "WEBSERVER_STORAGE": "null",
+            "WEBSERVER_STUDIES_DISPATCHER": "null",
+            "WEBSERVER_TAGS": "0",
+            "WEBSERVER_TRACING": "null",
+            # Module under test
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+            "WEBSERVER_VERSION_CONTROL": "1",
+        },
     )
-
-    # Enforces smallest GC in the background task
-    cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
-
-    return cfg
 
 
 @pytest.fixture
