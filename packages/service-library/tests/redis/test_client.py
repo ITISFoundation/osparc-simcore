@@ -6,15 +6,12 @@
 
 import asyncio
 import datetime
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 
 import pytest
-from faker import Faker
-from pytest_mock import MockerFixture
 from redis.exceptions import LockError, LockNotOwnedError
-from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
-from servicelib.redis import _constants as redis_constants
+from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
@@ -33,30 +30,8 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture
-async def redis_client_sdk(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
-) -> AsyncIterator[RedisClientSDK]:
-    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as client:
-        yield client
-
-
-@pytest.fixture
 def redis_lock_ttl() -> datetime.timedelta:
     return datetime.timedelta(seconds=1)
-
-
-@pytest.fixture
-def with_short_default_redis_lock_ttl(mocker: MockerFixture) -> None:
-    mocker.patch.object(
-        redis_constants, "DEFAULT_LOCK_TTL", datetime.timedelta(seconds=0.25)
-    )
-
-
-@pytest.fixture
-def lock_name(faker: Faker) -> str:
-    return faker.pystr()
 
 
 async def test_redis_lock_no_ttl(redis_client_sdk: RedisClientSDK, lock_name: str):
@@ -175,7 +150,7 @@ async def test_redis_lock_with_ttl(
 
 #     assert await redis_client_sdk.lock_value(lock_name) is None
 
-#     with pytest.raises(RuntimeError):  # noqa: PT012
+#     with pytest.raises(RuntimeError):
 #         async with redis_client_sdk.lock_context(lock_name):
 #             assert await redis_client_sdk.redis.get(lock_name) is not None
 #             msg = "Expected error"
@@ -213,7 +188,7 @@ async def test_redis_lock_with_ttl(
 #     )
 
 #     async def _inc_counter() -> None:
-#         async with get_redis_client_sdk(  # noqa: SIM117
+#         async with get_redis_client_sdk(
 #             RedisDatabase.RESOURCES
 #         ) as redis_client_sdk:
 #             async with redis_client_sdk.lock_context(
@@ -227,23 +202,6 @@ async def test_redis_lock_with_ttl(
 #         *(_inc_counter() for _ in range(INCREASE_OPERATIONS)), limit=15
 #     )
 #     assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
-
-
-async def test_redis_client_sdks_manager(
-    mock_redis_socket_timeout: None, redis_service: RedisSettings
-):
-    all_redis_configs: set[RedisManagerDBConfig] = {
-        RedisManagerDBConfig(database=db) for db in RedisDatabase
-    }
-    manager = RedisClientsManager(
-        databases_configs=all_redis_configs,
-        settings=redis_service,
-        client_name="pytest",
-    )
-
-    async with manager:
-        for config in all_redis_configs:
-            assert manager.client(config.database)
 
 
 async def test_redis_client_sdk_setup_shutdown(
@@ -276,15 +234,8 @@ async def test_redis_client_sdk_setup_shutdown(
     await client.shutdown()
 
 
-@pytest.fixture
-def mock_default_socket_timeout(mocker: MockerFixture) -> None:
-    mocker.patch.object(
-        redis_constants, "DEFAULT_SOCKET_TIMEOUT", datetime.timedelta(seconds=0.25)
-    )
-
-
 async def test_regression_fails_on_redis_service_outage(
-    mock_default_socket_timeout: None,
+    mock_redis_socket_timeout: None,
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client_sdk: RedisClientSDK,
 ):

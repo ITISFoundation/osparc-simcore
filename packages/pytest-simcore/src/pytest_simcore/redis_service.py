@@ -119,4 +119,6 @@ async def wait_till_redis_responsive(redis_url: URL | str) -> None:
 @pytest.fixture
 def mock_redis_socket_timeout(mocker: MockerFixture) -> None:
     # lowered to allow CI to properly shutdown RedisClientSDK instances
-    mocker.patch.object(redis_constants, "DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=1))
+    mocker.patch.object(
+        redis_constants, "DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=0.25)
+    )
