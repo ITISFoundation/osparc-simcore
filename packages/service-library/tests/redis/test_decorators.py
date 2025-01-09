@@ -1,11 +1,11 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
-from collections.abc import Callable
+import datetime
+from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from datetime import timedelta
 from itertools import chain
-from typing import Awaitable
 from unittest.mock import Mock
 
 import arrow
@@ -18,6 +18,7 @@ from servicelib.redis import (
     exclusive,
     start_exclusive_periodic_task,
 )
+from servicelib.redis._errors import LockLostError
 from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase
 from tenacity.asyncio import AsyncRetrying
@@ -267,3 +268,24 @@ async def test_start_exclusive_periodic_task_parallel_all_finish(
     # NOTE all entries should be in increasing order;
     # this means that the `_sleep_task` ran sequentially
     assert _check_elements_lower(flattened_results)
+
+
+async def test_exclusive_raises_if_lock_is_lost(
+    redis_client_sdk: RedisClientSDK, faker: Faker
+):
+    lock_name = faker.pystr()
+    started_event = asyncio.Event()
+
+    @exclusive(redis_client_sdk, lock_key=lock_name)
+    async def _(time_to_sleep: datetime.timedelta) -> datetime.timedelta:
+        started_event.set()
+        await asyncio.sleep(time_to_sleep.total_seconds())
+        return time_to_sleep
+
+    exclusive_task = asyncio.create_task(_(datetime.timedelta(seconds=10)))
+    await asyncio.wait_for(started_event.wait(), timeout=2)
+    # let's simlulate lost lock by forcefully deleting it
+    await redis_client_sdk._client.delete(lock_name)  # noqa: SLF001
+
+    with pytest.raises(LockLostError):
+        await exclusive_task

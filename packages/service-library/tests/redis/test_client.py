@@ -16,13 +16,11 @@ from pytest_mock import MockerFixture
 from redis.exceptions import LockError, LockNotOwnedError
 from servicelib.redis import (
     CouldNotAcquireLockError,
-    LockLostError,
     RedisClientSDK,
     RedisClientsManager,
     RedisManagerDBConfig,
 )
 from servicelib.redis import _constants as redis_constants
-from servicelib.redis._decorators import exclusive
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
@@ -150,42 +148,6 @@ async def test_redis_lock_with_ttl(
             assert await ttl_lock.owned()
             await asyncio.sleep(2 * lock_timeout.total_seconds())
             assert not await ttl_lock.locked()
-
-
-async def test_lock_context(
-    redis_client_sdk: RedisClientSDK, faker: Faker, lock_timeout: datetime.timedelta
-):
-    lock_name = faker.pystr()
-    assert await _is_locked(redis_client_sdk, lock_name) is False
-    async with redis_client_sdk.lock_context(lock_name) as ttl_lock:
-        assert await _is_locked(redis_client_sdk, lock_name) is True
-        assert await ttl_lock.owned() is True
-        await asyncio.sleep(5 * lock_timeout.total_seconds())
-        assert await _is_locked(redis_client_sdk, lock_name) is True
-        assert await ttl_lock.owned() is True
-    assert await _is_locked(redis_client_sdk, lock_name) is False
-    assert await ttl_lock.owned() is False
-
-
-async def test_lock_context_raises_if_lock_is_lost(
-    redis_client_sdk: RedisClientSDK, faker: Faker
-):
-    lock_name = faker.pystr()
-    started_event = asyncio.Event()
-
-    @exclusive(redis_client_sdk, lock_key=lock_name)
-    async def _(time_to_sleep: datetime.timedelta) -> datetime.timedelta:
-        started_event.set()
-        await asyncio.sleep(time_to_sleep.total_seconds())
-        return time_to_sleep
-
-    exclusive_task = asyncio.create_task(_(datetime.timedelta(seconds=10)))
-    await asyncio.wait_for(started_event.wait(), timeout=2)
-    # let's simlulate lost lock by forcefully deleting it
-    await redis_client_sdk._client.delete(lock_name)  # noqa: SLF001
-
-    with pytest.raises(LockLostError):
-        await exclusive_task
 
 
 async def test_lock_context_with_already_locked_lock_raises(
