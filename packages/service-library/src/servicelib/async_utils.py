@@ -133,17 +133,17 @@ def run_sequentially_in_context(
                 sub_args = arg.split(".")
                 main_arg = sub_args[0]
                 if main_arg not in search_args:
-                    raise ValueError(
+                    msg = (
                         f"Expected '{main_arg}' in '{decorated_function.__name__}'"
                         f" arguments. Got '{search_args}'"
                     )
+                    raise ValueError(msg)
                 context_key = search_args[main_arg]
                 for attribute in sub_args[1:]:
                     potential_key = getattr(context_key, attribute)
                     if not potential_key:
-                        raise ValueError(
-                            f"Expected '{attribute}' attribute in '{context_key.__name__}' arguments."
-                        )
+                        msg = f"Expected '{attribute}' attribute in '{context_key.__name__}' arguments."
+                        raise ValueError(msg)
                     context_key = potential_key
 
                 key_parts.append(f"{decorated_function.__name__}_{context_key}")
