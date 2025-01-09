@@ -138,9 +138,12 @@ def app_environment(
     """
     # NOTE: remains from from old cfg
     cfg = deepcopy(default_app_cfg)
+    cfg["storage"]["port"] = unused_tcp_port_factory()
+    envs_app_cfg = monkeypatch_setenv_from_app_config(cfg)
+
     return (
         mock_env_devel_environment
-        | monkeypatch_setenv_from_app_config(cfg)
+        | envs_app_cfg
         | setenvs_from_dict(
             monkeypatch,
             {

@@ -2,12 +2,15 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 from urllib.parse import quote
 
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestServer
 from faker import Faker
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
@@ -17,10 +20,11 @@ API_VERSION = "v0"
 
 # TODO: create a fake storage service here
 @pytest.fixture()
-def storage_server(event_loop, aiohttp_server, app_cfg):
-    cfg = app_cfg["storage"]
-    app = create_safe_application(cfg)
-
+def storage_server(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_server: TestServer,
+    app_environment: EnvVarsDict,
+):
     async def _get_locs(request: web.Request):
         assert not request.can_read_body
 
@@ -119,11 +123,14 @@ def storage_server(event_loop, aiohttp_server, app_cfg):
             }
         )
 
-    storage_api_version = cfg["version"]
+    storage_api_version = app_environment["STORAGE_VTAG"]
+    storage_port = int(app_environment["STORAGE_PORT"])
+
     assert (
         storage_api_version != API_VERSION
     ), "backend service w/ different version as webserver entrypoint"
 
+    app = create_safe_application()
     app.router.add_get(f"/{storage_api_version}/locations", _get_locs)
     app.router.add_post(
         f"/{storage_api_version}/locations/0:sync", _post_sync_meta_data
@@ -140,9 +147,7 @@ def storage_server(event_loop, aiohttp_server, app_cfg):
         _get_datasets_meta,
     )
 
-    assert cfg["host"] == "localhost"
-
-    server = event_loop.run_until_complete(aiohttp_server(app, port=cfg["port"]))
+    server = event_loop.run_until_complete(aiohttp_server(app, port=storage_port))
     return server
 
 

@@ -5,7 +5,6 @@ import asyncio
 import json
 import re
 from collections.abc import Callable
-from copy import deepcopy
 
 import pytest
 import sqlalchemy as sa
@@ -17,7 +16,6 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.rest.plugin import setup_rest
@@ -52,12 +50,8 @@ def client(
     app_environment: EnvVarsDict,
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
-    app_cfg: AppConfigDict,
     postgres_db: sa.engine.Engine,
 ) -> TestClient:
-    cfg = deepcopy(app_cfg)
-    port = cfg["main"]["port"]
-
     app = create_safe_application()
 
     settings = setup_settings(app)
@@ -68,7 +62,7 @@ def client(
     assert setup_statics(app)
 
     return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
+        aiohttp_client(app, server_kwargs={"host": "localhost"})
     )
 
 
