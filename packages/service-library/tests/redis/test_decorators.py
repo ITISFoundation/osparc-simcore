@@ -276,3 +276,76 @@ async def test_exclusive_raises_if_lock_is_lost(
 
     with pytest.raises(LockLostError):
         await exclusive_task
+
+
+# async def test_lock_context_with_data(redis_client_sdk: RedisClientSDK, faker: Faker):
+#     lock_data = faker.text()
+#     lock_name = faker.pystr()
+#     assert await _is_locked(redis_client_sdk, lock_name) is False
+#     assert await redis_client_sdk.lock_value(lock_name) is None
+#     async with redis_client_sdk.lock_context(lock_name, lock_value=lock_data):
+#         assert await _is_locked(redis_client_sdk, lock_name) is True
+#         assert await redis_client_sdk.lock_value(lock_name) == lock_data
+#     assert await _is_locked(redis_client_sdk, lock_name) is False
+#     assert await redis_client_sdk.lock_value(lock_name) is None
+
+
+# async def test_lock_context_released_after_error(
+#     redis_client_sdk: RedisClientSDK, faker: Faker
+# ):
+#     lock_name = faker.pystr()
+
+#     assert await redis_client_sdk.lock_value(lock_name) is None
+
+#     with pytest.raises(RuntimeError):
+#         async with redis_client_sdk.lock_context(lock_name):
+#             assert await redis_client_sdk.redis.get(lock_name) is not None
+#             msg = "Expected error"
+#             raise RuntimeError(msg)
+
+#     assert await redis_client_sdk.lock_value(lock_name) is None
+
+
+# async def test_lock_acquired_in_parallel_to_update_same_resource(
+#     with_short_default_redis_lock_ttl: None,
+#     get_redis_client_sdk: Callable[
+#         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+#     ],
+#     faker: Faker,
+# ):
+#     INCREASE_OPERATIONS: Final[int] = 250
+#     INCREASE_BY: Final[int] = 10
+
+#     class RaceConditionCounter:
+#         def __init__(self):
+#             self.value: int = 0
+
+#         async def race_condition_increase(self, by: int) -> None:
+#             current_value = self.value
+#             current_value += by
+#             # most likely situation which creates issues
+#             await asyncio.sleep(redis_constants.DEFAULT_LOCK_TTL.total_seconds() / 2)
+#             self.value = current_value
+
+#     counter = RaceConditionCounter()
+#     lock_name: str = faker.pystr()
+#     # ensures it does nto time out before acquiring the lock
+#     time_for_all_inc_counter_calls_to_finish_s: float = (
+#         redis_constants.DEFAULT_LOCK_TTL.total_seconds() * INCREASE_OPERATIONS * 10
+#     )
+
+#     async def _inc_counter() -> None:
+#         async with get_redis_client_sdk(
+#             RedisDatabase.RESOURCES
+#         ) as redis_client_sdk:
+#             async with redis_client_sdk.lock_context(
+#                 lock_key=lock_name,
+#                 blocking=True,
+#                 blocking_timeout_s=time_for_all_inc_counter_calls_to_finish_s,
+#             ):
+#                 await counter.race_condition_increase(INCREASE_BY)
+
+#     await limited_gather(
+#         *(_inc_counter() for _ in range(INCREASE_OPERATIONS)), limit=15
+#     )
+#     assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
