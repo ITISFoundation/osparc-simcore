@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     LicensedItemCheckoutNotFoundError as _LicensedItemCheckoutNotFoundError,
@@ -23,7 +24,8 @@ _exception_mapper = partial(
 
 
 @dataclass
-class ResourceUsageTrackerClient:
+class ResourceUsageTrackerClient(SingletonInAppStateMixin):
+    app_state_name = "resource_usage_tracker_rpc_client"
     _client: RabbitMQRPCClient
 
     @_exception_mapper(
@@ -51,7 +53,8 @@ class ResourceUsageTrackerClient:
         )
 
 
-def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
-    app.state.resource_usage_tracker_rpc_client = ResourceUsageTrackerClient(
-        _client=rabbitmq_rmp_client
+def setup(app: FastAPI, rabbitmq_rpc_client: RabbitMQRPCClient):
+    resource_usage_tracker_rpc_client = ResourceUsageTrackerClient(
+        _client=rabbitmq_rpc_client
     )
+    resource_usage_tracker_rpc_client.set_to_app_state(app=app)

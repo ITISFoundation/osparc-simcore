@@ -11,6 +11,7 @@ from models_library.resource_tracker_licensed_items_checkouts import (
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CanNotCheckoutNotEnoughAvailableSeatsError,
@@ -72,7 +73,8 @@ def _create_licensed_items_get_page(
 
 
 @dataclass
-class WbApiRpcClient:
+class WbApiRpcClient(SingletonInAppStateMixin):
+    app_state_name = "wb_api_rpc_client"
     _client: RabbitMQRPCClient
 
     @_exception_mapper(rpc_exception_map={})
@@ -178,4 +180,5 @@ class WbApiRpcClient:
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
-    app.state.wb_api_rpc_client = WbApiRpcClient(_client=rabbitmq_rmp_client)
+    wb_api_rpc_client = WbApiRpcClient(_client=rabbitmq_rmp_client)
+    wb_api_rpc_client.set_to_app_state(app=app)
