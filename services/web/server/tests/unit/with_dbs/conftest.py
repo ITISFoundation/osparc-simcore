@@ -136,6 +136,7 @@ def app_cfg(default_app_cfg: AppConfigDict, unused_tcp_port_factory) -> AppConfi
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_cfg: AppConfigDict,
+    mock_env_devel_environment: EnvVarsDict,
     monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
@@ -148,9 +149,10 @@ def app_environment(
         monkeypatch.setenv("MODIFIED_ENV", "VALUE")
         return app_environment | {"MODIFIED_ENV":"VALUE"}
     """
-    print("+ web_server:")
-    cfg = deepcopy(app_cfg)
-    envs = monkeypatch_setenv_from_app_config(cfg)
+
+    envs = mock_env_devel_environment | monkeypatch_setenv_from_app_config(
+        deepcopy(app_cfg)
+    )
 
     #
     # NOTE: this emulates hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" in docker-compose that
