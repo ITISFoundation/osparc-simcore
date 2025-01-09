@@ -245,7 +245,7 @@ _MAX_TASK_CANCELLATION_ATTEMPTS: Final[int] = 3
 async def retried_cancel_task(
     task: asyncio.Task,
     *,
-    timeout: float | None,  # noqa: ASYNC109
+    timeout: float | None = None,  # noqa: ASYNC109
 ) -> None:
     """Reliable task cancellation. Some libraries will just hang without
     cancelling the task. The operation is retried _MAX_TASK_CANCELLATION_ATTEMPTS times
