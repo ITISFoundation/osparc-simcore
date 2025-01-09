@@ -278,32 +278,58 @@ async def test_exclusive_raises_if_lock_is_lost(
         await exclusive_task
 
 
-# async def test_lock_context_with_data(redis_client_sdk: RedisClientSDK, faker: Faker):
-#     lock_data = faker.text()
-#     lock_name = faker.pystr()
-#     assert await _is_locked(redis_client_sdk, lock_name) is False
-#     assert await redis_client_sdk.lock_value(lock_name) is None
-#     async with redis_client_sdk.lock_context(lock_name, lock_value=lock_data):
-#         assert await _is_locked(redis_client_sdk, lock_name) is True
-#         assert await redis_client_sdk.lock_value(lock_name) == lock_data
-#     assert await _is_locked(redis_client_sdk, lock_name) is False
-#     assert await redis_client_sdk.lock_value(lock_name) is None
+@pytest.fixture
+def lock_data(faker: Faker) -> str:
+    return faker.text()
 
 
-# async def test_lock_context_released_after_error(
-#     redis_client_sdk: RedisClientSDK, faker: Faker
-# ):
-#     lock_name = faker.pystr()
+async def test_exclusive_with_lock_value(
+    redis_client_sdk: RedisClientSDK, lock_name: str, lock_data: str
+):
+    started_event = asyncio.Event()
 
-#     assert await redis_client_sdk.lock_value(lock_name) is None
+    @exclusive(redis_client_sdk, lock_key=lock_name, lock_value=lock_data)
+    async def _(time_to_sleep: datetime.timedelta) -> datetime.timedelta:
+        started_event.set()
+        await asyncio.sleep(time_to_sleep.total_seconds())
+        return time_to_sleep
 
-#     with pytest.raises(RuntimeError):
-#         async with redis_client_sdk.lock_context(lock_name):
-#             assert await redis_client_sdk.redis.get(lock_name) is not None
-#             msg = "Expected error"
-#             raise RuntimeError(msg)
+    # initial state
+    assert await _is_locked(redis_client_sdk, lock_name) is False
+    assert await redis_client_sdk.lock_value(lock_name) is None
 
-#     assert await redis_client_sdk.lock_value(lock_name) is None
+    # run the exclusive task
+    exclusive_task = asyncio.create_task(_(datetime.timedelta(seconds=3)))
+    await asyncio.wait_for(started_event.wait(), timeout=2)
+    # expected
+    assert await _is_locked(redis_client_sdk, lock_name) is True
+    assert await redis_client_sdk.lock_value(lock_name) == lock_data
+    # now let the task finish
+    assert await exclusive_task == datetime.timedelta(seconds=3)
+    # expected
+    assert await _is_locked(redis_client_sdk, lock_name) is False
+    assert await redis_client_sdk.lock_value(lock_name) is None
+
+
+async def test_exclusive_task_erroring_releases_lock(
+    redis_client_sdk: RedisClientSDK, lock_name: str
+):
+    @exclusive(redis_client_sdk, lock_key=lock_name)
+    async def _() -> None:
+        msg = "Expected error"
+        raise RuntimeError(msg)
+
+    # initial state
+    assert await _is_locked(redis_client_sdk, lock_name) is False
+    assert await redis_client_sdk.lock_value(lock_name) is None
+
+    # run the exclusive task
+    exclusive_task = asyncio.create_task(_())
+
+    with pytest.raises(RuntimeError):
+        await exclusive_task
+
+    assert await redis_client_sdk.lock_value(lock_name) is None
 
 
 # async def test_lock_acquired_in_parallel_to_update_same_resource(
