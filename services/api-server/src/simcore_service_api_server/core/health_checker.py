@@ -94,7 +94,7 @@ class ApiServerHealthChecker:
                 self._dummy_queue.get(), timeout=self._timeout_seconds
             )
             self._health_check_failure_count = 0
-        except TimeoutError:
+        except asyncio.TimeoutError:
             self._increment_health_check_failure_count()
 
 
