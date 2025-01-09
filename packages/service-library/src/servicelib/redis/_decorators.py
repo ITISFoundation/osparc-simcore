@@ -3,6 +3,7 @@ import contextlib
 import functools
 import logging
 from collections.abc import Callable, Coroutine
+from datetime import timedelta
 from typing import Any, ParamSpec, TypeVar
 
 import redis.exceptions
@@ -25,6 +26,8 @@ def exclusive(
     *,
     lock_key: str | Callable[..., str],
     lock_value: bytes | str | None = None,
+    blocking: bool = False,
+    blocking_timeout: timedelta | None = None,
 ) -> Callable[
     [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
 ]:
@@ -64,7 +67,13 @@ def exclusive(
             assert isinstance(client, RedisClientSDK)  # nosec
 
             lock = client.create_lock(redis_lock_key, ttl=DEFAULT_LOCK_TTL)
-            if not await lock.acquire(token=lock_value):
+            if not await lock.acquire(
+                token=lock_value,
+                blocking=blocking,
+                blocking_timeout=blocking_timeout.total_seconds()
+                if blocking_timeout
+                else None,
+            ):
                 raise CouldNotAcquireLockError(lock=lock)
 
             try:

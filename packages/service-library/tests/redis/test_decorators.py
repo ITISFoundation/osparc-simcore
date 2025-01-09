@@ -9,6 +9,7 @@ import datetime
 from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from itertools import chain
+from typing import Final
 from unittest.mock import Mock
 
 import arrow
@@ -22,7 +23,7 @@ from servicelib.redis import (
     start_exclusive_periodic_task,
 )
 from servicelib.redis._errors import LockLostError
-from servicelib.utils import logged_gather
+from servicelib.utils import limited_gather, logged_gather
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -332,46 +333,41 @@ async def test_exclusive_task_erroring_releases_lock(
     assert await redis_client_sdk.lock_value(lock_name) is None
 
 
-# async def test_lock_acquired_in_parallel_to_update_same_resource(
-#     with_short_default_redis_lock_ttl: None,
-#     get_redis_client_sdk: Callable[
-#         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-#     ],
-#     faker: Faker,
-# ):
-#     INCREASE_OPERATIONS: Final[int] = 250
-#     INCREASE_BY: Final[int] = 10
+async def test_lock_acquired_in_parallel_to_update_same_resource(
+    with_short_default_redis_lock_ttl: datetime.timedelta,
+    redis_client_sdk: RedisClientSDK,
+    lock_name: str,
+):
+    INCREASE_OPERATIONS: Final[int] = 250
+    INCREASE_BY: Final[int] = 10
 
-#     class RaceConditionCounter:
-#         def __init__(self):
-#             self.value: int = 0
+    class RaceConditionCounter:
+        def __init__(self) -> None:
+            self.value: int = 0
 
-#         async def race_condition_increase(self, by: int) -> None:
-#             current_value = self.value
-#             current_value += by
-#             # most likely situation which creates issues
-#             await asyncio.sleep(redis_constants.DEFAULT_LOCK_TTL.total_seconds() / 2)
-#             self.value = current_value
+        async def race_condition_increase(self, by: int) -> None:
+            current_value = self.value
+            current_value += by
+            # most likely situation which creates issues
+            await asyncio.sleep(with_short_default_redis_lock_ttl.total_seconds() / 2)
+            self.value = current_value
 
-#     counter = RaceConditionCounter()
-#     lock_name: str = faker.pystr()
-#     # ensures it does nto time out before acquiring the lock
-#     time_for_all_inc_counter_calls_to_finish_s: float = (
-#         redis_constants.DEFAULT_LOCK_TTL.total_seconds() * INCREASE_OPERATIONS * 10
-#     )
+    counter = RaceConditionCounter()
+    # ensures it does nto time out before acquiring the lock
+    time_for_all_inc_counter_calls_to_finish = (
+        with_short_default_redis_lock_ttl * INCREASE_OPERATIONS * 10
+    )
 
-#     async def _inc_counter() -> None:
-#         async with get_redis_client_sdk(
-#             RedisDatabase.RESOURCES
-#         ) as redis_client_sdk:
-#             async with redis_client_sdk.lock_context(
-#                 lock_key=lock_name,
-#                 blocking=True,
-#                 blocking_timeout_s=time_for_all_inc_counter_calls_to_finish_s,
-#             ):
-#                 await counter.race_condition_increase(INCREASE_BY)
+    @exclusive(
+        redis_client_sdk,
+        lock_key=lock_name,
+        blocking=True,
+        blocking_timeout=time_for_all_inc_counter_calls_to_finish,
+    )
+    async def _inc_counter() -> None:
+        await counter.race_condition_increase(INCREASE_BY)
 
-#     await limited_gather(
-#         *(_inc_counter() for _ in range(INCREASE_OPERATIONS)), limit=15
-#     )
-#     assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
+    await limited_gather(
+        *(_inc_counter() for _ in range(INCREASE_OPERATIONS)), limit=15
+    )
+    assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
