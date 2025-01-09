@@ -55,12 +55,12 @@ async def redis_client_sdk(
 
 
 @pytest.fixture
-def lock_timeout() -> datetime.timedelta:
+def redis_lock_ttl() -> datetime.timedelta:
     return datetime.timedelta(seconds=1)
 
 
 @pytest.fixture
-def mock_default_lock_ttl(mocker: MockerFixture) -> None:
+def with_short_default_redis_lock_ttl(mocker: MockerFixture) -> None:
     mocker.patch.object(
         redis_constants, "DEFAULT_LOCK_TTL", datetime.timedelta(seconds=0.25)
     )
@@ -134,10 +134,10 @@ async def test_redis_lock_context_manager(
 
 
 async def test_redis_lock_with_ttl(
-    redis_client_sdk: RedisClientSDK, faker: Faker, lock_timeout: datetime.timedelta
+    redis_client_sdk: RedisClientSDK, faker: Faker, redis_lock_ttl: datetime.timedelta
 ):
     ttl_lock = redis_client_sdk.redis.lock(
-        faker.pystr(), timeout=lock_timeout.total_seconds()
+        faker.pystr(), timeout=redis_lock_ttl.total_seconds()
     )
     assert not await ttl_lock.locked()
 
@@ -146,7 +146,7 @@ async def test_redis_lock_with_ttl(
         async with ttl_lock:
             assert await ttl_lock.locked()
             assert await ttl_lock.owned()
-            await asyncio.sleep(2 * lock_timeout.total_seconds())
+            await asyncio.sleep(2 * redis_lock_ttl.total_seconds())
             assert not await ttl_lock.locked()
 
 
@@ -206,7 +206,7 @@ async def test_lock_context_released_after_error(
 
 
 async def test_lock_acquired_in_parallel_to_update_same_resource(
-    mock_default_lock_ttl: None,
+    with_short_default_redis_lock_ttl: None,
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
     ],
