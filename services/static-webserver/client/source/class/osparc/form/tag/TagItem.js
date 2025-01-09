@@ -14,6 +14,9 @@ qx.Class.define("osparc.form.tag.TagItem", {
   construct: function() {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(5));
+    this.set({
+      alignY: "middle",
+    });
     this.__validationManager = new qx.ui.form.validation.Manager();
   },
 
@@ -94,7 +97,9 @@ qx.Class.define("osparc.form.tag.TagItem", {
       let control;
       switch (id) {
         case "tag":
-          control = new osparc.ui.basic.Tag();
+          control = new osparc.ui.basic.Tag().set({
+            alignY: "middle",
+          });
           this.bind("name", control, "value");
           this.bind("color", control, "color");
           break;
@@ -102,6 +107,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
           control = new qx.ui.basic.Label().set({
             rich: true,
             allowGrowX: true,
+            alignY: "middle",
           });
           this.bind("description", control, "value");
           break;
