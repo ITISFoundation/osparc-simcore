@@ -138,9 +138,6 @@ def app_environment(
     """
     # NOTE: remains from from old cfg
     cfg = deepcopy(default_app_cfg)
-    cfg["main"]["port"] = unused_tcp_port_factory()
-    cfg["storage"]["port"] = unused_tcp_port_factory()
-
     return (
         mock_env_devel_environment
         | monkeypatch_setenv_from_app_config(cfg)
@@ -186,7 +183,7 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
-    app_cfg: AppConfigDict,
+    unused_tcp_port_factory: Callable,
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     # tools
@@ -200,7 +197,7 @@ def web_server(
     disable_static_webserver(app)
 
     server = event_loop.run_until_complete(
-        aiohttp_server(app, port=app_cfg["main"]["port"])
+        aiohttp_server(app, port=unused_tcp_port_factory())
     )
 
     assert isinstance(postgres_db, sa.engine.Engine)
