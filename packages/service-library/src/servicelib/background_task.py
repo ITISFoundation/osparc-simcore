@@ -1,11 +1,18 @@
 import asyncio
 import contextlib
 import datetime
+import functools
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Final
+from typing import Final, ParamSpec, TypeVar
 
-from tenacity import TryAgain, retry_always, retry_if_exception_type
+from tenacity import (
+    TryAgain,
+    before_sleep_log,
+    retry,
+    retry_always,
+    retry_if_exception_type,
+)
 from tenacity.asyncio import AsyncRetrying
 from tenacity.wait import wait_fixed
 
@@ -28,6 +35,42 @@ class SleepUsingAsyncioEvent:
         with contextlib.suppress(TimeoutError):
             await asyncio.wait_for(self.event.wait(), timeout=delay)
             self.event.clear()
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def periodic(
+    *,
+    interval: datetime.timedelta,
+    raise_on_error: bool = False,
+    early_wake_up_event: asyncio.Event | None = None,
+) -> Callable[[Callable[P, Awaitable[None]]], Callable[P, Awaitable[None]]]:
+    def _decorator(func: Callable[P, Awaitable[None]]) -> Callable[P, Awaitable[None]]:
+        nap = (
+            asyncio.sleep
+            if early_wake_up_event is None
+            else SleepUsingAsyncioEvent(early_wake_up_event)
+        )
+
+        @retry(
+            sleep=nap,
+            wait=wait_fixed(interval.total_seconds()),
+            reraise=True,
+            retry=retry_if_exception_type(TryAgain)
+            if raise_on_error
+            else retry_if_exception_type(),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
+        )
+        @functools.wraps(func)
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
+            await func(*args, **kwargs)
+            raise TryAgain
+
+        return _wrapper
+
+    return _decorator
 
 
 async def _periodic_scheduled_task(
