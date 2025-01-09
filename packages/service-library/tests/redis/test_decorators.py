@@ -181,6 +181,7 @@ async def test_exclusive_parallel_lock_is_released_and_reacquired(
 async def _sleep_task(sleep_interval: float, on_sleep_events: Mock) -> None:
     on_sleep_events(arrow.utcnow())
     await asyncio.sleep(sleep_interval)
+    print("Slept for", sleep_interval)
     on_sleep_events(arrow.utcnow())
 
 
@@ -193,6 +194,7 @@ async def _assert_on_sleep_done(on_sleep_events: Mock, *, stop_after: float):
     ):
         with attempt:
             assert on_sleep_events.call_count == 2
+            print("sleep was done with", on_sleep_events.call_count, " counts")
 
 
 async def _assert_task_completes_once(
@@ -274,21 +276,27 @@ async def test_start_exclusive_periodic_task_parallel_all_finish(
 
 
 async def test_exclusive_raises_if_lock_is_lost(
-    redis_client_sdk: RedisClientSDK, faker: Faker
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+    faker: Faker,
 ):
     lock_name = faker.pystr()
+
     started_event = asyncio.Event()
 
-    @exclusive(redis_client_sdk, lock_key=lock_name)
-    async def _(time_to_sleep: datetime.timedelta) -> datetime.timedelta:
-        started_event.set()
-        await asyncio.sleep(time_to_sleep.total_seconds())
-        return time_to_sleep
+    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client_sdk:
 
-    exclusive_task = asyncio.create_task(_(datetime.timedelta(seconds=10)))
-    await asyncio.wait_for(started_event.wait(), timeout=2)
-    # let's simlulate lost lock by forcefully deleting it
-    await redis_client_sdk._client.delete(lock_name)  # noqa: SLF001
+        @exclusive(redis_client_sdk, lock_key=lock_name)
+        async def _(time_to_sleep: datetime.timedelta) -> datetime.timedelta:
+            started_event.set()
+            await asyncio.sleep(time_to_sleep.total_seconds())
+            return time_to_sleep
 
-    with pytest.raises(LockLostError):
-        await exclusive_task
+        exclusive_task = asyncio.create_task(_(datetime.timedelta(seconds=10)))
+        await asyncio.wait_for(started_event.wait(), timeout=2)
+        # let's simlulate lost lock by forcefully deleting it
+        await redis_client_sdk._client.delete(lock_name)  # noqa: SLF001
+
+        with pytest.raises(LockLostError):
+            await exclusive_task
