@@ -65,7 +65,7 @@ class RedisClientSDK:
     async def setup(self) -> None:
         if not await self.ping():
             await self.shutdown()
-            url_safe: URL = URL(self.redis_dsn).with_password("???")
+            url_safe = URL(self.redis_dsn).with_password("???")
             raise CouldNotConnectToRedisError(dsn=f"{url_safe}")
 
         self._health_check_task = asyncio.create_task(
