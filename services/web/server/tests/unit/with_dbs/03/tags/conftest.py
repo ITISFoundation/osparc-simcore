@@ -2,16 +2,19 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 from collections.abc import AsyncIterator, Callable
 from copy import deepcopy
 from pathlib import Path
 
 import pytest
 from aioresponses import aioresponses
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
@@ -35,19 +38,14 @@ DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
 
 
 @pytest.fixture
-def client(
-    event_loop,
-    aiohttp_client,
-    app_cfg,
-    postgres_db,
-    mocked_dynamic_services_interface,
-    mock_orphaned_services,
-    redis_client,  # this ensure redis is properly cleaned
-    monkeypatch_setenv_from_app_config: Callable,
-):
-    # config app
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    app_cfg: AppConfigDict,
+    app_environment: EnvVarsDict,
+    monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
+) -> EnvVarsDict:
     cfg = deepcopy(app_cfg)
-    port = cfg["main"]["port"]
+
     cfg["projects"]["enabled"] = True
     cfg["resource_manager"][
         "garbage_collection_interval_seconds"
@@ -56,11 +54,25 @@ def client(
         "resource_deletion_timeout_seconds"
     ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
 
-    monkeypatch_setenv_from_app_config(cfg)
+    return app_environment | monkeypatch_setenv_from_app_config(cfg)
 
-    app = create_safe_application(cfg)
 
-    assert setup_settings(app)
+@pytest.fixture
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+    app_cfg: AppConfigDict,
+    app_environment: EnvVarsDict,
+    postgres_db,
+    mocked_dynamic_services_interface,
+    mock_orphaned_services,
+    redis_client,  # this ensure redis is properly cleaned
+):
+    # config app
+    app = create_safe_application()
+
+    settings = setup_settings(app)
+    assert settings.WEBSERVER_TAGS is not None
 
     # setup app
     setup_db(app)
@@ -71,14 +83,16 @@ def client(
     setup_resource_manager(app)
     setup_socketio(app)
     setup_director_v2(app)
-    setup_tags(app)
-    assert setup_projects(app)
+    assert setup_tags(app)
+    setup_projects(app)
     setup_products(app)
     setup_wallets(app)
 
     # server and client
     return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
+        aiohttp_client(
+            app, server_kwargs={"port": app_cfg["main"]["port"], "host": "localhost"}
+        )
     )
 
     # teardown here ...
