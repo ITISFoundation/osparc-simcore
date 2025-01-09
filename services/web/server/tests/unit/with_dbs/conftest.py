@@ -136,7 +136,7 @@ def app_cfg(default_app_cfg: AppConfigDict, unused_tcp_port_factory) -> AppConfi
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_cfg: AppConfigDict,
-    monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], dict[str, str]],
+    monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
@@ -144,7 +144,7 @@ def app_environment(
 
     override like so:
     @pytest.fixture
-    def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
+    def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
         monkeypatch.setenv("MODIFIED_ENV", "VALUE")
         return app_environment | {"MODIFIED_ENV":"VALUE"}
     """
