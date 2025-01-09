@@ -115,7 +115,7 @@ async def _periodic_scheduled_task(
             raise TryAgain
 
 
-def start_periodic_task(
+def create_periodic_task(
     task: Callable[..., Awaitable[None]],
     *,
     interval: datetime.timedelta,
@@ -167,7 +167,7 @@ async def periodic_task(
 ) -> AsyncIterator[asyncio.Task]:
     asyncio_task: asyncio.Task | None = None
     try:
-        asyncio_task = start_periodic_task(
+        asyncio_task = create_periodic_task(
             task,
             interval=interval,
             task_name=task_name,

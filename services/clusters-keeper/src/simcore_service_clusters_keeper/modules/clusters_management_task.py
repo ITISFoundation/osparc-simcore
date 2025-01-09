@@ -3,7 +3,7 @@ import logging
 from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.background_task import create_periodic_task, stop_periodic_task
 from servicelib.redis import exclusive
 
 from .._meta import APP_NAME
@@ -22,7 +22,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
         lock_key = f"{APP_NAME}:clusters-management_lock"
         lock_value = json.dumps({})
-        app.state.clusters_cleaning_task = start_periodic_task(
+        app.state.clusters_cleaning_task = create_periodic_task(
             exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
                 check_clusters
             ),

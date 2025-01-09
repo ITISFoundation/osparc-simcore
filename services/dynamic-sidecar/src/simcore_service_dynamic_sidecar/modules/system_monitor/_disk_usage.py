@@ -14,7 +14,7 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import (
 )
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.background_task import create_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 
@@ -120,7 +120,7 @@ class DiskUsageMonitor:
 
     @staticmethod
     def _get_grouped_usage_to_folder_names(
-        local_disk_usage: dict[str, DiskUsage]
+        local_disk_usage: dict[str, DiskUsage],
     ) -> dict[DiskUsage, set[str]]:
         """Groups all paths that have the same metrics together"""
         usage_to_folder_names: dict[DiskUsage, set[str]] = {}
@@ -174,7 +174,7 @@ class DiskUsageMonitor:
             self._last_usage = supported_usage
 
     async def setup(self) -> None:
-        self._monitor_task = start_periodic_task(
+        self._monitor_task = create_periodic_task(
             self._monitor, interval=self.interval, task_name="monitor_disk_usage"
         )
 

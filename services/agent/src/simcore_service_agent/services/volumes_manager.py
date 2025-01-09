@@ -9,7 +9,7 @@ from aiodocker.docker import Docker
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.background_task import create_periodic_task, stop_periodic_task
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
@@ -45,12 +45,12 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
     app_state_name: str = "volumes_manager"
 
     async def setup(self) -> None:
-        self._task_bookkeeping = start_periodic_task(
+        self._task_bookkeeping = create_periodic_task(
             self._bookkeeping_task,
             interval=self.book_keeping_interval,
             task_name="volumes bookkeeping",
         )
-        self._task_periodic_volume_cleanup = start_periodic_task(
+        self._task_periodic_volume_cleanup = create_periodic_task(
             self._bookkeeping_task,
             interval=self.volume_cleanup_interval,
             task_name="volume cleanup",

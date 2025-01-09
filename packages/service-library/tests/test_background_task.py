@@ -15,9 +15,9 @@ import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
 from servicelib.background_task import (  # Assuming the module is imported correctly
+    create_periodic_task,
     periodic,
     periodic_task,
-    start_periodic_task,
     stop_periodic_task,
 )
 
@@ -60,7 +60,7 @@ async def create_background_task(
         task: Callable[..., Awaitable],
         early_wake_up_event: asyncio.Event | None,
     ) -> asyncio.Task:
-        background_task = start_periodic_task(
+        background_task = create_periodic_task(
             task,
             interval=interval,
             task_name=faker.pystr(),

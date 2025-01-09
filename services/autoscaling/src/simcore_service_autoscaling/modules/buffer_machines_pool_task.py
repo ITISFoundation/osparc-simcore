@@ -3,7 +3,7 @@ from collections.abc import Awaitable, Callable
 from typing import Final
 
 from fastapi import FastAPI
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.background_task import create_periodic_task, stop_periodic_task
 from servicelib.redis import exclusive
 
 from ..core.settings import ApplicationSettings
@@ -25,7 +25,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
         assert lock_value  # nosec
 
         assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-        app.state.buffers_pool_task = start_periodic_task(
+        app.state.buffers_pool_task = create_periodic_task(
             exclusive(
                 get_redis_client(app),
                 lock_key=f"{lock_key}_buffers_pool",
