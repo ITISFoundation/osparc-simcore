@@ -7,7 +7,7 @@ from typing import TypedDict
 from fastapi import FastAPI
 from servicelib.background_task import stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis_utils import start_exclusive_periodic_task
+from servicelib.redis import start_exclusive_periodic_task
 
 from .background_tasks import removal_policy_task
 from .modules.redis import get_redis_lock_client
@@ -33,9 +33,10 @@ _EFS_GUARDIAN_BACKGROUND_TASKS = [
 
 def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
-        with log_context(
-            _logger, logging.INFO, msg="Efs Guardian startup.."
-        ), log_catch(_logger, reraise=False):
+        with (
+            log_context(_logger, logging.INFO, msg="Efs Guardian startup.."),
+            log_catch(_logger, reraise=False),
+        ):
             app.state.efs_guardian_background_tasks = []
 
             # Setup periodic tasks
@@ -57,9 +58,10 @@ def _on_app_shutdown(
     _app: FastAPI,
 ) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
-        with log_context(
-            _logger, logging.INFO, msg="Efs Guardian shutdown.."
-        ), log_catch(_logger, reraise=False):
+        with (
+            log_context(_logger, logging.INFO, msg="Efs Guardian shutdown.."),
+            log_catch(_logger, reraise=False),
+        ):
             assert _app  # nosec
             if _app.state.efs_guardian_background_tasks:
                 await asyncio.gather(

@@ -77,7 +77,8 @@ async def get_redis_client_sdk(
 ]:
     @asynccontextmanager
     async def _(
-        database: RedisDatabase, decode_response: bool = True  # noqa: FBT002
+        database: RedisDatabase,
+        decode_response: bool = True,  # noqa: FBT002
     ) -> AsyncIterator[RedisClientSDK]:
         redis_resources_dns = redis_service.build_redis_dsn(database)
         client = RedisClientSDK(
@@ -97,7 +98,7 @@ async def get_redis_client_sdk(
             await clients_manager.client(db).redis.flushall()
 
     async with RedisClientsManager(
-        {RedisManagerDBConfig(db) for db in RedisDatabase},
+        {RedisManagerDBConfig(database=db) for db in RedisDatabase},
         redis_service,
         client_name="pytest",
     ) as clients_manager:

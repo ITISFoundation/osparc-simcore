@@ -19,7 +19,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     const studiesLabel = osparc.product.Utils.getStudyAlias({plural: true});
     const studyLabel = osparc.product.Utils.getStudyAlias();
     const msg = this.tr("\
-    Tags are annotations to help users with grouping ") + studiesLabel + this.tr(" in the Dashboard. \
+    Tags help you organize the ") + studiesLabel + this.tr(" in the Dashboard by categorizing topics, making it easier to search and filter. \
     Once the tags are created, they can be assigned to the ") + studyLabel + this.tr("  via 'More options...' on the ") + studyLabel + this.tr(" cards.");
     const intro = osparc.ui.window.TabbedView.createHelpLabel(msg);
     this._add(intro);
