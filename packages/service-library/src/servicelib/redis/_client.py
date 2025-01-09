@@ -10,6 +10,7 @@ import redis.exceptions
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
+from servicelib.async_utils import cancel_wait_task
 from tenacity import retry
 from yarl import URL
 
@@ -20,9 +21,9 @@ from ._constants import (
     DEFAULT_HEALTH_CHECK_INTERVAL,
     DEFAULT_LOCK_TTL,
     DEFAULT_SOCKET_TIMEOUT,
+    SHUTDOWN_TIMEOUT_S,
 )
 from ._errors import CouldNotConnectToRedisError
-from ._utils import cancel_or_warn
 
 _logger = logging.getLogger(__name__)
 
@@ -82,7 +83,9 @@ class RedisClientSDK:
     async def shutdown(self) -> None:
         if self._health_check_task:
             self._continue_health_checking = False
-            await cancel_or_warn(self._health_check_task)
+            await cancel_wait_task(
+                self._health_check_task, max_delay=SHUTDOWN_TIMEOUT_S
+            )
             self._health_check_task = None
 
         await self._client.aclose(close_connection_pool=True)
