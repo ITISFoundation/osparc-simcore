@@ -16,7 +16,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.products import products
-from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.db.plugin import setup_db
@@ -55,25 +54,18 @@ def client(
     aiohttp_client: Callable,
     app_cfg: AppConfigDict,
     postgres_db: sa.engine.Engine,
-    monkeypatch_setenv_from_app_config: Callable,
 ) -> TestClient:
     cfg = deepcopy(app_cfg)
-
     port = cfg["main"]["port"]
 
-    assert cfg["rest"]["version"] == API_VTAG
-    monkeypatch_setenv_from_app_config(cfg)
-
-    # fake config
-    app = create_safe_application(cfg)
+    app = create_safe_application()
 
     settings = setup_settings(app)
-    print(settings.model_dump_json(indent=1))
-
+    assert settings.WEBSERVER_STATICWEB
     setup_rest(app)
     setup_db(app)
     setup_products(app)
-    setup_statics(app)
+    assert setup_statics(app)
 
     return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
