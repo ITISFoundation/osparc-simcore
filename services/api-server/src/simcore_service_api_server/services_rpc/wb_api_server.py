@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from functools import partial
-from typing import cast
 
 from fastapi import FastAPI
 from fastapi_pagination import Page, create_page
@@ -69,7 +68,7 @@ def _create_licensed_items_get_page(
         total=licensed_items_page.total,
         params=page_params,
     )
-    return cast(Page[LicensedItemGet], page)
+    return page
 
 
 @dataclass
