@@ -1,80 +1,43 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-
-import logging
-from copy import deepcopy
-from typing import Any
-
+# pylint: disable=too-many-arguments
 import pytest
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.log import setup_logging
 
 
 @pytest.fixture
 def user_role() -> UserRole:
-    # TODO: user rights still not in place
     return UserRole.TESTER
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, unused_tcp_port_factory, monkeypatch) -> dict[str, Any]:
-    """App's configuration used for every test in this module
-
-    NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
-    """
-    cfg = deepcopy(default_app_cfg)
-
-    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
-
-    cfg["main"]["port"] = unused_tcp_port_factory()
-    cfg["main"]["studies_access_enabled"] = True
-
-    exclude = {
-        "activity",
-        "clusters",
-        "computation",
-        "diagnostics",
-        "garbage_collector",
-        "groups",
-        "publications",
-        "smtp",
-        "socketio",
-        "storage",
-        "studies_dispatcher",
-        "tags",
-        "tracing",
-    }
-    include = {
-        "catalog",
-        "db",
-        "login",
-        "meta_modeling",  # MODULE UNDER TEST
-        "products",
-        "projects",
-        "redis",
-        "resource_manager",
-        "rest",
-        "users",
-        "version_control",
-    }
-
-    assert include.intersection(exclude) == set()
-
-    for section in include:
-        cfg[section]["enabled"] = True
-    for section in exclude:
-        cfg[section]["enabled"] = False
-
-    # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    setup_logging(
-        level=logging.DEBUG,
-        log_format_local_dev_enabled=True,
-        logger_filter_mapping={},
-        tracing_settings=None,
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            # exclude
+            "WEBSERVER_ACTIVITY": "null",
+            "WEBSERVER_CLUSTERS": "null",
+            "WEBSERVER_COMPUTATION": "null",
+            "WEBSERVER_DIAGNOSTICS": "null",
+            "WEBSERVER_GROUPS": "0",
+            "WEBSERVER_PUBLICATIONS": "0",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_SMTP": "null",
+            "WEBSERVER_SOCKETIO": "0",
+            "WEBSERVER_STORAGE": "null",
+            "WEBSERVER_STUDIES_DISPATCHER": "null",
+            "WEBSERVER_TAGS": "0",
+            "WEBSERVER_TRACING": "null",
+            # Module under test
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+            "WEBSERVER_VERSION_CONTROL": "1",
+            "WEBSERVER_META_MODELING": "1",
+        },
     )
-
-    # Enforces smallest GC in the background task
-    cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
-
-    return cfg
