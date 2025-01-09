@@ -4,8 +4,8 @@ import logging
 from collections.abc import Awaitable, Callable
 
 import arrow
-from servicelib.background_task import start_periodic_task
 
+from ..background_task import start_periodic_task
 from ._client import RedisClientSDK
 from ._decorators import exclusive
 from ._errors import CouldNotAcquireLockError
