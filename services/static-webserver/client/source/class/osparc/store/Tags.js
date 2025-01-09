@@ -97,6 +97,9 @@ qx.Class.define("osparc.store.Tags", {
       };
       return osparc.data.Resources.getInstance().fetch("tags", "patch", params)
         .then(tagData => {
+          if ("accessRights" in tagData) {
+            delete tagData["accessRights"];
+          }
           return this.__addToCache(tagData);
         })
         .catch(console.error);
