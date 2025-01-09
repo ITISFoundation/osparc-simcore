@@ -208,7 +208,7 @@ async def _assert_task_completes_once(
             redis_client_sdk,
             _sleep_task,
             task_period=timedelta(seconds=1),
-            task_name="long_running",
+            task_name="pytest_sleep_task",
             sleep_interval=1,
             on_sleep_events=sleep_events,
         )
