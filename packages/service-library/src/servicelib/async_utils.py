@@ -254,10 +254,10 @@ async def retried_cancel_task(
     :param task: task to be canceled
     :param timeout_delay: duration (in seconds) to wait before giving
         up the cancellation. If None it waits forever. Will be repeated _MAX_TASK_CANCELLATION_ATTEMPTS times.
-    :raises TimeoutError: raised if cannot cancel the task. Errors during cancellations are suppressed (backwards compatibility).
+    :raises TimeoutError: raised if cannot cancel the task.
     """
 
     task.cancel()
     async with asyncio.timeout(timeout):
-        with contextlib.suppress(BaseException):
+        with contextlib.suppress(asyncio.CancelledError):
             await task
