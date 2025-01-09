@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from functools import partial
+from typing import cast
 
 from fastapi import FastAPI
-from fastapi_pagination import Page, create_page
+from fastapi_pagination import create_page
 from models_library.api_schemas_webserver.licensed_items import LicensedItemGetPage
 from models_library.licensed_items import LicensedItemID
 from models_library.resource_tracker_licensed_items_checkouts import (
@@ -44,7 +45,7 @@ from ..exceptions.backend_errors import (
     LicensedItemCheckoutNotFoundError,
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
-from ..models.pagination import PaginationParams
+from ..models.pagination import Page, PaginationParams
 from ..models.schemas.model_adapter import LicensedItemCheckoutGet, LicensedItemGet
 
 _exception_mapper = partial(service_exception_mapper, service_name="WebApiServer")
@@ -69,8 +70,7 @@ def _create_licensed_items_get_page(
         total=licensed_items_page.total,
         params=page_params,
     )
-    assert isinstance(page, Page)  # nosec
-    return page
+    return cast(Page[LicensedItemGet], page)
 
 
 @dataclass
