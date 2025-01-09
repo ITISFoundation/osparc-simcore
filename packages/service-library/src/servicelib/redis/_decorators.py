@@ -111,7 +111,7 @@ def exclusive(
                                 work_task, timeout=SHUTDOWN_TIMEOUT_S
                             )
                     # return the extend task raised error
-                    return await auto_extend_task
+                    return await auto_extend_task  # type: ignore[no-any-return] # will raise
 
             finally:
                 with contextlib.suppress(redis.exceptions.LockNotOwnedError):
