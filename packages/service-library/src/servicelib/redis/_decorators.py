@@ -59,7 +59,7 @@ def exclusive(
                 if callable(redis_client)
                 else redis_client
             )
-            assert isinstance(redis_client, RedisClientSDK)  # nosec
+            assert isinstance(client, RedisClientSDK)  # nosec
 
             lock = client.create_lock(redis_lock_key, ttl=DEFAULT_LOCK_TTL)
             if not await lock.acquire(token=lock_value):
