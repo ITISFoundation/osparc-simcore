@@ -41,11 +41,8 @@ from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeFloat
-from servicelib.background_task import (
-    cancel_task,
-    start_periodic_task,
-    stop_periodic_task,
-)
+from servicelib.async_utils import retried_cancel_task
+from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.redis import RedisClientsManager, exclusive
@@ -368,7 +365,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                     self._service_observation_task[service_name]
                 )
                 if isinstance(service_task, asyncio.Task):
-                    await cancel_task(service_task, timeout=10)
+                    await retried_cancel_task(service_task, timeout=10)
 
             if skip_observation_recreation:
                 return

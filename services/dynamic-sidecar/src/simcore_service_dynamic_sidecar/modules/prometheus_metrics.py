@@ -9,7 +9,7 @@ import arrow
 from fastapi import FastAPI, status
 from models_library.callbacks_mapping import CallbacksMapping, UserServiceCommand
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
-from servicelib.background_task import cancel_task
+from servicelib.async_utils import retried_cancel_task
 from servicelib.logging_utils import log_context
 from servicelib.sequences_utils import pairwise
 from simcore_service_dynamic_sidecar.core.errors import (
@@ -143,7 +143,7 @@ class UserServicesMetrics:
     async def stop(self) -> None:
         with log_context(_logger, logging.INFO, "shutdown service metrics recovery"):
             if self._metrics_recovery_task:
-                await cancel_task(
+                await retried_cancel_task(
                     self._metrics_recovery_task, timeout=_TASK_CANCELLATION_TIMEOUT_S
                 )
 

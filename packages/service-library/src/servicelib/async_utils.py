@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import datetime
 import logging
 from collections import deque
@@ -6,7 +7,9 @@ from collections.abc import Awaitable, Callable, Coroutine
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Final, ParamSpec, TypeVar
+
+from tenacity import before_sleep_log, retry, stop_after_attempt
 
 from . import tracing
 from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
@@ -229,3 +232,32 @@ def with_delay(
         return wrapper
 
     return decorator
+
+
+_MAX_TASK_CANCELLATION_ATTEMPTS: Final[int] = 3
+
+
+@retry(
+    reraise=True,
+    stop=stop_after_attempt(_MAX_TASK_CANCELLATION_ATTEMPTS),
+    before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
+)
+async def retried_cancel_task(
+    task: asyncio.Task,
+    *,
+    timeout: float | None,  # noqa: ASYNC109
+) -> None:
+    """Reliable task cancellation. Some libraries will just hang without
+    cancelling the task. The operation is retried _MAX_TASK_CANCELLATION_ATTEMPTS times
+    in case of timeout.
+
+    :param task: task to be canceled
+    :param timeout_delay: duration (in seconds) to wait before giving
+        up the cancellation. If None it waits forever. Will be repeated _MAX_TASK_CANCELLATION_ATTEMPTS times.
+    :raises TimeoutError: raised if cannot cancel the task. Errors during cancellations are suppressed (backwards compatibility).
+    """
+
+    task.cancel()
+    async with asyncio.timeout(timeout):
+        with contextlib.suppress(BaseException):
+            await task

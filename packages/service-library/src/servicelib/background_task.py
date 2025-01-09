@@ -5,24 +5,17 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Final
 
-from common_library.errors_classes import OsparcErrorMixin
 from tenacity import TryAgain, retry_always, retry_if_exception_type
 from tenacity.asyncio import AsyncRetrying
-from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-from .async_utils import with_delay
+from .async_utils import retried_cancel_task, with_delay
 from .logging_utils import log_catch, log_context
 
 _logger = logging.getLogger(__name__)
 
 
 _DEFAULT_STOP_TIMEOUT_S: Final[int] = 5
-_MAX_TASK_CANCELLATION_ATTEMPTS: Final[int] = 3
-
-
-class PeriodicTaskCancellationError(OsparcErrorMixin, Exception):
-    msg_template: str = "Could not cancel task '{task_name}'"
 
 
 class SleepUsingAsyncioEvent:
@@ -108,35 +101,6 @@ def start_periodic_task(
         )
 
 
-async def cancel_task(
-    task: asyncio.Task,
-    *,
-    timeout: float | None,
-    cancellation_attempts: int = _MAX_TASK_CANCELLATION_ATTEMPTS,
-) -> None:
-    """Reliable task cancellation. Some libraries will just hang without
-    cancelling the task. It is important to retry the operation to provide
-    a timeout in that situation to avoid forever pending tasks.
-
-    :param task: task to be canceled
-    :param timeout: total duration (in seconds) to wait before giving
-        up the cancellation. If None it waits forever.
-    :raises TryAgain: raised if cannot cancel the task.
-    """
-    async for attempt in AsyncRetrying(
-        stop=stop_after_attempt(cancellation_attempts), reraise=True
-    ):
-        with attempt:
-            task.cancel()
-            _, pending = await asyncio.wait((task,), timeout=timeout)
-            if pending:
-                task_name = task.get_name()
-                _logger.info(
-                    "tried to cancel '%s' but timed-out! %s", task_name, pending
-                )
-                raise PeriodicTaskCancellationError(task_name=task_name)
-
-
 async def stop_periodic_task(
     asyncio_task: asyncio.Task, *, timeout: float | None = None
 ) -> None:
@@ -145,7 +109,7 @@ async def stop_periodic_task(
         logging.DEBUG,
         msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
     ):
-        await cancel_task(asyncio_task, timeout=timeout)
+        await retried_cancel_task(asyncio_task, timeout=timeout)
 
 
 @contextlib.asynccontextmanager
