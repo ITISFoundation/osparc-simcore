@@ -29,6 +29,9 @@ from tenacity.wait import wait_fixed
 pytest_simcore_core_services_selection = [
     "redis",
 ]
+pytest_simcore_ops_services_selection = [
+    "redis-commander",
+]
 
 
 async def _is_locked(redis_client_sdk: RedisClientSDK, lock_name: str) -> bool:
