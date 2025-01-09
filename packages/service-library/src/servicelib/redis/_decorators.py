@@ -46,11 +46,11 @@ def exclusive(
         msg = "lock_key cannot be empty string!"
         raise ValueError(msg)
 
-    def decorator(
+    def _decorator(
         func: Callable[P, Coroutine[Any, Any, R]],
     ) -> Callable[P, Coroutine[Any, Any, R]]:
         @functools.wraps(func)
-        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             redis_lock_key = (
                 lock_key(*args, **kwargs) if callable(lock_key) else lock_key
             )
@@ -110,6 +110,6 @@ def exclusive(
                     # this would raise again and is not necessary
                     await lock.release()
 
-        return wrapper
+        return _wrapper
 
-    return decorator
+    return _decorator
