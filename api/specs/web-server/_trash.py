@@ -10,7 +10,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from models_library.trash import RemoveQueryParams
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.folders._models import (
+from simcore_service_webserver.folders._common.models import (
     FoldersPathParams,
     FolderTrashQueryParams,
 )

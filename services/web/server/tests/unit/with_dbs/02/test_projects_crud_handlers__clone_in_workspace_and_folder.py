@@ -20,7 +20,7 @@ from servicelib.aiohttp.long_running_tasks.client import long_running_task_reque
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.folders._folders_api import create_folder
+from simcore_service_webserver.folders._folders_service import create_folder
 from simcore_service_webserver.projects._folders_api import move_project_into_folder
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.workspaces._workspaces_api import create_workspace

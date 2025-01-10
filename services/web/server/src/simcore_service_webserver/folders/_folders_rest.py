@@ -23,9 +23,9 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _folders_api
-from ._exceptions_handlers import handle_plugin_requests_exceptions
-from ._models import (
+from . import _folders_service
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
+from ._common.models import (
     FolderFilters,
     FolderSearchQueryParams,
     FoldersListQueryParams,
@@ -47,7 +47,7 @@ async def create_folder(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
     body_params = await parse_request_body_as(FolderCreateBodyParams, request)
 
-    folder = await _folders_api.create_folder(
+    folder = await _folders_service.create_folder(
         request.app,
         user_id=req_ctx.user_id,
         name=body_params.name,
@@ -72,7 +72,7 @@ async def list_folders(request: web.Request):
     if not query_params.filters:
         query_params.filters = FolderFilters()
 
-    folders: FolderGetPage = await _folders_api.list_folders(
+    folders: FolderGetPage = await _folders_service.list_folders(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -112,7 +112,7 @@ async def list_folders_full_search(request: web.Request):
     if not query_params.filters:
         query_params.filters = FolderFilters()
 
-    folders: FolderGetPage = await _folders_api.list_folders_full_depth(
+    folders: FolderGetPage = await _folders_service.list_folders_full_depth(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -146,7 +146,7 @@ async def get_folder(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
 
-    folder: FolderGet = await _folders_api.get_folder(
+    folder: FolderGet = await _folders_service.get_folder(
         app=request.app,
         folder_id=path_params.folder_id,
         user_id=req_ctx.user_id,
@@ -168,7 +168,7 @@ async def replace_folder(request: web.Request):
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
     body_params = await parse_request_body_as(FolderReplaceBodyParams, request)
 
-    folder = await _folders_api.update_folder(
+    folder = await _folders_service.update_folder(
         app=request.app,
         user_id=req_ctx.user_id,
         folder_id=path_params.folder_id,
@@ -190,7 +190,7 @@ async def delete_folder_group(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
 
-    await _folders_api.delete_folder(
+    await _folders_service.delete_folder(
         app=request.app,
         user_id=req_ctx.user_id,
         folder_id=path_params.folder_id,

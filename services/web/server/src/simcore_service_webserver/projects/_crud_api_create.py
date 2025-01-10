@@ -28,7 +28,7 @@ from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..folders import _folders_db as folders_db
+from ..folders import _folders_repository as folders_db
 from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,

@@ -19,13 +19,13 @@ from models_library.api_schemas_webserver.folders_v2 import (
 from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.folders._exceptions_handlers import _TO_HTTP_ERROR_MAP
-from simcore_service_webserver.folders._models import (
+from simcore_service_webserver.folders._common.exceptions_handlers import (
+    _TO_HTTP_ERROR_MAP,
+)
+from simcore_service_webserver.folders._common.models import (
     FolderSearchQueryParams,
     FoldersListQueryParams,
     FoldersPathParams,
-)
-from simcore_service_webserver.folders._workspaces_handlers import (
     _FolderWorkspacesPathParams,
 )
 
