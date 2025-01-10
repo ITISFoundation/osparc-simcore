@@ -1,4 +1,4 @@
-from ._core import (
+from ._service import (
     extract_invitation,
     generate_invitation,
     is_service_invitation_code,

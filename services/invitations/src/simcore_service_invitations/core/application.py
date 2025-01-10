@@ -15,6 +15,7 @@ from .._meta import (
     SUMMARY,
 )
 from ..api.routes import setup_api_routes
+from . import exceptions_handlers
 from .settings import ApplicationSettings
 
 
@@ -43,7 +44,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_tracing(app, app.state.settings.INVITATIONS_TRACING, APP_NAME)
 
     # ERROR HANDLERS
-    # ... add here ...
+    exceptions_handlers.setup(app)
 
     # EVENTS
     async def _on_startup() -> None:

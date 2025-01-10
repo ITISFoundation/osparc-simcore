@@ -203,9 +203,6 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     __createWindowLayout: function() {
       const node = this.getNode();
-      if (node.getThumbnail()) {
-        this.setThumbnail(node.getThumbnail());
-      }
 
       this.getChildControl("chips").show();
 

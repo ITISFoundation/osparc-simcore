@@ -1259,14 +1259,30 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/tags"
           },
-          put: {
+          patch: {
             method: "PATCH",
             url: statics.API + "/tags/{tagId}"
           },
           delete: {
             method: "DELETE",
             url: statics.API + "/tags/{tagId}"
-          }
+          },
+          getAccessRights: {
+            method: "GET",
+            url: statics.API + "/tags/{tagId}/groups"
+          },
+          putAccessRights: {
+            method: "PUT",
+            url: statics.API + "/tags/{tagId}/groups/{groupId}"
+          },
+          postAccessRights: {
+            method: "POST",
+            url: statics.API + "/tags/{tagId}/groups/{groupId}"
+          },
+          deleteAccessRights: {
+            method: "DELETE",
+            url: statics.API + "/tags/{tagId}/groups/{groupId}"
+          },
         }
       },
 
