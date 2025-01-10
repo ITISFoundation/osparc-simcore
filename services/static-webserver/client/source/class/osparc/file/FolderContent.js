@@ -240,13 +240,11 @@ qx.Class.define("osparc.file.FolderContent", {
       this.setSelection([this.getSelectables()[this.getMode() === "icons" ? 0 : 1]]);
     },
 
-    __itemTapped: function(entry, buttonSelected) {
+    __selectionChanged: function(selection) {
       if (this.isMultiSelect()) {
-        this.fireDataEvent("multiSelectionChanged", entry);
-      } else if (buttonSelected === false) {
-        this.fireDataEvent("selectionChanged", null);
+        this.fireDataEvent("multiSelectionChanged", selection);
       } else {
-        this.fireDataEvent("selectionChanged", entry);
+        this.fireDataEvent("selectionChanged", (selection && selection.length) ? selection[0] : null);
       }
     },
 
@@ -265,9 +263,9 @@ qx.Class.define("osparc.file.FolderContent", {
               selectedFiles.push(btn.entry);
             }
           });
-          this.__itemTapped(selectedFiles, gridItem.getValue());
+          this.__selectionChanged(selectedFiles);
         } else {
-          this.__itemTapped(gridItem.entry, gridItem.getValue());
+          this.__selectionChanged(gridItem.getValue() ? [gridItem.entry] : null);
         }
         // folders can't be selected
         if (osparc.file.FilesTree.isDir(gridItem.entry)) {
@@ -284,7 +282,7 @@ qx.Class.define("osparc.file.FolderContent", {
         const selectedRow = e.getRow();
         const rowData = table.getTableModel().getRowData(selectedRow);
         if ("entry" in rowData) {
-          this.__itemTapped(rowData.entry);
+          this.__selectionChanged([rowData.entry]);
         }
       }, this);
       table.addListener("cellDbltap", e => {
