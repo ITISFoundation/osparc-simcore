@@ -226,7 +226,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           }
           const hintText = sharedGrpLabels.join("<br>");
           if (hintText) {
-            hint.setText(hintText)
+            hint.setText(hintText);
           }
         }
       }, this);
