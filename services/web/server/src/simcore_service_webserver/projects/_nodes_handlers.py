@@ -27,6 +27,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
 )
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupID, GroupType
 from models_library.projects import Project, ProjectID
+from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
@@ -234,7 +235,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
         node_id=path_params.node_id,
-        node_patch=node_patch,
+        node_patch=Node.model_construct(**node_patch.model_dump()),
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

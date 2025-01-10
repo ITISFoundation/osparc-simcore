@@ -32,7 +32,6 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects import ProjectPatch
-from models_library.api_schemas_webserver.projects_nodes import NodePatch
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
 from models_library.groups import GroupID
@@ -121,7 +120,7 @@ from ..users.preferences_api import (
 from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_db as workspaces_db
-from . import _crud_api_delete, _nodes_api, _projects_db
+from . import _crud_api_delete, _nodes_api, _projects_db, _projects_nodes_repository
 from ._access_rights_api import (
     check_user_project_permission,
     has_user_project_access_rights,
@@ -800,7 +799,7 @@ async def add_project_node(
             required_resources=jsonable_encoder(default_resources),
             key=service_key,
             version=service_version,
-            label=service_key.split("/")[-1]
+            label=service_key.split("/")[-1],
         ),
         Node.model_validate(
             {
@@ -1001,7 +1000,7 @@ async def patch_project_node(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    node_patch: NodePatch,
+    node_patch: Node,
 ) -> None:
     _node_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
         node_patch, exclude_unset=True, by_alias=True
@@ -1042,6 +1041,13 @@ async def patch_project_node(
         node_id=node_id,
         product_name=product_name,
         new_node_data=_node_patch_exclude_unset,
+    )
+
+    await _projects_nodes_repository.update(
+        app,
+        project_id=project_id,
+        node_id=node_id,
+        node=node_patch,
     )
 
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)

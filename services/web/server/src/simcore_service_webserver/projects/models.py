@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 from enum import Enum
 from typing import Any, TypeAlias
 
@@ -6,6 +6,7 @@ from aiopg.sa.result import RowProxy
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.folders import FolderID
 from models_library.projects import ClassifierID, ProjectID
+from models_library.projects_nodes import NodeID
 from models_library.projects_ui import StudyUI
 from models_library.users import UserID
 from models_library.utils.common_validators import (
@@ -42,8 +43,8 @@ class ProjectDB(BaseModel):
     description: str
     thumbnail: HttpUrl | None
     prj_owner: UserID
-    creation_date: datetime
-    last_change_date: datetime
+    creation_date: dt.datetime
+    last_change_date: dt.datetime
     ui: StudyUI | None
     classifiers: list[ClassifierID]
     dev: dict | None
@@ -51,7 +52,7 @@ class ProjectDB(BaseModel):
     published: bool
     hidden: bool
     workspace_id: WorkspaceID | None
-    trashed_at: datetime | None
+    trashed_at: dt.datetime | None
     trashed_explicitly: bool = False
 
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
@@ -95,10 +96,34 @@ class UserProjectAccessRightsWithWorkspace(BaseModel):
 
 class ProjectPatchExtended(ProjectPatch):
     # Only used internally
-    trashed_at: datetime | None
+    trashed_at: dt.datetime | None
     trashed_explicitly: bool
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+
+class NodeDB(BaseModel):
+    node_id: NodeID
+    required_resources: dict[str, Any]
+    created: dt.datetime
+    modified: dt.datetime
+    project_uuid: ProjectID
+    project_node_id: int
+    key: str
+    version: str
+    label: str
+    progress: float | None
+    thumbnail: HttpUrl | None
+    input_access: dict[str, Any]
+    input_nodes: list[NodeID]
+    inputs: dict[str, Any]
+    inouts_units: dict[str, Any]
+    output_nodes: list[NodeID]
+    outputs: dict[str, Any]
+    run_hash: str | None
+    state: dict[str, Any] | None
+    parent: str | None
+    boot_options: dict[str, Any] | None
 
 
 __all__: tuple[str, ...] = (
