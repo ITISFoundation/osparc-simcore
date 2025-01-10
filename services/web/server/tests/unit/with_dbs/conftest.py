@@ -66,6 +66,7 @@ from simcore_postgres_database.utils_products import (
     get_default_product_name,
     get_or_create_product_group,
 )
+from simcore_service_director.core.settings import get_application_settings
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings_utils import AppConfigDict
@@ -97,6 +98,7 @@ def disable_swagger_doc_generation(
 def docker_compose_env(default_app_cfg: AppConfigDict) -> Iterator[pytest.MonkeyPatch]:
     postgres_cfg = default_app_cfg["db"]["postgres"]
     redis_cfg = default_app_cfg["resource_manager"]["redis"]
+
     # docker-compose reads these environs
     with pytest.MonkeyPatch().context() as patcher:
         patcher.setenv("TEST_POSTGRES_DB", postgres_cfg["database"])
@@ -119,16 +121,18 @@ def docker_compose_file(docker_compose_env: pytest.MonkeyPatch) -> str:
 
 
 @pytest.fixture
-def web_test_server_port(unused_tcp_port_factory: Callable):
+def webserver_test_server_port(unused_tcp_port_factory: Callable):
+    # used to create a TestServer that emulates web-server service
     return unused_tcp_port_factory()
 
 
 @pytest.fixture
 def storage_test_server_port(
-    unused_tcp_port_factory: Callable, web_test_server_port: int
+    unused_tcp_port_factory: Callable, webserver_test_server_port: int
 ):
+    # used to create a TestServer that emulates storage service
     port = unused_tcp_port_factory()
-    assert port != web_test_server_port
+    assert port != webserver_test_server_port
     return port
 
 
@@ -136,7 +140,6 @@ def storage_test_server_port(
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     default_app_cfg: AppConfigDict,
-    unused_tcp_port_factory: Callable,
     mock_env_devel_environment: EnvVarsDict,
     storage_test_server_port: int,
     monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
@@ -201,15 +204,15 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def web_server(
     event_loop: asyncio.AbstractEventLoop,
-    unused_tcp_port_factory: Callable,
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
-    web_test_server_port: int,
+    webserver_test_server_port: int,
     # tools
     aiohttp_server: Callable,
     mocked_send_email: None,
     disable_static_webserver: Callable,
 ) -> TestServer:
+    assert app_environment
 
     # original APP
     app = create_application()
@@ -217,7 +220,7 @@ def web_server(
     disable_static_webserver(app)
 
     server = event_loop.run_until_complete(
-        aiohttp_server(app, port=web_test_server_port)
+        aiohttp_server(app, port=webserver_test_server_port)
     )
 
     assert isinstance(postgres_db, sa.engine.Engine)
