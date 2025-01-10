@@ -932,7 +932,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
       control.addListener("tap", e => {
         e.stopPropagation();
-        this.setValue(false);
         this.fireDataEvent("emptyStudyClicked", this.getUuid());
       }, this);
       return control;

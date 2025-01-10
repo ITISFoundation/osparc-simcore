@@ -230,7 +230,6 @@ qx.Class.define("osparc.form.tag.TagItem", {
     __tagItemButtons: function() {
       const canIWrite = osparc.share.CollaboratorsTag.canIWrite(this.getMyAccessRights());
       const canIDelete = osparc.share.CollaboratorsTag.canIDelete(this.getMyAccessRights());
-
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const sharedIcon = this.getChildControl("shared-icon");
