@@ -3,7 +3,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 from unittest.mock import AsyncMock, call
 from uuid import UUID, uuid4
 
@@ -159,7 +159,7 @@ def mock_scheduler() -> AsyncMock:
 
 
 @pytest.fixture
-def mock_director_v0_client() -> AsyncMock:
+def mock_catalog_client() -> AsyncMock:
     return AsyncMock()
 
 
@@ -195,11 +195,11 @@ def fake_project_id() -> ProjectID:
 
 
 @pytest.fixture
-def mock_docker_calls(mocker: MockerFixture) -> Iterable[dict[str, AsyncMock]]:
+def mock_docker_calls(mocker: MockerFixture) -> dict[str, AsyncMock]:
     requires_dynamic_sidecar_mock = AsyncMock()
     requires_dynamic_sidecar_mock.return_value = True
     class_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.DynamicSidecarsScheduler"
-    mocked_items = {
+    return {
         "attach": mocker.patch(f"{class_base}.attach_project_network", AsyncMock()),
         "detach": mocker.patch(f"{class_base}.detach_project_network", AsyncMock()),
         "requires_dynamic_sidecar": mocker.patch(
@@ -207,8 +207,6 @@ def mock_docker_calls(mocker: MockerFixture) -> Iterable[dict[str, AsyncMock]]:
             requires_dynamic_sidecar_mock,
         ),
     }
-
-    yield mocked_items
 
 
 async def test_send_network_configuration_to_dynamic_sidecar(
@@ -230,7 +228,7 @@ async def test_send_network_configuration_to_dynamic_sidecar(
 
 
 async def test_get_networks_with_aliases_for_default_network_is_json_serializable(
-    mock_director_v0_client: AsyncMock,
+    mock_catalog_client: AsyncMock,
     fake_project_id: ProjectID,
     dy_workbench_with_networkable_labels: dict[str, Any],
     user_id: PositiveInt,
@@ -241,6 +239,6 @@ async def test_get_networks_with_aliases_for_default_network_is_json_serializabl
         project_id=fake_project_id,
         user_id=user_id,
         new_workbench=dy_workbench_with_networkable_labels,
-        director_v0_client=mock_director_v0_client,
+        catalog_client=mock_catalog_client,
         rabbitmq_client=rabbitmq_client,
     )

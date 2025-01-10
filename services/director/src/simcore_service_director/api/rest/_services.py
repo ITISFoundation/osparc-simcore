@@ -73,6 +73,7 @@ async def list_service_labels(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> Envelope[dict[str, Any]]:
+    # NOTE: avoid using this directly via `director` service, call it via `catalog` service
     _logger.debug(
         "Retrieving service labels with service_key %s, service_version %s",
         service_key,
