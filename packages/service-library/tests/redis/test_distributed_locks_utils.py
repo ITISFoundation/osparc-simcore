@@ -13,6 +13,7 @@ import arrow
 from servicelib.async_utils import cancel_wait_task
 from servicelib.redis._client import RedisClientSDK
 from servicelib.redis._distributed_locks_utils import create_exclusive_periodic_task
+from servicelib.utils import logged_gather
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -88,7 +89,7 @@ async def test_create_exclusive_periodic_task_parallel_all_finish(
     redis_client_sdk: RedisClientSDK,
 ):
     parallel_tasks = 10
-    results: list[tuple[float, float]] = await asyncio.gather(
+    results: list[tuple[float, float]] = await logged_gather(
         *[
             _assert_task_completes_once(redis_client_sdk, stop_after=60)
             for _ in range(parallel_tasks)
