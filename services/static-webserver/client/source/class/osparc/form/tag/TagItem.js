@@ -206,7 +206,6 @@ qx.Class.define("osparc.form.tag.TagItem", {
       this._add(this.getChildControl("description"), {
         flex: 1
       });
-      this._add(this.getChildControl("shared-icon"));
       this._add(this.__tagItemButtons());
       this.resetBackgroundColor();
     },
