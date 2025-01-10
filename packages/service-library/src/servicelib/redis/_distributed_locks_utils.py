@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import logging
+import socket
 from collections.abc import Awaitable, Callable
 
 import arrow
@@ -38,7 +39,7 @@ def create_exclusive_periodic_task(
     @exclusive(
         client,
         lock_key=f"lock:exclusive_periodic_task:{task_name}",
-        lock_value=f"locked since {arrow.utcnow().format()} by {client.client_name}",
+        lock_value=f"locked since {arrow.utcnow().format()} by {client.client_name} on {socket.gethostname()}",
     )
     @periodic(interval=task_period)
     async def _() -> None:
