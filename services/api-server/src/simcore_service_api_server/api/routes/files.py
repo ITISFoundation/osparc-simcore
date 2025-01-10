@@ -116,7 +116,7 @@ async def list_files(
 
             file_meta: File = to_file_api_model(stored_file_meta)
 
-        except (ValidationError, ValueError, AttributeError) as err:  # noqa: PERF203
+        except (ValidationError, ValueError, AttributeError) as err:
             _logger.warning(
                 "Skipping corrupted entry in storage '%s' (%s)"
                 "TIP: check this entry in file_meta_data table.",
@@ -186,7 +186,7 @@ async def upload_file(
     file_meta: File = await File.create_from_uploaded(
         file,
         file_size=file_size,
-        created_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        created_at=datetime.datetime.now(datetime.UTC).isoformat(),
     )
     _logger.debug(
         "Assigned id: %s of %s bytes (content-length), real size %s bytes",
@@ -242,7 +242,7 @@ async def get_upload_links(
     assert request  # nosec
     file_meta: File = await File.create_from_client_file(
         client_file,
-        datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        datetime.datetime.now(datetime.UTC).isoformat(),
     )
     _, upload_links = await get_upload_links_from_s3(
         user_id=user_id,

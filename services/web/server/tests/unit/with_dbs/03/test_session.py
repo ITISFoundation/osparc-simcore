@@ -12,10 +12,10 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from cryptography.fernet import Fernet
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.session._cookie_storage import (
     SharedCookieEncryptedCookieStorage,
 )
@@ -29,12 +29,25 @@ def session_url_path() -> str:
 
 
 @pytest.fixture
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            # do not include static entrypoint
+            "WEBSERVER_STATICWEB": "null",
+        },
+    )
+
+
+@pytest.fixture
 def client(
     session_url_path: str,
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     disable_static_webserver: Callable,
-    app_cfg: AppConfigDict,
     app_environment: EnvVarsDict,
     postgres_db,
     mock_orphaned_services,  # disables gc
@@ -52,15 +65,7 @@ def client(
 
     app.add_routes(extra_routes)
 
-    return event_loop.run_until_complete(
-        aiohttp_client(
-            app,
-            server_kwargs={
-                "port": app_cfg["main"]["port"],
-                "host": app_cfg["main"]["host"],
-            },
-        )
-    )
+    return event_loop.run_until_complete(aiohttp_client(app))
 
 
 async def test_security_identity_is_email_and_product(

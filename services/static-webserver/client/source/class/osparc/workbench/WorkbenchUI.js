@@ -1140,7 +1140,6 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         // create nodes
         const nodes = model.getNodes();
         this.__renderNodes(nodes);
-        qx.ui.core.queue.Layout.flush();
         this.__renderAnnotations(model.getStudy().getUi());
       }
     },
@@ -1154,7 +1153,14 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         nodeUI.addListenerOnce("appear", () => {
           nNodesToRender--;
           if (nNodesToRender === 0) {
+            // all nodes rendered
             this.__renderEdges(nodes);
+
+            setTimeout(() => {
+              // move to position (0, 0)
+              this._workbenchLayoutScroll.scrollToX(0);
+              this._workbenchLayoutScroll.scrollToY(0);
+            }, 10);
           }
         }, this);
         this._addNodeUIToWorkbench(nodeUI, node.getPosition());

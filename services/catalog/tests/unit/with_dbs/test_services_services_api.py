@@ -88,7 +88,7 @@ async def director_client(app: FastAPI) -> DirectorApi:
 
     # ensures manifest API cache is reset
     assert hasattr(manifest.get_service, "cache")
-    assert manifest.get_service.cache.clear()
+    assert await manifest.get_service.cache.clear()
 
     return director_api
 

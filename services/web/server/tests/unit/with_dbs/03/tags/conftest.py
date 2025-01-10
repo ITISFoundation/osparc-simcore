@@ -15,7 +15,6 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
@@ -62,7 +61,6 @@ def app_environment(
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
-    app_cfg: AppConfigDict,
     app_environment: EnvVarsDict,
     postgres_db,
     mocked_dynamic_services_interface,
@@ -94,9 +92,7 @@ def client(
 
     # server and client
     return event_loop.run_until_complete(
-        aiohttp_client(
-            app, server_kwargs={"port": app_cfg["main"]["port"], "host": "localhost"}
-        )
+        aiohttp_client(app, server_kwargs={"host": "localhost"})
     )
 
     # teardown here ...

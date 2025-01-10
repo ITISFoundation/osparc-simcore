@@ -65,7 +65,7 @@ def docker_compose_file(
     # configs
     subprocess.run(
         f'docker compose --file "{src_path}" config > "{dst_path}"',
-        shell=True,  # noqa: S602
+        shell=True,
         check=True,
         env=environ,
     )

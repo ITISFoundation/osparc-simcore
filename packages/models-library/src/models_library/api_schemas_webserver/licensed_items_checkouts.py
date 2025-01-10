@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import NamedTuple
 
-from pydantic import BaseModel, PositiveInt
+from pydantic import BaseModel, ConfigDict, PositiveInt
 
 from ..licensed_items import LicensedItemID
 from ..products import ProductName
@@ -22,6 +22,22 @@ class LicensedItemCheckoutRpcGet(BaseModel):
     started_at: datetime
     stopped_at: datetime | None
     num_of_seats: int
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "licensed_item_checkout_id": "633ef980-6f3e-4b1a-989a-bd77bf9a5d6b",
+                    "licensed_item_id": "0362b88b-91f8-4b41-867c-35544ad1f7a1",
+                    "wallet_id": 6,
+                    "user_id": 27845,
+                    "product_name": "osparc",
+                    "started_at": "2024-12-12 09:59:26.422140",
+                    "stopped_at": "2024-12-12 09:59:26.423540",
+                    "num_of_seats": 78,
+                }
+            ]
+        }
+    )
 
 
 class LicensedItemCheckoutRpcGetPage(NamedTuple):

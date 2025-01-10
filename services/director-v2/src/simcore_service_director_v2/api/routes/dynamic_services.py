@@ -17,7 +17,6 @@ from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOr
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -32,11 +31,13 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+from ...api.dependencies.catalog import get_catalog_client
 from ...api.dependencies.database import get_repository
 from ...api.dependencies.rabbitmq import get_rabbitmq_client_from_request
 from ...core.dynamic_services_settings import DynamicServicesSettings
 from ...core.dynamic_services_settings.scheduler import DynamicServicesSchedulerSettings
 from ...modules import projects_networks
+from ...modules.catalog import CatalogClient
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ...modules.director_v0 import DirectorV0Client
@@ -104,6 +105,7 @@ async def list_tracked_dynamic_services(
 @log_decorator(logger=logger)
 async def create_dynamic_service(
     service: DynamicServiceCreate,
+    catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
     dynamic_services_settings: Annotated[
         DynamicServicesSettings, Depends(get_dynamic_services_settings)
@@ -114,9 +116,7 @@ async def create_dynamic_service(
     x_simcore_user_agent: str = Header(...),
 ) -> DynamicServiceGet | RedirectResponse:
     simcore_service_labels: SimcoreServiceLabels = (
-        await director_v0_client.get_service_labels(
-            service=ServiceKeyVersion(key=service.key, version=service.version)
-        )
+        await catalog_client.get_service_labels(service.key, service.version)
     )
 
     # LEGACY (backwards compatibility)
@@ -324,7 +324,7 @@ async def update_projects_networks(
         ProjectsRepository, Depends(get_repository(ProjectsRepository))
     ],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
-    director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
+    catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     rabbitmq_client: Annotated[
         RabbitMQClient, Depends(get_rabbitmq_client_from_request)
     ],
@@ -334,7 +334,7 @@ async def update_projects_networks(
         projects_networks_repository=projects_networks_repository,
         projects_repository=projects_repository,
         scheduler=scheduler,
-        director_v0_client=director_v0_client,
+        catalog_client=catalog_client,
         rabbitmq_client=rabbitmq_client,
         project_id=project_id,
     )

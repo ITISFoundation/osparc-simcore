@@ -504,7 +504,7 @@ async def test_patch_user_project_workbench_concurrently(
     # patch all the nodes concurrently
     randomly_created_outputs = [
         {
-            "outputs": {f"out_{k}": f"{k}"}  # noqa: RUF011
+            "outputs": {f"out_{k}": f"{k}"}  # noqa: B035
             for k in range(randint(1, 10))  # noqa: S311
         }
         for n in range(_NUMBER_OF_NODES)

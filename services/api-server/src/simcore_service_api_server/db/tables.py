@@ -4,14 +4,14 @@ from simcore_postgres_database.models.groups import GroupType, groups, user_to_g
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 
 __all__: tuple[str, ...] = (
+    "GroupType",
+    "UserRole",
+    "UserStatus",
     "api_keys",
     "groups",
-    "GroupType",
     "metadata",
     "user_to_groups",
-    "UserRole",
     "users",
-    "UserStatus",
 )
 
 # nopycln: file  # noqa: ERA001

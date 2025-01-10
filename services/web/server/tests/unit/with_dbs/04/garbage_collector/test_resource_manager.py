@@ -38,7 +38,6 @@ from servicelib.aiohttp.application_setup import is_setup_completed
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import _core as gc_core
@@ -128,7 +127,6 @@ def app_environment(
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
-    app_cfg: AppConfigDict,
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     mock_orphaned_services,
@@ -166,10 +164,6 @@ def client(
     return event_loop.run_until_complete(
         aiohttp_client(
             app,
-            server_kwargs={
-                "port": app_cfg["main"]["port"],
-                "host": app_cfg["main"]["host"],
-            },
         )
     )
 
@@ -353,7 +347,7 @@ async def test_websocket_multiple_connections(
         clients.append(sio)
         resource_keys.append(resource_key)
 
-    for sio, resource_key in zip(clients, resource_keys):
+    for sio, resource_key in zip(clients, resource_keys, strict=True):
         sid = sio.get_sid()
         await sio.disconnect()
         await sio.wait()

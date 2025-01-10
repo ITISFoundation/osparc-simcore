@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-catalog",
     "description": "Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
-    "version": "0.6.0"
+    "version": "0.7.0"
   },
   "paths": {
     "/": {
@@ -119,6 +119,60 @@
                 "schema": {
                   "type": "object",
                   "title": "Response Get Service Resources V0 Services  Service Key   Service Version  Resources Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/services/{service_key}/{service_version}/labels": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Get Service Labels",
+        "operationId": "get_service_labels_v0_services__service_key___service_version__labels_get",
+        "parameters": [
+          {
+            "name": "service_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Service Key"
+            }
+          },
+          {
+            "name": "service_version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Service Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Service Labels V0 Services  Service Key   Service Version  Labels Get"
                 }
               }
             }
