@@ -595,17 +595,13 @@ async def _start_dynamic_service(  # noqa: C901
             request.app, project_id=project_uuid, user_id=user_id, permission="write"
         )
 
-    lock_key = _nodes_api.get_service_start_lock_key(user_id, project_uuid)
-    redis_client_sdk = get_redis_lock_manager_client_sdk(request.app)
-    project_settings: ProjectsSettings = get_plugin_settings(request.app)
-
     @exclusive(
-        redis_client_sdk,
-        lock_key=lock_key,
+        get_redis_lock_manager_client_sdk(request.app),
+        lock_key=_nodes_api.get_service_start_lock_key(user_id, project_uuid),
         blocking=True,
         blocking_timeout=datetime.timedelta(
             seconds=_nodes_api.get_total_project_dynamic_nodes_creation_interval(
-                project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+                get_plugin_settings(request.app).PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
             )
         ),
     )
