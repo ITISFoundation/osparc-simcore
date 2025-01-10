@@ -21,6 +21,13 @@ from tenacity import (
     wait_fixed,
 )
 
+pytest_simcore_core_services_selection = [
+    "redis",
+]
+pytest_simcore_ops_services_selection = [
+    "redis-commander",
+]
+
 
 async def _sleep_task(sleep_interval: float, on_sleep_events: Mock) -> None:
     on_sleep_events(arrow.utcnow())
