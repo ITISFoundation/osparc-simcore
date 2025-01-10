@@ -12,8 +12,8 @@ from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
 from ..security.decorators import permission_required
 from . import _trash_services
-from ._exceptions_handlers import handle_plugin_requests_exceptions
-from ._models import WorkspacesPathParams, WorkspaceTrashQueryParams
+from ._common._exceptions_handlers import handle_plugin_requests_exceptions
+from ._common._models import WorkspacesPathParams, WorkspaceTrashQueryParams
 
 _logger = logging.getLogger(__name__)
 

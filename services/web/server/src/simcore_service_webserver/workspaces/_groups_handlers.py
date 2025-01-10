@@ -12,14 +12,14 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
-from ._exceptions_handlers import handle_plugin_requests_exceptions
-from ._groups_api import WorkspaceGroupGet
-from ._models import (
+from ._common._exceptions_handlers import handle_plugin_requests_exceptions
+from ._common._models import (
     WorkspacesGroupsBodyParams,
     WorkspacesGroupsPathParams,
     WorkspacesPathParams,
     WorkspacesRequestContext,
 )
+from ._groups_api import WorkspaceGroupGet
 
 _logger = logging.getLogger(__name__)
 
