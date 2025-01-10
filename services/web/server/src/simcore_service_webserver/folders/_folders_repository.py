@@ -55,7 +55,7 @@ _SELECTION_ARGS = (
     folders_v2.c.created_by_gid,
     folders_v2.c.created,
     folders_v2.c.modified,
-    folders_v2.c.trashed_at,
+    folders_v2.c.trashed,
     folders_v2.c.user_id,
     folders_v2.c.workspace_id,
 )
@@ -185,11 +185,11 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     if filter_trashed is not None:
         attributes_filters.append(
             (
-                (folders_v2.c.trashed_at.is_not(None))
+                (folders_v2.c.trashed.is_not(None))
                 & (folders_v2.c.trashed_explicitly.is_(True))
             )
             if filter_trashed
-            else folders_v2.c.trashed_at.is_(None)
+            else folders_v2.c.trashed.is_(None)
         )
     if folder_query.folder_scope is not FolderScope.ALL:
         if folder_query.folder_scope == FolderScope.SPECIFIC:
@@ -315,7 +315,7 @@ async def update(
     # updatable columns
     name: str | UnSet = UnSet.VALUE,
     parent_folder_id: FolderID | None | UnSet = UnSet.VALUE,
-    trashed_at: datetime | None | UnSet = UnSet.VALUE,
+    trashed: datetime | None | UnSet = UnSet.VALUE,
     trashed_explicitly: bool | UnSet = UnSet.VALUE,
     workspace_id: WorkspaceID | None | UnSet = UnSet.VALUE,
     user_id: UserID | None | UnSet = UnSet.VALUE,
@@ -327,7 +327,7 @@ async def update(
     updated = as_dict_exclude_unset(
         name=name,
         parent_folder_id=parent_folder_id,
-        trashed_at=trashed_at,
+        trashed=trashed,
         trashed_explicitly=trashed_explicitly,
         workspace_id=workspace_id,
         user_id=user_id,

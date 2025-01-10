@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Any, TypeAlias
 
 from aiopg.sa.result import RowProxy
+from common_library.dict_tools import remap_keys
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.folders import FolderID
 from models_library.projects import ClassifierID, ProjectID
@@ -51,7 +52,7 @@ class ProjectDB(BaseModel):
     published: bool
     hidden: bool
     workspace_id: WorkspaceID | None
-    trashed_at: datetime | None
+    trashed: datetime | None
     trashed_explicitly: bool = False
 
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
@@ -94,11 +95,17 @@ class UserProjectAccessRightsWithWorkspace(BaseModel):
 
 
 class ProjectPatchExtended(ProjectPatch):
-    # Only used internally
+    # ONLY used internally
     trashed_at: datetime | None
     trashed_explicitly: bool
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    def to_model(self) -> dict[str, Any]:
+        return remap_keys(
+            self.model_dump(exclude_unset=True, by_alias=False),
+            rename={"trashed_at": "trash"},
+        )
 
 
 __all__: tuple[str, ...] = (

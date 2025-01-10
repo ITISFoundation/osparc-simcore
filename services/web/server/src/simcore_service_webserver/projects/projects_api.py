@@ -254,9 +254,7 @@ async def patch_project(
     project_patch: ProjectPatch | ProjectPatchExtended,
     product_name: ProductName,
 ):
-    _project_patch_exclude_unset = project_patch.model_dump(
-        exclude_unset=True, by_alias=False
-    )
+    patch_project_data = project_patch.to_model()
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # 1. Get project
@@ -272,7 +270,7 @@ async def patch_project(
     )
 
     # 3. If patching access rights
-    if new_prj_access_rights := _project_patch_exclude_unset.get("access_rights"):
+    if new_prj_access_rights := patch_project_data.get("access_rights"):
         # 3.1 Check if user is Owner and therefore can modify access rights
         if not _user_project_access_rights.delete:
             raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
@@ -293,7 +291,7 @@ async def patch_project(
     await _projects_db.patch_project(
         app=app,
         project_uuid=project_uuid,
-        new_partial_project_data=_project_patch_exclude_unset,
+        new_partial_project_data=patch_project_data,
     )
 
 

@@ -86,7 +86,7 @@ def convert_to_schema_names(
         if key in DB_EXCLUSIVE_COLUMNS:
             continue
         converted_value = value
-        if isinstance(value, datetime) and key not in {"trashed_at"}:
+        if isinstance(value, datetime) and key not in {"trashed"}:
             converted_value = format_datetime(value)
         elif key == "prj_owner":
             # this entry has to be converted to the owner e-mail address

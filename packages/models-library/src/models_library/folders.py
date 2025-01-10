@@ -64,7 +64,7 @@ class FolderDB(BaseModel):
         ...,
         description="Timestamp of last modification",
     )
-    trashed_at: datetime | None = Field(
+    trashed: datetime | None = Field(
         ...,
     )
 

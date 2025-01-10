@@ -70,7 +70,7 @@ async def _folders_db_update(
         connection,
         folders_id_or_ids=folder_id,
         product_name=product_name,
-        trashed_at=trashed_at,
+        trashed=trashed_at,
         trashed_explicitly=trashed_at is not None,
     )
 
@@ -89,7 +89,7 @@ async def _folders_db_update(
             connection,
             folders_id_or_ids=child_folders,
             product_name=product_name,
-            trashed_at=trashed_at,
+            trashed=trashed_at,
             trashed_explicitly=False,
         )
 

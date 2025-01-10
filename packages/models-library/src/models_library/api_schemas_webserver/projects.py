@@ -160,6 +160,9 @@ class ProjectPatch(InputSchema):
     ] = Field(default=None)
     quality: dict[str, Any] | None = Field(default=None)
 
+    def to_model(self) -> dict[str, Any]:
+        return self.model_dump(exclude_unset=True, by_alias=False)
+
 
 __all__: tuple[str, ...] = (
     "EmptyModel",
