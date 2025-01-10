@@ -347,7 +347,7 @@ async def test_websocket_multiple_connections(
         clients.append(sio)
         resource_keys.append(resource_key)
 
-    for sio, resource_key in zip(clients, resource_keys, strict=False):
+    for sio, resource_key in zip(clients, resource_keys, strict=True):
         sid = sio.get_sid()
         await sio.disconnect()
         await sio.wait()
