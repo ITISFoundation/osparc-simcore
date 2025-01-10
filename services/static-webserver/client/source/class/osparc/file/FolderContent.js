@@ -47,7 +47,7 @@ qx.Class.define("osparc.file.FolderContent", {
       init: false,
       nullable: false,
       event: "changeMultiSelect",
-      apply: "__reloadFolderContent"
+      apply: "__changeMultiSelect"
     },
   },
 
@@ -234,6 +234,16 @@ qx.Class.define("osparc.file.FolderContent", {
       this.setSelection([this.getSelectables()[this.getMode() === "icons" ? 0 : 1]]);
     },
 
+    __changeMultiSelect: function() {
+      if (this.getMode() === "icons" && this.getMultiSelect() === false) {
+        const iconsLayout = this.getChildControl("icons-layout");
+        const selectedButtons = iconsLayout.getChildren().filter(btn => btn.getValue());
+        if (selectedButtons.length > 1) {
+          selectedButtons.forEach(btn => btn.setValue(false));
+        }
+      }
+    },
+
     __selectionChanged: function(selection) {
       if (this.isMultiSelect()) {
         this.fireDataEvent("multiSelectionChanged", selection);
@@ -247,7 +257,10 @@ qx.Class.define("osparc.file.FolderContent", {
     },
 
     __attachListenersToGridItem: function(gridItem) {
-      gridItem.addListener("tap", () => {
+      gridItem.addListener("tap", e => {
+        if (e.getNativeEvent().ctrlKey) {
+          this.setMultiSelect(true);
+        }
         if (this.isMultiSelect()) {
           // pass all buttons that are selected
           const selectedFiles = [];
