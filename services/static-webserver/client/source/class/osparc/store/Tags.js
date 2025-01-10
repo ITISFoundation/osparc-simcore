@@ -88,15 +88,19 @@ qx.Class.define("osparc.store.Tags", {
         .catch(console.error);
     },
 
-    putTag: function(tagId, updateData) {
+    patchTag: function(tagId, updateData) {
       const params = {
         url: {
           tagId
         },
         data: updateData
       };
-      return osparc.data.Resources.getInstance().fetch("tags", "put", params)
+      return osparc.data.Resources.getInstance().fetch("tags", "patch", params)
         .then(tagData => {
+          if ("accessRights" in tagData) {
+            // accessRights are not patched in this endpoint
+            delete tagData["accessRights"];
+          }
           return this.__addToCache(tagData);
         })
         .catch(console.error);
