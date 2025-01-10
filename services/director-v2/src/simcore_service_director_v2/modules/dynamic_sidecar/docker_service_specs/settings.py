@@ -14,7 +14,6 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
 )
-from models_library.services import ServiceKeyVersion
 from models_library.services_resources import (
     CPU_100_PERCENT,
     DEFAULT_SINGLE_SERVICE_NAME,
@@ -29,7 +28,7 @@ from models_library.utils.docker_compose import (
     MATCH_SERVICE_VERSION,
 )
 
-from ....modules.director_v0 import DirectorV0Client
+from ....modules.catalog import CatalogClient
 from ..errors import DynamicSidecarError
 
 BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
@@ -193,7 +192,7 @@ def _assemble_key(service_key: str, service_tag: str) -> str:
 
 
 async def _extract_osparc_involved_service_labels(
-    director_v0_client: DirectorV0Client,
+    catalog_client: CatalogClient,
     service_key: str,
     service_tag: str,
     service_labels: SimcoreServiceLabels,
@@ -252,10 +251,8 @@ async def _extract_osparc_involved_service_labels(
         reverse_mapping[involved_key] = compose_service_key
 
         simcore_service_labels: SimcoreServiceLabels = (
-            await director_v0_client.get_service_labels(
-                service=ServiceKeyVersion(
-                    key=current_service_key, version=current_service_tag
-                )
+            await catalog_client.get_service_labels(
+                current_service_key, current_service_tag
             )
         )
         docker_image_name_by_services[involved_key] = simcore_service_labels
@@ -432,14 +429,12 @@ def _assemble_env_vars_for_boot_options(
 
 
 async def get_labels_for_involved_services(
-    director_v0_client: DirectorV0Client,
+    catalog_client: CatalogClient,
     service_key: ServiceKey,
     service_tag: ServiceVersion,
 ) -> dict[str, SimcoreServiceLabels]:
     simcore_service_labels: SimcoreServiceLabels = (
-        await director_v0_client.get_service_labels(
-            service=ServiceKeyVersion(key=service_key, version=service_tag)
-        )
+        await catalog_client.get_service_labels(service_key, service_tag)
     )
     log.info(
         "image=%s, tag=%s, labels=%s", service_key, service_tag, simcore_service_labels
@@ -451,7 +446,7 @@ async def get_labels_for_involved_services(
     labels_for_involved_services: dict[
         str, SimcoreServiceLabels
     ] = await _extract_osparc_involved_service_labels(
-        director_v0_client=director_v0_client,
+        catalog_client=catalog_client,
         service_key=service_key,
         service_tag=service_tag,
         service_labels=simcore_service_labels,
@@ -461,7 +456,7 @@ async def get_labels_for_involved_services(
 
 
 async def merge_settings_before_use(
-    director_v0_client: DirectorV0Client,
+    catalog_client: CatalogClient,
     *,
     service_key: ServiceKey,
     service_tag: ServiceVersion,
@@ -470,7 +465,7 @@ async def merge_settings_before_use(
     placement_substitutions: dict[str, DockerPlacementConstraint],
 ) -> SimcoreServiceSettingsLabel:
     labels_for_involved_services = await get_labels_for_involved_services(
-        director_v0_client=director_v0_client,
+        catalog_client=catalog_client,
         service_key=service_key,
         service_tag=service_tag,
     )

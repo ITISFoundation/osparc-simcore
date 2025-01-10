@@ -7,6 +7,7 @@ import traceback
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
 import respx
@@ -89,7 +90,7 @@ def mock_save_service_state(mocker: MockerFixture) -> None:
 def mock_save_service_state_as_failing(mocker: MockerFixture) -> None:
     async def _always_raise(*args, **kwargs) -> None:
         msg = "I AM FAILING NOW"
-        raise Exception(msg)  # pylint: disable=broad-exception-raised
+        raise Exception(msg)  # pylint: disable=broad-exception-raised  # noqa: TRY002
 
     mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.SidecarsClient.save_service_state",
@@ -107,9 +108,7 @@ def mock_get_node_state(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_director_v2.cli._core._get_dy_service_state",
         return_value=DynamicServiceGet.model_validate(
-            RunningDynamicServiceDetails.model_config["json_schema_extra"]["examples"][
-                0
-            ]
+            RunningDynamicServiceDetails.model_json_schema()["examples"][0]
         ),
     )
 
@@ -117,6 +116,14 @@ def mock_get_node_state(mocker: MockerFixture) -> None:
 @pytest.fixture
 def task_id(faker: Faker) -> str:
     return f"tas_id.{faker.uuid4()}"
+
+
+@pytest.fixture
+def mock_catalog_instance(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_director_v2.modules.catalog.CatalogClient.instance",
+        return_value=AsyncMock(),
+    )
 
 
 @pytest.fixture
@@ -181,6 +188,7 @@ def _format_cli_error(result: Result) -> str:
 
 
 def test_project_save_state_ok(
+    mock_catalog_instance: None,
     mock_requires_dynamic_sidecar: None,
     mock_save_service_state: None,
     cli_runner: CliRunner,
@@ -206,6 +214,7 @@ def test_project_save_state_ok(
 
 
 def test_project_save_state_retry_3_times_and_fails(
+    mock_catalog_instance: None,
     mock_requires_dynamic_sidecar: None,
     mock_save_service_state_as_failing: None,
     cli_runner: CliRunner,
