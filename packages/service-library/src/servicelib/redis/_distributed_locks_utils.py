@@ -45,4 +45,4 @@ def create_exclusive_periodic_task(
         await task(**kwargs)
 
     assert asyncio.iscoroutinefunction(_)  # nosec
-    return asyncio.create_task(_())
+    return asyncio.create_task(_(), name=f"exclusive_periodic_task_{task_name}")
