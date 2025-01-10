@@ -9,7 +9,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from models_library.workspaces import UserWorkspaceAccessRightsDB
 
-from ..workspaces import _workspaces_db as workspaces_db
+from ..workspaces import _workspaces_repository as workspaces_db
 from ._access_rights_api import check_user_project_permission
 from .db import ProjectDBAPI
 from .models import ProjectDict

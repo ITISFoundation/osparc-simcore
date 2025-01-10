@@ -28,7 +28,7 @@ from simcore_service_webserver.workspaces._common.models import (
     WorkspacesListQueryParams,
     WorkspacesPathParams,
 )
-from simcore_service_webserver.workspaces._groups_api import WorkspaceGroupGet
+from simcore_service_webserver.workspaces._groups_service import WorkspaceGroupGet
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",

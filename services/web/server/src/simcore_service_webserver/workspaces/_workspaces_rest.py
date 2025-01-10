@@ -23,7 +23,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _workspaces_api
+from . import _workspaces_service
 from ._common._exceptions_handlers import handle_plugin_requests_exceptions
 from ._common._models import (
     WorkspacesFilters,
@@ -46,7 +46,7 @@ async def create_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.model_validate(request)
     body_params = await parse_request_body_as(WorkspaceCreateBodyParams, request)
 
-    workspace: WorkspaceGet = await _workspaces_api.create_workspace(
+    workspace: WorkspaceGet = await _workspaces_service.create_workspace(
         request.app,
         user_id=req_ctx.user_id,
         name=body_params.name,
@@ -72,7 +72,7 @@ async def list_workspaces(request: web.Request):
         query_params.filters = WorkspacesFilters()
 
     assert query_params.filters
-    workspaces: WorkspaceGetPage = await _workspaces_api.list_workspaces(
+    workspaces: WorkspaceGetPage = await _workspaces_service.list_workspaces(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -106,7 +106,7 @@ async def get_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
-    workspace: WorkspaceGet = await _workspaces_api.get_workspace(
+    workspace: WorkspaceGet = await _workspaces_service.get_workspace(
         app=request.app,
         workspace_id=path_params.workspace_id,
         user_id=req_ctx.user_id,
@@ -128,7 +128,7 @@ async def replace_workspace(request: web.Request):
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
     body_params = await parse_request_body_as(WorkspaceReplaceBodyParams, request)
 
-    workspace: WorkspaceGet = await _workspaces_api.update_workspace(
+    workspace: WorkspaceGet = await _workspaces_service.update_workspace(
         app=request.app,
         user_id=req_ctx.user_id,
         workspace_id=path_params.workspace_id,
@@ -149,7 +149,7 @@ async def delete_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
-    await _workspaces_api.delete_workspace(
+    await _workspaces_service.delete_workspace(
         app=request.app,
         user_id=req_ctx.user_id,
         workspace_id=path_params.workspace_id,

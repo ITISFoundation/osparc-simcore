@@ -20,7 +20,7 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 
 from ..catalog.client import get_services_for_user_in_product
 from ..folders import _folders_repository as folders_db
-from ..workspaces._workspaces_api import check_user_workspace_access
+from ..workspaces._workspaces_service import check_user_workspace_access
 from . import projects_api
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI

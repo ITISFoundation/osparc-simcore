@@ -12,8 +12,8 @@ from simcore_postgres_database.utils_repos import transaction_context
 from ..db.plugin import get_asyncpg_engine
 from ..folders._trash_service import trash_folder, untrash_folder
 from ..projects._trash_service import trash_project, untrash_project
-from ._workspaces_api import check_user_workspace_access
-from ._workspaces_db import update_workspace
+from ._workspaces_repository import update_workspace
+from ._workspaces_service import check_user_workspace_access
 
 _logger = logging.getLogger(__name__)
 

@@ -9,10 +9,10 @@ from models_library.workspaces import UserWorkspaceAccessRightsDB, WorkspaceID
 from pydantic import BaseModel, ConfigDict
 
 from ..users import api as users_api
-from . import _groups_db as workspaces_groups_db
-from . import _workspaces_db as workspaces_db
-from ._groups_db import WorkspaceGroupGetDB
-from ._workspaces_api import check_user_workspace_access
+from . import _groups_repository as workspaces_groups_db
+from . import _workspaces_repository as workspaces_db
+from ._groups_repository import WorkspaceGroupGetDB
+from ._workspaces_service import check_user_workspace_access
 from .errors import WorkspaceAccessForbiddenError
 
 log = logging.getLogger(__name__)

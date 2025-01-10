@@ -34,7 +34,7 @@ from ..storage.api import (
     get_project_total_size_simcore_s3,
 )
 from ..users.api import get_user_fullname
-from ..workspaces import _workspaces_db as workspaces_db
+from ..workspaces import _workspaces_repository as workspaces_db
 from ..workspaces.api import check_user_workspace_access
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import _folders_db as project_to_folders_db

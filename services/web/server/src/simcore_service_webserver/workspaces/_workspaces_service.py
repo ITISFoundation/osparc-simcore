@@ -19,7 +19,7 @@ from pydantic import NonNegativeInt
 
 from ..projects._db_utils import PermissionStr
 from ..users.api import get_user
-from . import _workspaces_db as db
+from . import _workspaces_repository as db
 from .errors import WorkspaceAccessForbiddenError
 
 _logger = logging.getLogger(__name__)
