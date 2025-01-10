@@ -23,6 +23,7 @@ async def empty_trash(app: web.Application, product_name: ProductName, user_id: 
 
 
 async def prune_trash(app: web.Application) -> list[str]:
+    """Deletes expired items in the trash"""
     settings = get_plugin_settings(app)
     retention = timedelta(days=settings.TRASH_RETENTION_DAYS)
 
