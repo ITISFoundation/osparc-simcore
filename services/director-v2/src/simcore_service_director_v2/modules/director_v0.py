@@ -14,8 +14,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_decorator
@@ -105,19 +104,6 @@ class DirectorV0Client:
             return RunningDynamicServiceDetails.model_validate(
                 unenvelope_or_raise_error(resp)
             )
-        raise HTTPException(status_code=resp.status_code, detail=resp.content)
-
-    @log_decorator(logger=logger)
-    async def get_service_labels(
-        self, service: ServiceKeyVersion
-    ) -> SimcoreServiceLabels:
-        resp = await self._request(
-            "GET",
-            f"services/{urllib.parse.quote_plus(service.key)}/{service.version}/labels",
-        )
-        resp.raise_for_status()
-        if resp.status_code == status.HTTP_200_OK:
-            return SimcoreServiceLabels.model_validate(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)

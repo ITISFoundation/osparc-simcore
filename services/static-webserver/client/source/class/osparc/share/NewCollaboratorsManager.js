@@ -55,8 +55,12 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     },
 
     __renderLayout: function() {
+      let text = this.__showOrganizations ?
+        this.tr("Select users or organizations from the list below.") :
+        this.tr("Select users from the list below.");
+      text += this.tr("<br>Search them if they aren't listed.");
       const introLabel = new qx.ui.basic.Label().set({
-        value: this.tr("Select users or organizations from the list bellow. Search them if they aren't listed."),
+        value: text,
         rich: true,
         wrap: true,
         paddingBottom: 5
