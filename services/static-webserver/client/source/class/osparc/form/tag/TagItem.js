@@ -14,6 +14,9 @@ qx.Class.define("osparc.form.tag.TagItem", {
   construct: function() {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(5));
+    this.set({
+      alignY: "middle",
+    });
     this.__validationManager = new qx.ui.form.validation.Manager();
   },
 
@@ -94,7 +97,9 @@ qx.Class.define("osparc.form.tag.TagItem", {
       let control;
       switch (id) {
         case "tag":
-          control = new osparc.ui.basic.Tag();
+          control = new osparc.ui.basic.Tag().set({
+            alignY: "middle",
+          });
           this.bind("name", control, "value");
           this.bind("color", control, "color");
           break;
@@ -102,6 +107,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
           control = new qx.ui.basic.Label().set({
             rich: true,
             allowGrowX: true,
+            alignY: "middle",
           });
           this.bind("description", control, "value");
           break;
@@ -109,10 +115,8 @@ qx.Class.define("osparc.form.tag.TagItem", {
           control = new qx.ui.basic.Image().set({
             minWidth: 30,
             alignY: "middle",
-            cursor: "pointer",
           });
           osparc.dashboard.CardBase.populateShareIcon(control, this.getAccessRights())
-          control.addListener("tap", () => this.__openAccessRights(), this);
           break;
         case "name-input":
           control = new qx.ui.form.TextField().set({
@@ -227,22 +231,32 @@ qx.Class.define("osparc.form.tag.TagItem", {
     __tagItemButtons: function() {
       const canIWrite = osparc.share.CollaboratorsTag.canIWrite(this.getMyAccessRights());
       const canIDelete = osparc.share.CollaboratorsTag.canIDelete(this.getMyAccessRights());
+      const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
-      const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const sharedIcon = this.getChildControl("shared-icon");
+      sharedIcon.set({
+        cursor: canIWrite ? "pointer" : null,
+      });
+      if (canIWrite) {
+        sharedIcon.addListener("tap", () => this.__openAccessRights(), this);
+      }
+      buttonContainer.add(sharedIcon);
+
       const editButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/pencil-alt/12",
         toolTipText: this.tr("Edit"),
         enabled: canIWrite,
       });
+      buttonContainer.add(editButton);
+      editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
+
       const deleteButton = new osparc.ui.form.FetchButton().set({
         appearance: "danger-button",
         icon: "@FontAwesome5Solid/trash/12",
         toolTipText: this.tr("Delete"),
         enabled: canIDelete,
       });
-      buttonContainer.add(editButton);
       buttonContainer.add(deleteButton);
-      editButton.addListener("execute", () => this.setMode(this.self().modes.EDIT), this);
       deleteButton.addListener("execute", () => {
         deleteButton.setFetching(true);
         osparc.store.Tags.getInstance().deleteTag(this.getId())
@@ -250,6 +264,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
           .catch(console.error)
           .finally(() => deleteButton.setFetching(false));
       }, this);
+
       return buttonContainer;
     },
     /**
