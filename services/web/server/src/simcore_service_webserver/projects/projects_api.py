@@ -53,7 +53,7 @@ from models_library.resource_tracker import (
     PricingAndHardwareInfoTuple,
     PricingInfo,
 )
-from models_library.services import DynamicServiceKey, ServiceKey, ServiceVersion
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
@@ -89,7 +89,6 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
-from simcore_service_webserver.projects._db_utils import PermissionStr
 
 from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
@@ -127,6 +126,7 @@ from ._access_rights_api import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
+from ._db_utils import PermissionStr
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
@@ -556,7 +556,7 @@ async def _check_project_node_has_all_required_inputs(
         )
 
 
-async def _start_dynamic_service(
+async def _start_dynamic_service(  # noqa: C901
     request: web.Request,
     *,
     service_key: ServiceKey,
@@ -742,7 +742,7 @@ async def _start_dynamic_service(
                 can_save=save_state,
                 project_id=project_uuid,
                 user_id=user_id,
-                service_key=DynamicServiceKey(service_key),
+                service_key=service_key,
                 service_version=service_version,
                 service_uuid=node_uuid,
                 request_dns=extract_dns_without_default_port(request.url),
