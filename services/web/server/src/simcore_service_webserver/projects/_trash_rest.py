@@ -17,7 +17,7 @@ from ..exception_handling import (
 from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
 from ..security.decorators import permission_required
-from . import _trash_api
+from . import _trash_service
 from ._common.models import ProjectPathParams, RemoveQueryParams
 from .exceptions import ProjectRunningConflictError, ProjectStoppingError
 
@@ -64,7 +64,7 @@ async def trash_project(request: web.Request):
         RemoveQueryParams, request
     )
 
-    await _trash_api.trash_project(
+    await _trash_service.trash_project(
         request.app,
         product_name=product_name,
         user_id=user_id,
@@ -85,7 +85,7 @@ async def untrash_project(request: web.Request):
     product_name = get_product_name(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    await _trash_api.untrash_project(
+    await _trash_service.untrash_project(
         request.app,
         product_name=product_name,
         user_id=user_id,

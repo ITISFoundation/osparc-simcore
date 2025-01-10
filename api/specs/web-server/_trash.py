@@ -14,7 +14,7 @@ from simcore_service_webserver.folders._models import (
     FoldersPathParams,
     FolderTrashQueryParams,
 )
-from simcore_service_webserver.projects._trash_handlers import ProjectPathParams
+from simcore_service_webserver.projects._trash_rest import ProjectPathParams
 from simcore_service_webserver.workspaces._models import (
     WorkspacesPathParams,
     WorkspaceTrashQueryParams,
