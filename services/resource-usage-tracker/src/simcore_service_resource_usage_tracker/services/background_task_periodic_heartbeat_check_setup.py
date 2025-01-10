@@ -5,7 +5,7 @@ from typing import TypedDict
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_wait_task
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import start_exclusive_periodic_task
+from servicelib.redis import create_exclusive_periodic_task
 
 from ..core.settings import ApplicationSettings
 from .background_task_periodic_heartbeat_check import (
@@ -39,7 +39,7 @@ def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
             app.state.rut_background_task__periodic_check_of_running_services = None
 
             # Setup periodic task
-            exclusive_task = start_exclusive_periodic_task(
+            exclusive_task = create_exclusive_periodic_task(
                 get_redis_lock_client(app),
                 periodic_check_of_running_services_task,
                 task_period=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC,

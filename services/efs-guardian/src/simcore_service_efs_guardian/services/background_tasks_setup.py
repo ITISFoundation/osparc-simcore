@@ -7,7 +7,7 @@ from typing import TypedDict
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_wait_task
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import start_exclusive_periodic_task
+from servicelib.redis import create_exclusive_periodic_task
 
 from .background_tasks import removal_policy_task
 from .modules.redis import get_redis_lock_client
@@ -41,7 +41,7 @@ def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
             # Setup periodic tasks
             for task in _EFS_GUARDIAN_BACKGROUND_TASKS:
-                exclusive_task = start_exclusive_periodic_task(
+                exclusive_task = create_exclusive_periodic_task(
                     get_redis_lock_client(app),
                     task["task_func"],
                     task_period=timedelta(seconds=1 * _HOUR),

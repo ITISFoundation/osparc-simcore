@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.async_utils import cancel_wait_task
-from servicelib.redis import start_exclusive_periodic_task
+from servicelib.redis import create_exclusive_periodic_task
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 
@@ -133,7 +133,7 @@ class Monitor:
         )
 
     async def setup(self) -> None:
-        self.app.state.status_monitor_background_task = start_exclusive_periodic_task(
+        self.app.state.status_monitor_background_task = create_exclusive_periodic_task(
             get_redis_client(self.app, RedisDatabase.LOCKS),
             self._worker_check_services_require_status_update,
             task_period=_INTERVAL_BETWEEN_CHECKS,

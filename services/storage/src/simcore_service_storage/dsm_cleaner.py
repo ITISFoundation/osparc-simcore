@@ -26,7 +26,7 @@ from typing import cast
 from aiohttp import web
 from servicelib.async_utils import cancel_wait_task
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import start_exclusive_periodic_task
+from servicelib.redis import create_exclusive_periodic_task
 
 from .constants import APP_CONFIG_KEY, APP_DSM_KEY
 from .dsm_factory import DataManagerProvider
@@ -64,7 +64,7 @@ def setup_dsm_cleaner(app: web.Application):
             cfg: Settings = app[APP_CONFIG_KEY]
             assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
 
-            storage_background_task = start_exclusive_periodic_task(
+            storage_background_task = create_exclusive_periodic_task(
                 get_redis_client(app),
                 dsm_cleaner_task,
                 task_period=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),

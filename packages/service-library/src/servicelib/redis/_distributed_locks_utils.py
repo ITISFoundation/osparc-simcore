@@ -12,7 +12,7 @@ from ._decorators import exclusive
 _logger = logging.getLogger(__name__)
 
 
-def start_exclusive_periodic_task(
+def create_exclusive_periodic_task(
     client: RedisClientSDK,
     task: Callable[..., Awaitable[None]],
     *,
@@ -23,26 +23,22 @@ def start_exclusive_periodic_task(
 ) -> asyncio.Task:
     """
     Ensures that only 1 process periodically ever runs ``task`` at all times.
-    If one process dies, another process will run the ``task``.
+    If the process dies, and another replica exists, it will take over the ``task``.
 
-    Creates a background task that periodically tries to start the user ``task``.
-    Before the ``task`` is scheduled for periodic background execution, it acquires a lock.
-    Subsequent calls to ``start_exclusive_periodic_task`` will not allow the same ``task``
-    to start since the lock will prevent the scheduling.
+    Creates a background task that periodically tries to acquire a distributed lock
+    and then runs another background task that periodically runs the user ``task``.
+    Only the process that acquired the lock will run the user ``task``.
 
     Q&A:
-    - Why is `_exclusive_task_starter` run as a task?
-        This is usually used at setup time and cannot block the setup process forever
     - Why is `_exclusive_task_starter` task a periodic task?
-        If Redis connectivity is lost, the periodic `_exclusive_task_starter` ensures the lock is
-        reacquired
+        If Redis connectivity is lost, the periodic acquisition of the lock shall kick in
     """
 
     @periodic(interval=retry_after)
     @exclusive(
         client,
-        lock_key=f"lock:exclusive_task_starter:{task_name}",
-        lock_value=f"locked since {arrow.utcnow().format()}",
+        lock_key=f"lock:exclusive_periodic_task:{task_name}",
+        lock_value=f"locked since {arrow.utcnow().format()} by {client.client_name}",
     )
     @periodic(interval=task_period)
     async def _() -> None:

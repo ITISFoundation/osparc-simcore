@@ -19,8 +19,8 @@ from servicelib.async_utils import cancel_wait_task
 from servicelib.redis import (
     CouldNotAcquireLockError,
     RedisClientSDK,
+    create_exclusive_periodic_task,
     exclusive,
-    start_exclusive_periodic_task,
 )
 from servicelib.redis._errors import LockLostError
 from servicelib.utils import limited_gather, logged_gather
@@ -193,7 +193,7 @@ async def _assert_task_completes_once(
 ) -> tuple[float, ...]:
     sleep_events = Mock()
 
-    started_task = start_exclusive_periodic_task(
+    started_task = create_exclusive_periodic_task(
         redis_client_sdk,
         _sleep_task,
         task_period=timedelta(seconds=1),
