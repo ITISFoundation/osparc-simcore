@@ -227,13 +227,7 @@ qx.Class.define("osparc.file.FolderContent", {
       } else if (this.getMode() === "icons") {
         const iconsLayout = this.getChildControl("icons-layout");
         iconsLayout.removeAll();
-        const iconsGroup = new qx.ui.form.RadioGroup().set({
-          allowEmptySelection: true
-        });
         entries.forEach(entry => {
-          if (!this.isMultiSelect()) {
-            iconsGroup.add(entry);
-          }
           iconsLayout.add(entry);
         });
       }
@@ -265,6 +259,13 @@ qx.Class.define("osparc.file.FolderContent", {
           });
           this.__selectionChanged(selectedFiles);
         } else {
+          if (this.getMode() === "icons") {
+            // unselect the other items
+            const iconsLayout = this.getChildControl("icons-layout");
+            iconsLayout.getChildren().forEach(btn => {
+              btn.setValue(btn === gridItem);
+            });
+          }
           this.__selectionChanged(gridItem.getValue() ? [gridItem.entry] : null);
         }
         // folders can't be selected
