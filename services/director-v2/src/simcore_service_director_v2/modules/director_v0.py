@@ -1,7 +1,6 @@
 """Module that takes care of communications with director v0 service"""
 
 import logging
-import urllib.parse
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -11,10 +10,8 @@ from fastapi import FastAPI, HTTPException, status
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
-from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_decorator
@@ -80,18 +77,6 @@ class DirectorV0Client:
     @handle_retry(logger)
     async def _request(self, method: str, tail_path: str, **kwargs) -> httpx.Response:
         return await self.client.request(method, tail_path, **kwargs)
-
-    @log_decorator(logger=logger)
-    async def get_service_extras(
-        self, service_key: ServiceKey, service_version: ServiceVersion
-    ) -> ServiceExtras:
-        resp = await self._request(
-            "GET",
-            f"/service_extras/{urllib.parse.quote_plus(service_key)}/{service_version}",
-        )
-        if resp.status_code == status.HTTP_200_OK:
-            return ServiceExtras.model_validate(unenvelope_or_raise_error(resp))
-        raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
     async def get_running_service_details(

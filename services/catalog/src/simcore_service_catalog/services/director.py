@@ -167,6 +167,17 @@ class DirectorApi:
         assert isinstance(response, dict)  # nosec
         return response
 
+    async def get_service_extras(
+        self,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ) -> dict[str, Any]:
+        response = await self.get(
+            f"/service_extras/{urllib.parse.quote_plus(service_key)}/{service_version}"
+        )
+        assert isinstance(response, dict)  # nosec
+        return response
+
 
 async def setup_director(
     app: FastAPI, tracing_settings: TracingSettings | None

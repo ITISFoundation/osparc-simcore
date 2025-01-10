@@ -26,6 +26,14 @@ async def test_get_service_labels(
 ):
     service_key = "simcore/services/comp/ans-model"
     service_version = "3.0.0"
-    result = await aclient.get(f"/v0/services/{service_key}/{service_version}/labels")
+    result = await aclient.get(f"/v0/services/{service_key}/{service_version}/extras")
     assert result.status_code == status.HTTP_200_OK, result.text
-    assert result.json() == get_mocked_service_labels(service_key, service_version)
+    assert result.json() == {
+        "data": {
+            "node_requirements": {"CPU": 4, "RAM": 2147483648},
+            "build_date": "2023-04-17T08:04:15Z",
+            "vcs_ref": "",
+            "vcs_url": "",
+        },
+        "error": None,
+    }
