@@ -5,6 +5,7 @@ from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException, status
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
@@ -64,7 +65,7 @@ class CatalogClient:
 
     @classmethod
     def instance(cls, app: FastAPI) -> "CatalogClient":
-        assert type(app.state.catalog_client) == CatalogClient  # nosec
+        assert isinstance(app.state.catalog_client, CatalogClient)  # nosec
         return app.state.catalog_client
 
     @handle_errors("Catalog", logger)
@@ -105,6 +106,18 @@ class CatalogClient:
                 ServiceResourcesDict
             ).validate_python(resp.json())
             return json_response
+        raise HTTPException(status_code=resp.status_code, detail=resp.content)
+
+    async def get_service_labels(
+        self, service_key: ServiceKey, service_version: ServiceVersion
+    ) -> SimcoreServiceLabels:
+        resp = await self.request(
+            "GET",
+            f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/labels",
+        )
+        resp.raise_for_status()
+        if resp.status_code == status.HTTP_200_OK:
+            return SimcoreServiceLabels.model_validate(resp.json())
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_specifications(

@@ -150,7 +150,7 @@ async def _get_node_infos(
     ] = await asyncio.gather(
         _get_service_details(catalog_client, user_id, product_name, node),
         director_client.get_service_extras(node.key, node.version),
-        director_client.get_service_labels(node),
+        catalog_client.get_service_labels(node.key, node.version),
     )
     return result
 

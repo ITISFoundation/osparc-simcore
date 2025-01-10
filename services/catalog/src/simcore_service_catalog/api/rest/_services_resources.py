@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from copy import deepcopy
-from typing import Annotated, Any, Final, cast
+from typing import Annotated, Any, Final
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -131,12 +131,7 @@ async def _get_service_labels(
     director_client: DirectorApi, key: ServiceKey, version: ServiceVersion
 ) -> dict[str, Any] | None:
     try:
-        service_labels = cast(
-            dict[str, Any],
-            await director_client.get(
-                f"/services/{urllib.parse.quote_plus(key)}/{version}/labels"
-            ),
-        )
+        service_labels = await director_client.get_service_labels(key, version)
         _logger.debug(
             "received for %s %s",
             f"/services/{urllib.parse.quote_plus(key)}/{version}/labels",
