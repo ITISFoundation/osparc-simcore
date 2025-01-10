@@ -423,11 +423,22 @@ def get_mocked_service_labels() -> Callable[[str, str], dict]:
 
 
 @pytest.fixture
+def mock_service_extras() -> dict[str, Any]:
+    return {
+        "node_requirements": {"CPU": 4, "RAM": 2147483648},
+        "build_date": "2023-04-17T08:04:15Z",
+        "vcs_ref": "",
+        "vcs_url": "",
+    }
+
+
+@pytest.fixture
 def mocked_director_service_api(
     mocked_director_service_api_base: respx.MockRouter,
     director_service_openapi_specs: dict[str, Any],
     expected_director_list_services: list[dict[str, Any]],
     get_mocked_service_labels: Callable[[str, str], dict],
+    mock_service_extras: dict[str, Any],
 ) -> respx.MockRouter:
     """
     STANDARD fixture to mock director service API
@@ -514,15 +525,7 @@ def mocked_director_service_api(
     def _get_service_extras(request, service_key, service_version):
         if _search(service_key, service_version):
             return httpx.Response(
-                status.HTTP_200_OK,
-                json={
-                    "data": {
-                        "node_requirements": {"CPU": 4, "RAM": 2147483648},
-                        "build_date": "2023-04-17T08:04:15Z",
-                        "vcs_ref": "",
-                        "vcs_url": "",
-                    }
-                },
+                status.HTTP_200_OK, json={"data": mock_service_extras}
             )
         return httpx.Response(
             status.HTTP_404_NOT_FOUND,
