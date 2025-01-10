@@ -56,18 +56,16 @@ def mocked_core_do_send_email(mocker: MockerFixture) -> MagicMock:
         print(message)
         print("---------------")
 
-    mock = mocker.patch(
+    return mocker.patch(
         "simcore_service_webserver.email._core._do_send_mail",
         spec=True,
         side_effect=print_mail,
     )
-    return mock
 
 
 @pytest.fixture
 def destination_email(faker: Faker) -> str:
-    email = faker.email()
-    return email
+    return faker.email()
 
 
 @pytest.mark.parametrize("product_name", FRONTEND_APPS_AVAILABLE)

@@ -48,10 +48,9 @@ def client(
 
     app.router.add_get("/slow", slow_handler)
 
-    cli = event_loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs=server_kwargs)
     )
-    return cli
 
 
 async def test_frontend_config(

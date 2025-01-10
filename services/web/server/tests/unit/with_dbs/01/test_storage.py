@@ -151,8 +151,7 @@ def storage_server(
         _get_datasets_meta,
     )
 
-    server = event_loop.run_until_complete(aiohttp_server(app, port=storage_port))
-    return server
+    return event_loop.run_until_complete(aiohttp_server(app, port=storage_port))
 
 
 # --------------------------------------------------------------------------

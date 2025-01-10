@@ -4,8 +4,8 @@
 
 import asyncio
 import time
-from collections.abc import Awaitable
-from typing import Callable
+from collections.abc import Awaitable, Callable
+from typing import Annotated
 
 import pytest
 from aiohttp import web
@@ -13,7 +13,6 @@ from aiohttp.test_utils import TestClient
 from aiohttp.web_exceptions import HTTPOk, HTTPTooManyRequests
 from pydantic import Field, TypeAdapter, ValidationError
 from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
-from typing_extensions import Annotated
 
 TOTAL_TEST_TIME = 1  # secs
 MAX_NUM_REQUESTS = 3

@@ -5,9 +5,8 @@
 
 import asyncio
 import textwrap
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Awaitable
 
 import pytest
 from aiohttp import web
@@ -47,30 +46,32 @@ def client(
 
     @routes.get("/")
     async def get_root(_request):
-        raise web.HTTPOk()
+        raise web.HTTPOk
 
     @routes.get("/other")
     async def get_other(_request):
-        raise web.HTTPOk()
+        raise web.HTTPOk
 
     @routes.get("/redirect-to-other")
     async def get_redirect_to_other(request):
-        raise web.HTTPFound("/other")
+        msg = "/other"
+        raise web.HTTPFound(msg)
 
     @routes.get("/redirect-to-static")
     async def get_redirect_to_static(_request):
-        raise web.HTTPFound("/statics/index.html")
+        msg = "/statics/index.html"
+        raise web.HTTPFound(msg)
 
     @routes.get("/redirect-to-root")
     async def get_redirect_to_root(_request):
-        raise web.HTTPFound("/")
+        msg = "/"
+        raise web.HTTPFound(msg)
 
     routes.static("/statics", index_static_path)
 
     app = web.Application()
     app.add_routes(routes)
-    cli = event_loop.run_until_complete(aiohttp_client(app))
-    return cli
+    return event_loop.run_until_complete(aiohttp_client(app))
 
 
 @pytest.mark.parametrize("test_path", ["/", "/other"])
@@ -80,7 +81,7 @@ async def test_preserves_fragments(client, test_path):
     assert resp.real_url.fragment == "this/is/a/fragment"
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail()
 @pytest.mark.parametrize(
     "test_path,expected_redirected_path",
     [

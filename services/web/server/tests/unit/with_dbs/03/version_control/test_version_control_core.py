@@ -27,7 +27,7 @@ def aiohttp_mocked_request(client: TestClient, user_id: int) -> web.Request:
     return req
 
 
-@pytest.mark.acceptance_test
+@pytest.mark.acceptance_test()
 async def test_workflow(
     client: TestClient,
     project_uuid: UUID,
