@@ -448,9 +448,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_PROJECTS": {
                     "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES",
-                },
-                "WEBSERVER_TRASH": {
-                    "TRASH_RETENTION_DAYS",
+                    "PROJECTS_TRASH_RETENTION_DAYS",
                 },
                 "WEBSERVER_LOGIN": {
                     "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
