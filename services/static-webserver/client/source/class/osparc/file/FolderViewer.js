@@ -52,8 +52,9 @@ qx.Class.define("osparc.file.FolderViewer", {
     this.bind("folder", folderContent, "folder");
 
     if (allowMultiselection) {
+      multiSelectButton.bind("value", folderContent, "multiSelect");
+      folderContent.bind("multiSelect", multiSelectButton, "value");
       multiSelectButton.addListener("changeValue", e => {
-        folderContent.setMultiSelect(e.getData());
         selectedFileLayout.setMultiSelect(e.getData());
       });
     }
