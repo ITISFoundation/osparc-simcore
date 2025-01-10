@@ -74,7 +74,7 @@ from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.errors import WalletAccessForbiddenError, WalletNotEnoughCreditsError
 from . import nodes_utils, projects_api
-from ._common_models import ProjectPathParams, RequestContext
+from ._common.models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots
 from .exceptions import (
     ClustersKeeperNotAvailableError,

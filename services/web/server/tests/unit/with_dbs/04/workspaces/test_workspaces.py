@@ -169,7 +169,7 @@ async def test_list_workspaces_with_text_search(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    added_workspace = WorkspaceGet.model_validate(data)
+    WorkspaceGet.model_validate(data)
 
     # CREATE a new workspace
     url = client.app.router["create_workspace"].url_for()
@@ -182,7 +182,7 @@ async def test_list_workspaces_with_text_search(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    added_workspace = WorkspaceGet.model_validate(data)
+    WorkspaceGet.model_validate(data)
 
     # LIST user workspaces
     url = client.app.router["list_workspaces"].url_for()

@@ -63,10 +63,10 @@ async def test_project_wallets_user_project_access(
     )
     resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
-    assert data == None
+    assert data is None
 
     # Now we will log as a different user who doesnt have access to the project
-    async with LoggedUser(client) as new_logged_user:
+    async with LoggedUser(client):
         base_url = client.app.router["get_project_wallet"].url_for(
             project_id=user_project["uuid"]
         )
@@ -112,7 +112,7 @@ async def test_project_wallets_full_workflow(
     )
     resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
-    assert data == None
+    assert data is None
 
     # Now we will connect the wallet
     base_url = client.app.router["connect_wallet_to_project"].url_for(

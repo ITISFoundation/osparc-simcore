@@ -207,7 +207,7 @@ async def _assert_redirected_to_study(
     assert response.url.path == "/"
     assert (
         "OSPARC-SIMCORE" in content
-    ), "Expected front-end rendering workbench's study, got %s" % str(content)
+    ), f"Expected front-end rendering workbench's study, got {content!s}"
 
     # Expects fragment to indicate client where to find newly created project
     m = re.match(r"/study/([\d\w-]+)", response.real_url.fragment)
@@ -217,8 +217,7 @@ async def _assert_redirected_to_study(
     assert _is_user_authenticated(session)
 
     # returns newly created project
-    redirected_project_id = m.group(1)
-    return redirected_project_id
+    return m.group(1)
 
 
 # -----------------------------------------------------------
@@ -333,7 +332,7 @@ async def test_access_study_by_logged_user(
     user_project = projects[0]
 
     # heck redirects to /#/study/{uuid}
-    assert resp.real_url.fragment.endswith("/study/%s" % user_project["uuid"])
+    assert resp.real_url.fragment.endswith("/study/{}".format(user_project["uuid"]))
     _assert_same_projects(user_project, published_project)
 
     assert user_project["prjOwner"] == logged_user["email"]

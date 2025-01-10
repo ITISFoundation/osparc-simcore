@@ -1,61 +1,50 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import re
-from copy import deepcopy
 
 import pytest
 from aiohttp import web_exceptions
 from aioresponses.core import aioresponses
-from simcore_service_webserver.application_settings_utils import AppConfigDict
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg: AppConfigDict, unused_tcp_port_factory):
-    """App's configuration used for every test in this module
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+) -> EnvVarsDict:
 
-    NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
-    """
-    cfg = deepcopy(default_app_cfg)
+    monkeypatch.delenv("WEBSERVER_STUDIES_DISPATCHER", raising=False)
+    app_environment.pop("WEBSERVER_STUDIES_DISPATCHER", None)
 
-    cfg["main"]["port"] = unused_tcp_port_factory()
-    cfg["main"]["studies_access_enabled"] = True
-
-    exclude = {
-        "tracing",
-        "smtp",
-        "storage",
-        "activity",
-        "diagnostics",
-        "tags",
-        "publications",
-        "catalog",
-        "computation",
-        "products",
-        "socketio",
-        "resource_manager",
-        "projects",
-        "login",
-        "users",
-    }
-    include = {
-        "db",
-        "rest",
-        "groups",
-    }
-
-    assert include.intersection(exclude) == set()
-
-    for section in include:
-        cfg[section]["enabled"] = True
-    for section in exclude:
-        cfg[section]["enabled"] = False
-
-    # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    ## setup_logging(level=logging.DEBUG)
-
-    return cfg
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            # exclude
+            "WEBSERVER_ACTIVITY": "null",
+            "WEBSERVER_CATALOG": "null",
+            "WEBSERVER_CLUSTERS": "null",
+            "WEBSERVER_COMPUTATION": "null",
+            "WEBSERVER_DIAGNOSTICS": "null",
+            "WEBSERVER_EMAIL": "null",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_GROUPS": "0",
+            "WEBSERVER_LOGIN": "null",
+            "WEBSERVER_PRODUCTS": "0",
+            "WEBSERVER_PROJECTS": "null",
+            "WEBSERVER_PUBLICATIONS": "0",
+            "WEBSERVER_SOCKETIO": "0",
+            "WEBSERVER_STORAGE": "null",
+            "WEBSERVER_RESOURCE_MANAGER": "null",
+            "WEBSERVER_TAGS": "0",
+            "WEBSERVER_TRACING": "null",
+            "WEBSERVER_USERS": "null",
+        },
+    )
 
 
 @pytest.mark.skip(reason="UNDER DEV: test_group_handlers")
