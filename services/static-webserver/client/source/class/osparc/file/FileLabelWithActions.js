@@ -67,7 +67,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
   members: {
     __selection: null,
-    __multiSelection: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -101,7 +100,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     __enableMultiSelection: function() {
       this.resetItemSelected();
-      this.__multiSelection = [];
     },
 
     setItemSelected: function(selectedItem) {
@@ -111,13 +109,13 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
         this.getChildControl("delete-button").setEnabled(isFile);
         const selectedLabel = this.getChildControl("selected-label");
         if (isFile) {
-          this.__selection = selectedItem;
+          this.__selection = [selectedItem];
           selectedLabel.set({
             value: selectedItem.getLabel(),
             toolTipText: selectedItem.getFileId()
           });
         } else {
-          this.__selection = null;
+          this.__selection = [];
           selectedLabel.set({
             value: "",
             toolTipText: ""
@@ -129,7 +127,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     setMultiItemSelected: function(multiSelectionData) {
-      this.__multiSelection = multiSelectionData;
+      this.__selection = multiSelectionData;
       if (multiSelectionData && multiSelectionData.length) {
         if (multiSelectionData.length === 1) {
           this.setItemSelected(multiSelectionData[0]);
@@ -145,24 +143,25 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     resetItemSelected: function() {
-      this.__selection = null;
-      this.__multiSelection = [];
+      this.__selection = [];
       this.getChildControl("download-button").setEnabled(false);
       this.getChildControl("delete-button").setEnabled(false);
       this.getChildControl("selected-label").resetValue();
     },
 
     getItemSelected: function() {
-      const selectedItem = this.__selection;
-      if (selectedItem && osparc.file.FilesTree.isFile(selectedItem)) {
-        return selectedItem;
+      if (this.__selection.length) {
+        const selectedItem = this.__selection[0];
+        if (selectedItem && osparc.file.FilesTree.isFile(selectedItem)) {
+          return selectedItem;
+        }
       }
       return null;
     },
 
     __retrieveURLAndDownloadSelected: function() {
       if (this.isMultiSelect()) {
-        this.__multiSelection.forEach(selection => {
+        this.__selection.forEach(selection => {
           this.__retrieveURLAndDownloadFile(selection);
         });
       } else {
@@ -176,7 +175,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     __deleteSelected: function() {
       if (this.isMultiSelect()) {
         const requests = [];
-        this.__multiSelection.forEach(selection => {
+        this.__selection.forEach(selection => {
           const request = this.__deleteFile(selection);
           if (request) {
             requests.push(request);
