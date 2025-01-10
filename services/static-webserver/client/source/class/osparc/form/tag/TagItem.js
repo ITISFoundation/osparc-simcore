@@ -116,7 +116,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
             minWidth: 30,
             alignY: "middle",
           });
-          osparc.dashboard.CardBase.populateShareIcon(control, this.getAccessRights())
+          osparc.dashboard.CardBase.populateShareIcon(control, this.getAccessRights());
           break;
         case "name-input":
           control = new qx.ui.form.TextField().set({
