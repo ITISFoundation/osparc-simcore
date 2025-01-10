@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 @router.get("/{service_key:path}/{service_version}/labels")
-async def get_service_labels_(
+async def get_service_labels(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     director_client: Annotated[DirectorApi, Depends(get_director_api)],
