@@ -61,7 +61,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       init: false,
       nullable: false,
       event: "changeMultiSelect",
-      apply: "__enableMultiSelection",
+      apply: "__changeMultiSelection",
     },
   },
 
@@ -98,8 +98,10 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       return control || this.base(arguments, id);
     },
 
-    __enableMultiSelection: function() {
-      this.resetItemSelected();
+    __changeMultiSelection: function() {
+      if (this.__selection.length > 1) {
+        this.resetItemSelected();
+      }
     },
 
     setItemSelected: function(selectedItem) {
