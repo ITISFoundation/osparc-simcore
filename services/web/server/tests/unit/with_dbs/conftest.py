@@ -66,7 +66,6 @@ from simcore_postgres_database.utils_products import (
     get_default_product_name,
     get_or_create_product_group,
 )
-from simcore_service_director.core.settings import get_application_settings
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings_utils import AppConfigDict
