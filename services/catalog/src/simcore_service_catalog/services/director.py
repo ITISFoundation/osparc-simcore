@@ -156,6 +156,17 @@ class DirectorApi:
         assert len(data) == 1  # nosec
         return ServiceMetaDataPublished.model_validate(data[0])
 
+    async def get_service_labels(
+        self,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ) -> dict[str, Any]:
+        response = await self.get(
+            f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/labels"
+        )
+        assert isinstance(response, dict)  # nosec
+        return response
+
 
 async def setup_director(
     app: FastAPI, tracing_settings: TracingSettings | None

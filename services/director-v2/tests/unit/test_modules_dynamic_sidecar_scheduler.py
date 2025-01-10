@@ -5,7 +5,6 @@
 
 import logging
 import re
-import urllib.parse
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from typing import Final
@@ -18,14 +17,12 @@ from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
-from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services_enums import ServiceState
 from models_library.wallets import WalletID
 from pydantic import NonNegativeFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
-from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DynamicSidecarStatus,
@@ -147,24 +144,6 @@ def mock_env(
     monkeypatch.setenv("S3_REGION", faker.pystr())
     monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
     monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
-
-
-@pytest.fixture
-def mocked_director_v0(
-    minimal_config: AppSettings, scheduler_data: SchedulerData
-) -> Iterator[MockRouter]:
-    endpoint = minimal_config.DIRECTOR_V0.endpoint
-
-    with respx.mock as mock:
-        mock.get(
-            re.compile(
-                rf"^{endpoint}/services/{urllib.parse.quote_plus(scheduler_data.key)}/{scheduler_data.version}/labels"
-            ),
-            name="service labels",
-        ).respond(
-            json={"data": SimcoreServiceLabels.model_json_schema()["examples"][0]}
-        )
-        yield mock
 
 
 @pytest.fixture
