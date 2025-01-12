@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
 from typing import Final
 
@@ -81,7 +81,7 @@ async def test_product_owner_generates_invitation(
     trial_account_days: PositiveInt | None,
     extra_credits_in_usd: PositiveInt | None,
 ):
-    before_dt = datetime.now(tz=timezone.utc)
+    before_dt = datetime.now(tz=UTC)
 
     request_model = GenerateInvitation(
         guest=guest_email,
@@ -109,7 +109,7 @@ async def test_product_owner_generates_invitation(
     product_base_url = f"{client.make_url('/')}"
     assert f"{got.invitation_link}".startswith(product_base_url)
     assert before_dt < got.created
-    assert got.created < datetime.now(tz=timezone.utc)
+    assert got.created < datetime.now(tz=UTC)
 
 
 MANY_TIMES: Final = 2

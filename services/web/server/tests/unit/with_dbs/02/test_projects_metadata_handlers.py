@@ -43,7 +43,6 @@ async def test_custom_metadata_handlers(
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
-    #
     client: TestClient,
     faker: Faker,
     logged_user: UserInfoDict,
@@ -118,7 +117,6 @@ async def test_new_project_with_parent_project_node(
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
-    #
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -196,7 +194,6 @@ async def test_new_project_with_invalid_parent_project_node(
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
-    #
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -280,7 +277,6 @@ async def test_set_project_parent_backward_compatibility(
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
-    #
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -344,7 +340,6 @@ async def test_update_project_metadata_backward_compatibility_with_same_project_
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
-    #
     client: TestClient,
     faker: Faker,
     logged_user: UserInfoDict,
@@ -400,7 +395,6 @@ async def test_update_project_metadata_s4lacad_backward_compatibility_passing_ni
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
     storage_subsystem_mock: MockedStorageSubsystem,
-    #
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
