@@ -157,11 +157,15 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           layout = this.getChildControl("footer");
           layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.FPOS.DATE);
           break;
-        case "last-touching-icon":
-          control = new qx.ui.basic.Image().set({
+        case "last-touching-atom":
+          control = new qx.ui.basic.Atom().set({
             alignY: "middle",
             allowGrowX: false,
-            allowShrinkX: false
+            allowShrinkX: false,
+            label: "by",
+            font: "text-12",
+            icon: osparc.dashboard.CardBase.SHARED_USER,
+            iconPosition: "right",
           });
           layout = this.getChildControl("footer");
           layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.FPOS.LAST_TOUCHING);
@@ -281,11 +285,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
     __applyTrashedBy: function(gid) {
       if (gid) {
         // OM: at the moment I'm receiving userId
-        const label = this.getChildControl("date-text");
-        label.setValue(label.getValue() + " by ");
-        const icon = this.getChildControl("last-touching-icon");
-        osparc.dashboard.CardBase.populateTooltip(icon, [gid]);
-        icon.setSource(osparc.dashboard.CardBase.SHARED_USER);
+        const atom = this.getChildControl("last-touching-atom");
+        osparc.dashboard.CardBase.populateTooltip(atom, [gid]);
       }
     },
 
