@@ -98,6 +98,12 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       nullable: true,
       apply: "__applyTrashedAt"
     },
+
+    trashedBy: {
+      check: "Number",
+      nullable: true,
+      apply: "__applyTrashedBy"
+    },
   },
 
   statics: {
@@ -139,7 +145,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           layout = this.getChildControl("header");
           layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.HPOS.MENU);
           break;
-        case "footer-text":
+        case "date-text":
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-dark",
             alignY: "middle",
@@ -149,7 +155,16 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
             allowGrowY: false
           });
           layout = this.getChildControl("footer");
-          layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.FPOS.MODIFIED);
+          layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.FPOS.DATE);
+          break;
+        case "last-touching-icon":
+          control = new qx.ui.basic.Image().set({
+            alignY: "middle",
+            allowGrowX: false,
+            allowShrinkX: false
+          });
+          layout = this.getChildControl("footer");
+          layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.FPOS.LAST_TOUCHING);
           break;
       }
       return control || this.base(arguments, id);
@@ -168,6 +183,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       workspace.bind("accessRights", this, "accessRights");
       workspace.bind("modifiedAt", this, "modifiedAt");
       workspace.bind("trashedAt", this, "trashedAt");
+      workspace.bind("trashedBy", this, "trashedBy");
       workspace.bind("myAccessRights", this, "myAccessRights");
 
       osparc.utils.Utils.setIdToWidget(this, "workspaceItem_" + workspace.getWorkspaceId());
@@ -250,15 +266,26 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
     __applyModifiedAt: function(value) {
       if (value) {
-        const label = this.getChildControl("footer-text");
+        const label = this.getChildControl("date-text");
         label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
     },
 
     __applyTrashedAt: function(value) {
       if (value && value.getTime() !== new Date(0).getTime()) {
-        const label = this.getChildControl("footer-text");
+        const label = this.getChildControl("date-text");
         label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+      }
+    },
+
+    __applyTrashedBy: function(gid) {
+      if (gid) {
+        // OM: at the moment I'm receiving userId
+        const label = this.getChildControl("date-text");
+        label.setValue(label.getValue() + " by ");
+        const icon = this.getChildControl("last-touching-icon");
+        osparc.dashboard.CardBase.populateTooltip(icon, [gid]);
+        icon.setSource(osparc.dashboard.CardBase.SHARED_USER);
       }
     },
 

@@ -110,6 +110,7 @@ qx.Class.define("osparc.data.model.Workspace", {
       check: "Number",
       nullable: true,
       init: null,
+      event: "changeTrashedBy",
     },
   },
 
