@@ -362,7 +362,7 @@ async def get_project(request: web.Request):
         # Adds permalink
         await update_or_pop_permalink_in_project(request, project)
 
-        data = ProjectGet.model_validate(project).data(exclude_unset=True)
+        data = ProjectGet.from_model(project).data(exclude_unset=True)
         return web.json_response({"data": data}, dumps=json_dumps)
 
     except ProjectInvalidRightsError as exc:
