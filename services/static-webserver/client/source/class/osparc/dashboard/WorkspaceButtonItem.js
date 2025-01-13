@@ -220,7 +220,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
           menu.addSeparator();
 
-          const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+          const deleteButton = new qx.ui.menu.Button(this.tr("Delete permanently"), "@FontAwesome5Solid/trash/12");
           osparc.utils.Utils.setIdToWidget(deleteButton, "deleteWorkspaceMenuItem");
           deleteButton.addListener("execute", () => this.__deleteWorkspaceRequested(), this);
           menu.add(deleteButton);
@@ -291,7 +291,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       msg += "<br>" + this.tr("All the content of the workspace will be deleted.");
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete Workspace"),
-        confirmText: this.tr("Delete"),
+        confirmText: this.tr("Delete permanently"),
         confirmAction: "delete"
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteWorkspaceButton");

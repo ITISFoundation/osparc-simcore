@@ -329,7 +329,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       const msg = this.tr("Are you sure you want to delete") + " <b>" + this.getTitle() + "</b>?";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete Folder"),
-        confirmText: this.tr("Delete"),
+        confirmText: this.tr("Delete permanently"),
         confirmAction: "delete"
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteFolderButton");
