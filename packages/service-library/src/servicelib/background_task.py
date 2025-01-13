@@ -54,7 +54,7 @@ def periodic(
         early_wake_up_event -- allows to awaken the function before the interval has passed. (default: {None})
 
     Returns:
-        _description_
+        coroutine that will be called periodically (runs forever)
     """
 
     def _decorator(
