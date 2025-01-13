@@ -16,5 +16,7 @@ async def get_service_extras(
     service_version: ServiceVersion,
     director_client: Annotated[DirectorApi, Depends(get_director_api)],
 ) -> dict[str, Any]:
-    labels = await director_client.get_service_extras(service_key, service_version)
-    return Envelope[dict[str, Any]](data=labels).model_dump(mode="json")
+    service_extras = await director_client.get_service_extras(
+        service_key, service_version
+    )
+    return Envelope[dict[str, Any]](data=service_extras).model_dump(mode="json")

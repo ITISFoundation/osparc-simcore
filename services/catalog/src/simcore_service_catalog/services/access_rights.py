@@ -6,8 +6,7 @@ import logging
 import operator
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, cast
-from urllib.parse import quote_plus
+from typing import cast
 
 import arrow
 from fastapi import FastAPI
@@ -36,12 +35,8 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
     # NOTE: https://github.com/ITISFoundation/osparc-simcore/pull/6003#discussion_r1658200909
     # get service build date
     client = get_director_api(app)
-    data = cast(
-        dict[str, Any],
-        await client.get(
-            f"/service_extras/{quote_plus(service.key)}/{service.version}"
-        ),
-    )
+
+    data = await client.get_service_extras(service.key, service.version)
     if not data or "build_date" not in data:
         return True
     service_build_data = arrow.get(data["build_date"]).datetime
