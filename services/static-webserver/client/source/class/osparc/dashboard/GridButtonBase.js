@@ -251,7 +251,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           layout.add(control, {flex: 1});
           break;
         }
-        case "modified-text":
+        case "date-text":
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-dark",
             alignY: "middle",

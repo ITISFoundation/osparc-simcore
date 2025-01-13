@@ -308,6 +308,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       nullable: true
     },
 
+    trashedAt: {
+      check: "Date",
+      apply: "_applyTrasehdAt",
+      nullable: true
+    },
+
     classifiers: {
       check: "Array"
     },
@@ -457,6 +463,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         owner,
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
+        trashedAt: resourceData.trashedAt ? new Date(resourceData.trashedAt) : null,
         icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
@@ -520,6 +527,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _applyLastChangeDate: function(value, old) {
+      throw new Error("Abstract method called!");
+    },
+
+    _applyTrasehdAt: function(value, old) {
       throw new Error("Abstract method called!");
     },
 
