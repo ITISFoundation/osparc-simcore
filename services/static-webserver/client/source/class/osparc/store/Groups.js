@@ -131,7 +131,7 @@ qx.Class.define("osparc.store.Groups", {
       })
     },
 
-    getAllGroupsAndUsers: function() {
+    getAllGroups: function() {
       const allGroupsAndUsers = {};
 
       const groupEveryone = this.getEveryoneGroup();
@@ -145,11 +145,6 @@ qx.Class.define("osparc.store.Groups", {
 
       Object.values(this.getOrganizations()).forEach(organization => {
         allGroupsAndUsers[organization.getGroupId()] = organization;
-      });
-
-      const users = osparc.store.Users.getInstance().getUsers();
-      users.forEach(user => {
-        allGroupsAndUsers[user.getGroupId()] = user;
       });
 
       return allGroupsAndUsers;

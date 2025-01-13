@@ -392,7 +392,7 @@ qx.Class.define("osparc.share.Collaborators", {
       return null;
     },
 
-    _reloadCollaboratorsList: function() {
+    _reloadCollaboratorsList: async function() {
       // reload "Share with..." list
       if (this.__addCollaborators) {
         const serializedDataCopy = osparc.utils.Utils.deepCloneObject(this._serializedDataCopy);
@@ -412,10 +412,17 @@ qx.Class.define("osparc.share.Collaborators", {
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
       const showOptions = this.__canIChangePermissions();
-      const allGroupsAndUsers = groupsStore.getAllGroupsAndUsers();
-      Object.keys(accessRights).forEach(gid => {
-        if (gid in allGroupsAndUsers) {
-          const collab = allGroupsAndUsers[gid];
+      const allGroups = groupsStore.getAllGroups();
+      const usersStore = osparc.store.Users.getInstance();
+      for (let i=0; i<Object.keys(accessRights).length; i++) {
+        const gid = parseInt(Object.keys(accessRights)[i]);
+        let collab = null;
+        if (gid in allGroups) {
+          collab = allGroups[gid];
+        } else {
+          collab = await usersStore.getUser(gid);
+        }
+        if (collab) {
           // Do not override collaborator object
           const collaborator = {
             "gid": collab.getGroupId(),
@@ -436,7 +443,7 @@ qx.Class.define("osparc.share.Collaborators", {
           collaborator["resourceType"] = this._resourceType;
           collaboratorsList.push(collaborator);
         }
-      });
+      }
       collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
       collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
     },
