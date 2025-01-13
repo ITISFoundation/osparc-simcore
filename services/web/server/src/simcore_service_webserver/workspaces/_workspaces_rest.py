@@ -4,12 +4,12 @@ from aiohttp import web
 from models_library.api_schemas_webserver.workspaces import (
     WorkspaceCreateBodyParams,
     WorkspaceGet,
-    WorkspaceGetPage,
     WorkspaceReplaceBodyParams,
 )
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
+from models_library.workspaces import UserWorkspaceAccessRightsDB
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -46,7 +46,7 @@ async def create_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.model_validate(request)
     body_params = await parse_request_body_as(WorkspaceCreateBodyParams, request)
 
-    workspace: WorkspaceGet = await _workspaces_service.create_workspace(
+    workspace: UserWorkspaceAccessRightsDB = await _workspaces_service.create_workspace(
         request.app,
         user_id=req_ctx.user_id,
         name=body_params.name,
@@ -55,7 +55,7 @@ async def create_workspace(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    return envelope_json_response(workspace, web.HTTPCreated)
+    return envelope_json_response(WorkspaceGet.from_model(workspace), web.HTTPCreated)
 
 
 @routes.get(f"/{VTAG}/workspaces", name="list_workspaces")
@@ -72,7 +72,7 @@ async def list_workspaces(request: web.Request):
         query_params.filters = WorkspacesFilters()
 
     assert query_params.filters
-    workspaces: WorkspaceGetPage = await _workspaces_service.list_workspaces(
+    total_count, workspaces = await _workspaces_service.list_workspaces(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -85,9 +85,9 @@ async def list_workspaces(request: web.Request):
 
     page = Page[WorkspaceGet].model_validate(
         paginate_data(
-            chunk=workspaces.items,
+            chunk=[WorkspaceGet.from_model(w) for w in workspaces],
             request_url=request.url,
-            total=workspaces.total,
+            total=total_count,
             limit=query_params.limit,
             offset=query_params.offset,
         )
@@ -106,14 +106,14 @@ async def get_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
-    workspace: WorkspaceGet = await _workspaces_service.get_workspace(
+    workspace = await _workspaces_service.get_workspace(
         app=request.app,
         workspace_id=path_params.workspace_id,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
     )
 
-    return envelope_json_response(workspace)
+    return envelope_json_response(WorkspaceGet.from_model(workspace))
 
 
 @routes.put(
@@ -128,14 +128,14 @@ async def replace_workspace(request: web.Request):
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
     body_params = await parse_request_body_as(WorkspaceReplaceBodyParams, request)
 
-    workspace: WorkspaceGet = await _workspaces_service.update_workspace(
+    workspace = await _workspaces_service.update_workspace(
         app=request.app,
         user_id=req_ctx.user_id,
         workspace_id=path_params.workspace_id,
         product_name=req_ctx.product_name,
         **body_params.model_dump(),
     )
-    return envelope_json_response(workspace)
+    return envelope_json_response(WorkspaceGet.from_model(workspace))
 
 
 @routes.delete(

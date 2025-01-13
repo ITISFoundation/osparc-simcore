@@ -3,9 +3,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Iterator
 from copy import deepcopy
-from typing import Any
+from typing import Any, AsyncIterator
 
 import pytest
 import sqlalchemy as sa
@@ -30,7 +29,9 @@ from yarl import URL
 @pytest.fixture
 async def create_workspace_and_folder(
     client: TestClient, logged_user: UserInfoDict, postgres_db: sa.engine.Engine
-) -> Iterator[tuple[WorkspaceID, FolderID]]:
+) -> AsyncIterator[tuple[WorkspaceID, FolderID]]:
+    assert client.app
+
     workspace = await create_workspace(
         client.app,
         user_id=logged_user["id"],
