@@ -48,7 +48,7 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 from . import _crud_api_create, _crud_api_read, projects_api
-from ._common_models import ProjectPathParams, RequestContext
+from ._common.models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveQueryParams,
     ProjectCreateHeaders,

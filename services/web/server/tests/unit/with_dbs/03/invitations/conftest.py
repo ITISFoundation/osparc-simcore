@@ -8,7 +8,7 @@ import binascii
 import json
 from contextlib import suppress
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -155,7 +155,7 @@ def mock_invitations_service_http_api(
                         **example,
                         **body,
                         "invitation_url": f"https://osparc-simcore.test/#/registration?invitation={fake_code}",
-                        "created": datetime.now(tz=timezone.utc),
+                        "created": datetime.now(tz=UTC),
                     }
                 )
             ),

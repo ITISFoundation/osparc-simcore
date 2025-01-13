@@ -317,7 +317,7 @@ async def assert_redirected_to_study(
     assert resp.url.path == "/"
     assert (
         "OSPARC-SIMCORE" in content
-    ), "Expected front-end rendering workbench's study, got %s" % str(content)
+    ), f"Expected front-end rendering workbench's study, got {content!s}"
 
     # Expects auth cookie for current user
     assert DEFAULT_SESSION_COOKIE_NAME in [c.key for c in session.cookie_jar]

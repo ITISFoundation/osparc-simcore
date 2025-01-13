@@ -33,7 +33,7 @@ from ..login.decorators import login_required
 from ..projects._access_rights_api import check_user_project_permission
 from ..security.decorators import permission_required
 from . import _ports_api, projects_api
-from ._common_models import ProjectPathParams, RequestContext
+from ._common.models import ProjectPathParams, RequestContext
 from .db import ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
