@@ -13,6 +13,7 @@ import pytest
 from faker import Faker
 from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK, exclusive
 from servicelib.redis._errors import LockLostError
+from servicelib.redis._decorators import _EXCLUSIVE_AUTO_EXTEND_TASK_NAME
 from servicelib.utils import limited_gather, logged_gather
 
 pytest_simcore_core_services_selection = [
@@ -213,6 +214,9 @@ async def test_exclusive_task_erroring_releases_lock(
 ):
     @exclusive(redis_client_sdk, lock_key=lock_name)
     async def _() -> None:
+        # await asyncio.sleep(0)
+
+        print("raising error")
         msg = "Expected error"
         raise RuntimeError(msg)
 
@@ -221,10 +225,10 @@ async def test_exclusive_task_erroring_releases_lock(
     assert await redis_client_sdk.lock_value(lock_name) is None
 
     # run the exclusive task
-    exclusive_task = asyncio.create_task(_())
+    # exclusive_task = asyncio.create_task(_())
 
     with pytest.raises(RuntimeError):
-        await exclusive_task
+        await _()
 
     assert await redis_client_sdk.lock_value(lock_name) is None
 
@@ -267,3 +271,28 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
         *(_inc_counter() for _ in range(INCREASE_OPERATIONS)), limit=15
     )
     assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
+
+
+async def test_cancelling_exclusive_task_works(
+    redis_client_sdk: RedisClientSDK, lock_name: str
+):
+    started_event = asyncio.Event()
+
+    @exclusive(redis_client_sdk, lock_key=lock_name)
+    async def _(time_to_sleep: datetime.timedelta) -> datetime.timedelta:
+        started_event.set()
+        await asyncio.sleep(time_to_sleep.total_seconds())
+        return time_to_sleep
+
+    exclusive_task = asyncio.create_task(_(datetime.timedelta(seconds=10)))
+    await asyncio.wait_for(started_event.wait(), timeout=2)
+    exclusive_task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await exclusive_task
+
+    assert not await _is_locked(redis_client_sdk, lock_name)
+
+    assert _EXCLUSIVE_AUTO_EXTEND_TASK_NAME.format(redis_lock_key=lock_name) not in [
+        t.get_name() for t in asyncio.tasks.all_tasks()
+    ], "The auto extend lock task was not properly stopped!"

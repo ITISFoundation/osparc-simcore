@@ -4,21 +4,51 @@ import functools
 import logging
 from collections.abc import Callable, Coroutine
 from datetime import timedelta
-from typing import Any, ParamSpec, TypeVar
+from typing import Any, Final, ParamSpec, TypeVar
 
 import redis.exceptions
+from redis.asyncio.lock import Lock
+from tenacity import retry
 
-from ..background_task import periodic_task
-from ..logging_utils import log_context
+from servicelib.async_utils import cancel_wait_task, with_delay
+from servicelib.logging_utils import log_context
+
+from ..background_task import periodic
 from ._client import RedisClientSDK
 from ._constants import DEFAULT_LOCK_TTL, SHUTDOWN_TIMEOUT_S
-from ._errors import CouldNotAcquireLockError
+from ._errors import CouldNotAcquireLockError, LockLostError
 from ._utils import auto_extend_lock
 
 _logger = logging.getLogger(__file__)
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+_EXCLUSIVE_TASK_NAME: Final[str] = "exclusive/{func_name}"
+_EXCLUSIVE_AUTO_EXTEND_TASK_NAME: Final[str] = (
+    "exclusive/autoextend_lock_{redis_lock_key}"
+)
+
+
+@periodic(interval=DEFAULT_LOCK_TTL / 2, raise_on_error=True)
+async def _periodic_auto_extender(lock: Lock, started_event: asyncio.Event) -> None:
+    started_event.set()
+    await auto_extend_lock(lock)
+    current_task = asyncio.tasks.current_task()
+    assert current_task is not None  # nosec
+    print(current_task.cancelling())
+
+
+def _cancel_auto_extender_task(
+    _: asyncio.Task, *, auto_extend_task: asyncio.Task
+) -> None:
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        f"Cancelling auto-extend task {auto_extend_task.get_name()}",
+    ):
+        auto_extend_task.cancel()
+        assert auto_extend_task.cancelling()
 
 
 def exclusive(
@@ -78,42 +108,58 @@ def exclusive(
                 raise CouldNotAcquireLockError(lock=lock)
 
             try:
-                async with periodic_task(
-                    auto_extend_lock,
-                    interval=DEFAULT_LOCK_TTL / 2,
-                    task_name=f"autoextend_exclusive_lock_{redis_lock_key}",
-                    raise_on_error=True,
-                    lock=lock,
-                ) as auto_extend_task:
+                async with asyncio.TaskGroup() as tg:
+                    started_event = asyncio.Event()
+                    # first create a task that will auto-extend the lock
+                    auto_extend_lock_task = tg.create_task(
+                        _periodic_auto_extender(lock, started_event),
+                        name=_EXCLUSIVE_AUTO_EXTEND_TASK_NAME.format(
+                            redis_lock_key=redis_lock_key
+                        ),
+                    )
+                    # NOTE: in case the work task is super short lived, then we might fail in cancelling it
+                    await started_event.wait()
+
+                    # then the task that runs the user code
                     assert asyncio.iscoroutinefunction(func)  # nosec
-                    work_task = asyncio.create_task(
-                        func(*args, **kwargs), name=f"exclusive_{func.__name__}"
+                    work_task = tg.create_task(
+                        func(*args, **kwargs),
+                        name=_EXCLUSIVE_TASK_NAME.format(func_name=func.__name__),
                     )
-                    done, _pending = await asyncio.wait(
-                        [work_task, auto_extend_task],
-                        return_when=asyncio.FIRST_COMPLETED,
-                    )
-                    # the task finished, let's return its result whatever it is
-                    if work_task in done:
-                        return await work_task
 
-                    # the auto extend task can only finish if it raised an error, so it's bad
-                    _logger.error(
-                        "lock %s could not be auto-extended, cancelling work task! "
-                        "TIP: check connection to Redis DBs or look for Synchronous "
-                        "code that might block the auto-extender task.",
-                        lock.name,
-                    )
-                    with log_context(_logger, logging.DEBUG, msg="cancel work task"):
-                        work_task.cancel()
-                        with contextlib.suppress(asyncio.CancelledError, TimeoutError):
-                            # this will raise any other error that could have happened in the work task
-                            await asyncio.wait_for(
-                                work_task, timeout=SHUTDOWN_TIMEOUT_S
-                            )
-                    # return the extend task raised error
-                    return await auto_extend_task  # type: ignore[no-any-return] # will raise
+                    # work_task.add_done_callback(
+                    #     functools.partial(
+                    #         _cancel_auto_extender_task,
+                    #         auto_extend_task=auto_extend_lock_task,
+                    #     )
+                    # )
 
+                    res = await work_task
+                    auto_extend_lock_task.cancel()
+
+                    return res
+
+            except BaseExceptionGroup as eg:
+                breakpoint()
+                # Separate exceptions into LockLostError and others
+                lock_lost_errors, other_errors = eg.split(LockLostError)
+
+                # If there are any other errors, re-raise them
+                if other_errors:
+                    assert len(other_errors.exceptions) == 1  # nosec
+                    raise other_errors.exceptions[0] from eg
+
+                assert lock_lost_errors is not None  # nosec
+                assert len(lock_lost_errors.exceptions) == 1  # nosec
+                _logger.error(  # noqa: TRY400
+                    "lock %s could not be auto-extended! "
+                    "TIP: check connection to Redis DBs or look for Synchronous "
+                    "code that might block the auto-extender task. Somehow the distributed lock disappeared!",
+                    lock.name,
+                )
+                raise lock_lost_errors.exceptions[0] from eg
+            except Exception as exc:
+                breakpoint()
             finally:
                 with contextlib.suppress(redis.exceptions.LockNotOwnedError):
                     # in the case where the lock would have been lost,
