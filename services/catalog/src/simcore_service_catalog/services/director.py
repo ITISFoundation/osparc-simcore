@@ -13,6 +13,7 @@ from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
+from pydantic import NonNegativeInt
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_context
 from starlette import status
@@ -26,14 +27,37 @@ from ..exceptions.errors import DirectorUnresponsiveError
 
 _logger = logging.getLogger(__name__)
 
-MINUTE = 60
+_MINUTE: Final[NonNegativeInt] = 60
+
+
+_SERVICE_RUNTIME_SETTINGS: Final[str] = "simcore.service.settings"
+_ORG_LABELS_TO_SCHEMA_LABELS: Final[dict[str, str]] = {
+    "org.label-schema.build-date": "build_date",
+    "org.label-schema.vcs-ref": "vcs_ref",
+    "org.label-schema.vcs-url": "vcs_url",
+}
+
+_CONTAINER_SPEC_ENTRY_NAME = "ContainerSpec".lower()
+_RESOURCES_ENTRY_NAME = "Resources".lower()
+
+
+def _validate_kind(entry_to_validate: dict[str, Any], kind_name: str):
+    for element in (
+        entry_to_validate.get("value", {})
+        .get("Reservations", {})
+        .get("GenericResources", [])
+    ):
+        if element.get("DiscreteResourceSpec", {}).get("Kind") == kind_name:
+            return True
+    return False
+
 
 _director_startup_retry_policy: dict[str, Any] = {
     # Random service startup order in swarm.
     # wait_random prevents saturating other services while startup
     #
     "wait": wait_random(2, 5),
-    "stop": stop_after_delay(2 * MINUTE),
+    "stop": stop_after_delay(2 * _MINUTE),
     "before_sleep": before_sleep_log(_logger, logging.WARNING),
     "reraise": True,
 }
@@ -98,114 +122,6 @@ def _return_data_or_raise_error(
         return _unenvelope_or_raise_error(resp)
 
     return request_wrapper
-
-
-_SERVICE_RUNTIME_SETTINGS: Final[str] = "simcore.service.settings"
-_ORG_LABELS_TO_SCHEMA_LABELS: Final[dict[str, str]] = {
-    "org.label-schema.build-date": "build_date",
-    "org.label-schema.vcs-ref": "vcs_ref",
-    "org.label-schema.vcs-url": "vcs_url",
-}
-
-_CONTAINER_SPEC_ENTRY_NAME = "ContainerSpec".lower()
-_RESOURCES_ENTRY_NAME = "Resources".lower()
-
-
-def _validate_kind(entry_to_validate: dict[str, Any], kind_name: str):
-    for element in (
-        entry_to_validate.get("value", {})
-        .get("Reservations", {})
-        .get("GenericResources", [])
-    ):
-        if element.get("DiscreteResourceSpec", {}).get("Kind") == kind_name:
-            return True
-    return False
-
-
-async def _get_service_extras(
-    director_client: "DirectorApi", image_key: str, image_tag: str
-) -> dict[str, Any]:
-    # check physical node requirements
-    # all nodes require "CPU"
-    result: dict[str, Any] = {
-        "node_requirements": {
-            "CPU": director_client.default_max_nano_cpus / 1.0e09,
-            "RAM": director_client.default_max_memory,
-        }
-    }
-
-    labels = await director_client.get_service_labels(image_key, image_tag)
-    _logger.debug("Compiling service extras from labels %s", pformat(labels))
-
-    if _SERVICE_RUNTIME_SETTINGS in labels:
-        service_settings: list[dict[str, Any]] = json.loads(
-            labels[_SERVICE_RUNTIME_SETTINGS]
-        )
-        for entry in service_settings:
-            entry_name = entry.get("name", "").lower()
-            entry_value = entry.get("value")
-            invalid_with_msg = None
-
-            if entry_name == _RESOURCES_ENTRY_NAME:
-                if entry_value and isinstance(entry_value, dict):
-                    res_limit = entry_value.get("Limits", {})
-                    res_reservation = entry_value.get("Reservations", {})
-                    # CPU
-                    result["node_requirements"]["CPU"] = (
-                        float(res_limit.get("NanoCPUs", 0))
-                        or float(res_reservation.get("NanoCPUs", 0))
-                        or director_client.default_max_nano_cpus
-                    ) / 1.0e09
-                    # RAM
-                    result["node_requirements"]["RAM"] = (
-                        res_limit.get("MemoryBytes", 0)
-                        or res_reservation.get("MemoryBytes", 0)
-                        or director_client.default_max_memory
-                    )
-                else:
-                    invalid_with_msg = f"invalid type for resource [{entry_value}]"
-
-                # discrete resources (custom made ones) ---
-                # check if the service requires GPU support
-                if not invalid_with_msg and _validate_kind(entry, "VRAM"):
-
-                    result["node_requirements"]["GPU"] = 1
-                if not invalid_with_msg and _validate_kind(entry, "MPI"):
-                    result["node_requirements"]["MPI"] = 1
-
-            elif entry_name == _CONTAINER_SPEC_ENTRY_NAME:
-                # NOTE: some minor validation
-                # expects {'name': 'ContainerSpec', 'type': 'ContainerSpec', 'value': {'Command': [...]}}
-                if (
-                    entry_value
-                    and isinstance(entry_value, dict)
-                    and "Command" in entry_value
-                ):
-                    result["container_spec"] = entry_value
-                else:
-                    invalid_with_msg = f"invalid container_spec [{entry_value}]"
-
-            if invalid_with_msg:
-                _logger.warning(
-                    "%s entry [%s] encoded in settings labels of service image %s:%s",
-                    invalid_with_msg,
-                    entry,
-                    image_key,
-                    image_tag,
-                )
-
-    # get org labels
-    result.update(
-        {
-            sl: labels[dl]
-            for dl, sl in _ORG_LABELS_TO_SCHEMA_LABELS.items()
-            if dl in labels
-        }
-    )
-
-    _logger.debug("Following service extras were compiled: %s", pformat(result))
-
-    return result
 
 
 class DirectorApi:
@@ -288,7 +204,87 @@ class DirectorApi:
         service_key: ServiceKey,
         service_version: ServiceVersion,
     ) -> dict[str, Any]:
-        return await _get_service_extras(self, service_key, service_version)
+        # check physical node requirements
+        # all nodes require "CPU"
+        result: dict[str, Any] = {
+            "node_requirements": {
+                "CPU": self.default_max_nano_cpus / 1.0e09,
+                "RAM": self.default_max_memory,
+            }
+        }
+
+        labels = await self.get_service_labels(service_key, service_version)
+        _logger.debug("Compiling service extras from labels %s", pformat(labels))
+
+        if _SERVICE_RUNTIME_SETTINGS in labels:
+            service_settings: list[dict[str, Any]] = json.loads(
+                labels[_SERVICE_RUNTIME_SETTINGS]
+            )
+            for entry in service_settings:
+                entry_name = entry.get("name", "").lower()
+                entry_value = entry.get("value")
+                invalid_with_msg = None
+
+                if entry_name == _RESOURCES_ENTRY_NAME:
+                    if entry_value and isinstance(entry_value, dict):
+                        res_limit = entry_value.get("Limits", {})
+                        res_reservation = entry_value.get("Reservations", {})
+                        # CPU
+                        result["node_requirements"]["CPU"] = (
+                            float(res_limit.get("NanoCPUs", 0))
+                            or float(res_reservation.get("NanoCPUs", 0))
+                            or self.default_max_nano_cpus
+                        ) / 1.0e09
+                        # RAM
+                        result["node_requirements"]["RAM"] = (
+                            res_limit.get("MemoryBytes", 0)
+                            or res_reservation.get("MemoryBytes", 0)
+                            or self.default_max_memory
+                        )
+                    else:
+                        invalid_with_msg = f"invalid type for resource [{entry_value}]"
+
+                    # discrete resources (custom made ones) ---
+                    # check if the service requires GPU support
+                    if not invalid_with_msg and _validate_kind(entry, "VRAM"):
+
+                        result["node_requirements"]["GPU"] = 1
+                    if not invalid_with_msg and _validate_kind(entry, "MPI"):
+                        result["node_requirements"]["MPI"] = 1
+
+                elif entry_name == _CONTAINER_SPEC_ENTRY_NAME:
+                    # NOTE: some minor validation
+                    # expects {'name': 'ContainerSpec', 'type': 'ContainerSpec', 'value': {'Command': [...]}}
+                    if (
+                        entry_value
+                        and isinstance(entry_value, dict)
+                        and "Command" in entry_value
+                    ):
+                        result["container_spec"] = entry_value
+                    else:
+                        invalid_with_msg = f"invalid container_spec [{entry_value}]"
+
+                if invalid_with_msg:
+                    _logger.warning(
+                        "%s entry [%s] encoded in settings labels of service image %s:%s",
+                        invalid_with_msg,
+                        entry,
+                        service_key,
+                        service_version,
+                    )
+
+        # get org labels
+        result.update(
+            {
+                sl: labels[dl]
+                for dl, sl in _ORG_LABELS_TO_SCHEMA_LABELS.items()
+                if dl in labels
+            }
+        )
+
+        _logger.debug("Following service extras were compiled: %s", pformat(result))
+
+        return result
 
 
 async def setup_director(app: FastAPI) -> None:
