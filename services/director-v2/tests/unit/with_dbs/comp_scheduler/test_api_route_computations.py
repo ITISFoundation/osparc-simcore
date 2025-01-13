@@ -219,9 +219,7 @@ def mocked_catalog_service_fcts(
                 r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/extras"
             ),
             name="get_service_extras",
-        ).respond(
-            json={"data": fake_service_extras.model_dump(mode="json", by_alias=True)}
-        )
+        ).respond(json=fake_service_extras.model_dump(mode="json", by_alias=True))
         respx_mock.get(
             re.compile(
                 r"services/(?P<service_key>simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+)/(?P<service_version>[^\.]+.[^\.]+.[^/\?]+).*"

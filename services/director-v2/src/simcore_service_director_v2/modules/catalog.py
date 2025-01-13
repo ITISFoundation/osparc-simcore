@@ -16,7 +16,6 @@ from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
 
 from ..utils.client_decorators import handle_errors, handle_retry
-from ..utils.clients import unenvelope_or_raise_error
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +129,7 @@ class CatalogClient:
             f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/extras",
         )
         if resp.status_code == status.HTTP_200_OK:
-            return ServiceExtras.model_validate(unenvelope_or_raise_error(resp))
+            return ServiceExtras.model_validate(resp)
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_specifications(
