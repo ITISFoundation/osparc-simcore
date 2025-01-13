@@ -292,15 +292,28 @@ async def _process_stop_event(
             msg.created_at,
             running_service.pricing_unit_cost,
         )
+
+        wallet_total_credits = (
+            await credit_transactions_db.sum_credit_transactions_by_product_and_wallet(
+                db_engine,
+                product_name=running_service.product_name,
+                wallet_id=running_service.wallet_id,
+            )
+        )
+        _transaction_status = (
+            CreditTransactionStatus.BILLED
+            if wallet_total_credits.available_osparc_credits - computed_credits > 0
+            else CreditTransactionStatus.IN_DEBT
+        )
+        # Adjust the status if the platform status is not OK
+        if msg.simcore_platform_status != SimcorePlatformStatus.OK:
+            _transaction_status = CreditTransactionStatus.NOT_BILLED
+
         # Update credits in the transaction table and close the transaction
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
             service_run_id=msg.service_run_id,
             osparc_credits=make_negative(computed_credits),
-            transaction_status=(
-                CreditTransactionStatus.BILLED
-                if msg.simcore_platform_status == SimcorePlatformStatus.OK
-                else CreditTransactionStatus.NOT_BILLED
-            ),
+            transaction_status=_transaction_status,
         )
         await credit_transactions_db.update_credit_transaction_credits_and_status(
             db_engine, data=update_credit_transaction

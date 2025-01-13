@@ -24,7 +24,10 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
 from simcore_postgres_database.models.tags import tags
-from simcore_postgres_database.utils_repos import transaction_context
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ....exceptions.errors import ServiceRunNotCreatedDBError
@@ -162,7 +165,7 @@ async def get_service_run_by_id(
     *,
     service_run_id: ServiceRunID,
 ) -> ServiceRunDB | None:
-    async with transaction_context(engine, connection) as conn:
+    async with pass_or_acquire_connection(engine, connection) as conn:
         stmt = sa.select(resource_tracker_service_runs).where(
             resource_tracker_service_runs.c.service_run_id == service_run_id
         )
@@ -190,15 +193,18 @@ async def list_service_runs_by_product_and_user_and_wallet(
     product_name: ProductName,
     user_id: UserID | None,
     wallet_id: WalletID | None,
-    offset: int,
-    limit: int,
+    # attribute filtering
     service_run_status: ServiceRunStatus | None = None,
     started_from: datetime | None = None,
     started_until: datetime | None = None,
+    # pagination
+    offset: int,
+    limit: int,
+    # ordering
     order_by: OrderBy | None = None,
-) -> list[ServiceRunWithCreditsDB]:
-    async with transaction_context(engine, connection) as conn:
-        query = (
+) -> tuple[int, list[ServiceRunWithCreditsDB]]:
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        base_query = (
             sa.select(
                 resource_tracker_service_runs.c.product_name,
                 resource_tracker_service_runs.c.service_run_id,
@@ -257,41 +263,56 @@ async def list_service_runs_by_product_and_user_and_wallet(
                 )
             )
             .where(resource_tracker_service_runs.c.product_name == product_name)
-            .offset(offset)
-            .limit(limit)
         )
 
         if user_id:
-            query = query.where(resource_tracker_service_runs.c.user_id == user_id)
+            base_query = base_query.where(
+                resource_tracker_service_runs.c.user_id == user_id
+            )
         if wallet_id:
-            query = query.where(resource_tracker_service_runs.c.wallet_id == wallet_id)
+            base_query = base_query.where(
+                resource_tracker_service_runs.c.wallet_id == wallet_id
+            )
         if service_run_status:
-            query = query.where(
+            base_query = base_query.where(
                 resource_tracker_service_runs.c.service_run_status == service_run_status
             )
         if started_from:
-            query = query.where(
+            base_query = base_query.where(
                 sa.func.DATE(resource_tracker_service_runs.c.started_at)
                 >= started_from.date()
             )
         if started_until:
-            query = query.where(
+            base_query = base_query.where(
                 sa.func.DATE(resource_tracker_service_runs.c.started_at)
                 <= started_until.date()
             )
 
+        # Select total count from base_query
+        subquery = base_query.subquery()
+        count_query = sa.select(sa.func.count()).select_from(subquery)
+
         if order_by:
             if order_by.direction == OrderDirection.ASC:
-                query = query.order_by(sa.asc(order_by.field))
+                list_query = base_query.order_by(sa.asc(order_by.field))
             else:
-                query = query.order_by(sa.desc(order_by.field))
+                list_query = base_query.order_by(sa.desc(order_by.field))
         else:
             # Default ordering
-            query = query.order_by(resource_tracker_service_runs.c.started_at.desc())
+            list_query = base_query.order_by(
+                resource_tracker_service_runs.c.started_at.desc()
+            )
 
-        result = await conn.execute(query)
+        total_count = await conn.scalar(count_query)
+        if total_count is None:
+            total_count = 0
 
-    return [ServiceRunWithCreditsDB.model_validate(row) for row in result.fetchall()]
+        result = await conn.stream(list_query.offset(offset).limit(limit))
+        items: list[ServiceRunWithCreditsDB] = [
+            ServiceRunWithCreditsDB.model_validate(row) async for row in result
+        ]
+
+        return cast(int, total_count), items
 
 
 async def get_osparc_credits_aggregated_by_service(
@@ -306,7 +327,7 @@ async def get_osparc_credits_aggregated_by_service(
     started_from: datetime | None = None,
     started_until: datetime | None = None,
 ) -> tuple[int, list[OsparcCreditsAggregatedByServiceKeyDB]]:
-    async with transaction_context(engine, connection) as conn:
+    async with pass_or_acquire_connection(engine, connection) as conn:
         base_query = (
             sa.select(
                 resource_tracker_service_runs.c.service_key,
@@ -347,8 +368,12 @@ async def get_osparc_credits_aggregated_by_service(
             .where(
                 (resource_tracker_service_runs.c.product_name == product_name)
                 & (
-                    resource_tracker_credit_transactions.c.transaction_status
-                    == CreditTransactionStatus.BILLED
+                    resource_tracker_credit_transactions.c.transaction_status.in_(
+                        [
+                            CreditTransactionStatus.BILLED,
+                            CreditTransactionStatus.IN_DEBT,
+                        ]
+                    )
                 )
                 & (
                     resource_tracker_credit_transactions.c.transaction_classification
@@ -506,7 +531,7 @@ async def total_service_runs_by_product_and_user_and_wallet(
     started_from: datetime | None = None,
     started_until: datetime | None = None,
 ) -> PositiveInt:
-    async with transaction_context(engine, connection) as conn:
+    async with pass_or_acquire_connection(engine, connection) as conn:
         query = (
             sa.select(sa.func.count())
             .select_from(resource_tracker_service_runs)
@@ -547,7 +572,7 @@ async def list_service_runs_with_running_status_across_all_products(
     offset: int,
     limit: int,
 ) -> list[ServiceRunForCheckDB]:
-    async with transaction_context(engine, connection) as conn:
+    async with pass_or_acquire_connection(engine, connection) as conn:
         query = (
             sa.select(
                 resource_tracker_service_runs.c.service_run_id,
@@ -571,7 +596,7 @@ async def list_service_runs_with_running_status_across_all_products(
 async def total_service_runs_with_running_status_across_all_products(
     engine: AsyncEngine, connection: AsyncConnection | None = None
 ) -> PositiveInt:
-    async with transaction_context(engine, connection) as conn:
+    async with pass_or_acquire_connection(engine, connection) as conn:
         query = (
             sa.select(sa.func.count())
             .select_from(resource_tracker_service_runs)

@@ -7,6 +7,7 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
     WalletTotalCredits,
 )
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.resource_tracker import CreditTransactionId, CreditTransactionStatus
 from models_library.wallets import WalletID
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
@@ -29,7 +30,7 @@ async def create_credit_transaction(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    data: CreditTransactionCreate
+    data: CreditTransactionCreate,
 ) -> CreditTransactionId:
     async with transaction_context(engine, connection) as conn:
         insert_stmt = (
@@ -66,7 +67,7 @@ async def update_credit_transaction_credits(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    data: CreditTransactionCreditsUpdate
+    data: CreditTransactionCreditsUpdate,
 ) -> CreditTransactionId | None:
     async with transaction_context(engine, connection) as conn:
         update_stmt = (
@@ -103,7 +104,7 @@ async def update_credit_transaction_credits_and_status(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    data: CreditTransactionCreditsAndStatusUpdate
+    data: CreditTransactionCreditsAndStatusUpdate,
 ) -> CreditTransactionId | None:
     async with transaction_context(engine, connection) as conn:
         update_stmt = (
@@ -132,12 +133,47 @@ async def update_credit_transaction_credits_and_status(
     return cast(CreditTransactionId | None, row[0])
 
 
+async def batch_update_credit_transaction_status_for_in_debt_transactions(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    project_id: ProjectID | None = None,
+    wallet_id: WalletID,
+    transaction_status: CreditTransactionStatus,
+) -> None:
+    async with transaction_context(engine, connection) as conn:
+        update_stmt = (
+            resource_tracker_credit_transactions.update()
+            .values(
+                modified=sa.func.now(),
+                transaction_status=transaction_status,
+            )
+            .where(
+                (resource_tracker_credit_transactions.c.wallet_id == f"{wallet_id}")
+                & (
+                    resource_tracker_credit_transactions.c.transaction_status
+                    == CreditTransactionStatus.IN_DEBT
+                )
+            )
+        )
+
+        if project_id:
+            update_stmt = update_stmt.where(
+                resource_tracker_credit_transactions.c.project_id == f"{project_id}"
+            )
+
+        await conn.execute(update_stmt)
+
+
 async def sum_credit_transactions_by_product_and_wallet(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
-    wallet_id: WalletID
+    wallet_id: WalletID,
+    # attribute filters
+    transaction_status: CreditTransactionStatus | None = None,
+    project_id: ProjectID | None = None,
 ) -> WalletTotalCredits:
     async with transaction_context(engine, connection) as conn:
         sum_stmt = sa.select(
@@ -150,10 +186,22 @@ async def sum_credit_transactions_by_product_and_wallet(
                     [
                         CreditTransactionStatus.BILLED,
                         CreditTransactionStatus.PENDING,
+                        CreditTransactionStatus.IN_DEBT,
                     ]
                 )
             )
         )
+
+        if project_id:
+            sum_stmt = sum_stmt.where(
+                resource_tracker_credit_transactions.c.project_id == f"{project_id}"
+            )
+        if transaction_status:
+            sum_stmt = sum_stmt.where(
+                resource_tracker_credit_transactions.c.transaction_status
+                == transaction_status
+            )
+
         result = await conn.execute(sum_stmt)
     row = result.first()
     if row is None or row[0] is None:

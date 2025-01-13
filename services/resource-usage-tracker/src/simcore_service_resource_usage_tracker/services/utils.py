@@ -99,16 +99,17 @@ async def publish_to_rabbitmq_wallet_credits_limit_reached(
     )
 
     for offset in range(0, total_count, _BATCH_SIZE):
-        batch_services = (
-            await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
-                db_engine,
-                product_name=product_name,
-                user_id=None,
-                wallet_id=wallet_id,
-                offset=offset,
-                limit=_BATCH_SIZE,
-                service_run_status=ServiceRunStatus.RUNNING,
-            )
+        (
+            _,
+            batch_services,
+        ) = await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
+            db_engine,
+            product_name=product_name,
+            user_id=None,
+            wallet_id=wallet_id,
+            offset=offset,
+            limit=_BATCH_SIZE,
+            service_run_status=ServiceRunStatus.RUNNING,
         )
 
         await asyncio.gather(
