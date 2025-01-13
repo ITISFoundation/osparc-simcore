@@ -111,9 +111,9 @@ async def test_projects_groups_full_workflow(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
         assert data[1]["gid"] == new_user["primary_gid"]
-        assert data[1]["read"] == True
-        assert data[1]["write"] == False
-        assert data[1]["delete"] == False
+        assert data[1]["read"] is True
+        assert data[1]["write"] is False
+        assert data[1]["delete"] is False
 
         # Get the project endpoint and check the permissions
         url = client.app.router["get_project"].url_for(
@@ -163,9 +163,9 @@ async def test_projects_groups_full_workflow(
         )
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert data["gid"] == new_user["primary_gid"]
-        assert data["read"] == True
-        assert data["write"] == True
-        assert data["delete"] == False
+        assert data["read"] is True
+        assert data["write"] is True
+        assert data["delete"] is False
 
         # List the project groups
         url = client.app.router["list_project_groups"].url_for(
@@ -175,9 +175,9 @@ async def test_projects_groups_full_workflow(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
         assert data[1]["gid"] == new_user["primary_gid"]
-        assert data[1]["read"] == True
-        assert data[1]["write"] == True
-        assert data[1]["delete"] == False
+        assert data[1]["read"] is True
+        assert data[1]["write"] is True
+        assert data[1]["delete"] is False
 
         # Get the project endpoint and check the permissions
         url = client.app.router["get_project"].url_for(

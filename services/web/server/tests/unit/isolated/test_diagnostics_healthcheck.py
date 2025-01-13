@@ -7,8 +7,8 @@
 import asyncio
 import json
 import logging
-from collections.abc import Callable, Coroutine
 import time
+from collections.abc import Awaitable, Callable, Coroutine
 
 import pytest
 import simcore_service_webserver
@@ -89,12 +89,14 @@ def mock_environment(
         {
             **mock_env_devel_environment,
             "AIODEBUG_SLOW_DURATION_SECS": f"{SLOW_HANDLER_DELAY_SECS / 10}",
-            "WEBSERVER_DIAGNOSTICS": json.dumps({
-                "DIAGNOSTICS_MAX_AVG_LATENCY": "2.0",
-                "DIAGNOSTICS_MAX_TASK_DELAY": f"{SLOW_HANDLER_DELAY_SECS}",
-                "DIAGNOSTICS_START_SENSING_DELAY": f"{0}",
-                "DIAGNOSTICS_HEALTHCHECK_ENABLED": "1",
-            }),
+            "WEBSERVER_DIAGNOSTICS": json.dumps(
+                {
+                    "DIAGNOSTICS_MAX_AVG_LATENCY": "2.0",
+                    "DIAGNOSTICS_MAX_TASK_DELAY": f"{SLOW_HANDLER_DELAY_SECS}",
+                    "DIAGNOSTICS_START_SENSING_DELAY": f"{0}",
+                    "DIAGNOSTICS_HEALTHCHECK_ENABLED": "1",
+                }
+            ),
             "SC_HEALTHCHECK_TIMEOUT": "2m",
         },
     )
@@ -104,7 +106,7 @@ def mock_environment(
 def client(
     event_loop: asyncio.AbstractEventLoop,
     unused_tcp_port_factory: Callable,
-    aiohttp_client: Callable,
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
     api_version_prefix: str,
     mock_environment: EnvVarsDict,
 ) -> TestClient:

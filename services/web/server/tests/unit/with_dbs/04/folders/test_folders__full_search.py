@@ -112,7 +112,7 @@ async def test_folders_full_search(
     assert len(data) == 1
 
     # Create new user
-    async with LoggedUser(client) as new_logged_user:
+    async with LoggedUser(client):
         # list full folder search
         url = client.app.router["list_folders_full_search"].url_for()
         resp = await client.get(f"{url}")

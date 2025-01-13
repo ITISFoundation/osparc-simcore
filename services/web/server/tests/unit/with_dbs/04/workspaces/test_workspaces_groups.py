@@ -40,9 +40,9 @@ async def test_workspaces_groups_full_workflow(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["gid"] == logged_user["primary_gid"]
-    assert data[0]["read"] == True
-    assert data[0]["write"] == True
-    assert data[0]["delete"] == True
+    assert data[0]["read"] is True
+    assert data[0]["write"] is True
+    assert data[0]["delete"] is True
 
     async with NewUser(
         app=client.app,
@@ -65,9 +65,9 @@ async def test_workspaces_groups_full_workflow(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
         assert data[1]["gid"] == new_user["primary_gid"]
-        assert data[1]["read"] == True
-        assert data[1]["write"] == False
-        assert data[1]["delete"] == False
+        assert data[1]["read"] is True
+        assert data[1]["write"] is False
+        assert data[1]["delete"] is False
 
         # Update the workspace permissions of the added user
         url = client.app.router["replace_workspace_group"].url_for(
@@ -79,9 +79,9 @@ async def test_workspaces_groups_full_workflow(
         )
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert data["gid"] == new_user["primary_gid"]
-        assert data["read"] == True
-        assert data["write"] == True
-        assert data["delete"] == False
+        assert data["read"] is True
+        assert data["write"] is True
+        assert data["delete"] is False
 
         # List the workspace groups
         url = client.app.router["list_workspace_groups"].url_for(
@@ -91,9 +91,9 @@ async def test_workspaces_groups_full_workflow(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
         assert data[1]["gid"] == new_user["primary_gid"]
-        assert data[1]["read"] == True
-        assert data[1]["write"] == True
-        assert data[1]["delete"] == False
+        assert data[1]["read"] is True
+        assert data[1]["write"] is True
+        assert data[1]["delete"] is False
 
         # Delete the workspace group
         url = client.app.router["delete_workspace_group"].url_for(

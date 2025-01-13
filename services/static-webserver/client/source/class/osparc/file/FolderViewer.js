@@ -52,18 +52,21 @@ qx.Class.define("osparc.file.FolderViewer", {
     this.bind("folder", folderContent, "folder");
 
     if (allowMultiselection) {
+      multiSelectButton.bind("value", folderContent, "multiSelect");
+      folderContent.bind("multiSelect", multiSelectButton, "value");
       multiSelectButton.addListener("changeValue", e => {
-        folderContent.setMultiSelect(e.getData());
         selectedFileLayout.setMultiSelect(e.getData());
       });
     }
     gridViewButton.addListener("execute", () => {
       folderContent.setMode("icons");
-      selectedFileLayout.resetItemSelected();
+      selectedFileLayout.resetSelection();
+      multiSelectButton.setValue(false);
     });
     listViewButton.addListener("execute", () => {
       folderContent.setMode("list");
-      selectedFileLayout.resetItemSelected();
+      selectedFileLayout.resetSelection();
+      multiSelectButton.setValue(false);
     });
 
     folderContent.addListener("requestDatasetFiles", e => this.fireDataEvent("requestDatasetFiles", e.getData()));
@@ -176,7 +179,7 @@ qx.Class.define("osparc.file.FolderViewer", {
     },
 
     __applyFolder: function() {
-      this.getChildControl("selected-file-layout").resetItemSelected();
+      this.getChildControl("selected-file-layout").resetSelection();
     }
   }
 });

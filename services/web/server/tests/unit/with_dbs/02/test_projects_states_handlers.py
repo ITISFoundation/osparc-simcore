@@ -163,7 +163,7 @@ async def _open_project(
             try:
                 data, error = await assert_status(resp, e)
                 return data, error
-            except AssertionError:  # noqa: PERF203
+            except AssertionError:
                 # re-raise if last item
                 if e == expected[-1]:
                     raise
@@ -1235,8 +1235,8 @@ async def test_open_shared_project_2_users_locked(
     # now the expected result is that the project is locked and opened by client 1
     owner1 = Owner(
         user_id=logged_user["id"],
-        first_name=logged_user.get("first_name", None),
-        last_name=logged_user.get("last_name", None),
+        first_name=logged_user.get("first_name"),
+        last_name=logged_user.get("last_name"),
     )
     expected_project_state_client_1.locked.value = True
     expected_project_state_client_1.locked.status = ProjectStatus.OPENED

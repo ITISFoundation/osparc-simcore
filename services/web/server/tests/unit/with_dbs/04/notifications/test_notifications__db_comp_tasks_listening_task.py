@@ -6,7 +6,8 @@
 
 import json
 import logging
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any
 from unittest import mock
 
 import aiopg.sa
@@ -53,7 +54,7 @@ async def mock_project_subsystem(
         return_value="",
     )
 
-    yield mocked_project_calls
+    return mocked_project_calls
 
 
 @pytest.fixture
