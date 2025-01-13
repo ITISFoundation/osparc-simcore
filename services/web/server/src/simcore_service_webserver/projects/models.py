@@ -6,7 +6,7 @@ from aiopg.sa.result import RowProxy
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.folders import FolderID
 from models_library.projects import ClassifierID, ProjectID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_ui import StudyUI
 from models_library.users import UserID
 from models_library.utils.common_validators import (

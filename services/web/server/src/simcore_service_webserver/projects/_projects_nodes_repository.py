@@ -3,7 +3,8 @@ import logging
 import sqlalchemy as sa
 from aiohttp import web
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node, NodeID
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.utils_repos import transaction_context
 from simcore_postgres_database.webserver_models import projects_nodes
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -25,7 +26,7 @@ async def update(
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.stream(
             projects_nodes.update()
-            .values(**NodeDB.model_validate(node.model_dump()).model_dump())
+            .values(**NodeDB.model_construct(**node.model_dump()).model_dump(exclude_none=True))
             .where(
                 sa.and_(
                     projects_nodes.c.project_uuid == f"{project_id}",
