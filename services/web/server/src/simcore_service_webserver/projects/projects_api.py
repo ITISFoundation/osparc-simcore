@@ -38,7 +38,7 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_access import Owner
-from models_library.projects_nodes import Node
+from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_state import (
     ProjectLocked,
@@ -109,6 +109,7 @@ from ..socketio.messages import (
     send_message_to_standard_group,
     send_message_to_user,
 )
+from . import _projects_nodes_repository
 from ..storage import api as storage_api
 from ..users.api import FullNameDict, get_user, get_user_fullname, get_user_role
 from ..users.exceptions import UserNotFoundError
@@ -1109,6 +1110,13 @@ async def update_project_node_outputs(
         node_id=node_id,
         product_name=None,
         new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
+    )
+
+    await _projects_nodes_repository.update(
+        app,
+        project_id=project_id,
+        node_id=node_id,
+        node=PartialNode.model_construct(outputs=new_outputs, run_hash=new_run_hash),
     )
 
     log.debug(
