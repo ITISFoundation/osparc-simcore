@@ -176,7 +176,7 @@ async def test_reset_and_confirm(
         assert (
             response.url.path_qs
             == URL(login_options.LOGIN_REDIRECT)
-            .with_fragment("reset-password?code=%s" % code)
+            .with_fragment(f"reset-password?code={code}")
             .path_qs
         )
 

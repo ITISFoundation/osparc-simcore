@@ -148,7 +148,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
-    populateShareIcon: async function(shareIcon, accessRights) {
+    populateShareIcon: function(shareIcon, accessRights) {
       const gids = Object.keys(accessRights).map(key => parseInt(key));
 
       const groupsStore = osparc.store.Groups.getInstance();
@@ -169,6 +169,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Tooltip
+      const canIWrite = osparc.data.model.Study.canIWrite(accessRights);
+      const myGroupId = groupsStore.getMyGroupId();
+      if (gids.length === 0 || (gids.length === 1 && gids[0] === myGroupId)) {
+        if (canIWrite) {
+          shareIcon.set({
+            toolTipText: qx.locale.Manager.tr("Share")
+          });
+        }
+        return;
+      }
+
       const sharedGrps = [];
       const groups = [];
       groups.push(groupEveryone);
@@ -181,43 +192,44 @@ qx.Class.define("osparc.dashboard.CardBase", {
           gids.splice(idx, 1);
         }
       });
-      // once the groups were removed, the remaining group ids are users' primary groups ids
-      const usersStore = osparc.store.Users.getInstance();
-      const myGroupId = groupsStore.getMyGroupId();
-      for (let i=0; i<gids.length; i++) {
-        const gid = gids[i];
-        if (myGroupId !== gid) {
-          const user = await usersStore.getUser(gid);
-          if (user) {
-            sharedGrps.push(user);
+
+      const hint = new osparc.ui.hint.Hint(shareIcon);
+      shareIcon.addListener("mouseover", async () => {
+        hint.show();
+
+        // lazy load tooltip, this can be an expensive call
+
+        // once the groups were removed, the remaining group ids are users' primary groups ids
+        const usersStore = osparc.store.Users.getInstance();
+        for (let i=0; i<gids.length; i++) {
+          const gid = gids[i];
+          if (myGroupId !== gid) {
+            const user = await usersStore.getUser(gid);
+            if (user) {
+              sharedGrps.push(user);
+            }
           }
         }
-      }
 
-      const canIWrite = osparc.data.model.Study.canIWrite(accessRights);
-      if (sharedGrps.length === 0) {
-        if (canIWrite) {
-          shareIcon.set({
-            toolTipText: qx.locale.Manager.tr("Share")
-          });
+        if (hint.getText() === "") {
+          const sharedGrpLabels = [];
+          const maxItems = 6;
+          for (let i=0; i<sharedGrps.length; i++) {
+            if (i > maxItems) {
+              sharedGrpLabels.push("...");
+              break;
+            }
+            const sharedGrpLabel = sharedGrps[i].getLabel();
+            if (!sharedGrpLabels.includes(sharedGrpLabel)) {
+              sharedGrpLabels.push(sharedGrpLabel);
+            }
+          }
+          const hintText = sharedGrpLabels.join("<br>");
+          if (hintText) {
+            hint.setText(hintText);
+          }
         }
-        return;
-      }
-      const sharedGrpLabels = [];
-      const maxItems = 6;
-      for (let i=0; i<sharedGrps.length; i++) {
-        if (i > maxItems) {
-          sharedGrpLabels.push("...");
-          break;
-        }
-        const sharedGrpLabel = sharedGrps[i].getLabel();
-        if (!sharedGrpLabels.includes(sharedGrpLabel)) {
-          sharedGrpLabels.push(sharedGrpLabel);
-        }
-      }
-      const hintText = sharedGrpLabels.join("<br>");
-      const hint = new osparc.ui.hint.Hint(shareIcon, hintText);
-      shareIcon.addListener("mouseover", () => hint.show(), this);
+      }, this);
       shareIcon.addListener("mouseout", () => hint.exclude(), this);
     },
   },
@@ -920,7 +932,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
       control.addListener("tap", e => {
         e.stopPropagation();
-        this.setValue(false);
         this.fireDataEvent("emptyStudyClicked", this.getUuid());
       }, this);
       return control;

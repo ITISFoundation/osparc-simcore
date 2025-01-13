@@ -21,7 +21,7 @@ from ..resource_usage import api as rut_api
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import projects_api
-from ._common_models import RequestContext
+from ._common.models import RequestContext
 from ._nodes_handlers import NodePathParams
 from .db import ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
