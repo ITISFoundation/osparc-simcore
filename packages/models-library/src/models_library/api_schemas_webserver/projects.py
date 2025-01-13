@@ -106,10 +106,10 @@ class ProjectGet(OutputSchema):
     model_config = ConfigDict(frozen=False)
 
     @classmethod
-    def from_model(cls, project: dict[str, Any]) -> Self:
+    def from_model(cls, project_data: dict[str, Any]) -> Self:
         return cls.model_validate(
             remap_keys(
-                project,
+                project_data,
                 rename={"trashed": "trashed_at"},
             )
         )
