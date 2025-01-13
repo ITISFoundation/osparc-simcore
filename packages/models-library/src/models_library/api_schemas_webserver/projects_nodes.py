@@ -63,17 +63,11 @@ class NodePatch(InputSchemaWithoutCamelCase):
     ] | None = None  # NOTE: it is used by frontend for File Picker
 
     def to_model(self) -> PartialNode:
-        data = remap_keys(
-            self.model_dump(
-                mode="json",
-                exclude_unset=True,
-            ),
-            rename={
-                "service_key": "key",
-                "service_version": "version",
-            },
+        data = self.model_dump(
+            exclude_unset=True,
+            by_alias=True,
         )
-        return PartialNode(**data)
+        return PartialNode.model_construct(**data)
 
 
 class NodeCreated(OutputSchema):
