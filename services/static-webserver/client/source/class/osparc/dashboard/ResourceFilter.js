@@ -106,7 +106,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         value: false,
         appearance: "filter-toggle-button",
         label: this.tr("Trash"),
-        icon: "@FontAwesome5Solid/trash/16",
         paddingLeft: 10, // align it with the context
       });
       trashButton.addListener("changeValue", e => {
@@ -198,7 +197,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     setTrashEmpty: function(isEmpty) {
       this.__trashButton.set({
-        textColor: isEmpty ? "text" : "danger-red"
+        icon: isEmpty ? "@FontAwesome5Solid/trash/16" : "@FontAwesome5Solid/trash-alt/16"
       });
     },
     /* /TRASH BIN */
