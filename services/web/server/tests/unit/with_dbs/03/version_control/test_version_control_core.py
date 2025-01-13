@@ -10,7 +10,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from simcore_service_webserver._constants import RQT_USERID_KEY
-from simcore_service_webserver.projects import projects_api
+from simcore_service_webserver.projects import projects_service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.version_control._core import (
     checkout_checkpoint,
@@ -81,7 +81,7 @@ async def test_workflow(
     checkpoint_co = await checkout_checkpoint(vc_repo, project_uuid, checkpoint1.id)
     assert checkpoint1 == checkpoint_co
 
-    project = await projects_api.get_project_for_user(
+    project = await projects_service.get_project_for_user(
         aiohttp_mocked_request.app, str(project_uuid), user_id
     )
     assert project["workbench"] == user_project["workbench"]

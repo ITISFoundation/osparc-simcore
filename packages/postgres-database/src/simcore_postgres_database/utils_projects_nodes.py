@@ -46,10 +46,10 @@ class ProjectNodeCreate(BaseModel):
     progress: float | None = None
     thumbnail: str | None = None
     input_access: dict[str, Any] | None = None
-    input_nodes: list[dict[str, Any]] | None = None
+    input_nodes: list[str] | None = None
     inputs: dict[str, Any] | None = None
     inputs_units: dict[str, Any] | None = None
-    output_nodes: list[dict[str, Any]] | None = None
+    output_nodes: list[str] | None = None
     outputs: dict[str, Any] | None = None
     run_hash: str | None = None
     state: dict[str, Any] | None = None

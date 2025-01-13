@@ -1001,10 +1001,10 @@ async def update_project_node(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    node_patch: Node,
+    partial_node: PartialNode,
 ) -> None:
     _node_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
-        node_patch, exclude_unset=True, by_alias=True
+        partial_node, exclude_unset=True, by_alias=True
     )
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
@@ -1048,7 +1048,7 @@ async def update_project_node(
         app,
         project_id=project_id,
         node_id=node_id,
-        node=node_patch,
+        node=partial_node,
     )
 
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)

@@ -47,7 +47,7 @@ from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
-from . import _crud_api_create, _crud_api_read, projects_api
+from . import _crud_api_create, _crud_api_read, projects_service
 from ._common_models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveQueryParams,
@@ -295,7 +295,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 
         data = None
         if user_active_projects:
-            project = await projects_api.get_project_for_user(
+            project = await projects_service.get_project_for_user(
                 request.app,
                 project_uuid=user_active_projects[0],
                 user_id=req_ctx.user_id,
@@ -335,7 +335,7 @@ async def get_project(request: web.Request):
     )
 
     try:
-        project = await projects_api.get_project_for_user(
+        project = await projects_service.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
@@ -384,7 +384,7 @@ async def get_project(request: web.Request):
 async def get_project_inactivity(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    project_inactivity = await projects_api.get_project_inactivity(
+    project_inactivity = await projects_service.get_project_inactivity(
         app=request.app, project_id=path_params.project_id
     )
     return web.json_response(Envelope(data=project_inactivity), dumps=json_dumps)
@@ -403,7 +403,7 @@ async def patch_project(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
 
-    await projects_api.patch_project(
+    await projects_service.patch_project(
         request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
@@ -436,7 +436,7 @@ async def delete_project(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
-        await projects_api.get_project_for_user(
+        await projects_service.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
@@ -473,7 +473,7 @@ async def delete_project(request: web.Request):
                 reason=f"Project {path_params.project_id} is locked: {project_locked_state=}"
             )
 
-        await projects_api.submit_delete_project_task(
+        await projects_service.submit_delete_project_task(
             request.app,
             path_params.project_id,
             req_ctx.user_id,

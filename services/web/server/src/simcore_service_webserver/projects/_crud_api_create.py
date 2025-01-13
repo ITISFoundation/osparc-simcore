@@ -38,7 +38,7 @@ from ..workspaces import _workspaces_db as workspaces_db
 from ..workspaces.api import check_user_workspace_access
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import _folders_db as project_to_folders_db
-from . import projects_api
+from . import projects_service
 from ._metadata_api import set_project_ancestors
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
@@ -75,7 +75,7 @@ async def _prepare_project_copy(
     deep_copy: bool,
     task_progress: TaskProgress,
 ) -> tuple[ProjectDict, CopyProjectNodesCoro | None, CopyFileCoro | None]:
-    source_project = await projects_api.get_project_for_user(
+    source_project = await projects_service.get_project_for_user(
         app,
         project_uuid=f"{src_project_uuid}",
         user_id=user_id,
@@ -167,7 +167,7 @@ async def _copy_files_from_source_project(
     async with AsyncExitStack() as stack:
         if needs_lock_source_project:
             await stack.enter_async_context(
-                projects_api.lock_with_notification(
+                projects_service.lock_with_notification(
                     app,
                     source_project["uuid"],
                     ProjectStatus.CLONING,
@@ -392,7 +392,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         # get the latest state of the project (lastChangeDate for instance)
         new_project, _ = await db.get_project(project_uuid=new_project["uuid"])
         # Appends state
-        new_project = await projects_api.add_project_states_for_user(
+        new_project = await projects_service.add_project_states_for_user(
             user_id=user_id,
             project=new_project,
             is_template=as_template,
@@ -444,7 +444,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
     except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
         if project_uuid := new_project.get("uuid"):
-            await projects_api.submit_delete_project_task(
+            await projects_service.submit_delete_project_task(
                 app=request.app,
                 project_uuid=project_uuid,
                 user_id=user_id,
@@ -458,7 +458,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             f"{user_id=}",
         )
         if project_uuid := new_project.get("uuid"):
-            await projects_api.submit_delete_project_task(
+            await projects_service.submit_delete_project_task(
                 app=request.app,
                 project_uuid=project_uuid,
                 user_id=user_id,

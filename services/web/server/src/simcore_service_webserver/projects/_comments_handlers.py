@@ -30,7 +30,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _comments_api, projects_api
+from . import _comments_api, projects_service
 from ._common_models import RequestContext
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
@@ -86,7 +86,7 @@ async def create_project_comment(request: web.Request):
     body_params = await parse_request_body_as(_ProjectCommentsBodyParams, request)
 
     # ensure the project exists
-    await projects_api.get_project_for_user(
+    await projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_uuid}",
         user_id=req_ctx.user_id,
@@ -128,7 +128,7 @@ async def list_project_comments(request: web.Request):
     )
 
     # ensure the project exists
-    await projects_api.get_project_for_user(
+    await projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_uuid}",
         user_id=req_ctx.user_id,
@@ -176,7 +176,7 @@ async def update_project_comment(request: web.Request):
     body_params = await parse_request_body_as(_ProjectCommentsBodyParams, request)
 
     # ensure the project exists
-    await projects_api.get_project_for_user(
+    await projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_uuid}",
         user_id=req_ctx.user_id,
@@ -205,7 +205,7 @@ async def delete_project_comment(request: web.Request):
     )
 
     # ensure the project exists
-    await projects_api.get_project_for_user(
+    await projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_uuid}",
         user_id=req_ctx.user_id,
@@ -233,7 +233,7 @@ async def get_project_comment(request: web.Request):
     )
 
     # ensure the project exists
-    await projects_api.get_project_for_user(
+    await projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_uuid}",
         user_id=req_ctx.user_id,

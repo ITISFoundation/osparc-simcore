@@ -21,7 +21,7 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from ..catalog.client import get_services_for_user_in_product
 from ..folders import _folders_db as folders_db
 from ..workspaces._workspaces_api import check_user_workspace_access
-from . import projects_api
+from . import projects_service
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
@@ -36,7 +36,7 @@ async def _append_fields(
     model_schema_cls: type[OutputSchema],
 ):
     # state
-    await projects_api.add_project_states_for_user(
+    await projects_service.add_project_states_for_user(
         user_id=user_id,
         project=project,
         is_template=is_template,

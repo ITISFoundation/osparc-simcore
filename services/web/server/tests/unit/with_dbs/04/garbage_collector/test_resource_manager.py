@@ -47,7 +47,7 @@ from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 from simcore_service_webserver.projects.plugin import setup_projects
-from simcore_service_webserver.projects.projects_api import (
+from simcore_service_webserver.projects.projects_service import (
     remove_project_dynamic_services,
     submit_delete_project_task,
 )

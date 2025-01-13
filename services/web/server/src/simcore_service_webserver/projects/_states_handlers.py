@@ -35,7 +35,7 @@ from ..users import api
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.errors import WalletNotEnoughCreditsError
-from . import projects_api
+from . import projects_service
 from ._common_models import ProjectPathParams, RequestContext
 from .exceptions import (
     DefaultPricingUnitNotFoundError,
@@ -106,7 +106,7 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
     try:
-        project_type: ProjectType = await projects_api.get_project_type(
+        project_type: ProjectType = await projects_service.get_project_type(
             request.app, path_params.project_id
         )
         user_role: UserRole = await api.get_user_role(
@@ -116,7 +116,7 @@ async def open_project(request: web.Request) -> web.Response:
             # only USERS/TESTERS can do that
             raise web.HTTPForbidden(reason="Wrong user role to open/edit a template")
 
-        project = await projects_api.get_project_for_user(
+        project = await projects_service.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
@@ -128,7 +128,7 @@ async def open_project(request: web.Request) -> web.Response:
 
         product: Product = get_current_product(request)
 
-        if not await projects_api.try_open_project_for_user(
+        if not await projects_service.try_open_project_for_user(
             req_ctx.user_id,
             project_uuid=f"{path_params.project_id}",
             client_session_id=client_session_id,
@@ -138,7 +138,7 @@ async def open_project(request: web.Request) -> web.Response:
             raise HTTPLockedError(reason="Project is locked, try later")
 
         # the project can be opened, let's update its product links
-        await projects_api.update_project_linked_product(
+        await projects_service.update_project_linked_product(
             request.app, path_params.project_id, req_ctx.product_name
         )
 
@@ -151,30 +151,30 @@ async def open_project(request: web.Request) -> web.Response:
                 # NOTE: this method raises that exception when the number of dynamic
                 # services in the project is highter than the maximum allowed per project
                 # the project shall still open though.
-                await projects_api.run_project_dynamic_services(
+                await projects_service.run_project_dynamic_services(
                     request, project, req_ctx.user_id, req_ctx.product_name
                 )
 
         # and let's update the project last change timestamp
-        await projects_api.update_project_last_change_timestamp(
+        await projects_service.update_project_last_change_timestamp(
             request.app, path_params.project_id
         )
 
         # notify users that project is now opened
-        project = await projects_api.add_project_states_for_user(
+        project = await projects_service.add_project_states_for_user(
             user_id=req_ctx.user_id,
             project=project,
             is_template=False,
             app=request.app,
         )
-        await projects_api.notify_project_state_update(request.app, project)
+        await projects_service.notify_project_state_update(request.app, project)
 
         return envelope_json_response(project)
 
     except DirectorServiceError as exc:
         # there was an issue while accessing the director-v2/director-v0
         # ensure the project is closed again
-        await projects_api.try_close_project_for_user(
+        await projects_service.try_close_project_for_user(
             user_id=req_ctx.user_id,
             project_uuid=f"{path_params.project_id}",
             client_session_id=client_session_id,
@@ -208,13 +208,13 @@ async def close_project(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
     # ensure the project exists
-    await projects_api.get_project_for_user(
+    await projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
         include_state=False,
     )
-    await projects_api.try_close_project_for_user(
+    await projects_service.try_close_project_for_user(
         req_ctx.user_id,
         f"{path_params.project_id}",
         client_session_id,
@@ -240,7 +240,7 @@ async def get_project_state(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # check that project exists and queries state
-    validated_project = await projects_api.get_project_for_user(
+    validated_project = await projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,

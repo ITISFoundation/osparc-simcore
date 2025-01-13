@@ -36,7 +36,7 @@ from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.projects_api import lock_with_notification
+from simcore_service_webserver.projects.projects_service import lock_with_notification
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 

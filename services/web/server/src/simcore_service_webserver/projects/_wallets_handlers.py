@@ -19,7 +19,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _wallets_api as wallets_api
-from . import projects_api
+from . import projects_service
 from ._common_models import ProjectPathParams, RequestContext
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
@@ -53,7 +53,7 @@ async def get_project_wallet(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # ensure the project exists
-    await projects_api.get_project_for_user(
+    await projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
@@ -84,7 +84,7 @@ async def connect_wallet_to_project(request: web.Request):
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
 
     # ensure the project exists
-    await projects_api.get_project_for_user(
+    await projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
