@@ -307,6 +307,7 @@ async def get_for_user_or_workspace(
 
 
 async def update(
+    # pylint: disable=too-many-arguments
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -317,9 +318,9 @@ async def update(
     parent_folder_id: FolderID | None | UnSet = UnSet.VALUE,
     trashed: datetime | None | UnSet = UnSet.VALUE,
     trashed_explicitly: bool | UnSet = UnSet.VALUE,
-    trashed_by: UserID | UnSet = UnSet.VALUE,
+    trashed_by: UserID | UnSet = UnSet.VALUE,  # who trashed
     workspace_id: WorkspaceID | None | UnSet = UnSet.VALUE,
-    user_id: UserID | None | UnSet = UnSet.VALUE,
+    user_id: UserID | None | UnSet = UnSet.VALUE,  # ownership
 ) -> FolderDB:
     """
     Batch/single patch of folder/s
