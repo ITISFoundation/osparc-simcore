@@ -102,6 +102,7 @@ qx.Class.define("osparc.data.model.Folder", {
       check: "Date",
       nullable: true,
       init: null,
+      event: "changeTrashedAt"
     },
   },
 

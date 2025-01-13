@@ -90,6 +90,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       nullable: true,
       apply: "__applyLastModified"
     },
+
+    trashedAt: {
+      check: "Date",
+      nullable: true,
+      apply: "__applyTrashedAt"
+    },
   },
 
   members: {
@@ -112,7 +118,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.TITLE);
           break;
-        case "last-modified":
+        case "subtitle":
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-12",
@@ -150,6 +156,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       folder.bind("parentFolderId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("lastModified", this, "lastModified");
+      folder.bind("trashedAt", this, "trashedAt");
 
       osparc.utils.Utils.setIdToWidget(this, "folderItem_" + folder.getFolderId());
 
@@ -229,7 +236,14 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __applyLastModified: function(value) {
       if (value) {
-        const label = this.getChildControl("last-modified");
+        const label = this.getChildControl("subtitle");
+        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+      }
+    },
+
+    __applyTrashedAt: function(value) {
+      if (value && value.getTime() !== new Date(0).getTime()) {
+        const label = this.getChildControl("subtitle");
         label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
     },
