@@ -239,8 +239,15 @@ qx.Class.define("osparc.file.FolderContent", {
         const iconsLayout = this.getChildControl("icons-layout");
         const selectedButtons = iconsLayout.getChildren().filter(btn => btn.getValue());
         if (selectedButtons.length > 1) {
+          // reset selection
           selectedButtons.forEach(btn => btn.setValue(false));
         }
+      } else if (this.getMode() === "list") {
+        const table = this.getChildControl("table");
+        table.getSelectionModel().setSelectionMode(this.isMultiSelect() ?
+          qx.ui.table.selection.Model.MULTIPLE_INTERVAL_SELECTION_TOGGLE :
+          qx.ui.table.selection.Model.SINGLE_SELECTION
+        );
       }
     },
 
@@ -293,6 +300,9 @@ qx.Class.define("osparc.file.FolderContent", {
 
     __attachListenersToTableItem: function(table) {
       table.addListener("cellTap", e => {
+        if (e.getNativeEvent().ctrlKey) {
+          this.setMultiSelect(true);
+        }
         const selectedRow = e.getRow();
         const rowData = table.getTableModel().getRowData(selectedRow);
         if ("entry" in rowData) {
