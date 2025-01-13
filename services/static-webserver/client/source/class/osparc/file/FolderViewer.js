@@ -61,10 +61,12 @@ qx.Class.define("osparc.file.FolderViewer", {
     gridViewButton.addListener("execute", () => {
       folderContent.setMode("icons");
       selectedFileLayout.resetSelection();
+      multiSelectButton.setValue(false);
     });
     listViewButton.addListener("execute", () => {
       folderContent.setMode("list");
       selectedFileLayout.resetSelection();
+      multiSelectButton.setValue(false);
     });
 
     folderContent.addListener("requestDatasetFiles", e => this.fireDataEvent("requestDatasetFiles", e.getData()));
