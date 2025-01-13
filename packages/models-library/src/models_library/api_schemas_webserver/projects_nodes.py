@@ -3,6 +3,9 @@ from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import ConfigDict, Field
 
+from common_library.dict_tools import remap_keys
+from models_library.projects_nodes import Node
+
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
 from ..projects_nodes import InputID, InputsDict
@@ -46,6 +49,19 @@ class NodePatch(InputSchemaWithoutCamelCase):
     outputs: dict[
         str, Any
     ] | None = None  # NOTE: it is used by frontend for File Picker
+
+    def to_model(self) -> Node:
+        data = remap_keys(
+            self.model_dump(
+                mode="json",
+                exclude_unset=True,
+            ),
+            rename={
+                "service_key": "key",
+                "service_version": "version",
+            },
+        )
+        return Node(**data)
 
 
 class NodeCreated(OutputSchema):
