@@ -117,7 +117,7 @@ class NodeDB(BaseModel):
     input_access: dict[str, Any]
     input_nodes: list[NodeID]
     inputs: dict[str, Any]
-    inouts_units: dict[str, Any]
+    inputs_units: dict[str, Any]
     output_nodes: list[NodeID]
     outputs: dict[str, Any]
     run_hash: str | None
