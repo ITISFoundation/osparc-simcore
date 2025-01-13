@@ -470,7 +470,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.store.Workspaces.getInstance().trashWorkspace(workspaceId)
         .then(() => {
           this.__reloadWorkspaces();
-          const msg = this.tr("Successfully moved to Trash");
+          const msg = this.tr("Successfully moved to the Bin");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
@@ -608,7 +608,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.store.Folders.getInstance().trashFolder(folderId, this.getCurrentWorkspaceId())
         .then(() => {
           this.__reloadFolders();
-          const msg = this.tr("Successfully moved to Trash");
+          const msg = this.tr("Successfully moved to Bin");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
@@ -620,11 +620,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _trashFolderRequested: function(folderId) {
       const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
-      let msg = this.tr("Are you sure you want to move the Folder and all its content to the trash?");
+      let msg = this.tr("Are you sure you want to move the Folder and all its content to the Bin?");
       msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-        caption: this.tr("Move to Trash"),
-        confirmText: this.tr("Move to Trash"),
+        caption: this.tr("Move to Bin"),
+        confirmText: this.tr("Move to Bin"),
         confirmAction: "warning",
       });
       confirmationWin.center();
@@ -764,6 +764,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // loose equality: will do a Number to String conversion if necessary
         sameContext &= key in currentParams && currentParams[key] == value;
       });
+      console.log("sameContext", sameContext, reqParams, currentParams);
       return !sameContext;
     },
 
@@ -1051,17 +1052,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
         studiesMoveButton.set({
           visibility: selection.length && currentContext === "studiesAndFolders" ? "visible" : "excluded",
-          label: selection.length > 1 ? this.tr("Move selected")+" ("+selection.length+")" : this.tr("Move")
+          label: this.tr("Move") + (selection.length > 1 ? this.tr(" selected ") + `(${selection.length})` : ""),
         });
 
         studiesTrashButton.set({
           visibility: selection.length && currentContext === "studiesAndFolders" ? "visible" : "excluded",
-          label: selection.length > 1 ? this.tr("Trash selected")+" ("+selection.length+")" : this.tr("Trash")
+          label: this.tr("Move to Bin") + (selection.length > 1 ? this.tr(" selected ") + `(${selection.length})` : ""),
         });
 
         studiesDeleteButton.set({
           visibility: selection.length && currentContext === "trash" ? "visible" : "excluded",
-          label: selection.length > 1 ? this.tr("Delete selected")+" ("+selection.length+")" : this.tr("Delete")
+          label: this.tr("Delete permamently") + (selection.length > 1 ? this.tr(" selected ") + `(${selection.length})` : ""),
         });
       });
 
@@ -1320,8 +1321,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createTrashStudiesButton: function() {
-      const trashButton = new qx.ui.form.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/14").set({
-        appearance: "danger-button",
+      const trashButton = new qx.ui.form.Button(this.tr("Move to Bin"), "@FontAwesome5Solid/trash/14").set({
+        appearance: "warning-button",
         visibility: "excluded"
       });
       osparc.utils.Utils.setIdToWidget(trashButton, "deleteStudiesBtn");
@@ -1828,7 +1829,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getTrashStudyMenuButton: function(studyData) {
-      const trashButton = new qx.ui.menu.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/12");
+      const trashButton = new qx.ui.menu.Button(this.tr("Move to Bin"), "@FontAwesome5Solid/trash/12");
       trashButton["trashButton"] = true;
       trashButton.set({
         appearance: "menu-button"
@@ -2029,7 +2030,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.store.Store.getInstance().trashStudy(studyData.uuid)
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
-          const msg = this.tr("Successfully moved to Trash");
+          const msg = this.tr("Successfully moved to Bin");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
@@ -2089,12 +2090,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         msg += ` '${studyNames[0]}' `;
       }
-      msg += this.tr("to the Trash?");
+      msg += this.tr("to the Bin?");
       const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
       msg += "<br><br>" + (studyNames.length > 1 ? "They" : "It") + this.tr(` will be permanently deleted after ${trashDays} days.`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-        caption: this.tr("Move to Trash"),
-        confirmText: this.tr("Move to Trash"),
+        caption: this.tr("Move to Bin"),
+        confirmText: this.tr("Move to Bin"),
         confirmAction: "warning",
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");

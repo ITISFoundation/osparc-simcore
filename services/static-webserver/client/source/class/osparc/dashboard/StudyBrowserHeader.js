@@ -193,7 +193,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         }
         case "empty-trash-button": {
-          control = new qx.ui.form.Button(this.tr("Empty Trash"), "@FontAwesome5Solid/trash/14").set({
+          control = new qx.ui.form.Button(this.tr("Empty Bin"), "@FontAwesome5Solid/trash/14").set({
             appearance: "danger-button",
             allowGrowY: false,
             alignY: "middle",
@@ -233,7 +233,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       const roleWorkspaceLayout = this.getChildControl("role-layout").set({
         visibility: "excluded"
       });
-  
+
       const description = this.getChildControl("description").set({
         visibility: "excluded"
       });
@@ -275,10 +275,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           break;
         case "trash": {
           this.__setIcon("@FontAwesome5Solid/trash/20");
-          title.setValue(this.tr("Trash"));
+          title.setValue(this.tr("Bin"));
           const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
           description.set({
-            value: this.tr(`Items in the bin will be permanently deleted after ${trashDays} days.`),
+            value: this.tr(`Items in the Bin will be permanently deleted after ${trashDays} days.`),
             visibility: "visible",
           });
           break;

@@ -271,7 +271,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
         menu.addSeparator();
 
-        const trashButton = new qx.ui.menu.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/12");
+        const trashButton = new qx.ui.menu.Button(this.tr("Move to Bin"), "@FontAwesome5Solid/trash/12");
         trashButton.addListener("execute", () => this.fireDataEvent("trashFolderRequested", this.getFolderId()), this);
         menu.add(trashButton);
       } else if (studyBrowserContext === "trash") {

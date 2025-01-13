@@ -105,7 +105,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       const trashButton = this.__trashButton = new qx.ui.toolbar.RadioButton().set({
         value: false,
         appearance: "filter-toggle-button",
-        label: this.tr("Trash"),
+        label: this.tr("Bin"),
         paddingLeft: 10, // align it with the context
       });
       trashButton.addListener("changeValue", e => {
