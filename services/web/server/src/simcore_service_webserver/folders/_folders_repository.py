@@ -275,7 +275,7 @@ async def get_for_user_or_workspace(
     *,
     folder_id: FolderID,
     product_name: ProductName,
-    user_id: UserID | None,
+    user_id: UserID | None,  # owned
     workspace_id: WorkspaceID | None,
 ) -> FolderDB:
     assert not (
@@ -317,6 +317,7 @@ async def update(
     parent_folder_id: FolderID | None | UnSet = UnSet.VALUE,
     trashed: datetime | None | UnSet = UnSet.VALUE,
     trashed_explicitly: bool | UnSet = UnSet.VALUE,
+    trashed_by: UserID | UnSet = UnSet.VALUE,
     workspace_id: WorkspaceID | None | UnSet = UnSet.VALUE,
     user_id: UserID | None | UnSet = UnSet.VALUE,
 ) -> FolderDB:
@@ -328,9 +329,10 @@ async def update(
         name=name,
         parent_folder_id=parent_folder_id,
         trashed=trashed,
+        trashed_by=trashed_by,  # (who trashed)
         trashed_explicitly=trashed_explicitly,
         workspace_id=workspace_id,
-        user_id=user_id,
+        user_id=user_id,  # (who owns)
     )
 
     query = (

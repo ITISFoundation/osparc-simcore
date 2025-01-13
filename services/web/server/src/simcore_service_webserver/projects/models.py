@@ -103,8 +103,8 @@ class ProjectPatchExtended(ProjectPatch):
 
     def to_model(self) -> dict[str, Any]:
         return remap_keys(
-            self.model_dump(exclude_unset=True, by_alias=False),
-            rename={"trashed_at": "trash"},
+            self.model_dump(exclude_unset=True, by_alias=False, mode="json"),
+            rename={"trashed_at": "trashed"},
         )
 
 

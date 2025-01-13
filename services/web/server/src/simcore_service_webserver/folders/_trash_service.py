@@ -63,6 +63,7 @@ async def _folders_db_update(
     product_name: ProductName,
     folder_id: FolderID,
     trashed_at: datetime | None,
+    trashed_by: UserID,
 ):
     # EXPLICIT un/trash
     await _folders_repository.update(
@@ -72,6 +73,7 @@ async def _folders_db_update(
         product_name=product_name,
         trashed=trashed_at,
         trashed_explicitly=trashed_at is not None,
+        trashed_by=trashed_by,
     )
 
     # IMPLICIT un/trash
@@ -91,6 +93,7 @@ async def _folders_db_update(
             product_name=product_name,
             trashed=trashed_at,
             trashed_explicitly=False,
+            trashed_by=trashed_by,
         )
 
 
@@ -119,6 +122,7 @@ async def trash_folder(
             folder_id=folder_id,
             product_name=product_name,
             trashed_at=trashed_at,
+            trashed_by=user_id,
         )
 
         # 2. Trash all child projects that I am an owner
@@ -164,6 +168,7 @@ async def untrash_folder(
         folder_id=folder_id,
         product_name=product_name,
         trashed_at=None,
+        trashed_by=user_id,
     )
 
     # 3.2 UNtrash all child projects that I am an owner
