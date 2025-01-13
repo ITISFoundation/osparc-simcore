@@ -745,6 +745,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       delete reqParams["type"];
       delete reqParams["limit"];
       delete reqParams["offset"];
+      delete reqParams["filters"];
 
       const cParams = this.__getRequestParams();
       const currentParams = {};
@@ -764,7 +765,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // loose equality: will do a Number to String conversion if necessary
         sameContext &= key in currentParams && currentParams[key] == value;
       });
-      console.log("sameContext", sameContext, reqParams, currentParams);
       return !sameContext;
     },
 
