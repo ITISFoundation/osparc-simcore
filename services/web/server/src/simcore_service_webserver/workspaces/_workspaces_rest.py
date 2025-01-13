@@ -24,8 +24,8 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _workspaces_service
-from ._common._exceptions_handlers import handle_plugin_requests_exceptions
-from ._common._models import (
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
+from ._common.models import (
     WorkspacesFilters,
     WorkspacesListQueryParams,
     WorkspacesPathParams,
