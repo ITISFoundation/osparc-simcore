@@ -470,7 +470,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.store.Workspaces.getInstance().trashWorkspace(workspaceId)
         .then(() => {
           this.__reloadWorkspaces();
-          const msg = this.tr("Successfully moved to the Bin");
+          const msg = this.tr("Successfully moved to Bin");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
         })
