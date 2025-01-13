@@ -12,6 +12,15 @@ _logger = logging.getLogger(__name__)
 
 
 async def auto_extend_lock(lock: Lock) -> None:
+    """automatically extend a distributed lock TTL (time to live) by re-acquiring the lock
+
+    Arguments:
+        lock -- the lock to auto-extend
+
+    Raises:
+        LockLostError: in case the lock is not available anymore
+        LockError: in case of wrong usage (no timeout or lock was not previously acquired)
+    """
     try:
         with log_context(_logger, logging.DEBUG, f"Autoextend lock {lock.name!r}"):
             await lock.reacquire()
