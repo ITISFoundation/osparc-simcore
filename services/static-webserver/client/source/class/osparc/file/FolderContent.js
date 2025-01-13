@@ -243,11 +243,19 @@ qx.Class.define("osparc.file.FolderContent", {
           selectedButtons.forEach(btn => btn.setValue(false));
         }
       } else if (this.getMode() === "list") {
-        const table = this.getChildControl("table");
-        table.getSelectionModel().setSelectionMode(this.isMultiSelect() ?
+        const selectionModel = this.getChildControl("table").getSelectionModel();
+        let selection = null;
+        if (selectionModel.getSelectedCount() === 1) {
+          // keep selection
+          selection = selectionModel.getSelectedRanges()[0];
+        }
+        selectionModel.setSelectionMode(this.isMultiSelect() ?
           qx.ui.table.selection.Model.MULTIPLE_INTERVAL_SELECTION_TOGGLE :
           qx.ui.table.selection.Model.SINGLE_SELECTION
         );
+        if (selection) {
+          selectionModel.setSelectionInterval(selection.minIndex, selection.maxIndex);
+        }
       }
     },
 
