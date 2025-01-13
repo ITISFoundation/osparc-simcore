@@ -97,7 +97,8 @@ def _assert_added_project(
         "creationDate",
         "lastChangeDate",
         "accessRights",  # NOTE: access rights were moved away from the projects table
-        "trashedAt",
+        "trashed",
+        "trashedBy",
         "trashedExplicitly",
     ]
     assert {k: v for k, v in expected_prj.items() if k in _DIFFERENT_KEYS} != {
@@ -184,6 +185,7 @@ async def insert_project_in_db(
     client: TestClient,
 ) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     inserted_projects = []
+    assert client.app
 
     async def _inserter(prj: dict[str, Any], **overrides) -> dict[str, Any]:
         # add project without user id -> by default creates a template

@@ -423,7 +423,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             }
 
         # Ensures is like ProjectGet
-        data = ProjectGet.model_validate(new_project).data(exclude_unset=True)
+        data = ProjectGet.from_model(new_project).data(exclude_unset=True)
 
         raise web.HTTPCreated(
             text=json_dumps({"data": data}),

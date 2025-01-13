@@ -82,20 +82,20 @@ def convert_to_schema_names(
 ) -> dict:
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3516
     converted_args = {}
-    for key, value in project_database_data.items():
-        if key in DB_EXCLUSIVE_COLUMNS:
+    for col_name, col_value in project_database_data.items():
+        if col_name in DB_EXCLUSIVE_COLUMNS:
             continue
-        converted_value = value
-        if isinstance(value, datetime) and key not in {"trashed"}:
-            converted_value = format_datetime(value)
-        elif key == "prj_owner":
+        converted_value = col_value
+        if isinstance(col_value, datetime) and col_name not in {"trashed"}:
+            converted_value = format_datetime(col_value)
+        elif col_name == "prj_owner":
             # this entry has to be converted to the owner e-mail address
             converted_value = user_email
 
-        if key in SCHEMA_NON_NULL_KEYS and value is None:
+        if col_name in SCHEMA_NON_NULL_KEYS and col_value is None:
             converted_value = ""
 
-        converted_args[snake_to_camel(key)] = converted_value
+        converted_args[snake_to_camel(col_name)] = converted_value
     converted_args.update(**kwargs)
     return converted_args
 
@@ -275,7 +275,26 @@ class BaseProjectDB:
 
         query = (
             sa.select(
-                *[col for col in projects.columns if col.name not in ["access_rights"]],
+                projects.c.id,
+                projects.c.type,
+                projects.c.uuid,
+                projects.c.name,
+                projects.c.description,
+                projects.c.thumbnail,
+                projects.c.prj_owner,  # == user.id (who created)
+                projects.c.creation_date,
+                projects.c.last_change_date,
+                projects.c.workbench,
+                projects.c.ui,
+                projects.c.classifiers,
+                projects.c.dev,
+                projects.c.quality,
+                projects.c.published,
+                projects.c.hidden,
+                projects.c.trashed,
+                projects.c.trashed_by,  # == user.id (who trashed)
+                projects.c.trashed_explicitly,
+                projects.c.workspace_id,
                 access_rights_subquery.c.access_rights,
             )
             .select_from(projects.join(access_rights_subquery, isouter=True))
