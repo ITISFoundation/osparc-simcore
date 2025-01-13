@@ -91,7 +91,13 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       check: "Date",
       nullable: true,
       apply: "__applyModifiedAt"
-    }
+    },
+
+    trashedAt: {
+      check: "Date",
+      nullable: true,
+      apply: "__applyTrashedAt"
+    },
   },
 
   statics: {
@@ -133,7 +139,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           layout = this.getChildControl("header");
           layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.HPOS.MENU);
           break;
-        case "modified-text":
+        case "footer-text":
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-dark",
             alignY: "middle",
@@ -161,6 +167,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       });
       workspace.bind("accessRights", this, "accessRights");
       workspace.bind("modifiedAt", this, "modifiedAt");
+      workspace.bind("trashedAt", this, "trashedAt");
       workspace.bind("myAccessRights", this, "myAccessRights");
 
       osparc.utils.Utils.setIdToWidget(this, "workspaceItem_" + workspace.getWorkspaceId());
@@ -242,8 +249,17 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
     },
 
     __applyModifiedAt: function(value) {
-      const label = this.getChildControl("modified-text");
-      label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+      if (value) {
+        const label = this.getChildControl("footer-text");
+        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+      }
+    },
+
+    __applyTrashedAt: function(value) {
+      if (value && value.getTime() !== new Date(0).getTime()) {
+        const label = this.getChildControl("footer-text");
+        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+      }
     },
 
     __updateTooltip: function() {
