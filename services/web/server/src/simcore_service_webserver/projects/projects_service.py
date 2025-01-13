@@ -1048,7 +1048,7 @@ async def update_project_node(
         app,
         project_id=project_id,
         node_id=node_id,
-        node=partial_node,
+        partial_node=partial_node,
     )
 
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
@@ -1116,7 +1116,7 @@ async def update_project_node_outputs(
         app,
         project_id=project_id,
         node_id=node_id,
-        node=PartialNode.model_construct(outputs=new_outputs, run_hash=new_run_hash),
+        partial_node=PartialNode.model_construct(outputs=new_outputs, run_hash=new_run_hash),
     )
 
     log.debug(

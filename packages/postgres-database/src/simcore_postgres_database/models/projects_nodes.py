@@ -106,6 +106,12 @@ projects_nodes = sa.Table(
         doc="Input properties values",
     ),
     sa.Column(
+        "inputs_required",
+        JSONB,  # Array
+        nullable=True,
+        doc="Input IDs that are required",
+    ),
+    sa.Column(
         "inputs_units",
         JSONB,
         nullable=True,

@@ -10,7 +10,6 @@ from simcore_postgres_database.webserver_models import projects_nodes
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
-from .models import NodeDB
 
 _logger = logging.getLogger(__name__)
 
@@ -21,12 +20,13 @@ async def update(
     *,
     project_id: ProjectID,
     node_id: NodeID,
-    node: PartialNode,
+    partial_node: PartialNode,
 ) -> None:
+    values = partial_node.model_dump(mode="json", exclude_unset=True)
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.stream(
             projects_nodes.update()
-            .values(**NodeDB.model_construct(**node.model_dump()).model_dump(mode="json", exclude_defaults=True, exclude_unset=True, exclude_none=True))
+            .values(**values)
             .where(
                 sa.and_(
                     projects_nodes.c.project_uuid == f"{project_id}",
