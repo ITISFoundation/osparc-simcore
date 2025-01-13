@@ -49,6 +49,8 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     const deleteBtn = this.getChildControl("delete-button");
     deleteBtn.addListener("execute", () => this.__deleteSelected(), this);
+
+    this.__selection = [];
   },
 
   events: {
@@ -100,7 +102,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     __changeMultiSelection: function() {
       if (this.__selection.length > 1) {
-        this.resetItemSelected();
+        this.resetSelection();
       }
     },
 
@@ -124,7 +126,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           });
         }
       } else {
-        this.resetItemSelected();
+        this.resetSelection();
       }
     },
 
@@ -140,11 +142,11 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           });
         }
       } else {
-        this.resetItemSelected();
+        this.resetSelection();
       }
     },
 
-    resetItemSelected: function() {
+    resetSelection: function() {
       this.__selection = [];
       this.getChildControl("download-button").setEnabled(false);
       this.getChildControl("delete-button").setEnabled(false);
