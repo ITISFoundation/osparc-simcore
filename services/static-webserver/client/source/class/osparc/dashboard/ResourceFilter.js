@@ -106,6 +106,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         value: false,
         appearance: "filter-toggle-button",
         label: this.tr("Bin"),
+        icon: "@FontAwesome5Solid/trash-alt/16",
         paddingLeft: 10, // align it with the context
       });
       trashButton.addListener("changeValue", e => {
