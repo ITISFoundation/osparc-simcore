@@ -34,7 +34,7 @@ def twilio_config(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
         "TWILIO_MESSAGING_SID": "x" * 34,
     }
     # NOTE: enforces DELETE-ENV since apparently some session-based fixtures are settings these envs
-    for key in TWILO_CONFIG.keys():
+    for key in TWILO_CONFIG:
         monkeypatch.delenv(key, raising=False)
     return TWILO_CONFIG
 

@@ -97,10 +97,7 @@ def test_unique_permissions():
         for permission in can:
             assert (
                 permission not in used
-            ), "'{}' in {} is repeated in security_roles.ROLES_PERMISSIONS".format(
-                permission,
-                role,
-            )
+            ), f"'{permission}' in {role} is repeated in security_roles.ROLES_PERMISSIONS"
             used.append(permission)
 
 
@@ -263,7 +260,7 @@ def mock_db(mocker: MockerFixture) -> MagicMock:
             raise DatabaseError
 
         # inactive user or not found
-        return copy.deepcopy(users_db.get(email, None))
+        return copy.deepcopy(users_db.get(email))
 
     mock_db_fun = mocker.patch(
         "simcore_service_webserver.security._authz_policy.get_active_user_or_none",

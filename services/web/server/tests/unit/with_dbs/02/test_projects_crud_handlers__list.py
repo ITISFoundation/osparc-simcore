@@ -32,7 +32,7 @@ def assert_replaced(current_project, update_data):
     modified = [
         "lastChangeDate",
     ]
-    keep = [k for k in update_data.keys() if k not in modified]
+    keep = [k for k in update_data if k not in modified]
 
     assert _extract(current_project, keep) == _extract(update_data, keep)
 
@@ -86,7 +86,7 @@ async def _list_projects(
             )
         )
         if exp_offset <= 0:
-            assert links["prev"] == None
+            assert links["prev"] is None
         else:
             assert links["prev"] == str(
                 URL(complete_url).update_query(
@@ -94,7 +94,7 @@ async def _list_projects(
                 )
             )
         if exp_offset >= (exp_last_page * exp_limit):
-            assert links["next"] == None
+            assert links["next"] is None
         else:
             assert links["next"] == str(
                 URL(complete_url).update_query(

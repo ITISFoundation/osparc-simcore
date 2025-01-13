@@ -4,9 +4,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator
 from contextlib import AsyncExitStack
-from typing import AsyncIterable
 
 import pytest
 from aiohttp.test_utils import TestClient

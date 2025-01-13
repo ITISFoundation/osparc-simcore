@@ -16,7 +16,8 @@ from servicelib.aiohttp.application_setup import is_setup_function
 
 @pytest.fixture(scope="session")
 def app_config_schema():
-    raise RuntimeError("DEPRECATED. MUST NOT BE USED")
+    msg = "DEPRECATED. MUST NOT BE USED"
+    raise RuntimeError(msg)
 
 
 @pytest.fixture(scope="session")
@@ -33,15 +34,13 @@ def service_webserver_environ(
         ),  # defined if pip install --edit (but not in travis!)
     }
 
-    webserver_environ = eval_service_environ(
+    return eval_service_environ(
         services_docker_compose_file,
         "webserver",
         host_environ,
         image_environ,
         use_env_devel=True,
     )
-
-    return webserver_environ
 
 
 @pytest.fixture(scope="session")

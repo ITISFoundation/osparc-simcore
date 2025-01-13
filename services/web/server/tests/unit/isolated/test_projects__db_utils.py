@@ -5,9 +5,10 @@
 import datetime
 import json
 import re
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -95,7 +96,7 @@ def test_convert_to_schema_names(fake_project: dict[str, Any]):
         assert col is not None
 
     # test date time conversion
-    date = datetime.datetime.now(datetime.timezone.utc)
+    date = datetime.datetime.now(datetime.UTC)
     db_entries["creation_date"] = date
     schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     assert "creationDate" in schema_entries
@@ -110,7 +111,7 @@ def test_convert_to_schema_names_camel_casing(fake_db_dict):
     assert "anEntryThatUsesSnakeCase" in db_entries
     assert "anotherEntryThatUsesSnakeCase" in db_entries
     # test date time conversion
-    date = datetime.datetime.now(datetime.timezone.utc)
+    date = datetime.datetime.now(datetime.UTC)
     fake_db_dict["time_entry"] = date
     db_entries = convert_to_schema_names(fake_db_dict, fake_email)
     assert "timeEntry" in db_entries

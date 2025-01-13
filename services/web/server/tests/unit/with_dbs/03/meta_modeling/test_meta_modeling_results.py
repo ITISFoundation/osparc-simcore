@@ -127,7 +127,7 @@ def test_extract_project_results(fake_workbench: dict[str, Any]):
 
 @pytest.mark.parametrize(
     "model_cls",
-    (ExtractedResults,),
+    [ExtractedResults],
 )
 def test_models_examples(
     model_cls: type[BaseModel], model_cls_examples: dict[str, Any]
