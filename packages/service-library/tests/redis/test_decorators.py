@@ -12,8 +12,8 @@ from typing import Final
 import pytest
 from faker import Faker
 from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK, exclusive
-from servicelib.redis._errors import LockLostError
 from servicelib.redis._decorators import _EXCLUSIVE_AUTO_EXTEND_TASK_NAME
+from servicelib.redis._errors import LockLostError
 from servicelib.utils import limited_gather, logged_gather
 
 pytest_simcore_core_services_selection = [
@@ -214,18 +214,12 @@ async def test_exclusive_task_erroring_releases_lock(
 ):
     @exclusive(redis_client_sdk, lock_key=lock_name)
     async def _() -> None:
-        # await asyncio.sleep(0)
-
-        print("raising error")
         msg = "Expected error"
         raise RuntimeError(msg)
 
     # initial state
     assert await _is_locked(redis_client_sdk, lock_name) is False
     assert await redis_client_sdk.lock_value(lock_name) is None
-
-    # run the exclusive task
-    # exclusive_task = asyncio.create_task(_())
 
     with pytest.raises(RuntimeError):
         await _()

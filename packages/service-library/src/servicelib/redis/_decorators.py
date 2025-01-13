@@ -8,14 +8,10 @@ from typing import Any, Final, ParamSpec, TypeVar
 
 import redis.exceptions
 from redis.asyncio.lock import Lock
-from tenacity import retry
-
-from servicelib.async_utils import cancel_wait_task, with_delay
-from servicelib.logging_utils import log_context
 
 from ..background_task import periodic
 from ._client import RedisClientSDK
-from ._constants import DEFAULT_LOCK_TTL, SHUTDOWN_TIMEOUT_S
+from ._constants import DEFAULT_LOCK_TTL
 from ._errors import CouldNotAcquireLockError, LockLostError
 from ._utils import auto_extend_lock
 
@@ -25,30 +21,15 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 _EXCLUSIVE_TASK_NAME: Final[str] = "exclusive/{func_name}"
-_EXCLUSIVE_AUTO_EXTEND_TASK_NAME: Final[str] = (
-    "exclusive/autoextend_lock_{redis_lock_key}"
-)
+_EXCLUSIVE_AUTO_EXTEND_TASK_NAME: Final[
+    str
+] = "exclusive/autoextend_lock_{redis_lock_key}"
 
 
 @periodic(interval=DEFAULT_LOCK_TTL / 2, raise_on_error=True)
 async def _periodic_auto_extender(lock: Lock, started_event: asyncio.Event) -> None:
-    started_event.set()
     await auto_extend_lock(lock)
-    current_task = asyncio.tasks.current_task()
-    assert current_task is not None  # nosec
-    print(current_task.cancelling())
-
-
-def _cancel_auto_extender_task(
-    _: asyncio.Task, *, auto_extend_task: asyncio.Task
-) -> None:
-    with log_context(
-        _logger,
-        logging.DEBUG,
-        f"Cancelling auto-extend task {auto_extend_task.get_name()}",
-    ):
-        auto_extend_task.cancel()
-        assert auto_extend_task.cancelling()
+    started_event.set()
 
 
 def exclusive(
@@ -101,9 +82,9 @@ def exclusive(
             if not await lock.acquire(
                 token=lock_value,
                 blocking=blocking,
-                blocking_timeout=blocking_timeout.total_seconds()
-                if blocking_timeout
-                else None,
+                blocking_timeout=(
+                    blocking_timeout.total_seconds() if blocking_timeout else None
+                ),
             ):
                 raise CouldNotAcquireLockError(lock=lock)
 
@@ -117,7 +98,8 @@ def exclusive(
                             redis_lock_key=redis_lock_key
                         ),
                     )
-                    # NOTE: in case the work task is super short lived, then we might fail in cancelling it
+                    # NOTE: In case the work thread is raising right away,
+                    # this ensures the extend task ran once and ensure cancellation works
                     await started_event.wait()
 
                     # then the task that runs the user code
@@ -127,20 +109,11 @@ def exclusive(
                         name=_EXCLUSIVE_TASK_NAME.format(func_name=func.__name__),
                     )
 
-                    # work_task.add_done_callback(
-                    #     functools.partial(
-                    #         _cancel_auto_extender_task,
-                    #         auto_extend_task=auto_extend_lock_task,
-                    #     )
-                    # )
-
                     res = await work_task
                     auto_extend_lock_task.cancel()
-
                     return res
 
             except BaseExceptionGroup as eg:
-                breakpoint()
                 # Separate exceptions into LockLostError and others
                 lock_lost_errors, other_errors = eg.split(LockLostError)
 
@@ -158,8 +131,6 @@ def exclusive(
                     lock.name,
                 )
                 raise lock_lost_errors.exceptions[0] from eg
-            except Exception as exc:
-                breakpoint()
             finally:
                 with contextlib.suppress(redis.exceptions.LockNotOwnedError):
                     # in the case where the lock would have been lost,
