@@ -292,7 +292,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
     __updateTooltip: function() {
       const toolTipText = this.getTitle() + (this.getDescription() ? "<br>" + this.getDescription() : "");
-      this.set({
+      const title = this.getChildControl("title");
+      title.set({
         toolTipText
       })
     },
