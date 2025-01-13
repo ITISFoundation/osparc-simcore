@@ -197,7 +197,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     setTrashEmpty: function(isEmpty) {
       this.__trashButton.set({
-        icon: isEmpty ? "@FontAwesome5Solid/trash/16" : "@FontAwesome5Solid/trash-alt/16"
+        icon: isEmpty ? "@FontAwesome5Solid/trash-alt/16" : "@FontAwesome5Solid/trash/16"
       });
     },
     /* /TRASH BIN */
