@@ -287,13 +287,11 @@ qx.Class.define("osparc.file.FolderContent", {
           });
           this.__selectionChanged(selectedFiles);
         } else {
-          if (this.getMode() === "icons") {
-            // unselect the other items
-            const iconsLayout = this.getChildControl("icons-layout");
-            iconsLayout.getChildren().forEach(btn => {
-              btn.setValue(btn === gridItem);
-            });
-          }
+          // unselect the other items
+          const iconsLayout = this.getChildControl("icons-layout");
+          iconsLayout.getChildren().forEach(btn => {
+            btn.setValue(btn === gridItem);
+          });
           this.__selectionChanged(gridItem.getValue() ? [gridItem.entry] : null);
         }
         // folders can't be selected
@@ -311,11 +309,17 @@ qx.Class.define("osparc.file.FolderContent", {
         if (e.getNativeEvent().ctrlKey) {
           this.setMultiSelect(true);
         }
-        const selectedRow = e.getRow();
-        const rowData = table.getTableModel().getRowData(selectedRow);
-        if ("entry" in rowData) {
-          this.__selectionChanged([rowData.entry]);
-        }
+        const selectedFiles = [];
+        const selectionRanges = table.getSelectionModel().getSelectedRanges();
+        selectionRanges.forEach(range => {
+          for (let i=range.minIndex; i<=range.maxIndex; i++) {
+            const row = table.getTableModel().getRowData(i);
+            if (osparc.file.FilesTree.isFile(row.entry)) {
+              selectedFiles.push(row.entry);
+            }
+          }
+        });
+        this.__selectionChanged(selectedFiles);
       }, this);
       table.addListener("cellDbltap", e => {
         const selectedRow = e.getRow();
