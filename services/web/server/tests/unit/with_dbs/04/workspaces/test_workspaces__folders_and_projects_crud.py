@@ -418,7 +418,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     # Create project in workspace
     project_data = deepcopy(fake_project)
     project_data["workspace_id"] = f"{added_workspace_1['workspaceId']}"
-    project = await create_project(
+    await create_project(
         client.app,
         project_data,
         user_id=logged_user["id"],
@@ -451,7 +451,7 @@ async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_cr
     # Create project in workspace
     project_data = deepcopy(fake_project)
     project_data["workspace_id"] = f"{added_workspace_2['workspaceId']}"
-    project = await create_project(
+    await create_project(
         client.app,
         project_data,
         user_id=logged_user["id"],

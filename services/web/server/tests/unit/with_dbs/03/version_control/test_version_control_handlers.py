@@ -1,6 +1,8 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 
 from collections.abc import Awaitable, Callable
 from http import HTTPStatus
@@ -23,7 +25,7 @@ from simcore_service_webserver.version_control.models import (
 )
 
 
-async def assert_resp_page(
+async def _assert_resp_page(
     resp: aiohttp.ClientResponse,
     expected_page_cls: type[Page],
     expected_total: int,
@@ -38,7 +40,7 @@ async def assert_resp_page(
     return page
 
 
-async def assert_status_and_body(
+async def _assert_status_and_body(
     resp, expected_cls: HTTPStatus, expected_model: type[BaseModel]
 ) -> BaseModel:
     data, _ = await assert_status(resp, expected_cls)
@@ -84,7 +86,7 @@ async def test_workflow(
     #
     # this project now has a repo
     resp = await client.get(f"/{VX}/repos/projects")
-    page = await assert_resp_page(
+    page = await _assert_resp_page(
         resp, expected_page_cls=Page[ProjectDict], expected_total=1, expected_count=1
     )
 
@@ -97,8 +99,8 @@ async def test_workflow(
     assert CheckpointApiModel.model_validate(data) == checkpoint1
 
     # TODO: GET checkpoint with tag
+    resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints/v1")
     with pytest.raises(aiohttp.ClientResponseError) as excinfo:
-        resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints/v1")
         resp.raise_for_status()
 
     assert CheckpointApiModel.model_validate(data) == checkpoint1
@@ -114,7 +116,7 @@ async def test_workflow(
 
     # LIST checkpoints
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")
-    page = await assert_resp_page(
+    page = await _assert_resp_page(
         resp,
         expected_page_cls=Page[CheckpointApiModel],
         expected_total=1,
@@ -226,7 +228,7 @@ async def test_delete_project_and_repo(
 
     # LIST
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")
-    await assert_resp_page(
+    await _assert_resp_page(
         resp,
         expected_page_cls=Page[CheckpointApiModel],
         expected_total=1,
@@ -247,7 +249,7 @@ async def test_delete_project_and_repo(
 
     # LIST empty
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")
-    await assert_resp_page(
+    await _assert_resp_page(
         resp,
         expected_page_cls=Page[CheckpointApiModel],
         expected_total=0,

@@ -73,8 +73,7 @@ def viewer_id(faker: Faker) -> NodeID:
 @pytest.fixture
 def viewer_info(view: dict[str, Any]) -> ViewerInfo:
     view.setdefault("label", view.pop("display_name", "Undefined"))
-    viewer_ = ViewerInfo(**view)
-    return viewer_
+    return ViewerInfo(**view)
 
 
 @pytest.mark.parametrize("only_service", [True, False])

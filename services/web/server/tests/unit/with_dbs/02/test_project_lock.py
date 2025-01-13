@@ -122,7 +122,8 @@ async def test_raise_exception_while_locked_release_lock(
             )
             assert redis_value
             # now raising an exception
-            raise ValueError("pytest exception")
+            msg = "pytest exception"
+            raise ValueError(msg)
     # now the lock shall be released
     redis_value = await redis_locks_client.get(
         PROJECT_REDIS_LOCK_KEY.format(project_uuid)

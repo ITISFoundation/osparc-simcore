@@ -59,18 +59,6 @@ qx.Class.define("osparc.filter.OrganizationsAndMembers", {
       return selectedGIDs;
     },
 
-    reloadVisibleCollaborators: function(collaboratorsToBeRemoved = null) {
-      if (collaboratorsToBeRemoved) {
-        this.__collaboratorsToBeRemoved = collaboratorsToBeRemoved.map(collaboratorToBeRemoved => parseInt(collaboratorToBeRemoved));
-      }
-
-      osparc.store.Groups.getInstance().getPotentialCollaborators()
-        .then(potentialCollaborators => {
-          this.__visibleCollaborators = potentialCollaborators;
-          this.__addOrgsAndMembers();
-        });
-    },
-
     __addOrgsAndMembers: function() {
       this.reset();
 

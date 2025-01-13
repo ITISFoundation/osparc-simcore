@@ -61,7 +61,6 @@ def app_environment(
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_VERSION_CONTROL": "0",
             "WEBSERVER_WALLETS": "0",
-            #
             "STUDIES_ACCESS_ANONYMOUS_ALLOWED": "1",
         },
     )
@@ -112,12 +111,12 @@ def test_create_permalink(fake_get_project_request: web.Request, is_public: bool
 def valid_project_kwargs(
     request: pytest.FixtureRequest, fake_get_project_request: web.Request
 ):
-    return dict(
-        project_uuid=fake_get_project_request.match_info["project_uuid"],
-        project_type=ProjectType.TEMPLATE,
-        project_access_rights={"1": {"read": True, "write": False, "delete": False}},
-        project_is_public=request.param,
-    )
+    return {
+        "project_uuid": fake_get_project_request.match_info["project_uuid"],
+        "project_type": ProjectType.TEMPLATE,
+        "project_access_rights": {"1": {"read": True, "write": False, "delete": False}},
+        "project_is_public": request.param,
+    }
 
 
 def test_permalink_only_for_template_projects(

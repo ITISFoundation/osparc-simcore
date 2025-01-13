@@ -19,11 +19,10 @@ from simcore_service_webserver.studies_dispatcher.settings import (
 
 @pytest.fixture
 def environment(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
-    envs = setenvs_from_dict(
+    return setenvs_from_dict(
         monkeypatch,
         envs=StudiesDispatcherSettings.model_config["json_schema_extra"]["example"],
     )
-    return envs
 
 
 def test_studies_dispatcher_settings(environment: EnvVarsDict):

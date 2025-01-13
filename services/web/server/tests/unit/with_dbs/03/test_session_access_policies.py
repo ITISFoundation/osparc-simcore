@@ -5,7 +5,8 @@
 
 
 from asyncio import AbstractEventLoop
-from typing import Callable, Protocol
+from collections.abc import Callable
+from typing import Protocol
 
 import pytest
 from aiohttp import ClientResponse, web

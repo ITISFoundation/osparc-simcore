@@ -2,12 +2,15 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 from collections.abc import AsyncIterator, Callable
 from copy import deepcopy
 from pathlib import Path
 
 import pytest
 from aioresponses import aioresponses
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.application import create_safe_application
@@ -35,32 +38,43 @@ DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
 
 
 @pytest.fixture
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    # NOTE: undos some app_environment settings
+    monkeypatch.delenv("WEBSERVER_GARBAGE_COLLECTOR", raising=False)
+    app_environment.pop("WEBSERVER_GARBAGE_COLLECTOR", None)
+
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            # reduce deletion delay
+            "RESOURCE_MANAGER_RESOURCE_TTL_S": f"{DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS}",
+            # increase speed of garbage collection
+            "GARBAGE_COLLECTOR_INTERVAL_S": f"{DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS}",
+        },
+    )
+
+
+@pytest.fixture
 def client(
-    event_loop,
-    aiohttp_client,
-    app_cfg,
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+    app_environment: EnvVarsDict,
     postgres_db,
     mocked_dynamic_services_interface,
     mock_orphaned_services,
     redis_client,  # this ensure redis is properly cleaned
-    monkeypatch_setenv_from_app_config: Callable,
 ):
-    # config app
-    cfg = deepcopy(app_cfg)
-    port = cfg["main"]["port"]
-    cfg["projects"]["enabled"] = True
-    cfg["resource_manager"][
-        "garbage_collection_interval_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS  # increase speed of garbage collection
-    cfg["resource_manager"][
-        "resource_deletion_timeout_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
+    app = create_safe_application()
 
-    monkeypatch_setenv_from_app_config(cfg)
+    assert "WEBSERVER_GARBAGE_COLLECTOR" not in app_environment
 
-    app = create_safe_application(cfg)
-
-    assert setup_settings(app)
+    settings = setup_settings(app)
+    assert settings.WEBSERVER_GARBAGE_COLLECTOR is not None
+    assert settings.WEBSERVER_PROJECTS is not None
+    assert settings.WEBSERVER_TAGS is not None
 
     # setup app
     setup_db(app)
@@ -71,14 +85,14 @@ def client(
     setup_resource_manager(app)
     setup_socketio(app)
     setup_director_v2(app)
-    setup_tags(app)
-    assert setup_projects(app)
+    assert setup_tags(app)
+    setup_projects(app)
     setup_products(app)
     setup_wallets(app)
 
     # server and client
     return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
+        aiohttp_client(app, server_kwargs={"host": "localhost"})
     )
 
     # teardown here ...
