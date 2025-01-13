@@ -26,7 +26,7 @@ from simcore_service_webserver.folders._common.models import (
     FolderSearchQueryParams,
     FoldersListQueryParams,
     FoldersPathParams,
-    _FolderWorkspacesPathParams,
+    FolderWorkspacesPathParams,
 )
 
 router = APIRouter(
@@ -109,6 +109,6 @@ async def delete_folder(
     tags=["workspaces"],
 )
 async def move_folder_to_workspace(
-    _path: Annotated[_FolderWorkspacesPathParams, Depends()],
+    _path: Annotated[FolderWorkspacesPathParams, Depends()],
 ):
     ...

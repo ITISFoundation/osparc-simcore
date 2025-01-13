@@ -89,7 +89,7 @@ class FolderTrashQueryParams(RemoveQueryParams):
     ...
 
 
-class _FolderWorkspacesPathParams(BaseModel):
+class FolderWorkspacesPathParams(BaseModel):
     folder_id: FolderID
     workspace_id: Annotated[
         WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)
