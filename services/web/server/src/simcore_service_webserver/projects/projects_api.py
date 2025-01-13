@@ -993,7 +993,7 @@ async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool
     return await db.is_hidden(project_id)
 
 
-async def patch_project_node(
+async def update_project_node(
     app: web.Application,
     *,
     product_name: ProductName,

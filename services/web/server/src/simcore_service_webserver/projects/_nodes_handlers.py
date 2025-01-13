@@ -229,13 +229,13 @@ async def patch_project_node(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_patch = await parse_request_body_as(NodePatch, request)
 
-    await projects_api.patch_project_node(
+    await projects_api.update_project_node(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
         node_id=path_params.node_id,
-        node_patch=Node.model_validate(node_patch.model_dump()),
+        node_patch=node_patch.to_model(),
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

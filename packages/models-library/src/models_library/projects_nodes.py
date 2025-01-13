@@ -274,3 +274,8 @@ class Node(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
+
+
+class PartialNode(Node):
+    key: Annotated[ServiceKey | None, Field(default=None)]
+    version: Annotated[ServiceVersion | None, Field(default=None)]
