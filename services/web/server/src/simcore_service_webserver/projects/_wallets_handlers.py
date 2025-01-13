@@ -25,7 +25,7 @@ from ..security.decorators import permission_required
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _wallets_api as wallets_api
 from . import projects_api
-from ._common_models import ProjectPathParams, RequestContext
+from ._common.models import ProjectPathParams, RequestContext
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)

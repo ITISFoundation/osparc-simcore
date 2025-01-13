@@ -292,6 +292,8 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         parent_project_uuid: ProjectID | None = None,
         parent_node_id: NodeID | None = None,
     ) -> ProjectDict:
+        assert client.app
+
         url, project_data, expected_data, headers = await _setup(
             client,
             project=project,

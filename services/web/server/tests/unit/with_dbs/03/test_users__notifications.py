@@ -10,7 +10,7 @@ import random
 from collections.abc import AsyncIterable, AsyncIterator
 from contextlib import asynccontextmanager
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
 from typing import Any
 
@@ -76,7 +76,7 @@ def _create_notification(
                 "actionable_path": "a/path",
                 "title": "test_title",
                 "text": "text_text",
-                "date": datetime.now(timezone.utc).isoformat(),
+                "date": datetime.now(UTC).isoformat(),
                 "product": product_name,
             }
         )
@@ -154,7 +154,7 @@ async def test_list_user_notifications(
 
             result = TypeAdapter(list[UserNotification]).validate_python(
                 json_response["data"]
-            )  # noqa: F821
+            )
             assert len(result) <= MAX_NOTIFICATIONS_FOR_USER_TO_SHOW
             assert result == list(
                 reversed(created_notifications[:MAX_NOTIFICATIONS_FOR_USER_TO_SHOW])
@@ -229,7 +229,7 @@ async def test_create_user_notification(
         # these are always generated and overwritten, even if provided by the user, since
         # we do not want to overwrite existing ones
         assert user_notifications[0].read is False
-        assert user_notifications[0].id != notification_dict.get("id", None)
+        assert user_notifications[0].id != notification_dict.get("id")
     else:
         assert error is not None
 

@@ -183,7 +183,7 @@ async def test_delete_token(
     sid = fake_tokens[0]["service"]
 
     url = client.app.router["delete_token"].url_for(service=sid)
-    assert "/v0/me/tokens/%s" % sid == str(url)
+    assert f"/v0/me/tokens/{sid}" == str(url)
 
     resp = await client.delete(url.path)
 

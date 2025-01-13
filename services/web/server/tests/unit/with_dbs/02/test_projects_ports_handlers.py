@@ -236,7 +236,7 @@ async def test_io_workflow(
             },
             "76f607b4-8761-4f96-824d-cab670bc45f5": {
                 "key": "76f607b4-8761-4f96-824d-cab670bc45f5",
-                "value": 6,  #
+                "value": 6,
                 "label": "Random sleep interval",
             },
         }
