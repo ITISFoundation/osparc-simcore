@@ -60,11 +60,11 @@ qx.Class.define("osparc.file.FolderViewer", {
     }
     gridViewButton.addListener("execute", () => {
       folderContent.setMode("icons");
-      selectedFileLayout.resetItemSelected();
+      selectedFileLayout.resetSelection();
     });
     listViewButton.addListener("execute", () => {
       folderContent.setMode("list");
-      selectedFileLayout.resetItemSelected();
+      selectedFileLayout.resetSelection();
     });
 
     folderContent.addListener("requestDatasetFiles", e => this.fireDataEvent("requestDatasetFiles", e.getData()));
@@ -177,7 +177,7 @@ qx.Class.define("osparc.file.FolderViewer", {
     },
 
     __applyFolder: function() {
-      this.getChildControl("selected-file-layout").resetItemSelected();
+      this.getChildControl("selected-file-layout").resetSelection();
     }
   }
 });

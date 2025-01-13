@@ -153,24 +153,16 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       this.getChildControl("selected-label").resetValue();
     },
 
-    getItemSelected: function() {
-      if (this.__selection.length) {
-        const selectedItem = this.__selection[0];
-        if (selectedItem && osparc.file.FilesTree.isFile(selectedItem)) {
-          return selectedItem;
-        }
-      }
-      return null;
-    },
-
     __retrieveURLAndDownloadSelected: function() {
       if (this.isMultiSelect()) {
         this.__selection.forEach(selection => {
-          this.__retrieveURLAndDownloadFile(selection);
+          if (selection && osparc.file.FilesTree.isFile(selection)) {
+            this.__retrieveURLAndDownloadFile(selection);
+          }
         });
-      } else {
-        const selection = this.getItemSelected();
-        if (selection) {
+      } else if (this.__selection.length) {
+        const selection = this.__selection[0];
+        if (selection && osparc.file.FilesTree.isFile(selection)) {
           this.__retrieveURLAndDownloadFile(selection);
         }
       }
@@ -180,9 +172,11 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       if (this.isMultiSelect()) {
         const requests = [];
         this.__selection.forEach(selection => {
-          const request = this.__deleteFile(selection);
-          if (request) {
-            requests.push(request);
+          if (selection && osparc.file.FilesTree.isFile(selection)) {
+            const request = this.__deleteFile(selection);
+            if (request) {
+              requests.push(request);
+            }
           }
         });
         Promise.all(requests)
@@ -193,9 +187,9 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
             }
           });
         requests
-      } else {
-        const selection = this.getItemSelected();
-        if (selection) {
+      } else if (this.__selection.length) {
+        const selection = this.__selection[0];
+        if (selection && osparc.file.FilesTree.isFile(selection)) {
           const request = this.__deleteFile(selection);
           if (request) {
             request
