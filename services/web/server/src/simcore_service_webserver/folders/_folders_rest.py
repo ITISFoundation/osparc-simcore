@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.folders_v2 import (
     FolderReplaceBodyParams,
 )
 from models_library.rest_ordering import OrderBy
-from models_library.rest_pagination import Page
+from models_library.rest_pagination import ItemT, Page
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -37,6 +37,13 @@ _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
+
+
+def _create_json_response_from_page(page: Page[ItemT]):
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
 
 
 @routes.post(f"/{VTAG}/folders", name="create_folder")
@@ -93,10 +100,7 @@ async def list_folders(request: web.Request):
             offset=query_params.offset,
         )
     )
-    return web.Response(
-        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
-        content_type=MIMETYPE_APPLICATION_JSON,
-    )
+    return _create_json_response_from_page(page)
 
 
 @routes.get(f"/{VTAG}/folders:search", name="list_folders_full_search")
@@ -132,10 +136,7 @@ async def list_folders_full_search(request: web.Request):
             offset=query_params.offset,
         )
     )
-    return web.Response(
-        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
-        content_type=MIMETYPE_APPLICATION_JSON,
-    )
+    return _create_json_response_from_page(page)
 
 
 @routes.get(f"/{VTAG}/folders/{{folder_id}}", name="get_folder")
