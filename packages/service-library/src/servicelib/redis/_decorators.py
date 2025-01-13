@@ -43,6 +43,7 @@ def exclusive(
         Raises:
             - ValueError if used incorrectly
             - CouldNotAcquireLockError if the lock could not be acquired
+            - LockLostError if the lock was lost (e.g. due to Redis restart, or TTL was not extended in time)
     """
 
     if not lock_key:
