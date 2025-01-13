@@ -259,7 +259,7 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
         autospec=True,
     )
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api.remove_project_dynamic_services",
+        "simcore_service_webserver.projects.projects_service.remove_project_dynamic_services",
         autospec=True,
     )
     mocker.patch(

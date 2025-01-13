@@ -254,11 +254,11 @@ async def request_delete_project(
     mocker: MockerFixture,
 ) -> AsyncIterator[Callable[[TestClient, UUID], Awaitable]]:
     director_v2_api_delete_pipeline: mock.AsyncMock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
+        "simcore_service_webserver.projects.projects_service.director_v2_api.delete_pipeline",
         autospec=True,
     )
     dynamic_scheduler_api_stop_dynamic_services_in_project: mock.AsyncMock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.dynamic_scheduler_api.stop_dynamic_services_in_project",
+        "simcore_service_webserver.projects.projects_service.dynamic_scheduler_api.stop_dynamic_services_in_project",
         autospec=True,
     )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
