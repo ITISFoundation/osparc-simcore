@@ -6,7 +6,6 @@ Read operations are list, get
 """
 
 from aiohttp import web
-from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.projects import ProjectListItem
 from models_library.folders import FolderID, FolderQuery, FolderScope
 from models_library.projects import ProjectID
@@ -27,13 +26,12 @@ from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 
 
-async def _append_fields(
+async def _append_item(
     request: web.Request,
     *,
     user_id: UserID,
     project: ProjectDict,
     is_template: bool,
-    model_schema_cls: type[OutputSchema],
 ):
     # state
     await projects_api.add_project_states_for_user(
@@ -47,7 +45,7 @@ async def _append_fields(
     await update_or_pop_permalink_in_project(request, project)
 
     # validate
-    return model_schema_cls.model_validate(project).data(exclude_unset=True)
+    return ProjectListItem.from_model(project).data(exclude_unset=True)
 
 
 async def list_projects(  # pylint: disable=too-many-arguments
@@ -128,12 +126,11 @@ async def list_projects(  # pylint: disable=too-many-arguments
 
     projects: list[ProjectDict] = await logged_gather(
         *(
-            _append_fields(
+            _append_item(
                 request,
                 user_id=user_id,
                 project=prj,
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
-                model_schema_cls=ProjectListItem,
             )
             for prj, prj_type in zip(db_projects, db_project_types, strict=False)
         ),
@@ -182,12 +179,11 @@ async def list_projects_full_depth(
 
     projects: list[ProjectDict] = await logged_gather(
         *(
-            _append_fields(
+            _append_item(
                 request,
                 user_id=user_id,
                 project=prj,
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
-                model_schema_cls=ProjectListItem,
             )
             for prj, prj_type in zip(db_projects, db_project_types, strict=False)
         ),
