@@ -47,7 +47,7 @@ qx.Class.define("osparc.file.FolderContent", {
       init: false,
       nullable: false,
       event: "changeMultiSelect",
-      apply: "__reloadFolderContent"
+      apply: "__changeMultiSelect"
     },
   },
 
@@ -227,26 +227,43 @@ qx.Class.define("osparc.file.FolderContent", {
       } else if (this.getMode() === "icons") {
         const iconsLayout = this.getChildControl("icons-layout");
         iconsLayout.removeAll();
-        const iconsGroup = new qx.ui.form.RadioGroup().set({
-          allowEmptySelection: true
-        });
         entries.forEach(entry => {
-          if (!this.isMultiSelect()) {
-            iconsGroup.add(entry);
-          }
           iconsLayout.add(entry);
         });
       }
       this.setSelection([this.getSelectables()[this.getMode() === "icons" ? 0 : 1]]);
     },
 
-    __itemTapped: function(entry, buttonSelected) {
+    __changeMultiSelect: function() {
+      if (this.getMode() === "icons" && this.getMultiSelect() === false) {
+        const iconsLayout = this.getChildControl("icons-layout");
+        const selectedButtons = iconsLayout.getChildren().filter(btn => btn.getValue());
+        if (selectedButtons.length > 1) {
+          // reset selection
+          selectedButtons.forEach(btn => btn.setValue(false));
+        }
+      } else if (this.getMode() === "list") {
+        const selectionModel = this.getChildControl("table").getSelectionModel();
+        let selection = null;
+        if (selectionModel.getSelectedCount() === 1) {
+          // keep selection
+          selection = selectionModel.getSelectedRanges()[0];
+        }
+        selectionModel.setSelectionMode(this.isMultiSelect() ?
+          qx.ui.table.selection.Model.MULTIPLE_INTERVAL_SELECTION_TOGGLE :
+          qx.ui.table.selection.Model.SINGLE_SELECTION
+        );
+        if (selection) {
+          selectionModel.setSelectionInterval(selection.minIndex, selection.maxIndex);
+        }
+      }
+    },
+
+    __selectionChanged: function(selection) {
       if (this.isMultiSelect()) {
-        this.fireDataEvent("multiSelectionChanged", entry);
-      } else if (buttonSelected === false) {
-        this.fireDataEvent("selectionChanged", null);
+        this.fireDataEvent("multiSelectionChanged", selection);
       } else {
-        this.fireDataEvent("selectionChanged", entry);
+        this.fireDataEvent("selectionChanged", (selection && selection.length) ? selection[0] : null);
       }
     },
 
@@ -255,7 +272,10 @@ qx.Class.define("osparc.file.FolderContent", {
     },
 
     __attachListenersToGridItem: function(gridItem) {
-      gridItem.addListener("tap", () => {
+      gridItem.addListener("tap", e => {
+        if (e.getNativeEvent().ctrlKey) {
+          this.setMultiSelect(true);
+        }
         if (this.isMultiSelect()) {
           // pass all buttons that are selected
           const selectedFiles = [];
@@ -265,9 +285,14 @@ qx.Class.define("osparc.file.FolderContent", {
               selectedFiles.push(btn.entry);
             }
           });
-          this.__itemTapped(selectedFiles, gridItem.getValue());
+          this.__selectionChanged(selectedFiles);
         } else {
-          this.__itemTapped(gridItem.entry, gridItem.getValue());
+          // unselect the other items
+          const iconsLayout = this.getChildControl("icons-layout");
+          iconsLayout.getChildren().forEach(btn => {
+            btn.setValue(btn === gridItem);
+          });
+          this.__selectionChanged(gridItem.getValue() ? [gridItem.entry] : null);
         }
         // folders can't be selected
         if (osparc.file.FilesTree.isDir(gridItem.entry)) {
@@ -281,11 +306,20 @@ qx.Class.define("osparc.file.FolderContent", {
 
     __attachListenersToTableItem: function(table) {
       table.addListener("cellTap", e => {
-        const selectedRow = e.getRow();
-        const rowData = table.getTableModel().getRowData(selectedRow);
-        if ("entry" in rowData) {
-          this.__itemTapped(rowData.entry);
+        if (e.getNativeEvent().ctrlKey) {
+          this.setMultiSelect(true);
         }
+        const selectedFiles = [];
+        const selectionRanges = table.getSelectionModel().getSelectedRanges();
+        selectionRanges.forEach(range => {
+          for (let i=range.minIndex; i<=range.maxIndex; i++) {
+            const row = table.getTableModel().getRowData(i);
+            if (osparc.file.FilesTree.isFile(row.entry)) {
+              selectedFiles.push(row.entry);
+            }
+          }
+        });
+        this.__selectionChanged(selectedFiles);
       }, this);
       table.addListener("cellDbltap", e => {
         const selectedRow = e.getRow();
