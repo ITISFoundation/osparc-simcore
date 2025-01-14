@@ -63,7 +63,7 @@ from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
-from models_library.workspaces import UserWorkspaceAccessRightsDB
+from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import ByteSize, TypeAdapter
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
@@ -208,7 +208,7 @@ async def get_project_for_user(
         )
 
     if project["workspaceId"] is not None:
-        workspace_db: UserWorkspaceAccessRightsDB = (
+        workspace: UserWorkspaceWithAccessRights = (
             await workspaces_db.get_workspace_for_user(
                 app=app,
                 user_id=user_id,
@@ -218,7 +218,7 @@ async def get_project_for_user(
         )
         project["accessRights"] = {
             f"{gid}": access.model_dump()
-            for gid, access in workspace_db.access_rights.items()
+            for gid, access in workspace.access_rights.items()
         }
 
     Project.model_validate(project)  # NOTE: only validates

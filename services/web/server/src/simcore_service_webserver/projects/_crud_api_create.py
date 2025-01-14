@@ -14,7 +14,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.workspaces import UserWorkspaceAccessRightsDB
+from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -34,8 +34,7 @@ from ..storage.api import (
     get_project_total_size_simcore_s3,
 )
 from ..users.api import get_user_fullname
-from ..workspaces import _workspaces_repository as workspaces_db
-from ..workspaces.api import check_user_workspace_access
+from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import _folders_db as project_to_folders_db
 from . import projects_api
@@ -409,17 +408,16 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         # Overwrite project access rights
         if workspace_id:
-            workspace_db: UserWorkspaceAccessRightsDB = (
-                await workspaces_db.get_workspace_for_user(
-                    app=request.app,
-                    user_id=user_id,
-                    workspace_id=workspace_id,
-                    product_name=product_name,
-                )
+            workspace: UserWorkspaceWithAccessRights = await get_user_workspace(
+                request.app,
+                user_id=user_id,
+                workspace_id=workspace_id,
+                product_name=product_name,
+                permission=None,
             )
             new_project["accessRights"] = {
                 f"{gid}": access.model_dump()
-                for gid, access in workspace_db.access_rights.items()
+                for gid, access in workspace.access_rights.items()
             }
 
         # Ensures is like ProjectGet

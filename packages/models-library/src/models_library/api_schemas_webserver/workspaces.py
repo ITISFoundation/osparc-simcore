@@ -1,14 +1,13 @@
 from datetime import datetime
 from typing import Self
 
-from models_library.basic_types import IDStr
-from models_library.groups import GroupID
-from models_library.workspaces import WorkspaceID
 from pydantic import ConfigDict
 
 from ..access_rights import AccessRights
+from ..basic_types import IDStr
+from ..groups import GroupID
 from ..users import UserID
-from ..workspaces import UserWorkspaceAccessRightsDB, WorkspaceID
+from ..workspaces import UserWorkspaceWithAccessRights, WorkspaceID
 from ._base import InputSchema, OutputSchema
 
 
@@ -25,18 +24,18 @@ class WorkspaceGet(OutputSchema):
     access_rights: dict[GroupID, AccessRights]
 
     @classmethod
-    def from_model(cls, workspace_db: UserWorkspaceAccessRightsDB) -> Self:
+    def from_domain(cls, wks: UserWorkspaceWithAccessRights) -> Self:
         return cls(
-            workspace_id=workspace_db.workspace_id,
-            name=workspace_db.name,
-            description=workspace_db.description,
-            thumbnail=workspace_db.thumbnail,
-            created_at=workspace_db.created,
-            modified_at=workspace_db.modified,
-            trashed_at=workspace_db.trashed,
-            trashed_by=workspace_db.trashed_by if workspace_db.trashed else None,
-            my_access_rights=workspace_db.my_access_rights,
-            access_rights=workspace_db.access_rights,
+            workspace_id=wks.workspace_id,
+            name=wks.name,
+            description=wks.description,
+            thumbnail=wks.thumbnail,
+            created_at=wks.created,
+            modified_at=wks.modified,
+            trashed_at=wks.trashed,
+            trashed_by=wks.trashed_by if wks.trashed else None,
+            my_access_rights=wks.my_access_rights,
+            access_rights=wks.access_rights,
         )
 
 

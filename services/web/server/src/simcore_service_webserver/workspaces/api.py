@@ -5,6 +5,7 @@ assert get_workspace  # nosec
 assert check_user_workspace_access  # nosec
 
 __all__: tuple[str, ...] = (
-    "get_workspace",
     "check_user_workspace_access",
+    "get_user_workspace",
+    "get_workspace",
 )

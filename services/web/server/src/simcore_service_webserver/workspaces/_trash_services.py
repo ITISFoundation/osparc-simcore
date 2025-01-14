@@ -6,7 +6,7 @@ from models_library.folders import FolderID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from models_library.workspaces import WorkspaceID, WorkspaceUpdateDB
+from models_library.workspaces import WorkspaceID, WorkspaceUpdates
 from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
@@ -55,7 +55,7 @@ async def trash_workspace(
             connection,
             product_name=product_name,
             workspace_id=workspace_id,
-            updates=WorkspaceUpdateDB(trashed=trashed_at, trashed_by=user_id),
+            updates=WorkspaceUpdates(trashed=trashed_at, trashed_by=user_id),
         )
 
         # IMPLICIT trash
@@ -107,7 +107,7 @@ async def untrash_workspace(
             connection,
             product_name=product_name,
             workspace_id=workspace_id,
-            updates=WorkspaceUpdateDB(trashed=None, trashed_by=None),
+            updates=WorkspaceUpdates(trashed=None, trashed_by=None),
         )
 
         child_folders: list[FolderID] = (
