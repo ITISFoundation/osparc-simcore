@@ -32,8 +32,7 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
       this.setFilters(filters)
     }
     this.setSortColumnIndexWithoutSortingData(rentalsCols.START.column);
-    this.setSortAscendingWithoutSortingData(false)
-    this.setColumnSortable(rentalsCols.DURATION.column, false);
+    this.setSortAscendingWithoutSortingData(false);
   },
 
   properties: {
@@ -61,17 +60,22 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
 
   statics: {
     SERVER_MAX_LIMIT: 49,
+    COLUMN_ID_TO_DB_COLUMN_MAP: Object.values(osparc.desktop.credits.RentalsTable.COLS).reduce((acc, { id, column }) => {
+      acc[column] = id;
+      return acc;
+    }, {}),
+    /*
     COLUMN_ID_TO_DB_COLUMN_MAP: {
-      0: "root_parent_project_name",
-      1: "node_name",
-      2: "service_key",
-      3: "started_at",
-      // 4: (not used) SORTING BY DURATION
-      5: "service_run_status",
-      6: "credit_cost",
-      7: "user_email",
-      8: "projects_tags",
-    }
+      0: "purchaseId",
+      1: "itemId",
+      2: "itemLabel",
+      3: "start",
+      4: "duration",
+      5: "seats",
+      6: "cost",
+      7: "user",
+    },
+    */
   },
 
   members: {
@@ -86,7 +90,6 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
 
     // overridden
     _loadRowCount() {
-      const endpoint = this.getWalletId() == null ? "get" : "getWithWalletFiltered"
       const params = {
         url: {
           walletId: this.getWalletId(),
@@ -103,24 +106,23 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
       const options = {
         resolveWResponse: true
       };
-      osparc.data.Resources.fetch("resourceRentals", endpoint, params, options)
+      osparc.data.Resources.fetch("wallets", "purchases", params, options)
         .then(resp => {
           this._onRowCountLoaded(resp["_meta"].total)
         })
         .catch(() => {
           this._onRowCountLoaded(null)
-        })
+        });
     },
 
     // overridden
     _loadRowData(firstRow, qxLastRow) {
-      this.setIsFetching(true)
-      // Please Qloocloox don't ask for more rows than there are
+      this.setIsFetching(true);
+
       const lastRow = Math.min(qxLastRow, this._rowCount - 1)
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit=this.self().SERVER_MAX_LIMIT) => {
-        const endpoint = this.getWalletId() == null ? "get" : "getWithWalletFiltered"
-        return osparc.data.Resources.fetch("resourceRentals", endpoint, {
+        return osparc.data.Resources.fetch("wallets", "purchases", {
           url: {
             walletId: this.getWalletId(),
             limit,
@@ -137,38 +139,24 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
             const data = []
             const rentalsCols = osparc.desktop.credits.RentalsTable.COLS;
             rawData.forEach(rawRow => {
-              let service = ""
-              if (rawRow["service_key"]) {
-                const serviceName = rawRow["service_key"].split("/").pop()
-                service = `${serviceName}:${rawRow["service_version"]}`
-              }
-              let start = ""
-              let duration = ""
-              if (rawRow["started_at"]) {
-                start = osparc.utils.Utils.formatDateAndTime(new Date(rawRow["started_at"]))
-                if (rawRow["stopped_at"]) {
-                  duration = osparc.utils.Utils.formatMsToHHMMSS(new Date(rawRow["stopped_at"]) - new Date(rawRow["started_at"]))
-                }
-              }
               data.push({
-                // root_parent_project is the same as project if it has no parent
-                [rentalsCols.PROJECT.id]: rawRow["root_parent_project_name"] || rawRow["root_parent_project_id"] || rawRow["project_name"] || rawRow["project_id"],
-                [rentalsCols.NODE.id]: rawRow["node_name"] || rawRow["node_id"],
-                [rentalsCols.SERVICE.id]: service,
-                [rentalsCols.START.id]: start,
-                [rentalsCols.DURATION.id]: duration,
-                [rentalsCols.STATUS.id]: qx.lang.String.firstUp(rawRow["service_run_status"].toLowerCase()),
-                [rentalsCols.COST.id]: rawRow["credit_cost"] ? parseFloat(rawRow["credit_cost"]).toFixed(2) : "",
-                [rentalsCols.USER.id]: rawRow["user_email"],
-                [rentalsCols.TAGS.id]: rawRow["project_tags"],
+                [rentalsCols.PURCHASE_ID.id]: rawRow["licensedItemPurchaseId"],
+                [rentalsCols.ITEM_ID.id]: rawRow["licensedItemId"],
+                [rentalsCols.ITEM_LABEL.id]: "Hello",
+                [rentalsCols.START.id]: osparc.utils.Utils.formatDateAndTime(new Date(rawRow["startAt"])),
+                [rentalsCols.END.id]: osparc.utils.Utils.formatDateAndTime(new Date(rawRow["expireAt"])),
+                [rentalsCols.SEATS.id]: rawRow["numOfSeats"],
+                [rentalsCols.COST.id]: rawRow["pricingUnitCost"] ? parseFloat(rawRow["pricingUnitCost"]).toFixed(2) : "",
+                [rentalsCols.USER.id]: rawRow["purchasedByUser"],
               })
             })
-            return data
-          })
-      }
+            return data;
+          });
+      };
+
       // Divides the model row request into several server requests to comply with the number of rows server limit
-      const reqLimit = lastRow - firstRow + 1 // Number of requested rows
-      const nRequests = Math.ceil(reqLimit / this.self().SERVER_MAX_LIMIT)
+      const reqLimit = lastRow - firstRow + 1; // Number of requested rows
+      const nRequests = Math.ceil(reqLimit / this.self().SERVER_MAX_LIMIT);
       if (nRequests > 1) {
         let requests = []
         for (let i=firstRow; i <= lastRow; i += this.self().SERVER_MAX_LIMIT) {
