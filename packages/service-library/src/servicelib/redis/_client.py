@@ -79,9 +79,7 @@ class RedisClientSDK:
     async def shutdown(self) -> None:
         if self._health_check_task:
             assert self._health_check_task_started_event  # nosec
-            await (
-                self._health_check_task_started_event.wait()
-            )  # NOTE: wait for the health check task to start
+            await self._health_check_task_started_event.wait()  # NOTE: wait for the health check task to have started once before we can cancel it
             await cancel_wait_task(self._health_check_task)
 
         await self._client.aclose(close_connection_pool=True)
