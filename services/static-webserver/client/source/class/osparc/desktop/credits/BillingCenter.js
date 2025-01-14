@@ -84,7 +84,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     },
 
     __addTransactionsPage: function() {
-      const title = this.tr("Transactions");
+      const title = this.tr("Payments");
       const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
       const transactions = this.__transactionsTable = new osparc.desktop.credits.Transactions();
       const page = this.addTab(title, iconSrc, transactions);
