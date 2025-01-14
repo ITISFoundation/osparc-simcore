@@ -1,87 +1,51 @@
 import datetime
-import logging
-from asyncio.log import logger
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
-from typing import Final, TypeAlias
+import functools
+from collections.abc import Callable, Coroutine
+from typing import Any, Final, ParamSpec, TypeAlias, TypeVar
 
 import redis
 import redis.exceptions
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from redis.asyncio.lock import Lock
-from servicelib.redis._client import RedisClientSDK
 
-from .background_task import periodic_task
-from .logging_utils import log_context
-
-_logger = logging.getLogger(__name__)
+from .redis import RedisClientSDK, exclusive
 
 PROJECT_REDIS_LOCK_KEY: str = "project_lock:{}"
 PROJECT_LOCK_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
-ProjectLock = Lock
 
 ProjectLockError: TypeAlias = redis.exceptions.LockError
 
 
-async def _auto_extend_project_lock(project_lock: Lock) -> None:
-    # NOTE: the background task already catches anything that might raise here
-    await project_lock.reacquire()
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
-@asynccontextmanager
-async def lock_project(
-    redis_client: RedisClientSDK,
+def with_locked_project(
+    redis_client: RedisClientSDK | Callable[..., RedisClientSDK],
     *,
     project_uuid: str | ProjectID,
     status: ProjectStatus,
     owner: Owner | None = None,
-) -> AsyncIterator[None]:
-    """Context manager to lock and unlock a project by user_id
-
-    Raises:
-        ProjectLockError: if project is already locked
-    """
-
-    redis_lock = redis_client.create_lock(
-        PROJECT_REDIS_LOCK_KEY.format(project_uuid),
-        ttl=PROJECT_LOCK_TIMEOUT,
-    )
-
-    try:
-        if not await redis_lock.acquire(
-            blocking=False,
-            token=ProjectLocked(
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+]:
+    def _decorator(
+        func: Callable[P, Coroutine[Any, Any, R]],
+    ) -> Callable[P, Coroutine[Any, Any, R]]:
+        @exclusive(
+            redis_client,
+            lock_key=PROJECT_REDIS_LOCK_KEY.format(project_uuid),
+            lock_value=ProjectLocked(
                 value=True,
                 owner=owner,
                 status=status,
             ).model_dump_json(),
-        ):
-            msg = f"Lock for project {project_uuid!r} owner {owner!r} could not be acquired"
-            raise ProjectLockError(msg)
+        )
+        @functools.wraps(func)
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            return await func(*args, **kwargs)
 
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            msg=f"with lock for {owner=}:{project_uuid=}:{status=}",
-        ):
-            async with periodic_task(
-                _auto_extend_project_lock,
-                interval=0.6 * PROJECT_LOCK_TIMEOUT,
-                task_name=f"{PROJECT_REDIS_LOCK_KEY.format(project_uuid)}_lock_auto_extend",
-                project_lock=redis_lock,
-            ):
-                yield
+        return _wrapper
 
-    finally:
-        # let's ensure we release that stuff
-        try:
-            if await redis_lock.owned():
-                await redis_lock.release()
-        except (redis.exceptions.LockError, redis.exceptions.LockNotOwnedError) as exc:
-            logger.warning(
-                "releasing %s unexpectedly raised an exception: %s",
-                f"{redis_lock=!r}",
-                f"{exc}",
-            )
+    return _decorator

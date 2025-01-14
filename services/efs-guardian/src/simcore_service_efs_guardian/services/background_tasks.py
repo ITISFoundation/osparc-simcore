@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from servicelib.logging_utils import log_context
-from servicelib.project_lock import lock_project
+from servicelib.project_lock import with_locked_project
 from simcore_postgres_database.utils_projects import (
     DBProjectNotFoundError,
     ProjectsRepo,
@@ -16,6 +16,23 @@ from .efs_manager import EfsManager
 from .modules.redis import get_redis_lock_client
 
 _logger = logging.getLogger(__name__)
+
+
+async def _remove_data_with_lock(app: FastAPI, project_id: ProjectID) -> None:
+    # Decorate a new function that will call the necessary coroutine
+    efs_manager: EfsManager = app.state.efs_manager
+
+    @with_locked_project(
+        get_redis_lock_client(app),
+        project_uuid=project_id,
+        status=ProjectStatus.MAINTAINING,
+    )
+    async def _remove():
+        # Call the actual coroutine function
+        await efs_manager.remove_project_efs_data(project_id)
+
+    # Execute the decorated function
+    await _remove()
 
 
 async def removal_policy_task(app: FastAPI) -> None:
@@ -57,9 +74,4 @@ async def removal_policy_task(app: FastAPI) -> None:
                 logging.INFO,
                 msg=f"Removing data for project {project_id} started, project last change date {_project_last_change_date}, efs removal policy task age limit timedelta {app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA}",
             ):
-                async with lock_project(
-                    get_redis_lock_client(app),
-                    project_uuid=project_id,
-                    status=ProjectStatus.MAINTAINING,
-                ):
-                    await efs_manager.remove_project_efs_data(project_id)
+                await _remove_data_with_lock(app, project_id)
