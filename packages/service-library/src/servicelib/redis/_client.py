@@ -10,9 +10,9 @@ import redis.exceptions
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
-from servicelib.async_utils import cancel_wait_task
-from servicelib.background_task import periodic
 
+from ..async_utils import cancel_wait_task
+from ..background_task import periodic
 from ..logging_utils import log_catch
 from ._constants import (
     DEFAULT_DECODE_RESPONSES,
@@ -35,7 +35,6 @@ class RedisClientSDK:
     _client: aioredis.Redis = field(init=False)
     _health_check_task: Task | None = None
     _is_healthy: bool = False
-    _continue_health_checking: bool = True
 
     @property
     def redis(self) -> aioredis.Redis:
@@ -76,11 +75,9 @@ class RedisClientSDK:
 
     async def shutdown(self) -> None:
         if self._health_check_task:
-            self._continue_health_checking = False
             await cancel_wait_task(
                 self._health_check_task, max_delay=SHUTDOWN_TIMEOUT_S
             )
-            self._health_check_task = None
 
         await self._client.aclose(close_connection_pool=True)
 

@@ -24,10 +24,9 @@ async def test_redis_client_sdk_lost_connection(
         redis_service.build_redis_dsn(RedisDatabase.RESOURCES), client_name="pytest"
     )
     assert redis_client_sdk.client_name == "pytest"
-    await redis_client_sdk.setup()
 
     assert await redis_client_sdk.ping() is True
-    # now let's put down the rabbit service
+    # no connection available any longer should not hang but timeout
     for rabbit_docker_service in (
         docker_service
         for docker_service in docker_client.services.list()
