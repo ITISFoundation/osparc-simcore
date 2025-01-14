@@ -1,19 +1,3 @@
-# /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#     "faker",
-#     "locust",
-#     "locust-plugins",
-#     "parse",
-#     "pydantic",
-#     "pydantic-settings",
-#     "tenacity"
-# ]
-# ///
-# pylint: disable=unused-argument
-# pylint: disable=no-self-use
-# pylint: disable=no-name-in-module
-
 import importlib.util
 import inspect
 import json
