@@ -322,12 +322,12 @@ def mocked_ec2_instances_envs(
 @pytest.fixture
 def disable_dynamic_service_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_task.start_periodic_task",
+        "simcore_service_autoscaling.modules.auto_scaling_task.create_periodic_task",
         autospec=True,
     )
 
     mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_task.stop_periodic_task",
+        "simcore_service_autoscaling.modules.auto_scaling_task.cancel_wait_task",
         autospec=True,
     )
 
@@ -335,12 +335,12 @@ def disable_dynamic_service_background_task(mocker: MockerFixture) -> None:
 @pytest.fixture
 def disable_buffers_pool_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_autoscaling.modules.buffer_machines_pool_task.start_periodic_task",
+        "simcore_service_autoscaling.modules.buffer_machines_pool_task.create_periodic_task",
         autospec=True,
     )
 
     mocker.patch(
-        "simcore_service_autoscaling.modules.buffer_machines_pool_task.stop_periodic_task",
+        "simcore_service_autoscaling.modules.buffer_machines_pool_task.cancel_wait_task",
         autospec=True,
     )
 
@@ -826,7 +826,7 @@ def aws_instance_private_dns() -> str:
 
 @pytest.fixture
 def fake_localhost_ec2_instance_data(
-    fake_ec2_instance_data: Callable[..., EC2InstanceData]
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ) -> EC2InstanceData:
     local_ip = get_localhost_ip()
     fake_local_ec2_private_dns = f"ip-{local_ip.replace('.', '-')}.ec2.internal"
@@ -1126,7 +1126,7 @@ def buffer_count(
     ],
 ) -> int:
     def _by_buffer_count(
-        instance_type_and_settings: tuple[InstanceTypeType, EC2InstanceBootSpecific]
+        instance_type_and_settings: tuple[InstanceTypeType, EC2InstanceBootSpecific],
     ) -> bool:
         _, boot_specific = instance_type_and_settings
         return boot_specific.buffer_count > 0
