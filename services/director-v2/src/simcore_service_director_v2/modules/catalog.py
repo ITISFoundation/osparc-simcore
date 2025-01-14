@@ -129,7 +129,7 @@ class CatalogClient:
             f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/extras",
         )
         if resp.status_code == status.HTTP_200_OK:
-            return ServiceExtras.model_validate(resp)
+            return ServiceExtras.model_validate(resp.json())
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_specifications(
