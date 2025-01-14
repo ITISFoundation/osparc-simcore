@@ -119,7 +119,7 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     # - Needed for app to trigger start/stop event handlers
     # - Prefer this client instead of fastapi.testclient.TestClient
     async with httpx.AsyncClient(
-        app=app,
+        transport=ASGITransport(app=app),
         base_url="http://efs-guardian.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:

@@ -7,7 +7,7 @@ from collections.abc import AsyncIterable
 
 import pytest
 from fastapi import FastAPI
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from servicelib.fastapi import long_running_tasks
 
 
@@ -22,7 +22,7 @@ async def bg_task_app(router_prefix: str) -> FastAPI:
 @pytest.fixture
 async def async_client(bg_task_app: FastAPI) -> AsyncIterable[AsyncClient]:
     async with AsyncClient(
-        app=bg_task_app,
+        transport=ASGITransport(app=bg_task_app),
         base_url="http://backgroud.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
