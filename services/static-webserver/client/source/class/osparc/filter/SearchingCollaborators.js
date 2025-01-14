@@ -7,8 +7,6 @@
 
 qx.Class.define("osparc.filter.SearchingCollaborators", {
   extend: qx.ui.basic.Atom,
-  include: osparc.filter.MFilterable,
-  implement: osparc.filter.IFilterable,
 
   construct: function() {
     this.base(arguments);
@@ -23,28 +21,4 @@ qx.Class.define("osparc.filter.SearchingCollaborators", {
     this.getChildControl("icon").getContentElement().addClass("rotate");
     this.getChildControl("label").setTextColor("text");
   },
-
-  members: {
-    _filter: function() {
-      this.exclude();
-    },
-
-    _unfilter: function() {
-      this.show();
-    },
-
-    _shouldApplyFilter: function(data) {
-      if (data.name) {
-        return true;
-      }
-      return false;
-    },
-
-    _shouldReactToFilter: function(data) {
-      if (data.name) {
-        return true;
-      }
-      return false;
-    }
-  }
 });
