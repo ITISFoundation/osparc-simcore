@@ -3,21 +3,25 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
-from collections.abc import Callable
-from pathlib import Path
+import os
+from collections.abc import Awaitable, Callable
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-import yaml
 from aiohttp.client_exceptions import ClientConnectionError
 from aiohttp.test_utils import TestClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.activity.plugin import setup_activity
-from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.application_settings import (
+    PrometheusSettings,
+    setup_settings,
+)
 from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
@@ -55,29 +59,61 @@ def mocked_monitoring_down(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path) -> dict[str, Any]:
-    with Path.open(fake_data_dir / "test_activity_config.yml") as fh:
-        content = fh.read()
-        config = content.replace(
-            "${OSPARC_SIMCORE_REPO_ROOTDIR}", str(osparc_simcore_root_dir)
-        )
+def app_environment(
+    mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
 
-    return yaml.safe_load(config)
+    envs = mock_env_devel_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED": "True",
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED": "False",
+            "POSTGRES_DB": "simcoredb",
+            "POSTGRES_HOST": "postgres",
+            "POSTGRES_MAXSIZE": "10",
+            "POSTGRES_MINSIZE": "10",
+            "POSTGRES_PASSWORD": "simcore",
+            "POSTGRES_PORT": "5432",
+            "POSTGRES_USER": "simcore",
+            "PROMETHEUS_PASSWORD": "fake",
+            "PROMETHEUS_URL": "http://prometheus:9090",
+            "PROMETHEUS_USERNAME": "fake",
+            "PROMETHEUS_VTAG": "v1",
+            "SESSION_SECRET_KEY": "REPLACE_ME_with_result__Fernet_generate_key=",
+            "SMTP_HOST": "mail.foo.com",
+            "SMTP_PORT": "25",
+            "STORAGE_HOST": "storage",
+            "STORAGE_PORT": "11111",
+            "STORAGE_VTAG": "v0",
+            "WEBSERVER_LOGIN": "null",
+            "WEBSERVER_LOGLEVEL": "DEBUG",
+            "WEBSERVER_PORT": "8080",
+            "WEBSERVER_STUDIES_ACCESS_ENABLED": "True",
+        },
+    )
+
+    monkeypatch.delenv("WEBSERVER_ACTIVITY")
+    envs.pop("WEBSERVER_ACTIVITY")
+
+    return envs
 
 
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
-    aiohttp_client: Callable,
-    app_config: dict[str, Any],
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
     mock_orphaned_services: MagicMock,
-    monkeypatch_setenv_from_app_config: Callable,
+    app_environment: EnvVarsDict,
 ):
-    monkeypatch_setenv_from_app_config(app_config)
+    # app_environment are in place
+    assert {key: os.environ[key] for key in app_environment} == app_environment
+    expected_activity_settings = PrometheusSettings.create_from_envs()
 
-    app = create_safe_application(app_config)
+    app = create_safe_application()
 
-    assert setup_settings(app)
+    settings = setup_settings(app)
+    assert expected_activity_settings == settings.WEBSERVER_ACTIVITY
+
     setup_session(app)
     setup_security(app)
     setup_rest(app)
@@ -92,7 +128,7 @@ async def test_has_login_required(client: TestClient):
 
 
 async def test_monitoring_up(
-    mocked_login_required: None, mocked_monitoring: None, client
+    mocked_login_required: None, mocked_monitoring: None, client: TestClient
 ):
     RUNNING_NODE_ID = "894dd8d5-de3b-4767-950c-7c3ed8f51d8c"
 

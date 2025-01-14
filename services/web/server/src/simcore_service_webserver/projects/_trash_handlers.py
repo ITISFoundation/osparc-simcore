@@ -16,10 +16,9 @@ from ..exception_handling import (
 )
 from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
-from ..projects._common_models import ProjectPathParams
 from ..security.decorators import permission_required
 from . import _trash_api
-from ._common_models import RemoveQueryParams
+from ._common.models import ProjectPathParams, RemoveQueryParams
 from .exceptions import ProjectRunningConflictError, ProjectStoppingError
 
 _logger = logging.getLogger(__name__)

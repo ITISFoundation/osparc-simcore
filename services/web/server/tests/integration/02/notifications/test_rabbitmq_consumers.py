@@ -220,7 +220,6 @@ async def test_log_workflow(
     # project
     random_node_id_in_user_project: NodeID,
     user_project_id: ProjectID,
-    #
     faker: Faker,
     mocker: MockerFixture,
 ):
@@ -264,7 +263,6 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
     # project
     random_node_id_in_user_project: NodeID,
     user_project_id: ProjectID,
-    #
     faker: Faker,
     mocker: MockerFixture,
 ):
@@ -333,7 +331,6 @@ async def test_progress_non_computational_workflow(
     # project
     random_node_id_in_user_project: NodeID,
     user_project_id: ProjectID,
-    #
     mocker: MockerFixture,
 ):
     """

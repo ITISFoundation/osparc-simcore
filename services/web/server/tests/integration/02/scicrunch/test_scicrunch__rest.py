@@ -14,7 +14,6 @@
 """
 
 import os
-from pprint import pprint
 from typing import Any
 
 import pytest
@@ -48,7 +47,6 @@ async def test_scicrunch_openapi_specs(settings: SciCrunchSettings):
     async with ClientSession() as client:
         resp = await client.get(f"{SCICRUNCH_DEFAULT_URL}/swagger-docs/swagger.json")
         openapi_specs = await resp.json()
-        pprint(openapi_specs["info"])
 
         expected_api_version = 1
         assert openapi_specs["info"]["version"] == expected_api_version
@@ -65,7 +63,6 @@ async def test_scicrunch_get_all_versions(
 ):
     async with ClientSession() as client:
         versions = await get_all_versions(rrid, client, settings)
-        pprint(versions)
 
         assert versions
 
@@ -85,7 +82,6 @@ async def test_scicrunch_get_all_versions_with_invalid_rrids(
 ):
     async with ClientSession() as client:
         versions = await get_all_versions(rrid, client, settings)
-        pprint(versions)
 
         # invalid keys return success but an empty list of versions!
         assert isinstance(versions, list)

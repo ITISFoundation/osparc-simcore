@@ -78,7 +78,7 @@ async def test_resend_2fa_workflow(
     assert client.app
 
     # spy send functions
-    mock_send_sms_code1 = mocker.patch(
+    mocker.patch(
         "simcore_service_webserver.login._2fa_handlers.send_sms_code", autospec=True
     )
     mock_send_sms_code2 = mocker.patch(
