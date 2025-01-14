@@ -240,7 +240,7 @@ async def test_process_event_functions(
         postgres_db, msg.service_run_id, modified_at
     )
     assert output.osparc_credits < first_credits_used
-    assert output.transaction_status == "BILLED"
+    assert output.transaction_status == "IN_DEBT"
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),

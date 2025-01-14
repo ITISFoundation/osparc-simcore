@@ -302,7 +302,7 @@ async def _process_stop_event(
         )
         _transaction_status = (
             CreditTransactionStatus.BILLED
-            if wallet_total_credits.available_osparc_credits - computed_credits > 0
+            if wallet_total_credits.available_osparc_credits - computed_credits >= 0
             else CreditTransactionStatus.IN_DEBT
         )
         # Adjust the status if the platform status is not OK
