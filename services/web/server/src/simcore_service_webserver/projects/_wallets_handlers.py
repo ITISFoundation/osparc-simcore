@@ -22,7 +22,7 @@ from simcore_service_webserver.utils_aiohttp import envelope_json_response
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ..wallets.errors import WalletAccessForbiddenError
+from ..wallets.errors import WalletAccessForbiddenError, WalletNotFoundError
 from . import _wallets_api as wallets_api
 from . import projects_api
 from ._common.models import ProjectPathParams, RequestContext
@@ -38,6 +38,9 @@ def _handle_project_wallet_exceptions(handler: Handler):
             return await handler(request)
 
         except ProjectNotFoundError as exc:
+            raise web.HTTPNotFound(reason=f"{exc}") from exc
+
+        except WalletNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
         except (WalletAccessForbiddenError, ProjectInvalidRightsError) as exc:
@@ -132,14 +135,17 @@ async def pay_project_debt(request: web.Request):
         include_state=False,
     )
 
-    # Ensure the wallet is associated with the project
-    wallet: WalletGet | None = await wallets_api.get_project_wallet(
+    # Get curently associated wallet with the project
+    current_wallet: WalletGet | None = await wallets_api.get_project_wallet(
         request.app, path_params.project_id
     )
-    if not wallet:
-        raise web.HTTPNotFound(reason="Wallet not associated with the project")
+    if not current_wallet:
+        _logger.warning("This should not happen?")
+        raise web.HTTPNotFound(
+            reason="Project doesn't have any wallet associated to the project"
+        )
 
-    if wallet.wallet_id == path_params.wallet_id:
+    if current_wallet.wallet_id == path_params.wallet_id:
         # NOTE: Currently, this option is not supported. The only way a user can
         # access their project with the same wallet is by topping it up to achieve
         # a positive balance. (This could potentially be improved in the future;
@@ -148,21 +154,19 @@ async def pay_project_debt(request: web.Request):
         # At present, once the wallet balance becomes positive, RUT updates all
         # projects connected to that wallet from IN_DEBT to BILLED.
 
-        web.json_response(status=status.HTTP_501_NOT_IMPLEMENTED)
-    else:
-        # The debt is being paid using a different wallet than the one currently connected to the project.
-        # Steps:
-        # 1. Transfer the required credits from the specified wallet to the connected wallet.
-        # 2. Mark the transaction as billed (This will allow to )
+        return web.json_response(status=status.HTTP_501_NOT_IMPLEMENTED)
 
-        await wallets_api.pay_debt_with_different_wallet(
-            app=request.app,
-            product_name=req_ctx.product_name,
-            project_id=path_params.project_id,
-            user_id=req_ctx.user_id,
-            current_wallet_id=wallet.wallet_id,
-            new_wallet_id=path_params.wallet_id,
-            debt_amount=body_params.amount,
-        )
-
-    return envelope_json_response(payment_result)
+    # The debt is being paid using a different wallet than the one currently connected to the project.
+    # Steps:
+    # 1. Transfer the required credits from the specified wallet to the connected wallet.
+    # 2. Mark the project transactions as billed
+    await wallets_api.pay_debt_with_different_wallet(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        project_id=path_params.project_id,
+        user_id=req_ctx.user_id,
+        current_wallet_id=path_params.wallet_id,
+        new_wallet_id=path_params.wallet_id,
+        debt_amount=body_params.amount,
+    )
+    return envelope_json_response(web.json_response(status=status.HTTP_204_NO_CONTENT))

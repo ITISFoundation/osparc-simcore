@@ -5153,6 +5153,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/projects/{project_id}/wallet/{wallet_id}:pay-debt:
+    post:
+      tags:
+      - projects
+      summary: Pay Project Debt
+      operationId: pay_project_debt
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+      - name: wallet_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Wallet Id
+          minimum: 0
+      - name: amount
+        in: query
+        required: true
+        schema:
+          anyOf:
+          - type: number
+          - type: string
+          title: Amount
+      responses:
+        '204':
+          description: Successful Response
   /v0/projects/{project_id}/workspaces/{workspace_id}:move:
     post:
       tags:

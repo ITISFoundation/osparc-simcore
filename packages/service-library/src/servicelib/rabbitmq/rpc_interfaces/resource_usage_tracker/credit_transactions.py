@@ -56,7 +56,7 @@ async def pay_project_debt(
     current_wallet_transaction: CreditTransactionCreateBody,
     new_wallet_transaction: CreditTransactionCreateBody,
 ) -> None:
-    result = await rabbitmq_rpc_client.request(
+    await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("pay_project_debt"),
         project_id=project_id,
@@ -64,5 +64,3 @@ async def pay_project_debt(
         new_wallet_transaction=new_wallet_transaction,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, None)  # nosec
-    return result

@@ -72,6 +72,39 @@
               "title": "Wallet Id",
               "minimum": 0
             }
+          },
+          {
+            "name": "transaction_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CreditTransactionStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Transaction Status"
+            }
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
           }
         ],
         "responses": {
@@ -345,6 +378,17 @@
         ],
         "title": "CreditTransactionCreated",
         "description": "Response Create Credit Transaction V1 Credit Transactions Post"
+      },
+      "CreditTransactionStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "BILLED",
+          "IN_DEBT",
+          "NOT_BILLED",
+          "REQUIRES_MANUAL_REVIEW"
+        ],
+        "title": "CreditTransactionStatus"
       },
       "HTTPValidationError": {
         "properties": {

@@ -44,6 +44,7 @@ async def pay_project_debt(
     return await credit_transactions.pay_project_debt(
         db_engine=app.state.engine,
         rabbitmq_client=app.state.rabbitmq_client,
+        rut_fire_and_forget_tasks=app.state.rut_fire_and_forget_tasks,
         project_id=project_id,
         current_wallet_transaction=current_wallet_transaction,
         new_wallet_transaction=new_wallet_transaction,

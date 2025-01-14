@@ -14,6 +14,7 @@ from models_library.resource_tracker import (
 )
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.utils import fire_and_forget_task
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -92,15 +93,14 @@ async def sum_credit_transactions_by_product_and_wallet(
 
 
 async def pay_project_debt(
-    db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
-    rabbitmq_client: Annotated[
-        RabbitMQClient, Depends(get_rabbitmq_client_from_request)
-    ],
+    db_engine: AsyncEngine,
+    rabbitmq_client: RabbitMQClient,
+    rut_fire_and_forget_tasks: set,
     project_id: ProjectID,
     current_wallet_transaction: CreditTransactionCreateBody,
     new_wallet_transaction: CreditTransactionCreateBody,
 ):
-    # `current_wallet_transaction` is Wallet in DEBT
+    # NOTE: `current_wallet_transaction` is the Wallet in DEBT
 
     total_project_debt_amount = (
         await credit_transactions_db.sum_credit_transactions_by_product_and_wallet(
@@ -177,15 +177,23 @@ async def pay_project_debt(
             transaction_status=CreditTransactionStatus.BILLED,
         )
 
-    await sum_credit_transactions_and_publish_to_rabbitmq(
-        db_engine,
-        rabbitmq_client,
-        new_wallet_transaction_create.product_name,
-        new_wallet_transaction_create.wallet_id,
+    fire_and_forget_task(
+        sum_credit_transactions_and_publish_to_rabbitmq(
+            db_engine,
+            rabbitmq_client,
+            new_wallet_transaction_create.product_name,
+            new_wallet_transaction_create.wallet_id,
+        ),
+        task_suffix_name=f"sum_and_publish_credits_wallet_id{new_wallet_transaction_create.wallet_id}",
+        fire_and_forget_tasks_collection=rut_fire_and_forget_tasks,
     )
-    await sum_credit_transactions_and_publish_to_rabbitmq(
-        db_engine,
-        rabbitmq_client,
-        current_wallet_transaction_create.product_name,
-        current_wallet_transaction_create.wallet_id,
+    fire_and_forget_task(
+        sum_credit_transactions_and_publish_to_rabbitmq(
+            db_engine,
+            rabbitmq_client,
+            current_wallet_transaction_create.product_name,
+            current_wallet_transaction_create.wallet_id,
+        ),
+        task_suffix_name=f"sum_and_publish_credits_wallet_id{current_wallet_transaction_create.wallet_id}",
+        fire_and_forget_tasks_collection=rut_fire_and_forget_tasks,
     )
