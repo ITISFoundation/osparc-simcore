@@ -3,17 +3,14 @@ import contextlib
 import datetime
 import functools
 import logging
-import socket
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from typing import Any, Final, ParamSpec, TypeVar
 
-import arrow
 from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
 from tenacity.wait import wait_fixed
 
 from .async_utils import cancel_wait_task, with_delay
 from .logging_utils import log_context
-from .redis import RedisClientSDK, exclusive
 
 _logger = logging.getLogger(__name__)
 
@@ -140,41 +137,3 @@ async def periodic_task(
             # NOTE: this stopping is shielded to prevent the cancellation to propagate
             # into the stopping procedure
             await asyncio.shield(cancel_wait_task(asyncio_task, max_delay=stop_timeout))
-
-
-def exclusive_periodic(
-    client: RedisClientSDK,
-    *,
-    task_interval: datetime.timedelta,
-    retry_after: datetime.timedelta,
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]
-]:
-    """decorates a function to become exclusive and periodic.
-
-    Arguments:
-        client -- The Redis client
-        task_interval -- the task periodicity
-        retry_after -- in case the exclusive lock cannot be acquired or is lost, this is the retry interval
-
-    Returns:
-        Nothing, a periodic method does not return anything as it runs forever.
-    """
-
-    def _decorator(
-        func: Callable[P, Coroutine[Any, Any, None]],
-    ) -> Callable[P, Coroutine[Any, Any, None]]:
-        @periodic(interval=retry_after)
-        @exclusive(
-            client,
-            lock_key=f"lock:exclusive_periodic_task:{func.__name__}",
-            lock_value=f"locked since {arrow.utcnow().format()} by {client.client_name} on {socket.gethostname()}",
-        )
-        @periodic(interval=task_interval)
-        @functools.wraps(func)
-        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
-            return await func(*args, **kwargs)
-
-        return _wrapper
-
-    return _decorator

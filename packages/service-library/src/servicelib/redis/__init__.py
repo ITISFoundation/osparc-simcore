@@ -1,7 +1,6 @@
 from ._client import RedisClientSDK
 from ._clients_manager import RedisClientsManager
 from ._decorators import exclusive
-from ._distributed_locks_utils import create_exclusive_periodic_task
 from ._errors import (
     CouldNotAcquireLockError,
     CouldNotConnectToRedisError,
@@ -19,7 +18,6 @@ __all__: tuple[str, ...] = (
     "RedisClientSDK",
     "RedisClientsManager",
     "RedisManagerDBConfig",
-    "create_exclusive_periodic_task",
 )
 
 # nopycln: file

@@ -17,6 +17,14 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task, periodic, periodic_task
 
+pytest_simcore_core_services_selection = [
+    "redis",
+]
+pytest_simcore_ops_services_selection = [
+    "redis-commander",
+]
+
+
 _FAST_POLL_INTERVAL: Final[int] = 1
 _VERY_SLOW_POLL_INTERVAL: Final[int] = 100
 

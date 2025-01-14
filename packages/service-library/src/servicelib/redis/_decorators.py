@@ -2,10 +2,12 @@ import asyncio
 import contextlib
 import functools
 import logging
+import socket
 from collections.abc import Callable, Coroutine
 from datetime import timedelta
 from typing import Any, Final, ParamSpec, TypeVar
 
+import arrow
 import redis.exceptions
 from redis.asyncio.lock import Lock
 
@@ -77,6 +79,9 @@ def exclusive(
                 else redis_client
             )
             assert isinstance(client, RedisClientSDK)  # nosec
+            nonlocal lock_value
+            if lock_value is None:
+                lock_value = f"locked since {arrow.utcnow().format()} by {client.client_name} on {socket.gethostname()}"
 
             lock = client.create_lock(redis_lock_key, ttl=DEFAULT_LOCK_TTL)
             if not await lock.acquire(
