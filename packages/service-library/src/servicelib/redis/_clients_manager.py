@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass, field
 
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -28,10 +29,10 @@ class RedisClientsManager:
             )
 
     async def shutdown(self) -> None:
-        # NOTE: somehow using logged_gather is not an option
-        # doing so will make the shutdown procedure hang
-        for client in self._client_sdks.values():
-            await client.shutdown()
+        await asyncio.gather(
+            *[client.shutdown() for client in self._client_sdks.values()],
+            return_exceptions=True,
+        )
 
     def client(self, database: RedisDatabase) -> RedisClientSDK:
         return self._client_sdks[database]
