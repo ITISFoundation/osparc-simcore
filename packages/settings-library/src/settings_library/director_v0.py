@@ -6,11 +6,11 @@ from settings_library.basic_types import PortInt, VersionTag
 
 
 class DirectorV0Settings(BaseCustomSettings):
-    DIRECTOR_V0_ENABLED: bool = True
+    DIRECTOR_ENABLED: bool = True
 
     DIRECTOR_HOST: str = "director"
     DIRECTOR_PORT: PortInt = TypeAdapter(PortInt).validate_python(8000)
-    DIRECTOR_V0_VTAG: VersionTag = Field(
+    DIRECTOR_VTAG: VersionTag = Field(
         default="v0", description="Director-v0 service API's version tag"
     )
 
@@ -20,6 +20,6 @@ class DirectorV0Settings(BaseCustomSettings):
             scheme="http",
             host=self.DIRECTOR_HOST,
             port=self.DIRECTOR_PORT,
-            path=f"{self.DIRECTOR_V0_VTAG}",
+            path=f"{self.DIRECTOR_VTAG}",
         )
         return f"{url}"
