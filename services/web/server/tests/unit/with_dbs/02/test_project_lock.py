@@ -98,6 +98,7 @@ async def test_lock_already_locked_project_raises(
         await asyncio.sleep(10)
 
     task1 = asyncio.create_task(_locked_fct(), name="pytest_task_1")
+    await started_event.wait()
     with pytest.raises(ProjectLockError):
         await _locked_fct()
 
