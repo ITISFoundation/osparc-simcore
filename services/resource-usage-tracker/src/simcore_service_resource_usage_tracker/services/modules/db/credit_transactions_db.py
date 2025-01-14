@@ -141,28 +141,28 @@ async def batch_update_credit_transaction_status_for_in_debt_transactions(
     wallet_id: WalletID,
     transaction_status: CreditTransactionStatus,
 ) -> None:
-    async with transaction_context(engine, connection) as conn:
-        update_stmt = (
-            resource_tracker_credit_transactions.update()
-            .values(
-                modified=sa.func.now(),
-                transaction_status=transaction_status,
-            )
-            .where(
-                (resource_tracker_credit_transactions.c.wallet_id == f"{wallet_id}")
-                & (
-                    resource_tracker_credit_transactions.c.transaction_status
-                    == CreditTransactionStatus.IN_DEBT
-                )
+    update_stmt = (
+        resource_tracker_credit_transactions.update()
+        .values(
+            modified=sa.func.now(),
+            transaction_status=transaction_status,
+        )
+        .where(
+            (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
+            & (
+                resource_tracker_credit_transactions.c.transaction_status
+                == CreditTransactionStatus.IN_DEBT
             )
         )
+    )
 
-        if project_id:
-            update_stmt = update_stmt.where(
-                resource_tracker_credit_transactions.c.project_id == f"{project_id}"
-            )
-
-        await conn.execute(update_stmt)
+    if project_id:
+        update_stmt = update_stmt.where(
+            resource_tracker_credit_transactions.c.project_id == f"{project_id}"
+        )
+    async with transaction_context(engine, connection) as conn:
+        result = await conn.execute(update_stmt)
+        print(result)
 
 
 async def sum_credit_transactions_by_product_and_wallet(
