@@ -31,7 +31,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _comments_api, projects_service
-from ._common_models import RequestContext
+from ._common.models import RequestContext
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
