@@ -106,7 +106,7 @@ class ProjectGet(OutputSchema):
     model_config = ConfigDict(frozen=False)
 
     @classmethod
-    def from_model(cls, project_data: dict[str, Any]) -> Self:
+    def from_domain(cls, project_data: dict[str, Any]) -> Self:
         return cls.model_validate(
             remap_keys(
                 project_data,
