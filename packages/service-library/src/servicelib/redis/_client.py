@@ -19,7 +19,6 @@ from ._constants import (
     DEFAULT_HEALTH_CHECK_INTERVAL,
     DEFAULT_LOCK_TTL,
     DEFAULT_SOCKET_TIMEOUT,
-    SHUTDOWN_TIMEOUT_S,
 )
 
 _logger = logging.getLogger(__name__)
@@ -34,6 +33,7 @@ class RedisClientSDK:
 
     _client: aioredis.Redis = field(init=False)
     _health_check_task: Task | None = None
+    _health_check_task_started_event: asyncio.Event | None = None
     _is_healthy: bool = False
 
     @property
@@ -56,10 +56,13 @@ class RedisClientSDK:
             client_name=self.client_name,
         )
         # NOTE: connection is done here already
-        self._is_healthy = True
+        self._is_healthy = False
+        self._health_check_task_started_event = asyncio.Event()
 
         @periodic(interval=self.health_check_interval)
         async def _periodic_check_health() -> None:
+            assert self._health_check_task_started_event  # nosec
+            self._health_check_task_started_event.set()
             self._is_healthy = await self.ping()
 
         self._health_check_task = asyncio.create_task(
@@ -75,9 +78,11 @@ class RedisClientSDK:
 
     async def shutdown(self) -> None:
         if self._health_check_task:
-            await cancel_wait_task(
-                self._health_check_task, max_delay=SHUTDOWN_TIMEOUT_S
-            )
+            assert self._health_check_task_started_event  # nosec
+            await (
+                self._health_check_task_started_event.wait()
+            )  # NOTE: wait for the health check task to start
+            await cancel_wait_task(self._health_check_task)
 
         await self._client.aclose(close_connection_pool=True)
 
