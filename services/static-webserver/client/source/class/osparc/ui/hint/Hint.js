@@ -71,6 +71,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
 
     setText: function(text) {
       this.getChildControl("label").setValue(text);
+      // After setting the text, the dimensions of the Hint changed: recenter it
       setTimeout(() => this.updatePosition(), 10);
     }
   }
