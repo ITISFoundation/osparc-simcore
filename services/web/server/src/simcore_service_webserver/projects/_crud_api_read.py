@@ -45,7 +45,7 @@ async def _append_item(
     await update_or_pop_permalink_in_project(request, project)
 
     # validate
-    return ProjectListItem.from_domain(project).data(exclude_unset=True)
+    return ProjectListItem.from_domain_model(project).data(exclude_unset=True)
 
 
 async def list_projects(  # pylint: disable=too-many-arguments

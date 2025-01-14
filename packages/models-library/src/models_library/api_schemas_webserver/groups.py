@@ -73,7 +73,7 @@ class GroupGet(OutputSchema):
     ] = DEFAULT_FACTORY
 
     @classmethod
-    def from_model(cls, group: Group, access_rights: AccessRightsDict) -> Self:
+    def from_domain_model(cls, group: Group, access_rights: AccessRightsDict) -> Self:
         # Adapts these domain models into this schema
         return cls.model_validate(
             {
@@ -230,7 +230,7 @@ class MyGroupsGet(OutputSchema):
     )
 
     @classmethod
-    def from_model(
+    def from_domain_model(
         cls,
         groups_by_type: GroupsByTypeTuple,
         my_product_group: tuple[Group, AccessRightsDict] | None,
@@ -239,10 +239,12 @@ class MyGroupsGet(OutputSchema):
         assert groups_by_type.everyone  # nosec
 
         return cls(
-            me=GroupGet.from_model(*groups_by_type.primary),
-            organizations=[GroupGet.from_model(*gi) for gi in groups_by_type.standard],
-            all=GroupGet.from_model(*groups_by_type.everyone),
-            product=GroupGet.from_model(*my_product_group)
+            me=GroupGet.from_domain_model(*groups_by_type.primary),
+            organizations=[
+                GroupGet.from_domain_model(*gi) for gi in groups_by_type.standard
+            ],
+            all=GroupGet.from_domain_model(*groups_by_type.everyone),
+            product=GroupGet.from_domain_model(*my_product_group)
             if my_product_group
             else None,
         )
@@ -320,7 +322,7 @@ class GroupUserGet(OutputSchemaWithoutCamelCase):
     )
 
     @classmethod
-    def from_model(cls, user: GroupMember) -> Self:
+    def from_domain_model(cls, user: GroupMember) -> Self:
         return cls.model_validate(
             {
                 "id": user.id,

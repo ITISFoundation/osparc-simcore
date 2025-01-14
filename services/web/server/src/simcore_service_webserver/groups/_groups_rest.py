@@ -67,10 +67,14 @@ async def list_groups(request: web.Request):
             )
 
     my_groups = MyGroupsGet(
-        me=GroupGet.from_model(*groups_by_type.primary),
-        organizations=[GroupGet.from_model(*gi) for gi in groups_by_type.standard],
-        all=GroupGet.from_model(*groups_by_type.everyone),
-        product=GroupGet.from_model(*my_product_group) if my_product_group else None,
+        me=GroupGet.from_domain_model(*groups_by_type.primary),
+        organizations=[
+            GroupGet.from_domain_model(*gi) for gi in groups_by_type.standard
+        ],
+        all=GroupGet.from_domain_model(*groups_by_type.everyone),
+        product=GroupGet.from_domain_model(*my_product_group)
+        if my_product_group
+        else None,
     )
 
     return envelope_json_response(my_groups)
@@ -94,7 +98,7 @@ async def get_group(request: web.Request):
         request.app, user_id=req_ctx.user_id, group_id=path_params.gid
     )
 
-    return envelope_json_response(GroupGet.from_model(group, access_rights))
+    return envelope_json_response(GroupGet.from_domain_model(group, access_rights))
 
 
 @routes.post(f"/{API_VTAG}/groups", name="create_group")
@@ -113,7 +117,7 @@ async def create_group(request: web.Request):
         create=create.to_model(),
     )
 
-    created_group = GroupGet.from_model(group, access_rights)
+    created_group = GroupGet.from_domain_model(group, access_rights)
     return envelope_json_response(created_group, status_cls=web.HTTPCreated)
 
 
@@ -134,7 +138,7 @@ async def update_group(request: web.Request):
         update=update.to_model(),
     )
 
-    updated_group = GroupGet.from_model(group, access_rights)
+    updated_group = GroupGet.from_domain_model(group, access_rights)
     return envelope_json_response(updated_group)
 
 
@@ -173,7 +177,7 @@ async def get_all_group_users(request: web.Request):
     )
 
     return envelope_json_response(
-        [GroupUserGet.from_model(user) for user in users_in_group]
+        [GroupUserGet.from_domain_model(user) for user in users_in_group]
     )
 
 
@@ -216,7 +220,7 @@ async def get_group_user(request: web.Request):
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
 
-    return envelope_json_response(GroupUserGet.from_model(user))
+    return envelope_json_response(GroupUserGet.from_domain_model(user))
 
 
 @routes.patch(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="update_group_user")
@@ -236,7 +240,7 @@ async def update_group_user(request: web.Request):
         access_rights=update.access_rights.model_dump(mode="json"),  # type: ignore[arg-type]
     )
 
-    return envelope_json_response(GroupUserGet.from_model(user))
+    return envelope_json_response(GroupUserGet.from_domain_model(user))
 
 
 @routes.delete(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="delete_group_user")

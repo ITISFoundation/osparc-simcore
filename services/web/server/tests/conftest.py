@@ -242,7 +242,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             if not as_template:
                 expected_data["name"] = f"{from_study['name']} (Copy)"
 
-            expected_data = ProjectGet.from_domain(expected_data).model_dump(
+            expected_data = ProjectGet.from_domain_model(expected_data).model_dump(
                 mode="json", by_alias=True
             )
 

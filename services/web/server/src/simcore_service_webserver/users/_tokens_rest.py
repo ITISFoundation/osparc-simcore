@@ -46,7 +46,7 @@ def _handle_tokens_errors(handler: Handler):
 async def list_tokens(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     all_tokens = await _tokens_service.list_tokens(request.app, req_ctx.user_id)
-    return envelope_json_response([MyTokenGet.from_model(t) for t in all_tokens])
+    return envelope_json_response([MyTokenGet.from_domain_model(t) for t in all_tokens])
 
 
 @routes.post(f"/{API_VTAG}/me/tokens", name="create_token")
@@ -61,7 +61,7 @@ async def create_token(request: web.Request) -> web.Response:
         request.app, req_ctx.user_id, token_create.to_model()
     )
 
-    return envelope_json_response(MyTokenGet.from_model(token), web.HTTPCreated)
+    return envelope_json_response(MyTokenGet.from_domain_model(token), web.HTTPCreated)
 
 
 class _TokenPathParams(BaseModel):
@@ -80,7 +80,7 @@ async def get_token(request: web.Request) -> web.Response:
         request.app, req_ctx.user_id, req_path_params.service
     )
 
-    return envelope_json_response(MyTokenGet.from_model(token))
+    return envelope_json_response(MyTokenGet.from_domain_model(token))
 
 
 @routes.delete(f"/{API_VTAG}/me/tokens/{{service}}", name="delete_token")

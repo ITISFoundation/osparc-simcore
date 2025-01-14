@@ -57,7 +57,9 @@ async def create_workspace(request: web.Request):
         )
     )
 
-    return envelope_json_response(WorkspaceGet.from_domain(workspace), web.HTTPCreated)
+    return envelope_json_response(
+        WorkspaceGet.from_domain_model(workspace), web.HTTPCreated
+    )
 
 
 @routes.get(f"/{VTAG}/workspaces", name="list_workspaces")
@@ -87,7 +89,7 @@ async def list_workspaces(request: web.Request):
 
     page = Page[WorkspaceGet].model_validate(
         paginate_data(
-            chunk=[WorkspaceGet.from_domain(w) for w in workspaces],
+            chunk=[WorkspaceGet.from_domain_model(w) for w in workspaces],
             request_url=request.url,
             total=total_count,
             limit=query_params.limit,
@@ -115,7 +117,7 @@ async def get_workspace(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    return envelope_json_response(WorkspaceGet.from_domain(workspace))
+    return envelope_json_response(WorkspaceGet.from_domain_model(workspace))
 
 
 @routes.put(
@@ -137,7 +139,7 @@ async def replace_workspace(request: web.Request):
         product_name=req_ctx.product_name,
         **body_params.model_dump(),
     )
-    return envelope_json_response(WorkspaceGet.from_domain(workspace))
+    return envelope_json_response(WorkspaceGet.from_domain_model(workspace))
 
 
 @routes.delete(

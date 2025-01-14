@@ -57,7 +57,7 @@ def test_output_schemas_from_models(faker: Faker):
         group_type=GroupType.STANDARD,
         thumbnail=None,
     )
-    output_schema = GroupGet.from_model(
+    output_schema = GroupGet.from_domain_model(
         domain_model,
         access_rights=AccessRightsDict(read=True, write=False, delete=False),
     )
@@ -73,7 +73,7 @@ def test_output_schemas_from_models(faker: Faker):
         primary_gid=13,
         access_rights=AccessRightsDict(read=True, write=False, delete=False),
     )
-    output_schema = GroupUserGet.from_model(user=domain_model)
+    output_schema = GroupUserGet.from_domain_model(user=domain_model)
     assert output_schema.user_name == domain_model.name
 
 

@@ -24,7 +24,7 @@ class WorkspaceGet(OutputSchema):
     access_rights: dict[GroupID, AccessRights]
 
     @classmethod
-    def from_domain(cls, wks: UserWorkspaceWithAccessRights) -> Self:
+    def from_domain_model(cls, wks: UserWorkspaceWithAccessRights) -> Self:
         return cls(
             workspace_id=wks.workspace_id,
             name=wks.name,
