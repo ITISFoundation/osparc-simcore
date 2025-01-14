@@ -126,6 +126,11 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
 
 @pytest.fixture
+def with_disabled_background_tasks(mocker: MockerFixture) -> None:
+    mocker.patch("simcore_service_efs_guardian.core.application.setup_background_tasks")
+
+
+@pytest.fixture
 def with_disabled_redis_and_background_tasks(mocker: MockerFixture) -> None:
     mocker.patch("simcore_service_efs_guardian.core.application.setup_redis")
     mocker.patch("simcore_service_efs_guardian.core.application.setup_background_tasks")
@@ -137,7 +142,7 @@ def with_disabled_redis_and_background_tasks(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-async def efs_cleanup(app: FastAPI):
+async def efs_cleanup(app: FastAPI) -> AsyncIterator[None]:
     yield
 
     aws_efs_settings: AwsEfsSettings = app.state.settings.EFS_GUARDIAN_AWS_EFS_SETTINGS
