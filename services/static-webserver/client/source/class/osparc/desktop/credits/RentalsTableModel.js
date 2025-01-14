@@ -109,32 +109,40 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1)
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit=this.self().SERVER_MAX_LIMIT) => {
-        return osparc.data.Resources.fetch("wallets", "purchases", {
-          url: {
-            walletId: this.getWalletId(),
-            limit,
-            offset,
-            filters: this.getFilters() ?
-              JSON.stringify({
-                "started_at": this.getFilters()
-              }) :
-              null,
-            orderBy: JSON.stringify(this.getOrderBy())
-          }
-        })
-          .then(rawData => {
-            const data = []
+        return Promise.all([
+          osparc.data.Resources.get("licensedItems"),
+          osparc.data.Resources.fetch("wallets", "purchases", {
+            url: {
+              walletId: this.getWalletId(),
+              limit,
+              offset,
+              filters: this.getFilters() ?
+                JSON.stringify({
+                  "started_at": this.getFilters()
+                }) :
+                null,
+              orderBy: JSON.stringify(this.getOrderBy())
+            }
+          }),
+        ])
+          .then(values => {
+            const licensedItems = values[0];
+            const purchasesItems = values[1];
+
+            const data = [];
             const rentalsCols = osparc.desktop.credits.RentalsTable.COLS;
-            rawData.forEach(rawRow => {
+            purchasesItems.forEach(purchasesItem => {
+              const licensedItemId = purchasesItem["licensedItemId"];
+              const licensedItem = licensedItems.find(licItem => licItem["licensedItemId"] === licensedItemId);
               data.push({
-                [rentalsCols.PURCHASE_ID.id]: rawRow["licensedItemPurchaseId"],
-                [rentalsCols.ITEM_ID.id]: rawRow["licensedItemId"],
-                [rentalsCols.ITEM_LABEL.id]: "Hello",
-                [rentalsCols.START.id]: osparc.utils.Utils.formatDateAndTime(new Date(rawRow["startAt"])),
-                [rentalsCols.END.id]: osparc.utils.Utils.formatDateAndTime(new Date(rawRow["expireAt"])),
-                [rentalsCols.SEATS.id]: rawRow["numOfSeats"],
-                [rentalsCols.COST.id]: rawRow["pricingUnitCost"] ? parseFloat(rawRow["pricingUnitCost"]).toFixed(2) : "",
-                [rentalsCols.USER.id]: rawRow["purchasedByUser"],
+                [rentalsCols.PURCHASE_ID.id]: purchasesItem["licensedItemPurchaseId"],
+                [rentalsCols.ITEM_ID.id]: licensedItemId,
+                [rentalsCols.ITEM_LABEL.id]: licensedItem ? licensedItem["name"] : "unknown model",
+                [rentalsCols.START.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["startAt"])),
+                [rentalsCols.END.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["expireAt"])),
+                [rentalsCols.SEATS.id]: purchasesItem["numOfSeats"],
+                [rentalsCols.COST.id]: purchasesItem["pricingUnitCost"] ? parseFloat(purchasesItem["pricingUnitCost"]).toFixed(2) : "",
+                [rentalsCols.USER.id]: purchasesItem["purchasedByUser"],
               })
             })
             return data;
