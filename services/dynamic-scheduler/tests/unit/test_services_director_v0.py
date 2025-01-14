@@ -13,7 +13,6 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services_base import ServiceKeyVersion
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_scheduler.services.director_v0 import (
@@ -40,13 +39,6 @@ def legacy_service_details(
 ) -> RunningDynamicServiceDetails:
     return TypeAdapter(RunningDynamicServiceDetails).validate_python(
         RunningDynamicServiceDetails.model_json_schema()["examples"][0]
-    )
-
-
-@pytest.fixture
-def service_labels() -> SimcoreServiceLabels:
-    return TypeAdapter(SimcoreServiceLabels).validate_python(
-        SimcoreServiceLabels.model_json_schema()["examples"][0]
     )
 
 
@@ -78,14 +70,6 @@ def mock_director_v0(
             json={"data": [legacy_service_details.model_dump(mode="json")]},
         )
 
-        respx_mock.request(
-            method="GET",
-            path="/v0/services/simcore/services/dynamic/test/1.0.0/labels",
-        ).respond(
-            status_code=200,
-            json={"data": service_labels.model_dump(mode="jsone"), "error": None},
-        )
-
         yield
 
 
@@ -98,16 +82,6 @@ async def test_get_running_service_details(
     client = DirectorV0PublicClient.get_from_app_state(app)
     result = await client.get_running_service_details(node_id)
     assert result == legacy_service_details
-
-
-async def test_get_service_labels(
-    mock_director_v0: None, app: FastAPI, service_labels: SimcoreServiceLabels
-):
-    client = DirectorV0PublicClient.get_from_app_state(app)
-    labels = await client.get_service_labels(
-        ServiceKeyVersion(key="simcore/services/dynamic/test", version="1.0.0")
-    )
-    assert labels.model_dump(mode="json") == service_labels.model_dump(mode="json")
 
 
 async def test_get_running_services(

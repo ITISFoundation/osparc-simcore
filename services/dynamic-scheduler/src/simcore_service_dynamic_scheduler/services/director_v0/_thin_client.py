@@ -1,11 +1,8 @@
-import urllib.parse
-
 from common_library.unset import as_dict_exclude_none
 from fastapi import FastAPI, status
 from httpx import Response
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services_base import ServiceKeyVersion
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import AttachLifespanMixin
@@ -48,13 +45,6 @@ class DirectorV0ThinClient(
         self, node_id: NodeID
     ) -> Response:
         return await self.client.get(f"/running_interactive_services/{node_id}")
-
-    @retry_on_errors()
-    @expect_status(status.HTTP_200_OK)
-    async def get_services_labels(self, service: ServiceKeyVersion) -> Response:
-        return await self.client.get(
-            f"/services/{urllib.parse.quote_plus(service.key)}/{service.version}/labels"
-        )
 
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)

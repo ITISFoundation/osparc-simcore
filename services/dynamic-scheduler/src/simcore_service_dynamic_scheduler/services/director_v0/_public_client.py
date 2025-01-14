@@ -8,8 +8,6 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services_base import ServiceKeyVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
@@ -49,17 +47,7 @@ class DirectorV0PublicClient(SingletonInAppStateMixin):
             _unenvelope_or_raise_error(response)
         )
 
-    async def get_service_labels(  # required
-        self, service: ServiceKeyVersion
-    ) -> SimcoreServiceLabels:
-        response = await DirectorV0ThinClient.get_from_app_state(
-            self.app
-        ).get_services_labels(service)
-        return TypeAdapter(SimcoreServiceLabels).validate_python(
-            _unenvelope_or_raise_error(response)
-        )
-
-    async def get_running_services(  # required
+    async def get_running_services(
         self, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[RunningDynamicServiceDetails]:
         response = await DirectorV0ThinClient.get_from_app_state(
