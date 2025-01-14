@@ -95,6 +95,81 @@ async def create(
         return FolderDB.model_validate(row)
 
 
+def _create_private_workspace_query(
+    product_name: ProductName,
+    user_id: UserID,
+    workspace_scope: WorkspaceScope,
+):
+    if workspace_scope is not WorkspaceScope.SHARED:
+        assert workspace_scope in (  # nosec
+            WorkspaceScope.PRIVATE,
+            WorkspaceScope.ALL,
+        )
+        return (
+            select(
+                *_SELECTION_ARGS,
+                func.json_build_object(
+                    "read",
+                    sa.text("true"),
+                    "write",
+                    sa.text("true"),
+                    "delete",
+                    sa.text("true"),
+                ).label("my_access_rights"),
+            )
+            .select_from(folders_v2)
+            .where(
+                (folders_v2.c.product_name == product_name)
+                & (folders_v2.c.user_id == user_id)
+            )
+        )
+    return None
+
+
+def _create_shared_workspace_query(
+    product_name: ProductName,
+    user_id: UserID,
+    workspace_scope: WorkspaceScope,
+    workspace_id: WorkspaceID | None,
+):
+    if workspace_scope is not WorkspaceScope.PRIVATE:
+        assert workspace_scope in (  # nosec
+            WorkspaceScope.SHARED,
+            WorkspaceScope.ALL,
+        )
+
+        workspace_access_rights_subquery = create_my_workspace_access_rights_subquery(
+            user_id=user_id
+        )
+
+        shared_workspace_query = (
+            select(
+                *_SELECTION_ARGS, workspace_access_rights_subquery.c.my_access_rights
+            )
+            .select_from(
+                folders_v2.join(
+                    workspace_access_rights_subquery,
+                    folders_v2.c.workspace_id
+                    == workspace_access_rights_subquery.c.workspace_id,
+                )
+            )
+            .where(
+                (folders_v2.c.product_name == product_name)
+                & (folders_v2.c.user_id.is_(None))
+            )
+        )
+
+        if workspace_scope == WorkspaceScope.SHARED:
+            shared_workspace_query = shared_workspace_query.where(
+                folders_v2.c.workspace_id == workspace_id
+            )
+
+    else:
+        shared_workspace_query = None
+
+    return shared_workspace_query
+
+
 async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -118,67 +193,17 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     trashed - If set to true, it returns folders **explicitly** trashed, if false then non-trashed folders.
     """
 
-    workspace_access_rights_subquery = create_my_workspace_access_rights_subquery(
-        user_id=user_id
+    private_workspace_query = _create_private_workspace_query(
+        workspace_scope=workspace_query.workspace_scope,
+        product_name=product_name,
+        user_id=user_id,
     )
-
-    if workspace_query.workspace_scope is not WorkspaceScope.SHARED:
-        assert workspace_query.workspace_scope in (  # nosec
-            WorkspaceScope.PRIVATE,
-            WorkspaceScope.ALL,
-        )
-
-        private_workspace_query = (
-            select(
-                *_SELECTION_ARGS,
-                func.json_build_object(
-                    "read",
-                    sa.text("true"),
-                    "write",
-                    sa.text("true"),
-                    "delete",
-                    sa.text("true"),
-                ).label("my_access_rights"),
-            )
-            .select_from(folders_v2)
-            .where(
-                (folders_v2.c.product_name == product_name)
-                & (folders_v2.c.user_id == user_id)
-            )
-        )
-    else:
-        private_workspace_query = None
-
-    if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
-        assert workspace_query.workspace_scope in (  # nosec
-            WorkspaceScope.SHARED,
-            WorkspaceScope.ALL,
-        )
-
-        shared_workspace_query = (
-            select(
-                *_SELECTION_ARGS, workspace_access_rights_subquery.c.my_access_rights
-            )
-            .select_from(
-                folders_v2.join(
-                    workspace_access_rights_subquery,
-                    folders_v2.c.workspace_id
-                    == workspace_access_rights_subquery.c.workspace_id,
-                )
-            )
-            .where(
-                (folders_v2.c.product_name == product_name)
-                & (folders_v2.c.user_id.is_(None))
-            )
-        )
-
-        if workspace_query.workspace_scope == WorkspaceScope.SHARED:
-            shared_workspace_query = shared_workspace_query.where(
-                folders_v2.c.workspace_id == workspace_query.workspace_id
-            )
-
-    else:
-        shared_workspace_query = None
+    shared_workspace_query = _create_shared_workspace_query(
+        workspace_scope=workspace_query.workspace_scope,
+        product_name=product_name,
+        user_id=user_id,
+        workspace_id=workspace_query.workspace_id,
+    )
 
     attributes_filters: list[ColumnElement] = []
 
