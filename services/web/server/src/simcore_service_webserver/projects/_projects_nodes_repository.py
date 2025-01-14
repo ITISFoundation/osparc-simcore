@@ -1,6 +1,5 @@
 import logging
 
-import sqlalchemy as sa
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes import PartialNode
@@ -28,9 +27,7 @@ async def update(
             projects_nodes.update()
             .values(**values)
             .where(
-                sa.and_(
-                    projects_nodes.c.project_uuid == f"{project_id}",
-                    projects_nodes.c.node_id == f"{node_id}",
-                )
+                (projects_nodes.c.project_uuid == f"{project_id}")
+                & (projects_nodes.c.node_id == f"{node_id}")
             )
         )
