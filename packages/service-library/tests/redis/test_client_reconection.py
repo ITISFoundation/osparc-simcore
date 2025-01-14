@@ -27,12 +27,12 @@ async def test_redis_client_sdk_lost_connection(
 
     assert await redis_client_sdk.ping() is True
     # no connection available any longer should not hang but timeout
-    for rabbit_docker_service in (
+    for redis_docker_service in (
         docker_service
         for docker_service in docker_client.services.list()
         if "redis" in docker_service.name  # type: ignore
     ):
-        rabbit_docker_service.remove()  # type: ignore
+        redis_docker_service.remove()  # type: ignore
 
     # check that connection was lost
     async for attempt in AsyncRetrying(
