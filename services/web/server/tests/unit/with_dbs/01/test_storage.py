@@ -1,13 +1,18 @@
-# pylint:disable=unused-import
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
+import asyncio
+from collections.abc import Awaitable, Callable
 from urllib.parse import quote
 
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
@@ -17,10 +22,12 @@ API_VERSION = "v0"
 
 # TODO: create a fake storage service here
 @pytest.fixture()
-def storage_server(event_loop, aiohttp_server, app_cfg):
-    cfg = app_cfg["storage"]
-    app = create_safe_application(cfg)
-
+def storage_server(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_server: Callable[..., Awaitable[TestServer]],
+    app_environment: EnvVarsDict,
+    storage_test_server_port: int,
+) -> TestServer:
     async def _get_locs(request: web.Request):
         assert not request.can_read_body
 
@@ -119,11 +126,15 @@ def storage_server(event_loop, aiohttp_server, app_cfg):
             }
         )
 
-    storage_api_version = cfg["version"]
+    storage_api_version = app_environment["STORAGE_VTAG"]
+    storage_port = int(app_environment["STORAGE_PORT"])
+    assert storage_port == storage_test_server_port
+
     assert (
         storage_api_version != API_VERSION
     ), "backend service w/ different version as webserver entrypoint"
 
+    app = create_safe_application()
     app.router.add_get(f"/{storage_api_version}/locations", _get_locs)
     app.router.add_post(
         f"/{storage_api_version}/locations/0:sync", _post_sync_meta_data
@@ -140,10 +151,7 @@ def storage_server(event_loop, aiohttp_server, app_cfg):
         _get_datasets_meta,
     )
 
-    assert cfg["host"] == "localhost"
-
-    server = event_loop.run_until_complete(aiohttp_server(app, port=cfg["port"]))
-    return server
+    return event_loop.run_until_complete(aiohttp_server(app, port=storage_port))
 
 
 # --------------------------------------------------------------------------
@@ -159,7 +167,9 @@ PREFIX = "/" + API_VERSION + "/storage"
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_storage_locations(client, storage_server, logged_user, expected):
+async def test_get_storage_locations(
+    client: TestClient, storage_server: TestServer, logged_user, expected
+):
     url = "/v0/storage/locations"
     assert url.startswith(PREFIX)
 
@@ -181,7 +191,9 @@ async def test_get_storage_locations(client, storage_server, logged_user, expect
         (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
-async def test_sync_file_meta_table(client, storage_server, logged_user, expected):
+async def test_sync_file_meta_table(
+    client: TestClient, storage_server: TestServer, logged_user, expected
+):
     url = "/v0/storage/locations/0:sync"
     assert url.startswith(PREFIX)
 
@@ -203,7 +215,9 @@ async def test_sync_file_meta_table(client, storage_server, logged_user, expecte
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_datasets_metadata(client, storage_server, logged_user, expected):
+async def test_get_datasets_metadata(
+    client: TestClient, storage_server: TestServer, logged_user, expected
+):
     url = "/v0/storage/locations/0/datasets"
     assert url.startswith(PREFIX)
 
@@ -229,7 +243,7 @@ async def test_get_datasets_metadata(client, storage_server, logged_user, expect
     ],
 )
 async def test_get_files_metadata_dataset(
-    client, storage_server, logged_user, expected
+    client: TestClient, storage_server: TestServer, logged_user, expected
 ):
     url = "/v0/storage/locations/0/datasets/N:asdfsdf/metadata"
     assert url.startswith(PREFIX)
@@ -258,7 +272,7 @@ async def test_get_files_metadata_dataset(
     ],
 )
 async def test_storage_file_meta(
-    client, storage_server, logged_user, expected, faker: Faker
+    client: TestClient, storage_server: TestServer, logged_user, expected, faker: Faker
 ):
     # tests redirect of path with quotes in path
     file_id = f"{faker.uuid4()}/{faker.uuid4()}/a/b/c/d/e/dat"
@@ -284,7 +298,9 @@ async def test_storage_file_meta(
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_storage_list_filter(client, storage_server, logged_user, expected):
+async def test_storage_list_filter(
+    client: TestClient, storage_server: TestServer, logged_user, expected
+):
     # tests composition of 2 queries
     file_id = "a/b/c/d/e/dat"
     url = "/v0/storage/locations/0/files/metadata?uuid_filter={}".format(

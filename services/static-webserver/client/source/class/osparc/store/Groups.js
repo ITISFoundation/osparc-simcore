@@ -131,7 +131,7 @@ qx.Class.define("osparc.store.Groups", {
       })
     },
 
-    getAllGroupsAndUsers: function() {
+    getAllGroups: function() {
       const allGroupsAndUsers = {};
 
       const groupEveryone = this.getEveryoneGroup();
@@ -147,16 +147,11 @@ qx.Class.define("osparc.store.Groups", {
         allGroupsAndUsers[organization.getGroupId()] = organization;
       });
 
-      const users = osparc.store.Users.getInstance().getUsers();
-      users.forEach(user => {
-        allGroupsAndUsers[user.getGroupId()] = user;
-      });
-
       return allGroupsAndUsers;
     },
 
     getMyGroupId: function() {
-      return this.getGroupMe().getGroupId();
+      return osparc.auth.Data.getInstance().getGroupId();
     },
 
     getOrganizationIds: function() {

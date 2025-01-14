@@ -36,7 +36,7 @@ from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.errors import WalletNotEnoughCreditsError
 from . import projects_api
-from ._common_models import ProjectPathParams, RequestContext
+from ._common.models import ProjectPathParams, RequestContext
 from .exceptions import (
     DefaultPricingUnitNotFoundError,
     ProjectInvalidRightsError,

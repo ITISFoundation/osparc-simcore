@@ -51,6 +51,10 @@ qx.Class.define("osparc.share.AddCollaborators", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "intro-text":
+          control = new qx.ui.basic.Label();
+          this._addAt(control, 0);
+          break;
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
           this._add(control);

@@ -288,7 +288,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         converter: val => val ? "tab-button-selected" : "tab-button"
       });
       if (widget) {
-        tabPage.add(widget, {
+        const scrollView = new qx.ui.container.Scroll();
+        scrollView.add(widget);
+        tabPage.add(scrollView, {
           flex: 1
         });
       }
@@ -788,24 +790,33 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__studyOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__studyOptionsPage]);
 
-      this.__studyOptionsPage.add(new osparc.info.StudyMedium(study), {
+      const scrollView = new qx.ui.container.Scroll();
+      const secondaryColumnStudyContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
+        backgroundColor: "transparent"
+      });
+      scrollView.add(secondaryColumnStudyContent);
+      this.__studyOptionsPage.add(scrollView, {
         flex: 1
       });
 
-      this.__studyOptionsPage.add(this.__getSlideshowSection());
+      secondaryColumnStudyContent.add(new osparc.info.StudyMedium(study), {
+        flex: 1
+      });
 
-      this.__studyOptionsPage.add(this.__getAnnotationsSection());
+      secondaryColumnStudyContent.add(this.__getSlideshowSection());
+
+      secondaryColumnStudyContent.add(this.__getAnnotationsSection());
 
       const snaps = this.__getSnapshotsSection();
       snaps.exclude();
       const isVCDisabled = osparc.utils.DisabledPlugins.isVersionControlDisabled();
       snaps.setVisibility(isVCDisabled ? "excluded" : "visible");
-      this.__studyOptionsPage.add(snaps);
+      secondaryColumnStudyContent.add(snaps);
 
       const iters = this.__getIterationsSection();
       const isMMDisabled = osparc.utils.DisabledPlugins.isMetaModelingDisabled();
       snaps.setVisibility(isMMDisabled ? "excluded" : "visible");
-      this.__studyOptionsPage.add(iters);
+      secondaryColumnStudyContent.add(iters);
     },
 
     __getSlideshowSection: function() {

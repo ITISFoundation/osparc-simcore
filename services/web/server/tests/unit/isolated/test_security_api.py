@@ -6,7 +6,7 @@
 import asyncio
 import statistics
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -205,7 +205,7 @@ def app_routes(
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
-    aiohttp_client: Callable,
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
     mocker: MockerFixture,
     app_products: OrderedDict[str, Product],
     set_products_in_app_state: Callable[

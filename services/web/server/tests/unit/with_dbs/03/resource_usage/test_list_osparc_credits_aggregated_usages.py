@@ -27,11 +27,9 @@ from simcore_service_webserver.db.models import UserRole
 _SERVICE_RUN_GET = OsparcCreditsAggregatedUsagesPage(
     items=[
         OsparcCreditsAggregatedByServiceGet(
-            **{
-                "osparc_credits": Decimal(-50),
-                "service_key": "simcore/services/comp/itis/sleeper",
-                "running_time_in_hours": Decimal(0.5),
-            }
+            osparc_credits=Decimal(-50),
+            service_key="simcore/services/comp/itis/sleeper",
+            running_time_in_hours=Decimal(0.5),
         )
     ],
     total=1,

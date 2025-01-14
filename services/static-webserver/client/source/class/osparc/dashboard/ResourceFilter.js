@@ -147,6 +147,11 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     },
 
     evaluateTrashEmpty: function() {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        // Guests do not have access to folders and workspaces
+        return;
+      }
+
       const studiesParams = {
         url: {
           offset: 0,

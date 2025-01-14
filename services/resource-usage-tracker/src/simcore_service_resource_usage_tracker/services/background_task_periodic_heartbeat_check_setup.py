@@ -5,7 +5,7 @@ from typing import TypedDict
 from fastapi import FastAPI
 from servicelib.background_task import stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis_utils import start_exclusive_periodic_task
+from servicelib.redis import start_exclusive_periodic_task
 
 from ..core.settings import ApplicationSettings
 from .background_task_periodic_heartbeat_check import (
@@ -26,11 +26,14 @@ class RutBackgroundTask(TypedDict):
 
 def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="RUT background task Periodic check of running services startup..",
-        ), log_catch(_logger, reraise=False):
+        with (
+            log_context(
+                _logger,
+                logging.INFO,
+                msg="RUT background task Periodic check of running services startup..",
+            ),
+            log_catch(_logger, reraise=False),
+        ):
             app_settings: ApplicationSettings = app.state.settings
 
             app.state.rut_background_task__periodic_check_of_running_services = None
@@ -55,11 +58,14 @@ def _on_app_shutdown(
     _app: FastAPI,
 ) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="RUT background tasks Periodic check of running services shutdown..",
-        ), log_catch(_logger, reraise=False):
+        with (
+            log_context(
+                _logger,
+                logging.INFO,
+                msg="RUT background tasks Periodic check of running services shutdown..",
+            ),
+            log_catch(_logger, reraise=False),
+        ):
             assert _app  # nosec
             if _app.state.rut_background_task__periodic_check_of_running_services:
                 await stop_periodic_task(

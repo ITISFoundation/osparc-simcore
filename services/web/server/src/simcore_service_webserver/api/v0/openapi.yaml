@@ -3964,6 +3964,16 @@ paths:
       summary: List Projects Full Search
       operationId: list_projects_full_search
       parameters:
+      - name: filters
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            contentMediaType: application/json
+            contentSchema: {}
+          - type: 'null'
+          title: Filters
       - name: order_by
         in: query
         required: false

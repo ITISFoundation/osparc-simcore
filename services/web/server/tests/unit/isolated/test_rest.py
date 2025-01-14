@@ -3,7 +3,7 @@
 # pylint:disable=no-name-in-module
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from http import HTTPStatus
 from unittest.mock import MagicMock
 
@@ -24,7 +24,7 @@ from simcore_service_webserver.security.plugin import setup_security
 def client(
     event_loop: asyncio.AbstractEventLoop,
     unused_tcp_port_factory: Callable,
-    aiohttp_client: Callable,
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
     api_version_prefix: str,
     mock_env_devel_environment: EnvVarsDict,
     mock_env_deployer_pipeline: EnvVarsDict,
@@ -48,10 +48,9 @@ def client(
 
     app.router.add_get("/slow", slow_handler)
 
-    cli = event_loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs=server_kwargs)
     )
-    return cli
 
 
 async def test_frontend_config(

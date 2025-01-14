@@ -7,7 +7,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 from models_library.projects import ProjectID
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..models import RequestContext
+from ...models import RequestContext
 
 assert RequestContext.__name__  # nosec
 

@@ -1,0 +1,35 @@
+7-Zip (z) 24.09 (x64) : Copyright (c) 1999-2024 Igor Pavlov : 2024-11-28
+ 64-bit locale=C.UTF-8 Threads:12 OPEN_MAX:1048576, ASM
+Scanning the drive for archives:
+1 file, 2089391770 bytes (1993 MiB)
+Listing archive: /tmp/simcorefiles/3f8abbcc-923b-429b-953f-827df68b715f/input_1/PromlematicZipFile.zip
+--
+Path = /tmp/simcorefiles/3f8abbcc-923b-429b-953f-827df68b715f/input_1/PromlematicZipFile.zip
+Type = zip
+Physical Size = 2089391770
+   Date      Time    Attr         Size   Compressed  Name
+------------------- ----- ------------ ------------  ------------------------
+2024-12-11 15:31:40 ....A     45388221     45392151  b0_pair.nii.gz
+2024-12-11 15:31:32 ....A          326           14  bvals
+2024-12-11 15:31:32 ....A         2610         1228  bvecs
+2024-12-11 15:31:52 ....A          192          111  diff2struct_fsl.mat
+2024-12-11 15:31:52 ....A          191          110  diff2struct_fsl_inverse.mat
+2024-12-11 15:31:52 ....A          848          367  diff2struct_mrtrix.txt
+2024-12-11 15:31:46 ....A   1124081680   1009101417  dwi_preproc.mif
+2024-12-11 15:31:52 ....A   1008525390   1008612664  dwi_preproc.nii.gz
+2024-12-11 15:31:52 ....A          154          118  electrode_coords_coreg.txt
+2024-12-11 15:31:52 ....A        57871        36566  mask_brain_coreg.nii.gz
+2024-12-11 15:31:52 ....A        16811          703  mask_lh_hippo_body_coreg.nii.gz
+2024-12-11 15:31:52 ....A        17304         1324  mask_lh_hippo_coreg.nii.gz
+2024-12-11 15:31:52 ....A        16903          821  mask_lh_hippo_head_coreg.nii.gz
+2024-12-11 15:31:52 ....A        16679          540  mask_lh_hippo_tail_coreg.nii.gz
+2024-12-11 15:31:52 ....A        16779          670  mask_rh_hippo_body_coreg.nii.gz
+2024-12-11 15:31:52 ....A        17232         1246  mask_rh_hippo_coreg.nii.gz
+2024-12-11 15:31:52 ....A        16840          752  mask_rh_hippo_head_coreg.nii.gz
+2024-12-11 15:31:52 ....A        16699          582  mask_rh_hippo_tail_coreg.nii.gz
+2024-12-11 15:31:38 ....A     15068179     15069543  mean_b0.nii.gz
+2024-12-11 11:49:22 ....A           54           54  simulation_parameters.txt
+2024-11-22 12:21:58 ....A           94           80  stimulation_parameters.txt
+2024-12-11 15:31:40 ....A     11166326     11168031  T1_coreg.nii.gz
+------------------- ----- ------------ ------------  ------------------------
+2024-12-11 15:31:52         2204427383   2089389092  22 files

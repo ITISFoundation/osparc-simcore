@@ -23,7 +23,7 @@ from ..products.api import get_product_name
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response
 from ._catalog import ValidService, validate_requested_service
-from ._constants import MSG_UNEXPECTED_ERROR
+from ._constants import MSG_UNEXPECTED_DISPATCH_ERROR
 from ._core import validate_requested_file, validate_requested_viewer
 from ._errors import InvalidRedirectionParams, StudyDispatcherError
 from ._models import FileParams, ServiceInfo, ServiceParams, ViewerInfo
@@ -73,12 +73,12 @@ def _create_redirect_response_to_error_page(
 
 
 def _create_service_info_from(service: ValidService) -> ServiceInfo:
-    values_map = dict(
-        key=service.key,
-        version=service.version,
-        label=service.title,
-        is_guest_allowed=service.is_public,
-    )
+    values_map = {
+        "key": service.key,
+        "version": service.version,
+        "label": service.title,
+        "is_guest_allowed": service.is_public,
+    }
     if service.thumbnail:
         values_map["thumbnail"] = service.thumbnail
     return ServiceInfo.model_construct(_fields_set=set(values_map.keys()), **values_map)
@@ -127,7 +127,7 @@ def _handle_errors_with_error_page(handler: Handler):
             error_code = create_error_code(err)
 
             user_error_msg = compose_support_error_msg(
-                msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
+                msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
             )
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
@@ -335,7 +335,7 @@ async def get_redirection_to_viewer(request: web.Request):
 
     else:
         # NOTE: if query is done right, this should never happen
-        raise InvalidRedirectionParams()
+        raise InvalidRedirectionParams
 
     # Adds auth cookies (login)
     await ensure_authentication(user, request, response)

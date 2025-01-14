@@ -20,7 +20,7 @@ async def dir_to_bytes(source: Path) -> bytes:
     async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
         archive_path = Path(tmp_dir) / "archive"
 
-        await archive_dir(source, archive_path, compress=True, store_relative_path=True)
+        await archive_dir(source, archive_path, compress=True)
 
         archive_size = archive_path.stat().st_size
         if archive_size > _MAX_PREFERENCES_TOTAL_SIZE:

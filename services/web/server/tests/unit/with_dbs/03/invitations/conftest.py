@@ -8,7 +8,7 @@ import binascii
 import json
 from contextlib import suppress
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -116,7 +116,7 @@ def mock_invitations_service_http_api(
     # extract
     assert "/v1/invitations:extract" in oas["paths"]
 
-    def _extract(url, **kwargs):
+    def _extract_cbk(url, **kwargs):
         fake_code = URL(URL(f'{kwargs["json"]["invitation_url"]}').fragment).query[
             "invitation"
         ]
@@ -133,7 +133,7 @@ def mock_invitations_service_http_api(
 
     aioresponses_mocker.post(
         f"{base_url}/v1/invitations:extract",
-        callback=_extract,
+        callback=_extract_cbk,
         repeat=True,  # NOTE: this can be used many times
     )
 
@@ -155,7 +155,7 @@ def mock_invitations_service_http_api(
                         **example,
                         **body,
                         "invitation_url": f"https://osparc-simcore.test/#/registration?invitation={fake_code}",
-                        "created": datetime.now(tz=timezone.utc),
+                        "created": datetime.now(tz=UTC),
                     }
                 )
             ),

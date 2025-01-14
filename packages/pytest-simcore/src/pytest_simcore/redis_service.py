@@ -10,6 +10,7 @@ import pytest
 import tenacity
 from pytest_mock import MockerFixture
 from redis.asyncio import Redis, from_url
+from servicelib.redis import _constants as redis_constants
 from settings_library.basic_types import PortInt
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity.before_sleep import before_sleep_log
@@ -118,6 +119,4 @@ async def wait_till_redis_responsive(redis_url: URL | str) -> None:
 @pytest.fixture
 def mock_redis_socket_timeout(mocker: MockerFixture) -> None:
     # lowered to allow CI to properly shutdown RedisClientSDK instances
-    from servicelib import redis
-
-    mocker.patch.object(redis, "_DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=1))
+    mocker.patch.object(redis_constants, "DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=1))

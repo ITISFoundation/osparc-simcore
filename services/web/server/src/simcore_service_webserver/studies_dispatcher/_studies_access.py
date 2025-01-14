@@ -48,7 +48,7 @@ from ._constants import (
     MSG_PROJECT_NOT_PUBLISHED,
     MSG_PUBLIC_PROJECT_NOT_PUBLISHED,
     MSG_TOO_MANY_GUESTS,
-    MSG_UNEXPECTED_ERROR,
+    MSG_UNEXPECTED_DISPATCH_ERROR,
 )
 from ._errors import GuestUsersLimitError
 from ._users import create_temporary_guest_user, get_authorized_user
@@ -260,7 +260,7 @@ def _handle_errors_with_error_page(handler: Handler):
         except Exception as err:
             error_code = create_error_code(err)
             user_error_msg = compose_support_error_msg(
-                msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
+                msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
             )
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
@@ -366,7 +366,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     except Exception as exc:  # pylint: disable=broad-except
         error_code = create_error_code(exc)
 
-        user_error_msg = MSG_UNEXPECTED_ERROR.format(hint="while copying your study")
+        user_error_msg = MSG_UNEXPECTED_DISPATCH_ERROR
         _logger.exception(
             **create_troubleshotting_log_kwargs(
                 user_error_msg,

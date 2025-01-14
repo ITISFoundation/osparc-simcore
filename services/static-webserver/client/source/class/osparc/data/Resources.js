@@ -143,7 +143,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageTrashed: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/projects:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           postToTemplate: {
             method: "POST",
@@ -327,7 +327,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageTrashed: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/folders?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/folders:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           post: {
             method: "POST",
@@ -373,6 +373,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageTrashed: {
             useCache: false,
             method: "GET",
+            // url: statics.API + "/workspaces:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
             url: statics.API + "/workspaces?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           post: {
@@ -1258,14 +1259,30 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/tags"
           },
-          put: {
+          patch: {
             method: "PATCH",
             url: statics.API + "/tags/{tagId}"
           },
           delete: {
             method: "DELETE",
             url: statics.API + "/tags/{tagId}"
-          }
+          },
+          getAccessRights: {
+            method: "GET",
+            url: statics.API + "/tags/{tagId}/groups"
+          },
+          putAccessRights: {
+            method: "PUT",
+            url: statics.API + "/tags/{tagId}/groups/{groupId}"
+          },
+          postAccessRights: {
+            method: "POST",
+            url: statics.API + "/tags/{tagId}/groups/{groupId}"
+          },
+          deleteAccessRights: {
+            method: "DELETE",
+            url: statics.API + "/tags/{tagId}/groups/{groupId}"
+          },
         }
       },
 

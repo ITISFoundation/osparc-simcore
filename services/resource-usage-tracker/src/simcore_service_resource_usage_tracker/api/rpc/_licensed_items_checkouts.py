@@ -15,6 +15,7 @@ from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     LICENSES_ERRORS,
+    LicensedItemCheckoutNotFoundError,
 )
 
 from ...services import licensed_items_checkouts
@@ -22,7 +23,7 @@ from ...services import licensed_items_checkouts
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=LICENSES_ERRORS)
+@router.expose(reraise_if_error_type=(LicensedItemCheckoutNotFoundError,))
 async def get_licensed_item_checkout(
     app: FastAPI,
     *,

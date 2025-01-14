@@ -28,8 +28,7 @@ _logger = logging.getLogger(__name__)
 @lru_cache
 def compose_uuid_from(*values) -> uuid.UUID:
     composition: str = "/".join(map(str, values))
-    new_uuid = uuid.uuid5(_BASE_UUID, composition)
-    return new_uuid
+    return uuid.uuid5(_BASE_UUID, composition)
 
 
 async def list_viewers_info(
@@ -58,9 +57,8 @@ async def list_viewers_info(
         async for row in await conn.execute(query):
             try:
                 # TODO: filter in database (see test_list_default_compatible_services )
-                if only_default:
-                    if row["filetype"] in listed_filetype:
-                        continue
+                if only_default and row["filetype"] in listed_filetype:
+                    continue
                 listed_filetype.add(row["filetype"])
                 consumer = ViewerInfo.create_from_db(row)
                 consumers.append(consumer)

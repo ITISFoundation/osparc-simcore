@@ -29,8 +29,8 @@ MSG_UNDER_DEVELOPMENT: Final[
 
 
 __all__: tuple[str, ...] = (
-    "APP_CONFIG_KEY",
     "APP_AIOPG_ENGINE_KEY",
+    "APP_CONFIG_KEY",
     "APP_FIRE_AND_FORGET_TASKS_KEY",
     "APP_SETTINGS_KEY",
     "RQT_USERID_KEY",

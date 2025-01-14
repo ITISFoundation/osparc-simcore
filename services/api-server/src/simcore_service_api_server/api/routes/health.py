@@ -29,7 +29,7 @@ async def check_service_health(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="unhealthy"
         )
 
-    return f"{__name__}@{datetime.datetime.now(tz=datetime.timezone.utc).isoformat()}"
+    return f"{__name__}@{datetime.datetime.now(tz=datetime.UTC).isoformat()}"
 
 
 @router.get(

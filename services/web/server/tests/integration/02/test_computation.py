@@ -199,7 +199,7 @@ def _assert_db_contents(
 
         for task_db in tasks_db:
             assert task_db.project_id == project_id
-            assert task_db.node_id in mock_pipeline.keys()
+            assert task_db.node_id in mock_pipeline
 
             assert task_db.inputs == mock_pipeline[task_db.node_id].get("inputs")
 

@@ -8,8 +8,7 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.logging_utils import log_context
-from servicelib.redis import CouldNotAcquireLockError
-from servicelib.redis_utils import exclusive
+from servicelib.redis import CouldNotAcquireLockError, exclusive
 
 from ...core.settings import get_application_settings
 from ...models.comp_runs import Iteration
@@ -50,7 +49,6 @@ async def _exclusively_schedule_pipeline(
 
 
 async def _handle_apply_distributed_schedule(app: FastAPI, data: bytes) -> bool:
-
     with log_context(_logger, logging.DEBUG, msg="handling scheduling"):
         to_schedule_pipeline = SchedulePipelineRabbitMessage.model_validate_json(data)
         with contextlib.suppress(CouldNotAcquireLockError):
