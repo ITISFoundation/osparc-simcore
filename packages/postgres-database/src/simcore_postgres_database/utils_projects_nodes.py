@@ -98,7 +98,7 @@ class ProjectNodesRepo:
                 [
                     {
                         "project_uuid": f"{self.project_uuid}",
-                        **node.model_dump(),
+                        **node.model_dump(exclude_unset=True),
                     }
                     for node in nodes
                 ]
