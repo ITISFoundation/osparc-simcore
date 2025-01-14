@@ -60,22 +60,9 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
 
   statics: {
     SERVER_MAX_LIMIT: 49,
-    COLUMN_ID_TO_DB_COLUMN_MAP: Object.values(osparc.desktop.credits.RentalsTable.COLS).reduce((acc, { id, column }) => {
-      acc[column] = id;
-      return acc;
-    }, {}),
-    /*
     COLUMN_ID_TO_DB_COLUMN_MAP: {
-      0: "purchaseId",
-      1: "itemId",
-      2: "itemLabel",
-      3: "start",
-      4: "duration",
-      5: "seats",
-      6: "cost",
-      7: "user",
+      0: "purchased_at",
     },
-    */
   },
 
   members: {
