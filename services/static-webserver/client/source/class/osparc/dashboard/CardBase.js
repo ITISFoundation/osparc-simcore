@@ -180,10 +180,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return;
       }
 
-      this.populateTooltip(shareIcon, gids);
+      this.addHintFromGids(shareIcon, gids);
     },
 
-    populateTooltip: function(icon, gids) {
+    addHintFromGids: function(icon, gids) {
       const groupsStore = osparc.store.Groups.getInstance();
       const groupEveryone = groupsStore.getEveryoneGroup();
       const groupProductEveryone = groupsStore.getEveryoneProductGroup();

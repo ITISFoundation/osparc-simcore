@@ -286,7 +286,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       if (gid) {
         // OM: at the moment I'm receiving userId
         const atom = this.getChildControl("last-touching-atom");
-        osparc.dashboard.CardBase.populateTooltip(atom, [gid]);
+        osparc.dashboard.CardBase.addHintFromGids(atom, [gid]);
       }
     },
 
