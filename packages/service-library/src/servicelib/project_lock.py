@@ -11,6 +11,7 @@ from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from redis.asyncio.lock import Lock
+from servicelib.redis._client import RedisClientSDK
 
 from .background_task import periodic_task
 from .logging_utils import log_context
@@ -31,7 +32,8 @@ async def _auto_extend_project_lock(project_lock: Lock) -> None:
 
 @asynccontextmanager
 async def lock_project(
-    redis_lock: Lock,
+    redis_client: RedisClientSDK,
+    *,
     project_uuid: str | ProjectID,
     status: ProjectStatus,
     owner: Owner | None = None,
@@ -41,6 +43,11 @@ async def lock_project(
     Raises:
         ProjectLockError: if project is already locked
     """
+
+    redis_lock = redis_client.create_lock(
+        PROJECT_REDIS_LOCK_KEY.format(project_uuid),
+        ttl=PROJECT_LOCK_TIMEOUT,
+    )
 
     try:
         if not await redis_lock.acquire(

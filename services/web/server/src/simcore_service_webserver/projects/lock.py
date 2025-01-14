@@ -6,10 +6,10 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from servicelib.project_lock import PROJECT_LOCK_TIMEOUT, PROJECT_REDIS_LOCK_KEY
+from servicelib.project_lock import PROJECT_REDIS_LOCK_KEY
 from servicelib.project_lock import lock_project as common_lock_project
 
-from ..redis import get_redis_lock_manager_client
+from ..redis import get_redis_lock_manager_client, get_redis_lock_manager_client_sdk
 from ..users.api import FullNameDict
 
 _logger = logging.getLogger(__name__)
@@ -28,15 +28,11 @@ async def lock_project(
     Raises:
         ProjectLockError: if project is already locked
     """
-
-    redis_lock = get_redis_lock_manager_client(app).lock(
-        PROJECT_REDIS_LOCK_KEY.format(project_uuid),
-        timeout=PROJECT_LOCK_TIMEOUT.total_seconds(),
-    )
-    owner = Owner(user_id=user_id, **user_fullname)
-
     async with common_lock_project(
-        redis_lock, project_uuid=project_uuid, status=status, owner=owner
+        get_redis_lock_manager_client_sdk(app),
+        project_uuid=project_uuid,
+        status=status,
+        owner=Owner(user_id=user_id, **user_fullname),
     ):
         yield
 
