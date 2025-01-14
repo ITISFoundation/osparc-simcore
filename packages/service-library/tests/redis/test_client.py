@@ -113,11 +113,6 @@ async def test_redis_client_sdk_setup_shutdown(
     assert client
     assert client.redis_dsn == redis_resources_dns
 
-    # ensure nothing happens if shutdown is called before setup
-    await client.shutdown()
-
-    await client.setup()
-
     # ensure health check task sets the health to True
     client._is_healthy = False  # noqa: SLF001
     async for attempt in AsyncRetrying(

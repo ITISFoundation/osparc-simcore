@@ -27,9 +27,6 @@ class RedisClientsManager:
                 client_name=f"{self.client_name}",
             )
 
-        for client in self._client_sdks.values():
-            await client.setup()
-
     async def shutdown(self) -> None:
         # NOTE: somehow using logged_gather is not an option
         # doing so will make the shutdown procedure hang

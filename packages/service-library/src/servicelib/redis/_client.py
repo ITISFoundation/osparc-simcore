@@ -11,11 +11,9 @@ from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 from servicelib.async_utils import cancel_wait_task
-from tenacity import retry
-from yarl import URL
+from servicelib.background_task import periodic
 
 from ..logging_utils import log_catch
-from ..retry_policies import RedisRetryPolicyUponInitialization
 from ._constants import (
     DEFAULT_DECODE_RESPONSES,
     DEFAULT_HEALTH_CHECK_INTERVAL,
@@ -23,7 +21,6 @@ from ._constants import (
     DEFAULT_SOCKET_TIMEOUT,
     SHUTDOWN_TIMEOUT_S,
 )
-from ._errors import CouldNotConnectToRedisError
 
 _logger = logging.getLogger(__name__)
 
@@ -52,27 +49,24 @@ class RedisClientSDK:
             retry_on_error=[
                 redis.exceptions.BusyLoadingError,
                 redis.exceptions.ConnectionError,
-                redis.exceptions.TimeoutError,
             ],
+            retry_on_timeout=True,
             socket_timeout=DEFAULT_SOCKET_TIMEOUT.total_seconds(),
-            socket_connect_timeout=DEFAULT_SOCKET_TIMEOUT.total_seconds(),
             encoding="utf-8",
             decode_responses=self.decode_responses,
             client_name=self.client_name,
         )
+        # NOTE: connection is done here already
+        self._is_healthy = True
 
-    @retry(**RedisRetryPolicyUponInitialization(_logger).kwargs)
-    async def setup(self) -> None:
-        if not await self.ping():
-            await self.shutdown()
-            url_safe = URL(self.redis_dsn).with_password("???")
-            raise CouldNotConnectToRedisError(dsn=f"{url_safe}")
+        @periodic(interval=self.health_check_interval)
+        async def _periodic_check_health() -> None:
+            self._is_healthy = await self.ping()
 
         self._health_check_task = asyncio.create_task(
-            self._check_health(),
+            _periodic_check_health(),
             name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
         )
-        self._is_healthy = True
 
         _logger.info(
             "Connection to %s succeeded with %s",
@@ -95,14 +89,6 @@ class RedisClientSDK:
             await self._client.ping()
             return True
         return False
-
-    async def _check_health(self) -> None:
-        sleep_s = self.health_check_interval.total_seconds()
-
-        while self._continue_health_checking:
-            with log_catch(_logger, reraise=False):
-                self._is_healthy = await self.ping()
-            await asyncio.sleep(sleep_s)
 
     @property
     def is_healthy(self) -> bool:
