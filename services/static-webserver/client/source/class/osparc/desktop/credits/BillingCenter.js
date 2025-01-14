@@ -32,7 +32,10 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
       this.__usagePage = this.__addUsagePage();
-      this.__rentalsPage = this.__addRentalsPage();
+    }
+
+    if (osparc.product.Utils.showS4LStore()) {
+      this.__addRentalsPage();
     }
   },
 
@@ -60,7 +63,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     __paymentMethodsPage: null,
     __transactionsPage: null,
     __usagePage: null,
-    __rentalsPage: null,
     __paymentMethods: null,
     __transactionsTable: null,
 
