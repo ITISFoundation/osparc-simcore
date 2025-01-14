@@ -25,6 +25,9 @@ def exclusive_periodic(
         task_interval -- the task periodicity
         retry_after -- in case the exclusive lock cannot be acquired or is lost, this is the retry interval
 
+    Raises:
+        Nothing
+
     Returns:
         Nothing, a periodic method does not return anything as it runs forever.
     """
