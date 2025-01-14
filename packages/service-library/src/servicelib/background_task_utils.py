@@ -22,7 +22,7 @@ def exclusive_periodic(
 
     Arguments:
         client -- The Redis client
-        task_interval -- the task periodicity
+        task_interval -- the task interval, i.e. how often the task should run
         retry_after -- in case the exclusive lock cannot be acquired or is lost, this is the retry interval
 
     Raises:

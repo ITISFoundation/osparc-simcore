@@ -45,18 +45,19 @@ def exclusive(
     [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
 ]:
     """
-        Define a method to run exclusively across
-        processes by leveraging a Redis Lock.
-    a1f69fdefa14fae2fee03fac7e89f27e44b13aa9
-        parameters:
-        redis: the redis client SDK
-        lock_key: a string as the name of the lock (good practice: app_name:lock_name)
-        lock_value: some additional data that can be retrieved by another client
+    Define a method to run exclusively across
+    processes by leveraging a Redis Lock.
 
-        Raises:
-            - ValueError if used incorrectly
-            - CouldNotAcquireLockError if the lock could not be acquired
-            - LockLostError if the lock was lost (e.g. due to Redis restart, or TTL was not extended in time)
+    Arguments:
+        redis -- the redis client
+        lock_key -- a string as the name of the lock (good practice: app_name:lock_name)
+        lock_value -- some additional data that can be retrieved by another client if None,
+                    it will be automatically filled with the current time and the client name
+
+    Raises:
+        - ValueError if used incorrectly
+        - CouldNotAcquireLockError if the lock could not be acquired
+        - LockLostError if the lock was lost (e.g. due to Redis restart, or TTL was not extended in time)
     """
 
     if not lock_key:
