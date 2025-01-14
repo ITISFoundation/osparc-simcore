@@ -27,6 +27,7 @@ from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.agent.containers import force_container_cleanup
 from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
     NoServiceVolumesFoundRPCError,
@@ -253,8 +254,11 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
                         swarm_stack_name=swarm_stack_name,
                         node_id=scheduler_data.node_uuid,
                     )
-                except NoServiceVolumesFoundRPCError as e:
-                    _logger.info("Could not remove volumes, reason: %s", e)
+                except (
+                    NoServiceVolumesFoundRPCError,
+                    RemoteMethodNotRegisteredError,  # happens when autoscaling node was removed
+                ) as e:
+                    _logger.info("Could not remove volumes, because: '%s'", e)
 
     _logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",
