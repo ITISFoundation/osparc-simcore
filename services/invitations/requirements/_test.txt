@@ -12,11 +12,11 @@ certifi==2024.8.30
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
-coverage==7.6.8
+coverage==7.6.10
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==33.0.0
+faker==33.3.1
     # via -r requirements/_test.in
 h11==0.14.0
     # via
@@ -31,7 +31,7 @@ httpx==0.27.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-hypothesis==6.119.4
+hypothesis==6.123.17
     # via -r requirements/_test.in
 idna==3.10
     # via
@@ -47,7 +47,7 @@ packaging==24.2
     #   pytest-sugar
 pluggy==1.5.0
     # via pytest
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio

@@ -36,13 +36,13 @@ charset-normalizer==3.4.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.6.8
+coverage==7.6.10
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==33.1.0
+faker==33.3.1
     # via -r requirements/_test.in
 frozenlist==1.5.0
     # via
@@ -85,7 +85,7 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.13.0
+mypy==1.14.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -103,7 +103,7 @@ propcache==0.2.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-pytest==8.3.3
+pytest==8.3.4
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -145,7 +145,7 @@ requests==2.32.3
     # via
     #   -c requirements/_base.txt
     #   docker
-respx==0.21.1
+respx==0.22.0
     # via -r requirements/_test.in
 simple-websocket==1.1.0
     # via
@@ -170,13 +170,13 @@ sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 termcolor==2.5.0
     # via pytest-sugar
-types-aiofiles==24.1.0.20240626
+types-aiofiles==24.1.0.20241221
     # via -r requirements/_test.in
 types-pyasn1==0.6.0.20240913
     # via types-python-jose
 types-python-jose==3.3.4.20240106
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20240917
+types-pyyaml==6.0.12.20241230
     # via -r requirements/_test.in
 typing-extensions==4.12.2
     # via

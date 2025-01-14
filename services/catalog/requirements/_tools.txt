@@ -28,7 +28,7 @@ isort==5.13.2
     #   pylint
 mccabe==0.7.0
     # via pylint
-mypy==1.13.0
+mypy==1.14.1
     # via
     #   -c requirements/_test.txt
     #   -r requirements/../../../requirements/devenv.txt

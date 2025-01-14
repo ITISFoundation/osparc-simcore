@@ -37,17 +37,17 @@ aws-sam-translator==1.55.0
     #   cfn-lint
 aws-xray-sdk==2.14.0
     # via moto
-boto3==1.35.76
+boto3==1.35.98
     # via
     #   aws-sam-translator
     #   moto
-botocore==1.35.76
+botocore==1.35.98
     # via
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.35.76
+botocore-stubs==1.35.98
     # via types-boto3
 certifi==2024.8.30
     # via
@@ -73,7 +73,7 @@ click==8.1.7
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   flask
-coverage==7.6.8
+coverage==7.6.10
     # via pytest-cov
 cryptography==44.0.0
     # via
@@ -91,7 +91,7 @@ ecdsa==0.19.0
     #   moto
     #   python-jose
     #   sshpubkeys
-faker==33.1.0
+faker==33.3.1
     # via -r requirements/_test.in
 flask==2.1.3
     # via
@@ -154,7 +154,7 @@ jsondiff==2.2.1
     # via moto
 jsonpatch==1.33
     # via cfn-lint
-jsonpickle==4.0.0
+jsonpickle==4.0.1
     # via jschema-to-python
 jsonpointer==3.0.0
     # via jsonpatch
@@ -190,7 +190,7 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.13.0
+mypy==1.14.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -230,7 +230,7 @@ pyinstrument==5.0.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-pyparsing==3.2.0
+pyparsing==3.2.1
     # via moto
 pyrsistent==0.20.0
     # via
@@ -280,9 +280,9 @@ requests==2.32.3
     #   docker
     #   moto
     #   responses
-responses==0.25.3
+responses==0.25.6
     # via moto
-respx==0.21.1
+respx==0.22.0
     # via -r requirements/_test.in
 rsa==4.9
     # via
@@ -321,11 +321,11 @@ sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 sshpubkeys==3.3.1
     # via moto
-types-aiofiles==24.1.0.20240626
+types-aiofiles==24.1.0.20241221
     # via -r requirements/_test.in
-types-awscrt==0.23.3
+types-awscrt==0.23.6
     # via botocore-stubs
-types-boto3==1.35.76
+types-boto3==1.35.98
     # via -r requirements/_test.in
 types-s3transfer==0.10.4
     # via types-boto3

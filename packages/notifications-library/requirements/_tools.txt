@@ -8,7 +8,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.4.0
     # via pre-commit
-click==8.1.7
+click==8.1.8
     # via
     #   -c requirements/_base.txt
     #   black
@@ -27,7 +27,7 @@ isort==5.13.2
     #   pylint
 mccabe==0.7.0
     # via pylint
-mypy==1.12.0
+mypy==1.14.1
     # via
     #   -c requirements/_test.txt
     #   -r requirements/../../../requirements/devenv.txt

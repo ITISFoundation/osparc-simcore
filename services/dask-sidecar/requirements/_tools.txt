@@ -70,7 +70,7 @@ pyyaml==6.0.2
     #   watchdog
 ruff==0.9.1
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==75.6.0
+setuptools==75.8.0
     # via
     #   -c requirements/_test.txt
     #   pip-tools
