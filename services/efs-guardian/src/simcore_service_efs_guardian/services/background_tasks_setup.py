@@ -1,13 +1,26 @@
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
+from datetime import timedelta
 from typing import TypedDict
 
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
 
 from .background_tasks import removal_policy_task
+from .modules.redis import get_redis_lock_client
+
+
+@exclusive_periodic(
+    get_redis_lock_client,
+    task_interval=timedelta(hours=1),
+    retry_after=timedelta(minutes=5),
+)
+async def periodic_removal_policy_task(app: FastAPI) -> None:
+    await removal_policy_task(app)
+
 
 _logger = logging.getLogger(__name__)
 
@@ -19,7 +32,7 @@ class EfsGuardianBackgroundTask(TypedDict):
 
 _EFS_GUARDIAN_BACKGROUND_TASKS = [
     EfsGuardianBackgroundTask(
-        name="efs_removal_policy_task", task_func=removal_policy_task
+        name="efs_removal_policy_task", task_func=periodic_removal_policy_task
     )
 ]
 
