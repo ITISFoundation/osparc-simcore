@@ -184,7 +184,7 @@ async def check_user_workspace_access(
     permission: PermissionStr,
 ) -> UserWorkspaceWithAccessRights:
     """
-    As `get_user_workspace` but here check is required
+    As `get_user_workspace` but here access check is required
 
     Raises:
         WorkspaceAccessForbiddenError
