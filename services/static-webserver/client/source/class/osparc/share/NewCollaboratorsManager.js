@@ -128,9 +128,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
         })
-        .finally(() => {
-          this.__searchingCollaborators.exclude();
-        });
+        .finally(() => this.__searchingCollaborators.exclude());
     },
 
     __showProductEveryone: function() {
