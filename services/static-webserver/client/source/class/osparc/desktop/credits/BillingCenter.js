@@ -32,6 +32,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
       this.__usagePage = this.__addUsagePage();
+      this.__rentalsPage = this.__addRentalsPage();
     }
   },
 
@@ -59,6 +60,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     __paymentMethodsPage: null,
     __transactionsPage: null,
     __usagePage: null,
+    __rentalsPage: null,
     __paymentMethods: null,
     __transactionsTable: null,
 
@@ -92,6 +94,14 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const iconSrc = "@FontAwesome5Solid/list/22";
       const usage = new osparc.desktop.credits.Usage();
       const page = this.addTab(title, iconSrc, usage);
+      return page;
+    },
+
+    __addRentalsPage: function() {
+      const title = this.tr("Rentals");
+      const iconSrc = "@FontAwesome5Solid/list/22";
+      const rentals = new osparc.desktop.credits.Rentals();
+      const page = this.addTab(title, iconSrc, rentals);
       return page;
     },
 
