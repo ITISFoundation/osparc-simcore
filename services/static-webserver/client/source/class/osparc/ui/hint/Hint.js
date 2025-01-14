@@ -71,6 +71,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
 
     setText: function(text) {
       this.getChildControl("label").setValue(text);
+      setTimeout(() => this.updatePosition(), 10);
     }
   }
 });
