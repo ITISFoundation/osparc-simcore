@@ -1,9 +1,10 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
+from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
 from servicelib.project_lock import (
     PROJECT_LOCK_TIMEOUT,
@@ -22,6 +23,11 @@ from .modules.redis import get_redis_lock_client
 _logger = logging.getLogger(__name__)
 
 
+@exclusive_periodic(
+    get_redis_lock_client,
+    task_interval=timedelta(hours=1),
+    retry_after=timedelta(minutes=5),
+)
 async def removal_policy_task(app: FastAPI) -> None:
     _logger.info("Removal policy task started")
 
@@ -29,7 +35,7 @@ async def removal_policy_task(app: FastAPI) -> None:
     assert app_settings  # nosec
     efs_manager: EfsManager = app.state.efs_manager
 
-    base_start_timestamp = datetime.now(tz=timezone.utc)
+    base_start_timestamp = datetime.now(tz=UTC)
 
     efs_project_ids: list[
         ProjectID

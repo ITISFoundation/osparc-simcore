@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import timedelta
 from functools import cached_property
@@ -8,7 +9,8 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.async_utils import cancel_wait_task
-from servicelib.redis import create_exclusive_periodic_task
+from servicelib.background_task_utils import exclusive_periodic
+from servicelib.redis._client import RedisClientSDK
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 
@@ -60,6 +62,10 @@ def _can_be_removed(model: TrackedServiceModel) -> bool:
     return False
 
 
+def _get_redis_client_from_monitor(monitor: "Monitor") -> RedisClientSDK:
+    return get_redis_client(monitor.app, RedisDatabase.LOCKS)
+
+
 class Monitor:
     def __init__(self, app: FastAPI, status_worker_interval: timedelta) -> None:
         self.app = app
@@ -69,6 +75,11 @@ class Monitor:
     def status_worker_interval_seconds(self) -> NonNegativeFloat:
         return self.status_worker_interval.total_seconds()
 
+    @exclusive_periodic(
+        _get_redis_client_from_monitor,
+        task_interval=_INTERVAL_BETWEEN_CHECKS,
+        retry_after=_INTERVAL_BETWEEN_CHECKS,
+    )
     async def _worker_check_services_require_status_update(self) -> None:
         """
         Check if any service requires it's status to be polled.
@@ -133,12 +144,9 @@ class Monitor:
         )
 
     async def setup(self) -> None:
-        self.app.state.status_monitor_background_task = create_exclusive_periodic_task(
-            get_redis_client(self.app, RedisDatabase.LOCKS),
-            self._worker_check_services_require_status_update,
-            task_period=_INTERVAL_BETWEEN_CHECKS,
-            retry_after=_INTERVAL_BETWEEN_CHECKS,
-            task_name="periodic_service_status_update",
+        self.app.state.status_monitor_background_task = asyncio.create_task(
+            self._worker_check_services_require_status_update(),
+            name="periodic_service_status_update",
         )
 
     async def shutdown(self) -> None:
