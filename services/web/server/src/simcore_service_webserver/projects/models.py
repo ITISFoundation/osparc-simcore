@@ -101,7 +101,7 @@ class ProjectPatchExtended(ProjectPatch):
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
-    def to_model(self) -> dict[str, Any]:
+    def to_domain_model(self) -> dict[str, Any]:
         return remap_keys(
             self.model_dump(exclude_unset=True, by_alias=False),
             rename={"trashed_at": "trashed"},

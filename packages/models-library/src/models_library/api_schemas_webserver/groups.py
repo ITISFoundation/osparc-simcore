@@ -151,7 +151,7 @@ class GroupCreate(InputSchema):
     description: str
     thumbnail: AnyUrl | None = None
 
-    def to_model(self) -> StandardGroupCreate:
+    def to_domain_model(self) -> StandardGroupCreate:
         data = remap_keys(
             self.model_dump(
                 mode="json",
@@ -169,7 +169,7 @@ class GroupUpdate(InputSchema):
     description: str | None = None
     thumbnail: AnyUrl | None = None
 
-    def to_model(self) -> StandardGroupUpdate:
+    def to_domain_model(self) -> StandardGroupUpdate:
         data = remap_keys(
             self.model_dump(
                 mode="json",

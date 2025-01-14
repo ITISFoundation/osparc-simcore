@@ -254,7 +254,7 @@ async def patch_project(
     project_patch: ProjectPatch | ProjectPatchExtended,
     product_name: ProductName,
 ):
-    patch_project_data = project_patch.to_model()
+    patch_project_data = project_patch.to_domain_model()
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # 1. Get project

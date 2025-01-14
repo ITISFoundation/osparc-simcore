@@ -114,7 +114,7 @@ async def create_group(request: web.Request):
     group, access_rights = await _groups_service.create_standard_group(
         request.app,
         user_id=req_ctx.user_id,
-        create=create.to_model(),
+        create=create.to_domain_model(),
     )
 
     created_group = GroupGet.from_domain_model(group, access_rights)
@@ -135,7 +135,7 @@ async def update_group(request: web.Request):
         request.app,
         user_id=req_ctx.user_id,
         group_id=path_params.gid,
-        update=update.to_model(),
+        update=update.to_domain_model(),
     )
 
     updated_group = GroupGet.from_domain_model(group, access_rights)

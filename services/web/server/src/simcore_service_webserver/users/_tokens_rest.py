@@ -58,7 +58,7 @@ async def create_token(request: web.Request) -> web.Response:
     token_create = await parse_request_body_as(MyTokenCreate, request)
 
     token = await _tokens_service.create_token(
-        request.app, req_ctx.user_id, token_create.to_model()
+        request.app, req_ctx.user_id, token_create.to_domain_model()
     )
 
     return envelope_json_response(MyTokenGet.from_domain_model(token), web.HTTPCreated)

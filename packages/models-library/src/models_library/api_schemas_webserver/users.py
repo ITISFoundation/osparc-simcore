@@ -293,7 +293,7 @@ class MyTokenCreate(InputSchemaWithoutCamelCase):
     token_key: IDStr
     token_secret: IDStr
 
-    def to_model(self) -> UserThirdPartyToken:
+    def to_domain_model(self) -> UserThirdPartyToken:
         return UserThirdPartyToken(
             service=self.service,
             token_key=self.token_key,
