@@ -121,7 +121,7 @@ from ..users.preferences_api import (
 from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_db as workspaces_db
-from . import _crud_api_delete, _nodes_api, _projects_db, _projects_nodes_repository
+from . import _crud_api_delete, _nodes_api, _projects_db
 from ._access_rights_api import (
     check_user_project_permission,
     has_user_project_access_rights,
