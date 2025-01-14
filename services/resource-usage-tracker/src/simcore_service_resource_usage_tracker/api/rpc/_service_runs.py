@@ -4,7 +4,9 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunPage,
 )
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.resource_tracker import (
+    CreditTransactionStatus,
     ServiceResourceUsagesFilters,
     ServicesAggregatedUsagesTimePeriod,
     ServicesAggregatedUsagesType,
@@ -34,9 +36,11 @@ async def get_service_run_page(
     wallet_id: WalletID | None = None,
     access_all_wallet_usage: bool = False,
     filters: ServiceResourceUsagesFilters | None = None,
+    transaction_status: CreditTransactionStatus | None = None,
+    project_id: ProjectID | None = None,
     # pagination
-    limit: int = 20,
     offset: int = 0,
+    limit: int = 20,
     # ordering
     order_by: OrderBy | None = None,
 ) -> ServiceRunPage:
@@ -47,8 +51,10 @@ async def get_service_run_page(
         wallet_id=wallet_id,
         access_all_wallet_usage=access_all_wallet_usage,
         filters=filters,
-        limit=limit,
+        transaction_status=transaction_status,
+        project_id=project_id,
         offset=offset,
+        limit=limit,
         order_by=order_by,
     )
 

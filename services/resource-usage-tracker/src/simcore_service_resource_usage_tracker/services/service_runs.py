@@ -10,7 +10,9 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
 )
 from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.resource_tracker import (
+    CreditTransactionStatus,
     ServiceResourceUsagesFilters,
     ServicesAggregatedUsagesTimePeriod,
     ServicesAggregatedUsagesType,
@@ -34,8 +36,10 @@ async def list_service_runs(
     wallet_id: WalletID | None = None,
     access_all_wallet_usage: bool = False,
     filters: ServiceResourceUsagesFilters | None = None,
-    limit: int = 20,
+    transaction_status: CreditTransactionStatus | None = None,
+    project_id: ProjectID | None = None,
     offset: int = 0,
+    limit: int = 20,
     order_by: OrderBy | None = None,
 ) -> ServiceRunPage:
     started_from = None
@@ -56,6 +60,8 @@ async def list_service_runs(
             wallet_id=None,
             started_from=started_from,
             started_until=started_until,
+            transaction_status=transaction_status,
+            project_id=project_id,
             offset=offset,
             limit=limit,
             order_by=order_by,
@@ -72,6 +78,8 @@ async def list_service_runs(
             wallet_id=wallet_id,
             started_from=started_from,
             started_until=started_until,
+            transaction_status=transaction_status,
+            project_id=project_id,
             offset=offset,
             limit=limit,
             order_by=order_by,
@@ -88,6 +96,8 @@ async def list_service_runs(
             wallet_id=wallet_id,
             started_from=started_from,
             started_until=started_until,
+            transaction_status=transaction_status,
+            project_id=project_id,
             offset=offset,
             limit=limit,
             order_by=order_by,

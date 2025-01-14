@@ -6,6 +6,7 @@ from typing import cast
 import sqlalchemy as sa
 from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.resource_tracker import (
     CreditClassification,
     CreditTransactionStatus,
@@ -197,6 +198,8 @@ async def list_service_runs_by_product_and_user_and_wallet(
     service_run_status: ServiceRunStatus | None = None,
     started_from: datetime | None = None,
     started_until: datetime | None = None,
+    transaction_status: CreditTransactionStatus | None = None,
+    project_id: ProjectID | None = None,
     # pagination
     offset: int,
     limit: int,
@@ -286,6 +289,15 @@ async def list_service_runs_by_product_and_user_and_wallet(
             base_query = base_query.where(
                 sa.func.DATE(resource_tracker_service_runs.c.started_at)
                 <= started_until.date()
+            )
+        if project_id:
+            base_query = base_query.where(
+                resource_tracker_service_runs.c.project_id == project_id
+            )
+        if transaction_status:
+            base_query = base_query.where(
+                resource_tracker_credit_transactions.c.transaction_status
+                == transaction_status
             )
 
         # Select total count from base_query

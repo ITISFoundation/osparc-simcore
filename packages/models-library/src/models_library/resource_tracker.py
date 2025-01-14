@@ -61,11 +61,27 @@ class CreditTransactionStatus(StrAutoEnum):
 
 
 class CreditClassification(StrAutoEnum):
-    ADD_WALLET_TOP_UP = auto()  # user top up credits
-    DEDUCT_SERVICE_RUN = auto()  # computational/dynamic service run costs)
+    # Represents the different types of credit classifications.
+
+    ADD_WALLET_TOP_UP = auto()
+    # Indicates that credits have been added to the user's wallet through a top-up.
+    # Example: The user adds funds to their wallet to increase their available credits.
+
+    DEDUCT_SERVICE_RUN = auto()
+    # Represents a deduction from the user's wallet due to the costs of running a computational or dynamic service.
+    # Example: Credits are deducted when the user runs a simulation.
+
     DEDUCT_LICENSE_PURCHASE = auto()
+    # Represents a deduction from the user's wallet for purchasing a license.
+    # Example: The user purchases a license to access premium features such as VIP models.
+
     ADD_WALLET_EXCHANGE = auto()
+    # Represents the addition of credits to the user's wallet through an exchange.
+    # Example: Credits are added due to credit exchange between wallets.
+
     DEDUCT_WALLET_EXCHANGE = auto()
+    # Represents a deduction of credits from the user's wallet through an exchange.
+    # Example: Credits are deducted due to credit exchange between wallets.
 
 
 class PricingPlanClassification(StrAutoEnum):

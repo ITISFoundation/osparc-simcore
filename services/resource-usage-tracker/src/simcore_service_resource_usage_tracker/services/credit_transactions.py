@@ -116,12 +116,14 @@ async def pay_project_debt(
         total_project_debt_amount.available_osparc_credits
         != new_wallet_transaction.osparc_credits
     ):
-        raise ValueError("wrong")
+        msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.osparc_credits}"
+        raise ValueError(msg)
     if (
         make_negative(total_project_debt_amount.available_osparc_credits)
         != current_wallet_transaction.osparc_credits
     ):
-        raise ValueError("wrong")
+        msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.osparc_credits}"
+        raise ValueError(msg)
 
     new_wallet_transaction_create = CreditTransactionCreate(
         product_name=new_wallet_transaction.product_name,

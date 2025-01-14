@@ -12,6 +12,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletDB, WalletID
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     credit_transactions,
+    service_runs,
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -40,22 +41,6 @@ async def connect_wallet_to_project(
 ) -> WalletGet:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
-    project_wallet = await db.get_project_wallet(project_uuid=project_id)
-
-    if project_wallet:
-        # NOTE: Do not allow to change wallet if the project is in DEBT!
-        rpc_client = get_rabbitmq_rpc_client(app)
-        project_wallet_credits = await credit_transactions.get_wallet_total_credits(
-            rpc_client,
-            product_name=product_name,
-            wallet_id=project_wallet.wallet_id,
-            project_id=project_id,
-            transaction_status=CreditTransactionStatus.IN_DEBT,
-        )
-        if project_wallet_credits.available_osparc_credits > 0:
-            msg = f"Current Project Wallet {project_wallet.wallet_id} is in DEBT"
-            raise ValueError(msg)
-
     # ensure the wallet can be used by the user
     wallet: WalletGet = await wallets_api.get_wallet_by_user(
         app,
@@ -64,8 +49,39 @@ async def connect_wallet_to_project(
         product_name=product_name,
     )
 
-    # Allow changing the wallet only if there are no pending transactions within the project.
-    # TODO: MATUS: check pending transactions
+    current_project_wallet = await db.get_project_wallet(project_uuid=project_id)
+    rpc_client = get_rabbitmq_rpc_client(app)
+
+    if current_project_wallet:
+        # Do not allow to change wallet if the project connected wallet is in DEBT!
+        project_wallet_credits = await credit_transactions.get_wallet_total_credits(
+            rpc_client,
+            product_name=product_name,
+            wallet_id=current_project_wallet.wallet_id,
+            project_id=project_id,
+            transaction_status=CreditTransactionStatus.IN_DEBT,
+        )
+        if project_wallet_credits.available_osparc_credits > 0:
+            msg = (
+                f"Current Project Wallet {current_project_wallet.wallet_id} is in DEBT"
+            )
+            raise ValueError(msg)
+
+        # Do not allow to change wallet if the project has transaction in PENDING!
+        project_service_runs_in_progress = await service_runs.get_service_run_page(
+            rpc_client,
+            user_id=user_id,
+            product_name=product_name,
+            wallet_id=wallet_id,
+            access_all_wallet_usage=True,
+            transaction_status=CreditTransactionStatus.PENDING,
+            project_id=project_id,
+            offset=0,
+            limit=1,
+        )
+        if project_service_runs_in_progress.total > 0:
+            msg = "Can not change the wallet, as project has currently pending transaction"
+            raise ValueError(msg)
 
     await db.connect_wallet_to_project(project_uuid=project_id, wallet_id=wallet_id)
     return wallet

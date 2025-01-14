@@ -140,7 +140,6 @@ async def pay_project_debt(request: web.Request):
         request.app, path_params.project_id
     )
     if not current_wallet:
-        _logger.warning("This should not happen?")
         raise web.HTTPNotFound(
             reason="Project doesn't have any wallet associated to the project"
         )
