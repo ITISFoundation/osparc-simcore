@@ -1,3 +1,6 @@
+# pylint:disable=unused-argument
+# pylint: disable=no-self-use
+
 import importlib.util
 import inspect
 import json
