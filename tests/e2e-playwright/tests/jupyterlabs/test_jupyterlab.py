@@ -112,7 +112,7 @@ def test_jupyterlab(
             logging.INFO,
             f"Creating multiple files and 1 file of about {large_file_size.human_readable()}",
         ):
-            iframe.get_by_role("button", name="New Launcher").click()
+            iframe.get_by_role("button", name="New Launcher").first().click()
             with page.expect_websocket(_JLabWaitForTerminalWebSocket()) as ws_info:
                 iframe.get_by_label("Launcher").get_by_text("Terminal").click()
 
