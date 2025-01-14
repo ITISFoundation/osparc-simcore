@@ -9,16 +9,16 @@
 
 import asyncio
 import collections
-import contextlib
 import datetime
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Generator
+from collections.abc import Callable, Coroutine, Generator
 from contextlib import suppress
 from decimal import Decimal
+from functools import wraps
 from pprint import pformat
-from typing import Any, Final, cast
+from typing import Any, Final, ParamSpec, TypeVar, cast
 from uuid import UUID, uuid4
 
 from aiohttp import web
@@ -145,7 +145,11 @@ from .exceptions import (
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
 )
-from .lock import get_project_locked_state, is_project_locked, lock_project
+from .lock import (
+    get_project_locked_state,
+    is_project_locked,
+    with_locked_project_from_app,
+)
 from .models import ProjectDict, ProjectPatchExtended
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
@@ -361,8 +365,8 @@ async def _get_default_pricing_and_hardware_info(
     service_pricing_plan_get = await rut_api.get_default_service_pricing_plan(
         app,
         product_name=product_name,
-        service_key=ServiceKey(service_key),
-        service_version=ServiceVersion(service_version),
+        service_key=service_key,
+        service_version=service_version,
     )
     if service_pricing_plan_get.pricing_units:
         for unit in service_pricing_plan_get.pricing_units:
@@ -1256,14 +1260,16 @@ async def try_open_project_for_user(
         False if cannot be opened (e.g. locked, )
     """
     try:
-        async with lock_with_notification(
+
+        @with_project_locked_notified_state(
             app,
-            project_uuid,
-            ProjectStatus.OPENING,
-            user_id,
-            await get_user_fullname(app, user_id=user_id),
+            project_uuid=project_uuid,
+            status=ProjectStatus.OPENING,
+            user_id=user_id,
+            user_name=await get_user_fullname(app, user_id=user_id),
             notify_users=False,
-        ):
+        )
+        async def _open_project() -> bool:
             with managed_resource(user_id, client_session_id, app) as user_session:
                 # NOTE: if max_number_of_studies_per_user is set, the same
                 # project shall still be openable if the tab was closed
@@ -1315,6 +1321,8 @@ async def try_open_project_for_user(
                         return True
 
             return False
+
+        return await _open_project()
 
     except ProjectLockError:
         # the project is currently locked
@@ -1495,26 +1503,27 @@ async def add_project_states_for_user(
     lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
     running_state = RunningState.UNKNOWN
 
-    if not is_template:
-        if computation_task := await director_v2_api.get_computation_task(
+    if not is_template and (
+        computation_task := await director_v2_api.get_computation_task(
             app, user_id, project["uuid"]
-        ):
-            # get the running state
-            running_state = computation_task.state
-            # get the nodes individual states
-            for (
-                node_id,
-                node_state,
-            ) in computation_task.pipeline_details.node_states.items():
-                prj_node = project["workbench"].get(str(node_id))
-                if prj_node is None:
-                    continue
-                node_state_dict = json.loads(
-                    node_state.model_dump_json(by_alias=True, exclude_unset=True)
-                )
-                prj_node.setdefault("state", {}).update(node_state_dict)
-                prj_node_progress = node_state_dict.get("progress", None) or 0
-                prj_node.update({"progress": round(prj_node_progress * 100.0)})
+        )
+    ):
+        # get the running state
+        running_state = computation_task.state
+        # get the nodes individual states
+        for (
+            node_id,
+            node_state,
+        ) in computation_task.pipeline_details.node_states.items():
+            prj_node = project["workbench"].get(str(node_id))
+            if prj_node is None:
+                continue
+            node_state_dict = json.loads(
+                node_state.model_dump_json(by_alias=True, exclude_unset=True)
+            )
+            prj_node.setdefault("state", {}).update(node_state_dict)
+            prj_node_progress = node_state_dict.get("progress", None) or 0
+            prj_node.update({"progress": round(prj_node_progress * 100.0)})
 
     project["state"] = ProjectState(
         locked=lock_state, state=ProjectRunningState(value=running_state)
@@ -1748,14 +1757,15 @@ async def remove_project_dynamic_services(
         save_state = False
     # -------------------
 
-    async with lock_with_notification(
+    @with_project_locked_notified_state(
         app,
-        project_uuid,
-        ProjectStatus.CLOSING,
-        user_id,
-        user_name_data,
+        project_uuid=project_uuid,
+        status=ProjectStatus.CLOSING,
+        user_id=user_id,
+        user_name=user_name_data,
         notify_users=notify_users,
-    ):
+    )
+    async def _locked_stop_dynamic_serivces_in_project() -> None:
         # save the state if the user is not a guest. if we do not know we save in any case.
         with suppress(
             RPCServerError,
@@ -1770,6 +1780,8 @@ async def remove_project_dynamic_services(
                 simcore_user_agent=simcore_user_agent,
                 save_state=save_state,
             )
+
+    await _locked_stop_dynamic_serivces_in_project()
 
 
 #
@@ -1848,43 +1860,51 @@ async def retrieve_and_notify_project_locked_state(
     )
 
 
-@contextlib.asynccontextmanager
-async def lock_with_notification(
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def with_project_locked_notified_state(
     app: web.Application,
+    *,
     project_uuid: str,
     status: ProjectStatus,
     user_id: int,
     user_name: FullNameDict,
-    *,
-    notify_users: bool = True,
-):
-    try:
-        async with lock_project(
-            app,
-            project_uuid,
-            status,
-            user_id,
-            user_name,
-        ):
+    notify_users: bool,
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+]:
+    def _decorator(
+        func: Callable[P, Coroutine[Any, Any, R]],
+    ) -> Callable[P, Coroutine[Any, Any, R]]:
+        @wraps(func)
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            @with_locked_project_from_app(
+                app,
+                project_uuid=project_uuid,
+                status=status,
+                user_id=user_id,
+                user_fullname=user_name,
+            )
+            async def _locked_func() -> R:
+                if notify_users:
+                    await retrieve_and_notify_project_locked_state(
+                        user_id, project_uuid, app
+                    )
+
+                return await func(*args, **kwargs)
+
+            result = await _locked_func()
             if notify_users:
                 await retrieve_and_notify_project_locked_state(
                     user_id, project_uuid, app
                 )
-            yield
-    except ProjectLockError:
-        # someone else has already the lock?
-        prj_states: ProjectState = await get_project_states_for_user(
-            user_id, project_uuid, app
-        )
-        log.exception(
-            "Project [%s] already locked in state '%s'. Please check with support.",
-            f"{project_uuid=}",
-            f"{prj_states.locked.status=}",
-        )
-        raise
-    finally:
-        if notify_users:
-            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+            return result
+
+        return _wrapper
+
+    return _decorator
 
 
 async def get_project_inactivity(

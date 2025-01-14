@@ -1,40 +1,46 @@
-import logging
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from collections.abc import Callable, Coroutine
+from functools import wraps
+from typing import Any, ParamSpec, TypeVar
 
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from servicelib.project_lock import PROJECT_REDIS_LOCK_KEY
-from servicelib.project_lock import lock_project as common_lock_project
+from servicelib.project_lock import PROJECT_REDIS_LOCK_KEY, with_locked_project
 
 from ..redis import get_redis_lock_manager_client, get_redis_lock_manager_client_sdk
 from ..users.api import FullNameDict
 
-_logger = logging.getLogger(__name__)
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
-@asynccontextmanager
-async def lock_project(
+def with_locked_project_from_app(
     app: web.Application,
+    *,
     project_uuid: str | ProjectID,
     status: ProjectStatus,
     user_id: int,
     user_fullname: FullNameDict,
-) -> AsyncIterator[None]:
-    """Context manager to lock and unlock a project by user_id
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+]:
+    def _decorator(
+        func: Callable[P, Coroutine[Any, Any, R]],
+    ) -> Callable[P, Coroutine[Any, Any, R]]:
+        @with_locked_project(
+            get_redis_lock_manager_client_sdk(app),
+            project_uuid=project_uuid,
+            status=status,
+            owner=Owner(user_id=user_id, **user_fullname),
+        )
+        @wraps(func)
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            return await func(*args, **kwargs)
 
-    Raises:
-        ProjectLockError: if project is already locked
-    """
-    async with common_lock_project(
-        get_redis_lock_manager_client_sdk(app),
-        project_uuid=project_uuid,
-        status=status,
-        owner=Owner(user_id=user_id, **user_fullname),
-    ):
-        yield
+        return _wrapper
+
+    return _decorator
 
 
 async def is_project_locked(

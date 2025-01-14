@@ -36,7 +36,9 @@ from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.projects_api import lock_with_notification
+from simcore_service_webserver.projects.projects_api import (
+    with_project_locked_notified_state,
+)
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 
@@ -228,12 +230,11 @@ async def test_delete_project_while_it_is_locked_raises_error(
 
     project_uuid = user_project["uuid"]
     user_id = logged_user["id"]
-    async with lock_with_notification(
+    await with_project_locked_notified_state(
         app=client.app,
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
         user_id=user_id,
         user_name={"first_name": "test", "last_name": "test"},
         notify_users=False,
-    ):
-        await _request_delete_project(client, user_project, expected.conflict)
+    )(_request_delete_project)(client, user_project, expected.conflict)

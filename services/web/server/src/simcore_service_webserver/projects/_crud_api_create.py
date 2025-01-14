@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from collections.abc import Coroutine
-from contextlib import AsyncExitStack
 from typing import Any, TypeAlias
 
 from aiohttp import web
@@ -163,17 +162,7 @@ async def _copy_files_from_source_project(
         != ProjectTypeDB.TEMPLATE
     )
 
-    async with AsyncExitStack() as stack:
-        if needs_lock_source_project:
-            await stack.enter_async_context(
-                projects_api.lock_with_notification(
-                    app,
-                    source_project["uuid"],
-                    ProjectStatus.CLONING,
-                    user_id,
-                    await get_user_fullname(app, user_id=user_id),
-                )
-            )
+    async def _copy() -> None:
         starting_value = task_progress.percent
         async for long_running_task in copy_data_folders_from_project(
             app, source_project, new_project, nodes_map, user_id
@@ -189,6 +178,18 @@ async def _copy_files_from_source_project(
             )
             if long_running_task.done():
                 await long_running_task.result()
+
+    if needs_lock_source_project:
+        await projects_api.with_project_locked_notified_state(
+            app,
+            project_uuid=source_project["uuid"],
+            status=ProjectStatus.CLONING,
+            user_id=user_id,
+            user_name=await get_user_fullname(app, user_id=user_id),
+            notify_users=True,
+        )(_copy)()
+    else:
+        await _copy()
 
 
 async def _compose_project_data(
