@@ -85,11 +85,10 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           clearTimeout(this.__searchDelayer);
         }
         if (filterValue.length > 3) {
-          this.__searchingCollaborators.show();
+          const waitBeforeSearching = 1000;
           this.__searchDelayer = setTimeout(() => {
-            this.__searchingCollaborators.show();
             this.__searchUsers();
-          }, 1000);
+          }, waitBeforeSearching);
         }
       });
       this.add(toolbar);
@@ -118,6 +117,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     },
 
     __searchUsers: function() {
+      this.__searchingCollaborators.show();
       const text = this.__textFilter.getChildControl("textfield").getValue();
       osparc.store.Users.getInstance().searchUsers(text)
         .then(users => {
