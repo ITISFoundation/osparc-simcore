@@ -38,7 +38,7 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_access import Owner
-from models_library.projects_nodes import Node, PartialNode
+from models_library.projects_nodes import Node, NodeState, PartialNode
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_state import (
     ProjectLocked,
@@ -977,6 +977,7 @@ async def update_project_node_state(
         permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
 
+    # TODO: delete this once workbench is removed from the projects table
     updated_project, _ = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
@@ -984,6 +985,14 @@ async def update_project_node_state(
         product_name=None,
         new_node_data={"state": {"currentStatus": new_state}},
     )
+
+    await _projects_nodes_repository.update(
+        app,
+        project_id=project_id,
+        node_id=node_id,
+        partial_node=PartialNode.model_construct(state=NodeState(currentStatus=RunningState(new_state))),
+    )
+
     return await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
     )
