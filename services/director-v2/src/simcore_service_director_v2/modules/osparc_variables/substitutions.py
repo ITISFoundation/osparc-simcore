@@ -204,9 +204,7 @@ async def resolve_and_substitute_session_variables_in_model(
                 project_id=project_id,
                 node_id=node_id,
                 run_id=service_run_id,
-                api_server_base_url=f"{app_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL}".rstrip(
-                    "/"
-                ),
+                api_server_base_url=app_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
             ),
         )
         _logger.debug("replacing with the identifiers=%s", identifiers)
@@ -250,9 +248,7 @@ async def resolve_and_substitute_session_variables_in_specs(
                     project_id=project_id,
                     node_id=node_id,
                     run_id=service_run_id,
-                    api_server_base_url=f"{app_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL}".rstrip(
-                        "/"
-                    ),
+                    api_server_base_url=app_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
                 ),
             )
 
