@@ -33,17 +33,17 @@ def exclusive_periodic(
     """
 
     def _decorator(
-        func: Callable[P, Coroutine[Any, Any, None]],
+        coro: Callable[P, Coroutine[Any, Any, None]],
     ) -> Callable[P, Coroutine[Any, Any, None]]:
         @periodic(interval=retry_after)
         @exclusive(
             redis_client,
-            lock_key=f"lock:exclusive_periodic_task:{func.__name__}",
+            lock_key=f"lock:exclusive_periodic_task:{coro.__module__}.{coro.__name__}",
         )
         @periodic(interval=task_interval)
-        @functools.wraps(func)
+        @functools.wraps(coro)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
-            return await func(*args, **kwargs)
+            return await coro(*args, **kwargs)
 
         return _wrapper
 

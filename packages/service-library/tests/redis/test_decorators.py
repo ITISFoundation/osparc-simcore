@@ -31,7 +31,9 @@ def _assert_exclusive_tasks_are_cancelled(lock_name: str, func: Callable) -> Non
     assert _EXCLUSIVE_AUTO_EXTEND_TASK_NAME.format(redis_lock_key=lock_name) not in [
         t.get_name() for t in asyncio.tasks.all_tasks()
     ], "the auto extend lock task was not properly stopped!"
-    assert _EXCLUSIVE_TASK_NAME.format(func_name=func.__name__) not in [
+    assert _EXCLUSIVE_TASK_NAME.format(
+        module_name=func.__module__, func_name=func.__name__
+    ) not in [
         t.get_name() for t in asyncio.tasks.all_tasks()
     ], "the exclusive task was not properly stopped!"
 

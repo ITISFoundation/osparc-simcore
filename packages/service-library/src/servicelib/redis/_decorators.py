@@ -22,7 +22,7 @@ _logger = logging.getLogger(__file__)
 P = ParamSpec("P")
 R = TypeVar("R")
 
-_EXCLUSIVE_TASK_NAME: Final[str] = "exclusive/{func_name}"
+_EXCLUSIVE_TASK_NAME: Final[str] = "exclusive/{module_name}.{func_name}"
 _EXCLUSIVE_AUTO_EXTEND_TASK_NAME: Final[
     str
 ] = "exclusive/autoextend_lock_{redis_lock_key}"
@@ -65,9 +65,9 @@ def exclusive(
         raise ValueError(msg)
 
     def _decorator(
-        func: Callable[P, Coroutine[Any, Any, R]],
+        coro: Callable[P, Coroutine[Any, Any, R]],
     ) -> Callable[P, Coroutine[Any, Any, R]]:
-        @functools.wraps(func)
+        @functools.wraps(coro)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             redis_lock_key = (
                 lock_key(*args, **kwargs) if callable(lock_key) else lock_key
@@ -109,10 +109,12 @@ def exclusive(
                     await started_event.wait()
 
                     # then the task that runs the user code
-                    assert asyncio.iscoroutinefunction(func)  # nosec
+                    assert asyncio.iscoroutinefunction(coro)  # nosec
                     work_task = tg.create_task(
-                        func(*args, **kwargs),
-                        name=_EXCLUSIVE_TASK_NAME.format(func_name=func.__name__),
+                        coro(*args, **kwargs),
+                        name=_EXCLUSIVE_TASK_NAME.format(
+                            module_name=coro.__module__, func_name=coro.__name__
+                        ),
                     )
 
                     res = await work_task
@@ -130,12 +132,6 @@ def exclusive(
 
                 assert lock_lost_errors is not None  # nosec
                 assert len(lock_lost_errors.exceptions) == 1  # nosec
-                _logger.error(  # noqa: TRY400
-                    "lock %s could not be auto-extended! "
-                    "TIP: check connection to Redis DBs or look for Synchronous "
-                    "code that might block the auto-extender task. Somehow the distributed lock disappeared!",
-                    lock.name,
-                )
                 raise lock_lost_errors.exceptions[0] from eg
             finally:
                 with contextlib.suppress(redis.exceptions.LockNotOwnedError):
