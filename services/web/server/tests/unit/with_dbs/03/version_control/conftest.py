@@ -140,12 +140,12 @@ def request_update_project(
     mocker: MockerFixture,
 ) -> Callable[[TestClient, UUID], Awaitable]:
     mocker.patch(
-        "simcore_service_webserver.projects._nodes_handlers.projects_api.is_service_deprecated",
+        "simcore_service_webserver.projects._nodes_handlers.projects_service.is_service_deprecated",
         autospec=True,
         return_value=False,
     )
     mocker.patch(
-        "simcore_service_webserver.projects._nodes_handlers.projects_api.catalog_client.get_service_resources",
+        "simcore_service_webserver.projects._nodes_handlers.projects_service.catalog_client.get_service_resources",
         autospec=True,
         return_value=ServiceResourcesDict(),
     )
