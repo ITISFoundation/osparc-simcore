@@ -214,22 +214,22 @@ def run_sequentially_in_context(
     return decorator
 
 
-def with_delay(
+def delayed_start(
     delay: datetime.timedelta,
 ) -> Callable[
     [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
 ]:
-    def decorator(
+    def _decorator(
         func: Callable[P, Coroutine[Any, Any, R]],
     ) -> Callable[P, Coroutine[Any, Any, R]]:
         @wraps(func)
-        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             await asyncio.sleep(delay.total_seconds())
             return await func(*args, **kwargs)
 
-        return wrapper
+        return _wrapper
 
-    return decorator
+    return _decorator
 
 
 async def cancel_wait_task(

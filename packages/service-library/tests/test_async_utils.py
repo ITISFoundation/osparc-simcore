@@ -15,8 +15,8 @@ import pytest
 from faker import Faker
 from servicelib.async_utils import (
     _sequential_jobs_contexts,
+    delayed_start,
     run_sequentially_in_context,
-    with_delay,
 )
 
 RETRIES = 10
@@ -228,7 +228,7 @@ async def test_different_contexts(
 
 
 async def test_with_delay():
-    @with_delay(timedelta(seconds=0.2))
+    @delayed_start(timedelta(seconds=0.2))
     async def decorated_awaitable() -> int:
         return 42
 
@@ -237,6 +237,8 @@ async def test_with_delay():
     async def another_awaitable() -> int:
         return 42
 
-    decorated_another_awaitable = with_delay(timedelta(seconds=0.2))(another_awaitable)
+    decorated_another_awaitable = delayed_start(timedelta(seconds=0.2))(
+        another_awaitable
+    )
 
     assert await decorated_another_awaitable() == 42

@@ -9,7 +9,7 @@ from typing import Any, Final, ParamSpec, TypeVar
 from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
 from tenacity.wait import wait_fixed
 
-from .async_utils import cancel_wait_task, with_delay
+from .async_utils import cancel_wait_task, delayed_start
 from .logging_utils import log_context
 
 _logger = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ def create_periodic_task(
     early_wake_up_event: asyncio.Event | None = None,
     **kwargs,
 ) -> asyncio.Task:
-    @with_delay(wait_before_running)
+    @delayed_start(wait_before_running)
     @periodic(
         interval=interval,
         raise_on_error=raise_on_error,
