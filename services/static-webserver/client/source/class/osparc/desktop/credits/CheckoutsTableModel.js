@@ -134,7 +134,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
             checkoutsItems.forEach(checkoutsItem => {
               const licensedItemId = checkoutsItem["licensedItemId"];
               const licensedItem = licensedItems.find(licItem => licItem["licensedItemId"] === licensedItemId);
-              const vipModel = vipModels.find(vipMdl => vipMdl["modelId"] == licensedItem["name"]);
+              const vipModel = vipModels.find(vipMdl => licensedItem && (vipMdl["modelId"] == licensedItem["name"]));
               data.push({
                 [checkoutsCols.PURCHASE_ID.id]: checkoutsItem["licensedItemPurchaseId"],
                 [checkoutsCols.ITEM_ID.id]: licensedItemId,
