@@ -9,15 +9,21 @@ import datetime
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Final
 from unittest import mock
+from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
-from servicelib.background_task import (
-    periodic_task,
-    start_periodic_task,
-    stop_periodic_task,
-)
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task import create_periodic_task, periodic, periodic_task
+
+pytest_simcore_core_services_selection = [
+    "redis",
+]
+pytest_simcore_ops_services_selection = [
+    "redis-commander",
+]
+
 
 _FAST_POLL_INTERVAL: Final[int] = 1
 _VERY_SLOW_POLL_INTERVAL: Final[int] = 100
@@ -58,7 +64,7 @@ async def create_background_task(
         task: Callable[..., Awaitable],
         early_wake_up_event: asyncio.Event | None,
     ) -> asyncio.Task:
-        background_task = start_periodic_task(
+        background_task = create_periodic_task(
             task,
             interval=interval,
             task_name=faker.pystr(),
@@ -71,7 +77,7 @@ async def create_background_task(
     yield _creator
     # cleanup
     await asyncio.gather(
-        *(stop_periodic_task(t, timeout=stop_task_timeout) for t in created_tasks)
+        *(cancel_wait_task(t, max_delay=stop_task_timeout) for t in created_tasks)
     )
 
 
@@ -177,3 +183,24 @@ async def test_periodic_task_context_manager(
         assert asyncio_task.cancelled() is False
         assert asyncio_task.done() is False
     assert asyncio_task.cancelled() is True
+
+
+async def test_periodic_decorator():
+    # This mock function will allow us to test if the function is called periodically
+    mock_func = AsyncMock()
+
+    @periodic(interval=datetime.timedelta(seconds=0.1))
+    async def _func() -> None:
+        await mock_func()
+
+    task = asyncio.create_task(_func())
+
+    # Give some time for the periodic calls to happen
+    await asyncio.sleep(0.5)
+
+    # Once enough time has passed, cancel the task
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert mock_func.call_count > 1

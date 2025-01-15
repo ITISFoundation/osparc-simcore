@@ -57,7 +57,6 @@ async def redis_client_sdk(
         decode_responses=False,
         client_name="pytest",
     )
-    await sdk.setup()
     yield sdk
     await sdk.shutdown()
 
@@ -430,7 +429,7 @@ async def test_deferred_manager_code_times_out(
     get_mocked_deferred_handler: Callable[
         [int, timedelta, Callable[[DeferredContext], Awaitable[Any]]],
         tuple[dict[MockKeys, Mock], type[BaseDeferredHandler]],
-    ]
+    ],
 ):
     async def _run_that_times_out(_: DeferredContext) -> None:
         await asyncio.sleep(1e6)
