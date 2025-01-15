@@ -50,7 +50,7 @@ lazy-object-proxy==1.10.0
     # via openapi-spec-validator
 markupsafe==3.0.2
     # via werkzeug
-more-itertools==10.5.0
+more-itertools==10.6.0
     # via openapi-core
 multidict==6.1.0
     # via

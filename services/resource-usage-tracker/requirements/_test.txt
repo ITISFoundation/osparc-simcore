@@ -46,7 +46,7 @@ certifi==2024.2.2
     #   requests
 cffi==1.17.1
     # via cryptography
-cfn-lint==1.22.4
+cfn-lint==1.22.5
     # via moto
 charset-normalizer==3.3.2
     # via

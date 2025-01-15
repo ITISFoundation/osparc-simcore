@@ -11,7 +11,7 @@ click==8.1.8
     #   dask
     #   distributed
     #   typer
-cloudpickle==3.1.0
+cloudpickle==3.1.1
     # via
     #   dask
     #   distributed

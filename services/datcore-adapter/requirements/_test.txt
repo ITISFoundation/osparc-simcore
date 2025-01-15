@@ -4,7 +4,7 @@ anyio==4.3.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-botocore-stubs==1.35.98
+botocore-stubs==1.35.99
     # via
     #   types-boto3
     #   types-botocore
@@ -110,7 +110,7 @@ termcolor==2.5.0
     # via pytest-sugar
 types-awscrt==0.23.6
     # via botocore-stubs
-types-boto3==1.35.98
+types-boto3==1.35.99
     # via -r requirements/_test.in
 types-botocore==1.0.2
     # via -r requirements/_test.in
