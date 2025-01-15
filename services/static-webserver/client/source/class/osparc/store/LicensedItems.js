@@ -76,6 +76,15 @@ qx.Class.define("osparc.store.LicensedItems", {
         });
     },
 
+    getPurchasedLicensedItems: function(walletId) {
+      const purchasesParams = {
+        url: {
+          walletId
+        }
+      };
+      return osparc.data.Resources.fetch("wallets", "purchases", purchasesParams)
+    },
+
     purchaseLicensedItem: function(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats) {
       const params = {
         url: {

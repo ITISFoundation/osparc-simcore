@@ -202,14 +202,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             return;
           }
           const walletId = contextWallet.getWalletId();
-          const purchasesParams = {
-            url: {
-              walletId
-            }
-          };
           Promise.all([
             licensedItemsStore.getLicensedItems(),
-            osparc.data.Resources.fetch("wallets", "purchases", purchasesParams),
+            licensedItemsStore.getPurchasedLicensedItems(walletId),
           ])
             .then(values => {
               const licensedItems = values[0];
