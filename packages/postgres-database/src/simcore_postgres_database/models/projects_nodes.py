@@ -25,7 +25,7 @@ projects_nodes = sa.Table(
         nullable=False,
         autoincrement=True,
         primary_key=True,
-        doc="Project node index",
+        comment="Index of the project node",
     ),
     sa.Column(
         "project_uuid",
@@ -38,21 +38,21 @@ projects_nodes = sa.Table(
         ),
         nullable=False,
         index=True,
-        doc="Project unique identifier",
+        comment="Unique identifier of the project",
     ),
     sa.Column(
         "node_id",
         sa.String,
         nullable=False,
         index=True,
-        doc="Node unique identifier",
+        comment="Unique identifier of the node",
     ),
     sa.Column(
         "required_resources",
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="Node required resources",
+        comment="Required resources",
     ),
     # TIME STAMPS ----
     column_created_datetime(timezone=True),
@@ -61,97 +61,97 @@ projects_nodes = sa.Table(
         "key",
         sa.String,
         nullable=False,
-        doc="Distinctive name for the node based on the docker registry path",
+        comment="Distinctive name (based on the Docker registry path)",
     ),
     sa.Column(
         "version",
         sa.String,
         nullable=False,
-        doc="Semantic version number of the node",
+        comment="Semantic version number",
     ),
     sa.Column(
         "label",
         sa.String,
         nullable=False,
-        doc="Short name of the node",
+        comment="Short name ",
     ),
     sa.Column(
         "progress",
         sa.Numeric,
         nullable=True,
-        doc="Node progress value",
+        comment="Progress value",
     ),
     sa.Column(
         "thumbnail",
         sa.String,
         nullable=True,
-        doc="Url of the latest screenshot of the node",
+        comment="Url of the latest screenshot",
     ),
     sa.Column(
         "input_access",
         JSONB,
         nullable=True,
-        doc="Map with key - access level pairs",
+        comment="Map with key - access level pairs",
     ),
     sa.Column(
         "input_nodes",
         JSONB,  # Array
         nullable=True,
-        doc="Node IDs of where the node is connected to",
+        comment="IDs of the nodes where is connected to",
     ),
     sa.Column(
         "inputs",
         JSONB,
         nullable=True,
-        doc="Input properties values",
+        comment="Input properties values",
     ),
     sa.Column(
         "inputs_required",
         JSONB,  # Array
         nullable=True,
-        doc="Input IDs that are required",
+        comment="Required input IDs",
     ),
     sa.Column(
         "inputs_units",
         JSONB,
         nullable=True,
-        doc="Input unit values",
+        comment="Input units",
     ),
     sa.Column(
         "output_nodes",
         JSONB,  # Array
         nullable=True,
-        doc="Node IDs of those connected to the output",
+        comment="Node IDs of those connected to the output",
     ),
     sa.Column(
         "outputs",
         JSONB,
         nullable=True,
-        doc="Output properties values",
+        comment="Output properties values",
     ),
     # sa.Column(
     #     "output_node",
     #     sa.BOOLEAN,
     #     nullable=True,
-    #     doc="Deprecated",
+    #     comment="Deprecated",
     # ),
     sa.Column(
         "run_hash",
         sa.String,
         nullable=True,
-        doc="HEX digest of the resolved inputs + outputs hash at the time when the last outputs were generated",
+        comment="HEX digest of the resolved inputs + outputs hash at the time when the last outputs were generated",
     ),
     sa.Column(
         "state",
         JSONB,
         nullable=True,
-        doc="Node state",
+        comment="State",
     ),
     sa.Column(
         "parent",
         sa.String,
         nullable=True,
-        doc="Parent's (group-nodes) node ID",
+        comment="Parent's (group-nodes) node ID",
     ),
     # sa.Column(
     #     "position",
@@ -163,11 +163,10 @@ projects_nodes = sa.Table(
         "boot_options",
         JSONB,
         nullable=True,
-        doc="Some services provide alternative parameters to be injected at boot time."
+        comment="Some services provide alternative parameters to be injected at boot time."
         "The user selection should be stored here, and it will overwrite the services's defaults",
     ),
     sa.UniqueConstraint("project_uuid", "node_id"),
 )
-
 
 register_modified_datetime_auto_update_trigger(projects_nodes)
