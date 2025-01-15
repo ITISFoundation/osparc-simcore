@@ -106,7 +106,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __createIntroText: function() {
-      const msg = this.tr("Only Accountants of an organization can share a wallet with the entire organization and members.");
+      const msg = this.tr("Only Accountants of an Organization can share a wallet with other users.");
       const intro = new qx.ui.basic.Label().set({
         value: msg,
         alignX: "left",

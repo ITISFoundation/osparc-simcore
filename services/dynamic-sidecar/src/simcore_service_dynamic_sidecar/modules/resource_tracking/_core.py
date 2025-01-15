@@ -14,7 +14,8 @@ from models_library.rabbitmq_messages import (
 from models_library.services import ServiceType
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import NonNegativeFloat
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_context
 
 from ...core.docker_utils import (
@@ -49,7 +50,7 @@ async def _start_heart_beat_task(app: FastAPI) -> None:
         raise RuntimeError(msg)
 
     with log_context(_logger, logging.DEBUG, "starting heart beat task"):
-        resource_tracking.heart_beat_task = start_periodic_task(
+        resource_tracking.heart_beat_task = create_periodic_task(
             _heart_beat_task,
             app=app,
             interval=resource_tracking_settings.RESOURCE_TRACKING_HEARTBEAT_INTERVAL,
@@ -61,8 +62,8 @@ async def _start_heart_beat_task(app: FastAPI) -> None:
 async def stop_heart_beat_task(app: FastAPI) -> None:
     resource_tracking: ResourceTrackingState = app.state.resource_tracking
     if resource_tracking.heart_beat_task:
-        await stop_periodic_task(
-            resource_tracking.heart_beat_task, timeout=_STOP_WORKER_TIMEOUT_S
+        await cancel_wait_task(
+            resource_tracking.heart_beat_task, max_delay=_STOP_WORKER_TIMEOUT_S
         )
 
 
