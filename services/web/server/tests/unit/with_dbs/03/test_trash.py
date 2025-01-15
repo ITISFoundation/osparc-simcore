@@ -150,6 +150,7 @@ async def test_trash_projects(  # noqa: PLR0915
         assert got.trashed_at
         assert trashing_at < got.trashed_at
         assert got.trashed_at < arrow.utcnow().datetime
+        assert got.trashed_by == logged_user["primary_gid"]
 
     # LIST trashed
     resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
@@ -232,6 +233,8 @@ async def test_trash_single_folder(client: TestClient, logged_user: UserInfoDict
     assert got.trashed_at
     assert trashing_at < got.trashed_at
     assert got.trashed_at < arrow.utcnow().datetime
+    assert got.trashed_by == logged_user["primary_gid"]
+    assert got.owner == logged_user["primary_gid"]
 
     # LIST trashed
     resp = await client.get("/v0/folders", params={"filters": '{"trashed": true}'})
@@ -347,16 +350,19 @@ async def test_trash_folder_with_content(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = FolderGet.model_validate(data)
     assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["primary_gid"]
 
     resp = await client.get(f"/v0/folders/{subfolder.folder_id}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = FolderGet.model_validate(data)
     assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["primary_gid"]
 
     resp = await client.get(f"/v0/projects/{project_uuid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = ProjectGet.model_validate(data)
     assert got.trashed_at is not None
+    assert got.trashed_by == logged_user["primary_gid"]
 
     # UNTRASH folder
     resp = await client.post(f"/v0/folders/{folder.folder_id}:untrash")
@@ -471,7 +477,7 @@ async def test_trash_empty_workspace(
     )
     assert page.data[0].trashed_at is not None
     assert before_trash < page.data[0].trashed_at
-    assert page.data[0].trashed_by == logged_user["id"]
+    assert page.data[0].trashed_by == logged_user["primary_gid"]
 
     # --------
 
