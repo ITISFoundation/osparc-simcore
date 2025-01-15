@@ -142,7 +142,7 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
                 [rentalsCols.START.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["startAt"])),
                 [rentalsCols.END.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["expireAt"])),
                 [rentalsCols.SEATS.id]: purchasesItem["numOfSeats"],
-                [rentalsCols.COST.id]: purchasesItem["pricingUnitCost"] ? parseFloat(purchasesItem["pricingUnitCost"]).toFixed(2) : "",
+                [rentalsCols.COST.id]: purchasesItem["pricingUnitCost"] ? ("-" + parseFloat(purchasesItem["pricingUnitCost"]).toFixed(2)) : "", // show it negative
                 [rentalsCols.USER.id]: purchasesItem["purchasedByUser"],
               });
             });
