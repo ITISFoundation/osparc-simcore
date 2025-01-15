@@ -206,12 +206,12 @@ def disable_clusters_management_background_task(
     mocker: MockerFixture,
 ) -> Iterator[None]:
     start_background_task = mocker.patch(
-        "simcore_service_clusters_keeper.modules.clusters_management_task.start_periodic_task",
+        "simcore_service_clusters_keeper.modules.clusters_management_task.create_periodic_task",
         autospec=True,
     )
 
     stop_background_task = mocker.patch(
-        "simcore_service_clusters_keeper.modules.clusters_management_task.stop_periodic_task",
+        "simcore_service_clusters_keeper.modules.clusters_management_task.cancel_wait_task",
         autospec=True,
     )
 
