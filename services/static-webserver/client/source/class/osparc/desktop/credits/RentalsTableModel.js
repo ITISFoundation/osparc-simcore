@@ -52,7 +52,7 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
     orderBy: {
       check: "Object",
       init: {
-        field: "started_at",
+        field: "purchased_at",
         direction: "desc"
       }
     }
