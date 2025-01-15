@@ -193,7 +193,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     },
 
     __fetchModels: function(vipSubset) {
-      osparc.store.LicensedItems.getInstance().getVipModels(vipSubset)
+      const licensedItemsStore = osparc.store.LicensedItems.getInstance();
+      licensedItemsStore.getVipModels(vipSubset)
         .then(allAnatomicalModels => {
           const store = osparc.store.Store.getInstance();
           const contextWallet = store.getContextWallet();
@@ -207,7 +208,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             }
           };
           Promise.all([
-            osparc.store.LicensedItems.getInstance().getLicensedItems(),
+            licensedItemsStore.getLicensedItems(),
             osparc.data.Resources.fetch("wallets", "purchases", purchasesParams),
           ])
             .then(values => {
@@ -258,18 +259,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
                   const split = pricingUnit.getName().split(" ");
                   numberOfSeats = parseInt(split[0]);
                 }
-                const params = {
-                  url: {
-                    licensedItemId
-                  },
-                  data: {
-                    "wallet_id": walletId,
-                    "pricing_plan_id": pricingPlanId,
-                    "pricing_unit_id": pricingUnitId,
-                    "num_of_seats": numberOfSeats, // this should go away
-                  },
-                }
-                osparc.data.Resources.fetch("licensedItems", "purchase", params)
+                licensedItemsStore.purchaseLicensedItem(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats)
                   .then(() => {
                     const expirationDate = new Date();
                     expirationDate.setMonth(expirationDate.getMonth() + 1); // rented for one month

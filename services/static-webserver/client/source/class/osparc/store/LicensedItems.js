@@ -73,7 +73,22 @@ qx.Class.define("osparc.store.LicensedItems", {
         .then(licensedItems => {
           this.__licensedItems = licensedItems;
           return this.__licensedItems;
-        })
+        });
+    },
+
+    purchaseLicensedItem: function(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats) {
+      const params = {
+        url: {
+          licensedItemId
+        },
+        data: {
+          "wallet_id": walletId,
+          "pricing_plan_id": pricingPlanId,
+          "pricing_unit_id": pricingUnitId,
+          "num_of_seats": numberOfSeats, // this should go away
+        },
+      }
+      return osparc.data.Resources.fetch("licensedItems", "purchase", params);
     },
 
     __fetchVipModels: async function(vipSubset) {
