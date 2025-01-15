@@ -148,7 +148,8 @@ from .exceptions import (
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
 )
-from .models import ProjectDict, ProjectPatchExtended
+from .lock import get_project_locked_state, is_project_locked, lock_project
+from .models import ProjectDict, ProjectPatchInternalExtended
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
@@ -254,7 +255,7 @@ async def patch_project(
     *,
     user_id: UserID,
     project_uuid: ProjectID,
-    project_patch: ProjectPatch | ProjectPatchExtended,
+    project_patch: ProjectPatch | ProjectPatchInternalExtended,
     product_name: ProductName,
 ):
     patch_project_data = project_patch.to_domain_model()

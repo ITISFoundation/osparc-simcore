@@ -7,6 +7,7 @@ from ..access_rights import AccessRights
 from ..basic_types import IDStr
 from ..folders import FolderID
 from ..groups import GroupID
+from ..users import UserID
 from ..utils.common_validators import null_or_none_str_to_none_validator
 from ..workspaces import WorkspaceID
 from ._base import InputSchema, OutputSchema
@@ -19,7 +20,7 @@ class FolderGet(OutputSchema):
     created_at: datetime
     modified_at: datetime
     trashed_at: datetime | None
-    trashed_by: GroupID | None
+    trashed_by: UserID | None
     owner: GroupID
     workspace_id: WorkspaceID | None
     my_access_rights: AccessRights

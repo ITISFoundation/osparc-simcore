@@ -35,6 +35,7 @@ from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
+from ..users._users_service import get_user_primary_group_id
 from ..users.api import get_user_fullname
 from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
@@ -440,7 +441,16 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             }
 
         # Ensures is like ProjectGet
-        data = ProjectGet.from_domain_model(new_project).data(exclude_unset=True)
+        if trashed_by_uid := new_project.get("trashed_by"):
+            trashed_by_primary_gid = await get_user_primary_group_id(
+                request.app, trashed_by_uid
+            )
+        else:
+            trashed_by_primary_gid = None
+
+        data = ProjectGet.from_domain_model(
+            new_project, trashed_by_primary_gid=trashed_by_primary_gid
+        ).data(exclude_unset=True)
 
         raise web.HTTPCreated(
             text=json_dumps({"data": data}),

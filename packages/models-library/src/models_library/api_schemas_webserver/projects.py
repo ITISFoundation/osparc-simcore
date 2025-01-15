@@ -20,12 +20,12 @@ from pydantic import (
     PlainSerializer,
     field_validator,
 )
+from simcore_service_webserver.models import UserID
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import LongTruncatedStr, ShortTruncatedStr
 from ..emails import LowerCaseEmailStr
 from ..folders import FolderID
-from ..groups import GroupID
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
 from ..projects_state import ProjectState
@@ -99,7 +99,7 @@ class ProjectGet(OutputSchema):
     folder_id: FolderID | None
 
     trashed_at: datetime | None
-    trashed_by: GroupID | None
+    trashed_by: UserID | None
 
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
