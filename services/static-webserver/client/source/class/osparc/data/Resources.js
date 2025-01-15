@@ -938,7 +938,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           purchases: {
             method: "GET",
-            url: statics.API + "/wallets/{walletId}/licensed-items-purchases"
+            url: statics.API + "/wallets/{walletId}/licensed-items-purchases?offset={offset}&limit={limit}"
           },
         }
       },

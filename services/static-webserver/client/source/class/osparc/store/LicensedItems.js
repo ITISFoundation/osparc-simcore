@@ -76,13 +76,18 @@ qx.Class.define("osparc.store.LicensedItems", {
         });
     },
 
-    getPurchasedLicensedItems: function(walletId) {
-      const purchasesParams = {
+    getPurchasedLicensedItems: function(walletId, urlParams, options = {}) {
+      let purchasesParams = {
         url: {
-          walletId
+          walletId,
+          offset: 0,
+          limit: 49,
         }
       };
-      return osparc.data.Resources.fetch("wallets", "purchases", purchasesParams)
+      if (urlParams) {
+        purchasesParams.url = Object.assign(purchasesParams.url, urlParams);
+      }
+      return osparc.data.Resources.fetch("wallets", "purchases", purchasesParams, options);
     },
 
     purchaseLicensedItem: function(licensedItemId, walletId, pricingPlanId, pricingUnitId, numberOfSeats) {

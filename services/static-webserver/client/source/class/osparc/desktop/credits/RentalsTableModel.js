@@ -77,23 +77,21 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
 
     // overridden
     _loadRowCount() {
-      const params = {
-        url: {
-          walletId: this.getWalletId(),
-          limit: 1,
-          offset: 0,
-          filters: this.getFilters() ?
-            JSON.stringify({
-              "started_at": this.getFilters()
-            }) :
-            null,
-          orderBy: JSON.stringify(this.getOrderBy())
-        }
+      const walletId = this.getWalletId();
+      const urlParams = {
+        offset: 0,
+        limit: 1,
+        filters: this.getFilters() ?
+          JSON.stringify({
+            "started_at": this.getFilters()
+          }) :
+          null,
+        orderBy: JSON.stringify(this.getOrderBy()),
       };
       const options = {
         resolveWResponse: true
       };
-      osparc.data.Resources.fetch("wallets", "purchases", params, options)
+      osparc.store.LicensedItems.getInstance().getPurchasedLicensedItems(walletId, urlParams, options)
         .then(resp => {
           this._onRowCountLoaded(resp["_meta"].total)
         })
@@ -109,21 +107,20 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1)
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit=this.self().SERVER_MAX_LIMIT) => {
+        const walletId = this.getWalletId();
+        const urlParams = {
+          limit,
+          offset,
+          filters: this.getFilters() ?
+            JSON.stringify({
+              "started_at": this.getFilters()
+            }) :
+            null,
+          orderBy: JSON.stringify(this.getOrderBy())
+        }
         return Promise.all([
           osparc.store.LicensedItems.getInstance().getLicensedItems(),
-          osparc.data.Resources.fetch("wallets", "purchases", {
-            url: {
-              walletId: this.getWalletId(),
-              limit,
-              offset,
-              filters: this.getFilters() ?
-                JSON.stringify({
-                  "started_at": this.getFilters()
-                }) :
-                null,
-              orderBy: JSON.stringify(this.getOrderBy())
-            }
-          }),
+          osparc.store.LicensedItems.getInstance().getPurchasedLicensedItems(walletId, urlParams),
         ])
           .then(values => {
             const licensedItems = values[0];
