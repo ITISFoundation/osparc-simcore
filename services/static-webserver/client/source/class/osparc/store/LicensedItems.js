@@ -29,7 +29,7 @@ qx.Class.define("osparc.store.LicensedItems", {
     VIP_MODELS: {
       HUMAN_BODY: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanWholeBody",
       HUMAN_BODY_REGION: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/HumanBodyRegion",
-      ANIMAL_BODY: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnimalWholeBody",
+      ANIMAL: "https://itis.swiss/PD_DirectDownload/getDownloadableItems/AnimalWholeBody",
       PHANTOM: "https://speag.swiss/PD_DirectDownload/getDownloadableItems/ComputationalPhantom",
     },
 
@@ -63,7 +63,7 @@ qx.Class.define("osparc.store.LicensedItems", {
     __modelsCache: null,
 
     __fetchVipModels: async function(vipSubset) {
-      if (!(vipSubset in this.VIP_MODELS)) {
+      if (!(vipSubset in this.self().VIP_MODELS)) {
         return [];
       }
 
@@ -71,7 +71,7 @@ qx.Class.define("osparc.store.LicensedItems", {
         return this.__modelsCache[vipSubset];
       }
 
-      return await fetch(this.VIP_MODELS[vipSubset], {
+      return await fetch(this.self().VIP_MODELS[vipSubset], {
         method:"POST"
       })
         .then(resp => resp.json())
@@ -85,7 +85,7 @@ qx.Class.define("osparc.store.LicensedItems", {
             anatomicalModel["name"] = model["Features"]["name"] + " " + model["Features"]["version"];
             anatomicalModel["description"] = model["Description"];
             anatomicalModel["features"] = model["Features"];
-            anatomicalModel["date"] = new Date(model["Features"]["date"]);
+            anatomicalModel["date"] = model["Features"]["date"];
             anatomicalModel["DOI"] = model["DOI"];
             anatomicalModels.push(anatomicalModel);
           });

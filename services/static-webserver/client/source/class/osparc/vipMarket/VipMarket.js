@@ -38,12 +38,12 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       event: "changeOpenBy",
     },
 
-    metadataUrl: {
-      check: "String",
+    vipSubset: {
+      check: ["HUMAN_BODY", "HUMAN_BODY_REGION", "ANIMAL", "PHANTOM"],
       init: null,
-      nullable: false,
+      nullable: true,
       apply: "__fetchModels",
-    }
+    },
   },
 
   statics: {
@@ -192,14 +192,9 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
       }, this);
     },
 
-    __fetchModels: function(url) {
-      fetch(url, {
-        method:"POST"
-      })
-        .then(resp => resp.json())
-        .then(anatomicalModelsRaw => {
-          const allAnatomicalModels = this.self().curateAnatomicalModels(anatomicalModelsRaw);
-
+    __fetchModels: function(vipSubset) {
+      osparc.store.LicensedItems.getInstance().fetchVipModels(vipSubset)
+        .then(allAnatomicalModels => {
           const store = osparc.store.Store.getInstance();
           const contextWallet = store.getContextWallet();
           if (!contextWallet) {
@@ -221,17 +216,11 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
 
               this.__anatomicalModels = [];
               allAnatomicalModels.forEach(model => {
-                const modelId = model["ID"];
+                const modelId = model["modelId"];
                 const licensedItem = licensedItems.find(licItem => licItem["name"] == modelId);
                 if (licensedItem) {
-                  const anatomicalModel = {};
-                  anatomicalModel["modelId"] = model["ID"];
-                  anatomicalModel["thumbnail"] = model["Thumbnail"];
-                  anatomicalModel["name"] = model["Features"]["name"] + " " + model["Features"]["version"];
-                  anatomicalModel["description"] = model["Description"];
-                  anatomicalModel["features"] = model["Features"];
-                  anatomicalModel["date"] = new Date(model["Features"]["date"]);
-                  anatomicalModel["DOI"] = model["DOI"];
+                  const anatomicalModel = osparc.utils.Utils.deepCloneObject(model);
+                  anatomicalModel["date"] = new Date(anatomicalModel["date"]);
                   // attach license data
                   anatomicalModel["licensedItemId"] = licensedItem["licensedItemId"];
                   anatomicalModel["pricingPlanId"] = licensedItem["pricingPlanId"];
