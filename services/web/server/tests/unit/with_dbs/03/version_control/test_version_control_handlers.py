@@ -11,6 +11,7 @@ from uuid import UUID
 import aiohttp
 import pytest
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import Project, ProjectID
 from models_library.rest_pagination import Page
 from models_library.users import UserID
@@ -62,7 +63,7 @@ async def test_workflow(
     # get existing project
     resp = await client.get(f"/{VX}/projects/{project_uuid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    project = Project.model_validate(data)
+    project = ProjectGet.model_validate(data)
     assert project.uuid == UUID(project_uuid)
 
     #
