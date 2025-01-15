@@ -78,7 +78,6 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
           control = new qx.ui.form.Button(this.tr("Export")).set({
             allowStretchY: false,
             alignY: "bottom",
-            visibility: "excluded",
           });
           control.addListener("execute", () => this._handleExport());
           layout = this.getChildControl("filter-layout");
@@ -144,11 +143,8 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
       return null;
     },
 
-    _handleExport() {
-      const reportUrl = new URL("/v0/services/-/usage-report", window.location.origin)
-      reportUrl.searchParams.append("wallet_id", this._getSelectWalletId())
-      reportUrl.searchParams.append("filters", JSON.stringify({ "started_at": this.__dateFilters.getValue() }))
-      window.open(reportUrl, "_blank")
-    }
+    _handleExport: function() {
+      throw new Error("Abstract method called!");
+    },
   }
 });
