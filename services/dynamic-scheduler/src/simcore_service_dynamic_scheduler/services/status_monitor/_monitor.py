@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import timedelta
 from functools import cached_property
@@ -7,8 +8,8 @@ import arrow
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
-from servicelib.background_task import stop_periodic_task
-from servicelib.redis import start_exclusive_periodic_task
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task_utils import exclusive_periodic
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 
@@ -133,14 +134,19 @@ class Monitor:
         )
 
     async def setup(self) -> None:
-        self.app.state.status_monitor_background_task = start_exclusive_periodic_task(
+        @exclusive_periodic(
             get_redis_client(self.app, RedisDatabase.LOCKS),
-            self._worker_check_services_require_status_update,
-            task_period=_INTERVAL_BETWEEN_CHECKS,
+            task_interval=_INTERVAL_BETWEEN_CHECKS,
             retry_after=_INTERVAL_BETWEEN_CHECKS,
-            task_name="periodic_service_status_update",
+        )
+        async def _periodic_check_services_require_status_update() -> None:
+            await self._worker_check_services_require_status_update()
+
+        self.app.state.status_monitor_background_task = asyncio.create_task(
+            _periodic_check_services_require_status_update(),
+            name="periodic_service_status_update",
         )
 
     async def shutdown(self) -> None:
         if getattr(self.app.state, "status_monitor_background_task", None):
-            await stop_periodic_task(self.app.state.status_monitor_background_task)
+            await cancel_wait_task(self.app.state.status_monitor_background_task)

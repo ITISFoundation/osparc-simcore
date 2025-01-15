@@ -126,7 +126,7 @@ async def _close_unhealthy_service(
     )
 
 
-async def periodic_check_of_running_services_task(app: FastAPI) -> None:
+async def check_running_services(app: FastAPI) -> None:
     _logger.info("Periodic check started")
 
     # This check runs across all products

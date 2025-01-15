@@ -5,7 +5,8 @@ from datetime import timedelta
 from typing import Final, Generic, TypeVar
 
 from pydantic import NonNegativeInt
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis import RedisClientSDK
 from servicelib.utils import logged_gather
@@ -67,7 +68,7 @@ class BaseDistributedIdentifierManager(
         self._cleanup_task: Task | None = None
 
     async def setup(self) -> None:
-        self._cleanup_task = start_periodic_task(
+        self._cleanup_task = create_periodic_task(
             self._cleanup_unused_identifiers,
             interval=self.cleanup_interval,
             task_name="cleanup_unused_identifiers_task",
@@ -75,7 +76,7 @@ class BaseDistributedIdentifierManager(
 
     async def shutdown(self) -> None:
         if self._cleanup_task:
-            await stop_periodic_task(self._cleanup_task, timeout=5)
+            await cancel_wait_task(self._cleanup_task, max_delay=5)
 
     @classmethod
     def class_path(cls) -> str:
@@ -170,9 +171,12 @@ class BaseDistributedIdentifierManager(
             )
             return
 
-        with log_context(
-            _logger, logging.DEBUG, f"{self.__class__}: removing {identifier}"
-        ), log_catch(_logger, reraise=reraise):
+        with (
+            log_context(
+                _logger, logging.DEBUG, f"{self.__class__}: removing {identifier}"
+            ),
+            log_catch(_logger, reraise=reraise),
+        ):
             await self._destroy(identifier, cleanup_context)
 
         await self._redis_client_sdk.redis.delete(self._to_redis_key(identifier))

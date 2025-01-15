@@ -105,8 +105,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       const trashButton = this.__trashButton = new qx.ui.toolbar.RadioButton().set({
         value: false,
         appearance: "filter-toggle-button",
-        label: this.tr("Trash"),
-        icon: "@FontAwesome5Solid/trash/16",
+        label: this.tr("Bin"),
+        icon: "@FontAwesome5Solid/trash-alt/16",
         paddingLeft: 10, // align it with the context
       });
       trashButton.addListener("changeValue", e => {
@@ -198,7 +198,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     setTrashEmpty: function(isEmpty) {
       this.__trashButton.set({
-        textColor: isEmpty ? "text" : "danger-red"
+        icon: isEmpty ? "@FontAwesome5Solid/trash-alt/16" : "@FontAwesome5Solid/trash/16"
       });
     },
     /* /TRASH BIN */

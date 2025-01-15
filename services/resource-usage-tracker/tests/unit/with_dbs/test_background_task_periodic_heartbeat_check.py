@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterator
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import sqlalchemy as sa
@@ -21,7 +21,7 @@ from simcore_service_resource_usage_tracker.models.credit_transactions import (
 )
 from simcore_service_resource_usage_tracker.models.service_runs import ServiceRunDB
 from simcore_service_resource_usage_tracker.services.background_task_periodic_heartbeat_check import (
-    periodic_check_of_running_services_task,
+    check_running_services,
 )
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
@@ -33,8 +33,8 @@ _SERVICE_RUN_ID_OSPARC_10_MIN_OLD = "1"
 _SERVICE_RUN_ID_S4L_10_MIN_OLD = "2"
 _SERVICE_RUN_ID_OSPARC_NOW = "3"
 
-_LAST_HEARTBEAT_10_MIN_OLD = datetime.now(tz=timezone.utc) - timedelta(minutes=10)
-_LAST_HEARTBEAT_NOW = datetime.now(tz=timezone.utc)
+_LAST_HEARTBEAT_10_MIN_OLD = datetime.now(tz=UTC) - timedelta(minutes=10)
+_LAST_HEARTBEAT_NOW = datetime.now(tz=UTC)
 
 
 @pytest.fixture()
@@ -131,11 +131,11 @@ async def test_process_event_functions(
     app_settings: ApplicationSettings = initialized_app.state.settings
 
     for _ in range(app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL):
-        await periodic_check_of_running_services_task(initialized_app)
+        await check_running_services(initialized_app)
         # NOTE: As we are doing check that the modified field needs to be older then some
         # threshold, we need to make this field artificaly older in this test
         with postgres_db.connect() as con:
-            fake_old_modified_at = datetime.now(tz=timezone.utc) - timedelta(minutes=5)
+            fake_old_modified_at = datetime.now(tz=UTC) - timedelta(minutes=5)
             update_stmt = resource_tracker_service_runs.update().values(
                 modified=fake_old_modified_at
             )
@@ -160,7 +160,7 @@ async def test_process_event_functions(
             assert service_run.service_run_status == ServiceRunStatus.RUNNING
 
     # Now we call the function one more time and it should consider some of running services as unhealthy
-    await periodic_check_of_running_services_task(initialized_app)
+    await check_running_services(initialized_app)
 
     with postgres_db.connect() as con:
         result = con.execute(sa.select(resource_tracker_service_runs))

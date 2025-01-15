@@ -12,7 +12,8 @@ from models_library.basic_types import IDStr
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
 from servicelib import progress_bar
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
@@ -194,7 +195,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         self._schedule_all_ports_for_upload = True
 
     async def start(self) -> None:
-        self._task_scheduler_worker = start_periodic_task(
+        self._task_scheduler_worker = create_periodic_task(
             self._scheduler_worker,
             interval=timedelta(seconds=self.task_monitor_interval_s),
             task_name="outputs_manager_scheduler_worker",
@@ -204,8 +205,8 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         with log_context(_logger, logging.INFO, f"{OutputsManager.__name__} shutdown"):
             await self._uploading_task_cancel()
             if self._task_scheduler_worker is not None:
-                await stop_periodic_task(
-                    self._task_scheduler_worker, timeout=self.task_monitor_interval_s
+                await cancel_wait_task(
+                    self._task_scheduler_worker, max_delay=self.task_monitor_interval_s
                 )
 
     async def port_key_content_changed(self, port_key: str) -> None:

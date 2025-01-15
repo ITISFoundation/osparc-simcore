@@ -176,7 +176,6 @@ async def redis_client_sdk(
     client = RedisClientSDK(redis_resources_dns, client_name="pytest")
     assert client
     assert client.redis_dsn == redis_resources_dns
-    await client.setup()
     # cleanup, previous run's leftovers
     await client.redis.flushall()
 

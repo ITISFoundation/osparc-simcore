@@ -95,7 +95,6 @@ class ExampleApp:
         )
 
     async def setup(self) -> None:
-        await self._redis_client.setup()
         await self._manager.setup()
 
 

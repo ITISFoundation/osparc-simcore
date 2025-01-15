@@ -6,7 +6,6 @@
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import suppress
 
 import aio_pika
 import pytest
@@ -141,12 +140,11 @@ async def ensure_parametrized_queue_is_empty(
     rabbitmq_client = create_rabbitmq_client("pytest-purger")
 
     async def _queue_messages_purger() -> None:
-        with suppress(aio_pika.exceptions.ChannelClosed):
-            assert rabbitmq_client._channel_pool  # noqa: SLF001
-            async with rabbitmq_client._channel_pool.acquire() as channel:  # noqa: SLF001
-                assert isinstance(channel, aio_pika.RobustChannel)
-                queue = await channel.get_queue(queue_name)
-                await queue.purge()
+        assert rabbitmq_client._channel_pool  # noqa: SLF001
+        async with rabbitmq_client._channel_pool.acquire() as channel:  # noqa: SLF001
+            assert isinstance(channel, aio_pika.RobustChannel)
+            queue = await channel.get_queue(queue_name)
+            await queue.purge()
 
     await _queue_messages_purger()
     yield

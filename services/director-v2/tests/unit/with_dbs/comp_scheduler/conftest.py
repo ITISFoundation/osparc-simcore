@@ -28,6 +28,7 @@ def mock_env(
     postgres_host_config: dict[str, str],
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
+    rabbit_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return mock_env | setenvs_from_dict(
         monkeypatch,
@@ -35,7 +36,8 @@ def mock_env(
         | {
             "COMPUTATIONAL_BACKEND_ENABLED": True,
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": True,
-        },
+        }
+        | rabbit_env_vars_dict,
     )
 
 

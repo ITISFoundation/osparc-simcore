@@ -112,7 +112,7 @@ def test_jupyterlab(
             logging.INFO,
             f"Creating multiple files and 1 file of about {large_file_size.human_readable()}",
         ):
-            iframe.get_by_role("button", name="New Launcher").click()
+            iframe.get_by_role("button", name="New Launcher").nth(0).click()
             with page.expect_websocket(_JLabWaitForTerminalWebSocket()) as ws_info:
                 iframe.get_by_label("Launcher").get_by_text("Terminal").click()
 
@@ -153,7 +153,7 @@ def test_jupyterlab(
         return
     # Wait until iframe is shown and create new notebook with print statement
     with log_context(logging.INFO, "Running new notebook"):
-        iframe.get_by_role("button", name="New Launcher").click()
+        iframe.get_by_role("button", name="New Launcher").nth(0).click()
         iframe.locator(".jp-LauncherCard-icon").first.click()
         iframe.get_by_role("tab", name="Untitled.ipynb").click()
         _jupyterlab_ui = iframe.get_by_label("Untitled.ipynb").get_by_role("textbox")

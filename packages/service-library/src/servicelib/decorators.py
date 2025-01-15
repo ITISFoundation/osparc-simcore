@@ -1,16 +1,13 @@
-""" General purpose decorators
+"""General purpose decorators
 
 IMPORTANT: lowest level module
    I order to avoid cyclic dependences, please
    DO NOT IMPORT ANYTHING from .
 """
-import asyncio
-import datetime
+
 import logging
-from collections.abc import Callable, Coroutine
 from copy import deepcopy
 from functools import wraps
-from typing import Any
 
 _logger = logging.getLogger(__name__)
 
@@ -36,17 +33,3 @@ def safe_return(if_fails_return=False, catch=None, logger=None):  # noqa: FBT002
         return safe_func
 
     return decorate
-
-
-def async_delayed(
-    interval: datetime.timedelta,
-) -> Callable[..., Callable[..., Coroutine]]:
-    def decorator(func) -> Callable[..., Coroutine]:
-        @wraps(func)
-        async def wrapper(*args, **kwargs) -> Any:
-            await asyncio.sleep(interval.total_seconds())
-            return await func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator

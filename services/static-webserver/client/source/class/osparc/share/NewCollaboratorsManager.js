@@ -44,8 +44,9 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     __resourceData: null,
     __showOrganizations: null,
     __textFilter: null,
-    __searchButton: null,
     __collabButtonsContainer: null,
+    __searchingCollaborators: null,
+    __searchDelayer: null,
     __shareButton: null,
     __selectedCollaborators: null,
     __potentialCollaborators: null,
@@ -72,17 +73,24 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       }));
       const filter = this.__textFilter = new osparc.filter.TextFilter("name", "collaboratorsManager");
       filter.setCompact(true);
-      this.addListener("appear", () => filter.getChildControl("textfield").focus());
+      const filterTextField = filter.getChildControl("textfield");
+      filterTextField.setPlaceholder(this.tr("Search"));
+      this.addListener("appear", () => filterTextField.focus());
       toolbar.add(filter, {
         flex: 1
       });
-      const searchButton = this.__searchButton = new osparc.ui.form.FetchButton(this.tr("Search"), "@FontAwesome5Solid/search/12").set({
-        maxHeight: 30,
+      filterTextField.addListener("input", e => {
+        const filterValue = e.getData();
+        if (this.__searchDelayer) {
+          clearTimeout(this.__searchDelayer);
+        }
+        if (filterValue.length > 3) {
+          const waitBeforeSearching = 1000;
+          this.__searchDelayer = setTimeout(() => {
+            this.__searchUsers();
+          }, waitBeforeSearching);
+        }
       });
-      const command = new qx.ui.command.Command("Enter");
-      searchButton.setCommand(command);
-      searchButton.addListener("execute", () => this.__searchUsers(), this);
-      toolbar.add(searchButton);
       this.add(toolbar);
 
       const collabButtonsContainer = this.__collabButtonsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
@@ -91,6 +99,10 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       this.add(scrollContainer, {
         flex: 1
       });
+
+      const searchingCollaborators = this.__searchingCollaborators = new osparc.filter.SearchingCollaborators();
+      searchingCollaborators.exclude();
+      this.__collabButtonsContainer.add(searchingCollaborators);
 
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right"
@@ -105,8 +117,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     },
 
     __searchUsers: function() {
+      this.__searchingCollaborators.show();
       const text = this.__textFilter.getChildControl("textfield").getValue();
-      this.__searchButton.setFetching(true);
       osparc.store.Users.getInstance().searchUsers(text)
         .then(users => {
           users.forEach(user => user["collabType"] = 2);
@@ -116,7 +128,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           console.error(err);
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
         })
-        .finally(() => this.__searchButton.setFetching(false));
+        .finally(() => this.__searchingCollaborators.exclude());
     },
 
     __showProductEveryone: function() {
@@ -208,6 +220,10 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         }
         this.__collabButtonsContainer.add(this.__collaboratorButton(potentialCollaborator));
       });
+
+      // move it to last position
+      this.__collabButtonsContainer.remove(this.__searchingCollaborators);
+      this.__collabButtonsContainer.add(this.__searchingCollaborators);
     },
 
     __shareClicked: function() {
