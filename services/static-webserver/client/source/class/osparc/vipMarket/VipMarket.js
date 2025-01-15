@@ -46,33 +46,6 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     },
   },
 
-  statics: {
-    curateAnatomicalModels: function(anatomicalModelsRaw) {
-      const anatomicalModels = [];
-      const models = anatomicalModelsRaw["availableDownloads"];
-      models.forEach(model => {
-        const curatedModel = {};
-        Object.keys(model).forEach(key => {
-          if (key === "Features") {
-            let featuresRaw = model["Features"];
-            featuresRaw = featuresRaw.substring(1, featuresRaw.length-1); // remove brackets
-            featuresRaw = featuresRaw.split(","); // split the string by commas
-            const features = {};
-            featuresRaw.forEach(pair => { // each pair is "key: value"
-              const keyValue = pair.split(":");
-              features[keyValue[0].trim()] = keyValue[1].trim()
-            });
-            curatedModel["Features"] = features;
-          } else {
-            curatedModel[key] = model[key];
-          }
-        });
-        anatomicalModels.push(curatedModel);
-      });
-      return anatomicalModels;
-    },
-  },
-
   members: {
     __anatomicalModels: null,
     __anatomicalModelsModel: null,
