@@ -277,6 +277,6 @@ class Node(BaseModel):
 
 
 class PartialNode(Node):
-    key: Annotated[ServiceKey | None, Field(default=None)]
-    version: Annotated[ServiceVersion | None, Field(default=None)]
-    label: Annotated[str | None, Field(default=None)]
+    key: Annotated[ServiceKey, Field(default=None)]
+    version: Annotated[ServiceVersion, Field(default=None)]
+    label: Annotated[str, Field(default=None)]
