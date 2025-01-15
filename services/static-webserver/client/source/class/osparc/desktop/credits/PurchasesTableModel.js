@@ -52,7 +52,7 @@ qx.Class.define("osparc.desktop.credits.PurchasesTableModel", {
     orderBy: {
       check: "Object",
       init: {
-        field: "purchased_at",
+        field: "startAt",
         direction: "desc"
       }
     }
@@ -61,7 +61,7 @@ qx.Class.define("osparc.desktop.credits.PurchasesTableModel", {
   statics: {
     SERVER_MAX_LIMIT: 49,
     COLUMN_ID_TO_DB_COLUMN_MAP: {
-      0: "purchased_at",
+      0: "startAt",
     },
   },
 
@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.credits.PurchasesTableModel", {
         limit: 1,
         filters: this.getFilters() ?
           JSON.stringify({
-            "started_at": this.getFilters()
+            "startAt": this.getFilters()
           }) :
           null,
         orderBy: JSON.stringify(this.getOrderBy()),

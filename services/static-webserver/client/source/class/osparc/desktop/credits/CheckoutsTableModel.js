@@ -52,7 +52,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
     orderBy: {
       check: "Object",
       init: {
-        field: "purchased_at",
+        field: "startAt",
         direction: "desc"
       }
     }
@@ -61,7 +61,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
   statics: {
     SERVER_MAX_LIMIT: 49,
     COLUMN_ID_TO_DB_COLUMN_MAP: {
-      0: "purchased_at",
+      0: "startAt",
     },
   },
 
@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
         limit: 1,
         filters: this.getFilters() ?
           JSON.stringify({
-            "started_at": this.getFilters()
+            "startAt": this.getFilters()
           }) :
           null,
         orderBy: JSON.stringify(this.getOrderBy()),
@@ -91,7 +91,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
       const options = {
         resolveWResponse: true
       };
-      osparc.store.LicensedItems.getInstance().getPurchasedLicensedItems(walletId, urlParams, options)
+      osparc.store.LicensedItems.getInstance().getCheckedOutLicensedItems(walletId, urlParams, options)
         .then(resp => {
           this._onRowCountLoaded(resp["_meta"].total)
         })
@@ -120,7 +120,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
         };
         const licensedItemsStore = osparc.store.LicensedItems.getInstance();
         return Promise.all([
-          licensedItemsStore.getLicensedItems(),
+          licensedItemsStore.getCheckedOutLicensedItems(),
           licensedItemsStore.getPurchasedLicensedItems(walletId, urlParams),
           licensedItemsStore.getVipModels(),
         ])

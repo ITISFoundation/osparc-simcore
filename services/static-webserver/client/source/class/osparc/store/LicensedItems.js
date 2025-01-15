@@ -105,6 +105,20 @@ qx.Class.define("osparc.store.LicensedItems", {
       return osparc.data.Resources.fetch("licensedItems", "purchase", params);
     },
 
+    getCheckedOutLicensedItems: function(walletId, urlParams, options = {}) {
+      let purchasesParams = {
+        url: {
+          walletId,
+          offset: 0,
+          limit: 49,
+        }
+      };
+      if (urlParams) {
+        purchasesParams.url = Object.assign(purchasesParams.url, urlParams);
+      }
+      return osparc.data.Resources.fetch("licensedItems", "checkouts", purchasesParams, options);
+    },
+
     __fetchVipModels: async function(vipSubset) {
       if (!(vipSubset in this.self().VIP_MODELS)) {
         return [];
