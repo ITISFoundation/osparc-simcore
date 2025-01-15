@@ -16,22 +16,22 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
+qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
   extend: qx.ui.table.model.Remote,
 
   construct(walletId, filters) {
     this.base(arguments);
 
-    const rentalsCols = osparc.desktop.credits.RentalsTable.COLS;
-    const colLabels = Object.values(rentalsCols).map(col => col.label);
-    const colIDs = Object.values(rentalsCols).map(col => col.id);
+    const checkoutsCols = osparc.desktop.credits.CheckoutsTable.COLS;
+    const colLabels = Object.values(checkoutsCols).map(col => col.label);
+    const colIDs = Object.values(checkoutsCols).map(col => col.id);
 
     this.setColumns(colLabels, colIDs);
     this.setWalletId(walletId)
     if (filters) {
       this.setFilters(filters)
     }
-    this.setSortColumnIndexWithoutSortingData(rentalsCols.START.column);
+    this.setSortColumnIndexWithoutSortingData(checkoutsCols.START.column);
     this.setSortAscendingWithoutSortingData(false);
   },
 
@@ -126,24 +126,24 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
         ])
           .then(values => {
             const licensedItems = values[0];
-            const purchasesItems = values[1];
+            const checkoutsItems = values[1];
             const vipModels = values[2];
 
             const data = [];
-            const rentalsCols = osparc.desktop.credits.RentalsTable.COLS;
-            purchasesItems.forEach(purchasesItem => {
-              const licensedItemId = purchasesItem["licensedItemId"];
+            const checkoutsCols = osparc.desktop.credits.CheckoutsTable.COLS;
+            checkoutsItems.forEach(checkoutsItem => {
+              const licensedItemId = checkoutsItem["licensedItemId"];
               const licensedItem = licensedItems.find(licItem => licItem["licensedItemId"] === licensedItemId);
               const vipModel = vipModels.find(vipMdl => vipMdl["modelId"] == licensedItem["name"]);
               data.push({
-                [rentalsCols.PURCHASE_ID.id]: purchasesItem["licensedItemPurchaseId"],
-                [rentalsCols.ITEM_ID.id]: licensedItemId,
-                [rentalsCols.ITEM_LABEL.id]: vipModel ? vipModel["name"] : "unknown model",
-                [rentalsCols.START.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["startAt"])),
-                [rentalsCols.END.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["expireAt"])),
-                [rentalsCols.SEATS.id]: purchasesItem["numOfSeats"],
-                [rentalsCols.COST.id]: purchasesItem["pricingUnitCost"] ? ("-" + parseFloat(purchasesItem["pricingUnitCost"]).toFixed(2)) : "", // show it negative
-                [rentalsCols.USER.id]: purchasesItem["purchasedByUser"],
+                [checkoutsCols.PURCHASE_ID.id]: checkoutsItem["licensedItemPurchaseId"],
+                [checkoutsCols.ITEM_ID.id]: licensedItemId,
+                [checkoutsCols.ITEM_LABEL.id]: vipModel ? vipModel["name"] : "unknown model",
+                [checkoutsCols.START.id]: osparc.utils.Utils.formatDateAndTime(new Date(checkoutsItem["startAt"])),
+                [checkoutsCols.END.id]: osparc.utils.Utils.formatDateAndTime(new Date(checkoutsItem["expireAt"])),
+                [checkoutsCols.SEATS.id]: checkoutsItem["numOfSeats"],
+                [checkoutsCols.COST.id]: checkoutsItem["pricingUnitCost"] ? ("-" + parseFloat(checkoutsItem["pricingUnitCost"]).toFixed(2)) : "", // show it negative
+                [checkoutsCols.USER.id]: checkoutsItem["purchasedByUser"],
               });
             });
             return data;

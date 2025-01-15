@@ -16,13 +16,13 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.desktop.credits.RentalsTable", {
+qx.Class.define("osparc.desktop.credits.CheckoutsTable", {
   extend: qx.ui.table.Table,
 
   construct: function(walletId, filters) {
     this.base(arguments);
 
-    const model = new osparc.desktop.credits.RentalsTableModel(walletId, filters);
+    const model = new osparc.desktop.credits.CheckoutsTableModel(walletId, filters);
     this.setTableModel(model);
 
     this.set({

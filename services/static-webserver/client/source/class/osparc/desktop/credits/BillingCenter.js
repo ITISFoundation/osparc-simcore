@@ -35,7 +35,8 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     }
 
     if (osparc.product.Utils.showS4LStore()) {
-      this.__addRentalsPage();
+      this.__addPurchasesPage();
+      this.__addCheckoutsPage();
     }
   },
 
@@ -99,11 +100,19 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       return page;
     },
 
-    __addRentalsPage: function() {
-      const title = this.tr("Rentals");
+    __addPurchasesPage: function() {
+      const title = this.tr("Purchases");
       const iconSrc = "@FontAwesome5Solid/list/22";
-      const rentals = new osparc.desktop.credits.Rentals();
-      const page = this.addTab(title, iconSrc, rentals);
+      const purchases = new osparc.desktop.credits.Purchases();
+      const page = this.addTab(title, iconSrc, purchases);
+      return page;
+    },
+
+    __addCheckoutsPage: function() {
+      const title = this.tr("Checkouts");
+      const iconSrc = "@FontAwesome5Solid/list/22";
+      const purchases = new osparc.desktop.credits.Checkouts();
+      const page = this.addTab(title, iconSrc, purchases);
       return page;
     },
 

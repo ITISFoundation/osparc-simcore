@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.desktop.credits.Rentals", {
+qx.Class.define("osparc.desktop.credits.Purchases", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.credits.Rentals", {
             this.__table.getTableModel().reloadData()
           } else {
             // qx: changeSelection is triggered after the first item is added to SelectBox
-            this.__table = new osparc.desktop.credits.RentalsTable(this.__selectedWallet.getWalletId(), this.__dateFilters.getValue()).set({
+            this.__table = new osparc.desktop.credits.PurchasesTable(this.__selectedWallet.getWalletId(), this.__dateFilters.getValue()).set({
               marginTop: 10
             })
             this.__table.getTableModel().bind("isFetching", this.__fetchingImg, "visibility", {
@@ -91,7 +91,7 @@ qx.Class.define("osparc.desktop.credits.Rentals", {
       } else {
         lbl.setVisibility("excluded")
         walletSelectBox.setVisibility("excluded")
-        this.__table = new osparc.desktop.credits.RentalsTable(null, this.__dateFilters.getValue()).set({
+        this.__table = new osparc.desktop.credits.PurchasesTable(null, this.__dateFilters.getValue()).set({
           marginTop: 10
         })
         this.__table.getTableModel().bind("isFetching", this.__fetchingImg, "visibility", {
