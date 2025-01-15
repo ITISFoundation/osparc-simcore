@@ -27,9 +27,9 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
     const colIDs = Object.values(checkoutsCols).map(col => col.id);
 
     this.setColumns(colLabels, colIDs);
-    this.setWalletId(walletId)
+    this.setWalletId(walletId);
     if (filters) {
-      this.setFilters(filters)
+      this.setFilters(filters);
     }
     this.setSortColumnIndexWithoutSortingData(checkoutsCols.START.column);
     this.setSortAscendingWithoutSortingData(false);
@@ -41,22 +41,25 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
       check: "Number",
       nullable: true
     },
+
     filters: {
       check: "Object",
       init: null
     },
+
     isFetching: {
       check: "Boolean",
       init: false,
       event: "changeFetching"
     },
+
     orderBy: {
       check: "Object",
       init: {
         field: "startAt",
         direction: "desc"
       }
-    }
+    },
   },
 
   statics: {
@@ -73,7 +76,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
         field: this.self().COLUMN_ID_TO_DB_COLUMN_MAP[columnIndex],
         direction: ascending ? "asc" : "desc"
       })
-      this.base(arguments, columnIndex, ascending)
+      this.base(arguments, columnIndex, ascending);
     },
 
     // overridden
@@ -93,12 +96,8 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
         resolveWResponse: true
       };
       osparc.store.LicensedItems.getInstance().getCheckedOutLicensedItems(walletId, urlParams, options)
-        .then(resp => {
-          this._onRowCountLoaded(resp["_meta"].total)
-        })
-        .catch(() => {
-          this._onRowCountLoaded(null)
-        });
+        .then(resp => this._onRowCountLoaded(resp["_meta"].total))
+        .catch(() => this._onRowCountLoaded(null));
     },
 
     // overridden
@@ -167,9 +166,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
           requests.push(getFetchPromise(i, i > lastRow - this.self().SERVER_MAX_LIMIT + 1 ? reqLimit % this.self().SERVER_MAX_LIMIT : this.self().SERVER_MAX_LIMIT))
         }
         Promise.all(requests)
-          .then(responses => {
-            this._onRowDataLoaded(responses.flat());
-          })
+          .then(responses => this._onRowDataLoaded(responses.flat()))
           .catch(err => {
             console.error(err);
             this._onRowDataLoaded(null);
@@ -177,9 +174,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
           .finally(() => this.setIsFetching(false));
       } else {
         getFetchPromise(firstRow, reqLimit)
-          .then(data => {
-            this._onRowDataLoaded(data);
-          })
+          .then(data => this._onRowDataLoaded(data))
           .catch(err => {
             console.error(err)
             this._onRowDataLoaded(null);
