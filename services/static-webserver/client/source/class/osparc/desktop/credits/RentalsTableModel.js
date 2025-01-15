@@ -118,23 +118,27 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
             null,
           orderBy: JSON.stringify(this.getOrderBy())
         };
+        const licensedItemsStore = osparc.store.LicensedItems.getInstance();
         return Promise.all([
-          osparc.store.LicensedItems.getInstance().getLicensedItems(),
-          osparc.store.LicensedItems.getInstance().getPurchasedLicensedItems(walletId, urlParams),
+          licensedItemsStore.getLicensedItems(),
+          licensedItemsStore.getPurchasedLicensedItems(walletId, urlParams),
+          licensedItemsStore.getVipModels(),
         ])
           .then(values => {
             const licensedItems = values[0];
             const purchasesItems = values[1];
+            const vipModels = values[2];
 
             const data = [];
             const rentalsCols = osparc.desktop.credits.RentalsTable.COLS;
             purchasesItems.forEach(purchasesItem => {
               const licensedItemId = purchasesItem["licensedItemId"];
               const licensedItem = licensedItems.find(licItem => licItem["licensedItemId"] === licensedItemId);
+              const vipModel = vipModels.find(vipMdl => vipMdl["modelId"] == licensedItem["name"]);
               data.push({
                 [rentalsCols.PURCHASE_ID.id]: purchasesItem["licensedItemPurchaseId"],
                 [rentalsCols.ITEM_ID.id]: licensedItemId,
-                [rentalsCols.ITEM_LABEL.id]: licensedItem ? licensedItem["name"] : "unknown model",
+                [rentalsCols.ITEM_LABEL.id]: vipModel ? vipModel["name"] : "unknown model",
                 [rentalsCols.START.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["startAt"])),
                 [rentalsCols.END.id]: osparc.utils.Utils.formatDateAndTime(new Date(purchasesItem["expireAt"])),
                 [rentalsCols.SEATS.id]: purchasesItem["numOfSeats"],
