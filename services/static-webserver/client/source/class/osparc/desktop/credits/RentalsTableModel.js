@@ -104,7 +104,7 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
     _loadRowData(firstRow, qxLastRow) {
       this.setIsFetching(true);
 
-      const lastRow = Math.min(qxLastRow, this._rowCount - 1)
+      const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit=this.self().SERVER_MAX_LIMIT) => {
         const walletId = this.getWalletId();
@@ -117,7 +117,7 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
             }) :
             null,
           orderBy: JSON.stringify(this.getOrderBy())
-        }
+        };
         return Promise.all([
           osparc.store.LicensedItems.getInstance().getLicensedItems(),
           osparc.store.LicensedItems.getInstance().getPurchasedLicensedItems(walletId, urlParams),
@@ -140,8 +140,8 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
                 [rentalsCols.SEATS.id]: purchasesItem["numOfSeats"],
                 [rentalsCols.COST.id]: purchasesItem["pricingUnitCost"] ? parseFloat(purchasesItem["pricingUnitCost"]).toFixed(2) : "",
                 [rentalsCols.USER.id]: purchasesItem["purchasedByUser"],
-              })
-            })
+              });
+            });
             return data;
           });
       };
@@ -150,29 +150,29 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
       const reqLimit = lastRow - firstRow + 1; // Number of requested rows
       const nRequests = Math.ceil(reqLimit / this.self().SERVER_MAX_LIMIT);
       if (nRequests > 1) {
-        let requests = []
+        const requests = [];
         for (let i=firstRow; i <= lastRow; i += this.self().SERVER_MAX_LIMIT) {
           requests.push(getFetchPromise(i, i > lastRow - this.self().SERVER_MAX_LIMIT + 1 ? reqLimit % this.self().SERVER_MAX_LIMIT : this.self().SERVER_MAX_LIMIT))
         }
         Promise.all(requests)
           .then(responses => {
-            this._onRowDataLoaded(responses.flat())
+            this._onRowDataLoaded(responses.flat());
           })
           .catch(err => {
-            console.error(err)
-            this._onRowDataLoaded(null)
+            console.error(err);
+            this._onRowDataLoaded(null);
           })
-          .finally(() => this.setIsFetching(false))
+          .finally(() => this.setIsFetching(false));
       } else {
         getFetchPromise(firstRow, reqLimit)
           .then(data => {
-            this._onRowDataLoaded(data)
+            this._onRowDataLoaded(data);
           })
           .catch(err => {
             console.error(err)
-            this._onRowDataLoaded(null)
+            this._onRowDataLoaded(null);
           })
-          .finally(() => this.setIsFetching(false))
+          .finally(() => this.setIsFetching(false));
       }
     }
   }

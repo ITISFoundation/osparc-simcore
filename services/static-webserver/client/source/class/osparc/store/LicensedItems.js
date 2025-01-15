@@ -145,11 +145,7 @@ qx.Class.define("osparc.store.LicensedItems", {
       const promises = [];
       Object.keys(vipModels).forEach(sbs => promises.push(this.__fetchVipModels(sbs)));
       return await Promise.all(promises)
-        .then(values => {
-          const allVipModels = [];
-          values.forEach(value => allVipModels.push(...value));
-          return allVipModels;
-        });
+        .then(values => values.flat());
     },
   }
 });
