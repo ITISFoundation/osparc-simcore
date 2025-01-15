@@ -22,7 +22,7 @@ qx.Class.define("osparc.store.LicensedItems", {
   construct: function() {
     this.base(arguments);
 
-    this.__licensedItems = [];
+    this.__licensedItems = null;
     this.__modelsCache = {};
   },
 
