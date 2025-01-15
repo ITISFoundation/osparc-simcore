@@ -3,7 +3,6 @@ from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import ConfigDict, Field
 
-
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
 from ..projects_nodes import InputID, InputsDict, PartialNode
