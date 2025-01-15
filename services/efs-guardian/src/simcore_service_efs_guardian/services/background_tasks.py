@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import FastAPI
 from models_library.projects import ProjectID
@@ -29,7 +29,7 @@ async def removal_policy_task(app: FastAPI) -> None:
     assert app_settings  # nosec
     efs_manager: EfsManager = app.state.efs_manager
 
-    base_start_timestamp = datetime.now(tz=timezone.utc)
+    base_start_timestamp = datetime.now(tz=UTC)
 
     efs_project_ids: list[
         ProjectID
@@ -60,9 +60,9 @@ async def removal_policy_task(app: FastAPI) -> None:
                 logging.INFO,
                 msg=f"Removing data for project {project_id} started, project last change date {_project_last_change_date}, efs removal policy task age limit timedelta {app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA}",
             ):
-                redis_lock = get_redis_lock_client(app).redis.lock(
+                redis_lock = get_redis_lock_client(app).create_lock(
                     PROJECT_REDIS_LOCK_KEY.format(project_id),
-                    timeout=PROJECT_LOCK_TIMEOUT.total_seconds(),
+                    ttl=PROJECT_LOCK_TIMEOUT,
                 )
                 async with lock_project(
                     redis_lock,

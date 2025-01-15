@@ -22,7 +22,6 @@ from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
-from servicelib.redis import _constants as redis_client_constants
 from servicelib.sequences_utils import partition_gen
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -389,9 +388,8 @@ class ServiceManager:
 
 @pytest.fixture
 def mock_default_socket_timeout(mocker: MockerFixture) -> None:
-    mocker.patch.object(
-        redis_client_constants,
-        "DEFAULT_SOCKET_TIMEOUT",
+    mocker.patch(
+        "servicelib.redis._client.DEFAULT_SOCKET_TIMEOUT",
         datetime.timedelta(seconds=0.25),
     )
 
