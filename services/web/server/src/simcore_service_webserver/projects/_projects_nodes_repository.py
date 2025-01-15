@@ -17,7 +17,6 @@ _logger = logging.getLogger(__name__)
 
 
 _SELECTION_PROJECTS_NODES_DB_ARGS = [
-    projects_nodes.c.id,
     projects_nodes.c.key,
     projects_nodes.c.version,
     projects_nodes.c.label,
