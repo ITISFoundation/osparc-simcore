@@ -145,7 +145,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
                 }
               }
               data.push({
-                [checkoutsCols.CHECKOUT_ID.id]: checkoutsItem["licensed_item_checkout_id"],
+                [checkoutsCols.CHECKOUT_ID.id]: checkoutsItem["licensedItemCheckoutId"],
                 [checkoutsCols.ITEM_ID.id]: licensedItemId,
                 [checkoutsCols.ITEM_LABEL.id]: vipModel ? vipModel["name"] : "unknown model",
                 [checkoutsCols.START.id]: start,
