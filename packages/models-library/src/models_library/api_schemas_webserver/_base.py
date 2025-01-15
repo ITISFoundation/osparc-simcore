@@ -22,8 +22,9 @@ class InputSchemaWithoutCamelCase(BaseModel):
     )
 
 
-class InputSchema(InputSchemaWithoutCamelCase):
+class InputSchema(BaseModel):
     model_config = ConfigDict(
+        **InputSchemaWithoutCamelCase.model_config,
         alias_generator=snake_to_camel,
     )
 
@@ -31,14 +32,17 @@ class InputSchema(InputSchemaWithoutCamelCase):
 class OutputSchemaWithoutCamelCase(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
-        extra="ignore",  # Used to prune extra fields from internal data
+        extra="ignore",
         frozen=True,
     )
 
 
-class OutputSchema(OutputSchemaWithoutCamelCase):
+class OutputSchema(BaseModel):
     model_config = ConfigDict(
         alias_generator=snake_to_camel,
+        populate_by_name=True,
+        extra="ignore",  # Used to prune extra fields from internal data
+        frozen=True,
     )
 
     def data(
