@@ -36,7 +36,6 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
 ]
 
 
-
 async def get(
     app: web.Application,
     connection: AsyncConnection | None = None,
