@@ -55,6 +55,9 @@ qx.Class.define("osparc.desktop.credits.Checkouts", {
         this.__table.getTableModel().reloadData()
       });
       filterContainer.add(this.__dateFilters);
+      filterContainer.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
       const refreshButton = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14").set({
         allowStretchY: false,
         alignY: "bottom"
