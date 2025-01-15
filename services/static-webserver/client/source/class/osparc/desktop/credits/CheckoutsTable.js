@@ -32,7 +32,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTable", {
     });
 
     const columnModel = this.getTableColumnModel();
-    columnModel.setColumnVisible(this.self().COLS.PURCHASE_ID.column, false);
+    columnModel.setColumnVisible(this.self().COLS.CHECKOUT_ID.column, false);
     columnModel.setColumnVisible(this.self().COLS.ITEM_ID.column, false);
     columnModel.setDataCellRenderer(this.self().COLS.COST.column, new qx.ui.table.cellrenderer.Number());
 
@@ -41,10 +41,10 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTable", {
 
   statics: {
     COLS: {
-      PURCHASE_ID: {
-        id: "purchaseId",
+      CHECKOUT_ID: {
+        id: "checkoutId",
         column: 0,
-        label: qx.locale.Manager.tr("PurchaseId"),
+        label: qx.locale.Manager.tr("CheckoutId"),
         width: 150
       },
       ITEM_ID: {
@@ -65,10 +65,10 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTable", {
         label: qx.locale.Manager.tr("Start"),
         width: 150
       },
-      END: {
-        id: "end",
+      DURATION: {
+        id: "duration",
         column: 4,
-        label: qx.locale.Manager.tr("End"),
+        label: qx.locale.Manager.tr("Duration"),
         width: 150
       },
       SEATS: {
@@ -77,15 +77,9 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTable", {
         label: qx.locale.Manager.tr("Seats"),
         width: 50
       },
-      COST: {
-        id: "cost",
-        column: 6,
-        label: qx.locale.Manager.tr("Credits"),
-        width: 60
-      },
       USER: {
         id: "user",
-        column: 7,
+        column: 6,
         label: qx.locale.Manager.tr("User"),
         width: 100
       },

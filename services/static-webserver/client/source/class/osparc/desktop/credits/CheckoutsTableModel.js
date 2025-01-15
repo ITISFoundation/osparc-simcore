@@ -33,6 +33,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
     }
     this.setSortColumnIndexWithoutSortingData(checkoutsCols.START.column);
     this.setSortAscendingWithoutSortingData(false);
+    this.setColumnSortable(checkoutsCols.DURATION.column, false);
   },
 
   properties: {
@@ -135,14 +136,21 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
               const licensedItemId = checkoutsItem["licensedItemId"];
               const licensedItem = licensedItems.find(licItem => licItem["licensedItemId"] === licensedItemId);
               const vipModel = vipModels.find(vipMdl => licensedItem && (vipMdl["modelId"] == licensedItem["name"]));
+              let start = "";
+              let duration = "";
+              if (checkoutsItem["startedAt"]) {
+                start = osparc.utils.Utils.formatDateAndTime(new Date(checkoutsItem["startedAt"]));
+                if (checkoutsItem["stoppedAt"]) {
+                  duration = osparc.utils.Utils.formatMsToHHMMSS(new Date(checkoutsItem["stoppedAt"]) - new Date(checkoutsItem["startedAt"]));
+                }
+              }
               data.push({
-                [checkoutsCols.PURCHASE_ID.id]: checkoutsItem["licensedItemPurchaseId"],
+                [checkoutsCols.CHECKOUT_ID.id]: checkoutsItem["licensed_item_checkout_id"],
                 [checkoutsCols.ITEM_ID.id]: licensedItemId,
                 [checkoutsCols.ITEM_LABEL.id]: vipModel ? vipModel["name"] : "unknown model",
-                [checkoutsCols.START.id]: osparc.utils.Utils.formatDateAndTime(new Date(checkoutsItem["startAt"])),
-                [checkoutsCols.END.id]: osparc.utils.Utils.formatDateAndTime(new Date(checkoutsItem["expireAt"])),
+                [checkoutsCols.START.id]: start,
+                [checkoutsCols.DURATION.id]: duration,
                 [checkoutsCols.SEATS.id]: checkoutsItem["numOfSeats"],
-                [checkoutsCols.COST.id]: checkoutsItem["pricingUnitCost"] ? ("-" + parseFloat(checkoutsItem["pricingUnitCost"]).toFixed(2)) : "", // show it negative
                 [checkoutsCols.USER.id]: checkoutsItem["purchasedByUser"],
               });
             });
