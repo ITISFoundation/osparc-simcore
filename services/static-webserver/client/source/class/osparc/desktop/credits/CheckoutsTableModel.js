@@ -121,8 +121,8 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
         };
         const licensedItemsStore = osparc.store.LicensedItems.getInstance();
         return Promise.all([
-          licensedItemsStore.getCheckedOutLicensedItems(),
-          licensedItemsStore.getPurchasedLicensedItems(walletId, urlParams),
+          licensedItemsStore.getLicensedItems(),
+          licensedItemsStore.getCheckedOutLicensedItems(walletId, urlParams),
           licensedItemsStore.getVipModels(),
         ])
           .then(values => {
@@ -151,7 +151,7 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTableModel", {
                 [checkoutsCols.START.id]: start,
                 [checkoutsCols.DURATION.id]: duration,
                 [checkoutsCols.SEATS.id]: checkoutsItem["numOfSeats"],
-                [checkoutsCols.USER.id]: checkoutsItem["purchasedByUser"],
+                [checkoutsCols.USER.id]: checkoutsItem["userId"],
               });
             });
             return data;

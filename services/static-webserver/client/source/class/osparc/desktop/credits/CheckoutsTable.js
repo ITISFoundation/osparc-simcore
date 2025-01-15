@@ -34,7 +34,6 @@ qx.Class.define("osparc.desktop.credits.CheckoutsTable", {
     const columnModel = this.getTableColumnModel();
     columnModel.setColumnVisible(this.self().COLS.CHECKOUT_ID.column, false);
     columnModel.setColumnVisible(this.self().COLS.ITEM_ID.column, false);
-    columnModel.setDataCellRenderer(this.self().COLS.COST.column, new qx.ui.table.cellrenderer.Number());
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
   },
