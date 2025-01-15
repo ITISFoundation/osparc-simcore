@@ -68,9 +68,12 @@ _LicensedItemsPurchasesListOrderQueryParams: type[
     RequestParameters
 ] = create_ordering_query_model_class(
     ordering_fields={
-        "started_at",
+        "purchased_at",
+        "modified_at",
+        "name",
     },
-    default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
+    default=OrderBy(field=IDStr("purchased_at"), direction=OrderDirection.DESC),
+    ordering_fields_api_to_column_map={"modified_at": "modified"},
 )
 
 
