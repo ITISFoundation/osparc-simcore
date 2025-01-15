@@ -22,6 +22,7 @@ qx.Class.define("osparc.store.LicensedItems", {
   construct: function() {
     this.base(arguments);
 
+    this.__licensedItems = [];
     this.__modelsCache = {};
   },
 
@@ -60,7 +61,20 @@ qx.Class.define("osparc.store.LicensedItems", {
   },
 
   members: {
+    __licensedItems: null,
     __modelsCache: null,
+
+    getLicensedItems: function() {
+      if (this.__licensedItems) {
+        return new Promise(resolve => resolve(this.__licensedItems));
+      }
+
+      return osparc.data.Resources.getInstance().getAllPages("licensedItems")
+        .then(licensedItems => {
+          this.__licensedItems = licensedItems;
+          return this.__licensedItems;
+        })
+    },
 
     __fetchVipModels: async function(vipSubset) {
       if (!(vipSubset in this.self().VIP_MODELS)) {
@@ -94,7 +108,7 @@ qx.Class.define("osparc.store.LicensedItems", {
         });
     },
 
-    fetchVipModels: async function(vipSubset) {
+    getVipModels: async function(vipSubset) {
       const vipModels = this.self().VIP_MODELS;
       if (vipSubset && vipSubset in vipModels) {
         return await this.__fetchVipModels(vipSubset);

@@ -193,7 +193,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
     },
 
     __fetchModels: function(vipSubset) {
-      osparc.store.LicensedItems.getInstance().fetchVipModels(vipSubset)
+      osparc.store.LicensedItems.getInstance().getVipModels(vipSubset)
         .then(allAnatomicalModels => {
           const store = osparc.store.Store.getInstance();
           const contextWallet = store.getContextWallet();
@@ -207,7 +207,7 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
             }
           };
           Promise.all([
-            osparc.data.Resources.get("licensedItems"),
+            osparc.data.LicensedItems.getInstance().getLicensedItems(),
             osparc.data.Resources.fetch("wallets", "purchases", purchasesParams),
           ])
             .then(values => {

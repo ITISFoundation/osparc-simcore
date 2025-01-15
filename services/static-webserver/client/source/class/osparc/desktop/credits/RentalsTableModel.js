@@ -110,7 +110,7 @@ qx.Class.define("osparc.desktop.credits.RentalsTableModel", {
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit=this.self().SERVER_MAX_LIMIT) => {
         return Promise.all([
-          osparc.data.Resources.getInstance().getAllPages("licensedItems"),
+          osparc.data.LicensedItems.getInstance().getLicensedItems(),
           osparc.data.Resources.fetch("wallets", "purchases", {
             url: {
               walletId: this.getWalletId(),

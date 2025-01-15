@@ -27,7 +27,7 @@ qx.Class.define("osparc.vipMarket.Market", {
     });
     this.addWidgetOnTopOfTheTabs(miniWallet);
 
-    osparc.data.Resources.getInstance().getAllPages("licensedItems")
+    osparc.data.LicensedItems.getInstance().getLicensedItems()
       .then(() => {
         [{
           category: "human",
