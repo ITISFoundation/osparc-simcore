@@ -16,6 +16,7 @@ from models_library.clusters import (
     NoAuthentication,
 )
 from pydantic import (
+    AfterValidator,
     AliasChoices,
     AnyHttpUrl,
     AnyUrl,
@@ -232,10 +233,14 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         description="resource usage tracker service client's plugin",
     )
 
-    DIRECTOR_V2_PUBLIC_API_BASE_URL: AnyHttpUrl = Field(
-        ...,
-        description="Base URL used to access the public api e.g. http://127.0.0.1:6000 for development or https://api.osparc.io",
-    )
+    DIRECTOR_V2_PUBLIC_API_BASE_URL: Annotated[
+        AnyHttpUrl | str,
+        AfterValidator(lambda v: f"{v}".rstrip("/")),
+        Field(
+            ...,
+            description="Base URL used to access the public api e.g. http://127.0.0.1:6000 for development or https://api.osparc.io",
+        ),
+    ]
     DIRECTOR_V2_TRACING: TracingSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True},
         description="settings for opentelemetry tracing",

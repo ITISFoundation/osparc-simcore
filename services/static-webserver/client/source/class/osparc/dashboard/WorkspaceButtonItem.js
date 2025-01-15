@@ -210,7 +210,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
           menu.addSeparator();
 
-          const trashButton = new qx.ui.menu.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/12");
+          const trashButton = new qx.ui.menu.Button(this.tr("Move to Bin"), "@FontAwesome5Solid/trash/12");
           trashButton.addListener("execute", () => this.__trashWorkspaceRequested(), this);
           menu.add(trashButton);
         } else if (studyBrowserContext === "trash") {
@@ -220,7 +220,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
           menu.addSeparator();
 
-          const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+          const deleteButton = new qx.ui.menu.Button(this.tr("Delete permanently"), "@FontAwesome5Solid/trash/12");
           osparc.utils.Utils.setIdToWidget(deleteButton, "deleteWorkspaceMenuItem");
           deleteButton.addListener("execute", () => this.__deleteWorkspaceRequested(), this);
           menu.add(deleteButton);
@@ -270,11 +270,11 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
     __trashWorkspaceRequested: function() {
       const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
-      let msg = this.tr("Are you sure you want to move the Workspace and all its content to the trash?");
+      let msg = this.tr("Are you sure you want to move the Workspace and all its content to the Bin?");
       msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-        caption: this.tr("Move to Trash"),
-        confirmText: this.tr("Move to Trash"),
+        caption: this.tr("Move to Bin"),
+        confirmText: this.tr("Move to Bin"),
         confirmAction: "delete"
       });
       confirmationWin.center();
@@ -291,7 +291,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       msg += "<br>" + this.tr("All the content of the workspace will be deleted.");
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete Workspace"),
-        confirmText: this.tr("Delete"),
+        confirmText: this.tr("Delete permanently"),
         confirmAction: "delete"
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteWorkspaceButton");
