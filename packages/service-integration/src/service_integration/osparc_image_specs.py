@@ -28,7 +28,7 @@ def create_image_spec(
 
     - the image-spec simplifies building an image to ``docker compose build``
     """
-    labels: dict[str, str | float | bool | None] = {**meta_cfg.to_labels_annotations()}
+    labels = meta_cfg.to_labels_annotations()
     if extra_labels:
         labels.update(extra_labels)
     if runtime_cfg:
