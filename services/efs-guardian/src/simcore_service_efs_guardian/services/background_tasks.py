@@ -18,8 +18,7 @@ from .modules.redis import get_redis_lock_client
 _logger = logging.getLogger(__name__)
 
 
-async def _remove_data_with_lock(app: FastAPI, project_id: ProjectID) -> None:
-    # Decorate a new function that will call the necessary coroutine
+async def _lock_project_and_remove_data(app: FastAPI, project_id: ProjectID) -> None:
     efs_manager: EfsManager = app.state.efs_manager
 
     @with_project_locked(
@@ -28,10 +27,8 @@ async def _remove_data_with_lock(app: FastAPI, project_id: ProjectID) -> None:
         status=ProjectStatus.MAINTAINING,
     )
     async def _remove():
-        # Call the actual coroutine function
         await efs_manager.remove_project_efs_data(project_id)
 
-    # Execute the decorated function
     await _remove()
 
 
@@ -74,4 +71,4 @@ async def removal_policy_task(app: FastAPI) -> None:
                 logging.INFO,
                 msg=f"Removing data for project {project_id} started, project last change date {_project_last_change_date}, efs removal policy task age limit timedelta {app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA}",
             ):
-                await _remove_data_with_lock(app, project_id)
+                await _lock_project_and_remove_data(app, project_id)
