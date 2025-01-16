@@ -4,6 +4,7 @@
 
 from typing import Any
 
+from models_library.utils.labels_annotations import LabelsAnnotationsDict
 from service_integration.compose_spec_model import (
     BuildItem,
     ComposeSpecification,
@@ -21,7 +22,7 @@ def create_image_spec(
     docker_compose_overwrite_cfg: DockerComposeOverwriteConfig,
     runtime_cfg: RuntimeConfig | None = None,
     *,
-    extra_labels: dict[str, str] | None = None,
+    extra_labels: LabelsAnnotationsDict | None = None,
     **_context
 ) -> ComposeSpecification:
     """Creates the image-spec provided the osparc-config and a given context (e.g. development)
