@@ -1357,11 +1357,10 @@ qx.Class.define("osparc.data.Resources", {
           res[endpoint](params.url || null, params.data || null);
         }
 
-        res.addListenerOnce(endpoint + "Success", e => {
+        const successCB = e => {
           const response = e.getRequest().getResponse();
           const endpointDef = resourceDefinition.endpoints[endpoint];
           const data = endpointDef.isJsonFile ? response : response.data;
-          const useCache = ("useCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.useCache;
           // OM: Temporary solution until the quality object is better defined
           if (data && endpoint.includes("get") && ["studies", "templates"].includes(resource)) {
             if (Array.isArray(data)) {
@@ -1372,6 +1371,8 @@ qx.Class.define("osparc.data.Resources", {
               osparc.metadata.Quality.attachQualityToObject(data);
             }
           }
+
+          const useCache = ("useCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.useCache;
           if (useCache) {
             if (endpoint.includes("delete") && resourceDefinition["deleteId"] && resourceDefinition["deleteId"] in params.url) {
               const deleteId = params.url[resourceDefinition["deleteId"]];
@@ -1386,16 +1387,18 @@ qx.Class.define("osparc.data.Resources", {
               }
             }
           }
+
           res.dispose();
+
           if ("resolveWResponse" in options && options.resolveWResponse) {
             response.params = params;
             resolve(response);
           } else {
             resolve(data);
           }
-        }, this);
+        };
 
-        res.addListener(endpoint + "Error", e => {
+        const errorCB = e => {
           if (e.getPhase() === "timeout") {
             if (options.timeout && options.timeoutRetries) {
               options.timeoutRetries--;
@@ -1449,8 +1452,12 @@ qx.Class.define("osparc.data.Resources", {
             err.status = status;
           }
           reject(err);
-        });
+        };
 
+        const successEndpoint = endpoint + "Success";
+        const errorEndpoint = endpoint + "Error";
+        res.addListenerOnce(successEndpoint, e => successCB(e), this);
+        res.addListener(errorEndpoint, e => errorCB(e), this);
         sendRequest();
       });
     },
