@@ -56,6 +56,8 @@ _SELECTION_ARGS = (
     folders_v2.c.created,
     folders_v2.c.modified,
     folders_v2.c.trashed,
+    folders_v2.c.trashed_by,
+    folders_v2.c.trashed_explicitly,
     folders_v2.c.user_id,
     folders_v2.c.workspace_id,
 )
@@ -285,8 +287,8 @@ async def get(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(query)
-        row = await result.first()
+        result = await conn.execute(query)
+        row = result.first()
         if row is None:
             raise FolderAccessForbiddenError(
                 reason=f"Folder {folder_id} does not exist.",
