@@ -144,7 +144,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
                   }
                 });
               })
-              .catch(err => console.error(err))
+              .catch(console.error)
               .finally(collaboratorsManager.close());
           } else {
             collaboratorsManager.close();
