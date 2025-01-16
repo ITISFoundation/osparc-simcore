@@ -1261,13 +1261,13 @@ async def try_open_project_for_user(
     """
     try:
 
-        @with_project_locked_notified_state(
+        @with_project_locked_and_notify(
             app,
             project_uuid=project_uuid,
             status=ProjectStatus.OPENING,
             user_id=user_id,
             user_name=await get_user_fullname(app, user_id=user_id),
-            notify_users=False,
+            notify_users=True,
         )
         async def _open_project() -> bool:
             with managed_resource(user_id, client_session_id, app) as user_session:
@@ -1757,7 +1757,7 @@ async def remove_project_dynamic_services(
         save_state = False
     # -------------------
 
-    @with_project_locked_notified_state(
+    @with_project_locked_and_notify(
         app,
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
@@ -1864,7 +1864,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
-def with_project_locked_notified_state(
+def with_project_locked_and_notify(
     app: web.Application,
     *,
     project_uuid: str,

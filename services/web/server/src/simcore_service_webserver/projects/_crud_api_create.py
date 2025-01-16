@@ -180,7 +180,7 @@ async def _copy_files_from_source_project(
                 await long_running_task.result()
 
     if needs_lock_source_project:
-        await projects_api.with_project_locked_notified_state(
+        await projects_api.with_project_locked_and_notify(
             app,
             project_uuid=source_project["uuid"],
             status=ProjectStatus.CLONING,

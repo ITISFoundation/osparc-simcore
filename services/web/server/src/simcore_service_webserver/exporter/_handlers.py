@@ -12,7 +12,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..projects.projects_api import with_project_locked_notified_state
+from ..projects.projects_api import with_project_locked_and_notify
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from ._formatter.archive import get_sds_archive_path
@@ -43,7 +43,7 @@ async def export_project(request: web.Request):
     project_uuid = request.match_info.get("project_id")
     assert project_uuid  # nosec
 
-    @with_project_locked_notified_state(
+    @with_project_locked_and_notify(
         request.app,
         project_uuid=project_uuid,
         status=ProjectStatus.EXPORTING,
