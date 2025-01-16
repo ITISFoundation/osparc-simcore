@@ -98,6 +98,7 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
 
     @classmethod
     def update_preference_default_value(cls, new_default: Any) -> None:
+        # pylint: disable=unsubscriptable-object
         expected_type = get_type(cls.model_fields["value"])
         detected_type = type(new_default)
         if expected_type != detected_type:
