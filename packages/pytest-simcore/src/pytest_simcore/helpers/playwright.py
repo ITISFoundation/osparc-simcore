@@ -335,10 +335,10 @@ class SocketIONodeProgressCompleteWaiter:
                 )
 
         _current_timestamp = datetime.now(UTC)
-        if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
+        if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=10):
             url = f"https://{self.node_id}.services.{self.get_partial_product_url()}"
             response = self.api_request_context.get(url, timeout=1000)
-            self.logger.debug(
+            self.logger.info(
                 "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
                 url,
                 f"{response.status}: {response.text()}",
