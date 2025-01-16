@@ -1,18 +1,15 @@
 import functools
 from collections.abc import Callable, Coroutine
-from typing import Any, Final, ParamSpec, TypeAlias, TypeVar
+from typing import Any, Final, ParamSpec, TypeVar
 
-import redis
-import redis.exceptions
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
 
 from . import CouldNotAcquireLockError, RedisClientSDK, exclusive
+from ._errors import ProjectLockError
 
 PROJECT_REDIS_LOCK_KEY: Final[str] = "project_lock:{}"
-
-ProjectLockError: TypeAlias = redis.exceptions.LockError
 
 
 P = ParamSpec("P")
