@@ -260,6 +260,10 @@ async def pull_image(
         ):
             # each time there is an error progress start from zero again
             progress_bar.reset_progress()
+            _logger.info(
+                "Attemping for the count='%s' time to pull the image",
+                attempt.retry_state.attempt_number,
+            )
 
             with attempt:
                 reported_progress = 0.0
