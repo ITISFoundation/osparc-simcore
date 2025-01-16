@@ -208,6 +208,7 @@ async def test_list_projects(
         folder_id = got.pop("folderId")
 
         assert got == {k: template_project[k] for k in got}
+
         assert not ProjectState(
             **project_state
         ).locked.value, "Templates are not locked"
@@ -220,6 +221,7 @@ async def test_list_projects(
         folder_id = got.pop("folderId")
 
         assert got == {k: user_project[k] for k in got}
+
         assert ProjectState(**project_state)
         assert project_permalink is None
         assert folder_id is None

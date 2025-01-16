@@ -11,15 +11,15 @@ from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _groups_api
-from ._exceptions_handlers import handle_plugin_requests_exceptions
-from ._groups_api import WorkspaceGroupGet
-from ._models import (
+from . import _groups_service
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
+from ._common.models import (
     WorkspacesGroupsBodyParams,
     WorkspacesGroupsPathParams,
     WorkspacesPathParams,
     WorkspacesRequestContext,
 )
+from ._groups_service import WorkspaceGroupGet
 
 _logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ async def create_workspace_group(request: web.Request):
     path_params = parse_request_path_parameters_as(WorkspacesGroupsPathParams, request)
     body_params = await parse_request_body_as(WorkspacesGroupsBodyParams, request)
 
-    workspace_groups: WorkspaceGroupGet = await _groups_api.create_workspace_group(
+    workspace_groups: WorkspaceGroupGet = await _groups_service.create_workspace_group(
         request.app,
         user_id=req_ctx.user_id,
         workspace_id=path_params.workspace_id,
@@ -67,7 +67,7 @@ async def list_workspace_groups(request: web.Request):
 
     workspaces_groups: list[
         WorkspaceGroupGet
-    ] = await _groups_api.list_workspace_groups_by_user_and_workspace(
+    ] = await _groups_service.list_workspace_groups_by_user_and_workspace(
         request.app,
         user_id=req_ctx.user_id,
         workspace_id=path_params.workspace_id,
@@ -89,7 +89,7 @@ async def replace_workspace_group(request: web.Request):
     path_params = parse_request_path_parameters_as(WorkspacesGroupsPathParams, request)
     body_params = await parse_request_body_as(WorkspacesGroupsBodyParams, request)
 
-    workspace_group = await _groups_api.update_workspace_group(
+    workspace_group = await _groups_service.update_workspace_group(
         app=request.app,
         user_id=req_ctx.user_id,
         workspace_id=path_params.workspace_id,
@@ -113,7 +113,7 @@ async def delete_workspace_group(request: web.Request):
     req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesGroupsPathParams, request)
 
-    await _groups_api.delete_workspace_group(
+    await _groups_service.delete_workspace_group(
         app=request.app,
         user_id=req_ctx.user_id,
         workspace_id=path_params.workspace_id,
