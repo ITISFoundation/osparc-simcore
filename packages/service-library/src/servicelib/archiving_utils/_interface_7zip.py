@@ -3,6 +3,7 @@ import asyncio.subprocess
 import logging
 import os
 import re
+import shlex
 from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
 from pathlib import Path
@@ -214,7 +215,7 @@ async def archive_dir(
             "-mta=off",  # Don't store file access time
         ]
     )
-    command = f"{_7ZIP_EXECUTABLE} {options} {destination} {dir_to_compress}/*"
+    command = f"{_7ZIP_EXECUTABLE} {options} {shlex.quote(f'{destination}')} {shlex.quote(f'{dir_to_compress}')}/*"
 
     folder_size_bytes = sum(
         file.stat().st_size for file in iter_files_to_compress(dir_to_compress)
@@ -295,7 +296,7 @@ async def unarchive_dir(
     # get archive information
     archive_info_parser = _7ZipArchiveInfoParser()
     list_output = await _run_cli_command(
-        f"{_7ZIP_EXECUTABLE} l {archive_to_extract}",
+        f"{_7ZIP_EXECUTABLE} l {shlex.quote(f'{archive_to_extract}')}",
         output_handler=archive_info_parser.parse_chunk,
     )
     file_names_in_archive = _extract_file_names_from_archive(list_output)
@@ -330,7 +331,7 @@ async def unarchive_dir(
             ]
         )
         await _run_cli_command(
-            f"{_7ZIP_EXECUTABLE} {options} {archive_to_extract} -o{destination_folder}",
+            f"{_7ZIP_EXECUTABLE} {options} {shlex.quote(f'{archive_to_extract}')} -o{shlex.quote(f'{destination_folder}')}",
             output_handler=_7ZipProgressParser(_decompressed_bytes).parse_chunk,
         )
 
