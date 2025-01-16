@@ -178,7 +178,7 @@ class RestartableWebSocket:
                 self.ws.expect_event(event, predicate)
 
         except Exception as e:  # pylint: disable=broad-except
-            logger.error("🚨 Failed to reconnect WebSocket: %s", e)
+            logger.exception("🚨 Failed to reconnect WebSocket: %s", e)
 
     def expect_event(
         self,
@@ -334,8 +334,6 @@ class SocketIONodeProgressCompleteWaiter:
                     for progress in self._current_progress.values()
                 )
 
-        # TODO: That is NOT what the frontend is doing... AND 401 is not OK it just means traefik responded that we are not authorized...
-        # therefore it stops WAY too early and will generate false negatives!!
         _current_timestamp = datetime.now(UTC)
         if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
             url = f"https://{self.node_id}.services.{self.get_partial_product_url()}"
@@ -343,14 +341,13 @@ class SocketIONodeProgressCompleteWaiter:
             self.logger.info(
                 "Querying the service endpoint from the E2E test. Url: %s Response: %s TIP: %s",
                 url,
-                response,
+                f"{response.status}: {response.text}",
                 (
                     "We are emulating the frontend; a 500 response is acceptable if the service is not yet ready."
                 ),
             )
             if response.status <= 400:
                 # NOTE: If the response status is less than 400, it means that the backend is ready (There are some services that respond with a 3XX)
-                # MD: for now I have included 401 - as this also means that backend is ready
                 if self.got_expected_node_progress_types():
                     self.logger.warning(
                         "⚠️ Progress bar didn't receive 100 percent but service is already running: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
