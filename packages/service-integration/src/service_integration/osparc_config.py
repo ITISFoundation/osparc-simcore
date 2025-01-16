@@ -34,12 +34,14 @@ from models_library.services_regex import (
 from models_library.services_types import ServiceKey
 from models_library.utils.labels_annotations import (
     OSPARC_LABEL_PREFIXES,
+    LabelsAnnotationsDict,
     from_labels,
     to_labels,
 )
 from pydantic import (
     ConfigDict,
     NonNegativeInt,
+    TypeAdapter,
     ValidationError,
     ValidationInfo,
     field_validator,
@@ -73,7 +75,7 @@ class DockerComposeOverwriteConfig(ComposeSpecification):
     def create_default(
         cls, service_name: str | None = None
     ) -> "DockerComposeOverwriteConfig":
-        model: "DockerComposeOverwriteConfig" = cls.model_validate(
+        return cls.model_validate(
             {
                 "services": {
                     service_name: {
@@ -84,14 +86,12 @@ class DockerComposeOverwriteConfig(ComposeSpecification):
                 }
             }
         )
-        return model
 
     @classmethod
     def from_yaml(cls, path: Path) -> "DockerComposeOverwriteConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        model: "DockerComposeOverwriteConfig" = cls.model_validate(data)
-        return model
+        return cls.model_validate(data)
 
 
 class MetadataConfig(ServiceMetaDataPublished):
@@ -121,24 +121,21 @@ class MetadataConfig(ServiceMetaDataPublished):
     def from_yaml(cls, path: Path) -> "MetadataConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        model: "MetadataConfig" = cls.model_validate(data)
-        return model
+        return cls.model_validate(data)
 
     @classmethod
-    def from_labels_annotations(cls, labels: dict[str, str]) -> "MetadataConfig":
+    def from_labels_annotations(cls, labels: LabelsAnnotationsDict) -> "MetadataConfig":
         data = from_labels(
             labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
-        model: "MetadataConfig" = cls.model_validate(data)
-        return model
+        return cls.model_validate(data)
 
-    def to_labels_annotations(self) -> dict[str, str]:
-        labels: dict[str, str] = to_labels(
+    def to_labels_annotations(self) -> LabelsAnnotationsDict:
+        return to_labels(
             self.model_dump(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[0],
             trim_key_head=False,
         )
-        return labels
 
     def service_name(self) -> str:
         """name used as key in the compose-spec services map"""
@@ -151,7 +148,9 @@ class MetadataConfig(ServiceMetaDataPublished):
         if registry in "dockerhub":
             # dockerhub allows only one-level names -> dot it
             # TODO: check thisname is compatible with REGEX
-            service_path = ServiceKey(service_path.replace("/", "."))
+            service_path = TypeAdapter(ServiceKey).validate_python(
+                service_path.replace("/", ".")
+            )
 
         service_version = self.version
         return f"{registry_prefix}{service_path}:{service_version}"
@@ -264,13 +263,12 @@ class RuntimeConfig(BaseModel):
         return cls.model_validate(data)
 
     @classmethod
-    def from_labels_annotations(cls, labels: dict[str, str]) -> "RuntimeConfig":
+    def from_labels_annotations(cls, labels: LabelsAnnotationsDict) -> "RuntimeConfig":
         data = from_labels(labels, prefix_key=OSPARC_LABEL_PREFIXES[1])
         return cls.model_validate(data)
 
-    def to_labels_annotations(self) -> dict[str, str]:
-        labels: dict[str, str] = to_labels(
+    def to_labels_annotations(self) -> LabelsAnnotationsDict:
+        return to_labels(
             self.model_dump(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[1],
         )
-        return labels

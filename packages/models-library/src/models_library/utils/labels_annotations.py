@@ -10,7 +10,7 @@ from typing import Any, TypeAlias
 
 from common_library.json_serialization import json_dumps
 
-LabelsAnnotationsDict: TypeAlias = dict[str, str]
+LabelsAnnotationsDict: TypeAlias = dict[str, str | float | bool | None]
 
 # SEE https://docs.docker.com/config/labels-custom-metadata/#label-keys-and-values
 #  "Authors of third-party tools should prefix each label key with the reverse DNS notation of a
