@@ -37,9 +37,9 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
     client = get_director_api(app)
 
     data = await client.get_service_extras(service.key, service.version)
-    if not data or "build_date" not in data:
+    if not data or data.service_build_details is None:
         return True
-    service_build_data = arrow.get(data["build_date"]).datetime
+    service_build_data = arrow.get(data.service_build_details.build_date).datetime
     return bool(service_build_data < _LEGACY_SERVICES_DATE)
 
 
