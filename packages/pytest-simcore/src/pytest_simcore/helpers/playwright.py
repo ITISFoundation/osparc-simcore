@@ -10,9 +10,8 @@ from datetime import UTC, datetime, timedelta
 from enum import Enum, unique
 from typing import Any, Final
 
-import httpx
 from playwright._impl._sync_base import EventContextManager
-from playwright.sync_api import FrameLocator, Page, Request
+from playwright.sync_api import APIRequestContext, FrameLocator, Page, Request
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import WebSocket
 from pydantic import AnyUrl
@@ -179,7 +178,7 @@ class RestartableWebSocket:
                 self.ws.expect_event(event, predicate)
 
         except Exception as e:  # pylint: disable=broad-except
-            logger.error("🚨 Failed to reconnect WebSocket: %s", e)
+            logger.exception("🚨 Failed to reconnect WebSocket: %s", e)
 
     def expect_event(
         self,
@@ -294,6 +293,7 @@ class SocketIONodeProgressCompleteWaiter:
     node_id: str
     logger: logging.Logger
     product_url: AnyUrl
+    api_request_context: APIRequestContext
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
@@ -326,7 +326,7 @@ class SocketIONodeProgressCompleteWaiter:
                         self.logger.info(
                             "Current startup progress [expected number of node-progress-types=%d]: %s",
                             len(NodeProgressType.required_types_for_started_service()),
-                            f"{json.dumps({k:round(v,1) for k,v in self._current_progress.items()})}",
+                            f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                         )
 
                 return self.got_expected_node_progress_types() and all(
@@ -337,23 +337,25 @@ class SocketIONodeProgressCompleteWaiter:
         _current_timestamp = datetime.now(UTC)
         if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
             url = f"https://{self.node_id}.services.{self.get_partial_product_url()}"
-            response = httpx.get(url, timeout=10)
-            self.logger.info(
-                "Querying the service endpoint from the E2E test. Url: %s Response: %s TIP: %s",
+            response = self.api_request_context.get(url, timeout=1000)
+            level = logging.DEBUG
+            if (response.status >= 400) and (response.status not in (502, 503)):
+                level = logging.ERROR
+            self.logger.log(
+                level,
+                "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
                 url,
-                response,
+                f"{response.status}: {response.text()}",
                 (
-                    "Response 401 is OK. It means that service is ready."
-                    if response.status_code == 401
-                    else "We are emulating the frontend; a 500 response is acceptable if the service is not yet ready."
+                    "We are emulating the frontend; a 5XX response is acceptable if the service is not yet ready."
                 ),
             )
-            if response.status_code <= 401:
+
+            if response.status <= 400:
                 # NOTE: If the response status is less than 400, it means that the backend is ready (There are some services that respond with a 3XX)
-                # MD: for now I have included 401 - as this also means that backend is ready
                 if self.got_expected_node_progress_types():
                     self.logger.warning(
-                        "⚠️ Progress bar didn't receive 100 percent but service is already running: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                        "⚠️ Progress bar didn't receive 100 percent but service is already running: %s. TIP: we missed some websocket messages! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
                         self.get_current_progress(),
                     )
                 return True
@@ -408,8 +410,9 @@ def _node_started_predicate(request: Request) -> bool:
 
 
 def _trigger_service_start(page: Page, node_id: str) -> None:
-    with log_context(logging.INFO, msg="trigger start button"), page.expect_request(
-        _node_started_predicate, timeout=35 * SECOND
+    with (
+        log_context(logging.INFO, msg="trigger start button"),
+        page.expect_request(_node_started_predicate, timeout=35 * SECOND),
     ):
         page.get_by_test_id(f"Start_{node_id}").click()
 
@@ -433,12 +436,14 @@ def expected_service_running(
         logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
     ) as ctx:
         waiter = SocketIONodeProgressCompleteWaiter(
-            node_id=node_id, logger=ctx.logger, product_url=product_url
+            node_id=node_id,
+            logger=ctx.logger,
+            product_url=product_url,
+            api_request_context=page.request,
         )
         service_running = ServiceRunning(iframe_locator=None)
 
         try:
-
             with websocket.expect_event("framereceived", waiter, timeout=timeout):
                 if press_start_button:
                     _trigger_service_start(page, node_id)
@@ -475,7 +480,10 @@ def wait_for_service_running(
         logging.INFO, msg=f"Waiting for node to run. Timeout: {timeout}"
     ) as ctx:
         waiter = SocketIONodeProgressCompleteWaiter(
-            node_id=node_id, logger=ctx.logger, product_url=product_url
+            node_id=node_id,
+            logger=ctx.logger,
+            product_url=product_url,
+            api_request_context=page.request,
         )
         with websocket.expect_event("framereceived", waiter, timeout=timeout):
             if press_start_button:

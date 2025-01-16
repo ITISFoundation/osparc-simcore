@@ -14,13 +14,14 @@ from dataclasses import dataclass
 from typing import Any, Final, Literal
 
 from playwright.sync_api import Page, WebSocket
-from pydantic import ByteSize
+from pydantic import AnyUrl, ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
     RestartableWebSocket,
     ServiceType,
+    wait_for_service_running,
 )
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = (
@@ -46,45 +47,61 @@ class _JLabTerminalWebSocketWaiter:
     def __call__(self, message: str) -> bool:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
             decoded_message = json.loads(message)
-            if (
+            return bool(
                 self.expected_message_type == decoded_message[0]
                 and self.expected_message_contents in decoded_message[1]
-            ):
-                return True
-
-            return False
+            )
 
 
 @dataclass
 class _JLabWaitForTerminalWebSocket:
     def __call__(self, new_websocket: WebSocket) -> bool:
         with log_context(logging.DEBUG, msg=f"received {new_websocket=}"):
-            if "terminals/websocket" in new_websocket.url:
-                return True
-
-            return False
+            return "terminals/websocket" in new_websocket.url
 
 
 def test_jupyterlab(
     page: Page,
+    log_in_and_out: RestartableWebSocket,
     create_project_from_service_dashboard: Callable[
         [ServiceType, str, str | None], dict[str, Any]
     ],
     service_key: str,
     large_file_size: ByteSize,
     large_file_block_size: ByteSize,
+    product_url: AnyUrl,
 ):
     # NOTE: this waits for the jupyter to send message, but is not quite enough
-    with log_context(
-        logging.INFO,
-        f"Waiting for {service_key} to be responsive (waiting for {_SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR)})",
-    ), page.expect_response(
-        _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(
-            service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR
+    with (
+        log_context(
+            logging.INFO,
+            f"Waiting for {service_key} to be responsive (waiting for {_SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR)})",
         ),
-        timeout=_WAITING_FOR_SERVICE_TO_START,
+        page.expect_response(
+            _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR.get(
+                service_key, _DEFAULT_RESPONSE_TO_WAIT_FOR
+            ),
+            timeout=_WAITING_FOR_SERVICE_TO_START,
+        ),
     ):
-        create_project_from_service_dashboard(ServiceType.DYNAMIC, service_key, None)
+        project_data = create_project_from_service_dashboard(
+            ServiceType.DYNAMIC, service_key, None
+        )
+        assert "workbench" in project_data, "Expected workbench to be in project data!"
+        assert isinstance(
+            project_data["workbench"], dict
+        ), "Expected workbench to be a dict!"
+        node_ids: list[str] = list(project_data["workbench"])
+        assert len(node_ids) == 1, "Expected 1 node in the workbench!"
+
+        wait_for_service_running(
+            page=page,
+            node_id=node_ids[0],
+            websocket=log_in_and_out,
+            timeout=_WAITING_FOR_SERVICE_TO_START,
+            press_start_button=False,
+            product_url=product_url,
+        )
 
     iframe = page.frame_locator("iframe")
     if service_key == "jupyter-octave-python-math":
