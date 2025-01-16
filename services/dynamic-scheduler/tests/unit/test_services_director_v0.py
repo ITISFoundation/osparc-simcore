@@ -12,7 +12,6 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.service_settings_labels import SimcoreServiceLabels
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_scheduler.services.director_v0 import (
@@ -44,9 +43,7 @@ def legacy_service_details(
 
 @pytest.fixture
 def mock_director_v0(
-    node_id: NodeID,
-    legacy_service_details: RunningDynamicServiceDetails,
-    service_labels: SimcoreServiceLabels,
+    node_id: NodeID, legacy_service_details: RunningDynamicServiceDetails
 ) -> Iterator[None]:
     with respx.mock(
         base_url="http://director:8000",
