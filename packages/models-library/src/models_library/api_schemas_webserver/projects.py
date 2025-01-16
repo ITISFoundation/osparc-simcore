@@ -9,9 +9,6 @@ from datetime import datetime
 from typing import Annotated, Any, Literal, Self, TypeAlias
 
 from common_library.dict_tools import remap_keys
-from models_library.folders import FolderID
-from models_library.utils._original_fastapi_encoders import jsonable_encoder
-from models_library.workspaces import WorkspaceID
 from pydantic import (
     BeforeValidator,
     ConfigDict,
@@ -20,7 +17,6 @@ from pydantic import (
     PlainSerializer,
     field_validator,
 )
-from simcore_service_webserver.models import UserID
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import LongTruncatedStr, ShortTruncatedStr
@@ -30,6 +26,8 @@ from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
 from ..projects_state import ProjectState
 from ..projects_ui import StudyUI
+from ..users import UserID
+from ..utils._original_fastapi_encoders import jsonable_encoder
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
@@ -129,7 +127,8 @@ class ProjectReplace(InputSchema):
     name: ShortTruncatedStr
     description: LongTruncatedStr
     thumbnail: Annotated[
-        HttpUrl | None, BeforeValidator(empty_str_to_none_pre_validator)
+        HttpUrl | None,
+        BeforeValidator(empty_str_to_none_pre_validator),
     ] = Field(default=None)
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
