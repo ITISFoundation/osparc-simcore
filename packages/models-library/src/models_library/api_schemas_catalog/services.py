@@ -346,3 +346,30 @@ class ServiceUpdateV2(BaseModel):
 assert set(ServiceUpdateV2.model_fields.keys()) - set(  # nosec
     ServiceGetV2.model_fields.keys()
 ) == {"deprecated"}
+
+
+class _NodeRequirements(BaseModel):
+    CPU: NonNegativeInt
+    RAM: NonNegativeInt
+    model_config = ConfigDict(extra="forbid")
+
+
+class ServiceExtras(BaseModel):
+    node_requirements: _NodeRequirements
+    build_date: str
+    vcs_ref: str
+    vcs_url: str
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [
+                {
+                    "node_requirements": {"CPU": 4, "RAM": 2147483648},
+                    "build_date": "2023-04-17T08:04:15Z",
+                    "vcs_ref": "4d79449a2e79f8a3b3b2e1dd0290af9f3d1a8792",
+                    "vcs_url": "https://github.com/ITISFoundation/jupyter-math.git",
+                }
+            ]
+        },
+    )

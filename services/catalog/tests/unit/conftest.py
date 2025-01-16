@@ -21,8 +21,9 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
+from models_library.api_schemas_catalog.services import ServiceExtras
 from packaging.version import Version
-from pydantic import EmailStr
+from pydantic import EmailStr, TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -413,8 +414,8 @@ def get_mocked_service_labels() -> Callable[[str, str], dict]:
             "maintainer": "johnsmith",
             "org.label-schema.build-date": "2023-04-17T08:04:15Z",
             "org.label-schema.schema-version": "1.0",
-            "org.label-schema.vcs-ref": "",
-            "org.label-schema.vcs-url": "",
+            "org.label-schema.vcs-ref": "4d79449a2e79f8a3b3b2e1dd0290af9f3d1a8792",
+            "org.label-schema.vcs-url": "https://github.com/ITISFoundation/jupyter-math.git",
             "simcore.service.restart-policy": "no-restart",
             "simcore.service.settings": '[{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}, "Reservations": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]',
         }
@@ -423,13 +424,10 @@ def get_mocked_service_labels() -> Callable[[str, str], dict]:
 
 
 @pytest.fixture
-def mock_service_extras() -> dict[str, Any]:
-    return {
-        "node_requirements": {"CPU": 4, "RAM": 2147483648},
-        "build_date": "2023-04-17T08:04:15Z",
-        "vcs_ref": "",
-        "vcs_url": "",
-    }
+def mock_service_extras() -> ServiceExtras:
+    return TypeAdapter(ServiceExtras).validate_python(
+        ServiceExtras.model_json_schema()["examples"][0]
+    )
 
 
 @pytest.fixture
@@ -438,7 +436,7 @@ def mocked_director_service_api(
     director_service_openapi_specs: dict[str, Any],
     expected_director_list_services: list[dict[str, Any]],
     get_mocked_service_labels: Callable[[str, str], dict],
-    mock_service_extras: dict[str, Any],
+    mock_service_extras: ServiceExtras,
 ) -> respx.MockRouter:
     """
     STANDARD fixture to mock director service API
@@ -504,28 +502,6 @@ def mocked_director_service_api(
                 json={
                     "data": get_mocked_service_labels(found["key"], found["version"])
                 },
-            )
-        return httpx.Response(
-            status.HTTP_404_NOT_FOUND,
-            json={
-                "data": {
-                    "status": status.HTTP_404_NOT_FOUND,
-                    "message": f"The service {service_key}:{service_version}  does not exist",
-                }
-            },
-        )
-
-    # GET EXTRAS
-    assert openapi["paths"].get("/service_extras/{service_key}/{service_version}")
-
-    @respx_mock.get(
-        path__regex=r"^/service_extras/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)$",
-        name="get_service_extras",
-    )
-    def _get_service_extras(request, service_key, service_version):
-        if _search(service_key, service_version):
-            return httpx.Response(
-                status.HTTP_200_OK, json={"data": mock_service_extras}
             )
         return httpx.Response(
             status.HTTP_404_NOT_FOUND,

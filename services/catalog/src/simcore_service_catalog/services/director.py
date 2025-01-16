@@ -11,9 +11,10 @@ from typing import Any, Final
 import httpx
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException
+from models_library.api_schemas_catalog.services import ServiceExtras
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_context
 from starlette import status
@@ -203,7 +204,7 @@ class DirectorApi:
         self,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-    ) -> dict[str, Any]:
+    ) -> ServiceExtras:
         # check physical node requirements
         # all nodes require "CPU"
         result: dict[str, Any] = {
@@ -284,7 +285,7 @@ class DirectorApi:
 
         _logger.debug("Following service extras were compiled: %s", pformat(result))
 
-        return result
+        return TypeAdapter(ServiceExtras).validate_python(result)
 
 
 async def setup_director(app: FastAPI) -> None:

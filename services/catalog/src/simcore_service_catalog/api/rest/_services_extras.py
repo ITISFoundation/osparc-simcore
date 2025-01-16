@@ -1,6 +1,7 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from models_library.api_schemas_catalog.services import ServiceExtras
 from models_library.services import ServiceKey, ServiceVersion
 
 from ...services.director import DirectorApi
@@ -14,5 +15,5 @@ async def get_service_extras(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     director_client: Annotated[DirectorApi, Depends(get_director_api)],
-) -> dict[str, Any]:
+) -> ServiceExtras:
     return await director_client.get_service_extras(service_key, service_version)
