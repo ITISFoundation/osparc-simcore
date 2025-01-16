@@ -18,7 +18,7 @@ from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.redis import with_project_locked
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodeCreate,
@@ -35,7 +35,6 @@ from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
-from ..users._users_service import get_user_primary_group_id
 from ..users.api import get_user_fullname
 from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
@@ -440,17 +439,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 for gid, access in workspace.access_rights.items()
             }
 
-        # Ensures is like ProjectGet
-        if trashed_by_uid := new_project.get("trashed_by"):
-            trashed_by_primary_gid = await get_user_primary_group_id(
-                request.app, trashed_by_uid
-            )
-        else:
-            trashed_by_primary_gid = None
-
-        data = ProjectGet.from_domain_model(
-            new_project, trashed_by_primary_gid=trashed_by_primary_gid
-        ).data(exclude_unset=True)
+        data = ProjectGet.from_domain_model(new_project).data(**RESPONSE_MODEL_POLICY)
 
         raise web.HTTPCreated(
             text=json_dumps({"data": data}),
