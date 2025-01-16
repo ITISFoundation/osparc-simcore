@@ -21,7 +21,7 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
-from models_library.api_schemas_catalog.services import ServiceExtras
+from models_library.api_schemas_directorv2.services import ServiceExtras
 from packaging.version import Version
 from pydantic import EmailStr, TypeAdapter
 from pytest_mock import MockerFixture, MockType
@@ -417,7 +417,7 @@ def get_mocked_service_labels() -> Callable[[str, str], dict]:
             "org.label-schema.vcs-ref": "4d79449a2e79f8a3b3b2e1dd0290af9f3d1a8792",
             "org.label-schema.vcs-url": "https://github.com/ITISFoundation/jupyter-math.git",
             "simcore.service.restart-policy": "no-restart",
-            "simcore.service.settings": '[{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}, "Reservations": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]',
+            "simcore.service.settings": '[{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 1000000000, "MemoryBytes": 4194304}, "Reservations": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]',
         }
 
     return _

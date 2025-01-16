@@ -6,7 +6,8 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from models_library.api_schemas_catalog.services import ServiceExtras
+from models_library.api_schemas_directorv2.services import ServiceExtras
+from pydantic import TypeAdapter
 from respx import MockRouter
 
 
@@ -28,4 +29,7 @@ async def test_get_service_extras(
     service_version = "3.0.0"
     result = await aclient.get(f"/v0/services/{service_key}/{service_version}/extras")
     assert result.status_code == status.HTTP_200_OK, result.text
-    assert result.json() == mock_service_extras.model_dump(mode="json")
+
+    assert (
+        TypeAdapter(ServiceExtras).validate_python(result.json()) == mock_service_extras
+    )

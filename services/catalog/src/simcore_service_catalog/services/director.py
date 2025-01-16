@@ -11,7 +11,7 @@ from typing import Any, Final
 import httpx
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException
-from models_library.api_schemas_catalog.services import ServiceExtras
+from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import NonNegativeInt, TypeAdapter

@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from models_library.api_schemas_catalog.services import ServiceExtras
+from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.services import ServiceKey, ServiceVersion
 
 from ...services.director import DirectorApi
