@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
@@ -13,6 +14,12 @@ from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, ConfigDict, TypeAdapter, ValidationError
 from settings_library.docker_registry import RegistrySettings
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 from yarl import URL
 
 from .logging_utils import LogLevelInt
@@ -245,39 +252,51 @@ async def pull_image(
 
         client = await exit_stack.enter_async_context(aiodocker.Docker())
 
-        reported_progress = 0.0
-        async for pull_progress in client.images.pull(
-            image, stream=True, auth=registry_auth
+        async for attempt in AsyncRetrying(
+            wait=wait_random_exponential(),
+            stop=stop_after_attempt(3),
+            reraise=True,
+            retry=retry_if_exception_type(asyncio.TimeoutError),
         ):
-            try:
-                parsed_progress = TypeAdapter(_DockerPullImage).validate_python(
-                    pull_progress
-                )
-            except ValidationError:
-                _logger.exception(
-                    "Unexpected error while validating '%s'. "
-                    "TIP: This is probably an unforeseen pull status text that shall be added to the code. "
-                    "The pulling process will still continue.",
-                    f"{pull_progress=}",
-                )
-            else:
-                await _parse_pull_information(
-                    parsed_progress, layer_id_to_size=layer_id_to_size
-                )
+            # each time there is an error progress start from zero again
+            progress_bar.reset_progress()
 
-            # compute total progress
-            total_downloaded_size = sum(
-                layer.downloaded for layer in layer_id_to_size.values()
-            )
-            total_extracted_size = sum(
-                layer.extracted for layer in layer_id_to_size.values()
-            )
-            total_progress = (total_downloaded_size + total_extracted_size) / 2.0
-            progress_to_report = total_progress - reported_progress
-            await progress_bar.update(progress_to_report)
-            reported_progress = total_progress
+            with attempt:
+                reported_progress = 0.0
+                async for pull_progress in client.images.pull(
+                    image, stream=True, auth=registry_auth
+                ):
+                    try:
+                        parsed_progress = TypeAdapter(_DockerPullImage).validate_python(
+                            pull_progress
+                        )
+                    except ValidationError:
+                        _logger.exception(
+                            "Unexpected error while validating '%s'. "
+                            "TIP: This is probably an unforeseen pull status text that shall be added to the code. "
+                            "The pulling process will still continue.",
+                            f"{pull_progress=}",
+                        )
+                    else:
+                        await _parse_pull_information(
+                            parsed_progress, layer_id_to_size=layer_id_to_size
+                        )
 
-            await log_cb(
-                f"pulling {image_short_name}: {pull_progress}...",
-                logging.DEBUG,
-            )
+                    # compute total progress
+                    total_downloaded_size = sum(
+                        layer.downloaded for layer in layer_id_to_size.values()
+                    )
+                    total_extracted_size = sum(
+                        layer.extracted for layer in layer_id_to_size.values()
+                    )
+                    total_progress = (
+                        total_downloaded_size + total_extracted_size
+                    ) / 2.0
+                    progress_to_report = total_progress - reported_progress
+                    await progress_bar.update(progress_to_report)
+                    reported_progress = total_progress
+
+                    await log_cb(
+                        f"pulling {image_short_name}: {pull_progress}...",
+                        logging.DEBUG,
+                    )
