@@ -335,10 +335,14 @@ class SocketIONodeProgressCompleteWaiter:
                 )
 
         _current_timestamp = datetime.now(UTC)
-        if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=10):
+        if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
             url = f"https://{self.node_id}.services.{self.get_partial_product_url()}"
             response = self.api_request_context.get(url, timeout=1000)
-            self.logger.info(
+            level = logging.DEBUG
+            if (response.status >= 400) and (response.status not in (502, 503)):
+                level = logging.ERROR
+            self.logger.log(
+                level,
                 "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
                 url,
                 f"{response.status}: {response.text()}",
@@ -346,6 +350,7 @@ class SocketIONodeProgressCompleteWaiter:
                     "We are emulating the frontend; a 5XX response is acceptable if the service is not yet ready."
                 ),
             )
+
             if response.status <= 400:
                 # NOTE: If the response status is less than 400, it means that the backend is ready (There are some services that respond with a 3XX)
                 if self.got_expected_node_progress_types():
