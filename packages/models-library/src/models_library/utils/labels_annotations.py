@@ -28,7 +28,7 @@ def to_labels(
     """converts config into labels annotations"""
 
     # FIXME: null is loaded as 'null' string value? is that correct? json -> None upon deserialization?
-    labels = {}
+    labels: LabelsAnnotationsDict = {}
     for key, value in config.items():
         if trim_key_head:
             if isinstance(value, str):
@@ -57,7 +57,7 @@ def from_labels(
     for key, label in labels.items():
         if key.startswith(f"{prefix_key}."):
             try:
-                value = json.loads(label)
+                value = json.loads(label)  # type: ignore
             except JSONDecodeError:
                 value = label
 
