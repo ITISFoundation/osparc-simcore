@@ -338,19 +338,19 @@ class SocketIONodeProgressCompleteWaiter:
         if _current_timestamp - self._last_poll_timestamp > timedelta(seconds=5):
             url = f"https://{self.node_id}.services.{self.get_partial_product_url()}"
             response = self.api_request_context.get(url, timeout=1000)
-            self.logger.info(
-                "Querying the service endpoint from the E2E test. Url: %s Response: %s TIP: %s",
+            self.logger.debug(
+                "Querying service endpoint in case we missed some websocket messages. Url: %s Response: '%s' TIP: %s",
                 url,
-                f"{response.status}: {response.text}",
+                f"{response.status}: {response.text()}",
                 (
-                    "We are emulating the frontend; a 500 response is acceptable if the service is not yet ready."
+                    "We are emulating the frontend; a 5XX response is acceptable if the service is not yet ready."
                 ),
             )
             if response.status <= 400:
                 # NOTE: If the response status is less than 400, it means that the backend is ready (There are some services that respond with a 3XX)
                 if self.got_expected_node_progress_types():
                     self.logger.warning(
-                        "⚠️ Progress bar didn't receive 100 percent but service is already running: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                        "⚠️ Progress bar didn't receive 100 percent but service is already running: %s. TIP: we missed some websocket messages! ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
                         self.get_current_progress(),
                     )
                 return True
