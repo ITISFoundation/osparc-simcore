@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from servicelib.logging_utils import log_context
-from servicelib.project_lock import with_project_locked
+from servicelib.redis import with_project_locked
 from simcore_postgres_database.utils_projects import (
     DBProjectNotFoundError,
     ProjectsRepo,

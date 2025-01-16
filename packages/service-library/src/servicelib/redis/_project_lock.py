@@ -1,4 +1,3 @@
-import datetime
 import functools
 from collections.abc import Callable, Coroutine
 from typing import Any, Final, ParamSpec, TypeAlias, TypeVar
@@ -9,10 +8,9 @@ from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
 
-from .redis import CouldNotAcquireLockError, RedisClientSDK, exclusive
+from . import CouldNotAcquireLockError, RedisClientSDK, exclusive
 
-PROJECT_REDIS_LOCK_KEY: str = "project_lock:{}"
-PROJECT_LOCK_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
+PROJECT_REDIS_LOCK_KEY: Final[str] = "project_lock:{}"
 
 ProjectLockError: TypeAlias = redis.exceptions.LockError
 

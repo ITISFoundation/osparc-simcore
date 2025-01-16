@@ -36,7 +36,7 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.project_lock import get_project_locked_state
+from servicelib.redis import get_project_locked_state
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
