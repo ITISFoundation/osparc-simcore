@@ -12,7 +12,14 @@ import arrow
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ByteSize, ConfigDict, TypeAdapter, ValidationError
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    ConfigDict,
+    NonNegativeInt,
+    TypeAdapter,
+    ValidationError,
+)
 from settings_library.docker_registry import RegistrySettings
 from tenacity import (
     AsyncRetrying,
@@ -216,6 +223,8 @@ async def pull_image(
     progress_bar: ProgressBarData,
     log_cb: LogCB,
     image_information: DockerImageManifestsV2 | None,
+    *,
+    retry_upon_error_count: NonNegativeInt = 10,
 ) -> None:
     """pull a docker image to the host machine.
 
@@ -226,6 +235,7 @@ async def pull_image(
         progress_bar -- the current progress bar
         log_cb -- a callback function to send logs to
         image_information -- the image layer information. If this is None, then no fine progress will be retrieved.
+        retry_upon_error_count -- number of tries if there is a TimeoutError. Usually cased by networking issues.
     """
     registry_auth = None
     if registry_settings.REGISTRY_URL and registry_settings.REGISTRY_URL in image:
@@ -254,15 +264,16 @@ async def pull_image(
 
         async for attempt in AsyncRetrying(
             wait=wait_random_exponential(),
-            stop=stop_after_attempt(3),
+            stop=stop_after_attempt(retry_upon_error_count),
             reraise=True,
             retry=retry_if_exception_type(asyncio.TimeoutError),
         ):
-            # each time there is an error progress start from zero again
+            # each time there is an error progress starts from zero
             progress_bar.reset_progress()
             _logger.info(
-                "Attemping for the count='%s' time to pull the image",
+                "attempt='%s' to pull image='%s'",
                 attempt.retry_state.attempt_number,
+                image,
             )
 
             with attempt:
