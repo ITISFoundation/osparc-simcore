@@ -137,12 +137,14 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
             const usersStore = osparc.store.Users.getInstance();
             selectedMembers.forEach(selectedMemberGId => promises.push(usersStore.getUser(selectedMemberGId)));
             Promise.all(promises)
-              .then(users => {
-                users.forEach(user => this.__addMember(user.getUsername()));
+              .then(values => {
+                values.forEach(user => {
+                  if (user) {
+                    this.__addMember(user.getUsername());
+                  }
+                });
               })
-              .catch(err => {
-                console.error(err);
-              })
+              .catch(err => console.error(err))
               .finally(collaboratorsManager.close());
           } else {
             collaboratorsManager.close();
