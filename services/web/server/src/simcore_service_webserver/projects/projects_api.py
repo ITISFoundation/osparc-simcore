@@ -72,6 +72,11 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.project_lock import (
+    get_project_locked_state,
+    is_project_locked,
+    with_project_locked,
+)
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
@@ -144,11 +149,6 @@ from .exceptions import (
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
-)
-from .lock import (
-    get_project_locked_state,
-    is_project_locked,
-    with_locked_project_from_app,
 )
 from .models import ProjectDict, ProjectPatchExtended
 from .settings import ProjectsSettings, get_plugin_settings
@@ -286,7 +286,7 @@ async def patch_project(
             "delete": True,
         }
         user: dict = await get_user(app, project_db.prj_owner)
-        _prj_owner_primary_group = f'{user["primary_gid"]}'
+        _prj_owner_primary_group = f"{user['primary_gid']}"
         if _prj_owner_primary_group not in new_prj_access_rights:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
         if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:
@@ -1154,7 +1154,7 @@ async def _trigger_connected_service_retrieve(
     app: web.Application, project: dict, updated_node_uuid: str, changed_keys: list[str]
 ) -> None:
     project_id = project["uuid"]
-    if await is_project_locked(app, project_id):
+    if await is_project_locked(get_redis_lock_manager_client_sdk(app), project_id):
         # NOTE: we log warn since this function is fire&forget and raise an exception would not be anybody to handle it
         log.warning(
             "Skipping service retrieval because project with %s is currently locked."
@@ -1409,7 +1409,7 @@ async def _get_project_lock_state(
         f"{user_id=}",
     )
     prj_locked_state: ProjectLocked | None = await get_project_locked_state(
-        app, project_uuid
+        get_redis_lock_manager_client_sdk(app), project_uuid
     )
     if prj_locked_state:
         log.debug(
@@ -1880,12 +1880,11 @@ def with_project_locked_notified_state(
     ) -> Callable[P, Coroutine[Any, Any, R]]:
         @wraps(func)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            @with_locked_project_from_app(
-                app,
+            @with_project_locked(
+                get_redis_lock_manager_client_sdk(app),
                 project_uuid=project_uuid,
                 status=status,
-                user_id=user_id,
-                user_fullname=user_name,
+                owner=Owner(user_id=user_id, **user_name),
             )
             async def _locked_func() -> R:
                 if notify_users:

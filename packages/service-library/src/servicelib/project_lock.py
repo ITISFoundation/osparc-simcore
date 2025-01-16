@@ -55,3 +55,26 @@ def with_project_locked(
         return _wrapper
 
     return _decorator
+
+
+async def is_project_locked(
+    redis_client: RedisClientSDK, project_uuid: str | ProjectID
+) -> bool:
+    redis_lock = redis_client.create_lock(PROJECT_REDIS_LOCK_KEY.format(project_uuid))
+    return await redis_lock.locked()
+
+
+async def get_project_locked_state(
+    redis_client: RedisClientSDK, project_uuid: str | ProjectID
+) -> ProjectLocked | None:
+    """
+    Returns:
+        ProjectLocked object if the project project_uuid is locked or None otherwise
+    """
+    if await is_project_locked(redis_client, project_uuid=project_uuid) and (
+        lock_value := await redis_client.redis.get(
+            PROJECT_REDIS_LOCK_KEY.format(project_uuid)
+        )
+    ):
+        return ProjectLocked.model_validate_json(lock_value)
+    return None
