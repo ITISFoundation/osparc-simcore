@@ -54,7 +54,6 @@ qx.Class.define("osparc.store.Users", {
           }
         } catch (error) {
           console.error(error);
-          return null;
         }
       }
       return null;
