@@ -67,9 +67,7 @@ class ServiceExtras(BaseModel):
         json_schema_extra={
             "examples": [
                 {"node_requirements": node_example}
-                for node_example in NodeRequirements.model_json_schema()[
-                    "examples"
-                ]  # type: ignore[index,union-attr]
+                for node_example in NodeRequirements.model_json_schema()["examples"]
             ]
             + [
                 {
@@ -80,9 +78,7 @@ class ServiceExtras(BaseModel):
                         "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
                     },
                 }
-                for node_example in NodeRequirements.model_json_schema()[
-                    "examples"
-                ]  # type: ignore[index,dict-item, union-attr]
+                for node_example in NodeRequirements.model_json_schema()["examples"]
             ]
             + [
                 {
@@ -94,9 +90,7 @@ class ServiceExtras(BaseModel):
                     },
                     "container_spec": {"Command": ["run", "subcommand"]},
                 }
-                for node_example in NodeRequirements.model_json_schema()[
-                    "examples"
-                ]  # type: ignore[index,union-attr]
+                for node_example in NodeRequirements.model_json_schema()["examples"]
             ]
         }
     )
