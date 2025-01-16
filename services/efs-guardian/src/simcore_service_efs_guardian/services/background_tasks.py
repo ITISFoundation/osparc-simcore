@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from servicelib.logging_utils import log_context
-from servicelib.project_lock import with_locked_project
+from servicelib.project_lock import with_project_locked
 from simcore_postgres_database.utils_projects import (
     DBProjectNotFoundError,
     ProjectsRepo,
@@ -22,7 +22,7 @@ async def _remove_data_with_lock(app: FastAPI, project_id: ProjectID) -> None:
     # Decorate a new function that will call the necessary coroutine
     efs_manager: EfsManager = app.state.efs_manager
 
-    @with_locked_project(
+    @with_project_locked(
         get_redis_lock_client(app),
         project_uuid=project_id,
         status=ProjectStatus.MAINTAINING,

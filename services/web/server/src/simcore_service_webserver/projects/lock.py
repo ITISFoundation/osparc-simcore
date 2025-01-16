@@ -6,7 +6,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from servicelib.project_lock import PROJECT_REDIS_LOCK_KEY, with_locked_project
+from servicelib.project_lock import PROJECT_REDIS_LOCK_KEY, with_project_locked
 
 from ..redis import get_redis_lock_manager_client, get_redis_lock_manager_client_sdk
 from ..users.api import FullNameDict
@@ -28,7 +28,7 @@ def with_locked_project_from_app(
     def _decorator(
         func: Callable[P, Coroutine[Any, Any, R]],
     ) -> Callable[P, Coroutine[Any, Any, R]]:
-        @with_locked_project(
+        @with_project_locked(
             get_redis_lock_manager_client_sdk(app),
             project_uuid=project_uuid,
             status=status,

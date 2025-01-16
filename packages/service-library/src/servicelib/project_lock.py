@@ -21,7 +21,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
-def with_locked_project(
+def with_project_locked(
     redis_client: RedisClientSDK | Callable[..., RedisClientSDK],
     *,
     project_uuid: str | ProjectID,
