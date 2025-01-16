@@ -10,7 +10,11 @@ from datetime import datetime
 from typing import Annotated, Any
 
 from models_library.basic_types import SHA1Str, VersionStr
-from models_library.utils.labels_annotations import from_labels, to_labels
+from models_library.utils.labels_annotations import (
+    LabelsAnnotationsDict,
+    from_labels,
+    to_labels,
+)
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.networks import AnyUrl
 
@@ -132,17 +136,16 @@ class OciImageSpecAnnotations(BaseModel):
 
     @classmethod
     def from_labels_annotations(
-        cls, labels: dict[str, str]
+        cls, labels: LabelsAnnotationsDict
     ) -> "OciImageSpecAnnotations":
         data = from_labels(labels, prefix_key=OCI_LABEL_PREFIX, trim_key_head=False)
         return cls.model_validate(data)
 
-    def to_labels_annotations(self) -> dict[str, str]:
-        labels: dict[str, str] = to_labels(
+    def to_labels_annotations(self) -> LabelsAnnotationsDict:
+        return to_labels(
             self.model_dump(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OCI_LABEL_PREFIX,
         )
-        return labels
 
 
 class LabelSchemaAnnotations(BaseModel):
