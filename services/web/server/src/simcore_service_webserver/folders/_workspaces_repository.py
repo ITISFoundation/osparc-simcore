@@ -14,7 +14,7 @@ from ..projects import _projects_db as projects_db
 from ..projects._access_rights_api import check_user_project_permission
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
-from . import _folders_db
+from . import _folders_repository
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ async def move_folder_into_workspace(
     product_name: ProductName,
 ) -> None:
     # 1. User needs to have delete permission on source folder
-    folder_db = await _folders_db.get(
+    folder_db = await _folders_repository.get(
         app, folder_id=folder_id, product_name=product_name
     )
     workspace_is_private = True
@@ -56,7 +56,7 @@ async def move_folder_into_workspace(
     (
         folder_ids,
         project_ids,
-    ) = await _folders_db.get_all_folders_and_projects_ids_recursively(
+    ) = await _folders_repository.get_all_folders_and_projects_ids_recursively(
         app,
         connection=None,
         folder_id=folder_id,
@@ -86,7 +86,7 @@ async def move_folder_into_workspace(
             )
 
         # 5. BATCH update of folders with workspace_id
-        await _folders_db.update(
+        await _folders_repository.update(
             app,
             connection=conn,
             folders_id_or_ids=set(folder_ids),
@@ -96,7 +96,7 @@ async def move_folder_into_workspace(
         )
 
         # 6. Update source folder parent folder ID with NULL (it will appear in the root directory)
-        await _folders_db.update(
+        await _folders_repository.update(
             app,
             connection=conn,
             folders_id_or_ids=folder_id,

@@ -7,8 +7,9 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.sql import expression, func
 
-from ._common import RefActions
+from ._common import RefActions, column_trashed_by_user, column_trashed_datetime
 from .base import metadata
+from .users import users
 
 
 class ProjectType(enum.Enum):
@@ -142,13 +143,8 @@ projects = sa.Table(
         default=False,
         doc="If true, the project is by default not listed in the API",
     ),
-    sa.Column(
-        "trashed_at",
-        sa.DateTime(timezone=True),
-        nullable=True,
-        comment="The date and time when the project was marked as trashed. "
-        "Null if the project has not been trashed [default].",
-    ),
+    column_trashed_datetime("projects"),
+    column_trashed_by_user("projects", users_table=users),
     sa.Column(
         "trashed_explicitly",
         sa.Boolean,

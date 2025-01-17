@@ -2,14 +2,14 @@ import logging
 
 from servicelib.aiohttp import status
 
-from ..exception_handling import (
+from ...exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ..projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
-from .errors import (
+from ...projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
+from ..errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceGroupNotFoundError,
     WorkspaceNotFoundError,

@@ -35,7 +35,7 @@ async def create_tag(
         delete=True,
         **new_tag.model_dump(exclude_unset=True),
     )
-    return TagGet.from_model(tag)
+    return TagGet.from_domain_model(tag)
 
 
 async def list_tags(
@@ -45,7 +45,7 @@ async def list_tags(
     engine: AsyncEngine = get_async_engine(app)
     repo = TagsRepo(engine)
     tags = await repo.list_all(user_id=user_id)
-    return [TagGet.from_model(t) for t in tags]
+    return [TagGet.from_domain_model(t) for t in tags]
 
 
 async def update_tag(
@@ -59,7 +59,7 @@ async def update_tag(
         tag_id=tag_id,
         **tag_updates.model_dump(exclude_unset=True),
     )
-    return TagGet.from_model(tag)
+    return TagGet.from_domain_model(tag)
 
 
 async def delete_tag(app: web.Application, user_id: UserID, tag_id: IdInt):
