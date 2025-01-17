@@ -87,7 +87,13 @@ qx.Class.define("osparc.ui.basic.DateAndBy", {
     __applyGroupId: function(groupId) {
       if (groupId) {
         const atom = this.getChildControl("last-touching");
+        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+        if (groupId === myGroupId) {
+          atom.setLabel("by me");
+        } else {
+          atom.setLabel("by");
         osparc.dashboard.CardBase.addHintFromGids(atom, [groupId]);
+        }
       }
     },
   }
