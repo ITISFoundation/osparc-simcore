@@ -6,6 +6,7 @@
 
 import asyncio
 from typing import cast
+from unittest import mock
 from uuid import UUID
 
 import pytest
@@ -44,9 +45,6 @@ assert isinstance(Owner.model_config["json_schema_extra"]["examples"], list)
 @pytest.fixture(params=Owner.model_config["json_schema_extra"]["examples"])
 def owner(request: pytest.FixtureRequest) -> Owner:
     return Owner(**request.param)
-
-
-from unittest import mock
 
 
 @pytest.fixture
