@@ -59,7 +59,6 @@ async def export_project(request: web.Request):
         ),
     )
     async def _() -> tuple[Callable[[], Coroutine[Any, Any, None]], Path]:
-        # @GitHK what is this supposed to be doing??
         async with AsyncExitStack() as tmp_dir_stack:
             tmp_dir = await tmp_dir_stack.enter_async_context(AioTemporaryDirectory())
             file_to_download = await get_sds_archive_path(
