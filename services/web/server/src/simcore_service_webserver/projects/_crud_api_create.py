@@ -183,12 +183,6 @@ async def _copy_files_from_source_project(
                 await long_running_task.result()
 
     if needs_lock_source_project:
-
-        async def _notification_cb() -> None:
-            await projects_api.retrieve_and_notify_project_locked_state(
-                user_id, source_project["uuid"], app
-            )
-
         await with_project_locked(
             get_redis_lock_manager_client_sdk(app),
             project_uuid=source_project["uuid"],
@@ -196,7 +190,9 @@ async def _copy_files_from_source_project(
             owner=Owner(
                 user_id=user_id, **await get_user_fullname(app, user_id=user_id)
             ),
-            notification_cb=_notification_cb,
+            notification_cb=projects_api.create_user_notification_cb(
+                user_id, ProjectID(f"{source_project['uuid']}"), app
+            ),
         )(_copy)()
     else:
         await _copy()

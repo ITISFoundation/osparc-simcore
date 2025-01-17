@@ -6,6 +6,7 @@ from typing import Any
 
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from aiohttp import web
+from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectStatus
 from servicelib.redis import with_project_locked
@@ -14,7 +15,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..projects.projects_api import retrieve_and_notify_project_locked_state
+from ..projects.projects_api import create_user_notification_cb
 from ..redis import get_redis_lock_manager_client_sdk
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
@@ -53,8 +54,8 @@ async def export_project(request: web.Request):
         owner=Owner(
             user_id=user_id, **await get_user_fullname(request.app, user_id=user_id)
         ),
-        notification_cb=retrieve_and_notify_project_locked_state(
-            user_id, project_uuid, request.app
+        notification_cb=create_user_notification_cb(
+            user_id, ProjectID(f"{project_uuid}"), request.app
         ),
     )
     async def _() -> tuple[Callable[[], Coroutine[Any, Any, None]], Path]:

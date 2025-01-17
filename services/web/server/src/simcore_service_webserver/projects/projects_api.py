@@ -1244,9 +1244,18 @@ async def _clean_user_disconnected_clients(
                 await user_session.remove(PROJECT_ID_KEY)
 
 
+def create_user_notification_cb(
+    user_id: UserID, project_uuid: ProjectID, app: web.Application
+):
+    async def _notification_cb() -> None:
+        await retrieve_and_notify_project_locked_state(user_id, f"{project_uuid}", app)
+
+    return _notification_cb
+
+
 async def try_open_project_for_user(
     user_id: UserID,
-    project_uuid: str,
+    project_uuid: ProjectID,
     client_session_id: str,
     app: web.Application,
     max_number_of_studies_per_user: int | None,
@@ -1267,9 +1276,7 @@ async def try_open_project_for_user(
             owner=Owner(
                 user_id=user_id, **await get_user_fullname(app, user_id=user_id)
             ),
-            notification_cb=retrieve_and_notify_project_locked_state(
-                user_id, project_uuid, app
-            ),
+            notification_cb=create_user_notification_cb(user_id, project_uuid, app),
         )
         async def _open_project() -> bool:
             with managed_resource(user_id, client_session_id, app) as user_session:
@@ -1296,11 +1303,11 @@ async def try_open_project_for_user(
                 sessions_with_project: list[
                     UserSessionID
                 ] = await user_session.find_users_of_resource(
-                    app, PROJECT_ID_KEY, project_uuid
+                    app, PROJECT_ID_KEY, f"{project_uuid}"
                 )
                 if not sessions_with_project:
                     # no one has the project so we assign it
-                    await user_session.add(PROJECT_ID_KEY, project_uuid)
+                    await user_session.add(PROJECT_ID_KEY, f"{project_uuid}")
                     return True
 
                 # Otherwise if this is the only user (NOTE: a session = user_id + client_seesion_id !)
@@ -1316,7 +1323,7 @@ async def try_open_project_for_user(
                         app,
                     ):
                         # steal the project
-                        await user_session.add(PROJECT_ID_KEY, project_uuid)
+                        await user_session.add(PROJECT_ID_KEY, f"{project_uuid}")
                         await _clean_user_disconnected_clients(
                             sessions_with_project, app
                         )
@@ -1765,7 +1772,7 @@ async def remove_project_dynamic_services(
         status=ProjectStatus.CLOSING,
         owner=Owner(user_id=user_id, **user_name_data),
         notification_cb=(
-            retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+            create_user_notification_cb(user_id, ProjectID(project_uuid), app)
             if notify_users
             else None
         ),
