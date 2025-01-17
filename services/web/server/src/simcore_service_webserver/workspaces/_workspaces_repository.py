@@ -13,10 +13,10 @@ from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.workspaces import (
-    UserWorkspaceAccessRightsDB,
-    WorkspaceDB,
+    UserWorkspaceWithAccessRights,
+    Workspace,
     WorkspaceID,
-    WorkspaceUpdateDB,
+    WorkspaceUpdates,
 )
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.workspaces import workspaces
@@ -52,8 +52,8 @@ _SELECTION_ARGS = (
     workspaces.c.trashed_by,
 )
 
-assert set(WorkspaceDB.model_fields) == {c.name for c in _SELECTION_ARGS}  # nosec
-assert set(WorkspaceUpdateDB.model_fields).issubset(  # nosec
+assert set(Workspace.model_fields) == {c.name for c in _SELECTION_ARGS}  # nosec
+assert set(WorkspaceUpdates.model_fields).issubset(  # nosec
     c.name for c in workspaces.columns
 )
 
@@ -67,7 +67,7 @@ async def create_workspace(
     name: str,
     description: str | None,
     thumbnail: str | None,
-) -> WorkspaceDB:
+) -> Workspace:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             workspaces.insert()
@@ -83,7 +83,7 @@ async def create_workspace(
             .returning(*_SELECTION_ARGS)
         )
         row = await result.first()
-        return WorkspaceDB.model_validate(row)
+        return Workspace.model_validate(row)
 
 
 _access_rights_subquery = (
@@ -119,7 +119,7 @@ async def list_workspaces_for_user(
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
-) -> tuple[int, list[UserWorkspaceAccessRightsDB]]:
+) -> tuple[int, list[UserWorkspaceWithAccessRights]]:
     my_access_rights_subquery = create_my_workspace_access_rights_subquery(
         user_id=user_id
     )
@@ -163,8 +163,8 @@ async def list_workspaces_for_user(
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        items: list[UserWorkspaceAccessRightsDB] = [
-            UserWorkspaceAccessRightsDB.model_validate(row) async for row in result
+        items: list[UserWorkspaceWithAccessRights] = [
+            UserWorkspaceWithAccessRights.model_validate(row) async for row in result
         ]
 
         return cast(int, total_count), items
@@ -177,7 +177,7 @@ async def get_workspace_for_user(
     user_id: UserID,
     workspace_id: WorkspaceID,
     product_name: ProductName,
-) -> UserWorkspaceAccessRightsDB:
+) -> UserWorkspaceWithAccessRights:
     my_access_rights_subquery = create_my_workspace_access_rights_subquery(
         user_id=user_id
     )
@@ -204,7 +204,7 @@ async def get_workspace_for_user(
             raise WorkspaceAccessForbiddenError(
                 reason=f"User {user_id} does not have access to the workspace {workspace_id}. Or workspace does not exist.",
             )
-        return UserWorkspaceAccessRightsDB.model_validate(row)
+        return UserWorkspaceWithAccessRights.model_validate(row)
 
 
 async def update_workspace(
@@ -213,8 +213,8 @@ async def update_workspace(
     *,
     product_name: ProductName,
     workspace_id: WorkspaceID,
-    updates: WorkspaceUpdateDB,
-) -> WorkspaceDB:
+    updates: WorkspaceUpdates,
+) -> Workspace:
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
         **updates.model_dump(exclude_unset=True),
@@ -234,7 +234,7 @@ async def update_workspace(
         row = await result.first()
         if row is None:
             raise WorkspaceNotFoundError(reason=f"Workspace {workspace_id} not found.")
-        return WorkspaceDB.model_validate(row)
+        return Workspace.model_validate(row)
 
 
 async def delete_workspace(

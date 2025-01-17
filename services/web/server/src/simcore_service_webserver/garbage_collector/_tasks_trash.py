@@ -12,7 +12,7 @@ from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from ..projects._trash_api import prune_all_trashes
+from ..trash._service import prune_trash
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
     before_sleep=before_sleep_log(_logger, logging.WARNING),
 )
 async def _run_task(app: web.Application):
-    if deleted := await prune_all_trashes(app):
+    if deleted := await prune_trash(app):
         for name in deleted:
             _logger.info("Trash item %s expired and was deleted", f"{name}")
     else:

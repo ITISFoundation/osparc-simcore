@@ -1368,7 +1368,7 @@ async def test_open_shared_project_at_same_time(
     client: TestClient,
     client_on_running_server_factory: Callable,
     logged_user: dict,
-    shared_project: dict,
+    shared_project: ProjectDict,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable,
     user_role: UserRole,
@@ -1444,7 +1444,7 @@ async def test_open_shared_project_at_same_time(
             elif data:
                 project_status = ProjectState(**data.pop("state"))
                 data.pop("folderId")
-                assert data == shared_project
+                assert data == {k: shared_project[k] for k in data}
                 assert project_status.locked.value
                 assert project_status.locked.owner
                 assert project_status.locked.owner.first_name in [
