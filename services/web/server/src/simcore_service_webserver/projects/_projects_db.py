@@ -34,7 +34,7 @@ _SELECTION_PROJECT_DB_ARGS = [  # noqa: RUF012
     projects.c.published,
     projects.c.hidden,
     projects.c.workspace_id,
-    projects.c.trashed_at,
+    projects.c.trashed,
 ]
 
 

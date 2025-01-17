@@ -55,14 +55,16 @@ async def _get_user_projects(client) -> list[ProjectDict]:
 
 def _assert_same_projects(got: dict, expected: dict):
     exclude = {
+        "accessRights",
         "creationDate",
         "lastChangeDate",
         "prjOwner",
+        "trashedAt",
+        "trashedBy",
+        "trashedExplicitly",
+        "ui",
         "uuid",
         "workbench",
-        "accessRights",
-        "ui",
-        "trashedExplicitly",
     }
     for key in expected:
         if key not in exclude:

@@ -6,8 +6,9 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 """
 
 from datetime import datetime
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, Self, TypeAlias
 
+from common_library.dict_tools import remap_keys
 from models_library.folders import FolderID
 from models_library.utils._original_fastapi_encoders import jsonable_encoder
 from models_library.workspaces import WorkspaceID
@@ -95,6 +96,7 @@ class ProjectGet(OutputSchema):
     permalink: ProjectPermalink | None = None
     workspace_id: WorkspaceID | None
     folder_id: FolderID | None
+
     trashed_at: datetime | None
 
     _empty_description = field_validator("description", mode="before")(
@@ -102,6 +104,15 @@ class ProjectGet(OutputSchema):
     )
 
     model_config = ConfigDict(frozen=False)
+
+    @classmethod
+    def from_domain_model(cls, project_data: dict[str, Any]) -> Self:
+        return cls.model_validate(
+            remap_keys(
+                project_data,
+                rename={"trashed": "trashed_at"},
+            )
+        )
 
 
 TaskProjectGet: TypeAlias = TaskGet
@@ -159,6 +170,9 @@ class ProjectPatch(InputSchema):
         ),
     ] = Field(default=None)
     quality: dict[str, Any] | None = Field(default=None)
+
+    def to_domain_model(self) -> dict[str, Any]:
+        return self.model_dump(exclude_unset=True, by_alias=False)
 
 
 __all__: tuple[str, ...] = (

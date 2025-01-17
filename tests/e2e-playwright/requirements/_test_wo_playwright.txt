@@ -1,0 +1,93 @@
+annotated-types==0.7.0
+    # via pydantic
+anyio==4.8.0
+    # via httpx
+arrow==1.3.0
+    # via -r requirements/_test_wo_playwright.in
+certifi==2024.12.14
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
+charset-normalizer==3.4.1
+    # via requests
+dnspython==2.7.0
+    # via email-validator
+docker==7.1.0
+    # via -r requirements/_test_wo_playwright.in
+email-validator==2.2.0
+    # via pydantic
+faker==33.3.1
+    # via -r requirements/_test_wo_playwright.in
+h11==0.14.0
+    # via httpcore
+httpcore==1.0.7
+    # via httpx
+httpx==0.28.1
+    # via -r requirements/_test_wo_playwright.in
+idna==3.10
+    # via
+    #   anyio
+    #   email-validator
+    #   httpx
+    #   requests
+iniconfig==2.0.0
+    # via pytest
+jinja2==3.1.5
+    # via pytest-html
+markupsafe==3.0.2
+    # via jinja2
+packaging==24.2
+    # via
+    #   pytest
+    #   pytest-sugar
+pluggy==1.5.0
+    # via pytest
+pydantic==2.10.5
+    # via -r requirements/_test_wo_playwright.in
+pydantic-core==2.27.2
+    # via pydantic
+pytest==8.3.4
+    # via
+    #   pytest-html
+    #   pytest-instafail
+    #   pytest-metadata
+    #   pytest-sugar
+pytest-html==4.1.1
+    # via -r requirements/_test_wo_playwright.in
+pytest-instafail==0.5.0
+    # via -r requirements/_test_wo_playwright.in
+pytest-metadata==3.1.1
+    # via pytest-html
+pytest-runner==6.0.1
+    # via -r requirements/_test_wo_playwright.in
+pytest-sugar==1.0.0
+    # via -r requirements/_test_wo_playwright.in
+python-dateutil==2.9.0.post0
+    # via
+    #   arrow
+    #   faker
+pyyaml==6.0.2
+    # via -r requirements/_test_wo_playwright.in
+requests==2.32.3
+    # via docker
+six==1.17.0
+    # via python-dateutil
+sniffio==1.3.1
+    # via anyio
+tenacity==9.0.0
+    # via -r requirements/_test_wo_playwright.in
+termcolor==2.5.0
+    # via pytest-sugar
+types-python-dateutil==2.9.0.20241206
+    # via arrow
+typing-extensions==4.12.2
+    # via
+    #   anyio
+    #   faker
+    #   pydantic
+    #   pydantic-core
+urllib3==2.3.0
+    # via
+    #   docker
+    #   requests

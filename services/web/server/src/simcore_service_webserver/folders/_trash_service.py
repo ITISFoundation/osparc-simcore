@@ -11,9 +11,9 @@ from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
-from ..projects._trash_api import trash_project, untrash_project
+from ..projects._trash_service import trash_project, untrash_project
 from ..workspaces.api import check_user_workspace_access
-from . import _folders_db
+from . import _folders_repository
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ async def _check_exists_and_access(
     # exists?
     #   check whether this folder exists
     #   otherwise raise not-found error
-    folder_db = await _folders_db.get(
+    folder_db = await _folders_repository.get(
         app, folder_id=folder_id, product_name=product_name
     )
 
@@ -46,7 +46,7 @@ async def _check_exists_and_access(
         )
         workspace_is_private = False
 
-    await _folders_db.get_for_user_or_workspace(
+    await _folders_repository.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
@@ -63,34 +63,37 @@ async def _folders_db_update(
     product_name: ProductName,
     folder_id: FolderID,
     trashed_at: datetime | None,
+    trashed_by: UserID,
 ):
     # EXPLICIT un/trash
-    await _folders_db.update(
+    await _folders_repository.update(
         app,
         connection,
         folders_id_or_ids=folder_id,
         product_name=product_name,
-        trashed_at=trashed_at,
+        trashed=trashed_at,
         trashed_explicitly=trashed_at is not None,
+        trashed_by=trashed_by,
     )
 
     # IMPLICIT un/trash
     child_folders: set[FolderID] = {
         f
-        for f in await _folders_db.get_folders_recursively(
+        for f in await _folders_repository.get_folders_recursively(
             app, connection, folder_id=folder_id, product_name=product_name
         )
         if f != folder_id
     }
 
     if child_folders:
-        await _folders_db.update(
+        await _folders_repository.update(
             app,
             connection,
             folders_id_or_ids=child_folders,
             product_name=product_name,
-            trashed_at=trashed_at,
+            trashed=trashed_at,
             trashed_explicitly=False,
+            trashed_by=trashed_by,
         )
 
 
@@ -119,12 +122,13 @@ async def trash_folder(
             folder_id=folder_id,
             product_name=product_name,
             trashed_at=trashed_at,
+            trashed_by=user_id,
         )
 
         # 2. Trash all child projects that I am an owner
         child_projects: list[
             ProjectID
-        ] = await _folders_db.get_projects_recursively_only_if_user_is_owner(
+        ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
             app,
             connection,
             folder_id=folder_id,
@@ -164,12 +168,13 @@ async def untrash_folder(
         folder_id=folder_id,
         product_name=product_name,
         trashed_at=None,
+        trashed_by=user_id,
     )
 
     # 3.2 UNtrash all child projects that I am an owner
     child_projects: list[
         ProjectID
-    ] = await _folders_db.get_projects_recursively_only_if_user_is_owner(
+    ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
         app,
         folder_id=folder_id,
         private_workspace_user_id_or_none=user_id if workspace_is_private else None,
