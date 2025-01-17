@@ -53,6 +53,7 @@ from .session.settings import SessionSettings
 from .statics.settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage.settings import StorageSettings
 from .studies_dispatcher.settings import StudiesDispatcherSettings
+from .trash.settings import TrashSettings
 from .users.settings import UsersSettings
 
 _logger = logging.getLogger(__name__)
@@ -258,6 +259,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="tracing plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
+    WEBSERVER_TRASH: Annotated[
+        TrashSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
+
     WEBSERVER_RABBITMQ: Annotated[
         RabbitSettings | None,
         Field(
@@ -448,7 +453,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_PROJECTS": {
                     "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES",
-                    "PROJECTS_TRASH_RETENTION_DAYS",
+                },
+                "WEBSERVER_TRASH": {
+                    "TRASH_RETENTION_DAYS",
                 },
                 "WEBSERVER_LOGIN": {
                     "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",

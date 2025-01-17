@@ -196,13 +196,13 @@ async def get_user_fullname(app: web.Application, *, user_id: UserID) -> FullNam
     user_id = _parse_as_user(user_id)
 
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             sa.select(
                 users.c.first_name,
                 users.c.last_name,
             ).where(users.c.id == user_id)
         )
-        user = await result.first()
+        user = result.first()
         if not user:
             raise UserNotFoundError(user_id=user_id)
 
