@@ -166,7 +166,7 @@ async def pay_project_debt(request: web.Request):
         # At present, once the wallet balance becomes positive, RUT updates all
         # projects connected to that wallet from IN_DEBT to BILLED.
 
-        return web.json_response(status=status.HTTP_501_NOT_IMPLEMENTED)
+        raise web.HTTPNotImplemented
 
     # The debt is being paid using a different wallet than the one currently connected to the project.
     # Steps:
@@ -177,8 +177,8 @@ async def pay_project_debt(request: web.Request):
         product_name=req_ctx.product_name,
         project_id=path_params.project_id,
         user_id=req_ctx.user_id,
-        current_wallet_id=path_params.wallet_id,
+        current_wallet_id=current_wallet.wallet_id,
         new_wallet_id=path_params.wallet_id,
         debt_amount=body_params.amount,
     )
-    return envelope_json_response(web.json_response(status=status.HTTP_204_NO_CONTENT))
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

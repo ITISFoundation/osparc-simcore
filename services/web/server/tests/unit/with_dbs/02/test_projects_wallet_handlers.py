@@ -8,6 +8,7 @@
 from collections.abc import Iterator
 from decimal import Decimal
 from http import HTTPStatus
+from unittest.mock import MagicMock
 
 import pytest
 import sqlalchemy as sa
@@ -175,3 +176,63 @@ async def test_project_wallets_full_workflow(
     resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["walletId"] == setup_wallets_db[1].wallet_id
+
+
+@pytest.fixture
+def mock_pay_project_debt(mocker: MockerFixture):
+    return mocker.patch(
+        "simcore_service_webserver.projects._wallets_api.credit_transactions.pay_project_debt",
+        spec=True,
+    )
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+async def test_pay_project_debt(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    setup_wallets_db: list[WalletGet],
+    mock_get_project_wallet_total_credits: None,
+    mock_get_service_run_page: None,
+    mock_pay_project_debt: MagicMock,
+):
+    assert client.app
+    # Use endpoint while project is not connected to any wallet
+    base_url = client.app.router["pay_project_debt"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[1].wallet_id}"
+    )
+    resp = await client.post(f"{base_url}", json={"amount": -100})
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+    # Connect wallet to the project
+    base_url = client.app.router["connect_wallet_to_project"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[0].wallet_id}"
+    )
+    resp = await client.put(f"{base_url}")
+    data, _ = await assert_status(resp, expected)
+    assert data["walletId"] == setup_wallets_db[0].wallet_id
+
+    # Use endpoint with the same wallet as the one that is connected
+    base_url = client.app.router["pay_project_debt"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[0].wallet_id}"
+    )
+    resp = await client.post(f"{base_url}", json={"amount": -100})
+    assert resp.status == status.HTTP_501_NOT_IMPLEMENTED
+
+    # Use endpoint with wrong input
+    base_url = client.app.router["pay_project_debt"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[1].wallet_id}"
+    )
+    resp = await client.post(
+        f"{base_url}", json={"amount": 100}
+    )  # <-- Error input (must be negative!)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    # Use endpoint properly
+    base_url = client.app.router["pay_project_debt"].url_for(
+        project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[1].wallet_id}"
+    )
+    resp = await client.post(f"{base_url}", json={"amount": -100})
+    data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
+    assert mock_pay_project_debt.assert_called_once
