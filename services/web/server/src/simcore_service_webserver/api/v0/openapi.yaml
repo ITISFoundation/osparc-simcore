@@ -10011,6 +10011,13 @@ components:
             format: date-time
           - type: 'null'
           title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
         owner:
           type: integer
           exclusiveMinimum: true
@@ -10032,6 +10039,7 @@ components:
       - createdAt
       - modifiedAt
       - trashedAt
+      - trashedBy
       - owner
       - workspaceId
       - myAccessRights
@@ -12600,6 +12608,13 @@ components:
             format: date-time
           - type: 'null'
           title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
       type: object
       required:
       - uuid
@@ -12616,6 +12631,7 @@ components:
       - workspaceId
       - folderId
       - trashedAt
+      - trashedBy
       title: ProjectGet
     ProjectGroupGet:
       properties:
@@ -12848,6 +12864,13 @@ components:
             format: date-time
           - type: 'null'
           title: Trashedat
+        trashedBy:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Trashedby
       type: object
       required:
       - uuid
@@ -12864,6 +12887,7 @@ components:
       - workspaceId
       - folderId
       - trashedAt
+      - trashedBy
       title: ProjectListItem
     ProjectLocked:
       properties:
