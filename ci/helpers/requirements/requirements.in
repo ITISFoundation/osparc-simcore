@@ -2,7 +2,7 @@
 #
 # Installing these void e.g. E0611: No name 'UploadFile' in module 'fastapi' (no-name-in-module)
 #
---constraint ../../requirements/constraints.txt
+--constraint ../../../requirements/constraints.txt
 
 aiohttp
 fastapi
