@@ -26,7 +26,6 @@ from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
 from ..projects_state import ProjectState
 from ..projects_ui import StudyUI
-from ..users import UserID
 from ..utils._original_fastapi_encoders import jsonable_encoder
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -35,6 +34,7 @@ from ..utils.common_validators import (
 )
 from ..workspaces import WorkspaceID
 from ._base import EmptyModel, InputSchema, OutputSchema
+from .groups import GroupID
 from .permalinks import ProjectPermalink
 
 
@@ -97,7 +97,9 @@ class ProjectGet(OutputSchema):
     folder_id: FolderID | None
 
     trashed_at: datetime | None
-    trashed_by: UserID | None
+    trashed_by: Annotated[
+        GroupID | None, Field(description="The primary gid of the user who trashed")
+    ]
 
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
@@ -109,8 +111,16 @@ class ProjectGet(OutputSchema):
     def from_domain_model(cls, project_data: dict[str, Any]) -> Self:
         return cls.model_validate(
             remap_keys(
-                project_data,
-                rename={"trashed": "trashed_at"},
+                {
+                    k: v
+                    for k, v in project_data.items()
+                    if k not in {"trashed_by", "trashedBy"}
+                },
+                rename={
+                    "trashed": "trashed_at",
+                    "trashed_by_primary_gid": "trashed_by",
+                    "trashedByPrimaryGid": "trashedBy",
+                },
             )
         )
 

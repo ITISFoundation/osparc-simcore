@@ -12616,6 +12616,7 @@ components:
             minimum: 0
           - type: 'null'
           title: Trashedby
+          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
@@ -12872,6 +12873,7 @@ components:
             minimum: 0
           - type: 'null'
           title: Trashedby
+          description: The primary gid of the user who trashed
       type: object
       required:
       - uuid
