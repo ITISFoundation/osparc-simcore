@@ -127,14 +127,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._add(control, osparc.dashboard.FolderButtonBase.POS.SUBTITLE);
           break;
-        case "date-text":
-          control = new qx.ui.basic.Label().set({
-            font: "text-12",
-          });
-          this.getChildControl("subtitle-layout").add(control);
-          break;
-        case "last-touching":
-          control = osparc.info.StudyUtils.createLastTouchedBy();
+        case "date-by":
+          control = new osparc.ui.basic.DateAndBy();
           this.getChildControl("subtitle-layout").add(control);
           break;
         case "menu-button": {
@@ -250,9 +244,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __applyLastModified: function(value) {
       if (value) {
-        const label = this.getChildControl("date-text");
-        label.set({
-          value: osparc.utils.Utils.formatDateAndTime(value),
+        const dateBy = this.getChildControl("date-by");
+        dateBy.set({
+          date: value,
           toolTipText: this.tr("Last modified"),
         })
       }
@@ -260,9 +254,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __applyTrashedAt: function(value) {
       if (value && value.getTime() !== new Date(0).getTime()) {
-        const label = this.getChildControl("date-text");
-        label.set({
-          value: osparc.utils.Utils.formatDateAndTime(value),
+        const dateBy = this.getChildControl("date-by");
+        dateBy.set({
+          date: value,
           toolTipText: this.tr("Moved to the bin"),
         });
       }
@@ -270,8 +264,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __applyTrashedBy: function(gid) {
       if (gid) {
-        const atom = this.getChildControl("last-touching");
-        osparc.dashboard.CardBase.addHintFromGids(atom, [gid]);
+        const dateBy = this.getChildControl("date-by");
+        dateBy.setGid(gid);
       }
     },
 
