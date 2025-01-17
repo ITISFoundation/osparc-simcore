@@ -35,7 +35,7 @@ compile-dev: qx_packages source-output ## qx compiles host' 'source' -> host's '
 			--set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
 			--set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}" \
 			--set-env osparc.vcsOriginUrl="${VCS_URL}"
-	python ./scripts/post-compile.py ${VCS_REF_CLIENT}
+	python ./scripts/post-compile.py
 
 .PHONY: follow-dev-logs
 follow-dev-logs: ## follow the logs of the qx compiler
@@ -53,7 +53,7 @@ compile: ## qx compiles host' 'source' -> image's 'build-output'
 		--build-arg VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT} \
 		--build-arg VCS_URL=${VCS_URL} \
 		--target=build-client .
-	python ./scripts/post-compile.py ${VCS_REF_CLIENT}
+	python ./scripts/post-compile.py
 
 touch: ## minimal image build with /project/output-build inside
 	# touch /project/output-build such that multi-stage 'services/web/Dockerfile' can build development target (fixes #1097)

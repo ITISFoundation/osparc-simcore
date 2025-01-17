@@ -1,7 +1,6 @@
 import json
 import os
 import random
-import sys
 
 output_folders = [
     "source-output",  # dev output
@@ -54,9 +53,6 @@ def _get_output_file_paths(filename):
 
 
 def add_no_cache_param(vcs_ref_client):
-    if not vcs_ref_client:
-        vcs_ref_client = str(random.random())
-
     index_file_paths = _get_output_file_paths("index.html")
     for index_file_path in index_file_paths:
         if not os.path.isfile(index_file_path):
@@ -82,7 +78,5 @@ def add_no_cache_param(vcs_ref_client):
 
 if __name__ == "__main__":
     update_apps_metadata()
-    vcs_ref_client = None
-    if len(sys.argv) > 1:
-        vcs_ref_client = sys.argv[1]
+    vcs_ref_client = os.getenv("VCS_REF_CLIENT", str(random.random()))
     add_no_cache_param(vcs_ref_client)
