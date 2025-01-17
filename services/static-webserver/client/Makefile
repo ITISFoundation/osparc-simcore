@@ -35,7 +35,6 @@ compile-dev: qx_packages source-output ## qx compiles host' 'source' -> host's '
 			--set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
 			--set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}" \
 			--set-env osparc.vcsOriginUrl="${VCS_URL}"
-	python ./scripts/post-compile.py
 
 .PHONY: follow-dev-logs
 follow-dev-logs: ## follow the logs of the qx compiler
