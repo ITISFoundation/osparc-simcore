@@ -324,6 +324,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       nullable: true
     },
 
+    trashedBy: {
+      check: "Number",
+      apply: "_applyTrashedBy",
+      nullable: true
+    },
+
     classifiers: {
       check: "Array"
     },
@@ -541,6 +547,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _applyTrasehdAt: function(value, old) {
+      throw new Error("Abstract method called!");
+    },
+
+    _applyTrashedBy: function(value, old) {
       throw new Error("Abstract method called!");
     },
 

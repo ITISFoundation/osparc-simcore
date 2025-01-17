@@ -251,14 +251,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           layout.add(control, {flex: 1});
           break;
         }
-        case "date-text":
-          control = new qx.ui.basic.Label().set({
-            textColor: "contrasted-text-dark",
-            alignY: "middle",
-            rich: true,
-            font: "text-12",
-            allowGrowY: false
-          });
+        case "date-by":
+          control = new osparc.ui.basic.DateAndBy();
           layout = this.getChildControl("footer");
           layout.add(control, this.self().FPOS.MODIFIED);
           break;
