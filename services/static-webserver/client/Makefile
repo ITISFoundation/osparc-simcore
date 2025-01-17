@@ -52,7 +52,7 @@ compile: ## qx compiles host' 'source' -> image's 'build-output'
 		--build-arg VCS_STATUS_CLIENT=${VCS_STATUS_CLIENT} \
 		--build-arg VCS_URL=${VCS_URL} \
 		--target=build-client .
-	python ./scripts/post-compile.py
+	python ./scripts/post-compile.py ${VCS_REF_CLIENT}
 
 touch: ## minimal image build with /project/output-build inside
 	# touch /project/output-build such that multi-stage 'services/web/Dockerfile' can build development target (fixes #1097)
