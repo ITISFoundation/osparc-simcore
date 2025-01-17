@@ -34,10 +34,13 @@ def with_project_locked(
         project_uuid -- the project UUID
         status -- the project status
         owner -- the owner of the lock (default: {None})
-        notification_cb -- a notification callback that will be called AFTER the project is locked and AFTER it was unlocked
+        notification_cb -- an optional notification callback that will be called AFTER the project is locked and AFTER it was unlocked
 
     Returns:
         the decorated function return value
+
+    Raises:
+        raises anything from the decorated function and from the optional notification callback
     """
 
     def _decorator(
