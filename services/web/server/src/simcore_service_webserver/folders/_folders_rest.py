@@ -181,7 +181,9 @@ async def replace_folder(request: web.Request):
         parent_folder_id=body_params.parent_folder_id,
         product_name=req_ctx.product_name,
     )
-    return envelope_json_response(folder)
+    return envelope_json_response(
+        FolderGet.from_domain_model(folder.folder_db, folder.my_access_rights)
+    )
 
 
 @routes.delete(
