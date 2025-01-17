@@ -11,9 +11,9 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
 from ..security.decorators import permission_required
-from . import _trash_api
-from ._exceptions_handlers import handle_plugin_requests_exceptions
-from ._models import FoldersPathParams, FolderTrashQueryParams
+from . import _trash_service
+from ._common.exceptions_handlers import handle_plugin_requests_exceptions
+from ._common.models import FoldersPathParams, FolderTrashQueryParams
 
 _logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ async def trash_folder(request: web.Request):
         FolderTrashQueryParams, request
     )
 
-    await _trash_api.trash_folder(
+    await _trash_service.trash_folder(
         request.app,
         product_name=product_name,
         user_id=user_id,
@@ -53,7 +53,7 @@ async def untrash_folder(request: web.Request):
     product_name = get_product_name(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
 
-    await _trash_api.untrash_folder(
+    await _trash_service.untrash_folder(
         request.app,
         product_name=product_name,
         user_id=user_id,

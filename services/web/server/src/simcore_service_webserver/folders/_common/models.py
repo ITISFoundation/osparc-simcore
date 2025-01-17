@@ -20,7 +20,7 @@ from models_library.utils.common_validators import (
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
-from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from ..._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 
 _logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ class FolderTrashQueryParams(RemoveQueryParams):
     ...
 
 
-class _FolderWorkspacesPathParams(BaseModel):
+class FolderWorkspacesPathParams(BaseModel):
     folder_id: FolderID
     workspace_id: Annotated[
         WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)
