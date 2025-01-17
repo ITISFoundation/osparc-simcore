@@ -120,7 +120,7 @@ def mock_decorator(*args, **kwargs):
 
 @patch("simcore_service_efs_guardian.services.background_tasks.get_redis_lock_client")
 @patch(
-    "simcore_service_efs_guardian.services.background_tasks.with_locked_project",
+    "simcore_service_efs_guardian.services.background_tasks.with_project_locked",
     new=mock_decorator,
 )
 async def test_efs_removal_policy_task(
