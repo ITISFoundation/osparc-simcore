@@ -67,6 +67,7 @@ async def test_with_project_locked(
         project_uuid=project_uuid,
         status=project_status,
         owner=owner,
+        notification_cb=None,
     )
     async def _locked_fct() -> None:
         assert await is_project_locked(redis_client_sdk, project_uuid) is True
@@ -118,6 +119,7 @@ async def test_lock_already_locked_project_raises(
         project_uuid=project_uuid,
         status=project_status,
         owner=owner,
+        notification_cb=None,
     )
     async def _locked_fct() -> None:
         started_event.set()

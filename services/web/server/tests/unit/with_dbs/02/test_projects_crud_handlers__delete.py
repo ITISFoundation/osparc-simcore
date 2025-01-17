@@ -11,7 +11,6 @@ from unittest import mock
 from unittest.mock import MagicMock, call
 
 import pytest
-import redis.asyncio as aioredis
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -38,6 +37,7 @@ from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 
@@ -148,7 +148,6 @@ async def test_delete_multiple_opened_project_forbidden(
     user_role: UserRole,
     expected_ok: HTTPStatus,
     expected_forbidden: HTTPStatus,
-    redis_client: aioredis.Redis,
 ):
     assert client.app
 
@@ -231,7 +230,7 @@ async def test_delete_project_while_it_is_locked_raises_error(
     project_uuid = user_project["uuid"]
     user_id = logged_user["id"]
     await with_project_locked(
-        app=client.app,
+        get_redis_lock_manager_client_sdk(client.app),
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
         owner=Owner(user_id=user_id, first_name=faker.name(), last_name=faker.name()),

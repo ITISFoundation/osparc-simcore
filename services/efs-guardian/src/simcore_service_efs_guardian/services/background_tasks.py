@@ -25,6 +25,8 @@ async def _lock_project_and_remove_data(app: FastAPI, project_id: ProjectID) -> 
         get_redis_lock_client(app),
         project_uuid=project_id,
         status=ProjectStatus.MAINTAINING,
+        owner=None,
+        notification_cb=None,
     )
     async def _remove():
         await efs_manager.remove_project_efs_data(project_id)
