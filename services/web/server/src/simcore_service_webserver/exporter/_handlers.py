@@ -78,7 +78,6 @@ async def export_project(request: web.Request):
     delete_tmp_dir_callable, file_to_download = await _()
 
     headers = {"Content-Disposition": f'attachment; filename="{file_to_download.name}"'}
-    assert delete_tmp_dir_callable  # nosec
     return CleanupFileResponse(
         remove_tmp_dir_cb=delete_tmp_dir_callable,
         path=file_to_download,
