@@ -40,7 +40,7 @@ def update_apps_metadata():
                 file.write(data)
 
 
-def _get_output_file_paths(filename="index.html"):
+def _get_output_file_paths(filename):
     index_file_paths = []
     dirname = os.path.dirname(__file__)
     applications = _read_json_file("apps_metadata.json")
