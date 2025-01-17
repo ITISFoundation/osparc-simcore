@@ -45,6 +45,7 @@ from .exceptions import (
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
+    ProjectWalletDebtError,
 )
 
 _logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ def _handle_project_exceptions(handler: Handler):
         except ProjectTooManyProjectOpenedError as exc:
             raise web.HTTPConflict(reason=f"{exc}") from exc
 
-        except WalletNotEnoughCreditsError as exc:
+        except (WalletNotEnoughCreditsError, ProjectWalletDebtError) as exc:
             raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
 
     return _wrapper

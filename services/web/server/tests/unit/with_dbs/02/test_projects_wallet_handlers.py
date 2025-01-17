@@ -6,12 +6,20 @@
 # pylint: disable=too-many-statements
 
 from collections.abc import Iterator
+from decimal import Decimal
 from http import HTTPStatus
 
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    WalletTotalCredits,
+)
+from models_library.api_schemas_resource_usage_tracker.service_runs import (
+    ServiceRunPage,
+)
 from models_library.api_schemas_webserver.wallets import WalletGet
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
@@ -97,6 +105,28 @@ def setup_wallets_db(
         con.execute(wallets.delete())
 
 
+@pytest.fixture
+def mock_get_project_wallet_total_credits(
+    mocker: MockerFixture, setup_wallets_db: list[WalletGet]
+):
+    mocker.patch(
+        "simcore_service_webserver.projects._wallets_api.credit_transactions.get_project_wallet_total_credits",
+        spec=True,
+        return_value=WalletTotalCredits(
+            wallet_id=setup_wallets_db[0].wallet_id, available_osparc_credits=Decimal(0)
+        ),
+    )
+
+
+@pytest.fixture
+def mock_get_service_run_page(mocker: MockerFixture):
+    mocker.patch(
+        "simcore_service_webserver.projects._wallets_api.service_runs.get_service_run_page",
+        spec=True,
+        return_value=ServiceRunPage(items=[], total=0),
+    )
+
+
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_project_wallets_full_workflow(
     client: TestClient,
@@ -104,6 +134,8 @@ async def test_project_wallets_full_workflow(
     user_project: ProjectDict,
     expected: HTTPStatus,
     setup_wallets_db: list[WalletGet],
+    mock_get_project_wallet_total_credits: None,
+    mock_get_service_run_page: None,
 ):
     assert client.app
 

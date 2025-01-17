@@ -1,3 +1,4 @@
+# pylint: disable=too-many-arguments
 from fastapi import FastAPI
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedUsagesPage,
