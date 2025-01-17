@@ -13,12 +13,11 @@ import datetime
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Coroutine, Generator
+from collections.abc import Generator
 from contextlib import suppress
 from decimal import Decimal
-from functools import wraps
 from pprint import pformat
-from typing import Any, Final, ParamSpec, TypeVar, cast
+from typing import Any, Final, cast
 from uuid import UUID, uuid4
 
 from aiohttp import web
@@ -81,11 +80,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
 )
-from servicelib.redis import (
-    get_project_locked_state,
-    is_project_locked,
-    with_project_locked,
-)
+from servicelib.redis import get_project_locked_state, is_project_locked
 from servicelib.redis._decorators import exclusive
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
@@ -1858,52 +1853,6 @@ async def retrieve_and_notify_project_locked_state(
     await notify_project_state_update(
         app, project, notify_only_user=user_id if notify_only_prj_user else None
     )
-
-
-P = ParamSpec("P")
-R = TypeVar("R")
-
-
-def with_project_locked_and_notify(
-    app: web.Application,
-    *,
-    project_uuid: str,
-    status: ProjectStatus,
-    user_id: int,
-    user_name: FullNameDict,
-    notify_users: bool,
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
-]:
-    def _decorator(
-        func: Callable[P, Coroutine[Any, Any, R]],
-    ) -> Callable[P, Coroutine[Any, Any, R]]:
-        @wraps(func)
-        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            @with_project_locked(
-                get_redis_lock_manager_client_sdk(app),
-                project_uuid=project_uuid,
-                status=status,
-                owner=Owner(user_id=user_id, **user_name),
-            )
-            async def _locked_func() -> R:
-                if notify_users:
-                    await retrieve_and_notify_project_locked_state(
-                        user_id, project_uuid, app
-                    )
-
-                return await func(*args, **kwargs)
-
-            result = await _locked_func()
-            if notify_users:
-                await retrieve_and_notify_project_locked_state(
-                    user_id, project_uuid, app
-                )
-            return result
-
-        return _wrapper
-
-    return _decorator
 
 
 async def get_project_inactivity(
