@@ -11,7 +11,11 @@ from ._groups_api import (
 )
 from ._permalink_api import ProjectPermalink
 from ._permalink_api import register_factory as register_permalink_factory
-from ._wallets_api import connect_wallet_to_project, get_project_wallet
+from ._wallets_api import (
+    connect_wallet_to_project,
+    get_project_wallet,
+    raise_if_project_is_in_debt,
+)
 
 __all__: tuple[str, ...] = (
     "check_user_project_permission",
@@ -22,6 +26,7 @@ __all__: tuple[str, ...] = (
     "has_user_project_access_rights",
     "ProjectPermalink",
     "register_permalink_factory",
+    "raise_if_project_is_in_debt",
 )
 
 

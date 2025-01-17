@@ -1,9 +1,14 @@
-# pylint: disable=too-many-arguments
 import logging
 from datetime import datetime
+
+# pylint: disable=too-many-arguments
+from decimal import Decimal
 from typing import cast
 
 import sqlalchemy as sa
+from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    WalletTotalCredits,
+)
 from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -432,6 +437,70 @@ async def get_osparc_credits_aggregated_by_service(
             for row in list_result.fetchall()
         ],
     )
+
+
+async def sum_project_wallet_total_credits(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    product_name: ProductName,
+    wallet_id: WalletID,
+    project_id: ProjectID,
+    transaction_status: CreditTransactionStatus | None = None,
+) -> WalletTotalCredits:
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        sum_stmt = (
+            sa.select(
+                sa.func.SUM(resource_tracker_credit_transactions.c.osparc_credits),
+            )
+            .select_from(
+                resource_tracker_service_runs.join(
+                    resource_tracker_credit_transactions,
+                    (
+                        resource_tracker_service_runs.c.product_name
+                        == resource_tracker_credit_transactions.c.product_name
+                    )
+                    & (
+                        resource_tracker_service_runs.c.service_run_id
+                        == resource_tracker_credit_transactions.c.service_run_id
+                    ),
+                    isouter=True,
+                )
+            )
+            .where(
+                (resource_tracker_service_runs.c.product_name == product_name)
+                & (resource_tracker_service_runs.c.project_id == f"{project_id}")
+                & (
+                    resource_tracker_credit_transactions.c.transaction_classification
+                    == CreditClassification.DEDUCT_SERVICE_RUN
+                )
+                & (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
+            )
+        )
+
+        if transaction_status:
+            sum_stmt = sum_stmt.where(
+                resource_tracker_credit_transactions.c.transaction_status
+                == transaction_status
+            )
+        else:
+            sum_stmt = sum_stmt.where(
+                resource_tracker_credit_transactions.c.transaction_status.in_(
+                    [
+                        CreditTransactionStatus.BILLED,
+                        CreditTransactionStatus.PENDING,
+                        CreditTransactionStatus.IN_DEBT,
+                    ]
+                )
+            )
+
+        result = await conn.execute(sum_stmt)
+        row = result.first()
+        if row is None or row[0] is None:
+            return WalletTotalCredits(
+                wallet_id=wallet_id, available_osparc_credits=Decimal(0)
+            )
+        return WalletTotalCredits(wallet_id=wallet_id, available_osparc_credits=row[0])
 
 
 async def export_service_runs_table_to_s3(

@@ -14,6 +14,10 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     credit_transactions,
     service_runs,
 )
+from simcore_service_webserver.projects.exceptions import (
+    ProjectWalletDebtError,
+    ProjectWalletPendingTransactionError,
+)
 
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import api as users_api
@@ -29,6 +33,31 @@ async def get_project_wallet(app, project_id: ProjectID):
         WalletGet(**wallet_db.model_dump()) if wallet_db else None
     )
     return wallet
+
+
+async def raise_if_project_is_in_debt(
+    app, *, project_id: ProjectID, product_name: ProductName
+):
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
+
+    current_project_wallet = await db.get_project_wallet(project_uuid=project_id)
+    rpc_client = get_rabbitmq_rpc_client(app)
+
+    if current_project_wallet:
+        # Do not allow to change wallet if the project connected wallet is in DEBT!
+        project_wallet_credits_in_debt = (
+            await credit_transactions.get_project_wallet_total_credits(
+                rpc_client,
+                product_name=product_name,
+                wallet_id=current_project_wallet.wallet_id,
+                project_id=project_id,
+                transaction_status=CreditTransactionStatus.IN_DEBT,
+            )
+        )
+        if project_wallet_credits_in_debt.available_osparc_credits < 0:
+            raise ProjectWalletDebtError(
+                debt_amount=project_wallet_credits_in_debt.available_osparc_credits
+            )
 
 
 async def connect_wallet_to_project(
@@ -54,25 +83,26 @@ async def connect_wallet_to_project(
 
     if current_project_wallet:
         # Do not allow to change wallet if the project connected wallet is in DEBT!
-        project_wallet_credits = await credit_transactions.get_wallet_total_credits(
-            rpc_client,
-            product_name=product_name,
-            wallet_id=current_project_wallet.wallet_id,
-            project_id=project_id,
-            transaction_status=CreditTransactionStatus.IN_DEBT,
-        )
-        if project_wallet_credits.available_osparc_credits > 0:
-            msg = (
-                f"Current Project Wallet {current_project_wallet.wallet_id} is in DEBT"
+        project_wallet_credits_in_debt = (
+            await credit_transactions.get_project_wallet_total_credits(
+                rpc_client,
+                product_name=product_name,
+                wallet_id=current_project_wallet.wallet_id,
+                project_id=project_id,
+                transaction_status=CreditTransactionStatus.IN_DEBT,
             )
-            raise ValueError(msg)
+        )
+        if project_wallet_credits_in_debt.available_osparc_credits < 0:
+            raise ProjectWalletDebtError(
+                debt_amount=project_wallet_credits_in_debt.available_osparc_credits
+            )
 
         # Do not allow to change wallet if the project has transaction in PENDING!
         project_service_runs_in_progress = await service_runs.get_service_run_page(
             rpc_client,
             user_id=user_id,
             product_name=product_name,
-            wallet_id=wallet_id,
+            wallet_id=current_project_wallet.wallet_id,
             access_all_wallet_usage=True,
             transaction_status=CreditTransactionStatus.PENDING,
             project_id=project_id,
@@ -80,8 +110,7 @@ async def connect_wallet_to_project(
             limit=1,
         )
         if project_service_runs_in_progress.total > 0:
-            msg = "Can not change the wallet, as project has currently pending transaction"
-            raise ValueError(msg)
+            raise ProjectWalletPendingTransactionError
 
     await db.connect_wallet_to_project(project_uuid=project_id, wallet_id=wallet_id)
     return wallet
@@ -108,11 +137,11 @@ async def pay_debt_with_different_wallet(
     Parameters:
     - current_wallet_id: ID of Wallet A (the wallet currently linked to the project).
     - new_wallet_id: ID of Wallet B (the wallet the user wants to use to pay the debt).
-    - debt_amount: The amount to be transferred (e.g., 100 credits).
+    - debt_amount: The amount of debt to be payed (e.g., -100 credits). Needs to be negative.
 
     Process:
-    1. Transfer the specified debt amount (100 credits) from Wallet B to Wallet A.
-    2. Update the project's debt status (e.g., unblock the project).
+    1. Transfer the specified debt amount from Wallet B to Wallet A.
+    2. Update the project's debt status (this unblocks the project).
 
     Outcome:
     The project's debt is paid, Wallet A is credited, and Wallet B is debited.
@@ -146,8 +175,8 @@ async def pay_debt_with_different_wallet(
         wallet_name=new_wallet.name,
         user_id=user_id,
         user_email=user["email"],
-        osparc_credits=-debt_amount,  # <-- Negative number
-        payment_transaction_id=f"Payment transaction from wallet {current_wallet_id} to wallet {new_wallet_id}",
+        osparc_credits=debt_amount,  # <-- Negative number
+        payment_transaction_id=f"Payment transaction from wallet {current_wallet_id} to wallet {new_wallet_id}. Project id {project_id}.",
         created_at=_created_at,
     )
 
@@ -157,8 +186,8 @@ async def pay_debt_with_different_wallet(
         wallet_name=current_wallet.name,
         user_id=user_id,
         user_email=user["email"],
-        osparc_credits=debt_amount,  # <-- Positive number
-        payment_transaction_id=f"Payment transaction from wallet {new_wallet_id} to wallet {current_wallet_id}",
+        osparc_credits=-debt_amount,  # <-- Positive number
+        payment_transaction_id=f"Payment transaction from wallet {new_wallet_id} to wallet {current_wallet_id}. Project id {project_id}.",
         created_at=_created_at,
     )
 

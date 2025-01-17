@@ -9,7 +9,7 @@ from models_library.resource_tracker import CreditTransactionStatus
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
 
-from ...services import credit_transactions
+from ...services import credit_transactions, service_runs
 
 router = RPCRouter()
 
@@ -20,20 +20,33 @@ async def get_wallet_total_credits(
     *,
     product_name: ProductName,
     wallet_id: WalletID,
-    # internal filters
-    transaction_status: CreditTransactionStatus | None = None,
-    project_id: ProjectID | None = None,
 ) -> WalletTotalCredits:
-    return await credit_transactions.sum_credit_transactions_by_product_and_wallet(
+    return await credit_transactions.sum_wallet_credits(
         db_engine=app.state.engine,
         product_name=product_name,
         wallet_id=wallet_id,
-        transaction_status=transaction_status,
-        project_id=project_id,
     )
 
 
 @router.expose(reraise_if_error_type=())
+async def get_project_wallet_total_credits(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    wallet_id: WalletID,
+    project_id: ProjectID,
+    transaction_status: CreditTransactionStatus | None = None,
+) -> WalletTotalCredits:
+    return await service_runs.sum_project_wallet_total_credits(
+        db_engine=app.state.engine,
+        product_name=product_name,
+        wallet_id=wallet_id,
+        project_id=project_id,
+        transaction_status=transaction_status,
+    )
+
+
+@router.expose(reraise_if_error_type=(ValueError,))
 async def pay_project_debt(
     app: FastAPI,
     *,

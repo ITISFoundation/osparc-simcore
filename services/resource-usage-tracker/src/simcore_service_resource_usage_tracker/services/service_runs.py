@@ -1,7 +1,11 @@
+# pylint: disable=too-many-arguments
 from datetime import UTC, datetime, timedelta
 
 import shortuuid
 from aws_library.s3 import SimcoreS3API
+from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    WalletTotalCredits,
+)
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedByServiceGet,
     OsparcCreditsAggregatedUsagesPage,
@@ -179,6 +183,23 @@ async def export_service_runs(
         bucket=s3_bucket_name,
         object_key=s3_object_key,
         expiration_secs=_PRESIGNED_LINK_EXPIRATION_SEC,
+    )
+
+
+async def sum_project_wallet_total_credits(
+    db_engine: AsyncEngine,
+    *,
+    product_name: ProductName,
+    wallet_id: WalletID,
+    project_id: ProjectID,
+    transaction_status: CreditTransactionStatus | None = None,
+) -> WalletTotalCredits:
+    return await service_runs_db.sum_project_wallet_total_credits(
+        db_engine,
+        product_name=product_name,
+        wallet_id=wallet_id,
+        project_id=project_id,
+        transaction_status=transaction_status,
     )
 
 

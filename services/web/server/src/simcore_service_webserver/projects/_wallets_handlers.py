@@ -5,12 +5,13 @@
 import functools
 import logging
 from decimal import Decimal
+from typing import Annotated
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.projects import ProjectID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -26,7 +27,12 @@ from ..wallets.errors import WalletAccessForbiddenError, WalletNotFoundError
 from . import _wallets_api as wallets_api
 from . import projects_api
 from ._common.models import ProjectPathParams, RequestContext
-from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .exceptions import (
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+    ProjectWalletDebtError,
+    ProjectWalletPendingTransactionError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -43,7 +49,14 @@ def _handle_project_wallet_exceptions(handler: Handler):
         except WalletNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-        except (WalletAccessForbiddenError, ProjectInvalidRightsError) as exc:
+        except ProjectWalletDebtError as exc:
+            raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
+
+        except (
+            WalletAccessForbiddenError,
+            ProjectInvalidRightsError,
+            ProjectWalletPendingTransactionError,
+        ) as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper
@@ -111,7 +124,7 @@ async def connect_wallet_to_project(request: web.Request):
 
 
 class _PayProjectDebtBody(BaseModel):
-    amount: Decimal
+    amount: Annotated[Decimal, Field(lt=0)]
     model_config = ConfigDict(extra="forbid")
 
 

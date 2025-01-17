@@ -20,9 +20,10 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api.rest.dependencies import get_resource_tracker_db_engine
 from ..models.credit_transactions import CreditTransactionCreate
+from ..services.modules.db import service_runs_db
 from .modules.db import credit_transactions_db
 from .modules.rabbitmq import get_rabbitmq_client_from_request
-from .utils import make_negative, sum_credit_transactions_and_publish_to_rabbitmq
+from .utils import sum_credit_transactions_and_publish_to_rabbitmq
 
 
 async def create_credit_transaction(
@@ -74,21 +75,16 @@ async def create_credit_transaction(
         return transaction_id
 
 
-async def sum_credit_transactions_by_product_and_wallet(
+async def sum_wallet_credits(
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
     *,
     product_name: ProductName,
     wallet_id: WalletID,
-    # attribute filters
-    transaction_status: CreditTransactionStatus | None = None,
-    project_id: ProjectID | None = None,
 ) -> WalletTotalCredits:
-    return await credit_transactions_db.sum_credit_transactions_by_product_and_wallet(
+    return await credit_transactions_db.sum_wallet_credits(
         db_engine,
         product_name=product_name,
         wallet_id=wallet_id,
-        transaction_status=transaction_status,
-        project_id=project_id,
     )
 
 
@@ -102,27 +98,42 @@ async def pay_project_debt(
 ):
     # NOTE: `current_wallet_transaction` is the Wallet in DEBT
 
-    total_project_debt_amount = (
-        await credit_transactions_db.sum_credit_transactions_by_product_and_wallet(
-            db_engine,
-            product_name=current_wallet_transaction.product_name,
-            wallet_id=current_wallet_transaction.wallet_id,
-            transaction_status=CreditTransactionStatus.IN_DEBT,
-            project_id=project_id,
-        )
+    total_project_debt_amount = await service_runs_db.sum_project_wallet_total_credits(
+        db_engine,
+        product_name=current_wallet_transaction.product_name,
+        wallet_id=current_wallet_transaction.wallet_id,
+        project_id=project_id,
+        transaction_status=CreditTransactionStatus.IN_DEBT,
     )
 
     if (
         total_project_debt_amount.available_osparc_credits
         != new_wallet_transaction.osparc_credits
     ):
-        msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.osparc_credits}"
+        msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.wallet_id} credits {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.wallet_id} credits {current_wallet_transaction.osparc_credits}"
         raise ValueError(msg)
     if (
-        make_negative(total_project_debt_amount.available_osparc_credits)
+        -total_project_debt_amount.available_osparc_credits
         != current_wallet_transaction.osparc_credits
     ):
-        msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.osparc_credits}"
+        msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.wallet_id} credits {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.wallet_id} credits {current_wallet_transaction.osparc_credits}"
+        raise ValueError(msg)
+    if current_wallet_transaction.product_name != new_wallet_transaction.product_name:
+        msg = f"Currently we do not support credit exchange between different products. New wallet {new_wallet_transaction.wallet_id}, current wallet {current_wallet_transaction.wallet_id}"
+        raise ValueError(msg)
+
+    # Does the new wallet has enough credits to pay the debt?
+    new_wallet_total_credit_amount = await credit_transactions_db.sum_wallet_credits(
+        db_engine,
+        product_name=new_wallet_transaction.product_name,
+        wallet_id=new_wallet_transaction.wallet_id,
+    )
+    if (
+        new_wallet_total_credit_amount.available_osparc_credits
+        + total_project_debt_amount.available_osparc_credits
+        < 0
+    ):
+        msg = f"New wallet {new_wallet_transaction.wallet_id} doesn't have enough credits {new_wallet_total_credit_amount.available_osparc_credits} to pay the debt {total_project_debt_amount.available_osparc_credits} of current wallet {current_wallet_transaction.wallet_id}"
         raise ValueError(msg)
 
     new_wallet_transaction_create = CreditTransactionCreate(

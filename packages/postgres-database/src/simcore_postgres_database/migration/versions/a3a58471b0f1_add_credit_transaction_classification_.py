@@ -1,7 +1,7 @@
 """add credit transaction classification enums
 
 Revision ID: a3a58471b0f1
-Revises: 307017ee1a49
+Revises: f19905923355
 Create Date: 2025-01-14 13:44:05.025647+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "a3a58471b0f1"
-down_revision = "307017ee1a49"
+down_revision = "f19905923355"
 branch_labels = None
 depends_on = None
 

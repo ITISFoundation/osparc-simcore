@@ -1,4 +1,5 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
+
 # mypy: disable-error-code=truthy-function
 from typing import Any
 
@@ -235,6 +236,18 @@ class InvalidInputValue(WebServerBaseError):
 
 class ProjectGroupNotFoundError(BaseProjectError):
     msg_template = "Project group not found. {reason}"
+
+
+class ProjectWalletDebtError(BaseProjectError):
+    msg_template = (
+        "Project is in debt {debt_amount} credits. It is forbidden to change wallet."
+    )
+
+
+class ProjectWalletPendingTransactionError(BaseProjectError):
+    msg_template = (
+        "Project has currently pending transactions. It is forbidden to change wallet."
+    )
 
 
 assert ProjectLockError  # nosec

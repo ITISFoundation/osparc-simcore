@@ -34,7 +34,7 @@ router = APIRouter()
 async def get_credit_transactions_sum(
     wallet_total_credits: Annotated[
         WalletTotalCredits,
-        Depends(credit_transactions.sum_credit_transactions_by_product_and_wallet),
+        Depends(credit_transactions.sum_wallet_credits),
     ],
 ):
     return wallet_total_credits

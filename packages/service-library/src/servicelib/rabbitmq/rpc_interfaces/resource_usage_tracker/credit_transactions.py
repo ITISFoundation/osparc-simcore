@@ -32,16 +32,34 @@ async def get_wallet_total_credits(
     *,
     product_name: ProductName,
     wallet_id: WalletID,
-    transaction_status: CreditTransactionStatus | None = None,
-    project_id: ProjectID | None = None,
 ) -> WalletTotalCredits:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("get_wallet_total_credits"),
         product_name=product_name,
         wallet_id=wallet_id,
-        transaction_status=transaction_status,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, WalletTotalCredits)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_project_wallet_total_credits(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    wallet_id: WalletID,
+    project_id: ProjectID,
+    transaction_status: CreditTransactionStatus | None = None,
+) -> WalletTotalCredits:
+    result = await rabbitmq_rpc_client.request(
+        RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_project_wallet_total_credits"),
+        product_name=product_name,
+        wallet_id=wallet_id,
         project_id=project_id,
+        transaction_status=transaction_status,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, WalletTotalCredits)  # nosec

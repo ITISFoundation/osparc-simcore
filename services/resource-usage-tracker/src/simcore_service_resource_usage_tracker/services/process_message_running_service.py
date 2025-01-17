@@ -293,12 +293,10 @@ async def _process_stop_event(
             running_service.pricing_unit_cost,
         )
 
-        wallet_total_credits = (
-            await credit_transactions_db.sum_credit_transactions_by_product_and_wallet(
-                db_engine,
-                product_name=running_service.product_name,
-                wallet_id=running_service.wallet_id,
-            )
+        wallet_total_credits = await credit_transactions_db.sum_wallet_credits(
+            db_engine,
+            product_name=running_service.product_name,
+            wallet_id=running_service.wallet_id,
         )
         _transaction_status = (
             CreditTransactionStatus.BILLED

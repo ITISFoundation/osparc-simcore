@@ -13,6 +13,9 @@ from models_library.wallets import WalletID
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
+from simcore_postgres_database.models.resource_tracker_service_runs import (
+    resource_tracker_service_runs,
+)
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -158,22 +161,19 @@ async def batch_update_credit_transaction_status_for_in_debt_transactions(
 
     if project_id:
         update_stmt = update_stmt.where(
-            resource_tracker_credit_transactions.c.project_id == f"{project_id}"
+            resource_tracker_service_runs.c.project_id == f"{project_id}"
         )
     async with transaction_context(engine, connection) as conn:
         result = await conn.execute(update_stmt)
         print(result)
 
 
-async def sum_credit_transactions_by_product_and_wallet(
+async def sum_wallet_credits(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
     wallet_id: WalletID,
-    # attribute filters
-    transaction_status: CreditTransactionStatus | None = None,
-    project_id: ProjectID | None = None,
 ) -> WalletTotalCredits:
     async with transaction_context(engine, connection) as conn:
         sum_stmt = sa.select(
@@ -191,16 +191,6 @@ async def sum_credit_transactions_by_product_and_wallet(
                 )
             )
         )
-
-        if project_id:
-            sum_stmt = sum_stmt.where(
-                resource_tracker_credit_transactions.c.project_id == f"{project_id}"
-            )
-        if transaction_status:
-            sum_stmt = sum_stmt.where(
-                resource_tracker_credit_transactions.c.transaction_status
-                == transaction_status
-            )
 
         result = await conn.execute(sum_stmt)
     row = result.first()

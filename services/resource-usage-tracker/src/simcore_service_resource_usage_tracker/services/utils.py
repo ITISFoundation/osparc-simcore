@@ -37,12 +37,10 @@ async def sum_credit_transactions_and_publish_to_rabbitmq(
     product_name: ProductName,
     wallet_id: WalletID,
 ) -> WalletTotalCredits:
-    wallet_total_credits = (
-        await credit_transactions_db.sum_credit_transactions_by_product_and_wallet(
-            db_engine,
-            product_name=product_name,
-            wallet_id=wallet_id,
-        )
+    wallet_total_credits = await credit_transactions_db.sum_wallet_credits(
+        db_engine,
+        product_name=product_name,
+        wallet_id=wallet_id,
     )
     publish_message = WalletCreditsMessage.model_construct(
         wallet_id=wallet_id,

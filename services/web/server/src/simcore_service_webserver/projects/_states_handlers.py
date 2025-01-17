@@ -36,6 +36,7 @@ from ..users import api
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.errors import WalletNotEnoughCreditsError
+from . import api as projects_service
 from . import projects_api
 from ._common.models import ProjectPathParams, RequestContext
 from .exceptions import (
@@ -125,6 +126,12 @@ async def open_project(request: web.Request) -> web.Response:
             check_permissions=(
                 "write" if project_type is ProjectType.TEMPLATE else "read"
             ),
+        )
+
+        await projects_service.raise_if_project_is_in_debt(
+            request.app,
+            project_id=path_params.project_id,
+            product_name=req_ctx.product_name,
         )
 
         product: Product = get_current_product(request)
