@@ -2,23 +2,23 @@ import logging
 
 from servicelib.aiohttp import status
 
-from ..exception_handling import (
+from ...exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ..projects.exceptions import (
+from ...projects.exceptions import (
     ProjectInvalidRightsError,
     ProjectRunningConflictError,
     ProjectStoppingError,
 )
-from ..workspaces.errors import (
+from ...workspaces.errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceFolderInconsistencyError,
     WorkspaceNotFoundError,
 )
-from .errors import (
+from ..errors import (
     FolderAccessForbiddenError,
     FolderNotFoundError,
     FoldersValueError,
