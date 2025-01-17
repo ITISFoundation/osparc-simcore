@@ -480,6 +480,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
         trashedAt: resourceData.trashedAt ? new Date(resourceData.trashedAt) : null,
+        trashedBy: resourceData.trashedBy || null,
         icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],

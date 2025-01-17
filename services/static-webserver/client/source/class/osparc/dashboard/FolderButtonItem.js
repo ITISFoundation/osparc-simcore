@@ -123,13 +123,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.TITLE);
           break;
-        case "subtitle-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-          this._add(control, osparc.dashboard.FolderButtonBase.POS.SUBTITLE);
-          break;
         case "date-by":
           control = new osparc.ui.basic.DateAndBy();
-          this.getChildControl("subtitle-layout").add(control);
+          this._add(control, osparc.dashboard.FolderButtonBase.POS.SUBTITLE);
           break;
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
