@@ -1,5 +1,5 @@
 import functools
-from collections.abc import Callable, Coroutine
+from collections.abc import Awaitable, Callable, Coroutine
 from typing import Any, Final, ParamSpec, TypeVar
 
 from models_library.projects import ProjectID
@@ -61,6 +61,43 @@ def with_project_locked(
                 return await _exclusive_func(*args, **kwargs)
             except CouldNotAcquireLockError as e:
                 raise ProjectLockError from e
+
+        return _wrapper
+
+    return _decorator
+
+
+def with_project_locked_and_notify(
+    redis_client: RedisClientSDK | Callable[..., RedisClientSDK],
+    *,
+    project_uuid: str,
+    status: ProjectStatus,
+    owner: Owner,
+    notification_cb: Callable[[], Awaitable[None]] | None,
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+]:
+    def _decorator(
+        func: Callable[P, Coroutine[Any, Any, R]],
+    ) -> Callable[P, Coroutine[Any, Any, R]]:
+        @functools.wraps(func)
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            @with_project_locked(
+                redis_client,
+                project_uuid=project_uuid,
+                status=status,
+                owner=owner,
+            )
+            async def _locked_func() -> R:
+                if notification_cb is not None:
+                    await notification_cb()
+
+                return await func(*args, **kwargs)
+
+            result = await _locked_func()
+            if notification_cb is not None:
+                await notification_cb()
+            return result
 
         return _wrapper
 

@@ -18,6 +18,7 @@ from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.redis._project_lock import with_project_locked_and_notify
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodeCreate,
@@ -29,6 +30,7 @@ from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..folders import _folders_repository as folders_db
+from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
@@ -40,7 +42,6 @@ from . import _folders_db as project_to_folders_db
 from . import projects_api
 from ._metadata_api import set_project_ancestors
 from ._permalink_api import update_or_pop_permalink_in_project
-from ._projects_locks_utils import with_project_locked_and_notify
 from .db import ProjectDBAPI
 from .exceptions import (
     ParentNodeNotFoundError,
@@ -182,16 +183,20 @@ async def _copy_files_from_source_project(
                 await long_running_task.result()
 
     if needs_lock_source_project:
+
+        async def _notification_cb() -> None:
+            await projects_api.retrieve_and_notify_project_locked_state(
+                user_id, source_project["uuid"], app
+            )
+
         await with_project_locked_and_notify(
-            app,
+            get_redis_lock_manager_client_sdk(app),
             project_uuid=source_project["uuid"],
             status=ProjectStatus.CLONING,
             owner=Owner(
                 user_id=user_id, **await get_user_fullname(app, user_id=user_id)
             ),
-            notification_cb=projects_api.retrieve_and_notify_project_locked_state(
-                user_id, source_project["uuid"], app
-            ),
+            notification_cb=_notification_cb,
         )(_copy)()
     else:
         await _copy()

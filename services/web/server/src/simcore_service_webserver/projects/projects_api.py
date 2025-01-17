@@ -82,6 +82,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
 )
 from servicelib.redis import get_project_locked_state, is_project_locked
 from servicelib.redis._decorators import exclusive
+from servicelib.redis._project_lock import with_project_locked_and_notify
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
@@ -128,7 +129,6 @@ from ._access_rights_api import (
 )
 from ._db_utils import PermissionStr
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
-from ._projects_locks_utils import with_project_locked_and_notify
 from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
@@ -1258,7 +1258,7 @@ async def try_open_project_for_user(
     try:
 
         @with_project_locked_and_notify(
-            app,
+            get_redis_lock_manager_client_sdk(app),
             project_uuid=project_uuid,
             status=ProjectStatus.OPENING,
             owner=Owner(
@@ -1757,7 +1757,7 @@ async def remove_project_dynamic_services(
     # -------------------
 
     @with_project_locked_and_notify(
-        app,
+        get_redis_lock_manager_client_sdk(app),
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
         owner=Owner(user_id=user_id, **user_name_data),
