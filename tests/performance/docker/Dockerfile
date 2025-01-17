@@ -10,6 +10,7 @@ LABEL maintainer=bisgaard-itis
 # NOTE: to list the latest version run `make` inside `scripts/apt-packages-versions`
 ENV DOCKER_APT_VERSION="5:26.1.4-1~debian.12~bookworm"
 
+# -------------------------- Install docker -------------------
 # for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
 RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
   echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
