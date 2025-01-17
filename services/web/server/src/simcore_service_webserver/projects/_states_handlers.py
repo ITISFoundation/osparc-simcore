@@ -8,6 +8,7 @@ import json
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects_state import ProjectState
 from pydantic import BaseModel
 from servicelib.aiohttp import status
@@ -169,7 +170,7 @@ async def open_project(request: web.Request) -> web.Response:
         )
         await projects_api.notify_project_state_update(request.app, project)
 
-        return envelope_json_response(project)
+        return envelope_json_response(ProjectGet.from_domain_model(project))
 
     except DirectorServiceError as exc:
         # there was an issue while accessing the director-v2/director-v0

@@ -55,7 +55,7 @@ class TagGet(OutputSchema):
     access_rights: TagAccessRights = Field(..., alias="accessRights")
 
     @classmethod
-    def from_model(cls, tag: TagDict) -> Self:
+    def from_domain_model(cls, tag: TagDict) -> Self:
         # NOTE: cls(access_rights=tag, **tag) would also work because of Config
         return cls(
             id=tag["id"],
@@ -84,7 +84,7 @@ class TagGroupCreate(InputSchema):
     write: bool
     delete: bool
 
-    def to_model(self) -> AccessRightsDict:
+    def to_domain_model(self) -> AccessRightsDict:
         data = self.model_dump()
         return AccessRightsDict(
             read=data["read"],
@@ -101,7 +101,7 @@ class TagGroupGet(OutputSchema):
     delete: bool
 
     @classmethod
-    def from_model(cls, data: TagAccessRightsDict) -> Self:
+    def from_domain_model(cls, data: TagAccessRightsDict) -> Self:
         return cls(
             gid=data["group_id"],
             read=data["read"],

@@ -3,41 +3,22 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.workspaces import (
-    WorkspaceGet,
-    WorkspaceGetPage,
-)
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import (
-    UserWorkspaceAccessRightsDB,
+    UserWorkspaceWithAccessRights,
     WorkspaceID,
-    WorkspaceUpdateDB,
+    WorkspaceUpdates,
 )
 from pydantic import NonNegativeInt
 
 from ..projects._db_utils import PermissionStr
 from ..users.api import get_user
-from . import _workspaces_db as db
+from . import _workspaces_repository as db
 from .errors import WorkspaceAccessForbiddenError
 
 _logger = logging.getLogger(__name__)
-
-
-def _to_api_model(workspace_db: UserWorkspaceAccessRightsDB) -> WorkspaceGet:
-    return WorkspaceGet(
-        workspace_id=workspace_db.workspace_id,
-        name=workspace_db.name,
-        description=workspace_db.description,
-        thumbnail=workspace_db.thumbnail,
-        created_at=workspace_db.created,
-        modified_at=workspace_db.modified,
-        trashed_at=workspace_db.trashed,
-        trashed_by=workspace_db.trashed_by if workspace_db.trashed else None,
-        my_access_rights=workspace_db.my_access_rights,
-        access_rights=workspace_db.access_rights,
-    )
 
 
 async def create_workspace(
@@ -48,10 +29,9 @@ async def create_workspace(
     description: str | None,
     thumbnail: str | None,
     product_name: ProductName,
-) -> WorkspaceGet:
+) -> UserWorkspaceWithAccessRights:
     user = await get_user(app, user_id=user_id)
-
-    created_workspace_db = await db.create_workspace(
+    created = await db.create_workspace(
         app,
         product_name=product_name,
         owner_primary_gid=user["primary_gid"],
@@ -59,13 +39,12 @@ async def create_workspace(
         description=description,
         thumbnail=thumbnail,
     )
-    workspace_db = await db.get_workspace_for_user(
+    return await db.get_workspace_for_user(
         app,
         user_id=user_id,
-        workspace_id=created_workspace_db.workspace_id,
+        workspace_id=created.workspace_id,
         product_name=product_name,
     )
-    return _to_api_model(workspace_db)
 
 
 async def get_workspace(
@@ -74,15 +53,14 @@ async def get_workspace(
     user_id: UserID,
     workspace_id: WorkspaceID,
     product_name: ProductName,
-) -> WorkspaceGet:
-    workspace_db = await check_user_workspace_access(
+) -> UserWorkspaceWithAccessRights:
+    return await get_user_workspace(
         app=app,
         user_id=user_id,
         workspace_id=workspace_id,
         product_name=product_name,
         permission="read",
     )
-    return _to_api_model(workspace_db)
 
 
 async def list_workspaces(
@@ -95,7 +73,7 @@ async def list_workspaces(
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
-) -> WorkspaceGetPage:
+) -> tuple[int, list[UserWorkspaceWithAccessRights]]:
     total_count, workspaces = await db.list_workspaces_for_user(
         app,
         user_id=user_id,
@@ -107,10 +85,7 @@ async def list_workspaces(
         order_by=order_by,
     )
 
-    return WorkspaceGetPage(
-        items=[_to_api_model(workspace_db) for workspace_db in workspaces],
-        total=total_count,
-    )
+    return total_count, workspaces
 
 
 async def update_workspace(
@@ -120,7 +95,7 @@ async def update_workspace(
     user_id: UserID,
     workspace_id: WorkspaceID,
     **updates,
-) -> WorkspaceGet:
+) -> UserWorkspaceWithAccessRights:
 
     await check_user_workspace_access(
         app=app,
@@ -133,15 +108,14 @@ async def update_workspace(
         app,
         workspace_id=workspace_id,
         product_name=product_name,
-        updates=WorkspaceUpdateDB(**updates),
+        updates=WorkspaceUpdates(**updates),
     )
-    workspace_db = await db.get_workspace_for_user(
+    return await db.get_workspace_for_user(
         app,
         user_id=user_id,
         workspace_id=workspace_id,
         product_name=product_name,
     )
-    return _to_api_model(workspace_db)
 
 
 async def delete_workspace(
@@ -159,7 +133,46 @@ async def delete_workspace(
         permission="delete",
     )
 
-    await db.delete_workspace(app, workspace_id=workspace_id, product_name=product_name)
+    await db.delete_workspace(
+        app,
+        workspace_id=workspace_id,
+        product_name=product_name,
+    )
+
+
+async def get_user_workspace(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    workspace_id: WorkspaceID,
+    product_name: ProductName,
+    permission: PermissionStr | None,
+) -> UserWorkspaceWithAccessRights:
+    """
+
+    Here checking access is optional. A use case is when the caller has guarantees that
+    `user_id` has granted access and we do not want to re-check
+
+    Raises:
+        WorkspaceAccessForbiddenError: if permission not None and user_id does not have access
+    """
+    workspace: UserWorkspaceWithAccessRights = await db.get_workspace_for_user(
+        app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+    )
+
+    # NOTE: check here is optional
+    if permission is not None:
+        has_user_granted_permission = getattr(
+            workspace.my_access_rights, permission, False
+        )
+        if not has_user_granted_permission:
+            raise WorkspaceAccessForbiddenError(
+                user_id=user_id,
+                workspace_id=workspace_id,
+                product_name=product_name,
+                permission_checked=permission,
+            )
+    return workspace
 
 
 async def check_user_workspace_access(
@@ -168,19 +181,19 @@ async def check_user_workspace_access(
     user_id: UserID,
     workspace_id: WorkspaceID,
     product_name: ProductName,
-    permission: PermissionStr = "read",
-) -> UserWorkspaceAccessRightsDB:
+    permission: PermissionStr,
+) -> UserWorkspaceWithAccessRights:
     """
-    Raises WorkspaceAccessForbiddenError if no access
+    As `get_user_workspace` but here access check is required
+
+    Raises:
+        WorkspaceAccessForbiddenError
     """
-    workspace_db: UserWorkspaceAccessRightsDB = await db.get_workspace_for_user(
-        app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+    return await get_user_workspace(
+        app,
+        user_id=user_id,
+        workspace_id=workspace_id,
+        product_name=product_name,
+        # NOTE: check here is required
+        permission=permission,
     )
-    if getattr(workspace_db.my_access_rights, permission, False) is False:
-        raise WorkspaceAccessForbiddenError(
-            user_id=user_id,
-            workspace_id=workspace_id,
-            product_name=product_name,
-            permission_checked=permission,
-        )
-    return workspace_db
