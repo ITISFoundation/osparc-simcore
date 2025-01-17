@@ -20,6 +20,8 @@ class FolderGet(OutputSchema):
     created_at: datetime
     modified_at: datetime
     trashed_at: datetime | None
+    # NOTE: by design a folder is constraint to trashed_by == owner
+    # but we add this here for completeness
     trashed_by: UserID | None
     owner: GroupID
     workspace_id: WorkspaceID | None
