@@ -16,7 +16,6 @@ from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import fire_and_forget_task
 
-from ..folders.errors import FolderValueNotPermittedError
 from ..projects.projects_api import submit_delete_project_task
 from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
@@ -24,7 +23,8 @@ from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceFolderInconsistencyError,
 )
-from . import _folders_db as folders_db
+from . import _folders_repository as folders_db
+from .errors import FolderValueNotPermittedError
 
 _logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ async def create_folder(
         name=folder_db.name,
         created_at=folder_db.created,
         modified_at=folder_db.modified,
-        trashed_at=folder_db.trashed_at,
+        trashed_at=folder_db.trashed,
         owner=folder_db.created_by_gid,
         workspace_id=workspace_id,
         my_access_rights=user_folder_access_rights,
@@ -135,7 +135,7 @@ async def get_folder(
         name=folder_db.name,
         created_at=folder_db.created,
         modified_at=folder_db.modified,
-        trashed_at=folder_db.trashed_at,
+        trashed_at=folder_db.trashed,
         owner=folder_db.created_by_gid,
         workspace_id=folder_db.workspace_id,
         my_access_rights=user_folder_access_rights,
@@ -185,7 +185,7 @@ async def list_folders(
                 name=folder.name,
                 created_at=folder.created,
                 modified_at=folder.modified,
-                trashed_at=folder.trashed_at,
+                trashed_at=folder.trashed,
                 owner=folder.created_by_gid,
                 workspace_id=folder.workspace_id,
                 my_access_rights=folder.my_access_rights,
@@ -229,7 +229,7 @@ async def list_folders_full_depth(
                 name=folder.name,
                 created_at=folder.created,
                 modified_at=folder.modified,
-                trashed_at=folder.trashed_at,
+                trashed_at=folder.trashed,
                 owner=folder.created_by_gid,
                 workspace_id=folder.workspace_id,
                 my_access_rights=folder.my_access_rights,
@@ -306,7 +306,7 @@ async def update_folder(
         name=folder_db.name,
         created_at=folder_db.created,
         modified_at=folder_db.modified,
-        trashed_at=folder_db.trashed_at,
+        trashed_at=folder_db.trashed,
         owner=folder_db.created_by_gid,
         workspace_id=folder_db.workspace_id,
         my_access_rights=user_folder_access_rights,

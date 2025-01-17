@@ -57,7 +57,7 @@ def test_output_schemas_from_models(faker: Faker):
         group_type=GroupType.STANDARD,
         thumbnail=None,
     )
-    output_schema = GroupGet.from_model(
+    output_schema = GroupGet.from_domain_model(
         domain_model,
         access_rights=AccessRightsDict(read=True, write=False, delete=False),
     )
@@ -73,7 +73,7 @@ def test_output_schemas_from_models(faker: Faker):
         primary_gid=13,
         access_rights=AccessRightsDict(read=True, write=False, delete=False),
     )
-    output_schema = GroupUserGet.from_model(user=domain_model)
+    output_schema = GroupUserGet.from_domain_model(user=domain_model)
     assert output_schema.user_name == domain_model.name
 
 
@@ -82,13 +82,13 @@ def test_input_schemas_to_models(faker: Faker):
     input_schema = GroupCreate(
         label=faker.word(), description=faker.sentence(), thumbnail=faker.url()
     )
-    domain_model = input_schema.to_model()
+    domain_model = input_schema.to_domain_model()
     assert isinstance(domain_model, StandardGroupCreate)
     assert domain_model.name == input_schema.label
 
     # input : scheam -> model
     input_schema = GroupUpdate(label=faker.word())
-    domain_model = input_schema.to_model()
+    domain_model = input_schema.to_domain_model()
     assert isinstance(domain_model, StandardGroupUpdate)
     assert domain_model.name == input_schema.label
 

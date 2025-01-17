@@ -22,6 +22,6 @@ def test_adapter_from_model_to_schema():
     )
     my_preferences = {"foo": Preference(default_value=3, value=1)}
 
-    MyProfileGet.from_model(
+    MyProfileGet.from_domain_model(
         my_profile, my_groups_by_type, my_product_group, my_preferences
     )
