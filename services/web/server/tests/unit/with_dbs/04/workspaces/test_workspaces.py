@@ -20,7 +20,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.workspaces._workspaces_handlers import (
+from simcore_service_webserver.workspaces._workspaces_rest import (
     WorkspacesListQueryParams,
 )
 
