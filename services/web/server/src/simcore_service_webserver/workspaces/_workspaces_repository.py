@@ -19,6 +19,7 @@ from models_library.workspaces import (
     WorkspaceUpdates,
 )
 from pydantic import NonNegativeInt
+from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
@@ -40,7 +41,7 @@ from .errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 _logger = logging.getLogger(__name__)
 
 
-_SELECTION_ARGS = (
+_WORKSPACE_SELECTION_COLS = (
     workspaces.c.workspace_id,
     workspaces.c.name,
     workspaces.c.description,
@@ -52,10 +53,12 @@ _SELECTION_ARGS = (
     workspaces.c.trashed_by,
 )
 
-assert set(Workspace.model_fields) == {c.name for c in _SELECTION_ARGS}  # nosec
+assert set(Workspace.model_fields).issubset(
+    {c.name for c in _WORKSPACE_SELECTION_COLS}  # nosec
+), "part of the data-model is one-to-one to the domain model"
 assert set(WorkspaceUpdates.model_fields).issubset(  # nosec
     c.name for c in workspaces.columns
-)
+), "part of the data-model is one-to-one to the domain model"
 
 
 async def create_workspace(
@@ -80,32 +83,54 @@ async def create_workspace(
                 modified=func.now(),
                 product_name=product_name,
             )
-            .returning(*_SELECTION_ARGS)
+            .returning(*_WORKSPACE_SELECTION_COLS)
         )
         row = await result.first()
         return Workspace.model_validate(row)
 
 
-_access_rights_subquery = (
-    select(
-        workspaces_access_rights.c.workspace_id,
-        func.jsonb_object_agg(
-            workspaces_access_rights.c.gid,
-            func.jsonb_build_object(
-                "read",
-                workspaces_access_rights.c.read,
-                "write",
-                workspaces_access_rights.c.write,
-                "delete",
-                workspaces_access_rights.c.delete,
-            ),
+def _create_base_query(caller_user_id: UserID, product_name: ProductName):
+    # any other access
+    access_rights_subquery = (
+        select(
+            workspaces_access_rights.c.workspace_id,
+            func.jsonb_object_agg(
+                workspaces_access_rights.c.gid,
+                func.jsonb_build_object(
+                    "read",
+                    workspaces_access_rights.c.read,
+                    "write",
+                    workspaces_access_rights.c.write,
+                    "delete",
+                    workspaces_access_rights.c.delete,
+                ),
+            )
+            .filter(
+                workspaces_access_rights.c.read  # Filters out entries where "read" is False
+            )
+            .label("access_rights"),
+        ).group_by(workspaces_access_rights.c.workspace_id)
+    ).subquery("access_rights_subquery")
+
+    # caller's access rights
+    my_access_rights_subquery = create_my_workspace_access_rights_subquery(
+        user_id=caller_user_id
+    )
+
+    return (
+        select(
+            *_WORKSPACE_SELECTION_COLS,
+            access_rights_subquery.c.access_rights,
+            my_access_rights_subquery.c.my_access_rights,
+            users.c.primary_gid.label("trashed_by_primary_gid"),
         )
-        .filter(
-            workspaces_access_rights.c.read  # Filters out entries where "read" is False
+        .select_from(
+            workspaces.join(access_rights_subquery)
+            .join(my_access_rights_subquery)
+            .outerjoin(users, workspaces.c.trashed_by == users.c.id)
         )
-        .label("access_rights"),
-    ).group_by(workspaces_access_rights.c.workspace_id)
-).subquery("access_rights_subquery")
+        .where(workspaces.c.product_name == product_name)
+    )
 
 
 async def list_workspaces_for_user(
@@ -120,21 +145,7 @@ async def list_workspaces_for_user(
     limit: NonNegativeInt,
     order_by: OrderBy,
 ) -> tuple[int, list[UserWorkspaceWithAccessRights]]:
-    my_access_rights_subquery = create_my_workspace_access_rights_subquery(
-        user_id=user_id
-    )
-
-    base_query = (
-        select(
-            *_SELECTION_ARGS,
-            _access_rights_subquery.c.access_rights,
-            my_access_rights_subquery.c.my_access_rights,
-        )
-        .select_from(
-            workspaces.join(_access_rights_subquery).join(my_access_rights_subquery)
-        )
-        .where(workspaces.c.product_name == product_name)
-    )
+    base_query = _create_base_query(caller_user_id=user_id, product_name=product_name)
 
     if filter_trashed is not None:
         base_query = base_query.where(
@@ -178,24 +189,7 @@ async def get_workspace_for_user(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> UserWorkspaceWithAccessRights:
-    my_access_rights_subquery = create_my_workspace_access_rights_subquery(
-        user_id=user_id
-    )
-
-    base_query = (
-        select(
-            *_SELECTION_ARGS,
-            _access_rights_subquery.c.access_rights,
-            my_access_rights_subquery.c.my_access_rights,
-        )
-        .select_from(
-            workspaces.join(_access_rights_subquery).join(my_access_rights_subquery)
-        )
-        .where(
-            (workspaces.c.workspace_id == workspace_id)
-            & (workspaces.c.product_name == product_name)
-        )
-    )
+    base_query = _create_base_query(caller_user_id=user_id, product_name=product_name)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(base_query)
@@ -229,7 +223,7 @@ async def update_workspace(
                 (workspaces.c.workspace_id == workspace_id)
                 & (workspaces.c.product_name == product_name)
             )
-            .returning(*_SELECTION_ARGS)
+            .returning(*_WORKSPACE_SELECTION_COLS)
         )
         row = await result.first()
         if row is None:
