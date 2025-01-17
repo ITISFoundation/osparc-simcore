@@ -513,12 +513,12 @@ async def workspace(
     # CREATE a workspace
     resp = await client.post("/v0/workspaces", json={"name": "My first workspace"})
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    workspace = WorkspaceGet.model_validate(data)
+    wks = WorkspaceGet.model_validate(data)
 
-    yield workspace
+    yield wks
 
     # DELETE a workspace
-    resp = await client.delete(f"/v0/workspaces/{workspace.workspace_id}")
+    resp = await client.delete(f"/v0/workspaces/{wks.workspace_id}")
     data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
 

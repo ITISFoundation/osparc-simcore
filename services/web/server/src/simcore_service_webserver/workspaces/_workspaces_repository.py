@@ -82,7 +82,7 @@ async def create_workspace(
         return Workspace.model_validate(row)
 
 
-def _create_base_query(caller_user_id: UserID, product_name: ProductName):
+def _create_base_select_query(caller_user_id: UserID, product_name: ProductName):
     # any other access
     access_rights_subquery = (
         select(
@@ -138,29 +138,34 @@ async def list_workspaces_for_user(
     limit: NonNegativeInt,
     order_by: OrderBy,
 ) -> tuple[int, list[UserWorkspaceWithAccessRights]]:
-    base_query = _create_base_query(caller_user_id=user_id, product_name=product_name)
+    base_select_query = _create_base_select_query(
+        caller_user_id=user_id, product_name=product_name
+    )
 
     if filter_trashed is not None:
-        base_query = base_query.where(
+        base_select_query = base_select_query.where(
             workspaces.c.trashed.is_not(None)
             if filter_trashed
             else workspaces.c.trashed.is_(None)
         )
     if filter_by_text is not None:
-        base_query = base_query.where(
+        base_select_query = base_select_query.where(
             (workspaces.c.name.ilike(f"%{filter_by_text}%"))
             | (workspaces.c.description.ilike(f"%{filter_by_text}%"))
         )
 
     # Select total count from base_query
-    subquery = base_query.subquery()
-    count_query = select(func.count()).select_from(subquery)
+    count_query = select(func.count()).select_from(base_select_query.subquery())
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
-        list_query = base_query.order_by(asc(getattr(workspaces.c, order_by.field)))
+        list_query = base_select_query.order_by(
+            asc(getattr(workspaces.c, order_by.field))
+        )
     else:
-        list_query = base_query.order_by(desc(getattr(workspaces.c, order_by.field)))
+        list_query = base_select_query.order_by(
+            desc(getattr(workspaces.c, order_by.field))
+        )
     list_query = list_query.offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -182,10 +187,12 @@ async def get_workspace_for_user(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> UserWorkspaceWithAccessRights:
-    base_query = _create_base_query(caller_user_id=user_id, product_name=product_name)
+    select_query = _create_base_select_query(
+        caller_user_id=user_id, product_name=product_name
+    )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(base_query)
+        result = await conn.stream(select_query)
         row = await result.first()
         if row is None:
             raise WorkspaceAccessForbiddenError(
