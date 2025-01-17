@@ -297,7 +297,7 @@ async def list_service_runs_by_product_and_user_and_wallet(
             )
         if project_id:
             base_query = base_query.where(
-                resource_tracker_service_runs.c.project_id == project_id
+                resource_tracker_service_runs.c.project_id == f"{project_id}"
             )
         if transaction_status:
             base_query = base_query.where(

@@ -21,6 +21,7 @@ from models_library.resource_tracker import (
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     credit_transactions,
+    service_runs,
 )
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
@@ -28,6 +29,7 @@ from simcore_postgres_database.models.resource_tracker_credit_transactions impor
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
+from simcore_service_resource_usage_tracker.services.service_runs import ServiceRunPage
 from starlette import status
 from yarl import URL
 
@@ -166,15 +168,17 @@ def resource_tracker_setup_db(
                         stopped_at=datetime.now(tz=UTC),
                         project_id=project_id,
                         service_run_status=ServiceRunStatus.SUCCESS,
+                        wallet_id=_WALLET_ID,
                     ),
                     random_resource_tracker_service_run(
                         user_id=_USER_ID_2,  # <-- different user
                         service_run_id=_SERVICE_RUN_ID_2,
                         product_name=product_name,
                         started_at=datetime.now(tz=UTC) - timedelta(hours=1),
-                        stopped_at=datetime.now(tz=UTC),
+                        stopped_at=None,
                         project_id=project_id,
-                        service_run_status=ServiceRunStatus.SUCCESS,
+                        service_run_status=ServiceRunStatus.RUNNING,  # <-- Runnin status
+                        wallet_id=_WALLET_ID,
                     ),
                     random_resource_tracker_service_run(
                         user_id=_USER_ID_1,
@@ -184,6 +188,7 @@ def resource_tracker_setup_db(
                         stopped_at=datetime.now(tz=UTC),
                         project_id=project_id,
                         service_run_status=ServiceRunStatus.SUCCESS,
+                        wallet_id=_WALLET_ID,
                     ),
                     random_resource_tracker_service_run(
                         user_id=_USER_ID_1,
@@ -193,6 +198,7 @@ def resource_tracker_setup_db(
                         stopped_at=datetime.now(tz=UTC),
                         project_id=faker.uuid4(),  # <-- different project
                         service_run_status=ServiceRunStatus.SUCCESS,
+                        wallet_id=_WALLET_ID,
                     ),
                 ]
             )
@@ -210,6 +216,7 @@ def resource_tracker_setup_db(
                         user_id=_USER_ID_1,
                         service_run_id=_SERVICE_RUN_ID_1,
                         product_name=product_name,
+                        payment_transaction_id=None,
                         osparc_credits=-50,
                         transaction_status=CreditTransactionStatus.BILLED,
                         transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
@@ -219,8 +226,9 @@ def resource_tracker_setup_db(
                         user_id=_USER_ID_2,  # <-- different user
                         service_run_id=_SERVICE_RUN_ID_2,
                         product_name=product_name,
+                        payment_transaction_id=None,
                         osparc_credits=-70,
-                        transaction_status=CreditTransactionStatus.BILLED,
+                        transaction_status=CreditTransactionStatus.PENDING,  # <-- Pending status
                         transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
                         wallet_id=_WALLET_ID,
                     ),
@@ -229,6 +237,7 @@ def resource_tracker_setup_db(
                         osparc_credits=-100,
                         service_run_id=_SERVICE_RUN_ID_3,
                         product_name=product_name,
+                        payment_transaction_id=None,
                         transaction_status=CreditTransactionStatus.IN_DEBT,  # <-- IN DEBT
                         transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
                         wallet_id=_WALLET_ID,
@@ -238,6 +247,7 @@ def resource_tracker_setup_db(
                         osparc_credits=-90,
                         service_run_id=_SERVICE_RUN_ID_4,
                         product_name=product_name,
+                        payment_transaction_id=None,
                         transaction_status=CreditTransactionStatus.BILLED,
                         transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
                         wallet_id=_WALLET_ID,
@@ -248,6 +258,7 @@ def resource_tracker_setup_db(
                         osparc_credits=50,  # <-- Not enough credits to pay the DEBT (-100)
                         service_run_id=None,
                         product_name=product_name,
+                        payment_transaction_id="INVITATION",
                         transaction_status=CreditTransactionStatus.BILLED,
                         transaction_classification=CreditClassification.ADD_WALLET_TOP_UP,
                         wallet_id=_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS,
@@ -451,3 +462,56 @@ async def test_pay_project_debt(
         == total_wallet_credits_for_wallet_in_debt_in_beginning.available_osparc_credits
         + 100  # <-- 100 was added to the original wallet
     )
+
+
+async def test_list_service_runs_with_transaction_status_filter(
+    mocked_redis_server: None,
+    resource_tracker_setup_db: None,
+    rpc_client: RabbitMQRPCClient,
+    project_id: ProjectID,
+    product_name: ProductName,
+):
+    result = await service_runs.get_service_run_page(
+        rpc_client,
+        user_id=_USER_ID_1,
+        product_name=product_name,
+        wallet_id=_WALLET_ID,
+        access_all_wallet_usage=True,
+        project_id=project_id,
+        transaction_status=CreditTransactionStatus.PENDING,
+        offset=0,
+        limit=1,
+    )
+    assert isinstance(result, ServiceRunPage)
+    assert len(result.items) == 1
+    assert result.total == 1
+
+    result = await service_runs.get_service_run_page(
+        rpc_client,
+        user_id=_USER_ID_1,
+        product_name=product_name,
+        wallet_id=_WALLET_ID,
+        access_all_wallet_usage=True,
+        project_id=project_id,
+        transaction_status=CreditTransactionStatus.IN_DEBT,
+        offset=0,
+        limit=1,
+    )
+    assert isinstance(result, ServiceRunPage)
+    assert len(result.items) == 1
+    assert result.total == 1
+
+    result = await service_runs.get_service_run_page(
+        rpc_client,
+        user_id=_USER_ID_1,
+        product_name=product_name,
+        wallet_id=_WALLET_ID,
+        access_all_wallet_usage=True,
+        project_id=project_id,
+        transaction_status=CreditTransactionStatus.BILLED,
+        offset=0,
+        limit=1,
+    )
+    assert isinstance(result, ServiceRunPage)
+    assert len(result.items) == 1
+    assert result.total == 1
