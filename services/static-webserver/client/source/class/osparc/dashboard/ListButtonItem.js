@@ -70,7 +70,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "date-text":
           control = new qx.ui.basic.Label().set({
-            anonymous: true,
             font: "text-13",
             allowGrowY: false,
             minWidth: 120,
@@ -196,7 +195,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       if (value) {
         if (this.isResourceType("study") || this.isResourceType("template")) {
           const label = this.getChildControl("date-text");
-          label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+          label.set({
+            value: osparc.utils.Utils.formatDateAndTime(value),
+            toolTipText: this.tr("Last modified"),
+          });
         }
       }
     },
@@ -206,7 +208,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       if (value && value.getTime() !== new Date(0).getTime()) {
         if (this.isResourceType("study") || this.isResourceType("template")) {
           const label = this.getChildControl("date-text");
-          label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+          label.set({
+            value: osparc.utils.Utils.formatDateAndTime(value),
+            toolTipText: this.tr("Moved to the bin"),
+          });
         }
       }
     },

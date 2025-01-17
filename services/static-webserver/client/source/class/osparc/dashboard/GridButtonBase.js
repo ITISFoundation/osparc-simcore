@@ -256,7 +256,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             textColor: "contrasted-text-dark",
             alignY: "middle",
             rich: true,
-            anonymous: true,
             font: "text-12",
             allowGrowY: false
           });
