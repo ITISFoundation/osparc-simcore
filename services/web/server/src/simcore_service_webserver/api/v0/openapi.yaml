@@ -10018,6 +10018,7 @@ components:
             minimum: 0
           - type: 'null'
           title: Trashedby
+          description: The primary gid of the user who trashed
         owner:
           type: integer
           exclusiveMinimum: true
@@ -15211,6 +15212,7 @@ components:
             minimum: 0
           - type: 'null'
           title: Trashedby
+          description: The primary gid of the user who trashed
         myAccessRights:
           $ref: '#/components/schemas/AccessRights'
         accessRights:
