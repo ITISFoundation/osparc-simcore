@@ -6,10 +6,11 @@ from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
 
-from . import CouldNotAcquireLockError, RedisClientSDK, exclusive
-from ._errors import ProjectLockError
+from ._client import RedisClientSDK
+from ._decorators import exclusive
+from ._errors import CouldNotAcquireLockError, ProjectLockError
 
-PROJECT_REDIS_LOCK_KEY: Final[str] = "project_lock:{}"
+_PROJECT_REDIS_LOCK_KEY: Final[str] = "project_lock:{}"
 
 
 P = ParamSpec("P")
@@ -25,6 +26,20 @@ def with_project_locked(
 ) -> Callable[
     [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
 ]:
+    """creates a distributed auto sustained Redis lock for project with project_uuid, keeping its status and owner in the lock data
+
+    Arguments:
+        redis_client -- the client to use to access redis
+        project_uuid -- the project UUID
+        status -- the project status
+
+    Keyword Arguments:
+        owner -- the owner of the lock (default: {None})
+
+    Returns:
+        the decorated function return value
+    """
+
     def _decorator(
         func: Callable[P, Coroutine[Any, Any, R]],
     ) -> Callable[P, Coroutine[Any, Any, R]]:
@@ -32,7 +47,7 @@ def with_project_locked(
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             @exclusive(
                 redis_client,
-                lock_key=PROJECT_REDIS_LOCK_KEY.format(project_uuid),
+                lock_key=_PROJECT_REDIS_LOCK_KEY.format(project_uuid),
                 lock_value=ProjectLocked(
                     value=True,
                     owner=owner,
@@ -55,7 +70,7 @@ def with_project_locked(
 async def is_project_locked(
     redis_client: RedisClientSDK, project_uuid: str | ProjectID
 ) -> bool:
-    redis_lock = redis_client.create_lock(PROJECT_REDIS_LOCK_KEY.format(project_uuid))
+    redis_lock = redis_client.create_lock(_PROJECT_REDIS_LOCK_KEY.format(project_uuid))
     return await redis_lock.locked()
 
 
@@ -68,7 +83,7 @@ async def get_project_locked_state(
     """
     if await is_project_locked(redis_client, project_uuid=project_uuid) and (
         lock_value := await redis_client.redis.get(
-            PROJECT_REDIS_LOCK_KEY.format(project_uuid)
+            _PROJECT_REDIS_LOCK_KEY.format(project_uuid)
         )
     ):
         return ProjectLocked.model_validate_json(lock_value)

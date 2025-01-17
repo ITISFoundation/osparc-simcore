@@ -9,7 +9,6 @@ from ._errors import (
 )
 from ._models import RedisManagerDBConfig
 from ._project_lock import (
-    PROJECT_REDIS_LOCK_KEY,
     get_project_locked_state,
     is_project_locked,
     with_project_locked,
@@ -24,7 +23,6 @@ __all__: tuple[str, ...] = (
     "handle_redis_returns_union_types",
     "is_project_locked",
     "LockLostError",
-    "PROJECT_REDIS_LOCK_KEY",
     "ProjectLockError",
     "RedisClientSDK",
     "RedisClientsManager",

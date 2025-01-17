@@ -15,13 +15,13 @@ from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from servicelib.async_utils import cancel_wait_task
 from servicelib.redis import (
-    PROJECT_REDIS_LOCK_KEY,
     ProjectLockError,
     RedisClientSDK,
     get_project_locked_state,
     is_project_locked,
     with_project_locked,
 )
+from servicelib.redis._project_lock import _PROJECT_REDIS_LOCK_KEY
 
 pytest_simcore_core_services_selection = [
     "redis",
@@ -79,7 +79,7 @@ async def test_with_project_locked(
         )
         # check lock name formatting is correct
         redis_lock = await redis_client_sdk.redis.get(
-            PROJECT_REDIS_LOCK_KEY.format(project_uuid)
+            _PROJECT_REDIS_LOCK_KEY.format(project_uuid)
         )
         assert redis_lock
         assert ProjectLocked.model_validate_json(redis_lock) == ProjectLocked(
