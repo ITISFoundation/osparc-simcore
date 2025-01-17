@@ -40,7 +40,7 @@ def update_apps_metadata():
                 file.write(data)
 
 
-def _get_index_file_paths():
+def _get_output_file_paths(filename="index.html"):
     index_file_paths = []
     dirname = os.path.dirname(__file__)
     applications = _read_json_file("apps_metadata.json")
@@ -48,7 +48,7 @@ def _get_index_file_paths():
         application = i.get("application")
         for output_folder in output_folders:
             index_file_paths.append(
-                os.path.join(dirname, "..", output_folder, application, "index.html")
+                os.path.join(dirname, "..", output_folder, application, filename)
             )
     return index_file_paths
 
@@ -57,7 +57,8 @@ def add_no_cache_param(vcs_ref_client):
     if not vcs_ref_client:
         random.seed(5)
         vcs_ref_client = str(random.random())
-    index_file_paths = _get_index_file_paths()
+
+    index_file_paths = _get_output_file_paths("index.html")
     for index_file_path in index_file_paths:
         if not os.path.isfile(index_file_path):
             continue
@@ -66,6 +67,18 @@ def add_no_cache_param(vcs_ref_client):
             data = data.replace("vcs_ref_client", vcs_ref_client)
         with open(index_file_path, "w") as file:
             print(f"Updating vcs_ref_client: {index_file_path}")
+            file.write(data)
+
+    boot_file_paths = _get_output_file_paths("boot.js")
+    for boot_file_path in boot_file_paths:
+        if not os.path.isfile(boot_file_path):
+            continue
+        with open(boot_file_path) as boot_file:
+            data = boot_file.read()
+            # data = data.replace("var URL_PARAMETERS = {{}}", "var URL_PARAMETERS = {{'add-no-cache': true}}")
+            data = data.replace("addNoCacheParam : false", "addNoCacheParam : true")
+        with open(boot_file_path, "w") as file:
+            print(f"Updating URL_PARAMETERS: {boot_file_path}")
             file.write(data)
 
 
