@@ -38,10 +38,10 @@ qx.Class.define("osparc.ui.basic.DateAndBy", {
       apply: "__applyDate",
     },
 
-    gid: {
+    groupId: {
       check: "Number",
       nullable: true,
-      apply: "__applyGid",
+      apply: "__applyGroupId",
     },
   },
 
@@ -60,7 +60,7 @@ qx.Class.define("osparc.ui.basic.DateAndBy", {
           this._addAt(control, 0);
           break;
         case "last-touching":
-          new qx.ui.basic.Atom().set({
+          control = new qx.ui.basic.Atom().set({
             alignY: "middle",
             allowGrowX: false,
             allowShrinkX: false,
@@ -84,10 +84,10 @@ qx.Class.define("osparc.ui.basic.DateAndBy", {
       }
     },
 
-    __applyGid: function(gid) {
-      if (gid) {
+    __applyGroupId: function(groupId) {
+      if (groupId) {
         const atom = this.getChildControl("last-touching");
-        osparc.dashboard.CardBase.addHintFromGids(atom, [gid]);
+        osparc.dashboard.CardBase.addHintFromGids(atom, [groupId]);
       }
     },
   }

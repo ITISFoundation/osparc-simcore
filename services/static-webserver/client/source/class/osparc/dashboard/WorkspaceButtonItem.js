@@ -145,21 +145,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           layout = this.getChildControl("header");
           layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.HPOS.MENU);
           break;
-        case "date-text":
-          control = new qx.ui.basic.Label().set({
-            textColor: "contrasted-text-dark",
-            alignY: "middle",
-            rich: true,
-            font: "text-12",
-            allowGrowY: false
-          });
+        case "date-by":
+          control = new osparc.ui.basic.DateAndBy();
           layout = this.getChildControl("footer");
           layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.FPOS.DATE);
-          break;
-        case "last-touching":
-          control = osparc.info.StudyUtils.createLastTouchedBy();
-          layout = this.getChildControl("footer");
-          layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.FPOS.LAST_TOUCHING);
           break;
       }
       return control || this.base(arguments, id);
@@ -261,9 +250,9 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
     __applyModifiedAt: function(value) {
       if (value) {
-        const label = this.getChildControl("date-text");
-        label.set({
-          value: osparc.utils.Utils.formatDateAndTime(value),
+        const dateBy = this.getChildControl("date-by");
+        dateBy.set({
+          date: value,
           toolTipText: this.tr("Last modified"),
         })
       }
@@ -271,9 +260,9 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
     __applyTrashedAt: function(value) {
       if (value && value.getTime() !== new Date(0).getTime()) {
-        const label = this.getChildControl("date-text");
-        label.set({
-          value: osparc.utils.Utils.formatDateAndTime(value),
+        const dateBy = this.getChildControl("date-by");
+        dateBy.set({
+          date: value,
           toolTipText: this.tr("Moved to the bin"),
         });
       }
@@ -281,8 +270,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
     __applyTrashedBy: function(gid) {
       if (gid) {
-        const atom = this.getChildControl("last-touching");
-        osparc.dashboard.CardBase.addHintFromGids(atom, [gid]);
+        const dateBy = this.getChildControl("date-by");
+        dateBy.setGroupId(gid);
       }
     },
 

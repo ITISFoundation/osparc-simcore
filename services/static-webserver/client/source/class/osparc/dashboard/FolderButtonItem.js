@@ -265,7 +265,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     __applyTrashedBy: function(gid) {
       if (gid) {
         const dateBy = this.getChildControl("date-by");
-        dateBy.setGid(gid);
+        dateBy.setGroupid(gid);
       }
     },
 
