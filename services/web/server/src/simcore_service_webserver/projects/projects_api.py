@@ -381,9 +381,9 @@ async def _get_default_pricing_and_hardware_info(
     )
 
 
-_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[
-    float
-] = 0.1  # NOTE: machines always have less available RAM than advertised
+_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
+    0.1  # NOTE: machines always have less available RAM than advertised
+)
 _SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
     "1GiB"
 )
@@ -1276,7 +1276,7 @@ async def try_open_project_for_user(
             owner=Owner(
                 user_id=user_id, **await get_user_fullname(app, user_id=user_id)
             ),
-            notification_cb=create_user_notification_cb(user_id, project_uuid, app),
+            notification_cb=None,
         )
         async def _open_project() -> bool:
             with managed_resource(user_id, client_session_id, app) as user_session:
