@@ -78,9 +78,15 @@ qx.Class.define("osparc.ui.basic.DateAndBy", {
     __applyDate: function(value) {
       if (value) {
         const label = this.getChildControl("date-text");
-        label.set({
-          value: osparc.utils.Utils.formatDateAndTime(value),
-        });
+        const today = new Date();
+        const yesterday = new Date();
+        if (today.toDateString() === value.toDateString()) {
+          label.setValue(osparc.utils.Utils.formatDateAndTime(value)); // show date and time
+        } else if (yesterday.toDateString() === value.toDateString()) {
+          label.setValue(osparc.utils.Utils.formatDateAndTime(value)); // show date and time
+        } else {
+          label.setValue(osparc.utils.Utils.formatDate(value)); // show date only
+        }
       }
     },
 
@@ -92,7 +98,7 @@ qx.Class.define("osparc.ui.basic.DateAndBy", {
           atom.setLabel("by me");
         } else {
           atom.setLabel("by");
-        osparc.dashboard.CardBase.addHintFromGids(atom, [groupId]);
+          osparc.dashboard.CardBase.addHintFromGids(atom, [groupId]);
         }
       }
     },
