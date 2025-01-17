@@ -91,7 +91,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     },
     FPOS: {
       DATE: 0,
-      LAST_TOUCHING: 1,
     }
   },
 
