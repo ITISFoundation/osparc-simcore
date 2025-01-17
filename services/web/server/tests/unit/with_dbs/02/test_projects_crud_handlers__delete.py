@@ -31,11 +31,11 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 )
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.redis import with_project_locked
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.exporter._handlers import with_project_locked_and_notify
 from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict
 from socketio.exceptions import ConnectionError as SocketConnectionError
@@ -230,7 +230,7 @@ async def test_delete_project_while_it_is_locked_raises_error(
 
     project_uuid = user_project["uuid"]
     user_id = logged_user["id"]
-    await with_project_locked_and_notify(
+    await with_project_locked(
         app=client.app,
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,

@@ -18,7 +18,7 @@ from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.redis._project_lock import with_project_locked_and_notify
+from servicelib.redis import with_project_locked
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodeCreate,
@@ -189,7 +189,7 @@ async def _copy_files_from_source_project(
                 user_id, source_project["uuid"], app
             )
 
-        await with_project_locked_and_notify(
+        await with_project_locked(
             get_redis_lock_manager_client_sdk(app),
             project_uuid=source_project["uuid"],
             status=ProjectStatus.CLONING,

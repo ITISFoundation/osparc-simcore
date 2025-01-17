@@ -8,12 +8,12 @@ from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from aiohttp import web
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectStatus
+from servicelib.redis import with_project_locked
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..projects.api import with_project_locked_and_notify
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..redis import get_redis_lock_manager_client_sdk
 from ..security.decorators import permission_required
@@ -46,7 +46,7 @@ async def export_project(request: web.Request):
     project_uuid = request.match_info.get("project_id")
     assert project_uuid  # nosec
 
-    @with_project_locked_and_notify(
+    @with_project_locked(
         get_redis_lock_manager_client_sdk(request.app),
         project_uuid=project_uuid,
         status=ProjectStatus.EXPORTING,

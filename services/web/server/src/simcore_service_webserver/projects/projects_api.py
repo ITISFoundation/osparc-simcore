@@ -80,9 +80,12 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
 )
-from servicelib.redis import get_project_locked_state, is_project_locked
-from servicelib.redis._decorators import exclusive
-from servicelib.redis._project_lock import with_project_locked_and_notify
+from servicelib.redis import (
+    exclusive,
+    get_project_locked_state,
+    is_project_locked,
+    with_project_locked,
+)
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
@@ -1257,7 +1260,7 @@ async def try_open_project_for_user(
     """
     try:
 
-        @with_project_locked_and_notify(
+        @with_project_locked(
             get_redis_lock_manager_client_sdk(app),
             project_uuid=project_uuid,
             status=ProjectStatus.OPENING,
@@ -1756,7 +1759,7 @@ async def remove_project_dynamic_services(
         save_state = False
     # -------------------
 
-    @with_project_locked_and_notify(
+    @with_project_locked(
         get_redis_lock_manager_client_sdk(app),
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
