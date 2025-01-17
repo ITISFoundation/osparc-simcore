@@ -74,9 +74,4 @@ COPY --from=uv_build /uv /uvx /bin/
 
 RUN uv venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-  uv pip install --upgrade  \
-  wheel \
-  setuptools
-
 WORKDIR /test
