@@ -553,7 +553,7 @@ async def test_trash_empty_workspace(
     _exclude_attrs = {"trashed_by", "trashed_at", "modified_at"}
 
     # TRASH
-    before_trash = arrow.utcnow().datetime
+    trashing_at = arrow.utcnow().datetime
     resp = await client.post(f"/v0/workspaces/{workspace.workspace_id}:trash")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
@@ -574,8 +574,8 @@ async def test_trash_empty_workspace(
         exclude=_exclude_attrs
     )
     assert page.data[0].trashed_at is not None
-    assert before_trash < page.data[0].trashed_at
-    assert page.data[0].trashed_by == logged_user["id"]
+    assert trashing_at < page.data[0].trashed_at
+    assert page.data[0].trashed_by == logged_user["primary_gid"]
 
     # --------
 

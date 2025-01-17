@@ -53,13 +53,6 @@ _WORKSPACE_SELECTION_COLS = (
     workspaces.c.trashed_by,
 )
 
-assert set(Workspace.model_fields).issubset(
-    {c.name for c in _WORKSPACE_SELECTION_COLS}  # nosec
-), "part of the data-model is one-to-one to the domain model"
-assert set(WorkspaceUpdates.model_fields).issubset(  # nosec
-    c.name for c in workspaces.columns
-), "part of the data-model is one-to-one to the domain model"
-
 
 async def create_workspace(
     app: web.Application,

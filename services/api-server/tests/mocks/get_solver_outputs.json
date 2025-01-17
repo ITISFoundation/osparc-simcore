@@ -39,6 +39,7 @@
     "workspaceId": 2,
     "folderId": 2,
     "trashedAt": null,
+    "trashedBy": null,
     "workbench": {
      "df42d273-b6f0-509c-bfb5-4abbc5bb0581": {
       "key": "simcore/services/comp/itis/sleeper",
