@@ -6,13 +6,15 @@ from typing import Any
 
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from aiohttp import web
+from models_library.projects_access import Owner
 from models_library.projects_state import ProjectStatus
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..projects.projects_api import with_project_locked_and_notify
+from ..projects.api import with_project_locked_and_notify
+from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from ._formatter.archive import get_sds_archive_path
@@ -47,9 +49,12 @@ async def export_project(request: web.Request):
         request.app,
         project_uuid=project_uuid,
         status=ProjectStatus.EXPORTING,
-        user_id=user_id,
-        user_name=await get_user_fullname(request.app, user_id=user_id),
-        notify_users=True,
+        owner=Owner(
+            user_id=user_id, **await get_user_fullname(request.app, user_id=user_id)
+        ),
+        notification_cb=retrieve_and_notify_project_locked_state(
+            user_id, project_uuid, request.app
+        ),
     )
     async def _() -> tuple[Callable[[], Coroutine[Any, Any, None]], Path]:
         # @GitHK what is this supposed to be doing??

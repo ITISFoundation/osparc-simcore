@@ -9,6 +9,7 @@ from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
+from models_library.projects_access import Owner
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
@@ -39,6 +40,7 @@ from . import _folders_db as project_to_folders_db
 from . import projects_api
 from ._metadata_api import set_project_ancestors
 from ._permalink_api import update_or_pop_permalink_in_project
+from ._projects_locks_utils import with_project_locked_and_notify
 from .db import ProjectDBAPI
 from .exceptions import (
     ParentNodeNotFoundError,
@@ -180,13 +182,16 @@ async def _copy_files_from_source_project(
                 await long_running_task.result()
 
     if needs_lock_source_project:
-        await projects_api.with_project_locked_and_notify(
+        await with_project_locked_and_notify(
             app,
             project_uuid=source_project["uuid"],
             status=ProjectStatus.CLONING,
-            user_id=user_id,
-            user_name=await get_user_fullname(app, user_id=user_id),
-            notify_users=True,
+            owner=Owner(
+                user_id=user_id, **await get_user_fullname(app, user_id=user_id)
+            ),
+            notification_cb=projects_api.retrieve_and_notify_project_locked_state(
+                user_id, source_project["uuid"], app
+            ),
         )(_copy)()
     else:
         await _copy()

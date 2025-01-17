@@ -20,6 +20,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
 from models_library.projects import ProjectID
+from models_library.projects_access import Owner
 from models_library.projects_state import ProjectStatus
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -34,11 +35,9 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.exporter._handlers import with_project_locked_and_notify
 from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.projects.projects_api import (
-    with_project_locked_and_notify,
-)
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 
@@ -225,6 +224,7 @@ async def test_delete_project_while_it_is_locked_raises_error(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: ExpectedResponse,
+    faker: Faker,
 ):
     assert client.app
 
@@ -234,7 +234,6 @@ async def test_delete_project_while_it_is_locked_raises_error(
         app=client.app,
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
-        user_id=user_id,
-        user_name={"first_name": "test", "last_name": "test"},
-        notify_users=False,
+        owner=Owner(user_id=user_id, first_name=faker.name(), last_name=faker.name()),
+        notification_cb=None,
     )(_request_delete_project)(client, user_project, expected.conflict)

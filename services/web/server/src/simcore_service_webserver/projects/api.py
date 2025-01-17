@@ -11,6 +11,7 @@ from ._groups_api import (
 )
 from ._permalink_api import ProjectPermalink
 from ._permalink_api import register_factory as register_permalink_factory
+from ._projects_locks_utils import with_project_locked_and_notify
 from ._wallets_api import (
     check_project_financial_status,
     connect_wallet_to_project,
@@ -27,6 +28,7 @@ __all__: tuple[str, ...] = (
     "ProjectPermalink",
     "register_permalink_factory",
     "check_project_financial_status",
+    "with_project_locked_and_notify",
 )
 
 

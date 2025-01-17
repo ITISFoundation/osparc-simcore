@@ -128,6 +128,7 @@ from ._access_rights_api import (
 )
 from ._db_utils import PermissionStr
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
+from ._projects_locks_utils import with_project_locked_and_notify
 from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
@@ -1260,9 +1261,12 @@ async def try_open_project_for_user(
             app,
             project_uuid=project_uuid,
             status=ProjectStatus.OPENING,
-            user_id=user_id,
-            user_name=await get_user_fullname(app, user_id=user_id),
-            notify_users=True,
+            owner=Owner(
+                user_id=user_id, **await get_user_fullname(app, user_id=user_id)
+            ),
+            notification_cb=retrieve_and_notify_project_locked_state(
+                user_id, project_uuid, app
+            ),
         )
         async def _open_project() -> bool:
             with managed_resource(user_id, client_session_id, app) as user_session:
@@ -1756,9 +1760,12 @@ async def remove_project_dynamic_services(
         app,
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
-        user_id=user_id,
-        user_name=user_name_data,
-        notify_users=notify_users,
+        owner=Owner(user_id=user_id, **user_name_data),
+        notification_cb=(
+            retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+            if notify_users
+            else None
+        ),
     )
     async def _locked_stop_dynamic_serivces_in_project() -> None:
         # save the state if the user is not a guest. if we do not know we save in any case.
