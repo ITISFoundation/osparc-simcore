@@ -4,8 +4,7 @@ import logging
 
 from aiohttp import web
 from models_library.access_rights import AccessRights
-from models_library.api_schemas_webserver.folders_v2 import FolderGet, FolderGetPage
-from models_library.folders import FolderID, FolderQuery, FolderScope
+from models_library.folders import Folder, FolderID, FolderQuery, FolderScope
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
@@ -36,7 +35,7 @@ async def create_folder(
     parent_folder_id: FolderID | None,
     product_name: ProductName,
     workspace_id: WorkspaceID | None,
-) -> FolderGet:
+) -> Folder:
     user = await get_user(app, user_id=user_id)
 
     workspace_is_private = True
@@ -86,7 +85,7 @@ async def create_folder(
         user_id=user_id if workspace_is_private else None,
         workspace_id=workspace_id,
     )
-    return FolderGet.from_domain_model(folder_db, user_folder_access_rights)
+    return Folder(folder_db=folder_db, my_access_rights=user_folder_access_rights)
 
 
 async def get_folder(
@@ -94,7 +93,7 @@ async def get_folder(
     user_id: UserID,
     folder_id: FolderID,
     product_name: ProductName,
-) -> FolderGet:
+) -> Folder:
     folder_db = await folders_db.get(
         app, folder_id=folder_id, product_name=product_name
     )
@@ -119,7 +118,7 @@ async def get_folder(
         user_id=user_id if workspace_is_private else None,
         workspace_id=folder_db.workspace_id,
     )
-    return FolderGet.from_domain_model(folder_db, user_folder_access_rights)
+    return Folder(folder_db=folder_db, my_access_rights=user_folder_access_rights)
 
 
 async def list_folders(
@@ -132,7 +131,7 @@ async def list_folders(
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
-) -> FolderGetPage:
+) -> tuple[list[Folder], int]:
     # NOTE: Folder access rights for listing are checked within the listing DB function.
 
     total_count, folders = await folders_db.list_(
@@ -157,15 +156,15 @@ async def list_folders(
         limit=limit,
         order_by=order_by,
     )
-    return FolderGetPage(
-        items=[
-            FolderGet.from_domain_model(
-                folder,
-                folder.my_access_rights,
+    return (
+        [
+            Folder(
+                folder_db=folder,
+                my_access_rights=folder.my_access_rights,
             )
             for folder in folders
         ],
-        total=total_count,
+        total_count,
     )
 
 
@@ -179,7 +178,7 @@ async def list_folders_full_depth(
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
-) -> FolderGetPage:
+) -> tuple[list[Folder], int]:
     # NOTE: Folder access rights for listing are checked within the listing DB function.
 
     total_count, folders = await folders_db.list_(
@@ -194,15 +193,15 @@ async def list_folders_full_depth(
         limit=limit,
         order_by=order_by,
     )
-    return FolderGetPage(
-        items=[
-            FolderGet.from_domain_model(
-                folder,
-                folder.my_access_rights,
+    return (
+        [
+            Folder(
+                folder_db=folder,
+                my_access_rights=folder.my_access_rights,
             )
             for folder in folders
         ],
-        total=total_count,
+        total_count,
     )
 
 
@@ -214,7 +213,7 @@ async def update_folder(
     name: str,
     parent_folder_id: FolderID | None,
     product_name: ProductName,
-) -> FolderGet:
+) -> Folder:
     folder_db = await folders_db.get(
         app, folder_id=folder_id, product_name=product_name
     )
@@ -266,7 +265,7 @@ async def update_folder(
         parent_folder_id=parent_folder_id,
         product_name=product_name,
     )
-    return FolderGet.from_domain_model(folder_db, user_folder_access_rights)
+    return Folder(folder_db, user_folder_access_rights)
 
 
 async def delete_folder(

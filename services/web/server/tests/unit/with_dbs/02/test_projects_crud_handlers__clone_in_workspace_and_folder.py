@@ -41,7 +41,7 @@ async def create_workspace_and_folder(
         product_name="osparc",
     )
 
-    folder = await create_folder(
+    folder, _ = await create_folder(
         client.app,
         user_id=logged_user["id"],
         name="a",

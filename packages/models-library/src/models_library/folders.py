@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import auto
-from typing import TypeAlias
+from typing import NamedTuple, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, PositiveInt, ValidationInfo, field_validator
 
@@ -52,7 +52,7 @@ class FolderDB(BaseModel):
 
     trashed: datetime | None
     trashed_by: UserID | None
-    trashed_by_primary_gid: GroupID | None
+    trashed_by_primary_gid: GroupID | None = None
     trashed_explicitly: bool
 
     user_id: UserID | None  # owner?
@@ -64,3 +64,8 @@ class UserFolderAccessRightsDB(FolderDB):
     my_access_rights: AccessRights
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class Folder(NamedTuple):
+    folder_db: FolderDB
+    my_access_rights: AccessRights

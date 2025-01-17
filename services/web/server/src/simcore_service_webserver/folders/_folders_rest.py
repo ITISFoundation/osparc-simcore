@@ -4,9 +4,9 @@ from aiohttp import web
 from models_library.api_schemas_webserver.folders_v2 import (
     FolderCreateBodyParams,
     FolderGet,
-    FolderGetPage,
     FolderReplaceBodyParams,
 )
+from models_library.folders import Folder
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import ItemT, Page
 from models_library.rest_pagination_utils import paginate_data
@@ -54,7 +54,7 @@ async def create_folder(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
     body_params = await parse_request_body_as(FolderCreateBodyParams, request)
 
-    folder = await _folders_service.create_folder(
+    folder: Folder = await _folders_service.create_folder(
         request.app,
         user_id=req_ctx.user_id,
         name=body_params.name,
@@ -63,7 +63,10 @@ async def create_folder(request: web.Request):
         workspace_id=body_params.workspace_id,
     )
 
-    return envelope_json_response(folder, web.HTTPCreated)
+    return envelope_json_response(
+        FolderGet.from_domain_model(folder.folder_db, folder.my_access_rights),
+        web.HTTPCreated,
+    )
 
 
 @routes.get(f"/{VTAG}/folders", name="list_folders")
@@ -79,7 +82,7 @@ async def list_folders(request: web.Request):
     if not query_params.filters:
         query_params.filters = FolderFilters()
 
-    folders: FolderGetPage = await _folders_service.list_folders(
+    folders, total_count = await _folders_service.list_folders(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -93,9 +96,9 @@ async def list_folders(request: web.Request):
 
     page = Page[FolderGet].model_validate(
         paginate_data(
-            chunk=folders.items,
+            chunk=[FolderGet.from_domain_model(*f) for f in folders],
             request_url=request.url,
-            total=folders.total,
+            total=total_count,
             limit=query_params.limit,
             offset=query_params.offset,
         )
@@ -116,7 +119,7 @@ async def list_folders_full_search(request: web.Request):
     if not query_params.filters:
         query_params.filters = FolderFilters()
 
-    folders: FolderGetPage = await _folders_service.list_folders_full_depth(
+    folders, total_count = await _folders_service.list_folders_full_depth(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -129,9 +132,9 @@ async def list_folders_full_search(request: web.Request):
 
     page = Page[FolderGet].model_validate(
         paginate_data(
-            chunk=folders.items,
+            chunk=[FolderGet.from_domain_model(*f) for f in folders],
             request_url=request.url,
-            total=folders.total,
+            total=total_count,
             limit=query_params.limit,
             offset=query_params.offset,
         )
@@ -147,14 +150,15 @@ async def get_folder(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
 
-    folder: FolderGet = await _folders_service.get_folder(
+    folder: Folder = await _folders_service.get_folder(
         app=request.app,
         folder_id=path_params.folder_id,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
     )
-
-    return envelope_json_response(folder)
+    return envelope_json_response(
+        FolderGet.from_domain_model(folder.folder_db, folder.my_access_rights)
+    )
 
 
 @routes.put(
@@ -169,7 +173,7 @@ async def replace_folder(request: web.Request):
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
     body_params = await parse_request_body_as(FolderReplaceBodyParams, request)
 
-    folder = await _folders_service.update_folder(
+    folder: Folder = await _folders_service.update_folder(
         app=request.app,
         user_id=req_ctx.user_id,
         folder_id=path_params.folder_id,

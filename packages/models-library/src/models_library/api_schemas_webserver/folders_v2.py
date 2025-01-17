@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Annotated, NamedTuple, Self
+from typing import Annotated, Self
 
-from pydantic import ConfigDict, Field, PositiveInt, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from ..access_rights import AccessRights
 from ..basic_types import IDStr
@@ -31,7 +31,7 @@ class FolderGet(OutputSchema):
     def from_domain_model(
         cls, folder_db: FolderDB, user_folder_access_rights: AccessRights
     ) -> Self:
-        return cls(
+        return cls.model_construct(
             folder_id=folder_db.folder_id,
             parent_folder_id=folder_db.parent_folder_id,
             name=folder_db.name,
@@ -43,11 +43,6 @@ class FolderGet(OutputSchema):
             workspace_id=folder_db.workspace_id,
             my_access_rights=user_folder_access_rights,
         )
-
-
-class FolderGetPage(NamedTuple):
-    items: list[FolderGet]
-    total: PositiveInt
 
 
 class FolderCreateBodyParams(InputSchema):
