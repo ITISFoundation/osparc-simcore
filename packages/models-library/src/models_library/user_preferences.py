@@ -98,7 +98,7 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
 
     @classmethod
     def update_preference_default_value(cls, new_default: Any) -> None:
-        expected_type = get_type(cls.model_fields["value"])
+        expected_type = get_type(cls.model_fields.get("value"))
         detected_type = type(new_default)
         if expected_type != detected_type:
             msg = (
@@ -106,11 +106,11 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
             )
             raise TypeError(msg)
 
-        if cls.model_fields["value"].default is None:
-            cls.model_fields["value"].default_factory = lambda: new_default
+        if cls.model_fields.get("value").default is None:
+            cls.model_fields.get("value").default_factory = lambda: new_default
         else:
-            cls.model_fields["value"].default = new_default
-            cls.model_fields["value"].default_factory = None
+            cls.model_fields.get("value").default = new_default
+            cls.model_fields.get("value").default_factory = None
 
         cls.model_rebuild(force=True)
 
