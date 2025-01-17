@@ -46,6 +46,14 @@ def owner(request: pytest.FixtureRequest) -> Owner:
     return Owner(**request.param)
 
 
+from unittest import mock
+
+
+@pytest.fixture
+def mocked_notification_cb() -> mock.AsyncMock:
+    return mock.AsyncMock()
+
+
 @pytest.mark.parametrize(
     "project_status",
     [
@@ -61,15 +69,17 @@ async def test_with_project_locked(
     project_uuid: ProjectID,
     owner: Owner,
     project_status: ProjectStatus,
+    mocked_notification_cb: mock.AsyncMock,
 ):
     @with_project_locked(
         redis_client_sdk,
         project_uuid=project_uuid,
         status=project_status,
         owner=owner,
-        notification_cb=None,
+        notification_cb=mocked_notification_cb,
     )
     async def _locked_fct() -> None:
+        mocked_notification_cb.assert_called_once()
         assert await is_project_locked(redis_client_sdk, project_uuid) is True
         locked_state = await get_project_locked_state(redis_client_sdk, project_uuid)
         assert locked_state is not None
@@ -89,11 +99,14 @@ async def test_with_project_locked(
             status=project_status,
         )
 
+    mocked_notification_cb.assert_not_called()
     assert await get_project_locked_state(redis_client_sdk, project_uuid) is None
     assert await is_project_locked(redis_client_sdk, project_uuid) is False
     await _locked_fct()
     assert await is_project_locked(redis_client_sdk, project_uuid) is False
     assert await get_project_locked_state(redis_client_sdk, project_uuid) is None
+    mocked_notification_cb.assert_called()
+    assert mocked_notification_cb.call_count == 2
 
 
 @pytest.mark.parametrize(
