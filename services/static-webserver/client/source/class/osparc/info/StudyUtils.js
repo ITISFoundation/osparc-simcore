@@ -511,6 +511,18 @@ qx.Class.define("osparc.info.StudyUtils", {
           studyData["lastChangeDate"] = new Date().toISOString();
         })
         .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"));
-    }
+    },
+
+    createLastTouchedBy: function() {
+      return new qx.ui.basic.Atom().set({
+        alignY: "middle",
+        allowGrowX: false,
+        allowShrinkX: false,
+        label: "by",
+        font: "text-12",
+        icon: osparc.dashboard.CardBase.SHARED_USER,
+        iconPosition: "right",
+      });
+    },
   }
 });

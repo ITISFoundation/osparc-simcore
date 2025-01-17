@@ -96,6 +96,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       nullable: true,
       apply: "__applyTrashedAt"
     },
+
+    trashedBy: {
+      check: "Number",
+      nullable: true,
+      apply: "__applyTrashedBy"
+    },
   },
 
   members: {
@@ -117,11 +123,19 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.TITLE);
           break;
-        case "subtitle":
+        case "subtitle-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this._add(control, osparc.dashboard.FolderButtonBase.POS.SUBTITLE);
+          break;
+        case "date-text":
           control = new qx.ui.basic.Label().set({
             font: "text-12",
           });
-          this._add(control, osparc.dashboard.FolderButtonBase.POS.SUBTITLE);
+          this.getChildControl("subtitle-layout").add(control);
+          break;
+        case "last-touching":
+          control = osparc.info.StudyUtils.createLastTouchedBy();
+          this.getChildControl("subtitle-layout").add(control);
           break;
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
@@ -155,6 +169,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       folder.bind("name", this, "title");
       folder.bind("lastModified", this, "lastModified");
       folder.bind("trashedAt", this, "trashedAt");
+      folder.bind("trashedBy", this, "trashedBy");
 
       osparc.utils.Utils.setIdToWidget(this, "folderItem_" + folder.getFolderId());
 
@@ -235,7 +250,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __applyLastModified: function(value) {
       if (value) {
-        const label = this.getChildControl("subtitle");
+        const label = this.getChildControl("date-text");
         label.set({
           value: osparc.utils.Utils.formatDateAndTime(value),
           toolTipText: this.tr("Last modified"),
@@ -245,11 +260,18 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __applyTrashedAt: function(value) {
       if (value && value.getTime() !== new Date(0).getTime()) {
-        const label = this.getChildControl("subtitle");
+        const label = this.getChildControl("date-text");
         label.set({
           value: osparc.utils.Utils.formatDateAndTime(value),
           toolTipText: this.tr("Moved to the bin"),
         });
+      }
+    },
+
+    __applyTrashedBy: function(gid) {
+      if (gid) {
+        const atom = this.getChildControl("last-touching");
+        osparc.dashboard.CardBase.addHintFromGids(atom, [gid]);
       }
     },
 

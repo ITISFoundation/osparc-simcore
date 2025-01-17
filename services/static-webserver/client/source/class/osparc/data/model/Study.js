@@ -60,6 +60,7 @@ qx.Class.define("osparc.data.model.Study", {
       permalink: studyData.permalink || this.getPermalink(),
       dev: studyData.dev || this.getDev(),
       trashedAt: studyData.trashedAt ? new Date(studyData.trashedAt) : this.getTrashedAt(),
+      trashedBy: studyData.trashedBy || null,
     });
 
     const wbData = studyData.workbench || this.getWorkbench();
@@ -216,6 +217,13 @@ qx.Class.define("osparc.data.model.Study", {
       check: "Date",
       nullable: true,
       init: null,
+    },
+
+    trashedBy: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeTrashedBy",
     },
     // ------ ignore for serializing ------
   },
