@@ -66,6 +66,7 @@ def convert_to_db_names(project_document_data: dict) -> dict:
         "prjOwner",
         "folderId",
         "trashedByPrimaryGid",
+        "trashed_by_primary_gid",
     ]  # No column for tags, prjOwner is a foreign key in db
     for key, value in project_document_data.items():
         if key not in exclude_keys:
