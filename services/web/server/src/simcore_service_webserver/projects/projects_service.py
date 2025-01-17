@@ -124,14 +124,13 @@ from ..users.preferences_api import (
 from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_db
-from . import _crud_api_delete, _nodes_api, _projects_db, _projects_nodes_repository
+from . import _crud_api_delete, _nodes_api, _projects_db, _wallets_api, _projects_nodes_repository
 from ._access_rights_api import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
 from ._db_utils import PermissionStr
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
-from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     ClustersKeeperNotAvailableError,
@@ -626,7 +625,7 @@ async def _start_dynamic_service(  # noqa: C901
             and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
         ):
             # Deal with Wallet
-            project_wallet = await get_project_wallet(
+            project_wallet = await _wallets_api.get_project_wallet(
                 request.app, project_id=project_uuid
             )
             if project_wallet is None:
@@ -641,7 +640,7 @@ async def _start_dynamic_service(  # noqa: C901
                 project_wallet_id = TypeAdapter(WalletID).validate_python(
                     user_default_wallet_preference.value
                 )
-                await connect_wallet_to_project(
+                await _wallets_api.connect_wallet_to_project(
                     request.app,
                     product_name=product_name,
                     project_id=project_uuid,

@@ -19,12 +19,12 @@ from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.sql import select
 from sqlalchemy.sql.selectable import CompoundSelect, Select
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
+from ._projects_db import BASE_PROJECT_SELECT_ARGS
 from .exceptions import (
     NodeNotFoundError,
     ProjectInvalidRightsError,
@@ -130,7 +130,7 @@ class BaseProjectDB:
             user_groups.append(everyone_group)
         else:
             result = await conn.execute(
-                select(groups)
+                sa.select(groups)
                 .select_from(groups.join(user_to_groups))
                 .where(user_to_groups.c.uid == user_id)
             )
@@ -255,7 +255,7 @@ class BaseProjectDB:
         exclude_foreign = exclude_foreign or []
 
         access_rights_subquery = (
-            select(
+            sa.select(
                 project_to_groups.c.project_uuid,
                 sa.func.jsonb_object_agg(
                     project_to_groups.c.gid,
@@ -275,29 +275,14 @@ class BaseProjectDB:
 
         query = (
             sa.select(
-                projects.c.id,
-                projects.c.type,
-                projects.c.uuid,
-                projects.c.name,
-                projects.c.description,
-                projects.c.thumbnail,
-                projects.c.prj_owner,  # == user.id (who created)
-                projects.c.creation_date,
-                projects.c.last_change_date,
-                projects.c.workbench,
-                projects.c.ui,
-                projects.c.classifiers,
-                projects.c.dev,
-                projects.c.quality,
-                projects.c.published,
-                projects.c.hidden,
-                projects.c.trashed,
-                projects.c.trashed_by,  # == user.id (who trashed)
-                projects.c.trashed_explicitly,
-                projects.c.workspace_id,
+                *BASE_PROJECT_SELECT_ARGS,
                 access_rights_subquery.c.access_rights,
             )
-            .select_from(projects.join(access_rights_subquery, isouter=True))
+            .select_from(
+                projects.join(access_rights_subquery, isouter=True).outerjoin(
+                    users, projects.c.trashed_by == users.c.id
+                )
+            )
             .where(
                 (projects.c.uuid == f"{project_uuid}")
                 & (

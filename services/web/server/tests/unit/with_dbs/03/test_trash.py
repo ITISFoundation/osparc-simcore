@@ -151,7 +151,7 @@ async def test_trash_projects(  # noqa: PLR0915
         assert got.trashed_at
         assert trashing_at < got.trashed_at
         assert got.trashed_at < arrow.utcnow().datetime
-        assert got.trashed_by == logged_user["id"]
+        assert got.trashed_by == logged_user["primary_gid"]
 
     # LIST trashed
     resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
@@ -251,7 +251,7 @@ async def test_trash_projects_shared_among_users(
     assert page.data[0].uuid == project_uuid
     assert page.data[0].trashed_at
     assert trashing_at < page.data[0].trashed_at
-    assert page.data[0].trashed_by == logged_user["id"]
+    assert page.data[0].trashed_by == logged_user["primary_gid"]
 
     # Swith USER: LOGOUT
     url = client.app.router["auth_logout"].url_for()
@@ -277,7 +277,7 @@ async def test_trash_projects_shared_among_users(
     assert page.data[0].uuid == project_uuid
     assert page.data[0].trashed_at
     assert trashing_at < page.data[0].trashed_at
-    assert page.data[0].trashed_by == logged_user["id"]
+    assert page.data[0].trashed_by == logged_user["primary_gid"]
 
 
 @pytest.mark.acceptance_test(
@@ -460,7 +460,7 @@ async def test_trash_folder_with_content(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = ProjectGet.model_validate(data)
     assert got.trashed_at is not None
-    assert got.trashed_by == logged_user["id"]
+    assert got.trashed_by == logged_user["primary_gid"]
 
     # UNTRASH folder
     resp = await client.post(f"/v0/folders/{folder.folder_id}:untrash")

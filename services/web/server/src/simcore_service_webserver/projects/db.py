@@ -85,7 +85,7 @@ from ._db_utils import (
     patch_workbench,
     update_workbench,
 )
-from ._projects_db import _SELECTION_PROJECT_DB_ARGS
+from ._projects_db import BASE_PROJECT_SELECT_ARGS, PROJECT_WITHOUT_WORKBENCH_COLS
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
@@ -437,11 +437,7 @@ class ProjectDBAPI(BaseProjectDB):
 
                 private_workspace_query = (
                     sa.select(
-                        *[
-                            col
-                            for col in projects.columns
-                            if col.name not in ["access_rights"]
-                        ],
+                        *BASE_PROJECT_SELECT_ARGS,
                         self.access_rights_subquery.c.access_rights,
                         projects_to_products.c.product_name,
                         projects_to_folders.c.folder_id,
@@ -462,6 +458,7 @@ class ProjectDBAPI(BaseProjectDB):
                             isouter=True,
                         )
                         .join(project_tags_subquery, isouter=True)
+                        .outerjoin(users, projects.c.trashed_by == users.c.id)
                     )
                     .where(
                         (
@@ -494,11 +491,7 @@ class ProjectDBAPI(BaseProjectDB):
 
                 shared_workspace_query = (
                     sa.select(
-                        *[
-                            col
-                            for col in projects.columns
-                            if col.name not in ["access_rights"]
-                        ],
+                        *BASE_PROJECT_SELECT_ARGS,
                         workspace_access_rights_subquery.c.access_rights,
                         projects_to_products.c.product_name,
                         projects_to_folders.c.folder_id,
@@ -523,6 +516,7 @@ class ProjectDBAPI(BaseProjectDB):
                             isouter=True,
                         )
                         .join(project_tags_subquery, isouter=True)
+                        .outerjoin(users, projects.c.trashed_by == users.c.id)
                     )
                     .where(
                         (
@@ -699,9 +693,13 @@ class ProjectDBAPI(BaseProjectDB):
     async def get_project_db(self, project_uuid: ProjectID) -> ProjectDB:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
-                sa.select(*_SELECTION_PROJECT_DB_ARGS).where(
-                    projects.c.uuid == f"{project_uuid}"
+                sa.select(
+                    *BASE_PROJECT_SELECT_ARGS,
                 )
+                .select_from(
+                    projects.outerjoin(users, projects.c.trashed_by == users.c.id)
+                )
+                .where(projects.c.uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
             if row is None:
@@ -713,7 +711,10 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> UserSpecificProjectDataDB:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
-                sa.select(*_SELECTION_PROJECT_DB_ARGS, projects_to_folders.c.folder_id)
+                sa.select(
+                    *PROJECT_WITHOUT_WORKBENCH_COLS,
+                    projects_to_folders.c.folder_id,
+                )
                 .select_from(
                     projects.join(
                         projects_to_folders,
