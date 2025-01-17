@@ -86,18 +86,7 @@ async def create_folder(
         user_id=user_id if workspace_is_private else None,
         workspace_id=workspace_id,
     )
-    return FolderGet(
-        folder_id=folder_db.folder_id,
-        parent_folder_id=folder_db.parent_folder_id,
-        name=folder_db.name,
-        created_at=folder_db.created,
-        modified_at=folder_db.modified,
-        trashed_at=folder_db.trashed,
-        trashed_by=folder_db.trashed_by,
-        owner=folder_db.created_by_gid,
-        workspace_id=workspace_id,
-        my_access_rights=user_folder_access_rights,
-    )
+    return FolderGet.from_domain_model(folder_db, user_folder_access_rights)
 
 
 async def get_folder(
@@ -130,18 +119,7 @@ async def get_folder(
         user_id=user_id if workspace_is_private else None,
         workspace_id=folder_db.workspace_id,
     )
-    return FolderGet(
-        folder_id=folder_db.folder_id,
-        parent_folder_id=folder_db.parent_folder_id,
-        name=folder_db.name,
-        created_at=folder_db.created,
-        modified_at=folder_db.modified,
-        trashed_at=folder_db.trashed,
-        trashed_by=folder_db.trashed_by,
-        owner=folder_db.created_by_gid,
-        workspace_id=folder_db.workspace_id,
-        my_access_rights=user_folder_access_rights,
-    )
+    return FolderGet.from_domain_model(folder_db, user_folder_access_rights)
 
 
 async def list_folders(
@@ -181,17 +159,9 @@ async def list_folders(
     )
     return FolderGetPage(
         items=[
-            FolderGet(
-                folder_id=folder.folder_id,
-                parent_folder_id=folder.parent_folder_id,
-                name=folder.name,
-                created_at=folder.created,
-                modified_at=folder.modified,
-                trashed_at=folder.trashed,
-                trashed_by=folder.trashed_by,
-                owner=folder.created_by_gid,
-                workspace_id=folder.workspace_id,
-                my_access_rights=folder.my_access_rights,
+            FolderGet.from_domain_model(
+                folder,
+                folder.my_access_rights,
             )
             for folder in folders
         ],
@@ -226,17 +196,9 @@ async def list_folders_full_depth(
     )
     return FolderGetPage(
         items=[
-            FolderGet(
-                folder_id=folder.folder_id,
-                parent_folder_id=folder.parent_folder_id,
-                name=folder.name,
-                created_at=folder.created,
-                modified_at=folder.modified,
-                trashed_at=folder.trashed,
-                trashed_by=folder.trashed_by,
-                owner=folder.created_by_gid,
-                workspace_id=folder.workspace_id,
-                my_access_rights=folder.my_access_rights,
+            FolderGet.from_domain_model(
+                folder,
+                folder.my_access_rights,
             )
             for folder in folders
         ],
@@ -304,18 +266,7 @@ async def update_folder(
         parent_folder_id=parent_folder_id,
         product_name=product_name,
     )
-    return FolderGet(
-        folder_id=folder_db.folder_id,
-        parent_folder_id=folder_db.parent_folder_id,
-        name=folder_db.name,
-        created_at=folder_db.created,
-        modified_at=folder_db.modified,
-        trashed_at=folder_db.trashed,
-        trashed_by=folder_db.trashed_by,
-        owner=folder_db.created_by_gid,
-        workspace_id=folder_db.workspace_id,
-        my_access_rights=user_folder_access_rights,
-    )
+    return FolderGet.from_domain_model(folder_db, user_folder_access_rights)
 
 
 async def delete_folder(

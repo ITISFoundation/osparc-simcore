@@ -1,13 +1,12 @@
 from datetime import datetime
-from typing import NamedTuple
+from typing import Annotated, NamedTuple, Self
 
-from pydantic import ConfigDict, PositiveInt, field_validator
+from pydantic import ConfigDict, Field, PositiveInt, field_validator
 
 from ..access_rights import AccessRights
 from ..basic_types import IDStr
-from ..folders import FolderID
+from ..folders import FolderDB, FolderID
 from ..groups import GroupID
-from ..users import UserID
 from ..utils.common_validators import null_or_none_str_to_none_validator
 from ..workspaces import WorkspaceID
 from ._base import InputSchema, OutputSchema
@@ -17,15 +16,33 @@ class FolderGet(OutputSchema):
     folder_id: FolderID
     parent_folder_id: FolderID | None = None
     name: str
+
     created_at: datetime
     modified_at: datetime
     trashed_at: datetime | None
-    # NOTE: by design a folder is constraint to trashed_by == owner
-    # but we add this here for completeness
-    trashed_by: UserID | None
+    trashed_by: Annotated[
+        GroupID | None, Field(description="The primary gid of the user who trashed")
+    ]
     owner: GroupID
     workspace_id: WorkspaceID | None
     my_access_rights: AccessRights
+
+    @classmethod
+    def from_domain_model(
+        cls, folder_db: FolderDB, user_folder_access_rights: AccessRights
+    ) -> Self:
+        return cls(
+            folder_id=folder_db.folder_id,
+            parent_folder_id=folder_db.parent_folder_id,
+            name=folder_db.name,
+            created_at=folder_db.created,
+            modified_at=folder_db.modified,
+            trashed_at=folder_db.trashed,
+            trashed_by=folder_db.trashed_by_primary_gid,
+            owner=folder_db.created_by_gid,
+            workspace_id=folder_db.workspace_id,
+            my_access_rights=user_folder_access_rights,
+        )
 
 
 class FolderGetPage(NamedTuple):

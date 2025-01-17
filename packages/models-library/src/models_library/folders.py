@@ -52,6 +52,7 @@ class FolderDB(BaseModel):
 
     trashed: datetime | None
     trashed_by: UserID | None
+    trashed_by_primary_gid: GroupID | None
     trashed_explicitly: bool
 
     user_id: UserID | None  # owner?

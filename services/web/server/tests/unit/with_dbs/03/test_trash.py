@@ -448,19 +448,19 @@ async def test_trash_folder_with_content(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = FolderGet.model_validate(data)
     assert got.trashed_at is not None
-    assert got.trashed_by == logged_user["id"]
+    assert got.trashed_by == logged_user["primary_gid"]
 
     resp = await client.get(f"/v0/folders/{subfolder.folder_id}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = FolderGet.model_validate(data)
     assert got.trashed_at is not None
-    assert got.trashed_by == logged_user["id"]
+    assert got.trashed_by == logged_user["primary_gid"]
 
     resp = await client.get(f"/v0/projects/{project_uuid}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = ProjectGet.model_validate(data)
     assert got.trashed_at is not None
-    assert got.trashed_by == logged_user["id"]
+    assert got.trashed_by == logged_user["primary_gid"]
 
     # UNTRASH folder
     resp = await client.post(f"/v0/folders/{folder.folder_id}:untrash")
