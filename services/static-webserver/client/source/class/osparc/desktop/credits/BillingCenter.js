@@ -33,6 +33,11 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
       this.__usagePage = this.__addUsagePage();
     }
+
+    if (osparc.product.Utils.showS4LStore()) {
+      this.__addPurchasesPage();
+      this.__addCheckoutsPage();
+    }
   },
 
   statics: {
@@ -80,7 +85,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     },
 
     __addTransactionsPage: function() {
-      const title = this.tr("Transactions");
+      const title = this.tr("Payments");
       const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
       const transactions = this.__transactionsTable = new osparc.desktop.credits.Transactions();
       const page = this.addTab(title, iconSrc, transactions);
@@ -92,6 +97,22 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const iconSrc = "@FontAwesome5Solid/list/22";
       const usage = new osparc.desktop.credits.Usage();
       const page = this.addTab(title, iconSrc, usage);
+      return page;
+    },
+
+    __addPurchasesPage: function() {
+      const title = this.tr("Purchases");
+      const iconSrc = "@FontAwesome5Solid/list/22";
+      const purchases = new osparc.desktop.credits.Purchases();
+      const page = this.addTab(title, iconSrc, purchases);
+      return page;
+    },
+
+    __addCheckoutsPage: function() {
+      const title = this.tr("Checkouts");
+      const iconSrc = "@FontAwesome5Solid/list/22";
+      const purchases = new osparc.desktop.credits.Checkouts();
+      const page = this.addTab(title, iconSrc, purchases);
       return page;
     },
 
