@@ -113,14 +113,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         }
         case "title":
           control = new qx.ui.basic.Label().set({
-            anonymous: true,
             font: "text-14",
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.TITLE);
           break;
         case "subtitle":
           control = new qx.ui.basic.Label().set({
-            anonymous: true,
             font: "text-12",
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.SUBTITLE);
@@ -229,22 +227,29 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
     __applyTitle: function(value) {
       const label = this.getChildControl("title");
-      label.setValue(value);
-
-      this.setToolTipText(value);
+      label.set({
+        value,
+        toolTipText: value,
+      });
     },
 
     __applyLastModified: function(value) {
       if (value) {
         const label = this.getChildControl("subtitle");
-        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+        label.set({
+          value: osparc.utils.Utils.formatDateAndTime(value),
+          toolTipText: this.tr("Last modified"),
+        })
       }
     },
 
     __applyTrashedAt: function(value) {
       if (value && value.getTime() !== new Date(0).getTime()) {
         const label = this.getChildControl("subtitle");
-        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+        label.set({
+          value: osparc.utils.Utils.formatDateAndTime(value),
+          toolTipText: this.tr("Moved to the bin"),
+        });
       }
     },
 

@@ -150,7 +150,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
             textColor: "contrasted-text-dark",
             alignY: "middle",
             rich: true,
-            anonymous: true,
             font: "text-12",
             allowGrowY: false
           });
@@ -271,14 +270,20 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
     __applyModifiedAt: function(value) {
       if (value) {
         const label = this.getChildControl("date-text");
-        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+        label.set({
+          value: osparc.utils.Utils.formatDateAndTime(value),
+          toolTipText: this.tr("Last modified"),
+        })
       }
     },
 
     __applyTrashedAt: function(value) {
       if (value && value.getTime() !== new Date(0).getTime()) {
         const label = this.getChildControl("date-text");
-        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+        label.set({
+          value: osparc.utils.Utils.formatDateAndTime(value),
+          toolTipText: this.tr("Moved to the bin"),
+        });
       }
     },
 
