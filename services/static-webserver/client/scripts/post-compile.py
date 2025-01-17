@@ -75,7 +75,6 @@ def add_no_cache_param(vcs_ref_client):
             continue
         with open(boot_file_path) as boot_file:
             data = boot_file.read()
-            # data = data.replace("var URL_PARAMETERS = {{}}", "var URL_PARAMETERS = {{'add-no-cache': true}}")
             data = data.replace("addNoCacheParam : false", "addNoCacheParam : true")
         with open(boot_file_path, "w") as file:
             print(f"Updating URL_PARAMETERS: {boot_file_path}")
