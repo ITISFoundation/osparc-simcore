@@ -54,17 +54,16 @@ def _get_index_file_paths():
 
 
 def add_no_cache_param(vcs_ref_client):
+    if not vcs_ref_client:
+        random.seed(5)
+        vcs_ref_client = str(random.random())
     index_file_paths = _get_index_file_paths()
     for index_file_path in index_file_paths:
         if not os.path.isfile(index_file_path):
             continue
         with open(index_file_path) as index_file:
             data = index_file.read()
-            if vcs_ref_client:
-                data = data.replace("vcs_ref_client", vcs_ref_client)
-            else:
-                random.seed(5)
-                data = data.replace("vcs_ref_client", str(random.random()))
+            data = data.replace("vcs_ref_client", vcs_ref_client)
         with open(index_file_path, "w") as file:
             print(f"Updating vcs_ref_client: {index_file_path}")
             file.write(data)
