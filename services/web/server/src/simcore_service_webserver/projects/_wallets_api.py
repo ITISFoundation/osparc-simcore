@@ -14,15 +14,16 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     credit_transactions,
     service_runs,
 )
-from simcore_service_webserver.projects.exceptions import (
-    ProjectWalletDebtError,
-    ProjectWalletPendingTransactionError,
-)
 
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import api as users_api
 from ..wallets import _api as wallets_api
 from .db import ProjectDBAPI
+from .exceptions import (
+    ProjectInDebtCanNotChangeWalletError,
+    ProjectInDebtCanNotOpenError,
+    ProjectWalletPendingTransactionError,
+)
 
 
 async def get_project_wallet(app, project_id: ProjectID):
@@ -44,7 +45,7 @@ async def raise_if_project_is_in_debt(
     rpc_client = get_rabbitmq_rpc_client(app)
 
     if current_project_wallet:
-        # Do not allow to change wallet if the project connected wallet is in DEBT!
+        # Do not allow to open project if the project connected wallet is in DEBT!
         project_wallet_credits_in_debt = (
             await credit_transactions.get_project_wallet_total_credits(
                 rpc_client,
@@ -55,7 +56,7 @@ async def raise_if_project_is_in_debt(
             )
         )
         if project_wallet_credits_in_debt.available_osparc_credits < 0:
-            raise ProjectWalletDebtError(
+            raise ProjectInDebtCanNotOpenError(
                 debt_amount=project_wallet_credits_in_debt.available_osparc_credits
             )
 
@@ -93,7 +94,7 @@ async def connect_wallet_to_project(
             )
         )
         if project_wallet_credits_in_debt.available_osparc_credits < 0:
-            raise ProjectWalletDebtError(
+            raise ProjectInDebtCanNotChangeWalletError(
                 debt_amount=project_wallet_credits_in_debt.available_osparc_credits
             )
 

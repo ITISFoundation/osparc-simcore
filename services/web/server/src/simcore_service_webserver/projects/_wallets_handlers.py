@@ -28,9 +28,9 @@ from . import _wallets_api as wallets_api
 from . import projects_api
 from ._common.models import ProjectPathParams, RequestContext
 from .exceptions import (
+    ProjectInDebtCanNotChangeWalletError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
-    ProjectWalletDebtError,
     ProjectWalletPendingTransactionError,
 )
 
@@ -49,7 +49,7 @@ def _handle_project_wallet_exceptions(handler: Handler):
         except WalletNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-        except ProjectWalletDebtError as exc:
+        except ProjectInDebtCanNotChangeWalletError as exc:
             raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
 
         except (

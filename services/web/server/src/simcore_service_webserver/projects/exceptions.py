@@ -238,10 +238,12 @@ class ProjectGroupNotFoundError(BaseProjectError):
     msg_template = "Project group not found. {reason}"
 
 
-class ProjectWalletDebtError(BaseProjectError):
-    msg_template = (
-        "Project is in debt {debt_amount} credits. It is forbidden to change wallet."
-    )
+class ProjectInDebtCanNotChangeWalletError(BaseProjectError):
+    msg_template = "Can not change wallet on a project that is in debt. Project debt {debt_amount} credits. Project wallet {wallet_id}"
+
+
+class ProjectInDebtCanNotOpenError(BaseProjectError):
+    msg_template = "Can not open project that is in debt. Project debt {debt_amount} credits. Project wallet {wallet_id}"
 
 
 class ProjectWalletPendingTransactionError(BaseProjectError):

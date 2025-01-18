@@ -80,13 +80,13 @@ from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
+    ProjectInDebtCanNotChangeWalletError,
     ProjectInvalidRightsError,
     ProjectNodeRequiredInputsNotSetError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodesError,
-    ProjectWalletDebtError,
 )
 
 _logger = logging.getLogger(__name__)
@@ -108,7 +108,10 @@ def _handle_project_nodes_exceptions(handler: Handler):
             CatalogItemNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
-        except (WalletNotEnoughCreditsError, ProjectWalletDebtError) as exc:
+        except (
+            WalletNotEnoughCreditsError,
+            ProjectInDebtCanNotChangeWalletError,
+        ) as exc:
             raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
         except ProjectInvalidRightsError as exc:
             raise web.HTTPUnauthorized(reason=f"{exc}") from exc
