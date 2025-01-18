@@ -22,6 +22,7 @@ from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import LongTruncatedStr, ShortTruncatedStr
 from ..emails import LowerCaseEmailStr
 from ..folders import FolderID
+from ..groups import GroupID
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
 from ..projects_state import ProjectState
@@ -34,7 +35,6 @@ from ..utils.common_validators import (
 )
 from ..workspaces import WorkspaceID
 from ._base import EmptyModel, InputSchema, OutputSchema
-from .groups import GroupID
 from .permalinks import ProjectPermalink
 
 
