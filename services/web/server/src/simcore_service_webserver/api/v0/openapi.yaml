@@ -5181,6 +5181,8 @@ paths:
         schema:
           anyOf:
           - type: number
+            exclusiveMaximum: true
+            maximum: 0.0
           - type: string
           title: Amount
       responses:
