@@ -57,7 +57,8 @@ async def raise_if_project_is_in_debt(
         )
         if project_wallet_credits_in_debt.available_osparc_credits < 0:
             raise ProjectInDebtCanNotOpenError(
-                debt_amount=project_wallet_credits_in_debt.available_osparc_credits
+                debt_amount=project_wallet_credits_in_debt.available_osparc_credits,
+                wallet_id=current_project_wallet.wallet_id,
             )
 
 
@@ -95,7 +96,8 @@ async def connect_wallet_to_project(
         )
         if project_wallet_credits_in_debt.available_osparc_credits < 0:
             raise ProjectInDebtCanNotChangeWalletError(
-                debt_amount=project_wallet_credits_in_debt.available_osparc_credits
+                debt_amount=project_wallet_credits_in_debt.available_osparc_credits,
+                wallet_id=current_project_wallet.wallet_id,
             )
 
         # Do not allow to change wallet if the project has transaction in PENDING!
