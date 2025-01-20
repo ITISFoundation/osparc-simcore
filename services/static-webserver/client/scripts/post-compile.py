@@ -23,21 +23,21 @@ def update_apps_metadata():
     applications = _get_applications_from_metadata()
     for i in applications:
         application = i.get("application")
-        replacements = i.get("replacements")
         for output_folder in output_folders:
-            filename = os.path.join(
-                dirname, "..", output_folder, application, "index.html"
+            index_file_path = Path(dirname).joinpath(
+                "..", output_folder, application, "index.html"
             )
-            if not os.path.isfile(filename):
-                continue
-            with open(filename) as file:
-                data = file.read()
+            if os.path.isfile(index_file_path):
+                print(f"Updating app metadata: {index_file_path.resolve()}")
+                replacements = i.get("replacements")
                 for key in replacements:
                     replace_text = replacements[key]
-                    data = data.replace("${" + key + "}", replace_text)
-            with open(filename, "w") as file:
-                print(f"Updating app metadata: {filename}")
-                file.write(data)
+                    index_file_path.write_text(
+                        index_file_path.read_text().replace(
+                            "${" + key + "}",
+                            replace_text,
+                        )
+                    )
 
 
 def _get_output_file_paths(filename):
