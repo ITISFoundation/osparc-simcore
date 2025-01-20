@@ -1,6 +1,7 @@
 import json
 import os
 import random
+from pathlib import Path
 
 output_folders = [
     "source-output",  # dev output
@@ -40,40 +41,38 @@ def update_apps_metadata():
 
 
 def _get_output_file_paths(filename):
-    index_file_paths = []
+    output_file_paths: list[Path] = []
     dirname = os.path.dirname(__file__)
     applications = _read_json_file("apps_metadata.json")
     for i in applications:
         application = i.get("application")
         for output_folder in output_folders:
-            index_file_paths.append(
-                os.path.join(dirname, "..", output_folder, application, filename)
-            )
-    return index_file_paths
+            result = Path(dirname).joinpath("..", output_folder, application, filename)
+            if result.is_file():
+                output_file_paths.append(result.resolve())
+    return output_file_paths
 
 
 def add_no_cache_param(vcs_ref_client):
     index_file_paths = _get_output_file_paths("index.html")
     for index_file_path in index_file_paths:
-        if not os.path.isfile(index_file_path):
-            continue
-        with open(index_file_path) as index_file:
-            data = index_file.read()
-            data = data.replace("${boot_params}", "nocache=" + vcs_ref_client)
-        with open(index_file_path, "w") as file:
-            print(f"Updating vcs_ref_client: {index_file_path}")
-            file.write(data)
+        print(f"Updating vcs_ref_client: {index_file_path}")
+        index_file_path.write_text(
+            index_file_path.read_text().replace(
+                "${boot_params}",
+                "nocache=" + vcs_ref_client,
+            )
+        )
 
     boot_file_paths = _get_output_file_paths("boot.js")
     for boot_file_path in boot_file_paths:
-        if not os.path.isfile(boot_file_path):
-            continue
-        with open(boot_file_path) as boot_file:
-            data = boot_file.read()
-            data = data.replace("addNoCacheParam : false", "addNoCacheParam : true")
-        with open(boot_file_path, "w") as file:
-            print(f"Updating URL_PARAMETERS: {boot_file_path}")
-            file.write(data)
+        print(f"Updating addNoCacheParam URL_PARAMETERS: {boot_file_path}")
+        boot_file_path.write_text(
+            boot_file_path.read_text().replace(
+                "addNoCacheParam : false",
+                "addNoCacheParam : true",
+            )
+        )
 
 
 if __name__ == "__main__":
