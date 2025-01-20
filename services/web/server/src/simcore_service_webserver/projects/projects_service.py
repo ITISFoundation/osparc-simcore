@@ -1000,7 +1000,7 @@ async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool
     return await db.is_hidden(project_id)
 
 
-async def update_project_node(
+async def patch_project_node(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -1009,10 +1009,9 @@ async def update_project_node(
     node_id: NodeID,
     partial_node: PartialNode,
 ) -> None:
-    _node_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
-        partial_node, exclude_unset=True, by_alias=True
-    )
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    _node_patch_exclude_unset: dict[str, Any] = partial_node.model_dump(mode='json', exclude_unset=True, by_alias=True)
+
+    _projects_repository = ProjectDBAPI.get_from_app_context(app)
 
     # 1. Check user permissions
     await check_user_project_permission(
@@ -1025,7 +1024,7 @@ async def update_project_node(
 
     # 2. If patching service key or version make sure it's valid
     if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project, _ = await db.get_project(project_uuid=f"{project_id}")
+        _project, _ = await _projects_repository.get_project(project_uuid=f"{project_id}")
         _project_node_data = _project["workbench"][f"{node_id}"]
 
         _service_key = _node_patch_exclude_unset.get("key", _project_node_data["key"])
@@ -1042,7 +1041,7 @@ async def update_project_node(
         )
 
     # 3. Patch the project node
-    updated_project, _ = await db.update_project_node_data(
+    updated_project, _ = await _projects_repository.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
