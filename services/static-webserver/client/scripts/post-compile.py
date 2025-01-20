@@ -47,9 +47,11 @@ def _get_output_file_paths(filename):
     for i in applications:
         application = i.get("application")
         for output_folder in output_folders:
-            result = Path(dirname).joinpath("..", output_folder, application, filename)
-            if result.is_file():
-                output_file_paths.append(result)
+            output_file_path = Path(dirname).joinpath(
+                "..", output_folder, application, filename
+            )
+            if output_file_path.is_file():
+                output_file_paths.append(output_file_path)
     return output_file_paths
 
 
