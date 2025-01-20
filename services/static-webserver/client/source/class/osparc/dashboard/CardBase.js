@@ -682,16 +682,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
       const pipelineState = ("state" in state) ? state["state"]["value"] : undefined;
       if (pipelineState) {
-        this.__applyPipelineState(state["state"]);
+        this.__applyPipelineState(state["state"]["value"]);
       }
     },
 
-    __applyPipelineState: function(projectStatus) {
-      const status = projectStatus["value"];
+    __applyPipelineState: function(pipelineStatus) {
       let iconSource;
       let toolTipText;
       let borderColor;
-      switch (status) {
+      switch (pipelineStatus) {
         case "STARTED":
           iconSource = "@FontAwesome5Solid/spinner/10";
           toolTipText = this.tr("Running");
