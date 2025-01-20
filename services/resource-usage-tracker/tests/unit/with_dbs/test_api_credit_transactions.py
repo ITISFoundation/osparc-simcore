@@ -23,6 +23,9 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     credit_transactions,
     service_runs,
 )
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    WalletTransactionError,
+)
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -63,6 +66,7 @@ async def test_credit_transactions_workflow(
     async_client: httpx.AsyncClient,
     resource_tracker_credit_transactions_db: None,
     rpc_client: RabbitMQRPCClient,
+    faker: Faker,
 ):
     url = URL("/v1/credit-transactions")
 
@@ -255,7 +259,7 @@ def resource_tracker_setup_db(
                     # We will add 2 more wallets for paying a debt test
                     random_resource_tracker_credit_transactions(
                         user_id=_USER_ID_1,
-                        osparc_credits=50,  # <-- Not enough credits to pay the DEBT (-100)
+                        osparc_credits=50,  # <-- Not enough credits to pay the DEBT of -100
                         service_run_id=None,
                         product_name=product_name,
                         payment_transaction_id="INVITATION",
@@ -265,7 +269,7 @@ def resource_tracker_setup_db(
                     ),
                     random_resource_tracker_credit_transactions(
                         user_id=_USER_ID_1,
-                        osparc_credits=500,  # <-- Enough credits to pay the DEBT (-100)
+                        osparc_credits=500,  # <-- Enough credits to pay the DEBT of -100
                         service_run_id=None,
                         product_name=product_name,
                         transaction_status=CreditTransactionStatus.BILLED,
@@ -318,6 +322,7 @@ async def test_pay_project_debt(
     rpc_client: RabbitMQRPCClient,
     project_id: ProjectID,
     product_name: ProductName,
+    faker: Faker,
 ):
     total_wallet_credits_for_wallet_in_debt_in_beginning = (
         await credit_transactions.get_wallet_total_credits(
@@ -344,7 +349,7 @@ async def test_pay_project_debt(
         wallet_id=_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS,
         wallet_name="new wallet",
         user_id=_USER_ID_1,
-        user_email="test@test.com",
+        user_email=faker.email(),
         osparc_credits=_project_debt_amount - 50,  # <-- Negative number
         payment_transaction_id=f"Payment transaction from wallet {_WALLET_ID} to wallet {_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS}",
         created_at=datetime.now(UTC),
@@ -354,13 +359,13 @@ async def test_pay_project_debt(
         wallet_id=_WALLET_ID,
         wallet_name="current wallet",
         user_id=_USER_ID_1,
-        user_email="test@test.com",
+        user_email=faker.email(),
         osparc_credits=-_project_debt_amount,  # <-- Positive number
         payment_transaction_id=f"Payment transaction from wallet {_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS} to wallet {_WALLET_ID}",
         created_at=datetime.now(UTC),
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(WalletTransactionError):
         await credit_transactions.pay_project_debt(
             rpc_client,
             project_id=project_id,
@@ -390,7 +395,7 @@ async def test_pay_project_debt(
         created_at=datetime.now(UTC),
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(WalletTransactionError):
         await credit_transactions.pay_project_debt(
             rpc_client,
             project_id=project_id,

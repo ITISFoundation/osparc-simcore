@@ -25,6 +25,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
+    CreditTransactionClassification,
     resource_tracker_credit_transactions,
 )
 from simcore_postgres_database.models.resource_tracker_service_runs import (
@@ -136,9 +137,7 @@ def random_resource_tracker_credit_transactions(
             "user_id": faker.pyint(),
             "user_email": faker.email(),
             "osparc_credits": -abs(faker.pyfloat()),
-            "transaction_status": choice(
-                ["BILLED", "PENDING", "NOT_BILLED", "IN_DEBT"]
-            ),
+            "transaction_status": choice(list(CreditTransactionClassification)),
             "transaction_classification": "DEDUCT_SERVICE_RUN",
             "service_run_id": faker.uuid4(),
             "payment_transaction_id": faker.uuid4(),

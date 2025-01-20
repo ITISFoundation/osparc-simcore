@@ -27,3 +27,10 @@ LICENSES_ERRORS = (
     CanNotCheckoutServiceIsNotRunningError,
     LicensedItemCheckoutNotFoundError,
 )
+
+
+### Transaction Error
+
+
+class WalletTransactionError(OsparcErrorMixin, Exception):
+    msg_template = "{msg}"

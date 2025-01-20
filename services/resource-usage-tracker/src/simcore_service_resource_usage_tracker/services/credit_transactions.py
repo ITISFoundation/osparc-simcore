@@ -14,6 +14,9 @@ from models_library.resource_tracker import (
 )
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    WalletTransactionError,
+)
 from servicelib.utils import fire_and_forget_task
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -111,16 +114,16 @@ async def pay_project_debt(
         != new_wallet_transaction.osparc_credits
     ):
         msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.wallet_id} credits {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.wallet_id} credits {current_wallet_transaction.osparc_credits}"
-        raise ValueError(msg)
+        raise WalletTransactionError(msg=msg)
     if (
         -total_project_debt_amount.available_osparc_credits
         != current_wallet_transaction.osparc_credits
     ):
         msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.wallet_id} credits {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.wallet_id} credits {current_wallet_transaction.osparc_credits}"
-        raise ValueError(msg)
+        raise WalletTransactionError(msg=msg)
     if current_wallet_transaction.product_name != new_wallet_transaction.product_name:
         msg = f"Currently we do not support credit exchange between different products. New wallet {new_wallet_transaction.wallet_id}, current wallet {current_wallet_transaction.wallet_id}"
-        raise ValueError(msg)
+        raise WalletTransactionError(msg=msg)
 
     # Does the new wallet has enough credits to pay the debt?
     new_wallet_total_credit_amount = await credit_transactions_db.sum_wallet_credits(
@@ -134,7 +137,7 @@ async def pay_project_debt(
         < 0
     ):
         msg = f"New wallet {new_wallet_transaction.wallet_id} doesn't have enough credits {new_wallet_total_credit_amount.available_osparc_credits} to pay the debt {total_project_debt_amount.available_osparc_credits} of current wallet {current_wallet_transaction.wallet_id}"
-        raise ValueError(msg)
+        raise WalletTransactionError(msg=msg)
 
     new_wallet_transaction_create = CreditTransactionCreate(
         product_name=new_wallet_transaction.product_name,
@@ -195,7 +198,7 @@ async def pay_project_debt(
             db_engine,
             rabbitmq_client,
             new_wallet_transaction_create.product_name,
-            new_wallet_transaction_create.wallet_id,
+            new_wallet_transaction_create.wallet_id,  # <-- New wallet
         ),
         task_suffix_name=f"sum_and_publish_credits_wallet_id{new_wallet_transaction_create.wallet_id}",
         fire_and_forget_tasks_collection=rut_fire_and_forget_tasks,
@@ -205,7 +208,7 @@ async def pay_project_debt(
             db_engine,
             rabbitmq_client,
             current_wallet_transaction_create.product_name,
-            current_wallet_transaction_create.wallet_id,
+            current_wallet_transaction_create.wallet_id,  # <-- Current wallet
         ),
         task_suffix_name=f"sum_and_publish_credits_wallet_id{current_wallet_transaction_create.wallet_id}",
         fire_and_forget_tasks_collection=rut_fire_and_forget_tasks,

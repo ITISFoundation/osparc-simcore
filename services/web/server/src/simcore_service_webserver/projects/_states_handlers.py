@@ -134,7 +134,7 @@ async def open_project(request: web.Request) -> web.Response:
             ),
         )
 
-        await projects_service.raise_if_project_is_in_debt(
+        await projects_service.check_project_financial_status(
             request.app,
             project_id=path_params.project_id,
             product_name=req_ctx.product_name,

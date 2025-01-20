@@ -36,7 +36,7 @@ async def get_project_wallet(app, project_id: ProjectID):
     return wallet
 
 
-async def raise_if_project_is_in_debt(
+async def check_project_financial_status(
     app, *, project_id: ProjectID, product_name: ProductName
 ):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)

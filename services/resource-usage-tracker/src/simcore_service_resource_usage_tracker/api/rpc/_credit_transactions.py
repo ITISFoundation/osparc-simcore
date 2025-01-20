@@ -8,6 +8,9 @@ from models_library.projects import ProjectID
 from models_library.resource_tracker import CreditTransactionStatus
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    WalletTransactionError,
+)
 
 from ...services import credit_transactions, service_runs
 
@@ -46,7 +49,7 @@ async def get_project_wallet_total_credits(
     )
 
 
-@router.expose(reraise_if_error_type=(ValueError,))
+@router.expose(reraise_if_error_type=(WalletTransactionError,))
 async def pay_project_debt(
     app: FastAPI,
     *,
