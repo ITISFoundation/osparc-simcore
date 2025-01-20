@@ -73,7 +73,7 @@ projects_nodes = sa.Table(
         "label",
         sa.String,
         nullable=False,
-        comment="Short name ",
+        comment="Short name used for display",
     ),
     sa.Column(
         "progress",
