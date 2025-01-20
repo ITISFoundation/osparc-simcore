@@ -59,7 +59,7 @@ class NodePatch(InputSchemaWithoutCamelCase):
         str, Any
     ] | None = None  # NOTE: it is used by frontend for File Picker
 
-    def to_model(self) -> PartialNode:
+    def to_domain_model(self) -> PartialNode:
         data = self.model_dump(
             exclude_unset=True,
             by_alias=True,
