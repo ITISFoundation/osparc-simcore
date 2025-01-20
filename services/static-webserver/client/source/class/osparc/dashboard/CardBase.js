@@ -674,9 +674,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyState: function(state) {
-      const locked = ("locked" in state) ? state["locked"]["value"] : false;
-      this.setBlocked(locked ? "IN_USE" : false);
-      if (locked) {
+      let lockInUse = false;
+      if ("locked" in state && "value" in state["locked"]) {
+        lockInUse = state["locked"]["value"];
+      }
+      this.setBlocked(lockInUse ? "IN_USE" : false);
+      if (lockInUse) {
         this.__showBlockedCardFromStatus(state["locked"]);
       }
 
