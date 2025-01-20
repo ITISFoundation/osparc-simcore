@@ -689,7 +689,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    // pipelineState: ["NOT_STARTED", "STARTED", "SUCCESS", "FAILED", "UNKNOWN"]
+    // pipelineState: ["NOT_STARTED", "STARTED", "SUCCESS", "ABORTED", "FAILED", "UNKNOWN"]
     __applyPipelineState: function(pipelineState) {
       let iconSource;
       let toolTipText;
@@ -715,6 +715,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           toolTipText = this.tr("Ran with error");
           borderColor = "error";
           break;
+        case "UNKNOWN":
         case "NOT_STARTED":
         default:
           iconSource = null;
