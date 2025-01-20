@@ -424,6 +424,19 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
+    setStudyDebt: function(studyId, debt) {
+      const studiesWStateCache = this.getStudies();
+      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+      if (idx !== -1) {
+        studiesWStateCache[idx]["inDebt"] = debt;
+      }
+
+      const currentStudy = this.getCurrentStudy();
+      if (currentStudy && currentStudy.getUuid() === studyId) {
+        currentStudy.setInDebt(debt);
+      }
+    },
+
     setTemplateState: function(templateId, state) {
       const templatesWStateCache = this.getTemplates();
       const idx = templatesWStateCache.findIndex(templateWStateCache => templateWStateCache["uuid"] === templateId);
