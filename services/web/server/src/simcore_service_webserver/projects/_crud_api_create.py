@@ -14,7 +14,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.workspaces import UserWorkspaceAccessRightsDB
+from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -28,14 +28,13 @@ from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..folders import _folders_db as folders_db
+from ..folders import _folders_repository as folders_db
 from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
 from ..users.api import get_user_fullname
-from ..workspaces import _workspaces_db as workspaces_db
-from ..workspaces.api import check_user_workspace_access
+from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import _folders_db as project_to_folders_db
 from . import projects_service
@@ -412,21 +411,20 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         # Overwrite project access rights
         if workspace_id:
-            workspace_db: UserWorkspaceAccessRightsDB = (
-                await workspaces_db.get_workspace_for_user(
-                    app=request.app,
-                    user_id=user_id,
-                    workspace_id=workspace_id,
-                    product_name=product_name,
-                )
+            workspace: UserWorkspaceWithAccessRights = await get_user_workspace(
+                request.app,
+                user_id=user_id,
+                workspace_id=workspace_id,
+                product_name=product_name,
+                permission=None,
             )
             new_project["accessRights"] = {
                 f"{gid}": access.model_dump()
-                for gid, access in workspace_db.access_rights.items()
+                for gid, access in workspace.access_rights.items()
             }
 
         # Ensures is like ProjectGet
-        data = ProjectGet.model_validate(new_project).data(exclude_unset=True)
+        data = ProjectGet.from_domain_model(new_project).data(exclude_unset=True)
 
         raise web.HTTPCreated(
             text=json_dumps({"data": data}),

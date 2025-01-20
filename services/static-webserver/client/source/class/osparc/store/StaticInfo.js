@@ -70,9 +70,9 @@ qx.Class.define("osparc.store.StaticInfo", {
     },
 
     getTrashRetentionDays: function() {
-      const staticKey = "webserverProjects";
+      const staticKey = "webserverTrash";
       const wsStaticData = this.getValue(staticKey);
-      const key = "PROJECTS_TRASH_RETENTION_DAYS";
+      const key = "TRASH_RETENTION_DAYS";
       if (key in wsStaticData) {
         return wsStaticData[key];
       }

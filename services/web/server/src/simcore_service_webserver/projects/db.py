@@ -575,12 +575,12 @@ class ProjectDBAPI(BaseProjectDB):
                 attributes_filters.append(
                     # marked explicitly as trashed
                     (
-                        projects.c.trashed_at.is_not(None)
+                        projects.c.trashed.is_not(None)
                         & projects.c.trashed_explicitly.is_(True)
                     )
                     if filter_trashed
                     # not marked as trashed
-                    else projects.c.trashed_at.is_(None)
+                    else projects.c.trashed.is_(None)
                 )
             if filter_by_text is not None:
                 attributes_filters.append(

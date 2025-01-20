@@ -62,7 +62,7 @@ from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
-from models_library.workspaces import UserWorkspaceAccessRightsDB
+from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import ByteSize, TypeAdapter
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
@@ -120,7 +120,7 @@ from ..users.preferences_api import (
 )
 from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
-from ..workspaces import _workspaces_db as workspaces_db
+from ..workspaces import _workspaces_repository as workspaces_db
 from . import _crud_api_delete, _nodes_api, _projects_db
 from ._access_rights_api import (
     check_user_project_permission,
@@ -209,7 +209,7 @@ async def get_project_for_user(
         )
 
     if project["workspaceId"] is not None:
-        workspace_db: UserWorkspaceAccessRightsDB = (
+        workspace: UserWorkspaceWithAccessRights = (
             await workspaces_db.get_workspace_for_user(
                 app=app,
                 user_id=user_id,
@@ -219,7 +219,7 @@ async def get_project_for_user(
         )
         project["accessRights"] = {
             f"{gid}": access.model_dump()
-            for gid, access in workspace_db.access_rights.items()
+            for gid, access in workspace.access_rights.items()
         }
 
     Project.model_validate(project)  # NOTE: only validates
@@ -255,9 +255,7 @@ async def patch_project(
     project_patch: ProjectPatch | ProjectPatchExtended,
     product_name: ProductName,
 ):
-    _project_patch_exclude_unset = project_patch.model_dump(
-        exclude_unset=True, by_alias=False
-    )
+    patch_project_data = project_patch.to_domain_model()
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # 1. Get project
@@ -273,7 +271,7 @@ async def patch_project(
     )
 
     # 3. If patching access rights
-    if new_prj_access_rights := _project_patch_exclude_unset.get("access_rights"):
+    if new_prj_access_rights := patch_project_data.get("access_rights"):
         # 3.1 Check if user is Owner and therefore can modify access rights
         if not _user_project_access_rights.delete:
             raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
@@ -294,7 +292,7 @@ async def patch_project(
     await _projects_db.patch_project(
         app=app,
         project_uuid=project_uuid,
-        new_partial_project_data=_project_patch_exclude_unset,
+        new_partial_project_data=patch_project_data,
     )
 
 

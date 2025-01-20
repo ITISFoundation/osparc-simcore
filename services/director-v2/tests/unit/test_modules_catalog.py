@@ -23,7 +23,7 @@ def minimal_catalog_config(
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
 

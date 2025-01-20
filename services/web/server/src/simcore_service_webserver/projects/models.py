@@ -1,8 +1,9 @@
-import datetime as dt
+from datetime import datetime
 from enum import Enum
 from typing import Any, TypeAlias
 
 from aiopg.sa.result import RowProxy
+from common_library.dict_tools import remap_keys
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.folders import FolderID
 from models_library.projects import ClassifierID, ProjectID
@@ -43,8 +44,8 @@ class ProjectDB(BaseModel):
     description: str
     thumbnail: HttpUrl | None
     prj_owner: UserID
-    creation_date: dt.datetime
-    last_change_date: dt.datetime
+    creation_date: datetime
+    last_change_date: datetime
     ui: StudyUI | None
     classifiers: list[ClassifierID]
     dev: dict | None
@@ -52,7 +53,7 @@ class ProjectDB(BaseModel):
     published: bool
     hidden: bool
     workspace_id: WorkspaceID | None
-    trashed_at: dt.datetime | None
+    trashed: datetime | None
     trashed_explicitly: bool = False
 
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
@@ -95,18 +96,24 @@ class UserProjectAccessRightsWithWorkspace(BaseModel):
 
 
 class ProjectPatchExtended(ProjectPatch):
-    # Only used internally
-    trashed_at: dt.datetime | None
+    # ONLY used internally
+    trashed_at: datetime | None
     trashed_explicitly: bool
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    def to_domain_model(self) -> dict[str, Any]:
+        return remap_keys(
+            self.model_dump(exclude_unset=True, by_alias=False),
+            rename={"trashed_at": "trashed"},
+        )
 
 
 class NodeDB(BaseModel):
     node_id: NodeID
     required_resources: dict[str, Any]
-    created: dt.datetime
-    modified: dt.datetime
+    created: datetime
+    modified: datetime
     project_uuid: ProjectID
     project_node_id: int
     key: str
