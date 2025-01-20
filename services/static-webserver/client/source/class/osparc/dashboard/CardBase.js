@@ -151,27 +151,27 @@ qx.Class.define("osparc.dashboard.CardBase", {
     populateShareIcon: function(shareIcon, accessRights) {
       const gids = Object.keys(accessRights).map(key => parseInt(key));
 
-      const groupsStore = osparc.store.Groups.getInstance();
-
       // Icon
+      const groupsStore = osparc.store.Groups.getInstance();
       const groupEveryone = groupsStore.getEveryoneGroup();
       const groupProductEveryone = groupsStore.getEveryoneProductGroup();
       const organizations = groupsStore.getOrganizations();
+      const myGroupId = groupsStore.getMyGroupId();
+
       const organizationIds = Object.keys(organizations).map(key => parseInt(key));
       if (gids.includes(groupEveryone.getGroupId()) || gids.includes(groupProductEveryone.getGroupId())) {
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
       } else if (organizationIds.filter(value => gids.includes(value)).length) { // find intersection
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
-      } else if (gids.length === 1) {
+      } else if (gids.length === 1 && gids[0] === myGroupId) {
         shareIcon.setSource(osparc.dashboard.CardBase.SHARE_ICON);
       } else {
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
       }
 
       // Tooltip
-      const canIWrite = osparc.data.model.Study.canIWrite(accessRights);
-      const myGroupId = groupsStore.getMyGroupId();
       if (gids.length === 0 || (gids.length === 1 && gids[0] === myGroupId)) {
+        const canIWrite = osparc.data.model.Study.canIWrite(accessRights);
         if (canIWrite) {
           shareIcon.set({
             toolTipText: qx.locale.Manager.tr("Share")
@@ -179,6 +179,16 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
         return;
       }
+
+      this.addHintFromGids(shareIcon, gids);
+    },
+
+    addHintFromGids: function(icon, gids) {
+      const groupsStore = osparc.store.Groups.getInstance();
+      const groupEveryone = groupsStore.getEveryoneGroup();
+      const groupProductEveryone = groupsStore.getEveryoneProductGroup();
+      const organizations = groupsStore.getOrganizations();
+      const myGroupId = groupsStore.getMyGroupId();
 
       const sharedGrps = [];
       const groups = [];
@@ -193,8 +203,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
       });
 
-      const hint = new osparc.ui.hint.Hint(shareIcon);
-      shareIcon.addListener("mouseover", async () => {
+      const hint = new osparc.ui.hint.Hint(icon);
+      icon.addListener("mouseover", async () => {
         hint.show();
 
         // lazy load tooltip, this can be an expensive call
@@ -230,7 +240,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           }
         }
       }, this);
-      shareIcon.addListener("mouseout", () => hint.exclude(), this);
+      icon.addListener("mouseout", () => hint.exclude(), this);
     },
   },
 
@@ -305,6 +315,18 @@ qx.Class.define("osparc.dashboard.CardBase", {
     lastChangeDate: {
       check: "Date",
       apply: "_applyLastChangeDate",
+      nullable: true
+    },
+
+    trashedAt: {
+      check: "Date",
+      apply: "_applyTrasehdAt",
+      nullable: true
+    },
+
+    trashedBy: {
+      check: "Number",
+      apply: "_applyTrashedBy",
       nullable: true
     },
 
@@ -457,6 +479,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         owner,
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
+        trashedAt: resourceData.trashedAt ? new Date(resourceData.trashedAt) : null,
+        trashedBy: resourceData.trashedBy || null,
         icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
@@ -520,6 +544,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _applyLastChangeDate: function(value, old) {
+      throw new Error("Abstract method called!");
+    },
+
+    _applyTrasehdAt: function(value, old) {
+      throw new Error("Abstract method called!");
+    },
+
+    _applyTrashedBy: function(value, old) {
       throw new Error("Abstract method called!");
     },
 
