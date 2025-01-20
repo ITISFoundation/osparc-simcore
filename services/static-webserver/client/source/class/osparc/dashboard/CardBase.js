@@ -389,7 +389,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: ["NOT_STARTED", "STARTED", "SUCCESS", "FAILED", "UNKNOWN"],
       nullable: false,
       init: "UNKNOWN",
-      apply: "_applyProjectState"
+      apply: "__applyProjectState"
     },
 
     blocked: {
@@ -689,11 +689,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
       const projectState = ("state" in state) ? state["state"]["value"] : undefined;
       if (projectState) {
-        this._applyProjectState(state["state"]);
+        this.__applyProjectState(state["state"]);
       }
     },
 
-    _applyProjectState: function(projectStatus) {
+    __applyProjectState: function(projectStatus) {
       const status = projectStatus["value"];
       let icon;
       let toolTip;
