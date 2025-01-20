@@ -122,7 +122,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         tabs.push({
           id: "servicesTab",
           buttonId: "servicesTabBtn",
-          label: this.tr("SERVICES"),
+          label: this.tr("SERVICE"),
           icon: "@FontAwesome5Solid/cogs/"+tabIconSize,
           buildLayout: this.__createServiceBrowser
         });
