@@ -137,7 +137,9 @@ def random_resource_tracker_credit_transactions(
             "user_id": faker.pyint(),
             "user_email": faker.email(),
             "osparc_credits": -abs(faker.pyfloat()),
-            "transaction_status": choice(list(CreditTransactionClassification)),
+            "transaction_status": choice(
+                [member.value for member in CreditTransactionClassification]
+            ),
             "transaction_classification": "DEDUCT_SERVICE_RUN",
             "service_run_id": faker.uuid4(),
             "payment_transaction_id": faker.uuid4(),
