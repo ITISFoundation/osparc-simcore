@@ -599,8 +599,13 @@ qx.Class.define("osparc.data.model.Study", {
         data: osparc.utils.Utils.getClientSessionID()
       };
       if (this.getDisableServiceAutoStart() !== null) {
-        params["url"]["disableServiceAutoStart"] = this.getDisableServiceAutoStart();
-        return osparc.data.Resources.fetch("studies", "openDisableAutoStart", params);
+        // OM: remove this
+        // params["url"]["disableServiceAutoStart"] = this.getDisableServiceAutoStart();
+        // return osparc.data.Resources.fetch("studies", "openDisableAutoStart", params);
+        const error = new Error("Pay the debt, mate");
+        error.status = 402;
+        error.debtAmount = Math.floor(Math.random() * (50 - 10)) + 10;
+        return new Promise((_, reject) => reject(error));
       }
       return osparc.data.Resources.fetch("studies", "open", params);
     },
