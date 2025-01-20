@@ -385,13 +385,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyState"
     },
 
-    projectState: {
-      check: ["NOT_STARTED", "STARTED", "SUCCESS", "FAILED", "UNKNOWN"],
-      nullable: false,
-      init: "UNKNOWN",
-      apply: "__applyProjectState"
-    },
-
     blocked: {
       check: [true, "UNKNOWN_SERVICES", "IN_USE", false],
       init: false,
@@ -687,59 +680,58 @@ qx.Class.define("osparc.dashboard.CardBase", {
         this.__showBlockedCardFromStatus(state["locked"]);
       }
 
-      const projectState = ("state" in state) ? state["state"]["value"] : undefined;
-      if (projectState) {
-        this.__applyProjectState(state["state"]);
+      const pipelineState = ("state" in state) ? state["state"]["value"] : undefined;
+      if (pipelineState) {
+        this.__applyPipelineState(state["state"]);
       }
     },
 
-    __applyProjectState: function(projectStatus) {
+    __applyPipelineState: function(projectStatus) {
       const status = projectStatus["value"];
-      let icon;
-      let toolTip;
-      let border;
+      let iconSource;
+      let toolTipText;
+      let borderColor;
       switch (status) {
         case "STARTED":
-          icon = "@FontAwesome5Solid/spinner/10";
-          toolTip = this.tr("Running");
-          border = "info";
+          iconSource = "@FontAwesome5Solid/spinner/10";
+          toolTipText = this.tr("Running");
+          borderColor = "info";
           break;
         case "SUCCESS":
-          icon = "@FontAwesome5Solid/check/10";
-          toolTip = this.tr("Ran successfully");
-          border = "success";
+          iconSource = "@FontAwesome5Solid/check/10";
+          toolTipText = this.tr("Ran successfully");
+          borderColor = "success";
           break;
         case "ABORTED":
-          icon = "@FontAwesome5Solid/exclamation/10";
-          toolTip = this.tr("Run aborted");
-          border = "warning";
+          iconSource = "@FontAwesome5Solid/exclamation/10";
+          toolTipText = this.tr("Run aborted");
+          borderColor = "warning";
           break;
         case "FAILED":
-          icon = "@FontAwesome5Solid/exclamation/10";
-          toolTip = this.tr("Ran with error");
-          border = "error";
+          iconSource = "@FontAwesome5Solid/exclamation/10";
+          toolTipText = this.tr("Ran with error");
+          borderColor = "error";
           break;
+        case "NOT_STARTED":
         default:
-          icon = null;
-          toolTip = null;
-          border = null;
+          iconSource = null;
+          toolTipText = null;
+          borderColor = null;
           break;
       }
-      this.__applyProjectLabel(icon, toolTip, border);
-    },
 
-    __applyProjectLabel: function(icn, toolTipText, bdr) {
       const border = new qx.ui.decoration.Decorator().set({
         radius: 10,
         width: 1,
         style: "solid",
-        color: bdr,
-        backgroundColor: bdr ? bdr + "-bg" : null
+        color: borderColor,
+        backgroundColor: borderColor ? borderColor + "-bg" : null
       });
+
       const projectStatusLabel = this.getChildControl("project-status");
       projectStatusLabel.set({
         decorator: border,
-        textColor: bdr,
+        textColor: borderColor,
         alignX: "center",
         alignY: "middle",
         height: 17,
@@ -748,9 +740,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
 
       projectStatusLabel.set({
-        visibility: icn && toolTipText && bdr ? "visible" : "excluded",
-        source: icn,
-        toolTipIcon: icn,
+        visibility: iconSource && toolTipText && borderColor ? "visible" : "excluded",
+        source: iconSource,
+        toolTipIcon: iconSource,
         toolTipText
       });
     },
