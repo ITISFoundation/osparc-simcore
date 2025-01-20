@@ -228,6 +228,11 @@ qx.Class.define("osparc.store.Store", {
     },
   },
 
+  events: {
+    "studyStateChanged": "qx.event.type.Data",
+    "studyDebtChanged": "qx.event.type.Data",
+  },
+
   members: {
     // fetch resources that do not require log in
     preloadCalls: async function() {
@@ -422,19 +427,30 @@ qx.Class.define("osparc.store.Store", {
       if (currentStudy && currentStudy.getUuid() === studyId) {
         currentStudy.setState(state);
       }
+
+      this.fireDataEvent("studyStateChanged", {
+        studyId,
+        state,
+      });
     },
 
     setStudyDebt: function(studyId, debt) {
       const studiesWStateCache = this.getStudies();
       const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
       if (idx !== -1) {
-        studiesWStateCache[idx]["inDebt"] = debt;
+        studiesWStateCache[idx]["debt"] = debt;
       }
 
       const currentStudy = this.getCurrentStudy();
       if (currentStudy && currentStudy.getUuid() === studyId) {
-        currentStudy.setInDebt(debt);
+        currentStudy.setDebt(debt);
       }
+
+
+      this.fireDataEvent("studyDebtChanged", {
+        studyId,
+        debt,
+      });
     },
 
     setTemplateState: function(templateId, state) {

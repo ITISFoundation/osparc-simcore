@@ -732,10 +732,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.resetSelection();
         this.setMultiSelection(false);
       });
-      osparc.store.Store.getInstance().addListener("changeTags", () => {
+
+      const store = osparc.store.Store.getInstance();
+      store.addListener("changeTags", () => {
         this.invalidateStudies();
         this.__reloadStudies();
       }, this);
+      store.addListener("studyStateChanged", e => {
+        const {
+          studyId,
+          state,
+        } = e.getData();
+        this.__studyStateChanged(studyId, state);
+      });
+      store.addListener("studyDebtChanged", e => {
+        const {
+          studyId,
+          debt,
+        } = e.getData();
+        this.__studyDebtChanged(studyId, debt);
+      });
 
       qx.event.message.Bus.subscribe("reloadStudies", () => {
         this.invalidateStudies();
@@ -1420,6 +1436,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __studyStateReceived: function(studyId, state, errors) {
       osparc.store.Store.getInstance().setStudyState(studyId, state);
+      if (errors && errors.length) {
+        console.error(errors);
+      }
+    },
+
+    __studyStateChanged: function(studyId, state) {
       const idx = this._resourcesList.findIndex(study => study["uuid"] === studyId);
       if (idx > -1) {
         this._resourcesList[idx]["state"] = state;
@@ -1428,8 +1450,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (studyItem) {
         studyItem.setState(state);
       }
-      if (errors && errors.length) {
-        console.error(errors);
+    },
+
+    __studyDebtChanged: function(studyId, debt) {
+      const idx = this._resourcesList.findIndex(study => study["uuid"] === studyId);
+      if (idx > -1) {
+        this._resourcesList[idx]["debt"] = debt;
+      }
+      const studyItem = this._resourcesContainer.getCards().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
+      if (studyItem) {
+        // OM: here
+        studyItem.setDebt(debt);
       }
     },
 

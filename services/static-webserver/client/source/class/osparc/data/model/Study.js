@@ -206,11 +206,11 @@ qx.Class.define("osparc.data.model.Study", {
       event: "changePipelineRunning"
     },
 
-    inDebt: {
+    debt: {
       check: "Number",
       nullable: true,
       init: 0,
-      event: "changeInDebt"
+      event: "changeDebt"
     },
 
     readOnly: {
@@ -240,7 +240,7 @@ qx.Class.define("osparc.data.model.Study", {
       "permalink",
       "state",
       "pipelineRunning",
-      "inDebt",
+      "debt",
       "readOnly",
       "trashedAt",
     ],
