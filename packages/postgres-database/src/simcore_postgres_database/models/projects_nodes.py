@@ -25,7 +25,7 @@ projects_nodes = sa.Table(
         nullable=False,
         autoincrement=True,
         primary_key=True,
-        comment="Index of the project node",
+        doc="Index of the project node",
     ),
     sa.Column(
         "project_uuid",
@@ -38,21 +38,21 @@ projects_nodes = sa.Table(
         ),
         nullable=False,
         index=True,
-        comment="Unique identifier of the project",
+        doc="Unique identifier of the project",
     ),
     sa.Column(
         "node_id",
         sa.String,
         nullable=False,
         index=True,
-        comment="Unique identifier of the node",
+        doc="Unique identifier of the node",
     ),
     sa.Column(
         "required_resources",
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        comment="Required resources",
+        doc="Required resources",
     ),
     # TIME STAMPS ----
     column_created_datetime(timezone=True),
