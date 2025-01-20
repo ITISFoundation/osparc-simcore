@@ -19,6 +19,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingMessageType,
     RabbitResourceTrackingStartedMessage,
 )
+from models_library.resource_tracker import CreditTransactionStatus
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -138,9 +139,9 @@ def random_resource_tracker_credit_transactions(
             "user_email": faker.email(),
             "osparc_credits": -abs(faker.pyfloat()),
             "transaction_status": choice(
-                [member.value for member in CreditTransactionClassification]
+                [member.value for member in CreditTransactionStatus]
             ),
-            "transaction_classification": "DEDUCT_SERVICE_RUN",
+            "transaction_classification": CreditTransactionClassification.DEDUCT_SERVICE_RUN.value,
             "service_run_id": faker.uuid4(),
             "payment_transaction_id": faker.uuid4(),
             "created": datetime.now(tz=timezone.utc),
