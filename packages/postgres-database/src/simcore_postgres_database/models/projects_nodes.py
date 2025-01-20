@@ -129,12 +129,6 @@ projects_nodes = sa.Table(
         nullable=True,
         comment="Output properties values",
     ),
-    # sa.Column(
-    #     "output_node",
-    #     sa.BOOLEAN,
-    #     nullable=True,
-    #     comment="Deprecated",
-    # ),
     sa.Column(
         "run_hash",
         sa.String,
@@ -153,12 +147,6 @@ projects_nodes = sa.Table(
         nullable=True,
         comment="Parent's (group-nodes) node ID",
     ),
-    # sa.Column(
-    #     "position",
-    #     JSONB,
-    #     nullable=True,
-    #     doc="Deprecated",
-    # ),
     sa.Column(
         "boot_options",
         JSONB,
