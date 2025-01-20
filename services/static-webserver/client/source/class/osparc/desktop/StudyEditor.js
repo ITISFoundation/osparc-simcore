@@ -183,11 +183,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .catch(err => {
           console.error(err);
           let msg = "";
-          if ("status" in err && err["status"] == 409) { // max_open_studies_per_user
-            msg = err["message"];
-          } else if ("status" in err && err["status"] == 423) { // Locked
-            msg = study.getName() + this.tr(" is already opened");
-          } else {
+          if ("status" in err && err["status"]) {
+            if (err["status"] == 402) { // the study has some debt that needs to be paid
+              msg = err["message"];
+              msg += "<br>" + err["debtAmount"] + "$";
+              study.setInDebt(err["debtAmount"]);
+            } else if (err["status"] == 409) { // max_open_studies_per_user
+              msg = err["message"];
+            } else if (err["status"] == 423) { // Locked
+              msg = study.getName() + this.tr(" is already opened");
+            }
+          }
+          if (!msg) {
             msg = this.tr("Error opening study");
             if ("message" in err) {
               msg += "<br>" + err["message"];

@@ -207,9 +207,9 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     inDebt: {
-      check: "Boolean",
+      check: "Number",
       nullable: true,
-      init: false,
+      init: 0,
       event: "changeInDebt"
     },
 
