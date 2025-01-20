@@ -10,7 +10,7 @@ from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -155,9 +155,10 @@ async def _copy_files_from_source_project(
     user_id: UserID,
     task_progress: TaskProgress,
 ):
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
+    _projects_repository = ProjectDBAPI.get_from_app_context(app)
+
     needs_lock_source_project: bool = (
-        await db.get_project_type(
+        await _projects_repository.get_project_type(
             TypeAdapter(ProjectID).validate_python(source_project["uuid"])
         )
         != ProjectTypeDB.TEMPLATE
@@ -263,7 +264,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     """
     assert request.app  # nosec
 
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
+    _projects_repository = ProjectDBAPI.get_from_app_context(request.app)
 
     new_project: ProjectDict = {}
     copy_file_coro = None
@@ -340,7 +341,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             )
 
         # 3.1 save new project in DB
-        new_project = await db.insert_project(
+        new_project = await _projects_repository.insert_project(
             project=jsonable_encoder(new_project),
             user_id=user_id,
             product_name=product_name,
@@ -376,7 +377,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         # 5. unhide the project if needed since it is now complete
         if not new_project_was_hidden_before_data_was_copied:
-            await db.set_hidden_flag(new_project["uuid"], hidden=False)
+            await _projects_repository.set_hidden_flag(new_project["uuid"], hidden=False)
 
         # update the network information in director-v2
         await dynamic_scheduler_api.update_projects_networks(
@@ -389,7 +390,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             request.app, user_id, new_project["uuid"], product_name
         )
         # get the latest state of the project (lastChangeDate for instance)
-        new_project, _ = await db.get_project(project_uuid=new_project["uuid"])
+        new_project, _ = await _projects_repository.get_project(project_uuid=new_project["uuid"])
         # Appends state
         new_project = await projects_service.add_project_states_for_user(
             user_id=user_id,
@@ -403,7 +404,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         await update_or_pop_permalink_in_project(request, new_project)
 
         # Adds folderId
-        user_specific_project_data_db = await db.get_user_specific_project_data_db(
+        user_specific_project_data_db = await _projects_repository.get_user_specific_project_data_db(
             project_uuid=new_project["uuid"],
             private_workspace_user_id_or_none=user_id if workspace_id is None else None,
         )
