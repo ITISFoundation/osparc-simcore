@@ -132,7 +132,7 @@ async def _copy_project_nodes_from_source_project(
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     def _mapped_node_id(node: ProjectNode) -> NodeID:
-        return NodeID(nodes_map[TypeAdapter(NodeIDStr).validate_python(f"{node.node_id}")])
+        return NodeID(nodes_map[f"{node.node_id}"])
 
     return {
         _mapped_node_id(node): ProjectNodeCreate(
