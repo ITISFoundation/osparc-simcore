@@ -68,9 +68,8 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.SHARED
           });
           break;
-        case "last-change":
+        case "date-text":
           control = new qx.ui.basic.Label().set({
-            anonymous: true,
             font: "text-13",
             allowGrowY: false,
             minWidth: 120,
@@ -191,10 +190,39 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       return control || this.base(arguments, id);
     },
 
+    // overridden
     _applyLastChangeDate: function(value, old) {
       if (value) {
-        const label = this.getChildControl("last-change");
-        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+        if (this.isResourceType("study") || this.isResourceType("template")) {
+          const dateBy = this.getChildControl("date-by");
+          dateBy.set({
+            date: value,
+            toolTipText: this.tr("Last modified"),
+          });
+        }
+      }
+    },
+
+    // overridden
+    _applyTrasehdAt: function(value) {
+      if (value && value.getTime() !== new Date(0).getTime()) {
+        if (this.isResourceType("study") || this.isResourceType("template")) {
+          const dateBy = this.getChildControl("date-by");
+          dateBy.set({
+            date: value,
+            toolTipText: this.tr("Moved to the bin"),
+          });
+        }
+      }
+    },
+
+    // overridden
+    _applyTrashedBy: function(gid) {
+      if (gid) {
+        if (this.isResourceType("study") || this.isResourceType("template")) {
+          const dateBy = this.getChildControl("date-by");
+          dateBy.setGroupId(gid);
+        }
       }
     },
 
