@@ -5,7 +5,7 @@ from typing import Any
 
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from servicelib.project_lock import ProjectLockError
+from servicelib.redis import ProjectLockError
 
 from ..errors import WebServerBaseError
 

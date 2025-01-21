@@ -1,6 +1,4 @@
-""" handlers for project states
-
-"""
+"""handlers for project states"""
 
 import contextlib
 import functools
@@ -144,7 +142,7 @@ async def open_project(request: web.Request) -> web.Response:
 
         if not await projects_api.try_open_project_for_user(
             req_ctx.user_id,
-            project_uuid=f"{path_params.project_id}",
+            project_uuid=path_params.project_id,
             client_session_id=client_session_id,
             app=request.app,
             max_number_of_studies_per_user=product.max_open_studies_per_user,
