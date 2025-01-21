@@ -7,7 +7,6 @@ from common_library.dict_tools import remap_keys
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.folders import FolderID
 from models_library.projects import ClassifierID, ProjectID
-from models_library.projects_nodes_io import NodeID
 from models_library.projects_ui import StudyUI
 from models_library.users import UserID
 from models_library.utils.common_validators import (
@@ -107,33 +106,3 @@ class ProjectPatchExtended(ProjectPatch):
             self.model_dump(exclude_unset=True, by_alias=False),
             rename={"trashed_at": "trashed"},
         )
-
-
-class NodeDB(BaseModel):
-    node_id: NodeID
-    required_resources: dict[str, Any]
-    created: datetime
-    modified: datetime
-    project_uuid: ProjectID
-    project_node_id: int
-    key: str
-    version: str
-    label: str
-    progress: float | None
-    thumbnail: HttpUrl | None
-    input_access: dict[str, Any]
-    input_nodes: list[NodeID]
-    inputs: dict[str, Any]
-    inputs_units: dict[str, Any]
-    output_nodes: list[NodeID]
-    outputs: dict[str, Any]
-    run_hash: str | None
-    state: dict[str, Any] | None
-    parent: str | None
-    boot_options: dict[str, Any] | None
-
-
-__all__: tuple[str, ...] = (
-    "ProjectDict",
-    "ProjectProxy",
-)
