@@ -81,7 +81,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
       });
 
       this.__extraWidgetsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
-        paddingTop: 15
+        paddingTop: 10
       });
       this.__extraWidgetsLayout.exclude();
       this.add(this.__extraWidgetsLayout, {
