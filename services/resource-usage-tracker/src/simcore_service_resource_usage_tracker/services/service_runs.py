@@ -1,7 +1,11 @@
+# pylint: disable=too-many-arguments
 from datetime import UTC, datetime, timedelta
 
 import shortuuid
 from aws_library.s3 import SimcoreS3API
+from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
+    WalletTotalCredits,
+)
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedByServiceGet,
     OsparcCreditsAggregatedUsagesPage,
@@ -10,7 +14,9 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
 )
 from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.resource_tracker import (
+    CreditTransactionStatus,
     ServiceResourceUsagesFilters,
     ServicesAggregatedUsagesTimePeriod,
     ServicesAggregatedUsagesType,
@@ -18,25 +24,27 @@ from models_library.resource_tracker import (
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyUrl, PositiveInt, TypeAdapter
+from pydantic import AnyUrl, TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..models.service_runs import ServiceRunWithCreditsDB
 from .modules.db import service_runs_db
 
 _PRESIGNED_LINK_EXPIRATION_SEC = 7200
 
 
 async def list_service_runs(
+    db_engine: AsyncEngine,
+    *,
     user_id: UserID,
     product_name: ProductName,
-    db_engine: AsyncEngine,
-    limit: int = 20,
-    offset: int = 0,
     wallet_id: WalletID | None = None,
     access_all_wallet_usage: bool = False,
-    order_by: OrderBy | None = None,
     filters: ServiceResourceUsagesFilters | None = None,
+    transaction_status: CreditTransactionStatus | None = None,
+    project_id: ProjectID | None = None,
+    offset: int = 0,
+    limit: int = 20,
+    order_by: OrderBy | None = None,
 ) -> ServiceRunPage:
     started_from = None
     started_until = None
@@ -46,73 +54,56 @@ async def list_service_runs(
 
     # Situation when we want to see all usage of a specific user (ex. for Non billable product)
     if wallet_id is None and access_all_wallet_usage is False:
-        total_service_runs: PositiveInt = (
-            await service_runs_db.total_service_runs_by_product_and_user_and_wallet(
-                db_engine,
-                product_name=product_name,
-                user_id=user_id,
-                wallet_id=None,
-                started_from=started_from,
-                started_until=started_until,
-            )
-        )
-        service_runs_db_model: list[
-            ServiceRunWithCreditsDB
-        ] = await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
+        (
+            total_service_runs,
+            service_runs_db_model,
+        ) = await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
             db_engine,
             product_name=product_name,
             user_id=user_id,
             wallet_id=None,
-            offset=offset,
-            limit=limit,
             started_from=started_from,
             started_until=started_until,
+            transaction_status=transaction_status,
+            project_id=project_id,
+            offset=offset,
+            limit=limit,
             order_by=order_by,
         )
     # Situation when accountant user can see all users usage of the wallet
     elif wallet_id and access_all_wallet_usage is True:
-        total_service_runs: PositiveInt = await service_runs_db.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
+        (
+            total_service_runs,
+            service_runs_db_model,
+        ) = await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
             db_engine,
             product_name=product_name,
             user_id=None,
             wallet_id=wallet_id,
             started_from=started_from,
             started_until=started_until,
-        )
-        service_runs_db_model: list[  # type: ignore[no-redef]
-            ServiceRunWithCreditsDB
-        ] = await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
-            db_engine,
-            product_name=product_name,
-            user_id=None,
-            wallet_id=wallet_id,
+            transaction_status=transaction_status,
+            project_id=project_id,
             offset=offset,
             limit=limit,
-            started_from=started_from,
-            started_until=started_until,
             order_by=order_by,
         )
     # Situation when regular user can see only his usage of the wallet
     elif wallet_id and access_all_wallet_usage is False:
-        total_service_runs: PositiveInt = await service_runs_db.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
+        (
+            total_service_runs,
+            service_runs_db_model,
+        ) = await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
             db_engine,
             product_name=product_name,
             user_id=user_id,
             wallet_id=wallet_id,
             started_from=started_from,
             started_until=started_until,
-        )
-        service_runs_db_model: list[  # type: ignore[no-redef]
-            ServiceRunWithCreditsDB
-        ] = await service_runs_db.list_service_runs_by_product_and_user_and_wallet(
-            db_engine,
-            product_name=product_name,
-            user_id=user_id,
-            wallet_id=wallet_id,
+            transaction_status=transaction_status,
+            project_id=project_id,
             offset=offset,
             limit=limit,
-            started_from=started_from,
-            started_until=started_until,
             order_by=order_by,
         )
     else:
@@ -192,6 +183,23 @@ async def export_service_runs(
         bucket=s3_bucket_name,
         object_key=s3_object_key,
         expiration_secs=_PRESIGNED_LINK_EXPIRATION_SEC,
+    )
+
+
+async def sum_project_wallet_total_credits(
+    db_engine: AsyncEngine,
+    *,
+    product_name: ProductName,
+    wallet_id: WalletID,
+    project_id: ProjectID,
+    transaction_status: CreditTransactionStatus | None = None,
+) -> WalletTotalCredits:
+    return await service_runs_db.sum_project_wallet_total_credits(
+        db_engine,
+        product_name=product_name,
+        wallet_id=wallet_id,
+        project_id=project_id,
+        transaction_status=transaction_status,
     )
 
 
