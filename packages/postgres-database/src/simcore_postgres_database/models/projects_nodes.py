@@ -79,7 +79,7 @@ projects_nodes = sa.Table(
         "progress",
         sa.Numeric,
         nullable=True,
-        comment="Progress value",
+        comment="Progress value (0-100)",
     ),
     sa.Column(
         "thumbnail",
