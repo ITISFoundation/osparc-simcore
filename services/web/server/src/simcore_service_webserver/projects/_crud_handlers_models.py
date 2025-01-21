@@ -98,6 +98,10 @@ class ProjectFilters(Filters):
         default=False,
         description="Set to true to list trashed, false to list non-trashed (default), None to list all",
     )
+    project_name_search: str | None = Field(
+        default=None,
+        description="A search query to filter projects by their name. This field performs a case-insensitive partial match against the project name field.",
+    )
 
 
 ProjectsListOrderParams = create_ordering_query_model_class(

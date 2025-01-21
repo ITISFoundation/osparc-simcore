@@ -1,5 +1,6 @@
 # pylint: disable=too-many-public-methods
 
+import json
 import logging
 import urllib.parse
 from collections.abc import Mapping
@@ -185,14 +186,16 @@ class AuthSession:
         limit: int,
         offset: int,
         show_hidden: bool,
-        search: str | None = None,
+        project_name_search: str | None = None,
     ) -> Page[ProjectGet]:
         assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
         assert offset >= 0  # nosec
 
         optional: dict[str, Any] = {}
-        if search is not None:
-            optional["search"] = search
+        if project_name_search is not None:
+            optional["filters"] = json.dumps(
+                {"project_name_search": project_name_search}
+            )
 
         with service_exception_handler(
             service_name="Webserver",
@@ -353,9 +356,7 @@ class AuthSession:
             limit=limit,
             offset=offset,
             show_hidden=True,
-            # WARNING: better way to match jobs with projects (Next PR if this works fine!)
-            # WARNING: search text has a limit that I needed to increase for the example!
-            search=solver_name,
+            project_name_search=solver_name,
         )
 
     async def get_projects_page(self, *, limit: int, offset: int):
