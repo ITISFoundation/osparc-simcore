@@ -41,6 +41,10 @@ def test_create_invitation(
     assert invitation.guest == invitation_input.guest
     assert invitation.trial_account_days == invitation_input.trial_account_days
 
+    # checks issue with `//` reported in https://github.com/ITISFoundation/osparc-simcore/issues/7055
+    assert invitation.invitation_url
+    assert invitation.invitation_url.path == "/"
+
     assert invitation.product
     if invitation_input.product:
         assert invitation.product == invitation_input.product
