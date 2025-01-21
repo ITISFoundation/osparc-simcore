@@ -10,6 +10,7 @@ from uuid import UUID
 import aiohttp
 import pytest
 from aiohttp.test_utils import TestClient
+from common_library.dict_tools import remap_keys
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
@@ -198,11 +199,13 @@ def request_update_project(
         project["workbench"] = {node_id: jsonable_encoder(node)}
 
         db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(client.app)
-        project.pop("state")
+        project_db = remap_keys(project, rename={"trashedAt": "trashed"})
+        project_db.pop("state")
+
         await db.replace_project(
-            project,
+            project_db,
             logged_user["id"],
-            project_uuid=project["uuid"],
+            project_uuid=project_db["uuid"],
             product_name="osparc",
         )
 

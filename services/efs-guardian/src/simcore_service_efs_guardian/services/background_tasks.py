@@ -45,11 +45,12 @@ async def removal_policy_task(app: FastAPI) -> None:
             _project_last_change_date = (
                 await projects_repo.get_project_last_change_date(project_id)
             )
-        except DBProjectNotFoundError as exc:
-            _logger.warning(
-                "Project %s not found, this should not happen, please investigate (contact MD)",
-                exc.msg_template,
+        except DBProjectNotFoundError:
+            _logger.info(
+                "Project %s not found. Removing EFS data for project {project_id} started",
+                project_id,
             )
+            await efs_manager.remove_project_efs_data(project_id)
         if (
             _project_last_change_date
             < base_start_timestamp

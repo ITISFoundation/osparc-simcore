@@ -527,7 +527,17 @@ def postgres_db(
     with engine.begin() as conn:
         conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
 
-    orm.metadata.drop_all(engine)
+        conn.execute(
+            # NOTE: terminates all open transactions before droping all tables
+            # This solves https://github.com/ITISFoundation/osparc-simcore/issues/7008
+            sa.DDL(
+                "SELECT pg_terminate_backend(pid) "
+                "FROM pg_stat_activity "
+                "WHERE state = 'idle in transaction';"
+            )
+        )
+        orm.metadata.drop_all(bind=conn)
+
     engine.dispose()
 
 

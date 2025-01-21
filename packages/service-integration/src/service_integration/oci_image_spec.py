@@ -167,7 +167,7 @@ class LabelSchemaAnnotations(BaseModel):
     @classmethod
     def create_from_env(cls) -> "LabelSchemaAnnotations":
         data = {}
-        for field_name in cls.model_fields:  # pylint: disable=not-an-iterable
+        for field_name in cls.model_fields.keys():  # noqa: SIM118
             if value := os.environ.get(field_name.upper()):
                 data[field_name] = value
         return cls.model_validate(data)

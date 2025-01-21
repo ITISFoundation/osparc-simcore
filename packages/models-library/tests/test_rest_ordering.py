@@ -197,9 +197,7 @@ def test_ordering_query_model_class__defaults():
     model = OrderQueryParamsModel.model_validate({"order_by": {"field": "name"}})
     assert model.order_by
     assert model.order_by.field == "name"
-    assert (  # pylint: disable=unsubscriptable-object
-        model.order_by.direction == OrderBy.model_fields["direction"].default
-    )
+    assert model.order_by.direction == OrderBy.model_fields.get("direction").default
 
     # direction alone is invalid
     with pytest.raises(ValidationError) as err_info:
