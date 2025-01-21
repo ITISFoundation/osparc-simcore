@@ -141,7 +141,7 @@ async def pay_project_debt(request: web.Request):
     body_params = await parse_request_body_as(_PayProjectDebtBody, request)
 
     # Ensure the project exists
-    await projects_api.get_project_for_user(
+    await projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,

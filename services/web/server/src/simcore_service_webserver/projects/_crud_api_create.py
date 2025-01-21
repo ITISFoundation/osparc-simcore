@@ -191,7 +191,7 @@ async def _copy_files_from_source_project(
             owner=Owner(
                 user_id=user_id, **await get_user_fullname(app, user_id=user_id)
             ),
-            notification_cb=projects_api.create_user_notification_cb(
+            notification_cb=projects_service.create_user_notification_cb(
                 user_id, ProjectID(f"{source_project['uuid']}"), app
             ),
         )(_copy)()
