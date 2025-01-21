@@ -1459,7 +1459,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       const studyItem = this._resourcesContainer.getCards().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
       if (studyItem) {
-        // OM: here
         studyItem.setDebt(debt);
       }
     },

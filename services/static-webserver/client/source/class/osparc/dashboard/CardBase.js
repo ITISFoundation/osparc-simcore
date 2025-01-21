@@ -638,7 +638,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
         unaccessibleServices.forEach(unSrv => {
           toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
         });
-        image += this.classname.includes("Grid") ? "32" : "22";
         this.__showBlockedCard(image, toolTipText);
       }
     },
@@ -807,13 +806,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
           image = "@FontAwesome5Solid/lock/";
           break;
       }
-      image += this.classname.includes("Grid") ? "32" : "22";
       this.__showBlockedCard(image, toolTip);
     },
 
     __blockedInDebt: function(debt) {
       const toolTip = debt + "$";
-      const image = "osparc/coins-solid.svg";
+      const image = "@FontAwesome5Solid/lock/";
       this.__showBlockedCard(image, toolTip);
     },
 
@@ -824,6 +822,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
 
       const lockImage = this.getChildControl("lock-status").getChildControl("image");
+      lockImageSrc += this.classname.includes("Grid") ? "32" : "22";
       lockImage.setSource(lockImageSrc);
 
       if (toolTipText) {

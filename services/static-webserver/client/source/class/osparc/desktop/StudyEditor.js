@@ -186,8 +186,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if ("status" in err && err["status"]) {
             if (err["status"] == 402) { // the study has some debt that needs to be paid
               msg = err["message"];
-              const debt = err["debtAmount"];
-              msg += "<br>" + debt + "$";
+              let debt = 42;
+              if ("debtAmount" in err) {
+                debt = err["debtAmount"];
+                msg += "<br>" + debt + "$";
+              }
               study.setDebt(debt);
               osparc.store.Store.getInstance().setStudyDebt(study.getUuid(), debt);
             } else if (err["status"] == 409) { // max_open_studies_per_user
