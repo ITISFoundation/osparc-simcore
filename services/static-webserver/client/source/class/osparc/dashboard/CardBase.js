@@ -385,8 +385,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
       apply: "__applyState"
     },
 
+    debt: {
+      check: "Number",
+      nullable: true,
+      init: 0,
+      apply: "__applyDebt"
+    },
+
     blocked: {
-      check: [true, "UNKNOWN_SERVICES", "IN_USE", false],
+      check: [true, "UNKNOWN_SERVICES", "IN_USE", "IN_DEBT", false],
       init: false,
       nullable: false,
       apply: "__applyBlocked"
@@ -626,11 +633,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(workbench)
       if (unaccessibleServices.length) {
         this.setBlocked("UNKNOWN_SERVICES");
-        const image = "@FontAwesome5Solid/ban/";
+        let image = "@FontAwesome5Solid/ban/";
         let toolTipText = this.tr("Service info missing");
         unaccessibleServices.forEach(unSrv => {
           toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
         });
+        image += this.classname.includes("Grid") ? "32" : "22";
         this.__showBlockedCard(image, toolTipText);
       }
     },
@@ -680,12 +688,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
       this.setBlocked(lockInUse ? "IN_USE" : false);
       if (lockInUse) {
-        this.__showBlockedCardFromStatus(state["locked"]);
+        this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
       }
 
       const pipelineState = ("state" in state) ? state["state"]["value"] : undefined;
       if (pipelineState) {
         this.__applyPipelineState(state["state"]["value"]);
+      }
+    },
+
+    __applyDebt: function(debt) {
+      this.setBlocked(debt ? "IN_DEBT" : false);
+      if (debt) {
+        this.__showBlockedCardFromStatus("IN_DEBT", debt);
       }
     },
 
@@ -751,7 +766,18 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
     },
 
-    __showBlockedCardFromStatus: function(lockedStatus) {
+    __showBlockedCardFromStatus: function(reason, moreInfo) {
+      switch (reason) {
+        case "IN_USE":
+          this.__blockedInUse(moreInfo);
+          break;
+        case "IN_DEBT":
+          this.__blockedInDebt(moreInfo);
+          break;
+      }
+    },
+
+    __blockedInUse: function(lockedStatus) {
       const status = lockedStatus["status"];
       const owner = lockedStatus["owner"];
       let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"] || this.tr("A user"), owner["last_name"] || ""); // it will be replaced by "userName"
@@ -781,6 +807,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
           image = "@FontAwesome5Solid/lock/";
           break;
       }
+      image += this.classname.includes("Grid") ? "32" : "22";
+      this.__showBlockedCard(image, toolTip);
+    },
+
+    __blockedInDebt: function(debt) {
+      const toolTip = debt + "$";
+      const image = "osparc/coins-solid.svg";
       this.__showBlockedCard(image, toolTip);
     },
 
@@ -789,9 +822,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
         opacity: 1.0,
         visibility: "visible"
       });
+
       const lockImage = this.getChildControl("lock-status").getChildControl("image");
-      lockImageSrc += this.classname.includes("Grid") ? "32" : "22";
       lockImage.setSource(lockImageSrc);
+
       if (toolTipText) {
         this.set({
           toolTipText
