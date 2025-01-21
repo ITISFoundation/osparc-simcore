@@ -11,9 +11,11 @@ _logger = logging.getLogger(__name__)
 def _on_app_startup(_app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         with log_context(
-            _logger, logging.INFO, msg="Efs Guardian setup fire and forget tasks.."
+            _logger,
+            logging.INFO,
+            msg="Resource Usage Tracker setup fire and forget tasks..",
         ), log_catch(_logger, reraise=False):
-            _app.state.efs_guardian_fire_and_forget_tasks = set()
+            _app.state.rut_fire_and_forget_tasks = set()
 
     return _startup
 
@@ -23,11 +25,13 @@ def _on_app_shutdown(
 ) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
         with log_context(
-            _logger, logging.INFO, msg="Efs Guardian fire and forget tasks shutdown.."
+            _logger,
+            logging.INFO,
+            msg="Resource Usage Tracker fire and forget tasks shutdown..",
         ), log_catch(_logger, reraise=False):
             assert _app  # nosec
-            if _app.state.efs_guardian_fire_and_forget_tasks:
-                for task in _app.state.efs_guardian_fire_and_forget_tasks:
+            if _app.state.rut_fire_and_forget_tasks:
+                for task in _app.state.rut_fire_and_forget_tasks:
                     await cancel_wait_task(task)
 
     return _stop
