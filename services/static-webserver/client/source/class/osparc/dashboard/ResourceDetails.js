@@ -239,6 +239,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       });
       hBox.add(versionLabel);
       const versionsBox = new osparc.ui.toolbar.SelectBox();
+      osparc.utils.Utils.setIdToWidget(versionsBox, "serviceSelectBox");
       hBox.add(versionsBox);
 
 

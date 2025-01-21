@@ -1,6 +1,4 @@
-""" handlers for project states
-
-"""
+"""handlers for project states"""
 
 import contextlib
 import functools
@@ -36,10 +34,13 @@ from ..users import api
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.errors import WalletNotEnoughCreditsError
+from . import api as projects_service
 from . import projects_api
 from ._common.models import ProjectPathParams, RequestContext
 from .exceptions import (
     DefaultPricingUnitNotFoundError,
+    ProjectInDebtCanNotChangeWalletError,
+    ProjectInDebtCanNotOpenError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodesError,
@@ -74,7 +75,11 @@ def _handle_project_exceptions(handler: Handler):
         except ProjectTooManyProjectOpenedError as exc:
             raise web.HTTPConflict(reason=f"{exc}") from exc
 
-        except WalletNotEnoughCreditsError as exc:
+        except (
+            WalletNotEnoughCreditsError,
+            ProjectInDebtCanNotChangeWalletError,
+            ProjectInDebtCanNotOpenError,
+        ) as exc:
             raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
 
     return _wrapper
@@ -127,11 +132,17 @@ async def open_project(request: web.Request) -> web.Response:
             ),
         )
 
+        await projects_service.check_project_financial_status(
+            request.app,
+            project_id=path_params.project_id,
+            product_name=req_ctx.product_name,
+        )
+
         product: Product = get_current_product(request)
 
         if not await projects_api.try_open_project_for_user(
             req_ctx.user_id,
-            project_uuid=f"{path_params.project_id}",
+            project_uuid=path_params.project_id,
             client_session_id=client_session_id,
             app=request.app,
             max_number_of_studies_per_user=product.max_open_studies_per_user,

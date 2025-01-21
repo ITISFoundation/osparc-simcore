@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from collections.abc import Coroutine
-from contextlib import AsyncExitStack
 from typing import Any, TypeAlias
 
 from aiohttp import web
@@ -10,6 +9,7 @@ from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
+from models_library.projects_access import Owner
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
@@ -18,6 +18,7 @@ from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.redis import with_project_locked
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodeCreate,
@@ -29,6 +30,7 @@ from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..folders import _folders_repository as folders_db
+from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
@@ -163,17 +165,7 @@ async def _copy_files_from_source_project(
         != ProjectTypeDB.TEMPLATE
     )
 
-    async with AsyncExitStack() as stack:
-        if needs_lock_source_project:
-            await stack.enter_async_context(
-                projects_api.lock_with_notification(
-                    app,
-                    source_project["uuid"],
-                    ProjectStatus.CLONING,
-                    user_id,
-                    await get_user_fullname(app, user_id=user_id),
-                )
-            )
+    async def _copy() -> None:
         starting_value = task_progress.percent
         async for long_running_task in copy_data_folders_from_project(
             app, source_project, new_project, nodes_map, user_id
@@ -189,6 +181,21 @@ async def _copy_files_from_source_project(
             )
             if long_running_task.done():
                 await long_running_task.result()
+
+    if needs_lock_source_project:
+        await with_project_locked(
+            get_redis_lock_manager_client_sdk(app),
+            project_uuid=source_project["uuid"],
+            status=ProjectStatus.CLONING,
+            owner=Owner(
+                user_id=user_id, **await get_user_fullname(app, user_id=user_id)
+            ),
+            notification_cb=projects_api.create_user_notification_cb(
+                user_id, ProjectID(f"{source_project['uuid']}"), app
+            ),
+        )(_copy)()
+    else:
+        await _copy()
 
 
 async def _compose_project_data(
