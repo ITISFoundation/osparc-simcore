@@ -40,6 +40,8 @@ from . import projects_service
 from ._common.models import ProjectPathParams, RequestContext
 from .exceptions import (
     DefaultPricingUnitNotFoundError,
+    ProjectInDebtCanNotChangeWalletError,
+    ProjectInDebtCanNotOpenError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodesError,
@@ -74,7 +76,11 @@ def _handle_project_exceptions(handler: Handler):
         except ProjectTooManyProjectOpenedError as exc:
             raise web.HTTPConflict(reason=f"{exc}") from exc
 
-        except WalletNotEnoughCreditsError as exc:
+        except (
+            WalletNotEnoughCreditsError,
+            ProjectInDebtCanNotChangeWalletError,
+            ProjectInDebtCanNotOpenError,
+        ) as exc:
             raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
 
     return _wrapper
@@ -125,6 +131,12 @@ async def open_project(request: web.Request) -> web.Response:
             check_permissions=(
                 "write" if project_type is ProjectType.TEMPLATE else "read"
             ),
+        )
+
+        await projects_service.check_project_financial_status(
+            request.app,
+            project_id=path_params.project_id,
+            product_name=req_ctx.product_name,
         )
 
         product: Product = get_current_product(request)
