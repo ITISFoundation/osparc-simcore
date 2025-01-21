@@ -64,7 +64,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       const studyAlias = osparc.product.Utils.getStudyAlias();
       let msg = this.tr(`This ${studyAlias} is currently Embargoed.`) + "<br>";
       msg += this.tr("Credits required to unblock it:") + "<br>";
-      msg += -1*this.__studyData["debt"];
+      msg += -1*this.__studyData["debt"] + " " + this.tr("credits");
       const label = new qx.ui.basic.Label(msg).set({
         font: "text-14",
         rich: true,
