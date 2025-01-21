@@ -5,11 +5,7 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from servicelib.logging_utils import log_context
-from servicelib.project_lock import (
-    PROJECT_LOCK_TIMEOUT,
-    PROJECT_REDIS_LOCK_KEY,
-    lock_project,
-)
+from servicelib.redis import with_project_locked
 from simcore_postgres_database.utils_projects import (
     DBProjectNotFoundError,
     ProjectsRepo,
@@ -20,6 +16,22 @@ from .efs_manager import EfsManager
 from .modules.redis import get_redis_lock_client
 
 _logger = logging.getLogger(__name__)
+
+
+async def _lock_project_and_remove_data(app: FastAPI, project_id: ProjectID) -> None:
+    efs_manager: EfsManager = app.state.efs_manager
+
+    @with_project_locked(
+        get_redis_lock_client(app),
+        project_uuid=project_id,
+        status=ProjectStatus.MAINTAINING,
+        owner=None,
+        notification_cb=None,
+    )
+    async def _remove():
+        await efs_manager.remove_project_efs_data(project_id)
+
+    await _remove()
 
 
 async def removal_policy_task(app: FastAPI) -> None:
@@ -61,13 +73,4 @@ async def removal_policy_task(app: FastAPI) -> None:
                 logging.INFO,
                 msg=f"Removing data for project {project_id} started, project last change date {_project_last_change_date}, efs removal policy task age limit timedelta {app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA}",
             ):
-                redis_lock = get_redis_lock_client(app).create_lock(
-                    PROJECT_REDIS_LOCK_KEY.format(project_id),
-                    ttl=PROJECT_LOCK_TIMEOUT,
-                )
-                async with lock_project(
-                    redis_lock,
-                    project_uuid=project_id,
-                    status=ProjectStatus.MAINTAINING,
-                ):
-                    await efs_manager.remove_project_efs_data(project_id)
+                await _lock_project_and_remove_data(app, project_id)
