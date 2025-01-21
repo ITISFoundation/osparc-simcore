@@ -90,28 +90,33 @@ qx.Class.define("osparc.study.BillingSettings", {
               if (walletId === null) {
                 return;
               }
-              boxContent.setEnabled(false);
-              const paramsPut = {
-                url: {
-                  studyId: this.__studyData["uuid"],
-                  walletId
-                }
-              };
-              osparc.data.Resources.fetch("studies", "selectWallet", paramsPut)
-                .then(() => {
-                  const msg = this.tr("Credit Account saved");
-                  osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-                })
-                .catch(err => {
-                  console.error(err);
-                  osparc.FlashMessenger.logAs(err.message, "ERROR");
-                })
-                .finally(() => {
-                  boxContent.setEnabled(true);
-                  this.__populateWallets();
-                });
+              this.__switchWallet(walletId);
             }
           });
+        });
+    },
+
+    __switchWallet: function(walletId) {
+      const creditAccountLayout = this.getChildControl("credit-account-layout");
+      creditAccountLayout.setEnabled(false);
+      const paramsPut = {
+        url: {
+          studyId: this.__studyData["uuid"],
+          walletId
+        }
+      };
+      osparc.data.Resources.fetch("studies", "selectWallet", paramsPut)
+        .then(() => {
+          const msg = this.tr("Credit Account saved");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+        })
+        .finally(() => {
+          creditAccountLayout.setEnabled(true);
+          this.__populateWallets();
         });
     },
 
