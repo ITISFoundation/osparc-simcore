@@ -196,7 +196,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
                   debt = parseFloat(match[1]); // Convert the captured string to a number
                 }
               }
-              study.setDebt(debt);
               osparc.store.Store.getInstance().setStudyDebt(study.getUuid(), debt);
             } else if (err["status"] == 409) { // max_open_studies_per_user
               msg = err["message"];
