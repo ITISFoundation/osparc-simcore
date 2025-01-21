@@ -1,8 +1,15 @@
 import sqlalchemy as sa
 from sqlalchemy.sql import expression
 
-from ._common import RefActions, column_created_datetime, column_modified_datetime
+from ._common import (
+    RefActions,
+    column_created_datetime,
+    column_modified_datetime,
+    column_trashed_by_user,
+    column_trashed_datetime,
+)
 from .base import metadata
+from .users import users
 from .workspaces import workspaces
 
 folders_v2 = sa.Table(
@@ -75,13 +82,8 @@ folders_v2 = sa.Table(
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    sa.Column(
-        "trashed_at",
-        sa.DateTime(timezone=True),
-        nullable=True,
-        comment="The date and time when the folder was marked as trashed."
-        "Null if the folder has not been trashed [default].",
-    ),
+    column_trashed_datetime("folders"),
+    column_trashed_by_user("folders", users_table=users),
     sa.Column(
         "trashed_explicitly",
         sa.Boolean,

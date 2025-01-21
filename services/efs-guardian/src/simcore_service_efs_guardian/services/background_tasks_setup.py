@@ -5,18 +5,24 @@ from datetime import timedelta
 from typing import TypedDict
 
 from fastapi import FastAPI
-from servicelib.background_task import stop_periodic_task
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import start_exclusive_periodic_task
 
 from .background_tasks import removal_policy_task
 from .modules.redis import get_redis_lock_client
 
-_logger = logging.getLogger(__name__)
 
-_SEC = 1  # in s
-_MIN = 60 * _SEC  # in s
-_HOUR = 60 * _MIN  # in s
+@exclusive_periodic(
+    get_redis_lock_client,
+    task_interval=timedelta(hours=1),
+    retry_after=timedelta(minutes=5),
+)
+async def periodic_removal_policy_task(app: FastAPI) -> None:
+    await removal_policy_task(app)
+
+
+_logger = logging.getLogger(__name__)
 
 
 class EfsGuardianBackgroundTask(TypedDict):
@@ -26,7 +32,7 @@ class EfsGuardianBackgroundTask(TypedDict):
 
 _EFS_GUARDIAN_BACKGROUND_TASKS = [
     EfsGuardianBackgroundTask(
-        name="efs_removal_policy_task", task_func=removal_policy_task
+        name="efs_removal_policy_task", task_func=periodic_removal_policy_task
     )
 ]
 
@@ -41,15 +47,9 @@ def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
             # Setup periodic tasks
             for task in _EFS_GUARDIAN_BACKGROUND_TASKS:
-                exclusive_task = start_exclusive_periodic_task(
-                    get_redis_lock_client(app),
-                    task["task_func"],
-                    task_period=timedelta(seconds=1 * _HOUR),
-                    retry_after=timedelta(seconds=5 * _MIN),
-                    task_name=task["name"],
-                    app=app,
+                app.state.efs_guardian_background_tasks.append(
+                    asyncio.create_task(task["task_func"](), name=task["name"])
                 )
-                app.state.efs_guardian_background_tasks.append(exclusive_task)
 
     return _startup
 
@@ -66,7 +66,7 @@ def _on_app_shutdown(
             if _app.state.efs_guardian_background_tasks:
                 await asyncio.gather(
                     *[
-                        stop_periodic_task(task)
+                        cancel_wait_task(task)
                         for task in _app.state.efs_guardian_background_tasks
                     ]
                 )
