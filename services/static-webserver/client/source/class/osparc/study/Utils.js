@@ -266,6 +266,10 @@ qx.Class.define("osparc.study.Utils", {
       });
     },
 
+    isInDebt: function(studyData) {
+      return Boolean("debt" in studyData && studyData["debt"] <= 0);
+    },
+
     __getBlockedState: function(studyData) {
       if (studyData["workbench"]) {
         const unaccessibleServices = osparc.study.Utils.getInaccessibleServices(studyData["workbench"])
@@ -275,6 +279,9 @@ qx.Class.define("osparc.study.Utils", {
       }
       if (studyData["state"] && studyData["state"]["locked"] && studyData["state"]["locked"]["value"]) {
         return "IN_USE";
+      }
+      if (this.isInDebt(studyData)) {
+        return "IN_DEBT";
       }
       return false;
     },
@@ -286,7 +293,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canShowBillingOptions: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      return [false].includes(blocked);
+      return ["IN_DEBT", false].includes(blocked);
     },
 
     canShowServiceUpdates: function(studyData) {

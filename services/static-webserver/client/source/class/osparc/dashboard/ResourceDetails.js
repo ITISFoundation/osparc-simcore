@@ -111,7 +111,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       if (this.__resourceData["resourceType"] === "study") {
         const payDebtButton = this.__payDebtButton = new qx.ui.form.Button(this.tr("Pay debt")).set({
-          visibility: resourceData["debt"] && resourceData["debt"] < 0 ? "visible" : "excluded"
+          visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
         });
         osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(payDebtButton);
         payDebtButton.addListener("execute", () => this.openBillingSettings());
