@@ -74,7 +74,8 @@ async def export_project(request: web.Request):
                 msg = f"Must provide a file to download, not {file_to_download!s}"
                 raise SDSException(msg)
             # this allows to transfer deletion of the tmp dir responsibility
-        return tmp_dir_stack.pop_all().aclose, file_to_download
+            delete_tmp_dir_cb = tmp_dir_stack.pop_all().aclose
+        return delete_tmp_dir_cb, file_to_download
 
     delete_tmp_dir_callable, file_to_download = await _()
 
