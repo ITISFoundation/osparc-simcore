@@ -91,6 +91,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __classifiersPage: null,
     __qualityPage: null,
     __openButton: null,
+    __payDebtButton: null,
 
     __createToolbar: function() {
       const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
@@ -107,6 +108,15 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const toolbar = this.__createToolbar();
       page.addToHeader(toolbar);
+
+      if (this.__resourceData["resourceType"] === "study") {
+        const payDebtButton = this.__payDebtButton = new qx.ui.form.Button(this.tr("Pay debt")).set({
+          visibility: resourceData["debt"] && resourceData["debt"] < 0 ? "visible" : "excluded"
+        });
+        osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(payDebtButton);
+        payDebtButton.addListener("execute", () => this.openBillingSettings());
+        toolbar.add(payDebtButton);
+      }
 
       if (osparc.utils.Resources.isService(resourceData)) {
         const serviceVersionSelector = this.__createServiceVersionSelector();
@@ -125,7 +135,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.bind("showOpenButton", openButton, "visibility", {
         converter: show => (store.getCurrentStudy() === null && show) ? "visible" : "excluded"
       });
-
       openButton.addListener("execute", () => this.__openTapped());
 
       if (this.__resourceData["resourceType"] === "study") {
@@ -364,7 +373,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isStudy(resourceData)) {
         const id = "Billing";
-        const title = this.tr("Tier Settings");
+        const title = this.tr("Billing Settings");
         const iconSrc = "@FontAwesome5Solid/cogs/22";
         const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
         this.__addOpenButton(page);
