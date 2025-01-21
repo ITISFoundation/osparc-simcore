@@ -361,6 +361,9 @@ async def create_fake_projects_node(
         fake_node = ProjectNodeCreate(
             node_id=uuid.uuid4(),
             required_resources=faker.pydict(allowed_types=(str,)),
+            key=faker.pystr(),
+            version=faker.pystr(),
+            label=faker.pystr(),
         )
         repo = ProjectNodesRepo(project_uuid=project_uuid)
         created_nodes = await repo.add(connection, nodes=[fake_node])
