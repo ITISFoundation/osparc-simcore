@@ -441,12 +441,6 @@ qx.Class.define("osparc.store.Store", {
         studiesWStateCache[idx]["debt"] = debt;
       }
 
-      const currentStudy = this.getCurrentStudy();
-      if (currentStudy && currentStudy.getUuid() === studyId) {
-        currentStudy.setDebt(debt);
-      }
-
-
       this.fireDataEvent("studyDebtChanged", {
         studyId,
         debt,
