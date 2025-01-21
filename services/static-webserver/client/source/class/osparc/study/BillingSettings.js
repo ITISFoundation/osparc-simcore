@@ -45,11 +45,11 @@ qx.Class.define("osparc.study.BillingSettings", {
     },
 
     __buildLayout: function() {
-      this.__populateWallets();
+      this.__buildWalletGroup();
       this.__buildPricingUnitsGroup();
     },
 
-    __populateWallets: function() {
+    __buildWalletGroup: function() {
       const creditAccountLayout = this.getChildControl("credit-account-layout");
       creditAccountLayout.removeAll();
 
@@ -116,7 +116,7 @@ qx.Class.define("osparc.study.BillingSettings", {
         })
         .finally(() => {
           creditAccountLayout.setEnabled(true);
-          this.__populateWallets();
+          this.__buildWalletGroup();
         });
     },
 
