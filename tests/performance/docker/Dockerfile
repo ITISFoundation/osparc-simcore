@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
 
-ARG UV_VERSION="0.4"
-FROM cruizba/ubuntu-dind:latest as base
 
+FROM cruizba/ubuntu-dind:latest AS base
+ARG PYTHON_VERSION
 LABEL maintainer=bisgaard-itis
 
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
-ENV UV_PYTHON=3.11.9
+ENV UV_PYTHON=${PYTHON_VERSION}
 
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -27,7 +27,7 @@ RUN apt-get update \
   jq
 
 # install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.4 /uv /uvx /bin/
 
 RUN uv venv "${VIRTUAL_ENV}"
 

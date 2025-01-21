@@ -95,7 +95,7 @@ config: ## Create config for your locust tests
 
 .PHONY: build-test-image push-test-image
 build-test-image: _check_venv_active ## Build test image
-	docker build --build-arg PYTHON_VERSION=$(shell python --version | cut -d' ' -f2) -t ${TEST_IMAGE_NAME}:${TEST_IMAGE_TAG} ./docker
+	docker build --build-arg PYTHON_VERSION="$(shell python --version | cut -d' ' -f2)" --build-arg UV_VERSION="$(shell uv --version | cut -d' ' -f2)" -t ${TEST_IMAGE_NAME}:${TEST_IMAGE_TAG} ./docker
 
 push-test-image: ## Push test image to dockerhub
 	docker push ${TEST_IMAGE_NAME}:${TEST_IMAGE_TAG}
